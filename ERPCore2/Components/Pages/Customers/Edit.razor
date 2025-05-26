@@ -72,14 +72,16 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="contactPerson" class="form-label">聯絡人</label>                                        <InputText id="contactPerson" class="form-control" @bind-Value="customer.ContactPerson" />
+                                        <label for="contactPerson" class="form-label">聯絡人</label>                                        
+                                        <InputText id="contactPerson" class="form-control" @bind-Value="customer.ContactPerson" />
                                         <ValidationMessage For="@(() => customer.ContactPerson)" class="text-danger" />
                                     </div>
                                 </div>
                                 
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="taxNumber" class="form-label">統一編號</label>                                        <InputText id="taxNumber" class="form-control" @bind-Value="customer.TaxNumber" />
+                                        <label for="taxNumber" class="form-label">統一編號</label>                                        
+                                        <InputText id="taxNumber" class="form-control" @bind-Value="customer.TaxNumber" />
                                         <ValidationMessage For="@(() => customer.TaxNumber)" class="text-danger" />
                                     </div>
                                 </div>
@@ -107,7 +109,8 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="status" class="form-label">狀態</label>                                        <InputSelect id="status" class="form-select" @bind-Value="customer.Status">
+                                        <label for="status" class="form-label">狀態</label>                                        
+                                        <InputSelect id="status" class="form-select" @bind-Value="customer.Status">
                                             <option value="@EntityStatus.Active">啟用</option>
                                             <option value="@EntityStatus.Inactive">停用</option>
                                         </InputSelect>
@@ -117,7 +120,8 @@
                                 
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="modifiedBy" class="form-label">修改者</label>                                        <InputText id="modifiedBy" class="form-control" @bind-Value="customer.ModifiedBy" />
+                                        <label for="modifiedBy" class="form-label">修改者</label>                                        
+                                        <InputText id="modifiedBy" class="form-control" @bind-Value="customer.ModifiedBy" />
                                         <ValidationMessage For="@(() => customer.ModifiedBy)" class="text-danger" />
                                     </div>
                                 </div>
