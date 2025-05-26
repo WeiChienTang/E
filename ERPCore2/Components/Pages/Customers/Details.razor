@@ -1,7 +1,9 @@
 @page "/customers/{CustomerId:int}"
-@inject CustomerService CustomerService
+@inject ICustomerService CustomerService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@using ERPCore2.Services.Customers.Interfaces
+@using ERPCore2.Data.Entities
 
 <PageTitle>客戶詳細資料</PageTitle>
 
@@ -311,12 +313,11 @@
     {
         await LoadDataAsync();
     }
-    
-    private async Task LoadDataAsync()
+      private async Task LoadDataAsync()
     {
         try
         {
-            customer = await CustomerService.GetByIdWithDetailsAsync(CustomerId);
+            customer = await CustomerService.GetByIdAsync(CustomerId);
         }
         catch (Exception ex)
         {
@@ -349,23 +350,18 @@
             _ => "未知"
         };
     }
-    
-    private async Task ToggleStatus(EntityStatus newStatus)
+      private async Task ToggleStatus(EntityStatus newStatus)
     {
         if (customer == null) return;
         
         try
         {
-            ServiceResult result;
+            // 更新客戶狀態
+            customer.Status = newStatus;
+            customer.ModifiedBy = "系統管理員";
+            customer.ModifiedDate = DateTime.UtcNow;
             
-            if (newStatus == EntityStatus.Active)
-            {
-                result = await CustomerService.ActivateAsync(customer.CustomerId, "系統管理員");
-            }
-            else
-            {
-                result = await CustomerService.DeactivateAsync(customer.CustomerId, "系統管理員");
-            }
+            var result = await CustomerService.UpdateAsync(customer);
             
             if (result.IsSuccess)
             {

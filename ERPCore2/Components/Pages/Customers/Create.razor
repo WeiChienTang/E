@@ -1,7 +1,9 @@
 @page "/customers/create"
-@inject CustomerService CustomerService
+@inject ICustomerService CustomerService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@using ERPCore2.Services.Customers.Interfaces
+@using ERPCore2.Data.Entities
 
 <PageTitle>新增客戶</PageTitle>
 
@@ -29,7 +31,7 @@
                     }
                     else
                     {
-                        <EditForm Model="@request" OnValidSubmit="@HandleSubmit">
+                        <EditForm Model="@customer" OnValidSubmit="@HandleSubmit">
                             <DataAnnotationsValidator />
                             
                             <div class="row">
@@ -37,9 +39,9 @@
                                     <div class="mb-3">
                                         <label for="customerCode" class="form-label">
                                             客戶代碼 <span class="text-danger">*</span>
-                                        </label>
-                                        <InputText id="customerCode" class="form-control" @bind-Value="request.CustomerCode" />
-                                        <ValidationMessage For="@(() => request.CustomerCode)" class="text-danger" />
+                                        </label>                                        
+                                        <InputText id="customerCode" class="form-control" @bind-Value="customer.CustomerCode" />
+                                        <ValidationMessage For="@(() => customer.CustomerCode)" class="text-danger" />
                                     </div>
                                 </div>
                                 
@@ -47,9 +49,8 @@
                                     <div class="mb-3">
                                         <label for="companyName" class="form-label">
                                             公司名稱 <span class="text-danger">*</span>
-                                        </label>
-                                        <InputText id="companyName" class="form-control" @bind-Value="request.CompanyName" />
-                                        <ValidationMessage For="@(() => request.CompanyName)" class="text-danger" />
+                                        </label>                                        <InputText id="companyName" class="form-control" @bind-Value="customer.CompanyName" />
+                                        <ValidationMessage For="@(() => customer.CompanyName)" class="text-danger" />
                                     </div>
                                 </div>
                             </div>
@@ -57,79 +58,50 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="contactPerson" class="form-label">聯絡人</label>
-                                        <InputText id="contactPerson" class="form-control" @bind-Value="request.ContactPerson" />
-                                        <ValidationMessage For="@(() => request.ContactPerson)" class="text-danger" />
+                                        <label for="contactPerson" class="form-label">聯絡人</label>                                        <InputText id="contactPerson" class="form-control" @bind-Value="customer.ContactPerson" />
+                                        <ValidationMessage For="@(() => customer.ContactPerson)" class="text-danger" />
                                     </div>
                                 </div>
                                 
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="taxNumber" class="form-label">統一編號</label>
-                                        <InputText id="taxNumber" class="form-control" @bind-Value="request.TaxNumber" />
-                                        <ValidationMessage For="@(() => request.TaxNumber)" class="text-danger" />
+                                        <label for="taxNumber" class="form-label">統一編號</label>                                        <InputText id="taxNumber" class="form-control" @bind-Value="customer.TaxNumber" />
+                                        <ValidationMessage For="@(() => customer.TaxNumber)" class="text-danger" />
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div class="row">
+                              <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="customerType" class="form-label">客戶類型</label>
-                                        <InputSelect id="customerType" class="form-select" @bind-Value="request.CustomerTypeId">
-                                            <option value="">請選擇客戶類型</option>
-                                            @foreach (var type in customerTypes)
-                                            {
-                                                <option value="@type.CustomerTypeId">@type.TypeName</option>
-                                            }
-                                        </InputSelect>
-                                        <ValidationMessage For="@(() => request.CustomerTypeId)" class="text-danger" />
+                                        <label for="customerType" class="form-label">客戶類型ID</label>
+                                        <InputNumber id="customerType" class="form-control" @bind-Value="customer.CustomerTypeId" />
+                                        <ValidationMessage For="@(() => customer.CustomerTypeId)" class="text-danger" />
+                                        <small class="text-muted">暫時請直接輸入數字 ID</small>
                                     </div>
                                 </div>
                                 
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="industry" class="form-label">行業別</label>
-                                        <InputSelect id="industry" class="form-select" @bind-Value="request.IndustryId">
-                                            <option value="">請選擇行業別</option>
-                                            @foreach (var industry in industries)
-                                            {
-                                                <option value="@industry.IndustryId">@industry.IndustryName</option>
-                                            }
-                                        </InputSelect>
-                                        <ValidationMessage For="@(() => request.IndustryId)" class="text-danger" />
+                                        <label for="industry" class="form-label">行業別ID</label>
+                                        <InputNumber id="industry" class="form-control" @bind-Value="customer.IndustryId" />
+                                        <ValidationMessage For="@(() => customer.IndustryId)" class="text-danger" />
+                                        <small class="text-muted">暫時請直接輸入數字 ID</small>
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div class="row">
+                              <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="createdBy" class="form-label">建立者</label>
-                                        <InputText id="createdBy" class="form-control" @bind-Value="request.CreatedBy" />
-                                        <ValidationMessage For="@(() => request.CreatedBy)" class="text-danger" />
+                                        <InputText id="createdBy" class="form-control" @bind-Value="customer.CreatedBy" readonly />
+                                        <ValidationMessage For="@(() => customer.CreatedBy)" class="text-danger" />
                                     </div>
                                 </div>
                             </div>
-                            
-                            @if (!string.IsNullOrWhiteSpace(errorMessage))
+                              @if (!string.IsNullOrWhiteSpace(errorMessage))
                             {
                                 <div class="alert alert-danger" role="alert">
                                     <i class="fas fa-exclamation-triangle me-2"></i>@errorMessage
-                                </div>
-                            }
-                            
-                            @if (validationErrors.Any())
-                            {
-                                <div class="alert alert-danger" role="alert">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    <strong>請修正以下錯誤：</strong>
-                                    <ul class="mb-0 mt-2">
-                                        @foreach (var error in validationErrors)
-                                        {
-                                            <li>@error</li>
-                                        }
-                                    </ul>
                                 </div>
                             }
                             
@@ -164,35 +136,24 @@
 <!-- 載入 Font Awesome 圖示 -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 
-@code {
-    private CreateCustomerRequest request = new();
-    private List<CustomerType> customerTypes = new();
-    private List<Industry> industries = new();
+@code {    private Customer customer = new();
     
     private bool isLoading = true;
     private bool isSubmitting = false;
     private string errorMessage = string.Empty;
-    private List<string> validationErrors = new();
     
     protected override async Task OnInitializedAsync()
     {
         await LoadDataAsync();
-    }
-    
-    private async Task LoadDataAsync()
+    }      private Task LoadDataAsync()
     {
         try
         {
-            var customerTypesTask = CustomerService.GetAllCustomerTypesAsync();
-            var industriesTask = CustomerService.GetAllIndustriesAsync();
-            
-            await Task.WhenAll(customerTypesTask, industriesTask);
-            
-            customerTypes = await customerTypesTask;
-            industries = await industriesTask;
+            // TODO: 之後可以加載客戶類型和行業別的下拉選項
+            // 目前先簡化，讓使用者直接輸入 ID
             
             // 設定預設值
-            request.CreatedBy = "系統管理員"; // 可以從認證系統獲取
+            customer.CreatedBy = "系統管理員"; // 可以從認證系統獲取
         }
         catch (Exception ex)
         {
@@ -202,9 +163,9 @@
         {
             isLoading = false;
         }
-    }
-    
-    private async Task HandleSubmit()
+        
+        return Task.CompletedTask;
+    }private async Task HandleSubmit()
     {
         if (isSubmitting) return;
         
@@ -212,9 +173,8 @@
         {
             isSubmitting = true;
             errorMessage = string.Empty;
-            validationErrors.Clear();
             
-            var result = await CustomerService.CreateAsync(request);
+            var result = await CustomerService.CreateAsync(customer);
             
             if (result.IsSuccess)
             {
@@ -223,14 +183,7 @@
             }
             else
             {
-                if (result.ValidationErrors.Any())
-                {
-                    validationErrors = result.ValidationErrors;
-                }
-                else
-                {
-                    errorMessage = result.ErrorMessage;
-                }
+                errorMessage = result.ErrorMessage;
             }
         }
         catch (Exception ex)

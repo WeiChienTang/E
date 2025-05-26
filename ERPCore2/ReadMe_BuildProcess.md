@@ -2,17 +2,32 @@
 
 ## Architecture Overview
 
-This guide provides a systematic approach to building ERP systems using Blazor Server with a clean, layered architecture. The architecture follows the dependency flow:
+This guide provides a systematic approach to building ERP systems using Blazor Server with a simplified, efficient architecture. The architecture follows the dependency flow:
 
 ```
-Database ↔ DbContext ↔ Repository ↔ Service ↔ Blazor Pages
+Database ↔ DbContext (EF Core) ↔ Service ↔ Blazor Pages/Controllers
 ```
 
 ### Core Principles
 - **Separation of Concerns**: Each layer has a single responsibility
 - **Dependency Inversion**: Depend on abstractions, not concrete implementations
 - **SOLID Principles**: Maintain clean, maintainable code
+- **Simplicity**: Avoid unnecessary abstractions when Entity Framework Core already provides them
 - **Consistency**: Follow the same patterns across all modules
+
+### Why This Architecture?
+
+#### **Entity Framework Core IS the Repository**
+Entity Framework Core already implements the Repository and Unit of Work patterns:
+- `DbContext` = Unit of Work
+- `DbSet<T>` = Repository for entity T
+- Adding another repository layer creates unnecessary complexity
+
+#### **Service Layer Benefits**
+- **Single Responsibility**: Handles both business logic and data access
+- **Better Performance**: Direct access to EF Core's full feature set
+- **Easier Maintenance**: Fewer layers to debug and maintain
+- **Modern Approach**: Aligns with current .NET best practices
 
 ---
 
@@ -155,125 +170,10 @@ public class AppDbContext : DbContext
 - [ ] Foreign key relationships properly configured
 - [ ] Default values set where appropriate
 
----
-
-## 3. Repository Implementation
+## 3. Service Implementation
 
 ### Purpose
-Repository handles all data access operations, providing a clean interface between the service layer and the database.
-
-### Design Guidelines
-
-#### ✅ **Best Practices**
-- Keep methods simple and focused on data access
-- Use async/await for all database operations
-- Follow consistent naming conventions
-- Implement interface for testability
-- Handle common query patterns
-
-#### ❌ **Common Pitfalls**
-- Don't include business logic in repositories
-- Avoid exposing IQueryable directly
-- Don't ignore error handling
-
-### Template Structure
-```csharp
-// Interface Definition
-public interface I[EntityName]Repository
-{
-    // Basic CRUD Operations
-    Task<List<[EntityName]>> GetAllAsync();
-    Task<[EntityName]?> GetByIdAsync(int id);
-    Task<[EntityName]> AddAsync([EntityName] entity);
-    Task<[EntityName]> UpdateAsync([EntityName] entity);
-    Task DeleteAsync(int id);
-    
-    // Common Query Patterns
-    Task<bool> ExistsAsync(int id);
-    Task<[EntityName]?> GetByNameAsync(string name);
-    Task<List<[EntityName]>> GetActiveAsync();
-    Task<List<[EntityName]>> GetByStatusAsync([EntityName]Status status);
-    
-    // Pagination Support
-    Task<(List<[EntityName]> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize);
-}
-
-// Implementation
-public class [EntityName]Repository : I[EntityName]Repository
-{
-    private readonly AppDbContext _context;
-    
-    public [EntityName]Repository(AppDbContext context)
-    {
-        _context = context;
-    }
-    
-    public async Task<List<[EntityName]>> GetAllAsync()
-    {
-        return await _context.[EntityName]s
-            .Where(e => e.Status != [EntityName]Status.Deleted)
-            .OrderBy(e => e.Name)
-            .ToListAsync();
-    }
-    
-    public async Task<[EntityName]?> GetByIdAsync(int id)
-    {
-        return await _context.[EntityName]s
-            .FirstOrDefaultAsync(e => e.Id == id && e.Status != [EntityName]Status.Deleted);
-    }
-    
-    public async Task<[EntityName]> AddAsync([EntityName] entity)
-    {
-        entity.CreatedDate = DateTime.UtcNow;
-        entity.Status = [EntityName]Status.Active;
-        
-        _context.[EntityName]s.Add(entity);
-        await _context.SaveChangesAsync();
-        return entity;
-    }
-    
-    public async Task<[EntityName]> UpdateAsync([EntityName] entity)
-    {
-        entity.ModifiedDate = DateTime.UtcNow;
-        
-        _context.[EntityName]s.Update(entity);
-        await _context.SaveChangesAsync();
-        return entity;
-    }
-    
-    public async Task DeleteAsync(int id)
-    {
-        var entity = await GetByIdAsync(id);
-        if (entity != null)
-        {
-            entity.Status = [EntityName]Status.Deleted;
-            entity.ModifiedDate = DateTime.UtcNow;
-            await UpdateAsync(entity);
-        }
-    }
-    
-    public async Task<bool> ExistsAsync(int id)
-    {
-        return await _context.[EntityName]s
-            .AnyAsync(e => e.Id == id && e.Status != [EntityName]Status.Deleted);
-    }
-}
-```
-
-### Repository Checklist
-- [ ] Interface defined with all necessary methods
-- [ ] All methods are async
-- [ ] Soft delete implemented (using Status field)
-- [ ] Common query methods included
-- [ ] Proper error handling implemented
-- [ ] Pagination support added if needed
-
----
-
-## 4. Service Implementation
-
-### Purpose
-Services contain business logic, validation, and orchestrate operations across multiple repositories.
+Services contain business logic, data access operations, validation, and orchestrate complex workflows using Entity Framework Core directly.
 
 ### Design Guidelines
 
@@ -281,13 +181,15 @@ Services contain business logic, validation, and orchestrate operations across m
 - Implement comprehensive business validation
 - Return structured results (ServiceResult pattern)
 - Handle complex business workflows
-- Coordinate multiple repositories when needed
+- Use EF Core directly for data operations
 - Include proper error messages
+- Implement transaction management when needed
 
 #### ❌ **Common Pitfalls**
 - Don't bypass business rules
 - Avoid tight coupling to UI concerns
 - Don't ignore validation
+- Don't create unnecessary abstractions over EF Core
 
 ### Template Structure
 ```csharp
@@ -333,89 +235,249 @@ public class ServiceResult<T> : ServiceResult
     public static new ServiceResult<T> Failure(string error) => new() { IsSuccess = false, ErrorMessage = error };
 }
 
-// Service Implementation
-public class [EntityName]Service
+// Service Interface
+public interface I[EntityName]Service
 {
-    private readonly I[EntityName]Repository _repository;
+    Task<List<[EntityName]>> GetAllAsync();
+    Task<[EntityName]?> GetByIdAsync(int id);
+    Task<ServiceResult<[EntityName]>> CreateAsync(Create[EntityName]Request request);
+    Task<ServiceResult<[EntityName]>> UpdateAsync(Update[EntityName]Request request);
+    Task<ServiceResult> DeleteAsync(int id);
+    Task<bool> ExistsAsync(int id);
+    Task<[EntityName]?> GetByNameAsync(string name);
+    Task<(List<[EntityName]> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize);
+}
+
+// Service Implementation - Using EF Core Directly
+public class [EntityName]Service : I[EntityName]Service
+{
+    private readonly AppDbContext _context;
+    private readonly ILogger<[EntityName]Service> _logger;
     
-    public [EntityName]Service(I[EntityName]Repository repository)
+    public [EntityName]Service(AppDbContext context, ILogger<[EntityName]Service> logger)
     {
-        _repository = repository;
+        _context = context;
+        _logger = logger;
     }
     
     public async Task<List<[EntityName]>> GetAllAsync()
     {
-        return await _repository.GetAllAsync();
+        try
+        {
+            return await _context.[EntityName]s
+                .Where(e => e.Status != [EntityName]Status.Deleted)
+                .OrderBy(e => e.Name)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting all {EntityName}s", typeof([EntityName]).Name);
+            throw;
+        }
     }
     
     public async Task<[EntityName]?> GetByIdAsync(int id)
     {
         if (id <= 0)
             return null;
-            
-        return await _repository.GetByIdAsync(id);
+        
+        try
+        {
+            return await _context.[EntityName]s
+                .FirstOrDefaultAsync(e => e.Id == id && e.Status != [EntityName]Status.Deleted);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting {EntityName} with ID {Id}", typeof([EntityName]).Name, id);
+            throw;
+        }
     }
     
     public async Task<ServiceResult<[EntityName]>> CreateAsync(Create[EntityName]Request request)
     {
-        // Business Validation
-        var validationResult = await ValidateCreateRequestAsync(request);
-        if (!validationResult.IsSuccess)
-            return ServiceResult<[EntityName]>.Failure(validationResult.ErrorMessage);
-        
-        // Business Rules
-        var existingEntity = await _repository.GetByNameAsync(request.Name);
-        if (existingEntity != null)
-            return ServiceResult<[EntityName]>.Failure("Name already exists");
-        
-        // Create Entity
-        var entity = new [EntityName]
+        try
         {
-            Name = request.Name,
-            Description = request.Description,
-            Status = [EntityName]Status.Active
-        };
-        
-        // Save
-        var result = await _repository.AddAsync(entity);
-        
-        return ServiceResult<[EntityName]>.Success(result);
+            // Business Validation
+            var validationResult = await ValidateCreateRequestAsync(request);
+            if (!validationResult.IsSuccess)
+                return ServiceResult<[EntityName]>.Failure(validationResult.ErrorMessage);
+            
+            // Business Rules - Check for duplicates
+            var existingEntity = await _context.[EntityName]s
+                .FirstOrDefaultAsync(e => e.Name == request.Name && e.Status != [EntityName]Status.Deleted);
+            
+            if (existingEntity != null)
+                return ServiceResult<[EntityName]>.Failure("Name already exists");
+            
+            // Create Entity
+            var entity = new [EntityName]
+            {
+                Name = request.Name,
+                Description = request.Description,
+                Status = [EntityName]Status.Active,
+                CreatedDate = DateTime.UtcNow
+            };
+            
+            // Save to Database
+            _context.[EntityName]s.Add(entity);
+            await _context.SaveChangesAsync();
+            
+            _logger.LogInformation("{EntityName} created with ID {Id}", typeof([EntityName]).Name, entity.Id);
+            return ServiceResult<[EntityName]>.Success(entity);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating {EntityName}", typeof([EntityName]).Name);
+            return ServiceResult<[EntityName]>.Failure("An error occurred while creating the record");
+        }
     }
     
     public async Task<ServiceResult<[EntityName]>> UpdateAsync(Update[EntityName]Request request)
     {
-        // Business Validation
-        var entity = await _repository.GetByIdAsync(request.Id);
-        if (entity == null)
-            return ServiceResult<[EntityName]>.Failure("Entity not found");
-        
-        // Business Rules
-        var existingEntity = await _repository.GetByNameAsync(request.Name);
-        if (existingEntity != null && existingEntity.Id != request.Id)
-            return ServiceResult<[EntityName]>.Failure("Name already exists");
-        
-        // Update Entity
-        entity.Name = request.Name;
-        entity.Description = request.Description;
-        
-        // Save
-        var result = await _repository.UpdateAsync(entity);
-        
-        return ServiceResult<[EntityName]>.Success(result);
+        try
+        {
+            // Get existing entity
+            var entity = await _context.[EntityName]s
+                .FirstOrDefaultAsync(e => e.Id == request.Id && e.Status != [EntityName]Status.Deleted);
+            
+            if (entity == null)
+                return ServiceResult<[EntityName]>.Failure("Entity not found");
+            
+            // Business Rules - Check for duplicates (excluding current entity)
+            var existingEntity = await _context.[EntityName]s
+                .FirstOrDefaultAsync(e => e.Name == request.Name && 
+                                        e.Id != request.Id && 
+                                        e.Status != [EntityName]Status.Deleted);
+            
+            if (existingEntity != null)
+                return ServiceResult<[EntityName]>.Failure("Name already exists");
+            
+            // Update Entity
+            entity.Name = request.Name;
+            entity.Description = request.Description;
+            entity.ModifiedDate = DateTime.UtcNow;
+            
+            // Save to Database
+            await _context.SaveChangesAsync();
+            
+            _logger.LogInformation("{EntityName} updated with ID {Id}", typeof([EntityName]).Name, entity.Id);
+            return ServiceResult<[EntityName]>.Success(entity);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating {EntityName} with ID {Id}", typeof([EntityName]).Name, request.Id);
+            return ServiceResult<[EntityName]>.Failure("An error occurred while updating the record");
+        }
     }
     
     public async Task<ServiceResult> DeleteAsync(int id)
     {
-        var entity = await _repository.GetByIdAsync(id);
-        if (entity == null)
-            return ServiceResult.Failure("Entity not found");
+        try
+        {
+            var entity = await _context.[EntityName]s
+                .FirstOrDefaultAsync(e => e.Id == id && e.Status != [EntityName]Status.Deleted);
+            
+            if (entity == null)
+                return ServiceResult.Failure("Entity not found");
+            
+            // Business Rules - Check for dependencies
+            // Example: Check if entity is being used elsewhere
+            var hasReferences = await _context.SomeRelatedEntities
+                .AnyAsync(r => r.[EntityName]Id == id);
+            
+            if (hasReferences)
+                return ServiceResult.Failure("Cannot delete: Entity is being used by other records");
+            
+            // Soft Delete
+            entity.Status = [EntityName]Status.Deleted;
+            entity.ModifiedDate = DateTime.UtcNow;
+            
+            await _context.SaveChangesAsync();
+            
+            _logger.LogInformation("{EntityName} deleted with ID {Id}", typeof([EntityName]).Name, id);
+            return ServiceResult.Success();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting {EntityName} with ID {Id}", typeof([EntityName]).Name, id);
+            return ServiceResult.Failure("An error occurred while deleting the record");
+        }
+    }
+    
+    public async Task<bool> ExistsAsync(int id)
+    {
+        return await _context.[EntityName]s
+            .AnyAsync(e => e.Id == id && e.Status != [EntityName]Status.Deleted);
+    }
+    
+    public async Task<[EntityName]?> GetByNameAsync(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return null;
+            
+        return await _context.[EntityName]s
+            .FirstOrDefaultAsync(e => e.Name == name && e.Status != [EntityName]Status.Deleted);
+    }
+    
+    public async Task<(List<[EntityName]> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize)
+    {
+        var query = _context.[EntityName]s
+            .Where(e => e.Status != [EntityName]Status.Deleted);
         
-        // Business Rules - Check for dependencies
-        // Add your business logic here
+        var totalCount = await query.CountAsync();
         
-        await _repository.DeleteAsync(id);
+        var items = await query
+            .OrderBy(e => e.Name)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
         
-        return ServiceResult.Success();
+        return (items, totalCount);
+    }
+    
+    // Complex Business Operations Example
+    public async Task<ServiceResult> ProcessComplexBusinessOperationAsync(int entityId, SomeBusinessRequest request)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            // Step 1: Get and validate entity
+            var entity = await GetByIdAsync(entityId);
+            if (entity == null)
+                return ServiceResult.Failure("Entity not found");
+            
+            // Step 2: Business validation
+            if (entity.Status != [EntityName]Status.Active)
+                return ServiceResult.Failure("Operation not allowed for inactive entities");
+            
+            // Step 3: Update multiple related entities
+            var relatedEntities = await _context.RelatedEntities
+                .Where(r => r.[EntityName]Id == entityId)
+                .ToListAsync();
+            
+            foreach (var related in relatedEntities)
+            {
+                // Apply business logic
+                related.SomeProperty = CalculateSomeValue(related, request);
+                related.ModifiedDate = DateTime.UtcNow;
+            }
+            
+            // Step 4: Update main entity
+            entity.SomeCalculatedField = CalculateMainValue(entity, relatedEntities);
+            entity.ModifiedDate = DateTime.UtcNow;
+            
+            // Step 5: Save all changes
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            
+            return ServiceResult.Success();
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Error in complex business operation for entity {Id}", entityId);
+            return ServiceResult.Failure("Business operation failed");
+        }
     }
     
     private async Task<ServiceResult> ValidateCreateRequestAsync(Create[EntityName]Request request)
@@ -423,7 +485,10 @@ public class [EntityName]Service
         if (string.IsNullOrWhiteSpace(request.Name))
             return ServiceResult.Failure("Name is required");
         
-        // Add more validation rules as needed
+        if (request.Name.Length > 100)
+            return ServiceResult.Failure("Name cannot exceed 100 characters");
+        
+        // Add more business validation rules as needed
         
         return ServiceResult.Success();
     }
@@ -431,17 +496,20 @@ public class [EntityName]Service
 ```
 
 ### Service Checklist
-- [ ] Request/Response models defined
-- [ ] ServiceResult pattern implemented
-- [ ] Business validation included
-- [ ] Duplicate check implemented
+- [ ] Interface defined with all necessary methods
+- [ ] All methods are async and properly handle exceptions
+- [ ] Service uses EF Core DbContext directly
+- [ ] Business validation implemented
+- [ ] Soft delete implemented (using Status field)
+- [ ] Duplicate checking implemented
+- [ ] Transaction management for complex operations
+- [ ] Proper logging implemented
+- [ ] ServiceResult pattern used consistently
 - [ ] Error messages are user-friendly
-- [ ] Complex business rules handled
-- [ ] Dependencies properly injected
 
 ---
 
-## 5. Blazor Pages Implementation
+## 4. Blazor Pages Implementation
 
 ### Purpose
 Pages handle user interface, user input, and display data from services.
@@ -463,7 +531,7 @@ Pages handle user interface, user input, and display data from services.
 ### Template Structure
 ```razor
 @page "/[entityname]"
-@inject [EntityName]Service [EntityName]Service
+@inject I[EntityName]Service [EntityName]Service
 @inject IJSRuntime JSRuntime
 
 <PageTitle>[EntityName] Management</PageTitle>
@@ -769,7 +837,7 @@ Pages handle user interface, user input, and display data from services.
 
 ---
 
-## 6. Dependency Injection Registration
+## 5. Dependency Injection Registration
 
 ### Purpose
 Configure all services and dependencies in the application startup.
@@ -783,11 +851,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Repository Registration
-builder.Services.AddScoped<I[EntityName]Repository, [EntityName]Repository>();
-
-// Service Registration  
-builder.Services.AddScoped<[EntityName]Service>();
+// Service Registration (No Repository needed!)
+builder.Services.AddScoped<I[EntityName]Service, [EntityName]Service>();
 
 // Blazor Server
 builder.Services.AddRazorPages();
@@ -815,9 +880,97 @@ app.Run();
 
 ### Registration Checklist
 - [ ] DbContext registered with connection string
-- [ ] All repositories registered with interfaces
-- [ ] All services registered
+- [ ] All services registered with their interfaces
 - [ ] Proper service lifetimes chosen (Scoped for most cases)
+- [ ] No repository registrations needed
+
+---
+
+## Testing Strategy
+
+### Unit Testing with EF Core In-Memory Database
+```csharp
+[TestFixture]
+public class [EntityName]ServiceTests
+{
+    private AppDbContext _context;
+    private [EntityName]Service _service;
+    private ILogger<[EntityName]Service> _logger;
+
+    [SetUp]
+    public void Setup()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        _context = new AppDbContext(options);
+        _logger = new Mock<ILogger<[EntityName]Service>>().Object;
+        _service = new [EntityName]Service(_context, _logger);
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        _context.Dispose();
+    }
+
+    [Test]
+    public async Task CreateAsync_ShouldReturnSuccess_WhenValidData()
+    {
+        // Arrange
+        var request = new Create[EntityName]Request
+        {
+            Name = "Test Entity",
+            Description = "Test Description"
+        };
+
+        // Act
+        var result = await _service.CreateAsync(request);
+
+        // Assert
+        Assert.IsTrue(result.IsSuccess);
+        Assert.IsNotNull(result.Data);
+        Assert.AreEqual("Test Entity", result.Data.Name);
+    }
+
+    [Test]
+    public async Task CreateAsync_ShouldReturnFailure_WhenDuplicateName()
+    {
+        // Arrange
+        var existingEntity = new [EntityName]
+        {
+            Name = "Existing Entity",
+            Status = [EntityName]Status.Active,
+            CreatedDate = DateTime.UtcNow
+        };
+        _context.[EntityName]s.Add(existingEntity);
+        await _context.SaveChangesAsync();
+
+        var request = new Create[EntityName]Request
+        {
+            Name = "Existing Entity",
+            Description = "Test Description"
+        };
+
+        // Act
+        var result = await _service.CreateAsync(request);
+
+        // Assert
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual("Name already exists", result.ErrorMessage);
+    }
+}
+```
+
+### Integration Testing
+- Test complete workflows end-to-end
+- Test database operations with real database
+- Test API endpoints if applicable
+
+---
+
+## 6. Dependency Injection Registration
 
 ---
 
@@ -826,9 +979,8 @@ app.Run();
 ### Naming Conventions
 - **Entities**: Singular nouns (Customer, Order, Product)
 - **DbSets**: Plural nouns (Customers, Orders, Products)  
-- **Repositories**: [Entity]Repository
 - **Services**: [Entity]Service
-- **Interfaces**: I[Entity]Repository
+- **Interfaces**: I[Entity]Service
 
 ### File Organization
 ```
@@ -838,13 +990,11 @@ app.Run();
     Order.cs
   /Context
     AppDbContext.cs
-/Repositories
-  /Interfaces
-    ICustomerRepository.cs
-  CustomerRepository.cs
 /Services
   /Models
     CustomerModels.cs
+  /Interfaces
+    ICustomerService.cs
   CustomerService.cs
 /Pages
   /Customers
@@ -852,6 +1002,28 @@ app.Run();
     Create.razor
     Edit.razor
 ```
+
+### Simplified Architecture Benefits
+
+#### **Performance**
+- Direct EF Core access provides optimal performance
+- No unnecessary data mapping between layers
+- Full access to EF Core's advanced features (Include, Select, etc.)
+
+#### **Maintainability**
+- Fewer layers = easier debugging
+- Less boilerplate code to maintain
+- Single point of truth for business logic
+
+#### **Testability**
+- EF Core In-Memory Database for unit testing
+- Easy to mock DbContext for isolated testing
+- No complex repository mocking required
+
+#### **Modern Approach**
+- Aligns with Microsoft's recommendations
+- Leverages EF Core's built-in patterns
+- Reduces over-engineering
 
 ### Code Quality Standards
 - Use async/await consistently
@@ -877,24 +1049,37 @@ app.Run();
 
 ---
 
-## Common Patterns to Follow
+### Common Patterns to Follow
 
 ### Error Handling
 - Use ServiceResult pattern for business operations
 - Provide user-friendly error messages
 - Log technical errors for debugging
+- Handle database exceptions gracefully
 
 ### Validation
 - Use data annotations on entities and request models
 - Implement business validation in services
 - Provide clear validation feedback to users
 
+### Transaction Management
+- Use EF Core transactions for complex operations
+- Ensure data consistency across multiple operations
+- Implement proper rollback mechanisms
+
 ### Security Considerations
 - Validate all user inputs
 - Implement proper authorization
 - Sanitize data before database operations
-- Use parameterized queries (EF Core handles this)
+- Use parameterized queries (EF Core handles this automatically)
+
+### Performance Optimization
+- Use async/await consistently
+- Implement proper indexing in database
+- Use Select projections for large datasets
+- Implement pagination for large result sets
+- Use Include() judiciously to avoid N+1 queries
 
 ---
 
-This guide provides a solid foundation for building consistent, maintainable ERP systems using Blazor Server. Follow these patterns and guidelines to ensure code quality and system reliability across your entire application.
+This guide provides a modern, efficient foundation for building ERP systems using Blazor Server with Entity Framework Core. By eliminating the unnecessary Repository layer, you get better performance, easier maintenance, and cleaner code while still following SOLID principles and maintaining testability.

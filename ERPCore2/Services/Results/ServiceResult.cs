@@ -1,4 +1,4 @@
-namespace ERPCore2.Services.Models
+namespace ERPCore2.Services
 {
     /// <summary>
     /// 服務層操作結果的通用類別

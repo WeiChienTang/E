@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Data.Entities
 {

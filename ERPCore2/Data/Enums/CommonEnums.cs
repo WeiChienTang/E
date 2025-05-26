@@ -1,4 +1,4 @@
-namespace ERPCore2.Data.Entities
+namespace ERPCore2.Data.Enums
 {
     public enum EntityStatus
     {

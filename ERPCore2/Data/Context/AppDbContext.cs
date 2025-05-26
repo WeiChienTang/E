@@ -1,4 +1,5 @@
 using ERPCore2.Data.Entities;
+using ERPCore2.Data.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERPCore2.Data.Context

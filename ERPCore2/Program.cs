@@ -1,9 +1,8 @@
 using ERPCore2.Components;
 using ERPCore2.Data;
 using ERPCore2.Data.Context;
-using ERPCore2.Repositories;
-using ERPCore2.Repositories.Interfaces;
-using ERPCore2.Services;
+using ERPCore2.Services.Customers;
+using ERPCore2.Services.Customers.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,13 +11,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Repository Registration
-builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
-builder.Services.AddScoped<ICustomerTypeRepository, CustomerTypeRepository>();
-builder.Services.AddScoped<IIndustryRepository, IndustryRepository>();
-
-// Service Registration  
-builder.Services.AddScoped<CustomerService>();
+// Service Registration (No Repository needed!)
+builder.Services.AddScoped<ICustomerService, CustomerService>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
