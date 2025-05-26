@@ -1,0 +1,94 @@
+@typeparam TValue
+@* 下拉選單組件 - 用於客戶類型和行業別選擇 *@
+<div class="mb-3">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label for="@Id" class="form-label">
+            @Label
+            @if (IsRequired)
+            {
+                <span class="text-danger">*</span>
+            }
+        </label>
+    }
+    
+    <select id="@Id" class="form-select @CssClass" 
+            value="@Value?.ToString()" 
+            @onchange="OnValueChanged"
+            disabled="@IsDisabled">
+        @if (ShowEmptyOption)
+        {
+            <option value="">@EmptyOptionText</option>
+        }
+        @foreach (var item in Items)
+        {
+            <option value="@GetItemValue(item)">@GetItemText(item)</option>
+        }
+    </select>
+    
+    @if (!string.IsNullOrEmpty(HelpText))
+    {
+        <div class="form-text">@HelpText</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Id { get; set; } = Guid.NewGuid().ToString();
+    [Parameter] public string Label { get; set; } = string.Empty;
+    [Parameter] public TValue? Value { get; set; }
+    [Parameter] public EventCallback<TValue?> ValueChanged { get; set; }
+    [Parameter] public IEnumerable<object> Items { get; set; } = new List<object>();
+    [Parameter] public Func<object, string> GetItemText { get; set; } = item => item?.ToString() ?? "";
+    [Parameter] public Func<object, object> GetItemValue { get; set; } = item => item;
+    [Parameter] public bool IsRequired { get; set; } = false;
+    [Parameter] public bool IsDisabled { get; set; } = false;
+    [Parameter] public bool ShowEmptyOption { get; set; } = true;
+    [Parameter] public string EmptyOptionText { get; set; } = "請選擇...";
+    [Parameter] public string CssClass { get; set; } = string.Empty;
+    [Parameter] public string HelpText { get; set; } = string.Empty;
+
+    private async Task OnValueChanged(ChangeEventArgs e)
+    {
+        var stringValue = e.Value?.ToString();
+        
+        if (string.IsNullOrEmpty(stringValue))
+        {
+            Value = default(TValue?);
+        }
+        else
+        {
+            // 嘗試轉換為適當的類型
+            var targetType = typeof(TValue);
+            var nullableType = Nullable.GetUnderlyingType(targetType);
+            var actualType = nullableType ?? targetType;
+              try
+            {
+                if (actualType == typeof(int))
+                {
+                    Value = (TValue?)(object?)(int.TryParse(stringValue, out var intValue) ? intValue : (int?)null);
+                }
+                else if (actualType == typeof(string))
+                {
+                    Value = (TValue?)(object?)stringValue;
+                }
+                else if (actualType.IsEnum)
+                {
+                    Value = (TValue?)Enum.Parse(actualType, stringValue);
+                }
+                else
+                {
+                    Value = (TValue?)Convert.ChangeType(stringValue, actualType);
+                }
+            }
+            catch
+            {
+                Value = default(TValue?);
+            }
+        }
+        
+        if (ValueChanged.HasDelegate)
+        {
+            await ValueChanged.InvokeAsync(Value);
+        }
+    }
+}

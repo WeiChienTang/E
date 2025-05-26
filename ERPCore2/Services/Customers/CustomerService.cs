@@ -1,10 +1,9 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
-using ERPCore2.Services.Customers.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace ERPCore2.Services.Customers
+namespace ERPCore2.Services
 {
     /// <summary>
     /// 客戶服務實作 - 直接使用 EF Core，無需 Repository 和 DTO
@@ -285,6 +284,70 @@ namespace ERPCore2.Services.Customers
                 .Include(c => c.Industry)
                 .OrderBy(c => c.CompanyName)
                 .ToListAsync();
+        }
+
+        // 新增方法用於支持下拉列表
+        public async Task<List<CustomerType>> GetCustomerTypesAsync()
+        {
+            try
+            {
+                return await _context.CustomerTypes
+                    .Where(ct => ct.Status == EntityStatus.Active)
+                    .OrderBy(ct => ct.TypeName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting customer types");
+                throw;
+            }
+        }
+
+        public async Task<List<Industry>> GetIndustriesAsync()
+        {
+            try
+            {
+                return await _context.Industries
+                    .Where(i => i.Status == EntityStatus.Active)
+                    .OrderBy(i => i.IndustryName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting industries");
+                throw;
+            }
+        }
+
+        public async Task<List<ContactType>> GetContactTypesAsync()
+        {
+            try
+            {
+                return await _context.ContactTypes
+                    .OrderBy(ct => ct.TypeName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting contact types");
+                throw;
+            }
+        }
+
+        public async Task<List<AddressType>> GetAddressTypesAsync()
+        {
+            try
+            {
+                return await _context.AddressTypes
+                    .Where(at => at.Status == EntityStatus.Active)
+                    .OrderBy(at => at.TypeName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting address types");
+                throw;
+            }
         }
 
         private ServiceResult ValidateCustomer(Customer customer)

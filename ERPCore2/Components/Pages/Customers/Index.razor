@@ -1,149 +1,125 @@
 @page "/customers"
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
-@using ERPCore2.Services.Customers.Interfaces
+@using ERPCore2.Services
+@using Microsoft.AspNetCore.Components.Web
+@using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Components.Shared.Alerts
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Loading
+@using ERPCore2.Components.Shared.Forms
+@using static ERPCore2.Components.Shared.Buttons.ButtonComponent
+@using static ERPCore2.Components.Shared.Alerts.AlertComponent
 @inject ICustomerService CustomerService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
 
 <PageTitle>客戶管理</PageTitle>
+
+<link href="~/css/variables.css" rel="stylesheet" />
 
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title mb-0">
-                        <i class="fas fa-users me-2"></i>客戶管理
-                    </h3>
-                    <button class="btn btn-primary" @onclick="NavigateToCreate">
-                        <i class="fas fa-plus me-2"></i>新增客戶
-                    </button>
-                </div>
-                
-                <div class="card-body">
+                <PageHeaderComponent Title="客戶管理" IconClass="fas fa-users">
+                    <Actions>
+                        <ButtonComponent Text="新增客戶" 
+                                       Variant="ButtonVariant.Primary" 
+                                       IconClass="fas fa-plus" 
+                                       OnClick="NavigateToCreate" />
+                    </Actions>
+                </PageHeaderComponent>                <div class="card-body">
                     <!-- 搜索區域 -->
                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                <input type="text" class="form-control" placeholder="搜索客戶代碼或公司名稱..." 
-                                       @bind="searchTerm" @bind:event="oninput" @onkeypress="OnSearchKeyPress" />
-                            </div>
+                            <SearchComponent Placeholder="搜索客戶代碼或公司名稱..." 
+                                           SearchTerm="@searchTerm"
+                                           SearchTermChanged="@OnSearchTermChanged"
+                                           OnSearch="@OnSearchSubmit" />
                         </div>                        <div class="col-md-4">
-                            <select class="form-select" @onchange="OnFilterChanged" value="@selectedStatus">
-                                <option value="">全部狀態</option>
-                                <option value="@EntityStatus.Active">啟用</option>
-                                <option value="@EntityStatus.Inactive">停用</option>
-                            </select>
+                            <SelectComponent TValue="string"
+                                           Id="statusFilter" 
+                                           Label=""
+                                           @bind-Value="selectedStatus"
+                                           Items="@(Enum.GetValues<EntityStatus>().Cast<object>())"
+                                           GetItemText="@(item => GetStatusFilterText((EntityStatus)item))"
+                                           GetItemValue="@(item => item.ToString())"
+                                           EmptyOptionText="全部狀態" />
                         </div>
                         <div class="col-md-4">
-                            <button class="btn btn-outline-secondary" @onclick="ClearFilters">
-                                <i class="fas fa-times me-2"></i>清除篩選
-                            </button>
+                            <ButtonComponent Text="清除篩選" 
+                                           IconClass="fas fa-times" 
+                                           OnClick="ClearFilters" />
                         </div>
-                    </div>
-
-                    <!-- 錯誤訊息 -->
+                    </div><!-- 訊息顯示區域 -->
                     @if (!string.IsNullOrEmpty(errorMessage))
                     {
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            @errorMessage
-                            <button type="button" class="btn-close" @onclick="ClearError"></button>
-                        </div>
+                        <AlertComponent Type="AlertType.Danger" 
+                                      Message="@errorMessage" 
+                                      IconClass="fas fa-exclamation-triangle"
+                                      OnDismiss="ClearError" />
                     }
 
-                    <!-- 成功訊息 -->
                     @if (!string.IsNullOrEmpty(successMessage))
                     {
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            @successMessage
-                            <button type="button" class="btn-close" @onclick="ClearSuccess"></button>
-                        </div>
-                    }
-
-                    <!-- 載入中指示器 -->
-                    @if (isLoading)
-                    {
-                        <div class="text-center py-4">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">載入中...</span>
-                            </div>
-                        </div>
-                    }
-                    else
+                        <AlertComponent Type="AlertType.Success" 
+                                      Message="@successMessage" 
+                                      IconClass="fas fa-check-circle"
+                                      OnDismiss="ClearSuccess" />
+                    }                    <!-- 載入中指示器 -->
+                    <LoadingComponent IsLoading="@isLoading" 
+                                    LoadingText="載入客戶資料中..." 
+                                    ShowText="true" />
+                      @if (!isLoading)
                     {
                         <!-- 客戶列表 -->
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>客戶代碼</th>
-                                        <th>公司名稱</th>
-                                        <th>聯絡人</th>
-                                        <th>統一編號</th>
-                                        <th>客戶類型</th>
-                                        <th>行業別</th>
-                                        <th>狀態</th>
-                                        <th>建立日期</th>
-                                        <th>操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @if (customers.Any())
-                                    {
-                                        @foreach (var customer in customers)
-                                        {
-                                            <tr>
-                                                <td>
-                                                    <strong>@customer.CustomerCode</strong>
-                                                </td>
-                                                <td>@customer.CompanyName</td>
-                                                <td>@(customer.ContactPerson ?? "-")</td>
-                                                <td>@(customer.TaxNumber ?? "-")</td>
-                                                <td>@(customer.CustomerType?.TypeName ?? "-")</td>
-                                                <td>@(customer.Industry?.IndustryName ?? "-")</td>
-                                                <td>
-                                                    <span class="badge @GetStatusBadgeClass(customer.Status)">
-                                                        @GetStatusText(customer.Status)
-                                                    </span>
-                                                </td>
-                                                <td>@customer.CreatedDate.ToString("yyyy/MM/dd")</td>
-                                                <td>
-                                                    <div class="btn-group" role="group">
-                                                        <button type="button" class="btn btn-sm btn-outline-primary" 
-                                                                @onclick="() => NavigateToView(customer.CustomerId)" 
-                                                                title="檢視">
-                                                            <i class="fas fa-eye"></i>
-                                                        </button>
-                                                        <button type="button" class="btn btn-sm btn-outline-warning" 
-                                                                @onclick="() => NavigateToEdit(customer.CustomerId)" 
-                                                                title="編輯">
-                                                            <i class="fas fa-edit"></i>
-                                                        </button>
-                                                        <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                                @onclick="() => ConfirmDelete(customer.CustomerId, customer.CompanyName)" 
-                                                                title="刪除">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        }
-                                    }
-                                    else
-                                    {
-                                        <tr>
-                                            <td colspan="9" class="text-center py-4 text-muted">
-                                                <i class="fas fa-inbox fa-2x mb-2"></i>
-                                                <br />
-                                                沒有找到符合條件的客戶資料
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
+                        <TableComponent TItem="Customer" 
+                                      Items="customers"
+                                      Headers="tableHeaders"
+                                      ShowActions="true"
+                                      ActionsHeader="操作"
+                                      EmptyMessage="沒有找到符合條件的客戶資料">
+                            <RowTemplate Context="customer">
+                                <td>
+                                    <strong>@customer.CustomerCode</strong>
+                                </td>
+                                <td>@customer.CompanyName</td>
+                                <td>@(customer.ContactPerson ?? "-")</td>
+                                <td>@(customer.TaxNumber ?? "-")</td>
+                                <td>@(customer.CustomerType?.TypeName ?? "-")</td>
+                                <td>@(customer.Industry?.IndustryName ?? "-")</td>
+                                <td>
+                                    <StatusBadgeComponent Status="customer.Status" />
+                                </td>
+                                <td>@customer.CreatedDate.ToString("yyyy/MM/dd")</td>
+                            </RowTemplate>
+                            <ActionsTemplate Context="customer">
+                                <div class="btn-group" role="group">                                    
+                                    <ButtonComponent Text="" 
+                                        Variant="ButtonVariant.OutlinePrimary" 
+                                        Size="ButtonSize.Small"
+                                        IconClass="fas fa-eye" 
+                                        Title="檢視"
+                                        OnClick="() => NavigateToView(customer.CustomerId)" />       
+
+                                    <ButtonComponent Text="" 
+                                        Variant="ButtonVariant.OutlineWarning" 
+                                        Size="ButtonSize.Small"
+                                        IconClass="fas fa-edit" 
+                                        Title="編輯"
+                                        OnClick="() => NavigateToEdit(customer.CustomerId)" />       
+
+                                    <ButtonComponent Text="" 
+                                        Variant="ButtonVariant.OutlineDanger" 
+                                        Size="ButtonSize.Small"
+                                        IconClass="fas fa-trash" 
+                                        Title="刪除"
+                                        OnClick="() => ConfirmDelete(customer.CustomerId, customer.CompanyName)" />
+                                </div>
+                            </ActionsTemplate>
+                        </TableComponent>
                     }
                 </div>
             </div>
@@ -161,9 +137,14 @@
     private string searchTerm = string.Empty;
     private string selectedStatus = string.Empty;
     
-    private bool isLoading = true;
-    private string errorMessage = string.Empty;
+    private bool isLoading = true;    private string errorMessage = string.Empty;
     private string successMessage = string.Empty;
+    
+    private List<string> tableHeaders = new()
+    {
+        "客戶代碼", "公司名稱", "聯絡人", "統一編號", 
+        "客戶類型", "行業別", "狀態", "建立日期"
+    };
     
     protected override async Task OnInitializedAsync()
     {
@@ -211,8 +192,7 @@
             customers = customers.Where(c => c.Status == status).ToList();
         }
     }
-    
-    private async Task OnSearchKeyPress(KeyboardEventArgs e)
+      private async Task OnSearchKeyPress(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
@@ -220,41 +200,26 @@
             await InvokeAsync(StateHasChanged);
         }
     }
-    
-    private async Task OnFilterChanged(ChangeEventArgs e)
+
+    private async Task OnSearchTermChanged(string newSearchTerm)
     {
+        searchTerm = newSearchTerm;
         ApplyFilters();
         await InvokeAsync(StateHasChanged);
     }
-    
-    private void ClearFilters()
+
+    private async Task OnSearchSubmit(string searchValue)
+    {
+        searchTerm = searchValue;
+        ApplyFilters();
+        await InvokeAsync(StateHasChanged);
+    }
+      private void ClearFilters()
     {
         searchTerm = string.Empty;
         selectedStatus = string.Empty;
         ApplyFilters();
         StateHasChanged();
-    }
-    
-    private string GetStatusBadgeClass(EntityStatus status)
-    {
-        return status switch
-        {
-            EntityStatus.Active => "bg-success",
-            EntityStatus.Inactive => "bg-warning",
-            EntityStatus.Deleted => "bg-danger",
-            _ => "bg-secondary"
-        };
-    }
-    
-    private string GetStatusText(EntityStatus status)
-    {
-        return status switch
-        {
-            EntityStatus.Active => "啟用",
-            EntityStatus.Inactive => "停用",
-            EntityStatus.Deleted => "已刪除",
-            _ => "未知"
-        };
     }
     
     private void NavigateToCreate()
@@ -310,8 +275,7 @@
     // Watch for search term changes
     private string previousSearchTerm = string.Empty;
     private string previousStatus = string.Empty;
-    
-    protected override void OnAfterRender(bool firstRender)
+      protected override void OnAfterRender(bool firstRender)
     {
         if (!firstRender)
         {
@@ -324,5 +288,15 @@
                 StateHasChanged();
             }
         }
+    }
+    
+    private string GetStatusFilterText(EntityStatus status)
+    {
+        return status switch
+        {
+            EntityStatus.Active => "啟用",
+            EntityStatus.Inactive => "停用",
+            _ => status.ToString()
+        };
     }
 }

@@ -2,126 +2,123 @@
 @inject ICustomerService CustomerService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@using ERPCore2.Services.Customers.Interfaces
 @using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Components.Shared.Alerts
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Loading
+@using ERPCore2.Components.Shared.Forms
+@using static ERPCore2.Components.Shared.Buttons.ButtonComponent
+@using static ERPCore2.Components.Shared.Alerts.AlertComponent
+@rendermode InteractiveServer
 
 <PageTitle>新增客戶</PageTitle>
+
+<link href="~/css/variables.css" rel="stylesheet" />
 
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title mb-0">
-                        <i class="fas fa-user-plus me-2"></i>新增客戶
-                    </h3>
-                    <button class="btn btn-outline-secondary" @onclick="NavigateBack">
-                        <i class="fas fa-arrow-left me-2"></i>返回列表
-                    </button>
-                </div>
-                
-                <div class="card-body">
-                    @if (isLoading)
-                    {
-                        <div class="text-center py-4">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">載入中...</span>
-                            </div>
-                        </div>
-                    }
-                    else
+            <div class="card">                
+                <PageHeaderComponent Title="新增客戶" IconClass="fas fa-user-plus">
+                    <Actions>
+                        <ButtonComponent Text="返回列表" 
+                                       Variant="ButtonVariant.OutlineSecondary" 
+                                       IconClass="fas fa-arrow-left" 
+                                       OnClick="NavigateBack" />
+                    </Actions>
+                </PageHeaderComponent>                <div class="card-body">
+                    <LoadingComponent IsLoading="@isLoading" 
+                                    LoadingText="載入表單資料中..." 
+                                    ShowText="true" />
+                    
+                    @if (!isLoading)
                     {
                         <EditForm Model="@customer" OnValidSubmit="@HandleSubmit">
                             <DataAnnotationsValidator />
-                            
-                            <div class="row">
+                              <div class="row">
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="customerCode" class="form-label">
-                                            客戶代碼 <span class="text-danger">*</span>
-                                        </label>                                        
-                                        <InputText id="customerCode" class="form-control" @bind-Value="customer.CustomerCode" />
-                                        <ValidationMessage For="@(() => customer.CustomerCode)" class="text-danger" />
-                                    </div>
+                                    <InputComponent Id="customerCode" 
+                                                  Label="客戶代碼" 
+                                                  @bind-Value="customer.CustomerCode"
+                                                  IsRequired="true" />
+                                    <ValidationMessage For="@(() => customer.CustomerCode)" class="text-danger" />
                                 </div>
                                 
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="companyName" class="form-label">
-                                            公司名稱 <span class="text-danger">*</span>
-                                        </label>                                        <InputText id="companyName" class="form-control" @bind-Value="customer.CompanyName" />
-                                        <ValidationMessage For="@(() => customer.CompanyName)" class="text-danger" />
-                                    </div>
-                                </div>
-                            </div>
+                                    <InputComponent Id="companyName" 
+                                                  Label="公司名稱" 
+                                                  @bind-Value="customer.CompanyName"
+                                                  IsRequired="true" />
+                                    <ValidationMessage For="@(() => customer.CompanyName)" class="text-danger" />
+                                </div>                            </div>
                             
                             <div class="row">
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="contactPerson" class="form-label">聯絡人</label>                                        <InputText id="contactPerson" class="form-control" @bind-Value="customer.ContactPerson" />
-                                        <ValidationMessage For="@(() => customer.ContactPerson)" class="text-danger" />
-                                    </div>
+                                    <InputComponent Id="contactPerson" 
+                                                  Label="聯絡人" 
+                                                  @bind-Value="customer.ContactPerson" />
+                                    <ValidationMessage For="@(() => customer.ContactPerson)" class="text-danger" />
                                 </div>
                                 
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="taxNumber" class="form-label">統一編號</label>                                        <InputText id="taxNumber" class="form-control" @bind-Value="customer.TaxNumber" />
-                                        <ValidationMessage For="@(() => customer.TaxNumber)" class="text-danger" />
-                                    </div>
+                                    <InputComponent Id="taxNumber" 
+                                                  Label="統一編號" 
+                                                  @bind-Value="customer.TaxNumber" />
+                                    <ValidationMessage For="@(() => customer.TaxNumber)" class="text-danger" />
                                 </div>
                             </div>
                               <div class="row">
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="customerType" class="form-label">客戶類型ID</label>
-                                        <InputNumber id="customerType" class="form-control" @bind-Value="customer.CustomerTypeId" />
-                                        <ValidationMessage For="@(() => customer.CustomerTypeId)" class="text-danger" />
-                                        <small class="text-muted">暫時請直接輸入數字 ID</small>
-                                    </div>
+                                    <SelectComponent TValue="int?"
+                                                   Id="customerType" 
+                                                   Label="客戶類型"
+                                                   @bind-Value="customer.CustomerTypeId"
+                                                   Items="customerTypes"
+                                                   GetItemText="@(item => ((CustomerType)item).TypeName)"
+                                                   GetItemValue="@(item => ((CustomerType)item).CustomerTypeId)"
+                                                   EmptyOptionText="請選擇客戶類型..." />
+                                    <ValidationMessage For="@(() => customer.CustomerTypeId)" class="text-danger" />
                                 </div>
                                 
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="industry" class="form-label">行業別ID</label>
-                                        <InputNumber id="industry" class="form-control" @bind-Value="customer.IndustryId" />
-                                        <ValidationMessage For="@(() => customer.IndustryId)" class="text-danger" />
-                                        <small class="text-muted">暫時請直接輸入數字 ID</small>
-                                    </div>
+                                    <SelectComponent TValue="int?"
+                                                   Id="industry" 
+                                                   Label="行業別"
+                                                   @bind-Value="customer.IndustryId"
+                                                   Items="industries"
+                                                   GetItemText="@(item => ((Industry)item).IndustryName)"
+                                                   GetItemValue="@(item => ((Industry)item).IndustryId)"
+                                                   EmptyOptionText="請選擇行業別..." />
+                                    <ValidationMessage For="@(() => customer.IndustryId)" class="text-danger" />
                                 </div>
-                            </div>
-                              <div class="row">
+                            </div><div class="row">
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="createdBy" class="form-label">建立者</label>
-                                        <InputText id="createdBy" class="form-control" @bind-Value="customer.CreatedBy" readonly />
-                                        <ValidationMessage For="@(() => customer.CreatedBy)" class="text-danger" />
-                                    </div>
+                                    <InputComponent Id="createdBy" 
+                                                  Label="建立者" 
+                                                  @bind-Value="customer.CreatedBy"
+                                                  IsReadOnly="true" />
+                                    <ValidationMessage For="@(() => customer.CreatedBy)" class="text-danger" />
                                 </div>
-                            </div>
-                              @if (!string.IsNullOrWhiteSpace(errorMessage))
+                            </div>                            @if (!string.IsNullOrWhiteSpace(errorMessage))
                             {
-                                <div class="alert alert-danger" role="alert">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>@errorMessage
-                                </div>
-                            }
-                            
-                            <div class="row">
+                                <AlertComponent Type="AlertType.Danger" 
+                                              Message="@errorMessage" 
+                                              IconClass="fas fa-exclamation-triangle" />
+                            }                            <div class="row">                                
                                 <div class="col-12">
                                     <div class="d-flex justify-content-end gap-2">
-                                        <button type="button" class="btn btn-outline-secondary" @onclick="NavigateBack">
-                                            <i class="fas fa-times me-2"></i>取消
-                                        </button>
-                                        <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
-                                            @if (isSubmitting)
-                                            {
-                                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                                            }
-                                            else
-                                            {
-                                                <i class="fas fa-save me-2"></i>
-                                            }
-                                            儲存
-                                        </button>
+                                        <ButtonComponent Text="取消" 
+                                                       Variant="ButtonVariant.Secondary" 
+                                                       IconClass="fas fa-times"
+                                                       OnClick="NavigateBack" />
+                                                       
+                                        <ButtonComponent Text="@(isSubmitting ? "處理中" : "儲存")" 
+                                                       Variant="ButtonVariant.Primary" 
+                                                       IconClass="@(isSubmitting ? "spinner-border spinner-border-sm" : "fas fa-save")"
+                                                       IsDisabled="@isSubmitting"
+                                                       IsSubmit="true" />
                                     </div>
                                 </div>
                             </div>
@@ -136,7 +133,10 @@
 <!-- 載入 Font Awesome 圖示 -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 
-@code {    private Customer customer = new();
+@code {    
+    private Customer customer = new();
+    private List<CustomerType> customerTypes = new();
+    private List<Industry> industries = new();
     
     private bool isLoading = true;
     private bool isSubmitting = false;
@@ -145,12 +145,13 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadDataAsync();
-    }      private Task LoadDataAsync()
+    }      private async Task LoadDataAsync()
     {
         try
         {
-            // TODO: 之後可以加載客戶類型和行業別的下拉選項
-            // 目前先簡化，讓使用者直接輸入 ID
+            // 載入客戶類型和行業別的下拉選項
+            customerTypes = await CustomerService.GetCustomerTypesAsync();
+            industries = await CustomerService.GetIndustriesAsync();
             
             // 設定預設值
             customer.CreatedBy = "系統管理員"; // 可以從認證系統獲取
@@ -163,8 +164,6 @@
         {
             isLoading = false;
         }
-        
-        return Task.CompletedTask;
     }private async Task HandleSubmit()
     {
         if (isSubmitting) return;

@@ -1,0 +1,65 @@
+@* 狀態徽章組件 - 顯示實體狀態 *@
+@using ERPCore2.Data.Enums
+
+<span class="badge @GetBadgeClass() @CssClass">
+    @if (!string.IsNullOrEmpty(IconClass))
+    {
+        <i class="@IconClass me-1"></i>
+    }
+    @GetStatusText()
+</span>
+
+@code {
+    [Parameter] public EntityStatus Status { get; set; }
+    [Parameter] public string? CustomText { get; set; }
+    [Parameter] public string IconClass { get; set; } = string.Empty;
+    [Parameter] public string CssClass { get; set; } = string.Empty;
+    [Parameter] public BadgeSize Size { get; set; } = BadgeSize.Normal;
+
+    private string GetBadgeClass()
+    {
+        var classes = new List<string>();
+        
+        // 根據狀態設定顏色（遵循設計規範）
+        classes.Add(Status switch
+        {
+            EntityStatus.Active => "bg-success",
+            EntityStatus.Inactive => "bg-warning text-dark",
+            EntityStatus.Deleted => "bg-danger",
+            _ => "bg-secondary"
+        });
+        
+        // 大小設定
+        if (Size == BadgeSize.Small)
+            classes.Add("badge-sm");
+        
+        return string.Join(" ", classes);
+    }
+
+    private string GetStatusText()
+    {
+        if (!string.IsNullOrEmpty(CustomText))
+            return CustomText;
+            
+        return Status switch
+        {
+            EntityStatus.Active => "啟用",
+            EntityStatus.Inactive => "停用",
+            EntityStatus.Deleted => "已刪除",
+            _ => "未知"
+        };
+    }
+
+    public enum BadgeSize
+    {
+        Small,
+        Normal
+    }
+}
+
+<style>
+    .badge-sm {
+        font-size: 0.7em;
+        padding: 0.25em 0.4em;
+    }
+</style>

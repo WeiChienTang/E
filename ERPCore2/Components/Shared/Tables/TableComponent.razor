@@ -1,0 +1,120 @@
+@* 表格組件 - 遵循設計風格指南的表格樣式 *@
+@typeparam TItem
+
+<div class="table-responsive">
+    <table class="table @GetTableClass()">
+        @if (ShowHeader && Headers != null && Headers.Any())
+        {
+            <thead class="@GetHeaderClass()">
+                <tr>
+                    @foreach (var header in Headers)
+                    {
+                        <th scope="col">@header</th>
+                    }
+                    @if (ShowActions)
+                    {
+                        <th scope="col" class="text-center">@ActionsHeader</th>
+                    }
+                </tr>
+            </thead>
+        }
+        <tbody>
+            @if (Items != null && Items.Any())
+            {
+                @foreach (var item in Items)
+                {
+                    <tr class="@GetRowClass(item)">
+                        @RowTemplate(item)
+                        @if (ShowActions && ActionsTemplate != null)
+                        {
+                            <td class="text-center">
+                                @ActionsTemplate(item)
+                            </td>
+                        }
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="@GetColspan()" class="text-center py-4 text-muted">
+                        @if (EmptyTemplate != null)
+                        {
+                            @EmptyTemplate
+                        }
+                        else
+                        {
+                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                            <br />
+                            @EmptyMessage
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter] public IEnumerable<TItem>? Items { get; set; }
+    [Parameter] public List<string>? Headers { get; set; }
+    [Parameter] public RenderFragment<TItem> RowTemplate { get; set; } = default!;
+    [Parameter] public RenderFragment<TItem>? ActionsTemplate { get; set; }
+    [Parameter] public RenderFragment? EmptyTemplate { get; set; }
+    [Parameter] public bool ShowHeader { get; set; } = true;
+    [Parameter] public bool ShowActions { get; set; } = false;
+    [Parameter] public bool IsStriped { get; set; } = true;
+    [Parameter] public bool IsHoverable { get; set; } = true;
+    [Parameter] public bool IsBordered { get; set; } = false;
+    [Parameter] public TableSize Size { get; set; } = TableSize.Normal;
+    [Parameter] public string CssClass { get; set; } = string.Empty;
+    [Parameter] public string EmptyMessage { get; set; } = "沒有找到資料";
+    [Parameter] public string ActionsHeader { get; set; } = "操作";
+    [Parameter] public Func<TItem, string>? GetRowCssClass { get; set; }
+
+    private string GetTableClass()
+    {
+        var classes = new List<string>();
+        
+        if (IsStriped) classes.Add("table-striped");
+        if (IsHoverable) classes.Add("table-hover");
+        if (IsBordered) classes.Add("table-bordered");
+        
+        classes.Add(Size switch
+        {
+            TableSize.Small => "table-sm",
+            TableSize.Large => "table-lg",
+            _ => ""
+        });
+        
+        if (!string.IsNullOrEmpty(CssClass))
+            classes.Add(CssClass);
+            
+        return string.Join(" ", classes.Where(c => !string.IsNullOrEmpty(c)));
+    }
+
+    private string GetHeaderClass()
+    {
+        return "table-dark"; // 使用深色標題，符合設計風格
+    }
+
+    private string GetRowClass(TItem item)
+    {
+        if (GetRowCssClass != null)
+            return GetRowCssClass(item) ?? "";
+        return "";
+    }
+
+    private int GetColspan()
+    {
+        var headerCount = Headers?.Count ?? 0;
+        return ShowActions ? headerCount + 1 : headerCount;
+    }
+
+    public enum TableSize
+    {
+        Small,
+        Normal,
+        Large
+    }
+}

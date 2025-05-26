@@ -2,270 +2,165 @@
 @inject ICustomerService CustomerService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@using ERPCore2.Services.Customers.Interfaces
-@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@using ERPCore2.Components.Shared.Details
+@using static ERPCore2.Components.Shared.Buttons.ButtonComponent
+@using static ERPCore2.Components.Shared.Alerts.AlertComponent
+@rendermode InteractiveServer
 
 <PageTitle>客戶詳細資料</PageTitle>
 
+<link href="~/css/variables.css" rel="stylesheet" />
+
 <div class="container-fluid">
     <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title mb-0">
-                        <i class="fas fa-user me-2"></i>客戶詳細資料
+        <div class="col-12">            <div class="card">
+                <PageHeaderComponent Title="@GetPageTitle()" IconClass="fas fa-user">
+                    <Actions>
                         @if (customer != null)
                         {
-                            <small class="text-muted">(@customer.CustomerCode)</small>
+                            <ButtonComponent Text="編輯" 
+                                           Variant="ButtonVariant.OutlineWarning" 
+                                           IconClass="fas fa-edit" 
+                                           OnClick="NavigateToEdit" />
                         }
-                    </h3>
-                    <div>
-                        @if (customer != null)
-                        {
-                            <button class="btn btn-outline-warning me-2" @onclick="NavigateToEdit">
-                                <i class="fas fa-edit me-2"></i>編輯
-                            </button>
-                        }
-                        <button class="btn btn-outline-secondary" @onclick="NavigateBack">
-                            <i class="fas fa-arrow-left me-2"></i>返回列表
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="card-body">
-                    @if (isLoading)
+                        <ButtonComponent Text="返回列表" 
+                                       Variant="ButtonVariant.OutlineSecondary" 
+                                       IconClass="fas fa-arrow-left" 
+                                       OnClick="NavigateBack" />
+                    </Actions>
+                </PageHeaderComponent>
+                  <div class="card-body">
+                    <LoadingComponent IsLoading="@isLoading" 
+                                    LoadingText="載入客戶資料中..." 
+                                    ShowText="true" />
+                    
+                    @if (!isLoading && !string.IsNullOrWhiteSpace(errorMessage))
                     {
-                        <div class="text-center py-4">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">載入中...</span>
-                            </div>
+                        <AlertComponent Type="AlertType.Danger" 
+                                      Message="@errorMessage" 
+                                      IconClass="fas fa-exclamation-triangle" />
+                        <div class="text-center mt-3">
+                            <ButtonComponent Text="返回列表" 
+                                           Variant="ButtonVariant.Primary" 
+                                           IconClass="fas fa-arrow-left" 
+                                           OnClick="NavigateBack" />
                         </div>
                     }
-                    else if (!string.IsNullOrWhiteSpace(errorMessage))
+                    else if (!isLoading && customer == null)
                     {
-                        <div class="alert alert-danger" role="alert">
-                            <i class="fas fa-exclamation-triangle me-2"></i>@errorMessage
+                        <AlertComponent Type="AlertType.Warning" 
+                                      Message="找不到指定的客戶資料" 
+                                      IconClass="fas fa-exclamation-triangle" />
+                        <div class="text-center mt-3">
+                            <ButtonComponent Text="返回列表" 
+                                           Variant="ButtonVariant.Primary" 
+                                           IconClass="fas fa-arrow-left" 
+                                           OnClick="NavigateBack" />
                         </div>
-                        <div class="text-center">
-                            <button class="btn btn-primary" @onclick="NavigateBack">
-                                <i class="fas fa-arrow-left me-2"></i>返回列表
-                            </button>
-                        </div>
-                    }
-                    else if (customer == null)
-                    {
-                        <div class="alert alert-warning" role="alert">
-                            <i class="fas fa-exclamation-triangle me-2"></i>找不到指定的客戶資料
-                        </div>
-                        <div class="text-center">
-                            <button class="btn btn-primary" @onclick="NavigateBack">
-                                <i class="fas fa-arrow-left me-2"></i>返回列表
-                            </button>
-                        </div>
-                    }
-                    else
+                    }                    else if (!isLoading && customer != null)
                     {
                         <!-- 基本資訊 -->
-                        <div class="row">
-                            <div class="col-12">
-                                <h5 class="mb-3">
-                                    <i class="fas fa-info-circle me-2 text-primary"></i>基本資訊
-                                </h5>
-                            </div>
-                        </div>
-                        
-                        <div class="row mb-4">
+                        <DetailSectionComponent Title="基本資訊" IconClass="fas fa-info-circle text-primary">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">客戶代碼</label>
-                                    <div class="form-control-plaintext">@customer.CustomerCode</div>
-                                </div>
+                                <DetailItemComponent Label="客戶代碼" Value="@customer.CustomerCode" />
                             </div>
                             
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">公司名稱</label>
-                                    <div class="form-control-plaintext">@customer.CompanyName</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">聯絡人</label>
-                                    <div class="form-control-plaintext">@(customer.ContactPerson ?? "-")</div>
-                                </div>
+                                <DetailItemComponent Label="公司名稱" Value="@customer.CompanyName" />
                             </div>
                             
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">統一編號</label>
-                                    <div class="form-control-plaintext">@(customer.TaxNumber ?? "-")</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">客戶類型</label>
-                                    <div class="form-control-plaintext">@(customer.CustomerType?.TypeName ?? "-")</div>
-                                </div>
+                                <DetailItemComponent Label="聯絡人" Value="@customer.ContactPerson" />
                             </div>
                             
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">行業別</label>
-                                    <div class="form-control-plaintext">@(customer.Industry?.IndustryName ?? "-")</div>
-                                </div>
+                                <DetailItemComponent Label="統一編號" Value="@customer.TaxNumber" />
                             </div>
-                        </div>
-                        
-                        <div class="row mb-4">
+                            
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">狀態</label>
-                                    <div class="form-control-plaintext">
-                                        <span class="badge @GetStatusBadgeClass(customer.Status)">
-                                            @GetStatusText(customer.Status)
-                                        </span>
-                                    </div>
-                                </div>
+                                <DetailItemComponent Label="客戶類型" Value="@customer.CustomerType?.TypeName" />
                             </div>
-                        </div>
-                        
-                        <hr />
+                            
+                            <div class="col-md-6">
+                                <DetailItemComponent Label="行業別" Value="@customer.Industry?.IndustryName" />
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <DetailItemComponent Label="狀態">
+                                    <StatusBadgeComponent Status="customer.Status" />
+                                </DetailItemComponent>
+                            </div>
+                        </DetailSectionComponent>
                         
                         <!-- 系統資訊 -->
-                        <div class="row">
-                            <div class="col-12">
-                                <h5 class="mb-3">
-                                    <i class="fas fa-cog me-2 text-secondary"></i>系統資訊
-                                </h5>
-                            </div>
-                        </div>
-                        
-                        <div class="row mb-4">
+                        <DetailSectionComponent Title="系統資訊" IconClass="fas fa-cog text-secondary">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">建立日期</label>
-                                    <div class="form-control-plaintext">@customer.CreatedDate.ToString("yyyy/MM/dd HH:mm:ss")</div>
-                                </div>
+                                <DetailItemComponent Label="建立日期" Value="@customer.CreatedDate.ToString("yyyy/MM/dd HH:mm:ss")" />
                             </div>
                             
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">建立者</label>
-                                    <div class="form-control-plaintext">@(customer.CreatedBy ?? "-")</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">修改日期</label>
-                                    <div class="form-control-plaintext">
-                                        @(customer.ModifiedDate?.ToString("yyyy/MM/dd HH:mm:ss") ?? "-")
-                                    </div>
-                                </div>
+                                <DetailItemComponent Label="建立者" Value="@customer.CreatedBy" />
                             </div>
                             
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">修改者</label>
-                                    <div class="form-control-plaintext">@(customer.ModifiedBy ?? "-")</div>
-                                </div>
+                                <DetailItemComponent Label="修改日期" Value="@(customer.ModifiedDate?.ToString("yyyy/MM/dd HH:mm:ss"))" />
                             </div>
-                        </div>
-                        
-                        <hr />
-                        
+                            
+                            <div class="col-md-6">
+                                <DetailItemComponent Label="修改者" Value="@customer.ModifiedBy" />
+                            </div>
+                        </DetailSectionComponent>                        
                         <!-- 相關資料 -->
-                        <div class="row">
-                            <div class="col-12">
-                                <h5 class="mb-3">
-                                    <i class="fas fa-link me-2 text-info"></i>相關資料
-                                </h5>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
+                        <DetailSectionComponent Title="相關資料" IconClass="fas fa-link text-info" ShowDivider="false">
                             <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h6 class="mb-0">
-                                            <i class="fas fa-phone me-2"></i>聯絡方式 
-                                            <span class="badge bg-primary">@(customer.CustomerContacts?.Count ?? 0)</span>
-                                        </h6>
-                                    </div>
-                                    <div class="card-body">
-                                        @if (customer.CustomerContacts?.Any() == true)
+                                <RelatedDataCardComponent Title="聯絡方式" 
+                                                        IconClass="fas fa-phone" 
+                                                        Count="@(customer.CustomerContacts?.Count ?? 0)"
+                                                        HasData="@(customer.CustomerContacts?.Any() == true)">
+                                    @if (customer.CustomerContacts?.Any() == true)
+                                    {
+                                        @foreach (var contact in customer.CustomerContacts.Take(3))
                                         {
-                                            @foreach (var contact in customer.CustomerContacts.Take(3))
-                                            {
-                                                <div class="d-flex justify-content-between mb-2">
-                                                    <span>@contact.ContactType?.TypeName</span>
-                                                    <span>@contact.ContactValue</span>
-                                                    @if (contact.IsPrimary)
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>@contact.ContactType?.TypeName</span>
+                                                <span>@contact.ContactValue</span>
+                                                @if (contact.IsPrimary)
+                                                {
+                                                    <span class="badge bg-warning text-dark">主要</span>
+                                                }
+                                            </div>
+                                        }
+                                    }
+                                </RelatedDataCardComponent>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <RelatedDataCardComponent Title="地址資料" 
+                                                        IconClass="fas fa-map-marker-alt" 
+                                                        Count="@(customer.CustomerAddresses?.Count ?? 0)"
+                                                        HasData="@(customer.CustomerAddresses?.Any() == true)">
+                                    @if (customer.CustomerAddresses?.Any() == true)
+                                    {
+                                        @foreach (var address in customer.CustomerAddresses.Take(3))
+                                        {
+                                            <div class="mb-2">
+                                                <div class="d-flex justify-content-between">
+                                                    <span class="fw-bold">@address.AddressType?.TypeName</span>
+                                                    @if (address.IsPrimary)
                                                     {
                                                         <span class="badge bg-warning text-dark">主要</span>
                                                     }
                                                 </div>
-                                            }
-                                            @if (customer.CustomerContacts.Count > 3)
-                                            {
-                                                <small class="text-muted">... 還有 @(customer.CustomerContacts.Count - 3) 筆</small>
-                                            }
+                                                <small class="text-muted">
+                                                    @($"{address.PostalCode} {address.City}{address.District} {address.Address}")
+                                                </small>
+                                            </div>
                                         }
-                                        else
-                                        {
-                                            <small class="text-muted">尚未建立聯絡方式</small>
-                                        }
-                                    </div>
-                                </div>
+                                    }
+                                </RelatedDataCardComponent>
                             </div>
-                            
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h6 class="mb-0">
-                                            <i class="fas fa-map-marker-alt me-2"></i>地址資料 
-                                            <span class="badge bg-primary">@(customer.CustomerAddresses?.Count ?? 0)</span>
-                                        </h6>
-                                    </div>
-                                    <div class="card-body">
-                                        @if (customer.CustomerAddresses?.Any() == true)
-                                        {
-                                            @foreach (var address in customer.CustomerAddresses.Take(3))
-                                            {
-                                                <div class="mb-2">
-                                                    <div class="d-flex justify-content-between">
-                                                        <span class="fw-bold">@address.AddressType?.TypeName</span>
-                                                        @if (address.IsPrimary)
-                                                        {
-                                                            <span class="badge bg-warning text-dark">主要</span>
-                                                        }
-                                                    </div>
-                                                    <small class="text-muted">
-                                                        @($"{address.PostalCode} {address.City}{address.District} {address.Address}")
-                                                    </small>
-                                                </div>
-                                            }
-                                            @if (customer.CustomerAddresses.Count > 3)
-                                            {
-                                                <small class="text-muted">... 還有 @(customer.CustomerAddresses.Count - 3) 筆</small>
-                                            }
-                                        }
-                                        else
-                                        {
-                                            <small class="text-muted">尚未建立地址資料</small>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        </DetailSectionComponent>
                         
                         <!-- 操作按鈕 -->
                         <div class="row mt-4">
@@ -273,22 +168,26 @@
                                 <div class="d-flex justify-content-end gap-2">
                                     @if (customer.Status == EntityStatus.Active)
                                     {
-                                        <button class="btn btn-outline-secondary" @onclick="() => ToggleStatus(EntityStatus.Inactive)">
-                                            <i class="fas fa-pause me-2"></i>停用
-                                        </button>
+                                        <ButtonComponent Text="停用" 
+                                                       Variant="ButtonVariant.OutlineSecondary" 
+                                                       IconClass="fas fa-pause"
+                                                       OnClick="() => ToggleStatus(EntityStatus.Inactive)" />
                                     }
                                     else
                                     {
-                                        <button class="btn btn-outline-success" @onclick="() => ToggleStatus(EntityStatus.Active)">
-                                            <i class="fas fa-play me-2"></i>啟用
-                                        </button>
+                                        <ButtonComponent Text="啟用" 
+                                                       Variant="ButtonVariant.OutlineSecondary" 
+                                                       IconClass="fas fa-play"
+                                                       OnClick="() => ToggleStatus(EntityStatus.Active)" />
                                     }
-                                    <button class="btn btn-outline-danger" @onclick="ConfirmDelete">
-                                        <i class="fas fa-trash me-2"></i>刪除
-                                    </button>
-                                    <button class="btn btn-warning" @onclick="NavigateToEdit">
-                                        <i class="fas fa-edit me-2"></i>編輯
-                                    </button>
+                                    <ButtonComponent Text="刪除" 
+                                                   Variant="ButtonVariant.OutlineDanger" 
+                                                   IconClass="fas fa-trash"
+                                                   OnClick="ConfirmDelete" />
+                                    <ButtonComponent Text="編輯" 
+                                                   Variant="ButtonVariant.Warning" 
+                                                   IconClass="fas fa-edit"
+                                                   OnClick="NavigateToEdit" />
                                 </div>
                             </div>
                         </div>
@@ -412,9 +311,14 @@
     {
         Navigation.NavigateTo($"/customers/{CustomerId}/edit");
     }
-    
-    private void NavigateBack()
+      private void NavigateBack()
     {
         Navigation.NavigateTo("/customers");
+    }
+      private string GetPageTitle()
+    {
+        return customer != null 
+            ? $"客戶詳細資料 ({customer.CustomerCode})" 
+            : "客戶詳細資料";
     }
 }

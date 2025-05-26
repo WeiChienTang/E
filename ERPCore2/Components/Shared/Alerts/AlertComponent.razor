@@ -1,0 +1,58 @@
+@* 警告訊息組件 - 遵循設計原則的色彩系統 *@
+@using static ERPCore2.Components.Shared.Alerts.AlertComponent
+
+@if (IsVisible)
+{
+    <div class="alert @GetAlertClass() @(IsDismissible ? "alert-dismissible fade show" : "")" role="alert">
+        @if (!string.IsNullOrEmpty(IconClass))
+        {
+            <i class="@IconClass me-2"></i>
+        }
+        @Message
+        @ChildContent        
+        @if (IsDismissible)
+        {
+            <button type="button" class="btn-close" @onclick="HandleDismiss"></button>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public string Message { get; set; } = string.Empty;
+    [Parameter] public AlertType Type { get; set; } = AlertType.Info;
+    [Parameter] public bool IsVisible { get; set; } = true;
+    [Parameter] public bool IsDismissible { get; set; } = true;
+    [Parameter] public string IconClass { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnDismiss { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string GetAlertClass()
+    {
+        return Type switch
+        {
+            AlertType.Success => "alert-success",
+            AlertType.Warning => "alert-warning",
+            AlertType.Danger => "alert-danger",
+            AlertType.Info => "alert-info",
+            _ => "alert-info"
+        };
+    }    
+    
+    private async Task HandleDismiss()
+    {
+        IsVisible = false;
+        if (OnDismiss.HasDelegate)
+        {
+            await OnDismiss.InvokeAsync();
+        }
+        StateHasChanged();
+    }
+
+    public enum AlertType
+    {
+        Success,
+        Warning,
+        Danger,
+        Info
+    }
+}

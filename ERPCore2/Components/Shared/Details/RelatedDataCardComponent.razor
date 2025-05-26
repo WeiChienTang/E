@@ -1,0 +1,44 @@
+@namespace ERPCore2.Components.Shared.Details
+@* 相關資料卡片組件 - 用於顯示客戶的聯絡方式、地址等相關資料 *@
+
+<div class="card h-100">
+    <div class="card-header">
+        <h6 class="mb-0">
+            @if (!string.IsNullOrEmpty(IconClass))
+            {
+                <i class="@IconClass me-2"></i>
+            }
+            @Title
+            @if (ShowCount)
+            {
+                <span class="badge bg-primary">@Count</span>
+            }
+        </h6>
+    </div>
+    <div class="card-body">
+        @if (HasData)
+        {
+            @ChildContent
+            @if (ShowMoreIndicator && Count > DisplayLimit)
+            {
+                <small class="text-muted">... 還有 @(Count - DisplayLimit) 筆</small>
+            }
+        }
+        else
+        {
+            <small class="text-muted">@EmptyMessage</small>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string IconClass { get; set; } = string.Empty;
+    [Parameter] public int Count { get; set; } = 0;
+    [Parameter] public bool ShowCount { get; set; } = true;
+    [Parameter] public bool HasData { get; set; } = false;
+    [Parameter] public string EmptyMessage { get; set; } = "尚未建立資料";
+    [Parameter] public bool ShowMoreIndicator { get; set; } = true;
+    [Parameter] public int DisplayLimit { get; set; } = 3;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}
