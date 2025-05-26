@@ -1,0 +1,424 @@
+@page "/customers/{CustomerId:int}"
+@inject CustomerService CustomerService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>客戶詳細資料</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-user me-2"></i>客戶詳細資料
+                        @if (customer != null)
+                        {
+                            <small class="text-muted">(@customer.CustomerCode)</small>
+                        }
+                    </h3>
+                    <div>
+                        @if (customer != null)
+                        {
+                            <button class="btn btn-outline-warning me-2" @onclick="NavigateToEdit">
+                                <i class="fas fa-edit me-2"></i>編輯
+                            </button>
+                        }
+                        <button class="btn btn-outline-secondary" @onclick="NavigateBack">
+                            <i class="fas fa-arrow-left me-2"></i>返回列表
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    @if (isLoading)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">載入中...</span>
+                            </div>
+                        </div>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(errorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>@errorMessage
+                        </div>
+                        <div class="text-center">
+                            <button class="btn btn-primary" @onclick="NavigateBack">
+                                <i class="fas fa-arrow-left me-2"></i>返回列表
+                            </button>
+                        </div>
+                    }
+                    else if (customer == null)
+                    {
+                        <div class="alert alert-warning" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>找不到指定的客戶資料
+                        </div>
+                        <div class="text-center">
+                            <button class="btn btn-primary" @onclick="NavigateBack">
+                                <i class="fas fa-arrow-left me-2"></i>返回列表
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- 基本資訊 -->
+                        <div class="row">
+                            <div class="col-12">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-info-circle me-2 text-primary"></i>基本資訊
+                                </h5>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">客戶代碼</label>
+                                    <div class="form-control-plaintext">@customer.CustomerCode</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">公司名稱</label>
+                                    <div class="form-control-plaintext">@customer.CompanyName</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">聯絡人</label>
+                                    <div class="form-control-plaintext">@(customer.ContactPerson ?? "-")</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">統一編號</label>
+                                    <div class="form-control-plaintext">@(customer.TaxNumber ?? "-")</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">客戶類型</label>
+                                    <div class="form-control-plaintext">@(customer.CustomerType?.TypeName ?? "-")</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">行業別</label>
+                                    <div class="form-control-plaintext">@(customer.Industry?.IndustryName ?? "-")</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">狀態</label>
+                                    <div class="form-control-plaintext">
+                                        <span class="badge @GetStatusBadgeClass(customer.Status)">
+                                            @GetStatusText(customer.Status)
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr />
+                        
+                        <!-- 系統資訊 -->
+                        <div class="row">
+                            <div class="col-12">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-cog me-2 text-secondary"></i>系統資訊
+                                </h5>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">建立日期</label>
+                                    <div class="form-control-plaintext">@customer.CreatedDate.ToString("yyyy/MM/dd HH:mm:ss")</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">建立者</label>
+                                    <div class="form-control-plaintext">@(customer.CreatedBy ?? "-")</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">修改日期</label>
+                                    <div class="form-control-plaintext">
+                                        @(customer.ModifiedDate?.ToString("yyyy/MM/dd HH:mm:ss") ?? "-")
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">修改者</label>
+                                    <div class="form-control-plaintext">@(customer.ModifiedBy ?? "-")</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr />
+                        
+                        <!-- 相關資料 -->
+                        <div class="row">
+                            <div class="col-12">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-link me-2 text-info"></i>相關資料
+                                </h5>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-phone me-2"></i>聯絡方式 
+                                            <span class="badge bg-primary">@(customer.CustomerContacts?.Count ?? 0)</span>
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        @if (customer.CustomerContacts?.Any() == true)
+                                        {
+                                            @foreach (var contact in customer.CustomerContacts.Take(3))
+                                            {
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span>@contact.ContactType?.TypeName</span>
+                                                    <span>@contact.ContactValue</span>
+                                                    @if (contact.IsPrimary)
+                                                    {
+                                                        <span class="badge bg-warning text-dark">主要</span>
+                                                    }
+                                                </div>
+                                            }
+                                            @if (customer.CustomerContacts.Count > 3)
+                                            {
+                                                <small class="text-muted">... 還有 @(customer.CustomerContacts.Count - 3) 筆</small>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted">尚未建立聯絡方式</small>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-map-marker-alt me-2"></i>地址資料 
+                                            <span class="badge bg-primary">@(customer.CustomerAddresses?.Count ?? 0)</span>
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        @if (customer.CustomerAddresses?.Any() == true)
+                                        {
+                                            @foreach (var address in customer.CustomerAddresses.Take(3))
+                                            {
+                                                <div class="mb-2">
+                                                    <div class="d-flex justify-content-between">
+                                                        <span class="fw-bold">@address.AddressType?.TypeName</span>
+                                                        @if (address.IsPrimary)
+                                                        {
+                                                            <span class="badge bg-warning text-dark">主要</span>
+                                                        }
+                                                    </div>
+                                                    <small class="text-muted">
+                                                        @($"{address.PostalCode} {address.City}{address.District} {address.Address}")
+                                                    </small>
+                                                </div>
+                                            }
+                                            @if (customer.CustomerAddresses.Count > 3)
+                                            {
+                                                <small class="text-muted">... 還有 @(customer.CustomerAddresses.Count - 3) 筆</small>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted">尚未建立地址資料</small>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 操作按鈕 -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-end gap-2">
+                                    @if (customer.Status == EntityStatus.Active)
+                                    {
+                                        <button class="btn btn-outline-secondary" @onclick="() => ToggleStatus(EntityStatus.Inactive)">
+                                            <i class="fas fa-pause me-2"></i>停用
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-outline-success" @onclick="() => ToggleStatus(EntityStatus.Active)">
+                                            <i class="fas fa-play me-2"></i>啟用
+                                        </button>
+                                    }
+                                    <button class="btn btn-outline-danger" @onclick="ConfirmDelete">
+                                        <i class="fas fa-trash me-2"></i>刪除
+                                    </button>
+                                    <button class="btn btn-warning" @onclick="NavigateToEdit">
+                                        <i class="fas fa-edit me-2"></i>編輯
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 載入 Font Awesome 圖示 -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+
+@code {
+    [Parameter] public int CustomerId { get; set; }
+    
+    private Customer? customer;
+    private bool isLoading = true;
+    private string errorMessage = string.Empty;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+    
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            customer = await CustomerService.GetByIdWithDetailsAsync(CustomerId);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"載入客戶資料時發生錯誤: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+    
+    private string GetStatusBadgeClass(EntityStatus status)
+    {
+        return status switch
+        {
+            EntityStatus.Active => "bg-success",
+            EntityStatus.Inactive => "bg-warning",
+            EntityStatus.Deleted => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+    
+    private string GetStatusText(EntityStatus status)
+    {
+        return status switch
+        {
+            EntityStatus.Active => "啟用",
+            EntityStatus.Inactive => "停用",
+            EntityStatus.Deleted => "已刪除",
+            _ => "未知"
+        };
+    }
+    
+    private async Task ToggleStatus(EntityStatus newStatus)
+    {
+        if (customer == null) return;
+        
+        try
+        {
+            ServiceResult result;
+            
+            if (newStatus == EntityStatus.Active)
+            {
+                result = await CustomerService.ActivateAsync(customer.CustomerId, "系統管理員");
+            }
+            else
+            {
+                result = await CustomerService.DeactivateAsync(customer.CustomerId, "系統管理員");
+            }
+            
+            if (result.IsSuccess)
+            {
+                await LoadDataAsync(); // 重新載入資料
+                await JSRuntime.InvokeVoidAsync("alert", "狀態更新成功！");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"狀態更新失敗: {result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"狀態更新時發生錯誤: {ex.Message}");
+        }
+    }
+    
+    private async Task ConfirmDelete()
+    {
+        if (customer == null) return;
+        
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"確定要刪除客戶「{customer.CompanyName}」嗎？此操作無法復原。");
+        
+        if (confirmed)
+        {
+            try
+            {
+                var result = await CustomerService.DeleteAsync(customer.CustomerId);
+                
+                if (result.IsSuccess)
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "客戶刪除成功！");
+                    Navigation.NavigateTo("/customers");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", $"客戶刪除失敗: {result.ErrorMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"刪除客戶時發生錯誤: {ex.Message}");
+            }
+        }
+    }
+    
+    private void NavigateToEdit()
+    {
+        Navigation.NavigateTo($"/customers/{CustomerId}/edit");
+    }
+    
+    private void NavigateBack()
+    {
+        Navigation.NavigateTo("/customers");
+    }
+}
