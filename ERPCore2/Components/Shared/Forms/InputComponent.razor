@@ -24,8 +24,7 @@
         </textarea>
     }
     else
-    {
-        <input id="@Id" 
+    {        <input id="@Id" 
                type="@InputType" 
                class="form-control @GetInputClass()" 
                placeholder="@Placeholder"
@@ -58,8 +57,7 @@
     [Parameter] public bool IsReadOnly { get; set; } = false;
     [Parameter] public string CssClass { get; set; } = string.Empty;
     [Parameter] public string ContainerCssClass { get; set; } = string.Empty;
-    [Parameter] public string HelpText { get; set; } = string.Empty;
-    [Parameter] public string ErrorMessage { get; set; } = string.Empty;
+    [Parameter] public string HelpText { get; set; } = string.Empty;    [Parameter] public string ErrorMessage { get; set; } = string.Empty;
     [Parameter] public int Rows { get; set; } = 3;
     [Parameter] public string BindEvent { get; set; } = "onchange";
 

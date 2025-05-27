@@ -56,30 +56,43 @@ namespace ERPCore2.Services
                 _logger.LogError(ex, "Error getting customer with ID {CustomerId}", id);
                 throw;
             }
-        }
-
-        public async Task<ServiceResult<Customer>> CreateAsync(Customer customer)
+        }        public async Task<ServiceResult<Customer>> CreateAsync(Customer customer)
         {
             try
             {
+                Console.WriteLine("=== CustomerService.CreateAsync 開始 ===");
+                
                 // Business Validation
                 var validationResult = ValidateCustomer(customer);
                 if (!validationResult.IsSuccess)
+                {
+                    Console.WriteLine($"驗證失敗: {validationResult.ErrorMessage}");
                     return ServiceResult<Customer>.Failure(validationResult.ErrorMessage);
+                }
+
+                Console.WriteLine("基本驗證通過，檢查重複資料...");
 
                 // Business Rules - Check for duplicate customer code
                 var existingCustomer = await _context.Customers
                     .FirstOrDefaultAsync(c => c.CustomerCode == customer.CustomerCode && c.Status != EntityStatus.Deleted);
 
                 if (existingCustomer != null)
+                {
+                    Console.WriteLine($"客戶代碼重複: {customer.CustomerCode}");
                     return ServiceResult<Customer>.Failure("客戶代碼已存在");
+                }
 
                 // Check for duplicate company name
                 var existingCompany = await _context.Customers
                     .FirstOrDefaultAsync(c => c.CompanyName == customer.CompanyName && c.Status != EntityStatus.Deleted);
 
                 if (existingCompany != null)
+                {
+                    Console.WriteLine($"公司名稱重複: {customer.CompanyName}");
                     return ServiceResult<Customer>.Failure("公司名稱已存在");
+                }
+
+                Console.WriteLine("無重複資料，檢查外鍵...");
 
                 // Validate foreign keys
                 if (customer.CustomerTypeId.HasValue)
@@ -87,7 +100,10 @@ namespace ERPCore2.Services
                     var customerTypeExists = await _context.CustomerTypes
                         .AnyAsync(ct => ct.CustomerTypeId == customer.CustomerTypeId && ct.Status != EntityStatus.Deleted);
                     if (!customerTypeExists)
+                    {
+                        Console.WriteLine($"客戶類型不存在: {customer.CustomerTypeId}");
                         return ServiceResult<Customer>.Failure("客戶類型不存在");
+                    }
                 }
 
                 if (customer.IndustryId.HasValue)
@@ -95,23 +111,33 @@ namespace ERPCore2.Services
                     var industryExists = await _context.Industries
                         .AnyAsync(i => i.IndustryId == customer.IndustryId && i.Status != EntityStatus.Deleted);
                     if (!industryExists)
+                    {
+                        Console.WriteLine($"行業別不存在: {customer.IndustryId}");
                         return ServiceResult<Customer>.Failure("行業別不存在");
+                    }
                 }
+
+                Console.WriteLine("外鍵檢查通過，設定審計欄位...");
 
                 // Set audit fields
                 customer.Status = EntityStatus.Active;
                 customer.CreatedDate = DateTime.UtcNow;
                 customer.CreatedBy = "System"; // TODO: Replace with actual user when authentication is implemented
 
+                Console.WriteLine($"準備儲存客戶資料到資料庫: {customer.CustomerCode} - {customer.CompanyName}");
+
                 // Save to Database
                 _context.Customers.Add(customer);
                 await _context.SaveChangesAsync();
 
+                Console.WriteLine($"客戶建立成功，ID: {customer.CustomerId}");
                 _logger.LogInformation("Customer created with ID {CustomerId}", customer.CustomerId);
                 return ServiceResult<Customer>.Success(customer);
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"建立客戶時發生例外: {ex.Message}");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
                 _logger.LogError(ex, "Error creating customer");
                 return ServiceResult<Customer>.Failure("創建客戶時發生錯誤");
             }
@@ -348,11 +374,13 @@ namespace ERPCore2.Services
                 _logger.LogError(ex, "Error getting address types");
                 throw;
             }
-        }
-
-        private ServiceResult ValidateCustomer(Customer customer)
+        }        private ServiceResult ValidateCustomer(Customer customer)
         {
             var errors = new List<string>();
+
+            Console.WriteLine("=== 服務端驗證除錯資訊 ===");
+            Console.WriteLine($"CustomerCode: '{customer.CustomerCode}' (IsNullOrWhiteSpace: {string.IsNullOrWhiteSpace(customer.CustomerCode)})");
+            Console.WriteLine($"CompanyName: '{customer.CompanyName}' (IsNullOrWhiteSpace: {string.IsNullOrWhiteSpace(customer.CompanyName)})");
 
             if (string.IsNullOrWhiteSpace(customer.CustomerCode))
                 errors.Add("客戶代碼為必填");
@@ -372,9 +400,15 @@ namespace ERPCore2.Services
             if (!string.IsNullOrEmpty(customer.TaxNumber) && customer.TaxNumber.Length > 20)
                 errors.Add("統一編號不可超過20個字元");
 
+            Console.WriteLine($"驗證錯誤數量: {errors.Count}");
             if (errors.Any())
+            {
+                Console.WriteLine("驗證錯誤:");
+                errors.ForEach(error => Console.WriteLine($"  - {error}"));
                 return ServiceResult.ValidationFailure(errors);
+            }
 
+            Console.WriteLine("驗證通過");
             return ServiceResult.Success();
         }
     }

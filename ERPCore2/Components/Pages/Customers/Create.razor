@@ -145,7 +145,8 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadDataAsync();
-    }      private async Task LoadDataAsync()
+    }      
+      private async Task LoadDataAsync()
     {
         try
         {
@@ -155,16 +156,27 @@
             
             // 設定預設值
             customer.CreatedBy = "系統管理員"; // 可以從認證系統獲取
+            customer.CreatedDate = DateTime.Now; // 明確設定建立時間
+            customer.Status = ERPCore2.Data.Enums.EntityStatus.Active; // 明確設定狀態
+            
+            Console.WriteLine("=== 載入資料後的除錯資訊 ===");
+            Console.WriteLine($"CustomerTypes count: {customerTypes.Count}");
+            Console.WriteLine($"Industries count: {industries.Count}");
+            Console.WriteLine($"Default CreatedBy: '{customer.CreatedBy}'");
+            Console.WriteLine($"Default Status: {customer.Status}");
+            Console.WriteLine($"Default CreatedDate: {customer.CreatedDate}");
         }
         catch (Exception ex)
         {
             errorMessage = $"載入資料時發生錯誤: {ex.Message}";
+            Console.WriteLine($"LoadDataAsync Error: {ex.Message}");
         }
         finally
         {
             isLoading = false;
         }
-    }private async Task HandleSubmit()
+    }
+      private async Task HandleSubmit()
     {
         if (isSubmitting) return;
         
@@ -172,6 +184,18 @@
         {
             isSubmitting = true;
             errorMessage = string.Empty;
+            
+            // 除錯資訊 - 檢查表單資料
+            Console.WriteLine("=== 表單提交除錯資訊 ===");
+            Console.WriteLine($"CustomerCode: '{customer.CustomerCode}' (Length: {customer.CustomerCode?.Length})");
+            Console.WriteLine($"CompanyName: '{customer.CompanyName}' (Length: {customer.CompanyName?.Length})");
+            Console.WriteLine($"ContactPerson: '{customer.ContactPerson}'");
+            Console.WriteLine($"TaxNumber: '{customer.TaxNumber}'");
+            Console.WriteLine($"CustomerTypeId: {customer.CustomerTypeId}");
+            Console.WriteLine($"IndustryId: {customer.IndustryId}");
+            Console.WriteLine($"CreatedBy: '{customer.CreatedBy}'");
+            Console.WriteLine($"Status: {customer.Status}");
+            Console.WriteLine($"CreatedDate: {customer.CreatedDate}");
             
             var result = await CustomerService.CreateAsync(customer);
             

@@ -35,7 +35,8 @@
                 }
             }
             else
-            {                <tr>
+            {                
+                <tr>
                     <td colspan="@GetColspan()" class="text-center py-4 text-light-custom">
                         @if (EmptyTemplate != null)
                         {
@@ -90,11 +91,9 @@
             classes.Add(CssClass);
             
         return string.Join(" ", classes.Where(c => !string.IsNullOrEmpty(c)));
-    }
-
-    private string GetHeaderClass()
+    }    private string GetHeaderClass()
     {
-        return "table-dark"; // 使用深色標題，符合設計風格
+        return "table-header-primary"; // 使用主要藍色標題，符合設計風格
     }
 
     private string GetRowClass(TItem item)

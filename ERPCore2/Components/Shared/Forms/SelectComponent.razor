@@ -45,10 +45,9 @@
     [Parameter] public bool ShowEmptyOption { get; set; } = true;
     [Parameter] public string EmptyOptionText { get; set; } = "請選擇...";
     [Parameter] public string CssClass { get; set; } = string.Empty;
-    [Parameter] public string HelpText { get; set; } = string.Empty;
-
-    private async Task OnValueChanged(ChangeEventArgs e)
+    [Parameter] public string HelpText { get; set; } = string.Empty;    private async Task OnValueChanged(ChangeEventArgs e)
     {
+        var oldValue = Value;
         var stringValue = e.Value?.ToString();
         
         if (string.IsNullOrEmpty(stringValue))
@@ -86,7 +85,8 @@
             }
         }
         
-        if (ValueChanged.HasDelegate)
+        // 只有在值真正改變時才觸發 ValueChanged 事件
+        if (!EqualityComparer<TValue?>.Default.Equals(oldValue, Value) && ValueChanged.HasDelegate)
         {
             await ValueChanged.InvokeAsync(Value);
         }

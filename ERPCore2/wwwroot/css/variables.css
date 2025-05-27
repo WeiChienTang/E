@@ -225,6 +225,20 @@
   background-color: var(--bg-secondary);
 }
 
+/* 自定義表格標題樣式 - 使用主要藍色 */
+.table-header-primary {
+  background-color: var(--primary-blue) !important;
+  color: var(--primary-white) !important;
+  border-color: var(--primary-blue) !important;
+}
+
+.table-header-primary th {
+  background-color: var(--primary-blue) !important;
+  color: var(--primary-white) !important;
+  border-color: var(--primary-blue) !important;
+  font-weight: 600 !important;
+}
+
 /* 卡片樣式 */
 .card {
   background-color: var(--bg-primary) !important;
