@@ -9,13 +9,13 @@ Services 資料夾包含了 ERPCore2 系統的業務邏輯層實作，負責處�
 
 ```
 Services/
-├── Customers/           # 客戶相關服務
-│   ├── CustomerService.cs
-│   └── Interfaces/
-│       └── ICustomerService.cs
-├── Results/             # 服務層回傳結果類別
-│   └── ServiceResult.cs
-└── README_Services.md   # 本說明文檔
+├── CustomerService.cs        # 客戶服務實作
+├── AddressService.cs         # 地址管理服務實作
+├── ServiceResult.cs          # 服務層回傳結果類別
+├── Interfaces/               # 服務介面
+│   ├── ICustomerService.cs   # 客戶服務介面
+│   └── IAddressService.cs    # 地址管理服務介面
+└── README_Services.md        # 本說明文檔
 ```
 
 
@@ -27,9 +27,11 @@ Services/
 - ✅ **統一命名空間**：`ERPCore2.Services`
 
 ### 實際命名範例
-- `Services/Customers/CustomerService.cs` → `namespace ERPCore2.Services.Customers`
-- `Services/Results/ServiceResult.cs` → `namespace ERPCore2.Services`
-- `Services/Customers/Interfaces/ICustomerService.cs` → `namespace ERPCore2.Services.Customers.Interfaces`
+- `Services/CustomerService.cs` → `namespace ERPCore2.Services`
+- `Services/AddressService.cs` → `namespace ERPCore2.Services`
+- `Services/ServiceResult.cs` → `namespace ERPCore2.Services`
+- `Services/Interfaces/ICustomerService.cs` → `namespace ERPCore2.Services`
+- `Services/Interfaces/IAddressService.cs` → `namespace ERPCore2.Services`
 
 ## 簡化架構設計原則
 
@@ -377,3 +379,43 @@ public async Task<ServiceResult<Customer>> UpdateAsync(Customer customer)
 - **可維護性**：業務邏輯集中，程式碼結構清楚
 - **可測試性**：透過介面注入，便於單元測試
 - **擴展性**：可以輕鬆加入新的業務邏輯和驗證規則
+
+## 已實作的服務
+
+### 1. CustomerService (客戶服務)
+- **功能**：完整的客戶 CRUD 操作
+- **特色**：包含客戶資料驗證、業務規則檢查、相關資料載入
+- **檔案位置**：`Services/CustomerService.cs` 和 `Services/Interfaces/ICustomerService.cs`
+
+### 2. AddressService (地址管理服務)
+- **功能**：客戶地址的完整管理，包含主要地址設定、地址複製等業務邏輯
+- **特色**：
+  - 自動主要地址管理（確保客戶至少有一個主要地址）
+  - 地址複製功能
+  - 地址類型驗證
+  - 與 AddressManagement.razor 元件整合
+- **檔案位置**：`Services/AddressService.cs` 和 `Services/Interfaces/IAddressService.cs`
+
+#### AddressService 主要方法：
+```csharp
+// 取得地址相關資料
+Task<List<AddressType>> GetAddressTypesAsync();
+Task<List<CustomerAddress>> GetAddressesByCustomerIdAsync(int customerId);
+Task<CustomerAddress?> GetPrimaryAddressAsync(int customerId);
+
+// 地址業務邏輯操作
+Task<ServiceResult<CustomerAddress>> CreateAddressAsync(CustomerAddress address);
+Task<ServiceResult<CustomerAddress>> UpdateAddressAsync(CustomerAddress address);
+Task<ServiceResult> DeleteAddressAsync(int addressId);
+Task<ServiceResult> SetPrimaryAddressAsync(int customerId, int addressId);
+
+// 地址業務規則和輔助方法
+Task<ServiceResult> ValidateAddressAsync(CustomerAddress address);
+Task<ServiceResult> EnsureCustomerHasPrimaryAddressAsync(int customerId);
+Task<ServiceResult<CustomerAddress>> CopyFromAddressAsync(CustomerAddress sourceAddress, int targetCustomerId, int? targetAddressTypeId = null);
+```
+
+### 3. ServiceResult (服務結果封裝)
+- **功能**：統一的服務層回傳結果格式
+- **特色**：支援成功/失敗狀態、錯誤訊息、驗證錯誤集合
+- **檔案位置**：`Services/ServiceResult.cs`

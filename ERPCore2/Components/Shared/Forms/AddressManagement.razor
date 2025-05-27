@@ -1,0 +1,159 @@
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.Buttons
+@using static ERPCore2.Components.Shared.Buttons.ButtonComponent
+
+<div class="address-management mb-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-map-marker-alt me-2"></i>地址資訊
+            </h5>
+            @if (ShowAddButton)
+            {                <ButtonComponent Text="新增地址" 
+                               Variant="ButtonVariant.OutlinePrimary" 
+                               Size="ButtonSize.Small"
+                               IconClass="fas fa-plus" 
+                               OnClick="() => OnAddAddress.InvokeAsync()" />
+            }
+        </div>
+        <div class="card-body">
+            @if (Addresses.Any())
+            {
+                @foreach (var (address, index) in Addresses.Select((addr, idx) => (addr, idx)))
+                {
+                    <div class="address-item border rounded p-3 mb-3 @(index == 0 ? "border-primary" : "")">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h6 class="mb-0">
+                                @GetAddressTitle(index)
+                                @if (address.IsPrimary)
+                                {
+                                    <span class="badge bg-warning text-dark ms-2">主要</span>
+                                }
+                            </h6>
+                            @if (ShowRemoveButton && Addresses.Count > MinAddressCount)
+                            {                                <ButtonComponent Text="移除" 
+                                               Variant="ButtonVariant.OutlineDanger" 
+                                               Size="ButtonSize.Small"
+                                               IconClass="fas fa-trash" 
+                                               OnClick="() => OnRemoveAddress.InvokeAsync(index)" />
+                            }
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">                                <SelectComponent TValue="int?"
+                                               Id="@($"addressType_{index}")" 
+                                               Label="地址類型"
+                                               Value="@address.AddressTypeId"
+                                               ValueChanged="@(value => OnAddressTypeChanged.InvokeAsync((index, value)))"
+                                               Items="AddressTypes"
+                                               GetItemText="@(item => ((AddressType)item).TypeName)"
+                                               GetItemValue="@(item => ((AddressType)item).AddressTypeId)"
+                                               EmptyOptionText="請選擇地址類型..." />
+                            </div>
+                            
+                            <div class="col-md-6">                                <InputComponent Id="@($"postalCode_{index}")" 
+                                              Label="郵遞區號" 
+                                              Value="@address.PostalCode"
+                                              ValueChanged="@(value => OnPostalCodeChanged.InvokeAsync((index, value)))" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">                                <InputComponent Id="@($"city_{index}")" 
+                                              Label="城市" 
+                                              Value="@address.City"
+                                              ValueChanged="@(value => OnCityChanged.InvokeAsync((index, value)))" />
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <InputComponent Id="@($"district_{index}")" 
+                                              Label="行政區" 
+                                              Value="@address.District"
+                                              ValueChanged="@(value => OnDistrictChanged.InvokeAsync((index, value)))" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-10">                                <InputComponent Id="@($"address_{index}")" 
+                                              Label="詳細地址" 
+                                              Value="@address.Address"
+                                              ValueChanged="@(value => OnAddressChanged.InvokeAsync((index, value)))" />
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <div class="form-check mt-4">
+                                    <input class="form-check-input" 
+                                           type="radio" 
+                                           name="primaryAddress" 
+                                           id="@($"primary_{index}")"
+                                           checked="@address.IsPrimary"
+                                           @onchange="@(e => OnSetPrimaryAddress.InvokeAsync(index))" />
+                                    <label class="form-check-label" for="@($"primary_{index}")">
+                                        主要地址
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (index == 1 && Addresses.Count >= 2)
+                        {
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" 
+                                               type="checkbox" 
+                                               id="@($"copyFromFirst_{index}")"
+                                               @onchange="@(e => OnCopyFromFirstAddress.InvokeAsync((index, (bool)e.Value!)))" />
+                                        <label class="form-check-label" for="@($"copyFromFirst_{index}")">
+                                            與第一個地址相同
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-map-marker-alt fa-2x mb-2"></i>
+                    <p>尚未新增地址資料</p>                    <ButtonComponent Text="新增第一個地址" 
+                                   Variant="ButtonVariant.Primary" 
+                                   IconClass="fas fa-plus" 
+                                   OnClick="() => OnAddAddress.InvokeAsync()" />
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<CustomerAddress> Addresses { get; set; } = new();
+    [Parameter] public EventCallback<List<CustomerAddress>> AddressesChanged { get; set; }
+    [Parameter] public List<AddressType> AddressTypes { get; set; } = new();
+    [Parameter] public bool ShowAddButton { get; set; } = true;
+    [Parameter] public bool ShowRemoveButton { get; set; } = true;
+    [Parameter] public int MinAddressCount { get; set; } = 1;
+    
+    // 事件回調 - 將所有業務操作委託給父元件
+    [Parameter] public EventCallback OnAddAddress { get; set; }
+    [Parameter] public EventCallback<int> OnRemoveAddress { get; set; }
+    [Parameter] public EventCallback<int> OnSetPrimaryAddress { get; set; }
+    [Parameter] public EventCallback<(int targetIndex, bool shouldCopy)> OnCopyFromFirstAddress { get; set; }
+    [Parameter] public EventCallback<(int index, int? value)> OnAddressTypeChanged { get; set; }
+    [Parameter] public EventCallback<(int index, string? value)> OnPostalCodeChanged { get; set; }
+    [Parameter] public EventCallback<(int index, string? value)> OnCityChanged { get; set; }
+    [Parameter] public EventCallback<(int index, string? value)> OnDistrictChanged { get; set; }
+    [Parameter] public EventCallback<(int index, string? value)> OnAddressChanged { get; set; }    private string GetAddressTitle(int index)
+    {
+        return index switch
+        {
+            0 => "住宅地址",
+            1 => "寄信地址",
+            _ => $"地址 {index + 1}"
+        };
+    }
+}

@@ -122,17 +122,55 @@ namespace ERPCore2.Services
                 // Set audit fields
                 customer.Status = EntityStatus.Active;
                 customer.CreatedDate = DateTime.UtcNow;
-                customer.CreatedBy = "System"; // TODO: Replace with actual user when authentication is implemented
+                customer.CreatedBy = "System"; // TODO: Replace with actual user when authentication is implemented                Console.WriteLine($"準備儲存客戶資料到資料庫: {customer.CustomerCode} - {customer.CompanyName}");
 
-                Console.WriteLine($"準備儲存客戶資料到資料庫: {customer.CustomerCode} - {customer.CompanyName}");
+                // Validate addresses if any
+                if (customer.CustomerAddresses?.Any() == true)
+                {
+                    var addressValidationResult = ValidateAddresses(customer.CustomerAddresses);
+                    if (!addressValidationResult.IsSuccess)
+                    {
+                        Console.WriteLine($"地址驗證失敗: {addressValidationResult.ErrorMessage}");
+                        return ServiceResult<Customer>.Failure(addressValidationResult.ErrorMessage);
+                    }
 
-                // Save to Database
-                _context.Customers.Add(customer);
-                await _context.SaveChangesAsync();
+                    // Set CustomerId for addresses and audit fields
+                    foreach (var address in customer.CustomerAddresses)
+                    {
+                        address.Status = EntityStatus.Active;
+                    }
+                }
 
-                Console.WriteLine($"客戶建立成功，ID: {customer.CustomerId}");
-                _logger.LogInformation("Customer created with ID {CustomerId}", customer.CustomerId);
-                return ServiceResult<Customer>.Success(customer);
+                // Save to Database with transaction
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    _context.Customers.Add(customer);
+                    await _context.SaveChangesAsync();
+
+                    Console.WriteLine($"客戶建立成功，ID: {customer.CustomerId}");
+                    
+                    // Update CustomerId for addresses
+                    if (customer.CustomerAddresses?.Any() == true)
+                    {
+                        foreach (var address in customer.CustomerAddresses)
+                        {
+                            address.CustomerId = customer.CustomerId;
+                        }
+                        await _context.SaveChangesAsync();
+                        Console.WriteLine($"地址資料建立成功，共 {customer.CustomerAddresses.Count} 筆");
+                    }
+
+                    await transaction.CommitAsync();
+                    _logger.LogInformation("Customer created with ID {CustomerId} and {AddressCount} addresses", 
+                        customer.CustomerId, customer.CustomerAddresses?.Count ?? 0);
+                    return ServiceResult<Customer>.Success(customer);
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
             }
             catch (Exception ex)
             {
@@ -374,7 +412,9 @@ namespace ERPCore2.Services
                 _logger.LogError(ex, "Error getting address types");
                 throw;
             }
-        }        private ServiceResult ValidateCustomer(Customer customer)
+        }
+
+        private ServiceResult ValidateCustomer(Customer customer)
         {
             var errors = new List<string>();
 
@@ -409,6 +449,60 @@ namespace ERPCore2.Services
             }
 
             Console.WriteLine("驗證通過");
+            return ServiceResult.Success();
+        }
+
+        private ServiceResult ValidateAddresses(ICollection<CustomerAddress> addresses)
+        {
+            var errors = new List<string>();
+
+            if (addresses == null || !addresses.Any())
+            {
+                return ServiceResult.Success(); // 地址為選填
+            }
+
+            var primaryCount = addresses.Count(a => a.IsPrimary);
+            if (primaryCount == 0)
+            {
+                errors.Add("至少需要設定一個主要地址");
+            }
+            else if (primaryCount > 1)
+            {
+                errors.Add("只能設定一個主要地址");
+            }
+
+            for (int i = 0; i < addresses.Count; i++)
+            {
+                var address = addresses.ElementAt(i);
+                var prefix = $"地址 {i + 1}";
+
+                if (!string.IsNullOrEmpty(address.PostalCode) && address.PostalCode.Length > 10)
+                    errors.Add($"{prefix}: 郵遞區號不可超過10個字元");
+
+                if (!string.IsNullOrEmpty(address.City) && address.City.Length > 50)
+                    errors.Add($"{prefix}: 城市不可超過50個字元");
+
+                if (!string.IsNullOrEmpty(address.District) && address.District.Length > 50)
+                    errors.Add($"{prefix}: 行政區不可超過50個字元");
+
+                if (!string.IsNullOrEmpty(address.Address) && address.Address.Length > 200)
+                    errors.Add($"{prefix}: 地址不可超過200個字元");
+
+                // 檢查是否有實際的地址內容
+                var hasContent = !string.IsNullOrWhiteSpace(address.PostalCode) ||
+                               !string.IsNullOrWhiteSpace(address.City) ||
+                               !string.IsNullOrWhiteSpace(address.District) ||
+                               !string.IsNullOrWhiteSpace(address.Address);
+
+                if (!hasContent && address.AddressTypeId.HasValue)
+                    errors.Add($"{prefix}: 已選擇地址類型但未填寫地址資訊");
+            }
+
+            if (errors.Any())
+            {
+                return ServiceResult.ValidationFailure(errors);
+            }
+
             return ServiceResult.Success();
         }
     }

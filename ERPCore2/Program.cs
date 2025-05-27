@@ -12,6 +12,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Service Registration (No Repository needed!)
 builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IAddressService, AddressService>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
