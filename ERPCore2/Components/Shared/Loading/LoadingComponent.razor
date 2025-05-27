@@ -5,10 +5,9 @@
     <div class="@GetContainerClass()">
         <div class="spinner-border @GetSpinnerClass()" role="status">
             <span class="visually-hidden">@LoadingText</span>
-        </div>
-        @if (!string.IsNullOrEmpty(LoadingText) && ShowText)
+        </div>        @if (!string.IsNullOrEmpty(LoadingText) && ShowText)
         {
-            <div class="mt-2">@LoadingText</div>
+            <div class="mt-2 text-secondary-custom">@LoadingText</div>
         }
     </div>
 }
@@ -36,9 +35,7 @@
         }
         
         return string.Join(" ", classes);
-    }
-
-    private string GetSpinnerClass()
+    }    private string GetSpinnerClass()
     {
         var classes = new List<string> { "text-primary" };
         

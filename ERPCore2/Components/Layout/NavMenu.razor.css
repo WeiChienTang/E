@@ -17,7 +17,8 @@
 
 .top-row {
     min-height: 3.5rem;
-    background-color: rgba(30, 58, 138, 0.4);
+    background-color: #1F2937; /* fallback */
+    background-color: var(--primary-blue-alt);
 }
 
 .navbar-brand {
@@ -53,15 +54,12 @@
 
     .nav-item:first-of-type {
         padding-top: 1rem;
-    }
-
-    .nav-item:last-of-type {
+    }    .nav-item:last-of-type {
         padding-bottom: 1rem;
-    }
-
-    .nav-item ::deep .nav-link {
+    }    .nav-item ::deep .nav-link {
         color: #d7d7d7;
-        background: none;
+        background-color: #1F2937; /* fallback */
+        background-color: var(--primary-blue-alt);
         border: none;
         border-radius: 4px;
         height: 3rem;
@@ -72,17 +70,22 @@
     }
 
 .nav-item ::deep a.active {
-    background-color: rgba(30, 58, 138, 0.37);
+    background-color: #1E3A8A; /* fallback */
+    background-color: var(--primary-blue);
     color: white;
 }
 
 .nav-item ::deep .nav-link:hover {
-    background-color: rgba(30, 58, 138, 0.1);
-    color: white;
+    background-color: #F3F4F6; /* fallback */
+    background-color: var(--bg-tertiary);
+    color: #374151; /* fallback */
+    color: var(--text-primary);
 }
 
 .nav-scrollable {
     display: none;
+    background-color: #1F2937; /* fallback */
+    background-color: var(--primary-blue-alt);
 }
 
 .navbar-toggler:checked ~ .nav-scrollable {

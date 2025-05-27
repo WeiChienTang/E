@@ -1,15 +1,20 @@
+@import url('./css/variables.css');
+
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
 }
 
 a, .btn-link {
-    color: #006bb7;
+    color: var(--primary-blue);
 }
 
+/* 確保自訂按鈕樣式優先級 */
 .btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+    color: var(--primary-white) !important;
+    background-color: var(--primary-blue) !important;
+    border-color: var(--primary-blue) !important;
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {

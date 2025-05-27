@@ -1,9 +1,8 @@
 @namespace ERPCore2.Components.Shared.Details
 @* 相關資料卡片組件 - 用於顯示客戶的聯絡方式、地址等相關資料 *@
 
-<div class="card h-100">
-    <div class="card-header">
-        <h6 class="mb-0">
+<div class="card h-100">    <div class="card-header">
+        <h6 class="mb-0 text-primary-custom">
             @if (!string.IsNullOrEmpty(IconClass))
             {
                 <i class="@IconClass me-2"></i>
@@ -21,12 +20,12 @@
             @ChildContent
             @if (ShowMoreIndicator && Count > DisplayLimit)
             {
-                <small class="text-muted">... 還有 @(Count - DisplayLimit) 筆</small>
+                <small class="text-light-custom">... 還有 @(Count - DisplayLimit) 筆</small>
             }
         }
         else
         {
-            <small class="text-muted">@EmptyMessage</small>
+            <small class="text-light-custom">@EmptyMessage</small>
         }
     </div>
 </div>

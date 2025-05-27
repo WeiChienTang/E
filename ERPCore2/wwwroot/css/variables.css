@@ -38,27 +38,33 @@
   --radius-lg: 0.5rem;
 }
 
-/* 自訂按鈕樣式 - 根據設計規範 */
+/* 自訂按鈕樣式 - 根據設計規範，使用 !important 確保優先級 */
 .btn-primary {
-  background-color: var(--primary-blue);
-  border-color: var(--primary-blue);
-  color: var(--primary-white);
+  background-color: var(--primary-blue) !important;
+  border-color: var(--primary-blue) !important;
+  color: var(--primary-white) !important;
 }
 
 .btn-primary:hover {
-  background-color: #1e40af;
-  border-color: #1e40af;
+  background-color: #1e40af !important;
+  border-color: #1e40af !important;
+  color: var(--primary-white) !important;
+}
+
+.btn-primary:focus {
+  box-shadow: 0 0 0 0.2rem rgba(30, 58, 138, 0.25) !important;
 }
 
 .btn-outline-primary {
-  color: var(--primary-blue);
-  border-color: var(--primary-blue);
+  color: var(--primary-blue) !important;
+  border-color: var(--primary-blue) !important;
+  background-color: transparent !important;
 }
 
 .btn-outline-primary:hover {
-  background-color: var(--primary-blue);
-  border-color: var(--primary-blue);
-  color: var(--primary-white);
+  background-color: var(--primary-blue) !important;
+  border-color: var(--primary-blue) !important;
+  color: var(--primary-white) !important;
 }
 
 /* 卡片樣式 */
@@ -122,26 +128,91 @@
 
 /* 成功狀態按鈕 */
 .btn-success {
-  background-color: var(--success-color);
-  border-color: var(--success-color);
+  background-color: var(--success-color) !important;
+  border-color: var(--success-color) !important;
+  color: var(--primary-white) !important;
+}
+
+.btn-success:hover {
+  background-color: #047857 !important;
+  border-color: #047857 !important;
+  color: var(--primary-white) !important;
 }
 
 /* 警告狀態按鈕 */
 .btn-warning {
-  background-color: var(--warning-color);
-  border-color: var(--warning-color);
+  background-color: var(--warning-color) !important;
+  border-color: var(--warning-color) !important;
+  color: var(--primary-white) !important;
+}
+
+.btn-warning:hover {
+  background-color: #c2410c !important;
+  border-color: #c2410c !important;
+  color: var(--primary-white) !important;
 }
 
 /* 危險狀態按鈕 */
 .btn-danger {
-  background-color: var(--danger-color);
-  border-color: var(--danger-color);
+  background-color: var(--danger-color) !important;
+  border-color: var(--danger-color) !important;
+  color: var(--primary-white) !important;
+}
+
+.btn-danger:hover {
+  background-color: #b91c1c !important;
+  border-color: #b91c1c !important;
+  color: var(--primary-white) !important;
 }
 
 /* 次要按鈕 */
 .btn-secondary {
-  background-color: var(--text-secondary);
-  border-color: var(--text-secondary);
+  background-color: var(--text-secondary) !important;
+  border-color: var(--text-secondary) !important;
+  color: var(--primary-white) !important;
+}
+
+.btn-secondary:hover {
+  background-color: #4b5563 !important;
+  border-color: #4b5563 !important;
+  color: var(--primary-white) !important;
+}
+
+/* Outline 按鈕樣式 */
+.btn-outline-warning {
+  color: var(--warning-color) !important;
+  border-color: var(--warning-color) !important;
+  background-color: transparent !important;
+}
+
+.btn-outline-warning:hover {
+  background-color: var(--warning-color) !important;
+  border-color: var(--warning-color) !important;
+  color: var(--primary-white) !important;
+}
+
+.btn-outline-danger {
+  color: var(--danger-color) !important;
+  border-color: var(--danger-color) !important;
+  background-color: transparent !important;
+}
+
+.btn-outline-danger:hover {
+  background-color: var(--danger-color) !important;
+  border-color: var(--danger-color) !important;
+  color: var(--primary-white) !important;
+}
+
+.btn-outline-secondary {
+  color: var(--text-secondary) !important;
+  border-color: var(--text-secondary) !important;
+  background-color: transparent !important;
+}
+
+.btn-outline-secondary:hover {
+  background-color: var(--text-secondary) !important;
+  border-color: var(--text-secondary) !important;
+  color: var(--primary-white) !important;
 }
 
 /* 表格樣式 */
@@ -156,16 +227,17 @@
 
 /* 卡片樣式 */
 .card {
-  background-color: var(--bg-primary);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  background-color: var(--bg-primary) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
 }
 
 .card-header {
-  background-color: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-light);
-  color: var(--text-primary);
+  background-color: var(--bg-secondary) !important;
+  border-bottom: 1px solid var(--border-light) !important;
+  color: var(--text-primary) !important;
+  padding: 1rem 1.25rem !important;
 }
 
 /* 表單樣式 */
@@ -180,8 +252,8 @@
 }
 
 .form-label {
-  color: var(--text-primary);
-  font-weight: 500;
+  color: var(--text-primary) !important;
+  font-weight: 500 !important;
 }
 
 /* 狀態徽章 */
@@ -225,4 +297,56 @@
 
 .bg-tertiary-custom {
   background-color: var(--bg-tertiary) !important;
+}
+
+/* 輸入群組樣式 */
+.input-group-text {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-secondary) !important;
+}
+
+.input-group .form-control:focus {
+  border-color: var(--primary-blue) !important;
+  box-shadow: 0 0 0 0.2rem rgba(30, 58, 138, 0.25) !important;
+}
+
+/* 邊框工具類 */
+.border-color {
+  border-color: var(--border-color) !important;
+}
+
+.border-light-color {
+  border-color: var(--border-light) !important;
+}
+
+/* 分隔線樣式 */
+hr {
+  border-color: var(--border-light) !important;
+  opacity: 1 !important;
+}
+
+/* 空狀態樣式 */
+.empty-state {
+  color: var(--text-light) !important;
+}
+
+.empty-state i {
+  color: var(--text-light) !important;
+}
+
+/* 表單標籤增強 */
+.form-label {
+  color: var(--text-primary) !important;
+  font-weight: 500 !important;
+}
+
+/* 表單幫助文字 */
+.form-text {
+  color: var(--text-secondary) !important;
+}
+
+/* 無效回饋 */
+.invalid-feedback {
+  color: var(--danger-color) !important;
 }

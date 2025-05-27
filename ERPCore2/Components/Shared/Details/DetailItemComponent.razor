@@ -2,14 +2,14 @@
 @* 詳細資料項目組件 - 用於顯示標籤和值的組合 *@
 
 <div class="mb-3">
-    <label class="form-label fw-bold @LabelClass">
+    <label class="form-label fw-bold text-primary-custom @LabelClass">
         @if (!string.IsNullOrEmpty(IconClass))
         {
             <i class="@IconClass me-1"></i>
         }
         @Label
     </label>
-    <div class="form-control-plaintext @ValueClass">
+    <div class="form-control-plaintext text-secondary-custom @ValueClass">
         @if (ChildContent != null)
         {
             @ChildContent

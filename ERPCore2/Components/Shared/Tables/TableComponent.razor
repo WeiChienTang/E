@@ -35,16 +35,15 @@
                 }
             }
             else
-            {
-                <tr>
-                    <td colspan="@GetColspan()" class="text-center py-4 text-muted">
+            {                <tr>
+                    <td colspan="@GetColspan()" class="text-center py-4 text-light-custom">
                         @if (EmptyTemplate != null)
                         {
                             @EmptyTemplate
                         }
                         else
                         {
-                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                            <i class="fas fa-inbox fa-2x mb-2 text-light-custom"></i>
                             <br />
                             @EmptyMessage
                         }
