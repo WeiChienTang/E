@@ -1,0 +1,122 @@
+@namespace ERPCore2.Components.Shared.Forms
+@* 表單區塊組件 - 用於將表單欄位分組並提供完成度指示 *@
+
+<div class="card mb-4 @GetCardClass()">
+    <div class="card-header d-flex justify-content-between align-items-center @GetHeaderClass()">
+        <h5 class="mb-0 @GetTitleClass()">
+            @if (!string.IsNullOrEmpty(IconClass))
+            {
+                <i class="@IconClass me-2"></i>
+            }
+            @Title
+        </h5>
+        
+        @if (ShowCompletionStatus)
+        {
+            <div class="d-flex align-items-center">
+                @if (CompletionPercentage > 0)
+                {
+                    <div class="progress me-2" style="width: 60px; height: 6px;">
+                        <div class="progress-bar @GetProgressBarClass()" 
+                             role="progressbar" 
+                             style="width: @(CompletionPercentage)%"
+                             aria-valuenow="@CompletionPercentage" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                }
+                <small class="@GetStatusTextClass()">
+                    @if (RequiredFieldsCount > 0)
+                    {
+                        @($"{CompletedFieldsCount}/{RequiredFieldsCount}")
+                    }
+                    else
+                    {
+                        @("選填")
+                    }
+                </small>
+            </div>
+        }
+    </div>
+    
+    <div class="card-body @BodyCssClass">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string IconClass { get; set; } = string.Empty;
+    [Parameter] public FormSectionType SectionType { get; set; } = FormSectionType.Basic;
+    [Parameter] public bool ShowCompletionStatus { get; set; } = true;
+    [Parameter] public int RequiredFieldsCount { get; set; } = 0;
+    [Parameter] public int CompletedFieldsCount { get; set; } = 0;
+    [Parameter] public string CssClass { get; set; } = string.Empty;
+    [Parameter] public string BodyCssClass { get; set; } = string.Empty;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    
+    private int CompletionPercentage => 
+        RequiredFieldsCount > 0 ? (CompletedFieldsCount * 100) / RequiredFieldsCount : 100;
+    
+    private bool IsComplete => RequiredFieldsCount == 0 || CompletedFieldsCount >= RequiredFieldsCount;
+    
+    private string GetCardClass()
+    {
+        var classes = new List<string>();
+        
+        if (!IsComplete && RequiredFieldsCount > 0)
+        {
+            classes.Add("border-warning");
+        }
+        else if (IsComplete && RequiredFieldsCount > 0)
+        {
+            classes.Add("border-success");
+        }
+        
+        if (!string.IsNullOrEmpty(CssClass))
+        {
+            classes.Add(CssClass);
+        }
+        
+        return string.Join(" ", classes);
+    }
+    
+    private string GetHeaderClass()
+    {
+        return SectionType switch
+        {
+            FormSectionType.Basic => "bg-primary text-white",
+            FormSectionType.Contact => "bg-info text-white", 
+            FormSectionType.Address => "bg-success text-white",
+            FormSectionType.Financial => "bg-warning text-dark",
+            FormSectionType.System => "bg-secondary text-white",
+            _ => "bg-primary text-white"
+        };
+    }
+    
+    private string GetTitleClass()
+    {
+        return "text-white";
+    }
+    
+    private string GetProgressBarClass()
+    {
+        return CompletionPercentage >= 100 ? "bg-success" : "bg-warning";
+    }
+    
+    private string GetStatusTextClass()
+    {
+        var baseClass = "text-white-50";
+        return IsComplete ? $"{baseClass} fw-bold" : baseClass;
+    }
+    
+    public enum FormSectionType
+    {
+        Basic,     // 基本資訊 - 藍色
+        Contact,   // 聯絡資訊 - 青色  
+        Address,   // 地址資訊 - 綠色
+        Financial, // 財務資訊 - 橙色
+        System     // 系統資訊 - 灰色
+    }
+}

@@ -45,7 +45,9 @@
     [Parameter] public bool ShowEmptyOption { get; set; } = true;
     [Parameter] public string EmptyOptionText { get; set; } = "請選擇...";
     [Parameter] public string CssClass { get; set; } = string.Empty;
-    [Parameter] public string HelpText { get; set; } = string.Empty;    private async Task OnValueChanged(ChangeEventArgs e)
+    [Parameter] public string HelpText { get; set; } = string.Empty;    
+    
+    private async Task OnValueChanged(ChangeEventArgs e)
     {
         var oldValue = Value;
         var stringValue = e.Value?.ToString();

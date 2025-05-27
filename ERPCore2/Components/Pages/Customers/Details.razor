@@ -14,16 +14,10 @@
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-12">            <div class="card">
+        <div class="col-12">            
+            <div class="card">
                 <PageHeaderComponent Title="@GetPageTitle()" IconClass="fas fa-user">
                     <Actions>
-                        @* @if (customer != null)
-                        {
-                            <ButtonComponent Text="編輯" 
-                                           Variant="ButtonVariant.OutlineWarning" 
-                                           IconClass="fas fa-edit" 
-                                           OnClick="NavigateToEdit" />
-                        } *@
                         <ButtonComponent Text="返回列表" 
                                        Variant="ButtonVariant.OutlineSecondary" 
                                        IconClass="fas fa-arrow-left" 
@@ -58,7 +52,8 @@
                                            IconClass="fas fa-arrow-left" 
                                            OnClick="NavigateBack" />
                         </div>
-                    }                    else if (!isLoading && customer != null)
+                    }                    
+                    else if (!isLoading && customer != null)
                     {
                         <!-- 基本資訊 -->
                         <DetailSectionComponent Title="基本資訊" IconClass="fas fa-info-circle text-primary">

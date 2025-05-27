@@ -396,9 +396,7 @@ namespace ERPCore2.Services
                 _logger.LogError(ex, "Error getting contact types");
                 throw;
             }
-        }
-
-        public async Task<List<AddressType>> GetAddressTypesAsync()
+        }        public async Task<List<AddressType>> GetAddressTypesAsync()
         {
             try
             {
@@ -411,6 +409,113 @@ namespace ERPCore2.Services
             {
                 _logger.LogError(ex, "Error getting address types");
                 throw;
+            }
+        }
+
+        // 聯絡資料管理方法
+        public async Task<List<CustomerContact>> GetCustomerContactsAsync(int customerId)
+        {
+            try
+            {
+                return await _context.CustomerContacts
+                    .Where(cc => cc.CustomerId == customerId && cc.Status != EntityStatus.Deleted)
+                    .Include(cc => cc.ContactType)
+                    .OrderByDescending(cc => cc.IsPrimary)
+                    .ThenBy(cc => cc.ContactId)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting contacts for customer {CustomerId}", customerId);
+                throw;
+            }
+        }
+
+        public async Task<ServiceResult> UpdateCustomerContactsAsync(int customerId, List<CustomerContact> contacts)
+        {
+            try
+            {
+                // 使用交易確保資料一致性
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                
+                try
+                {
+                    // 1. 取得現有聯絡資料
+                    var existingContacts = await _context.CustomerContacts
+                        .Where(cc => cc.CustomerId == customerId && cc.Status != EntityStatus.Deleted)
+                        .ToListAsync();
+
+                    // 2. 處理需要刪除的聯絡資料 (現有聯絡資料中不在新聯絡資料列表中的)
+                    var contactsToDelete = existingContacts
+                        .Where(existing => !contacts.Any(contact => contact.ContactId == existing.ContactId))
+                        .ToList();
+
+                    foreach (var contactToDelete in contactsToDelete)
+                    {
+                        contactToDelete.Status = EntityStatus.Deleted;
+                    }
+
+                    // 3. 處理新增和更新的聯絡資料
+                    foreach (var contact in contacts)
+                    {
+                        contact.CustomerId = customerId; // 確保 CustomerId 正確
+                        
+                        if (contact.ContactId == 0)
+                        {
+                            // 新增聯絡資料
+                            contact.Status = EntityStatus.Active;
+                            _context.CustomerContacts.Add(contact);
+                        }
+                        else
+                        {
+                            // 更新現有聯絡資料
+                            var existingContact = existingContacts.FirstOrDefault(ec => ec.ContactId == contact.ContactId);
+                            if (existingContact != null)
+                            {
+                                // 更新屬性
+                                existingContact.ContactTypeId = contact.ContactTypeId;
+                                existingContact.ContactValue = contact.ContactValue;
+                                existingContact.IsPrimary = contact.IsPrimary;
+                                existingContact.Status = contact.Status;
+                            }
+                        }
+                    }
+
+                    // 4. 確保每種聯絡類型只有一個主要聯絡方式
+                    var contactTypes = contacts.Where(c => c.ContactTypeId.HasValue)
+                                             .GroupBy(c => c.ContactTypeId)
+                                             .ToList();
+
+                    foreach (var contactTypeGroup in contactTypes)
+                    {
+                        var primaryContacts = contactTypeGroup.Where(c => c.IsPrimary).ToList();
+                        if (primaryContacts.Count > 1)
+                        {
+                            // 如果有多個主要聯絡方式，只保留第一個
+                            for (int i = 1; i < primaryContacts.Count; i++)
+                            {
+                                primaryContacts[i].IsPrimary = false;
+                            }
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    _logger.LogInformation("Successfully updated {ContactCount} contacts for customer {CustomerId}", 
+                        contacts.Count, customerId);
+                    return ServiceResult.Success();
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating contacts for customer {CustomerId}", customerId);
+                return ServiceResult.Failure($"更新客戶聯絡資料時發生錯誤: {ex.Message}");
             }
         }
 

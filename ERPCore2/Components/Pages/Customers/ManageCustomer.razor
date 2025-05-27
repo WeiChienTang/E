@@ -13,6 +13,7 @@
 @using ERPCore2.Components.Shared.Forms
 @using static ERPCore2.Components.Shared.Buttons.ButtonComponent
 @using static ERPCore2.Components.Shared.Alerts.AlertComponent
+@using static ERPCore2.Components.Shared.Forms.FormSectionComponent
 @rendermode InteractiveServer
 
 <PageTitle>@GetPageTitle()</PageTitle>
@@ -22,8 +23,7 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <PageHeaderComponent Title="@GetPageTitle()" IconClass="@GetPageIcon()">
+            <div class="card">                <PageHeaderComponent Title="@GetPageTitle()" IconClass="@GetPageIcon()">
                     <Actions>
                         <ButtonComponent Text="返回列表" 
                                        Variant="ButtonVariant.OutlineSecondary" 
@@ -32,214 +32,256 @@
                     </Actions>
                 </PageHeaderComponent>
                 
-                @if (!IsEditMode)
-                {
-                    <!-- 固定按鈕列 (僅在新增模式顯示) -->
-                    <PageActionBar>
-                        <PrimaryActions>
-                            <ButtonComponent Text="@GetSubmitButtonText()" 
-                                           Variant="ButtonVariant.Primary" 
-                                           IconClass="fas fa-save" 
-                                           OnClick="HandleSubmit"
-                                           IsDisabled="@isSubmitting" />
-                            <ButtonComponent Text="取消" 
-                                           Variant="ButtonVariant.OutlineSecondary" 
-                                           IconClass="fas fa-times" 
-                                           OnClick="NavigateBack" />
-                        </PrimaryActions>
-                    </PageActionBar>
-                }
-                
                 <div class="card-body">
                     <LoadingComponent IsLoading="@isLoading" 
                                     LoadingText="@GetLoadingText()" 
                                     ShowText="true" />
-                    
-                    @if (!isLoading && !string.IsNullOrWhiteSpace(notFoundMessage))
+                      @if (!isLoading && !string.IsNullOrWhiteSpace(notFoundMessage))
                     {
                         <AlertComponent Type="AlertType.Warning" 
                                       Message="@notFoundMessage" 
                                       IconClass="fas fa-exclamation-triangle" />
-                        <div class="text-center mt-3">
-                            <ButtonComponent Text="返回列表" 
-                                           Variant="ButtonVariant.Primary" 
-                                           IconClass="fas fa-arrow-left" 
-                                           OnClick="NavigateBack" />
-                        </div>
                     }
                     else if (!isLoading)
-                    {
-                        <EditForm Model="@customer" OnValidSubmit="@HandleSubmit">
+                    {                        <EditForm Model="@customer" OnValidSubmit="@HandleSubmit">
                             <DataAnnotationsValidator />
                             
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <InputComponent Id="customerCode" 
-                                                  Label="客戶代碼" 
-                                                  Value="@customer.CustomerCode"
-                                                  ValueChanged="@(value => { customer.CustomerCode = value; LogChange("CustomerCode", value); })"
-                                                  IsRequired="true" />
-                                    <ValidationMessage For="@(() => customer.CustomerCode)" class="text-danger" />
+                            <!-- 基本資訊區塊 -->
+                            <FormSectionComponent Title="基本資訊" 
+                                                IconClass="fas fa-info-circle"
+                                                SectionType="FormSectionType.Basic"
+                                                RequiredFieldsCount="@GetBasicRequiredFieldsCount()"
+                                                CompletedFieldsCount="@GetBasicCompletedFieldsCount()">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <InputComponent Id="customerCode" 
+                                                      Label="客戶代碼" 
+                                                      Value="@customer.CustomerCode"
+                                                      ValueChanged="@(value => { customer.CustomerCode = value; LogChange("CustomerCode", value); })"
+                                                      IsRequired="true" />
+                                        <ValidationMessage For="@(() => customer.CustomerCode)" class="text-danger" />
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <InputComponent Id="companyName" 
+                                                      Label="公司名稱" 
+                                                      Value="@customer.CompanyName"
+                                                      ValueChanged="@(value => { customer.CompanyName = value; LogChange("CompanyName", value); })"
+                                                      IsRequired="true" />
+                                        <ValidationMessage For="@(() => customer.CompanyName)" class="text-danger" />
+                                    </div>
+                                    
+                                    <div class="col-md-3">
+                                        <InputComponent Id="taxNumber" 
+                                                      Label="統一編號" 
+                                                      Value="@customer.TaxNumber"
+                                                      ValueChanged="@(value => { customer.TaxNumber = value; LogChange("TaxNumber", value); })" />
+                                        <ValidationMessage For="@(() => customer.TaxNumber)" class="text-danger" />
+                                    </div>
                                 </div>
                                 
-                                <div class="col-md-6">
-                                    <InputComponent Id="companyName" 
-                                                  Label="公司名稱" 
-                                                  Value="@customer.CompanyName"
-                                                  ValueChanged="@(value => { customer.CompanyName = value; LogChange("CompanyName", value); })"
-                                                  IsRequired="true" />
-                                    <ValidationMessage For="@(() => customer.CompanyName)" class="text-danger" />
-                                </div>
-                            </div>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <SelectComponent TValue="int?"
+                                                       Id="customerType" 
+                                                       Label="客戶類型"
+                                                       Value="@customer.CustomerTypeId"
+                                                       ValueChanged="@(value => { customer.CustomerTypeId = value; LogChange("CustomerTypeId", value?.ToString() ?? "null"); StateHasChanged(); })"
+                                                       Items="customerTypes"
+                                                       GetItemText="@(item => ((CustomerType)item).TypeName)"
+                                                       GetItemValue="@(item => ((CustomerType)item).CustomerTypeId)"
+                                                       EmptyOptionText="請選擇客戶類型..." />
+                                        <ValidationMessage For="@(() => customer.CustomerTypeId)" class="text-danger" />
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <SelectComponent TValue="int?"
+                                                       Id="industry" 
+                                                       Label="行業別"
+                                                       Value="@customer.IndustryId"
+                                                       ValueChanged="@(value => { customer.IndustryId = value; LogChange("IndustryId", value?.ToString() ?? "null"); StateHasChanged(); })"
+                                                       Items="industries"
+                                                       GetItemText="@(item => ((Industry)item).IndustryName)"
+                                                       GetItemValue="@(item => ((Industry)item).IndustryId)"
+                                                       EmptyOptionText="請選擇行業別..." />
+                                        <ValidationMessage For="@(() => customer.IndustryId)" class="text-danger" />
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <InputComponent Id="contactPerson" 
+                                                      Label="聯絡人" 
+                                                      Value="@customer.ContactPerson"
+                                                      ValueChanged="@(value => { customer.ContactPerson = value; LogChange("ContactPerson", value); })" />
+                                        <ValidationMessage For="@(() => customer.ContactPerson)" class="text-danger" />
+                                    </div>
+                                </div>                            </FormSectionComponent>
                             
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <InputComponent Id="contactPerson" 
-                                                  Label="聯絡人" 
-                                                  Value="@customer.ContactPerson"
-                                                  ValueChanged="@(value => { customer.ContactPerson = value; LogChange("ContactPerson", value); })" />
-                                    <ValidationMessage For="@(() => customer.ContactPerson)" class="text-danger" />
+                            <!-- 聯絡資訊區塊 -->
+                            <FormSectionComponent Title="聯絡資訊" 
+                                                IconClass="fas fa-phone"
+                                                SectionType="FormSectionType.Contact"
+                                                RequiredFieldsCount="0"
+                                                CompletedFieldsCount="@GetContactCompletedFieldsCount()">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <InputComponent Id="phone" 
+                                                      Label="電話" 
+                                                      Value="@GetContactValue("電話")"
+                                                      ValueChanged="@(value => UpdateContactValue("電話", value))"
+                                                      InputType="tel"
+                                                      Placeholder="02-1234-5678" />
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <InputComponent Id="mobile" 
+                                                      Label="手機" 
+                                                      Value="@GetContactValue("手機")"
+                                                      ValueChanged="@(value => UpdateContactValue("手機", value))"
+                                                      InputType="tel"
+                                                      Placeholder="0912-345-678" />
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <InputComponent Id="fax" 
+                                                      Label="傳真" 
+                                                      Value="@GetContactValue("傳真")"
+                                                      ValueChanged="@(value => UpdateContactValue("傳真", value))"
+                                                      InputType="tel"
+                                                      Placeholder="02-1234-5679" />
+                                    </div>
                                 </div>
                                 
-                                <div class="col-md-6">
-                                    <InputComponent Id="taxNumber" 
-                                                  Label="統一編號" 
-                                                  Value="@customer.TaxNumber"
-                                                  ValueChanged="@(value => { customer.TaxNumber = value; LogChange("TaxNumber", value); })" />
-                                    <ValidationMessage For="@(() => customer.TaxNumber)" class="text-danger" />
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <InputComponent Id="email" 
+                                                      Label="Email" 
+                                                      Value="@GetContactValue("Email")"
+                                                      ValueChanged="@(value => UpdateContactValue("Email", value))"
+                                                      InputType="email"
+                                                      Placeholder="contact@company.com" />
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <InputComponent Id="website" 
+                                                      Label="網站" 
+                                                      Value="@GetContactValue("網站")"
+                                                      ValueChanged="@(value => UpdateContactValue("網站", value))"
+                                                      InputType="url"
+                                                      Placeholder="https://www.company.com" />
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <SelectComponent TValue="int?"
-                                                   Id="customerType" 
-                                                   Label="客戶類型"
-                                                   Value="@customer.CustomerTypeId"
-                                                   ValueChanged="@(value => { customer.CustomerTypeId = value; LogChange("CustomerTypeId", value?.ToString() ?? "null"); StateHasChanged(); })"
-                                                   Items="customerTypes"
-                                                   GetItemText="@(item => ((CustomerType)item).TypeName)"
-                                                   GetItemValue="@(item => ((CustomerType)item).CustomerTypeId)"
-                                                   EmptyOptionText="請選擇客戶類型..." />
-                                    <ValidationMessage For="@(() => customer.CustomerTypeId)" class="text-danger" />
-                                </div>
-                                
-                                <div class="col-md-6">
-                                    <SelectComponent TValue="int?"
-                                                   Id="industry" 
-                                                   Label="行業別"
-                                                   Value="@customer.IndustryId"
-                                                   ValueChanged="@(value => { customer.IndustryId = value; LogChange("IndustryId", value?.ToString() ?? "null"); StateHasChanged(); })"
-                                                   Items="industries"
-                                                   GetItemText="@(item => ((Industry)item).IndustryName)"
-                                                   GetItemValue="@(item => ((Industry)item).IndustryId)"
-                                                   EmptyOptionText="請選擇行業別..." />
-                                    <ValidationMessage For="@(() => customer.IndustryId)" class="text-danger" />
-                                </div>
-                            </div>
+                            </FormSectionComponent>
                             
                             @if (IsEditMode)
                             {
-                                <!-- 編輯模式的額外欄位 -->
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <SelectComponent TValue="EntityStatus"
-                                                       Id="status" 
-                                                       Label="狀態"
-                                                       Value="@customer.Status"
-                                                       ValueChanged="@(value => customer.Status = value)"
-                                                       Items="@(Enum.GetValues<EntityStatus>().Cast<object>())"
-                                                       GetItemText="@(item => GetStatusText((EntityStatus)item))"
-                                                       GetItemValue="@(item => item)"
-                                                       ShowEmptyOption="false" />
-                                        <ValidationMessage For="@(() => customer.Status)" class="text-danger" />
+                                <!-- 系統資訊區塊 (僅編輯模式顯示) -->
+                                <FormSectionComponent Title="系統資訊" 
+                                                    IconClass="fas fa-cog"
+                                                    SectionType="FormSectionType.System"
+                                                    RequiredFieldsCount="1"
+                                                    CompletedFieldsCount="@(customer.Status != EntityStatus.Default ? 1 : 0)">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <SelectComponent TValue="EntityStatus"
+                                                           Id="status" 
+                                                           Label="狀態"
+                                                           Value="@customer.Status"
+                                                           ValueChanged="@(value => customer.Status = value)"
+                                                           Items="@(Enum.GetValues<EntityStatus>().Cast<object>())"
+                                                           GetItemText="@(item => GetStatusText((EntityStatus)item))"
+                                                           GetItemValue="@(item => item)"
+                                                           ShowEmptyOption="false" />
+                                            <ValidationMessage For="@(() => customer.Status)" class="text-danger" />
+                                        </div>
+                                        
+                                        <div class="col-md-3">
+                                            <InputComponent Id="modifiedBy" 
+                                                          Label="修改者" 
+                                                          Value="@customer.ModifiedBy"
+                                                          ValueChanged="@(value => customer.ModifiedBy = value)" />
+                                            <ValidationMessage For="@(() => customer.ModifiedBy)" class="text-danger" />
+                                        </div>
+                                        
+                                        <div class="col-md-3">
+                                            <InputComponent Id="createdDate" 
+                                                          Label="建立日期" 
+                                                          Value="@customer.CreatedDate.ToString("yyyy-MM-dd HH:mm")"
+                                                          IsReadOnly="true" />
+                                        </div>
+                                        
+                                        <div class="col-md-3">
+                                            <InputComponent Id="createdBy" 
+                                                          Label="建立者" 
+                                                          Value="@customer.CreatedBy"
+                                                          IsReadOnly="true" />
+                                        </div>
                                     </div>
-                                    
-                                    <div class="col-md-6">
-                                        <InputComponent Id="modifiedBy" 
-                                                      Label="修改者" 
-                                                      Value="@customer.ModifiedBy"
-                                                      ValueChanged="@(value => customer.ModifiedBy = value)" />
-                                        <ValidationMessage For="@(() => customer.ModifiedBy)" class="text-danger" />
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <InputComponent Id="createdDate" 
-                                                      Label="建立日期" 
-                                                      Value="@customer.CreatedDate.ToString("yyyy-MM-dd HH:mm")"
-                                                      IsReadOnly="true" />
-                                    </div>
-                                    
-                                    <div class="col-md-6">
-                                        <InputComponent Id="createdBy" 
-                                                      Label="建立者" 
-                                                      Value="@customer.CreatedBy"
-                                                      IsReadOnly="true" />
-                                    </div>
-                                </div>
+                                </FormSectionComponent>
                             }
                             else
                             {
-                                <!-- 新增模式的建立者欄位 -->
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <InputComponent Id="createdBy" 
-                                                      Label="建立者" 
-                                                      Value="@customer.CreatedBy"
-                                                      ValueChanged="@(value => customer.CreatedBy = value)"
-                                                      IsReadOnly="true" />
-                                        <ValidationMessage For="@(() => customer.CreatedBy)" class="text-danger" />
+                                <!-- 新增模式的建立者資訊 -->
+                                <FormSectionComponent Title="建立資訊" 
+                                                    IconClass="fas fa-user-plus"
+                                                    SectionType="FormSectionType.System"
+                                                    RequiredFieldsCount="0"
+                                                    CompletedFieldsCount="1">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <InputComponent Id="createdBy" 
+                                                          Label="建立者" 
+                                                          Value="@customer.CreatedBy"
+                                                          ValueChanged="@(value => customer.CreatedBy = value)"
+                                                          IsReadOnly="true" />
+                                            <ValidationMessage For="@(() => customer.CreatedBy)" class="text-danger" />
+                                        </div>
                                     </div>
-                                </div>
+                                </FormSectionComponent>
                             }
-                              <!-- 地址管理區段 (新增和編輯模式都顯示) -->
-                            <div class="row mt-4">
-                                <div class="col-12">
-                                    <hr class="my-3" />                                     *@
-                                    <AddressManagement Addresses="@customerAddresses"
-                                                     AddressTypes="@addressTypes"
-                                                     AddressesChanged="@AddressesChangedCallback"
-                                                     OnAddAddress="@(() => HandleAddAddress())"                                                         
-                                                     OnRemoveAddress="HandleRemoveAddress"
-                                                     OnSetPrimaryAddress="HandleSetPrimaryAddress"
-                                                     OnCopyFromFirstAddress="HandleCopyFromFirstAddress"
-                                                     OnAddressTypeChanged="HandleAddressTypeChanged"
-                                                     OnPostalCodeChanged="HandlePostalCodeChanged"
-                                                     OnCityChanged="HandleCityChanged"
-                                                     OnDistrictChanged="HandleDistrictChanged"
-                                                     OnAddressChanged="HandleAddressChanged" />
-                                </div>
-                            </div>
                             
-                            @if (!string.IsNullOrWhiteSpace(errorMessage))
+                            <!-- 地址資訊區塊 -->
+                            <FormSectionComponent Title="地址資訊" 
+                                                IconClass="fas fa-map-marker-alt"
+                                                SectionType="FormSectionType.Address"
+                                                RequiredFieldsCount="0"
+                                                CompletedFieldsCount="@GetAddressCompletedFieldsCount()">
+                                <AddressManagement Addresses="@customerAddresses"
+                                                 AddressTypes="@addressTypes"
+                                                 AddressesChanged="@AddressesChangedCallback"
+                                                 OnAddAddress="@(() => HandleAddAddress())"                                                         
+                                                 OnRemoveAddress="HandleRemoveAddress"
+                                                 OnSetPrimaryAddress="HandleSetPrimaryAddress"
+                                                 OnCopyFromFirstAddress="HandleCopyFromFirstAddress"
+                                                 OnAddressTypeChanged="HandleAddressTypeChanged"
+                                                 OnPostalCodeChanged="HandlePostalCodeChanged"
+                                                 OnCityChanged="HandleCityChanged"
+                                                 OnDistrictChanged="HandleDistrictChanged"
+                                                 OnAddressChanged="HandleAddressChanged" />
+                            </FormSectionComponent>
+                              @if (!string.IsNullOrWhiteSpace(errorMessage))
                             {
                                 <AlertComponent Type="AlertType.Danger" 
                                               Message="@errorMessage" 
                                               IconClass="fas fa-exclamation-triangle" />
                             }
                             
-                            @if (IsEditMode)
-                            {
-                                <!-- 編輯模式的提交按鈕 -->
-                                <div class="row">
-                                    <div class="col-12">
-                                        <div class="d-flex justify-content-end gap-2">
-                                            <ButtonComponent Text="取消" 
-                                                           Variant="ButtonVariant.OutlineSecondary" 
-                                                           IconClass="fas fa-times"
-                                                           OnClick="NavigateBack" />
-                                                           
-                                            <ButtonComponent Text="@(isSubmitting ? "處理中" : "更新")" 
-                                                           Variant="ButtonVariant.Primary" 
-                                                           IconClass="@(isSubmitting ? "spinner-border spinner-border-sm" : "fas fa-save")"
-                                                           IsDisabled="@isSubmitting"
-                                                           IsSubmit="true" />
-                                        </div>
+                            <!-- 統一的提交按鈕區塊 (新增和編輯模式共用) -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-end gap-2 mt-3">
+                                        <ButtonComponent Text="取消" 
+                                                       Variant="ButtonVariant.OutlineSecondary" 
+                                                       IconClass="fas fa-times"
+                                                       OnClick="NavigateBack" />
+                                                       
+                                        <ButtonComponent Text="@GetSubmitButtonText()" 
+                                                       Variant="ButtonVariant.Primary" 
+                                                       IconClass="@(isSubmitting ? "spinner-border spinner-border-sm" : "fas fa-save")"
+                                                       IsDisabled="@isSubmitting"
+                                                       IsSubmit="true" />
                                     </div>
                                 </div>
-                            }
+                            </div>
                         </EditForm>
                     }
                 </div>
@@ -253,12 +295,13 @@
 
 @code {
     [Parameter] public int? CustomerId { get; set; }
-    
-    private Customer customer = new();
+      private Customer customer = new();
     private List<CustomerType> customerTypes = new();
     private List<Industry> industries = new();
     private List<AddressType> addressTypes = new();
+    private List<ContactType> contactTypes = new();
     private List<CustomerAddress> customerAddresses = new();
+    private List<CustomerContact> customerContacts = new();
     
     private bool isLoading = true;
     private bool isSubmitting = false;
@@ -280,14 +323,14 @@
     {
         await LoadDataAsync();
     }
-    
-    private async Task LoadDataAsync()
+      private async Task LoadDataAsync()
     {        try
         {
-            // 載入客戶類型、行業別和地址類型的下拉選項
+            // 載入客戶類型、行業別、地址類型和聯絡類型的下拉選項
             customerTypes = await CustomerService.GetCustomerTypesAsync();
             industries = await CustomerService.GetIndustriesAsync();
             addressTypes = await CustomerService.GetAddressTypesAsync();
+            contactTypes = await CustomerService.GetContactTypesAsync();
             
             if (IsEditMode)
             {
@@ -307,9 +350,9 @@
                 Console.WriteLine($"IsEditMode: {IsEditMode}");
                 Console.WriteLine($"CustomerId: {CustomerId}");
                 Console.WriteLine($"CustomerTypes count: {customerTypes.Count}");
-                Console.WriteLine($"Industries count: {industries.Count}");
-                Console.WriteLine($"AddressTypes count: {addressTypes.Count}");
+                Console.WriteLine($"Industries count: {industries.Count}");                Console.WriteLine($"ContactTypes count: {contactTypes.Count}");
                 Console.WriteLine($"CustomerAddresses count: {customerAddresses.Count}");
+                Console.WriteLine($"CustomerContacts count: {customerContacts.Count}");
                 LogCustomerState("初始化完成");
             }
         }
@@ -338,9 +381,11 @@
         customerCode = existingCustomer.CustomerCode;
         customer = existingCustomer;
         customer.ModifiedBy = "系統管理員"; // 可以從認證系統獲取
-        
-        // 載入客戶地址資料
+          // 載入客戶地址資料
         await LoadCustomerAddressesAsync();
+        
+        // 載入客戶聯絡資料
+        await LoadCustomerContactsAsync();
     }
     
     private async Task LoadCustomerAddressesAsync()
@@ -368,7 +413,30 @@
         {
             Console.WriteLine($"載入客戶地址時發生錯誤: {ex.Message}");
             // 如果載入失敗，初始化預設地址
-            InitializeDefaultAddresses();
+            InitializeDefaultAddresses();        }
+    }
+    
+    private async Task LoadCustomerContactsAsync()
+    {
+        try
+        {
+            if (CustomerId.HasValue)
+            {
+                // 載入客戶的聯絡資料
+                var contacts = await CustomerService.GetCustomerContactsAsync(CustomerId.Value);
+                customerContacts = contacts?.ToList() ?? new List<CustomerContact>();
+                
+                if (enableDebugLog)
+                {
+                    Console.WriteLine($"載入了 {customerContacts.Count} 個客戶聯絡資料");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"載入客戶聯絡資料時發生錯誤: {ex.Message}");
+            // 如果載入失敗，初始化空的聯絡資料
+            customerContacts = new List<CustomerContact>();
         }
     }
     
@@ -424,18 +492,19 @@
         {
             isSubmitting = true;
             errorMessage = string.Empty;
-            
-            if (enableDebugLog)
+              if (enableDebugLog)
             {
                 LogCustomerState("表單提交前");
                 Console.WriteLine($"準備提交的地址數量: {customerAddresses.Count}");
+                Console.WriteLine($"準備提交的聯絡資料數量: {customerContacts.Count}");
             }
             
             ServiceResult result;
               if (IsEditMode)
             {
-                // 編輯模式：更新客戶資料和地址
+                // 編輯模式：更新客戶資料、地址和聯絡資料
                 customer.CustomerAddresses = customerAddresses;
+                customer.CustomerContacts = customerContacts;
                 result = await CustomerService.UpdateAsync(customer);
                 
                 // 如果有地址資料，同時更新地址
@@ -451,11 +520,26 @@
                         // 地址更新失敗不影響客戶資料更新成功的結果
                     }
                 }
+                
+                // 如果有聯絡資料，同時更新聯絡資料
+                if (result.IsSuccess && customerContacts.Any())
+                {
+                    try
+                    {
+                        await CustomerService.UpdateCustomerContactsAsync(customer.CustomerId, customerContacts);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"更新客戶聯絡資料時發生錯誤: {ex.Message}");
+                        // 聯絡資料更新失敗不影響客戶資料更新成功的結果
+                    }
+                }
             }
             else
             {
-                // 新增模式：將地址加入到客戶物件中
+                // 新增模式：將地址和聯絡資料加入到客戶物件中
                 customer.CustomerAddresses = customerAddresses;
+                customer.CustomerContacts = customerContacts;
                 result = await CustomerService.CreateAsync(customer);
             }
             
@@ -789,9 +873,93 @@
         Console.WriteLine($"CreatedBy: '{customer.CreatedBy}'");
         Console.WriteLine("================================");
     }
-    
-    private void NavigateBack()
+      private void NavigateBack()
     {
         Navigation.NavigateTo("/customers");
+    }
+    
+    // 完成度追蹤輔助方法
+    private int GetBasicRequiredFieldsCount()
+    {
+        return 2; // CustomerCode 和 CompanyName 是必填欄位
+    }
+    
+    private int GetBasicCompletedFieldsCount()
+    {
+        int count = 0;
+        
+        if (!string.IsNullOrWhiteSpace(customer.CustomerCode))
+            count++;
+            
+        if (!string.IsNullOrWhiteSpace(customer.CompanyName))
+            count++;
+            
+        return count;
+    }
+      private int GetAddressCompletedFieldsCount()
+    {
+        if (!customerAddresses.Any())
+            return 0;
+            
+        // 計算至少有一個完整地址的數量
+        int completedAddresses = customerAddresses.Count(addr => 
+            !string.IsNullOrWhiteSpace(addr.PostalCode) &&
+            !string.IsNullOrWhiteSpace(addr.City) &&
+            !string.IsNullOrWhiteSpace(addr.District) &&
+            !string.IsNullOrWhiteSpace(addr.Address)
+        );
+        
+        return completedAddresses;
+    }
+    
+    // 聯絡資訊管理輔助方法
+    private int GetContactCompletedFieldsCount()
+    {
+        return customerContacts.Count(c => !string.IsNullOrWhiteSpace(c.ContactValue));
+    }
+    
+    private string GetContactValue(string contactTypeName)
+    {
+        var contactType = contactTypes.FirstOrDefault(ct => ct.TypeName == contactTypeName);
+        if (contactType == null) return string.Empty;
+        
+        var contact = customerContacts.FirstOrDefault(c => c.ContactTypeId == contactType.ContactTypeId);
+        return contact?.ContactValue ?? string.Empty;
+    }
+    
+    private void UpdateContactValue(string contactTypeName, string value)
+    {
+        var contactType = contactTypes.FirstOrDefault(ct => ct.TypeName == contactTypeName);
+        if (contactType == null) return;
+        
+        var existingContact = customerContacts.FirstOrDefault(c => c.ContactTypeId == contactType.ContactTypeId);
+        
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            if (existingContact != null)
+            {
+                existingContact.ContactValue = value;
+            }
+            else
+            {
+                customerContacts.Add(new CustomerContact
+                {
+                    CustomerId = customer.CustomerId,
+                    ContactTypeId = contactType.ContactTypeId,
+                    ContactValue = value,
+                    IsPrimary = !customerContacts.Any(c => c.IsPrimary && c.ContactTypeId == contactType.ContactTypeId),
+                    Status = EntityStatus.Active
+                });
+            }
+        }
+        else if (existingContact != null)
+        {
+            customerContacts.Remove(existingContact);
+        }
+        
+        if (enableDebugLog)
+        {
+            Console.WriteLine($"聯絡資訊更新: {contactTypeName} = '{value}'");
+        }
     }
 }
