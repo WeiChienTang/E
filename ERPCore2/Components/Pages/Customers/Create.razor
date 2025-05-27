@@ -28,7 +28,9 @@
                                        IconClass="fas fa-arrow-left" 
                                        OnClick="NavigateBack" />
                     </Actions>
-                </PageHeaderComponent>                <div class="card-body">
+                </PageHeaderComponent>
+                
+                <div class="card-body">
                     <LoadingComponent IsLoading="@isLoading" 
                                     LoadingText="載入表單資料中..." 
                                     ShowText="true" />
@@ -37,11 +39,13 @@
                     {
                         <EditForm Model="@customer" OnValidSubmit="@HandleSubmit">
                             <DataAnnotationsValidator />
-                              <div class="row">
+                            
+                            <div class="row">
                                 <div class="col-md-6">
                                     <InputComponent Id="customerCode" 
                                                   Label="客戶代碼" 
-                                                  @bind-Value="customer.CustomerCode"
+                                                  Value="@customer.CustomerCode"
+                                                  ValueChanged="@(value => { customer.CustomerCode = value; LogChange("CustomerCode", value); })"
                                                   IsRequired="true" />
                                     <ValidationMessage For="@(() => customer.CustomerCode)" class="text-danger" />
                                 </div>
@@ -49,32 +53,38 @@
                                 <div class="col-md-6">
                                     <InputComponent Id="companyName" 
                                                   Label="公司名稱" 
-                                                  @bind-Value="customer.CompanyName"
+                                                  Value="@customer.CompanyName"
+                                                  ValueChanged="@(value => { customer.CompanyName = value; LogChange("CompanyName", value); })"
                                                   IsRequired="true" />
                                     <ValidationMessage For="@(() => customer.CompanyName)" class="text-danger" />
-                                </div>                            </div>
+                                </div>
+                            </div>
                             
                             <div class="row">
                                 <div class="col-md-6">
                                     <InputComponent Id="contactPerson" 
                                                   Label="聯絡人" 
-                                                  @bind-Value="customer.ContactPerson" />
+                                                  Value="@customer.ContactPerson"
+                                                  ValueChanged="@(value => { customer.ContactPerson = value; LogChange("ContactPerson", value); })" />
                                     <ValidationMessage For="@(() => customer.ContactPerson)" class="text-danger" />
                                 </div>
                                 
                                 <div class="col-md-6">
                                     <InputComponent Id="taxNumber" 
                                                   Label="統一編號" 
-                                                  @bind-Value="customer.TaxNumber" />
+                                                  Value="@customer.TaxNumber"
+                                                  ValueChanged="@(value => { customer.TaxNumber = value; LogChange("TaxNumber", value); })" />
                                     <ValidationMessage For="@(() => customer.TaxNumber)" class="text-danger" />
                                 </div>
                             </div>
-                              <div class="row">
+                            
+                            <div class="row">
                                 <div class="col-md-6">
                                     <SelectComponent TValue="int?"
                                                    Id="customerType" 
                                                    Label="客戶類型"
-                                                   @bind-Value="customer.CustomerTypeId"
+                                                   Value="@customer.CustomerTypeId"
+                                                   ValueChanged="@(value => { customer.CustomerTypeId = value; LogChange("CustomerTypeId", value?.ToString() ?? "null"); StateHasChanged(); })"
                                                    Items="customerTypes"
                                                    GetItemText="@(item => ((CustomerType)item).TypeName)"
                                                    GetItemValue="@(item => ((CustomerType)item).CustomerTypeId)"
@@ -86,27 +96,35 @@
                                     <SelectComponent TValue="int?"
                                                    Id="industry" 
                                                    Label="行業別"
-                                                   @bind-Value="customer.IndustryId"
+                                                   Value="@customer.IndustryId"
+                                                   ValueChanged="@(value => { customer.IndustryId = value; LogChange("IndustryId", value?.ToString() ?? "null"); StateHasChanged(); })"
                                                    Items="industries"
                                                    GetItemText="@(item => ((Industry)item).IndustryName)"
                                                    GetItemValue="@(item => ((Industry)item).IndustryId)"
                                                    EmptyOptionText="請選擇行業別..." />
                                     <ValidationMessage For="@(() => customer.IndustryId)" class="text-danger" />
                                 </div>
-                            </div><div class="row">
+                            </div>
+                            
+                            <div class="row">
                                 <div class="col-md-6">
                                     <InputComponent Id="createdBy" 
                                                   Label="建立者" 
-                                                  @bind-Value="customer.CreatedBy"
+                                                  Value="@customer.CreatedBy"
+                                                  ValueChanged="@(value => customer.CreatedBy = value)"
                                                   IsReadOnly="true" />
                                     <ValidationMessage For="@(() => customer.CreatedBy)" class="text-danger" />
                                 </div>
-                            </div>                            @if (!string.IsNullOrWhiteSpace(errorMessage))
+                            </div>
+                            
+                            @if (!string.IsNullOrWhiteSpace(errorMessage))
                             {
                                 <AlertComponent Type="AlertType.Danger" 
                                               Message="@errorMessage" 
                                               IconClass="fas fa-exclamation-triangle" />
-                            }                            <div class="row">                                
+                            }
+
+                            <div class="row">                                
                                 <div class="col-12">
                                     <div class="d-flex justify-content-end gap-2">
                                         <ButtonComponent Text="取消" 
@@ -142,11 +160,15 @@
     private bool isSubmitting = false;
     private string errorMessage = string.Empty;
     
+    // 除錯設定
+    private bool enableDebugLog = true; // 可以設為 false 關閉除錯
+    
     protected override async Task OnInitializedAsync()
     {
         await LoadDataAsync();
     }      
-      private async Task LoadDataAsync()
+      
+    private async Task LoadDataAsync()
     {
         try
         {
@@ -154,17 +176,22 @@
             customerTypes = await CustomerService.GetCustomerTypesAsync();
             industries = await CustomerService.GetIndustriesAsync();
             
-            // 設定預設值
-            customer.CreatedBy = "系統管理員"; // 可以從認證系統獲取
-            customer.CreatedDate = DateTime.Now; // 明確設定建立時間
-            customer.Status = ERPCore2.Data.Enums.EntityStatus.Active; // 明確設定狀態
+            // 確保所有字串屬性都有初始值，避免 null
+            customer.CustomerCode = customer.CustomerCode ?? string.Empty;
+            customer.CompanyName = customer.CompanyName ?? string.Empty;
+            customer.ContactPerson = customer.ContactPerson ?? string.Empty;
+            customer.TaxNumber = customer.TaxNumber ?? string.Empty;
+            customer.CreatedBy = customer.CreatedBy ?? "系統管理員";
+            customer.CreatedDate = DateTime.Now;
+            customer.Status = ERPCore2.Data.Enums.EntityStatus.Active;
             
-            Console.WriteLine("=== 載入資料後的除錯資訊 ===");
-            Console.WriteLine($"CustomerTypes count: {customerTypes.Count}");
-            Console.WriteLine($"Industries count: {industries.Count}");
-            Console.WriteLine($"Default CreatedBy: '{customer.CreatedBy}'");
-            Console.WriteLine($"Default Status: {customer.Status}");
-            Console.WriteLine($"Default CreatedDate: {customer.CreatedDate}");
+            if (enableDebugLog)
+            {
+                Console.WriteLine("=== 載入資料後的除錯資訊 ===");
+                Console.WriteLine($"CustomerTypes count: {customerTypes.Count}");
+                Console.WriteLine($"Industries count: {industries.Count}");
+                LogCustomerState("初始化完成");
+            }
         }
         catch (Exception ex)
         {
@@ -176,7 +203,8 @@
             isLoading = false;
         }
     }
-      private async Task HandleSubmit()
+      
+    private async Task HandleSubmit()
     {
         if (isSubmitting) return;
         
@@ -185,17 +213,10 @@
             isSubmitting = true;
             errorMessage = string.Empty;
             
-            // 除錯資訊 - 檢查表單資料
-            Console.WriteLine("=== 表單提交除錯資訊 ===");
-            Console.WriteLine($"CustomerCode: '{customer.CustomerCode}' (Length: {customer.CustomerCode?.Length})");
-            Console.WriteLine($"CompanyName: '{customer.CompanyName}' (Length: {customer.CompanyName?.Length})");
-            Console.WriteLine($"ContactPerson: '{customer.ContactPerson}'");
-            Console.WriteLine($"TaxNumber: '{customer.TaxNumber}'");
-            Console.WriteLine($"CustomerTypeId: {customer.CustomerTypeId}");
-            Console.WriteLine($"IndustryId: {customer.IndustryId}");
-            Console.WriteLine($"CreatedBy: '{customer.CreatedBy}'");
-            Console.WriteLine($"Status: {customer.Status}");
-            Console.WriteLine($"CreatedDate: {customer.CreatedDate}");
+            if (enableDebugLog)
+            {
+                LogCustomerState("表單提交前");
+            }
             
             var result = await CustomerService.CreateAsync(customer);
             
@@ -217,6 +238,30 @@
         {
             isSubmitting = false;
         }
+    }
+    
+    // 簡單的除錯日誌方法
+    private void LogChange(string fieldName, string value)
+    {
+        if (enableDebugLog)
+        {
+            Console.WriteLine($"欄位 {fieldName} 變更為: '{value}' (長度: {value?.Length ?? 0})");
+        }
+    }
+    
+    private void LogCustomerState(string context)
+    {
+        if (!enableDebugLog) return;
+        
+        Console.WriteLine($"=== {context} - Customer 狀態 ===");
+        Console.WriteLine($"CustomerCode: '{customer.CustomerCode}' (Length: {customer.CustomerCode?.Length ?? 0})");
+        Console.WriteLine($"CompanyName: '{customer.CompanyName}' (Length: {customer.CompanyName?.Length ?? 0})");
+        Console.WriteLine($"ContactPerson: '{customer.ContactPerson}' (Length: {customer.ContactPerson?.Length ?? 0})");
+        Console.WriteLine($"TaxNumber: '{customer.TaxNumber}' (Length: {customer.TaxNumber?.Length ?? 0})");
+        Console.WriteLine($"CustomerTypeId: {customer.CustomerTypeId}");
+        Console.WriteLine($"IndustryId: {customer.IndustryId}");
+        Console.WriteLine($"CreatedBy: '{customer.CreatedBy}'");
+        Console.WriteLine("================================");
     }
     
     private void NavigateBack()
