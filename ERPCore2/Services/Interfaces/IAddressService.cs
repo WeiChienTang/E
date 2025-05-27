@@ -11,12 +11,12 @@ namespace ERPCore2.Services
         Task<List<AddressType>> GetAddressTypesAsync();
         Task<List<CustomerAddress>> GetAddressesByCustomerIdAsync(int customerId);
         Task<CustomerAddress?> GetPrimaryAddressAsync(int customerId);
-        
-        // 地址業務邏輯操作
+          // 地址業務邏輯操作
         Task<ServiceResult<CustomerAddress>> CreateAddressAsync(CustomerAddress address);
         Task<ServiceResult<CustomerAddress>> UpdateAddressAsync(CustomerAddress address);
         Task<ServiceResult> DeleteAddressAsync(int addressId);
         Task<ServiceResult> SetPrimaryAddressAsync(int customerId, int addressId);
+        Task<ServiceResult> UpdateCustomerAddressesAsync(int customerId, List<CustomerAddress> addresses);
         
         // 地址驗證和業務規則
         Task<ServiceResult> ValidateAddressAsync(CustomerAddress address);

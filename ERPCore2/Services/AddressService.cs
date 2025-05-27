@@ -225,8 +225,96 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error setting primary address {AddressId} for customer {CustomerId}", addressId, customerId);
-                return ServiceResult.Failure($"設定主要地址時發生錯誤: {ex.Message}");
+                _logger.LogError(ex, "Error setting primary address {AddressId} for customer {CustomerId}", addressId, customerId);                return ServiceResult.Failure($"設定主要地址時發生錯誤: {ex.Message}");
+            }
+        }
+
+        public async Task<ServiceResult> UpdateCustomerAddressesAsync(int customerId, List<CustomerAddress> addresses)
+        {
+            try
+            {
+                // 使用交易確保資料一致性
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                
+                try
+                {
+                    // 1. 取得現有地址
+                    var existingAddresses = await _context.CustomerAddresses
+                        .Where(ca => ca.CustomerId == customerId && ca.Status != EntityStatus.Deleted)
+                        .ToListAsync();
+
+                    // 2. 處理需要刪除的地址 (現有地址中不在新地址列表中的)
+                    var addressesToDelete = existingAddresses
+                        .Where(existing => !addresses.Any(addr => addr.AddressId == existing.AddressId))
+                        .ToList();
+
+                    foreach (var addressToDelete in addressesToDelete)
+                    {
+                        addressToDelete.Status = EntityStatus.Deleted;
+                    }
+
+                    // 3. 處理新增和更新的地址
+                    foreach (var address in addresses)
+                    {
+                        address.CustomerId = customerId; // 確保 CustomerId 正確
+                        
+                        if (address.AddressId == 0)
+                        {
+                            // 新增地址
+                            address.Status = EntityStatus.Active;
+                            _context.CustomerAddresses.Add(address);
+                        }
+                        else
+                        {
+                            // 更新現有地址
+                            var existingAddress = existingAddresses.FirstOrDefault(ea => ea.AddressId == address.AddressId);
+                            if (existingAddress != null)
+                            {
+                                // 更新屬性
+                                existingAddress.AddressTypeId = address.AddressTypeId;
+                                existingAddress.PostalCode = address.PostalCode;
+                                existingAddress.City = address.City;
+                                existingAddress.District = address.District;
+                                existingAddress.Address = address.Address;
+                                existingAddress.IsPrimary = address.IsPrimary;
+                                existingAddress.Status = address.Status;
+                            }
+                        }
+                    }
+
+                    // 4. 確保只有一個主要地址
+                    var primaryAddresses = addresses.Where(a => a.IsPrimary).ToList();
+                    if (primaryAddresses.Count > 1)
+                    {
+                        // 如果有多個主要地址，只保留第一個
+                        for (int i = 1; i < primaryAddresses.Count; i++)
+                        {
+                            primaryAddresses[i].IsPrimary = false;
+                        }
+                    }
+                    else if (primaryAddresses.Count == 0 && addresses.Any())
+                    {
+                        // 如果沒有主要地址，將第一個設為主要
+                        addresses.First().IsPrimary = true;
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    _logger.LogInformation("Successfully updated {AddressCount} addresses for customer {CustomerId}", 
+                        addresses.Count, customerId);
+                    return ServiceResult.Success();
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating addresses for customer {CustomerId}", customerId);
+                return ServiceResult.Failure($"更新客戶地址時發生錯誤: {ex.Message}");
             }
         }
 

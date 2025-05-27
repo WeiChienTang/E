@@ -450,9 +450,7 @@ namespace ERPCore2.Services
 
             Console.WriteLine("驗證通過");
             return ServiceResult.Success();
-        }
-
-        private ServiceResult ValidateAddresses(ICollection<CustomerAddress> addresses)
+        }        private ServiceResult ValidateAddresses(ICollection<CustomerAddress> addresses)
         {
             var errors = new List<string>();
 
@@ -476,6 +474,7 @@ namespace ERPCore2.Services
                 var address = addresses.ElementAt(i);
                 var prefix = $"地址 {i + 1}";
 
+                // 基本長度驗證
                 if (!string.IsNullOrEmpty(address.PostalCode) && address.PostalCode.Length > 10)
                     errors.Add($"{prefix}: 郵遞區號不可超過10個字元");
 
@@ -496,10 +495,20 @@ namespace ERPCore2.Services
 
                 if (!hasContent && address.AddressTypeId.HasValue)
                     errors.Add($"{prefix}: 已選擇地址類型但未填寫地址資訊");
+
+                // 如果有地址內容，檢查是否至少填寫了基本欄位
+                if (hasContent)
+                {
+                    if (string.IsNullOrWhiteSpace(address.City) && string.IsNullOrWhiteSpace(address.Address))
+                        errors.Add($"{prefix}: 至少需要填寫城市或詳細地址");
+                }
             }
 
+            Console.WriteLine($"地址驗證完成，錯誤數量: {errors.Count}");
             if (errors.Any())
             {
+                Console.WriteLine("地址驗證錯誤:");
+                errors.ForEach(error => Console.WriteLine($"  - {error}"));
                 return ServiceResult.ValidationFailure(errors);
             }
 

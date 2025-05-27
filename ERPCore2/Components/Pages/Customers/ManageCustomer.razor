@@ -1,4 +1,5 @@
 @page "/customers/create"
+@page "/customers/{CustomerId:int}/edit"
 @inject ICustomerService CustomerService
 @inject IAddressService AddressService
 @inject NavigationManager Navigation
@@ -14,13 +15,15 @@
 @using static ERPCore2.Components.Shared.Alerts.AlertComponent
 @rendermode InteractiveServer
 
-<PageTitle>新增客戶</PageTitle>
+<PageTitle>@GetPageTitle()</PageTitle>
 
 <link href="~/css/variables.css" rel="stylesheet" />
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-12">            <div class="card">                <PageHeaderComponent Title="新增客戶" IconClass="fas fa-user-plus">
+        <div class="col-12">
+            <div class="card">
+                <PageHeaderComponent Title="@GetPageTitle()" IconClass="@GetPageIcon()">
                     <Actions>
                         <ButtonComponent Text="返回列表" 
                                        Variant="ButtonVariant.OutlineSecondary" 
@@ -29,27 +32,42 @@
                     </Actions>
                 </PageHeaderComponent>
                 
-                <!-- 固定按鈕列 -->
-                <PageActionBar>
-                    <PrimaryActions>
-                        <ButtonComponent Text="儲存客戶" 
-                                       Variant="ButtonVariant.Primary" 
-                                       IconClass="fas fa-save" 
-                                       OnClick="HandleSubmit"
-                                       IsDisabled="@isSubmitting" />
-                        <ButtonComponent Text="取消" 
-                                       Variant="ButtonVariant.OutlineSecondary" 
-                                       IconClass="fas fa-times" 
-                                       OnClick="NavigateBack" />
-                    </PrimaryActions>
-                </PageActionBar>
+                @if (!IsEditMode)
+                {
+                    <!-- 固定按鈕列 (僅在新增模式顯示) -->
+                    <PageActionBar>
+                        <PrimaryActions>
+                            <ButtonComponent Text="@GetSubmitButtonText()" 
+                                           Variant="ButtonVariant.Primary" 
+                                           IconClass="fas fa-save" 
+                                           OnClick="HandleSubmit"
+                                           IsDisabled="@isSubmitting" />
+                            <ButtonComponent Text="取消" 
+                                           Variant="ButtonVariant.OutlineSecondary" 
+                                           IconClass="fas fa-times" 
+                                           OnClick="NavigateBack" />
+                        </PrimaryActions>
+                    </PageActionBar>
+                }
                 
                 <div class="card-body">
                     <LoadingComponent IsLoading="@isLoading" 
-                                    LoadingText="載入表單資料中..." 
+                                    LoadingText="@GetLoadingText()" 
                                     ShowText="true" />
                     
-                    @if (!isLoading)
+                    @if (!isLoading && !string.IsNullOrWhiteSpace(notFoundMessage))
+                    {
+                        <AlertComponent Type="AlertType.Warning" 
+                                      Message="@notFoundMessage" 
+                                      IconClass="fas fa-exclamation-triangle" />
+                        <div class="text-center mt-3">
+                            <ButtonComponent Text="返回列表" 
+                                           Variant="ButtonVariant.Primary" 
+                                           IconClass="fas fa-arrow-left" 
+                                           OnClick="NavigateBack" />
+                        </div>
+                    }
+                    else if (!isLoading)
                     {
                         <EditForm Model="@customer" OnValidSubmit="@HandleSubmit">
                             <DataAnnotationsValidator />
@@ -119,42 +137,108 @@
                                     <ValidationMessage For="@(() => customer.IndustryId)" class="text-danger" />
                                 </div>
                             </div>
-                              <div class="row">
-                                <div class="col-md-6">
-                                    <InputComponent Id="createdBy" 
-                                                  Label="建立者" 
-                                                  Value="@customer.CreatedBy"
-                                                  ValueChanged="@(value => customer.CreatedBy = value)"
-                                                  IsReadOnly="true" />
-                                    <ValidationMessage For="@(() => customer.CreatedBy)" class="text-danger" />
+                            
+                            @if (IsEditMode)
+                            {
+                                <!-- 編輯模式的額外欄位 -->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <SelectComponent TValue="EntityStatus"
+                                                       Id="status" 
+                                                       Label="狀態"
+                                                       Value="@customer.Status"
+                                                       ValueChanged="@(value => customer.Status = value)"
+                                                       Items="@(Enum.GetValues<EntityStatus>().Cast<object>())"
+                                                       GetItemText="@(item => GetStatusText((EntityStatus)item))"
+                                                       GetItemValue="@(item => item)"
+                                                       ShowEmptyOption="false" />
+                                        <ValidationMessage For="@(() => customer.Status)" class="text-danger" />
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <InputComponent Id="modifiedBy" 
+                                                      Label="修改者" 
+                                                      Value="@customer.ModifiedBy"
+                                                      ValueChanged="@(value => customer.ModifiedBy = value)" />
+                                        <ValidationMessage For="@(() => customer.ModifiedBy)" class="text-danger" />
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <InputComponent Id="createdDate" 
+                                                      Label="建立日期" 
+                                                      Value="@customer.CreatedDate.ToString("yyyy-MM-dd HH:mm")"
+                                                      IsReadOnly="true" />
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <InputComponent Id="createdBy" 
+                                                      Label="建立者" 
+                                                      Value="@customer.CreatedBy"
+                                                      IsReadOnly="true" />
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <!-- 新增模式的建立者欄位 -->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <InputComponent Id="createdBy" 
+                                                      Label="建立者" 
+                                                      Value="@customer.CreatedBy"
+                                                      ValueChanged="@(value => customer.CreatedBy = value)"
+                                                      IsReadOnly="true" />
+                                        <ValidationMessage For="@(() => customer.CreatedBy)" class="text-danger" />
+                                    </div>
+                                </div>
+                            }
+                              <!-- 地址管理區段 (新增和編輯模式都顯示) -->
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <hr class="my-3" />                                     *@
+                                    <AddressManagement Addresses="@customerAddresses"
+                                                     AddressTypes="@addressTypes"
+                                                     AddressesChanged="@AddressesChangedCallback"
+                                                     OnAddAddress="@(() => HandleAddAddress())"                                                         
+                                                     OnRemoveAddress="HandleRemoveAddress"
+                                                     OnSetPrimaryAddress="HandleSetPrimaryAddress"
+                                                     OnCopyFromFirstAddress="HandleCopyFromFirstAddress"
+                                                     OnAddressTypeChanged="HandleAddressTypeChanged"
+                                                     OnPostalCodeChanged="HandlePostalCodeChanged"
+                                                     OnCityChanged="HandleCityChanged"
+                                                     OnDistrictChanged="HandleDistrictChanged"
+                                                     OnAddressChanged="HandleAddressChanged" />
                                 </div>
                             </div>
                             
-                            <!-- 地址管理區段 -->
-                            <div class="row mt-4">
-                                <div class="col-12">
-                                    <hr class="my-3" />
-                                    <h5 class="mb-3">
-                                        <i class="fas fa-map-marker-alt me-2"></i>
-                                        地址管理
-                                    </h5>                                    <AddressManagement Addresses="@customerAddresses"
-                                                     AddressTypes="@addressTypes"
-                                                     AddressesChanged="@AddressesChangedCallback"
-                                                     OnAddAddress="@HandleAddAddress"
-                                                     OnRemoveAddress="@HandleRemoveAddress"
-                                                     OnSetPrimaryAddress="@HandleSetPrimaryAddress"
-                                                     OnCopyFromFirstAddress="@HandleCopyFromFirstAddress"
-                                                     OnAddressTypeChanged="@HandleAddressTypeChanged"
-                                                     OnPostalCodeChanged="@HandlePostalCodeChanged"
-                                                     OnCityChanged="@HandleCityChanged"
-                                                     OnDistrictChanged="@HandleDistrictChanged"
-                                                     OnAddressChanged="@HandleAddressChanged" />
-                                </div>
-                            </div>                            @if (!string.IsNullOrWhiteSpace(errorMessage))
+                            @if (!string.IsNullOrWhiteSpace(errorMessage))
                             {
                                 <AlertComponent Type="AlertType.Danger" 
                                               Message="@errorMessage" 
                                               IconClass="fas fa-exclamation-triangle" />
+                            }
+                            
+                            @if (IsEditMode)
+                            {
+                                <!-- 編輯模式的提交按鈕 -->
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <ButtonComponent Text="取消" 
+                                                           Variant="ButtonVariant.OutlineSecondary" 
+                                                           IconClass="fas fa-times"
+                                                           OnClick="NavigateBack" />
+                                                           
+                                            <ButtonComponent Text="@(isSubmitting ? "處理中" : "更新")" 
+                                                           Variant="ButtonVariant.Primary" 
+                                                           IconClass="@(isSubmitting ? "spinner-border spinner-border-sm" : "fas fa-save")"
+                                                           IsDisabled="@isSubmitting"
+                                                           IsSubmit="true" />
+                                        </div>
+                                    </div>
+                                </div>
                             }
                         </EditForm>
                     }
@@ -167,7 +251,9 @@
 <!-- 載入 Font Awesome 圖示 -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 
-@code {    
+@code {
+    [Parameter] public int? CustomerId { get; set; }
+    
     private Customer customer = new();
     private List<CustomerType> customerTypes = new();
     private List<Industry> industries = new();
@@ -177,42 +263,49 @@
     private bool isLoading = true;
     private bool isSubmitting = false;
     private string errorMessage = string.Empty;
+    private string notFoundMessage = string.Empty;
+    private string customerCode = string.Empty;
     
     // 除錯設定
     private bool enableDebugLog = true; // 可以設為 false 關閉除錯
     
-    // EventCallback for AddressManagement component
+    // 判斷是否為編輯模式
+    private bool IsEditMode => CustomerId.HasValue && CustomerId.Value > 0;
+    
+    // EventCallback for AddressManagement component (新增和編輯模式都可使用)
     private EventCallback<List<CustomerAddress>> AddressesChangedCallback => 
         EventCallback.Factory.Create<List<CustomerAddress>>(this, OnAddressesChanged);
     
     protected override async Task OnInitializedAsync()
     {
         await LoadDataAsync();
-    }      
-        private async Task LoadDataAsync()
-    {
-        try
+    }
+    
+    private async Task LoadDataAsync()
+    {        try
         {
             // 載入客戶類型、行業別和地址類型的下拉選項
             customerTypes = await CustomerService.GetCustomerTypesAsync();
             industries = await CustomerService.GetIndustriesAsync();
             addressTypes = await CustomerService.GetAddressTypesAsync();
             
-            // 初始化預設地址（住宅地址和通訊地址）
-            InitializeDefaultAddresses();
-            
-            // 確保所有字串屬性都有初始值，避免 null
-            customer.CustomerCode = customer.CustomerCode ?? string.Empty;
-            customer.CompanyName = customer.CompanyName ?? string.Empty;
-            customer.ContactPerson = customer.ContactPerson ?? string.Empty;
-            customer.TaxNumber = customer.TaxNumber ?? string.Empty;
-            customer.CreatedBy = customer.CreatedBy ?? "系統管理員";
-            customer.CreatedDate = DateTime.Now;
-            customer.Status = ERPCore2.Data.Enums.EntityStatus.Active;
+            if (IsEditMode)
+            {
+                // 編輯模式：載入現有客戶資料和地址
+                await LoadExistingCustomerAsync();
+            }
+            else
+            {
+                // 新增模式：初始化預設地址
+                InitializeDefaultAddresses();
+                InitializeNewCustomer();
+            }
             
             if (enableDebugLog)
             {
                 Console.WriteLine("=== 載入資料後的除錯資訊 ===");
+                Console.WriteLine($"IsEditMode: {IsEditMode}");
+                Console.WriteLine($"CustomerId: {CustomerId}");
                 Console.WriteLine($"CustomerTypes count: {customerTypes.Count}");
                 Console.WriteLine($"Industries count: {industries.Count}");
                 Console.WriteLine($"AddressTypes count: {addressTypes.Count}");
@@ -229,8 +322,101 @@
         {
             isLoading = false;
         }
+    }    private async Task LoadExistingCustomerAsync()
+    {
+        if (!CustomerId.HasValue) return;
+        
+        var existingCustomer = await CustomerService.GetByIdAsync(CustomerId.Value);
+        
+        if (existingCustomer == null)
+        {
+            notFoundMessage = "找不到指定的客戶資料";
+            return;
+        }
+        
+        // 填入現有資料
+        customerCode = existingCustomer.CustomerCode;
+        customer = existingCustomer;
+        customer.ModifiedBy = "系統管理員"; // 可以從認證系統獲取
+        
+        // 載入客戶地址資料
+        await LoadCustomerAddressesAsync();
     }
-        private async Task HandleSubmit()
+    
+    private async Task LoadCustomerAddressesAsync()
+    {        try
+        {
+            if (CustomerId.HasValue)
+            {
+                // 載入客戶的地址資料
+                var addresses = await AddressService.GetAddressesByCustomerIdAsync(CustomerId.Value);
+                customerAddresses = addresses?.ToList() ?? new List<CustomerAddress>();
+                
+                // 如果沒有地址，初始化一個預設地址
+                if (!customerAddresses.Any())
+                {
+                    InitializeDefaultAddresses();
+                }
+                
+                if (enableDebugLog)
+                {
+                    Console.WriteLine($"載入了 {customerAddresses.Count} 個客戶地址");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"載入客戶地址時發生錯誤: {ex.Message}");
+            // 如果載入失敗，初始化預設地址
+            InitializeDefaultAddresses();
+        }
+    }
+    
+    private void InitializeNewCustomer()
+    {
+        // 確保所有字串屬性都有初始值，避免 null
+        customer.CustomerCode = customer.CustomerCode ?? string.Empty;
+        customer.CompanyName = customer.CompanyName ?? string.Empty;
+        customer.ContactPerson = customer.ContactPerson ?? string.Empty;
+        customer.TaxNumber = customer.TaxNumber ?? string.Empty;
+        customer.CreatedBy = customer.CreatedBy ?? "系統管理員";
+        customer.CreatedDate = DateTime.Now;
+        customer.Status = ERPCore2.Data.Enums.EntityStatus.Active;
+    }
+    
+    private void InitializeDefaultAddresses()
+    {
+        customerAddresses.Clear();
+        
+        // 尋找公司地址類型
+        var companyAddressType = addressTypes.FirstOrDefault(at => at.TypeName.Contains("公司"));
+        
+        // 如果找不到公司地址類型，使用第一個可用的類型
+        if (companyAddressType == null && addressTypes.Any())
+            companyAddressType = addressTypes.First();
+        
+        // 新增預設公司地址
+        if (companyAddressType != null)
+        {
+            customerAddresses.Add(new CustomerAddress
+            {
+                AddressTypeId = companyAddressType.AddressTypeId,
+                IsPrimary = true,
+                Status = ERPCore2.Data.Enums.EntityStatus.Active,
+                PostalCode = string.Empty,
+                City = string.Empty,
+                District = string.Empty,
+                Address = string.Empty
+            });
+        }
+        
+        if (enableDebugLog)
+        {
+            Console.WriteLine($"初始化了 {customerAddresses.Count} 個預設地址 (公司地址)");
+        }
+    }
+    
+    private async Task HandleSubmit()
     {
         if (isSubmitting) return;
         
@@ -245,14 +431,38 @@
                 Console.WriteLine($"準備提交的地址數量: {customerAddresses.Count}");
             }
             
-            // 將地址加入到客戶物件中
-            customer.CustomerAddresses = customerAddresses;
-            
-            var result = await CustomerService.CreateAsync(customer);
+            ServiceResult result;
+              if (IsEditMode)
+            {
+                // 編輯模式：更新客戶資料和地址
+                customer.CustomerAddresses = customerAddresses;
+                result = await CustomerService.UpdateAsync(customer);
+                
+                // 如果有地址資料，同時更新地址
+                if (result.IsSuccess && customerAddresses.Any())
+                {
+                    try
+                    {
+                        await AddressService.UpdateCustomerAddressesAsync(customer.CustomerId, customerAddresses);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"更新客戶地址時發生錯誤: {ex.Message}");
+                        // 地址更新失敗不影響客戶資料更新成功的結果
+                    }
+                }
+            }
+            else
+            {
+                // 新增模式：將地址加入到客戶物件中
+                customer.CustomerAddresses = customerAddresses;
+                result = await CustomerService.CreateAsync(customer);
+            }
             
             if (result.IsSuccess)
             {
-                await JSRuntime.InvokeVoidAsync("alert", "客戶新增成功！");
+                var message = IsEditMode ? "客戶更新成功！" : "客戶新增成功！";
+                await JSRuntime.InvokeVoidAsync("alert", message);
                 Navigation.NavigateTo("/customers");
             }
             else
@@ -262,7 +472,8 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"新增客戶時發生錯誤: {ex.Message}";
+            var action = IsEditMode ? "更新" : "新增";
+            errorMessage = $"{action}客戶時發生錯誤: {ex.Message}";
         }
         finally
         {
@@ -270,56 +481,7 @@
         }
     }
     
-    private void InitializeDefaultAddresses()
-    {
-        customerAddresses.Clear();
-        
-        // 尋找住宅地址和通訊地址類型
-        var residentialType = addressTypes.FirstOrDefault(at => at.TypeName.Contains("住宅") || at.TypeName.Contains("公司"));
-        var mailingType = addressTypes.FirstOrDefault(at => at.TypeName.Contains("通訊") || at.TypeName.Contains("帳單"));
-        
-        // 如果找不到預期的地址類型，使用前兩個可用的類型
-        if (residentialType == null && addressTypes.Any())
-            residentialType = addressTypes.First();
-        if (mailingType == null && addressTypes.Count > 1)
-            mailingType = addressTypes.Skip(1).First();
-        
-        // 新增預設住宅地址
-        if (residentialType != null)
-        {
-            customerAddresses.Add(new CustomerAddress
-            {
-                AddressTypeId = residentialType.AddressTypeId,
-                IsPrimary = true,
-                Status = ERPCore2.Data.Enums.EntityStatus.Active,
-                PostalCode = string.Empty,
-                City = string.Empty,
-                District = string.Empty,
-                Address = string.Empty
-            });
-        }
-        
-        // 新增預設通訊地址
-        if (mailingType != null && mailingType.AddressTypeId != residentialType?.AddressTypeId)
-        {
-            customerAddresses.Add(new CustomerAddress
-            {
-                AddressTypeId = mailingType.AddressTypeId,
-                IsPrimary = false,
-                Status = ERPCore2.Data.Enums.EntityStatus.Active,
-                PostalCode = string.Empty,
-                City = string.Empty,
-                District = string.Empty,
-                Address = string.Empty
-            });
-        }
-        
-        if (enableDebugLog)
-        {
-            Console.WriteLine($"初始化了 {customerAddresses.Count} 個預設地址");        }
-    }
-    
-    // 地址管理事件處理方法
+    // 地址管理事件處理方法 (新增和編輯模式都可使用)
     private Task HandleAddAddress()
     {
         try
@@ -375,7 +537,8 @@
             }
         }
         catch (Exception ex)
-        {            errorMessage = $"移除地址時發生錯誤: {ex.Message}";
+        {
+            errorMessage = $"移除地址時發生錯誤: {ex.Message}";
             Console.WriteLine(errorMessage);
         }
         
@@ -402,7 +565,8 @@
             }
         }
         catch (Exception ex)
-        {            errorMessage = $"設定主要地址時發生錯誤: {ex.Message}";
+        {
+            errorMessage = $"設定主要地址時發生錯誤: {ex.Message}";
             Console.WriteLine(errorMessage);
         }
         
@@ -431,7 +595,8 @@
             }
         }
         catch (Exception ex)
-        {            errorMessage = $"複製地址時發生錯誤: {ex.Message}";
+        {
+            errorMessage = $"複製地址時發生錯誤: {ex.Message}";
             Console.WriteLine(errorMessage);
         }
         
@@ -453,7 +618,8 @@
             }
         }
         catch (Exception ex)
-        {            errorMessage = $"更新地址類型時發生錯誤: {ex.Message}";
+        {
+            errorMessage = $"更新地址類型時發生錯誤: {ex.Message}";
             Console.WriteLine(errorMessage);
         }
         
@@ -470,7 +636,8 @@
             }
         }
         catch (Exception ex)
-        {            errorMessage = $"更新郵遞區號時發生錯誤: {ex.Message}";
+        {
+            errorMessage = $"更新郵遞區號時發生錯誤: {ex.Message}";
             Console.WriteLine(errorMessage);
         }
         
@@ -487,7 +654,8 @@
             }
         }
         catch (Exception ex)
-        {            errorMessage = $"更新城市時發生錯誤: {ex.Message}";
+        {
+            errorMessage = $"更新城市時發生錯誤: {ex.Message}";
             Console.WriteLine(errorMessage);
         }
         
@@ -504,7 +672,8 @@
             }
         }
         catch (Exception ex)
-        {            errorMessage = $"更新行政區時發生錯誤: {ex.Message}";
+        {
+            errorMessage = $"更新行政區時發生錯誤: {ex.Message}";
             Console.WriteLine(errorMessage);
         }
         
@@ -521,7 +690,8 @@
             }
         }
         catch (Exception ex)
-        {            errorMessage = $"更新地址時發生錯誤: {ex.Message}";
+        {
+            errorMessage = $"更新地址時發生錯誤: {ex.Message}";
             Console.WriteLine(errorMessage);
         }
         
@@ -541,7 +711,7 @@
             _ => addressTypes.FirstOrDefault()?.AddressTypeId
         };
     }
-      
+    
     private Task OnAddressesChanged(List<CustomerAddress> updatedAddresses)
     {
         customerAddresses = updatedAddresses ?? new List<CustomerAddress>();
@@ -557,6 +727,43 @@
         
         StateHasChanged();
         return Task.CompletedTask;
+    }
+    
+    // UI 輔助方法
+    private string GetPageTitle()
+    {
+        if (IsEditMode)
+        {
+            return !string.IsNullOrWhiteSpace(customerCode) 
+                ? $"編輯客戶 ({customerCode})" 
+                : "編輯客戶";
+        }
+        return "新增客戶";
+    }
+    
+    private string GetPageIcon()
+    {
+        return IsEditMode ? "fas fa-user-edit" : "fas fa-user-plus";
+    }
+    
+    private string GetSubmitButtonText()
+    {
+        return IsEditMode ? "更新客戶" : "儲存客戶";
+    }
+    
+    private string GetLoadingText()
+    {
+        return IsEditMode ? "載入客戶資料中..." : "載入表單資料中...";
+    }
+    
+    private string GetStatusText(EntityStatus status)
+    {
+        return status switch
+        {
+            EntityStatus.Active => "啟用",
+            EntityStatus.Inactive => "停用",
+            _ => status.ToString()
+        };
     }
     
     // 簡單的除錯日誌方法
