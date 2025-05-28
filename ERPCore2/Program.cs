@@ -15,6 +15,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IAddressService, AddressService>();
 builder.Services.AddScoped<IContactTypeService, ContactTypeService>();
+builder.Services.AddScoped<ICustomerContactService, CustomerContactService>();
+builder.Services.AddScoped<ICustomerAddressService, CustomerAddressService>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

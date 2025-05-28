@@ -9,11 +9,10 @@ namespace ERPCore2.Data.Context
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
         }
-        
-        // DbSets for each entity
+          // DbSets for each entity
         public DbSet<Customer> Customers { get; set; }
         public DbSet<CustomerType> CustomerTypes { get; set; }
-        public DbSet<Industry> Industries { get; set; }
+        public DbSet<IndustryType> IndustryTypes { get; set; }
         public DbSet<ContactType> ContactTypes { get; set; }
         public DbSet<AddressType> AddressTypes { get; set; }
         public DbSet<CustomerContact> CustomerContacts { get; set; }
@@ -67,10 +66,9 @@ namespace ERPCore2.Data.Context
                       .WithMany(ct => ct.Customers)
                       .HasForeignKey(e => e.CustomerTypeId)
                       .OnDelete(DeleteBehavior.SetNull);
-                      
-                entity.HasOne(e => e.Industry)
+                        entity.HasOne(e => e.IndustryType)
                       .WithMany(i => i.Customers)
-                      .HasForeignKey(e => e.IndustryId)
+                      .HasForeignKey(e => e.IndustryTypeId)
                       .OnDelete(DeleteBehavior.SetNull);
             });
             
@@ -89,16 +87,16 @@ namespace ERPCore2.Data.Context
                       .HasDefaultValue(EntityStatus.Active)
                       .HasSentinel(EntityStatus.Default);
             });
-            
-            // Configure Industry Entity
-            modelBuilder.Entity<Industry>(entity =>
+              // Configure IndustryType Entity
+            modelBuilder.Entity<IndustryType>(entity =>
             {
-                entity.HasKey(e => e.IndustryId);
+                entity.HasKey(e => e.IndustryTypeId);
                 
-                entity.Property(e => e.IndustryName)
+                entity.Property(e => e.IndustryTypeName)
                       .IsRequired()
                       .HasMaxLength(100);
-                        entity.Property(e => e.IndustryCode)
+                      
+                entity.Property(e => e.IndustryTypeCode)
                       .HasMaxLength(10);
                       
                 entity.Property(e => e.Status)

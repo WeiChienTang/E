@@ -31,9 +31,8 @@ namespace ERPCore2.Data.Entities
         // Foreign Keys
         [Display(Name = "客戶類型")]
         public int? CustomerTypeId { get; set; }
-        
-        [Display(Name = "行業別")]
-        public int? IndustryId { get; set; }
+          [Display(Name = "行業類型")]
+        public int? IndustryTypeId { get; set; }
         
         // Audit Fields
         [Display(Name = "建立日期")]
@@ -52,10 +51,9 @@ namespace ERPCore2.Data.Entities
           // Status
         [Display(Name = "狀態")]
         public EntityStatus Status { get; set; } = EntityStatus.Default;
-        
-        // Navigation Properties
+          // Navigation Properties
         public CustomerType? CustomerType { get; set; }
-        public Industry? Industry { get; set; }
+        public IndustryType? IndustryType { get; set; }
         public ICollection<CustomerContact> CustomerContacts { get; set; } = new List<CustomerContact>();
         public ICollection<CustomerAddress> CustomerAddresses { get; set; } = new List<CustomerAddress>();
     }

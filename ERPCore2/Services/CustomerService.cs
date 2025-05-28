@@ -22,11 +22,10 @@ namespace ERPCore2.Services
         public async Task<List<Customer>> GetAllAsync()
         {
             try
-            {
-                return await _context.Customers
+            {                return await _context.Customers
                     .Where(c => c.Status != EntityStatus.Deleted)
                     .Include(c => c.CustomerType)
-                    .Include(c => c.Industry)
+                    .Include(c => c.IndustryType)
                     .OrderBy(c => c.CompanyName)
                     .ToListAsync();
             }
@@ -43,10 +42,9 @@ namespace ERPCore2.Services
                 return null;
 
             try
-            {
-                return await _context.Customers
+            {                return await _context.Customers
                     .Include(c => c.CustomerType)
-                    .Include(c => c.Industry)
+                    .Include(c => c.IndustryType)
                     .Include(c => c.CustomerContacts)
                     .Include(c => c.CustomerAddresses)
                     .FirstOrDefaultAsync(c => c.CustomerId == id && c.Status != EntityStatus.Deleted);
@@ -104,16 +102,14 @@ namespace ERPCore2.Services
                         Console.WriteLine($"客戶類型不存在: {customer.CustomerTypeId}");
                         return ServiceResult<Customer>.Failure("客戶類型不存在");
                     }
-                }
-
-                if (customer.IndustryId.HasValue)
+                }                if (customer.IndustryTypeId.HasValue)
                 {
-                    var industryExists = await _context.Industries
-                        .AnyAsync(i => i.IndustryId == customer.IndustryId && i.Status != EntityStatus.Deleted);
+                    var industryExists = await _context.IndustryTypes
+                        .AnyAsync(i => i.IndustryTypeId == customer.IndustryTypeId && i.Status != EntityStatus.Deleted);
                     if (!industryExists)
                     {
-                        Console.WriteLine($"行業別不存在: {customer.IndustryId}");
-                        return ServiceResult<Customer>.Failure("行業別不存在");
+                        Console.WriteLine($"行業類型不存在: {customer.IndustryTypeId}");
+                        return ServiceResult<Customer>.Failure("行業類型不存在");
                     }
                 }
 
@@ -222,23 +218,20 @@ namespace ERPCore2.Services
                         .AnyAsync(ct => ct.CustomerTypeId == customer.CustomerTypeId && ct.Status != EntityStatus.Deleted);
                     if (!customerTypeExists)
                         return ServiceResult<Customer>.Failure("客戶類型不存在");
-                }
-
-                if (customer.IndustryId.HasValue)
+                }                if (customer.IndustryTypeId.HasValue)
                 {
-                    var industryExists = await _context.Industries
-                        .AnyAsync(i => i.IndustryId == customer.IndustryId && i.Status != EntityStatus.Deleted);
+                    var industryExists = await _context.IndustryTypes
+                        .AnyAsync(i => i.IndustryTypeId == customer.IndustryTypeId && i.Status != EntityStatus.Deleted);
                     if (!industryExists)
-                        return ServiceResult<Customer>.Failure("行業別不存在");
+                        return ServiceResult<Customer>.Failure("行業類型不存在");
                 }
 
                 // Update Customer properties
                 existingCustomer.CustomerCode = customer.CustomerCode;
                 existingCustomer.CompanyName = customer.CompanyName;
                 existingCustomer.ContactPerson = customer.ContactPerson;
-                existingCustomer.TaxNumber = customer.TaxNumber;
-                existingCustomer.CustomerTypeId = customer.CustomerTypeId;
-                existingCustomer.IndustryId = customer.IndustryId;
+                existingCustomer.TaxNumber = customer.TaxNumber;                existingCustomer.CustomerTypeId = customer.CustomerTypeId;
+                existingCustomer.IndustryTypeId = customer.IndustryTypeId;
                 existingCustomer.ModifiedDate = DateTime.UtcNow;
                 existingCustomer.ModifiedBy = "System"; // TODO: Replace with actual user when authentication is implemented
 
@@ -301,33 +294,28 @@ namespace ERPCore2.Services
         public async Task<Customer?> GetByCustomerCodeAsync(string customerCode)
         {
             if (string.IsNullOrWhiteSpace(customerCode))
-                return null;
-
-            return await _context.Customers
+                return null;            return await _context.Customers
                 .Include(c => c.CustomerType)
-                .Include(c => c.Industry)
+                .Include(c => c.IndustryType)
                 .FirstOrDefaultAsync(c => c.CustomerCode == customerCode && c.Status != EntityStatus.Deleted);
         }
 
         public async Task<List<Customer>> GetByCompanyNameAsync(string companyName)
         {
             if (string.IsNullOrWhiteSpace(companyName))
-                return new List<Customer>();
-
-            return await _context.Customers
+                return new List<Customer>();            return await _context.Customers
                 .Where(c => c.CompanyName.Contains(companyName) && c.Status != EntityStatus.Deleted)
                 .Include(c => c.CustomerType)
-                .Include(c => c.Industry)
+                .Include(c => c.IndustryType)
                 .OrderBy(c => c.CompanyName)
                 .ToListAsync();
         }
 
         public async Task<(List<Customer> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize)
-        {
-            var query = _context.Customers
+        {            var query = _context.Customers
                 .Where(c => c.Status != EntityStatus.Deleted)
                 .Include(c => c.CustomerType)
-                .Include(c => c.Industry);
+                .Include(c => c.IndustryType);
 
             var totalCount = await query.CountAsync();
 
@@ -341,11 +329,10 @@ namespace ERPCore2.Services
         }
 
         public async Task<List<Customer>> GetActiveCustomersAsync()
-        {
-            return await _context.Customers
+        {            return await _context.Customers
                 .Where(c => c.Status == EntityStatus.Active)
                 .Include(c => c.CustomerType)
-                .Include(c => c.Industry)
+                .Include(c => c.IndustryType)
                 .OrderBy(c => c.CompanyName)
                 .ToListAsync();
         }
@@ -365,15 +352,13 @@ namespace ERPCore2.Services
                 _logger.LogError(ex, "Error getting customer types");
                 throw;
             }
-        }
-
-        public async Task<List<Industry>> GetIndustriesAsync()
+        }        public async Task<List<IndustryType>> GetIndustryTypesAsync()
         {
             try
             {
-                return await _context.Industries
+                return await _context.IndustryTypes
                     .Where(i => i.Status == EntityStatus.Active)
-                    .OrderBy(i => i.IndustryName)
+                    .OrderBy(i => i.IndustryTypeName)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -607,17 +592,56 @@ namespace ERPCore2.Services
                     if (string.IsNullOrWhiteSpace(address.City) && string.IsNullOrWhiteSpace(address.Address))
                         errors.Add($"{prefix}: 至少需要填寫城市或詳細地址");
                 }
-            }
-
-            Console.WriteLine($"地址驗證完成，錯誤數量: {errors.Count}");
+            }            Console.WriteLine($"地址驗證完成，錯誤數量: {errors.Count}");
             if (errors.Any())
             {
                 Console.WriteLine("地址驗證錯誤:");
                 errors.ForEach(error => Console.WriteLine($"  - {error}"));
                 return ServiceResult.ValidationFailure(errors);
-            }
+            }            return ServiceResult.Success();
+        }
 
-            return ServiceResult.Success();
+        /// <summary>
+        /// 初始化新客戶的預設值
+        /// </summary>
+        /// <param name="customer">要初始化的客戶物件</param>
+        public void InitializeNewCustomer(Customer customer)
+        {
+            // 確保所有字串屬性都有初始值，避免 null
+            customer.CustomerCode = customer.CustomerCode ?? string.Empty;
+            customer.CompanyName = customer.CompanyName ?? string.Empty;
+            customer.ContactPerson = customer.ContactPerson ?? string.Empty;
+            customer.TaxNumber = customer.TaxNumber ?? string.Empty;
+            customer.CreatedBy = customer.CreatedBy ?? "系統管理員";
+            customer.CreatedDate = DateTime.Now;
+            customer.Status = EntityStatus.Active;
+        }
+        
+        /// <summary>
+        /// 取得基本必填欄位數量
+        /// </summary>
+        /// <returns>必填欄位數量</returns>
+        public int GetBasicRequiredFieldsCount()
+        {
+            return 2; // CustomerCode 和 CompanyName 是必填欄位
+        }
+        
+        /// <summary>
+        /// 取得已完成的基本必填欄位數量
+        /// </summary>
+        /// <param name="customer">客戶物件</param>
+        /// <returns>已完成的必填欄位數量</returns>
+        public int GetBasicCompletedFieldsCount(Customer customer)
+        {
+            int count = 0;
+            
+            if (!string.IsNullOrWhiteSpace(customer.CustomerCode))
+                count++;
+                
+            if (!string.IsNullOrWhiteSpace(customer.CompanyName))
+                count++;
+                
+            return count;
         }
     }
 }

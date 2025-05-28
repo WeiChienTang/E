@@ -403,9 +403,7 @@ namespace ERPCore2.Services
                 _logger.LogError(ex, "Error copying address for customer {CustomerId}", targetCustomerId);
                 return ServiceResult<CustomerAddress>.Failure($"複製地址時發生錯誤: {ex.Message}");
             }
-        }
-
-        public async Task<int?> GetDefaultAddressTypeIdAsync(string addressTypeName)
+        }        public async Task<int?> GetDefaultAddressTypeIdAsync(string addressTypeName)
         {
             try
             {
@@ -418,6 +416,38 @@ namespace ERPCore2.Services
                 _logger.LogError(ex, "Error getting default address type for {AddressTypeName}", addressTypeName);
                 return null;
             }
+        }        /// <summary>
+        /// 取得客戶地址，如果沒有地址則初始化預設地址
+        /// </summary>
+        /// <param name="customerId">客戶ID</param>
+        /// <param name="addressTypes">地址類型列表</param>
+        /// <returns>客戶地址列表</returns>
+        public async Task<List<CustomerAddress>> GetAddressesWithDefaultAsync(int customerId, List<AddressType> addressTypes)
+        {
+            var addresses = await GetAddressesByCustomerIdAsync(customerId);
+            var result = addresses?.ToList() ?? new List<CustomerAddress>();
+            
+            if (!result.Any())
+            {
+                // 使用靜態方法來初始化預設地址
+                var defaultAddress = new CustomerAddress
+                {
+                    CustomerId = customerId,
+                    Status = EntityStatus.Active,
+                    IsPrimary = true,
+                    PostalCode = string.Empty,
+                    City = string.Empty,
+                    District = string.Empty,
+                    Address = string.Empty,
+                    AddressTypeId = addressTypes.FirstOrDefault(at => at.TypeName.Contains("公司") || at.TypeName.Contains("營業"))?.AddressTypeId
+                };
+                
+                result.Add(defaultAddress);
+                
+                _logger.LogInformation("Initialized default address for customer {CustomerId}", customerId);
+            }
+            
+            return result;
         }
 
         #endregion

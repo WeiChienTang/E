@@ -21,9 +21,11 @@ namespace ERPCore2.Services
         // 地址驗證和業務規則
         Task<ServiceResult> ValidateAddressAsync(CustomerAddress address);
         Task<ServiceResult> EnsureCustomerHasPrimaryAddressAsync(int customerId);
-        
-        // 地址操作輔助方法
+          // 地址操作輔助方法
         Task<ServiceResult<CustomerAddress>> CopyFromAddressAsync(CustomerAddress sourceAddress, int targetCustomerId, int? targetAddressTypeId = null);
         Task<int?> GetDefaultAddressTypeIdAsync(string addressTypeName);
+        
+        // 地址載入方法，包含預設地址初始化
+        Task<List<CustomerAddress>> GetAddressesWithDefaultAsync(int customerId, List<AddressType> addressTypes);
     }
 }

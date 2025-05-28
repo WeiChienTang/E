@@ -75,21 +75,20 @@ namespace ERPCore2.Data
             };
 
             await context.CustomerTypes.AddRangeAsync(customerTypes);
-
             // 新增行業別資料
-            var industries = new[]
+            var industryTypes = new[]
             {
-                new Industry { IndustryName = "製造業", IndustryCode = "MFG" },
-                new Industry { IndustryName = "資訊科技業", IndustryCode = "IT" },
-                new Industry { IndustryName = "服務業", IndustryCode = "SVC" },
-                new Industry { IndustryName = "貿易業", IndustryCode = "TRD" },
-                new Industry { IndustryName = "建築業", IndustryCode = "CON" },
-                new Industry { IndustryName = "金融業", IndustryCode = "FIN" },
-                new Industry { IndustryName = "零售業", IndustryCode = "RTL" },
-                new Industry { IndustryName = "餐飲業", IndustryCode = "F&B" }
+                new IndustryType { IndustryTypeName = "製造業", IndustryTypeCode = "MFG" },
+                new IndustryType { IndustryTypeName = "資訊科技業", IndustryTypeCode = "IT" },
+                new IndustryType { IndustryTypeName = "服務業", IndustryTypeCode = "SVC" },
+                new IndustryType { IndustryTypeName = "貿易業", IndustryTypeCode = "TRD" },
+                new IndustryType { IndustryTypeName = "建築業", IndustryTypeCode = "CON" },
+                new IndustryType { IndustryTypeName = "金融業", IndustryTypeCode = "FIN" },
+                new IndustryType { IndustryTypeName = "零售業", IndustryTypeCode = "RTL" },
+                new IndustryType { IndustryTypeName = "餐飲業", IndustryTypeCode = "F&B" }
             };
 
-            await context.Industries.AddRangeAsync(industries);
+            await context.IndustryTypes.AddRangeAsync(industryTypes);
 
             // 儲存變更
             await context.SaveChangesAsync();

@@ -3,6 +3,8 @@
 @inject ICustomerService CustomerService
 @inject IAddressService AddressService
 @inject IContactTypeService ContactTypeService
+@inject ICustomerContactService CustomerContactService
+@inject ICustomerAddressService CustomerAddressService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @using ERPCore2.Data.Entities
@@ -83,7 +85,7 @@
                                     </div>
                                 </div>
                                 
-                                <div class="row">                                    <div class="col-md-4">
+                                <div class="row">                                      <div class="col-md-4">
                                         <DatabaseSelectWithManagementComponent TValue="int?" TEntity="CustomerType"
                                                                              Id="customerType" 
                                                                              Label="客戶類型"
@@ -93,21 +95,20 @@
                                                                              GetItemText="@((CustomerType item) => item.TypeName)"
                                                                              GetItemValue="@((CustomerType item) => (object)item.CustomerTypeId)"
                                                                              EmptyOptionText="請選擇客戶類型..."
-                                                                             ShowManagementButton="false" />
+                                                                             ShowManagementButton="true" />
                                         <ValidationMessage For="@(() => customer.CustomerTypeId)" class="text-danger" />
-                                    </div>
-                                      <div class="col-md-4">
-                                        <DatabaseSelectWithManagementComponent TValue="int?" TEntity="Industry"
-                                                       Id="industry" 
-                                                       Label="行業別"
-                                                       Value="@customer.IndustryId"
-                                                       ValueChanged="@((int? value) => { customer.IndustryId = value; LogChange("IndustryId", value?.ToString() ?? "null"); StateHasChanged(); })"
-                                                       LoadDataFunc="@(() => CustomerService.GetIndustriesAsync())"
-                                                       GetItemText="@((Industry item) => item.IndustryName)"
-                                                       GetItemValue="@((Industry item) => (object)item.IndustryId)"
-                                                       EmptyOptionText="請選擇行業別..."
-                                                       ShowManagementButton="false" />
-                                        <ValidationMessage For="@(() => customer.IndustryId)" class="text-danger" />
+                                    </div>                                      <div class="col-md-4">
+                                        <DatabaseSelectWithManagementComponent TValue="int?" TEntity="IndustryType"
+                                                       Id="industryType" 
+                                                       Label="行業類型"
+                                                       Value="@customer.IndustryTypeId"
+                                                       ValueChanged="@((int? value) => { customer.IndustryTypeId = value; LogChange("IndustryTypeId", value?.ToString() ?? "null"); StateHasChanged(); })"
+                                                       LoadDataFunc="@(() => CustomerService.GetIndustryTypesAsync())"
+                                                       GetItemText="@((IndustryType item) => item.IndustryTypeName)"
+                                                       GetItemValue="@((IndustryType item) => (object)item.IndustryTypeId)"
+                                                       EmptyOptionText="請選擇行業類型..."
+                                                       ShowManagementButton="true" />
+                                        <ValidationMessage For="@(() => customer.IndustryTypeId)" class="text-danger" />
                                     </div>
                                     
                                     <div class="col-md-4">
@@ -116,7 +117,8 @@
                                                       Value="@customer.ContactPerson"
                                                       ValueChanged="@(value => { customer.ContactPerson = value; LogChange("ContactPerson", value); })" />
                                         <ValidationMessage For="@(() => customer.ContactPerson)" class="text-danger" />
-                                    </div>                                </div>
+                                    </div>                                
+                                </div>
                             </FormSectionComponent>
                                 <!-- 聯絡資訊區塊 -->                            
                             <FormSectionComponent Title="聯絡資訊" 
@@ -124,21 +126,6 @@
                                                 SectionType="@FormSectionType.Contact"
                                                 RequiredFieldsCount="0"
                                                 CompletedFieldsCount="@GetContactCompletedFieldsCount()">
-                                  <!-- 理想的聯絡類型選擇器（示範用，實際可能需要自定義組件）-->                                
-                                <DatabaseSelectWithManagementComponent TValue="int?" TEntity="ContactType"
-                                                                       Id="contactTypeSelect" 
-                                                                       Label="選擇聯絡類型"
-                                                                       Value="@selectedContactTypeId"
-                                                                       ValueChanged="@((int? value) => selectedContactTypeId = value)"
-                                                                       LoadDataFunc="@(() => ContactTypeService.GetActiveAsync())"
-                                                                       GetItemText="@((ContactType item) => item.TypeName)"
-                                                                       GetItemValue="@((ContactType item) => (object)item.ContactTypeId)"
-                                                                       EmptyOptionText="請選擇聯絡類型..."
-                                                                       ManagementButtonTitle="管理聯絡類型"
-                                                                       OnManagementClick="ShowContactTypeModal"
-                                                                       OnDataRefreshed="OnContactTypeDataRefreshed" />
-                                
-                                <!-- 原有的硬編碼聯絡方式輸入 -->
                                 
                                 <div class="row">
                                     <div class="col-md-4">
@@ -329,11 +316,11 @@
                        TableHeaders="ContactTypeTableHeaders"
                        TableRowContent="ContactTypeTableRow" />
 
-@code {    [Parameter] public int? CustomerId { get; set; }
-    
-    private Customer customer = new();
+@code {    
+    [Parameter] public int? CustomerId { get; set; }
+      private Customer customer = new();
     private List<CustomerType> customerTypes = new();
-    private List<Industry> industries = new();
+    private List<IndustryType> industryTypes = new();
     private List<AddressType> addressTypes = new();
     private List<ContactType> contactTypes = new();
     private List<CustomerAddress> customerAddresses = new();
@@ -368,10 +355,9 @@
     private async Task LoadDataAsync()
     {
         try
-        {
-            // 載入客戶類型、行業別、地址類型和聯絡類型的下拉選項            
+        {            // 載入客戶類型、行業類型、地址類型和聯絡類型的下拉選項            
             customerTypes = await CustomerService.GetCustomerTypesAsync();
-            industries = await CustomerService.GetIndustriesAsync();
+            industryTypes = await CustomerService.GetIndustryTypesAsync();
             addressTypes = await CustomerService.GetAddressTypesAsync();
 
             // 使用 ContactTypeService 載入聯絡類型
@@ -381,12 +367,11 @@
             {
                 // 編輯模式：載入現有客戶資料和地址
                 await LoadExistingCustomerAsync();
-            }
-            else
+            }            else
             {
-                // 新增模式：初始化預設地址
+                // 新增模式：初始化預設地址和新客戶
                 InitializeDefaultAddresses();
-                InitializeNewCustomer();
+                CustomerService.InitializeNewCustomer(customer);
             }
             
             if (enableDebugLog)
@@ -395,7 +380,7 @@
                 Console.WriteLine($"IsEditMode: {IsEditMode}");
                 Console.WriteLine($"CustomerId: {CustomerId}");
                 Console.WriteLine($"CustomerTypes count: {customerTypes.Count}");
-                Console.WriteLine($"Industries count: {industries.Count}");                Console.WriteLine($"ContactTypes count: {contactTypes.Count}");
+                Console.WriteLine($"IndustryTypes count: {industryTypes.Count}");                Console.WriteLine($"ContactTypes count: {contactTypes.Count}");
                 Console.WriteLine($"CustomerAddresses count: {customerAddresses.Count}");
                 Console.WriteLine($"CustomerContacts count: {customerContacts.Count}");
                 LogCustomerState("初始化完成");
@@ -426,42 +411,13 @@
         customerCode = existingCustomer.CustomerCode;
         customer = existingCustomer;
         customer.ModifiedBy = "系統管理員"; // 可以從認證系統獲取
-          // 載入客戶地址資料
-        await LoadCustomerAddressesAsync();
+          // 載入客戶地址資料（使用新的簡化方法）
+        customerAddresses = await AddressService.GetAddressesWithDefaultAsync(CustomerId.Value, addressTypes);
         
         // 載入客戶聯絡資料
-        await LoadCustomerContactsAsync();
+        customerContacts = (await CustomerService.GetCustomerContactsAsync(CustomerId.Value)).ToList();
     }
-    
-    private async Task LoadCustomerAddressesAsync()
-    {        try
-        {
-            if (CustomerId.HasValue)
-            {
-                // 載入客戶的地址資料
-                var addresses = await AddressService.GetAddressesByCustomerIdAsync(CustomerId.Value);
-                customerAddresses = addresses?.ToList() ?? new List<CustomerAddress>();
-                
-                // 如果沒有地址，初始化一個預設地址
-                if (!customerAddresses.Any())
-                {
-                    InitializeDefaultAddresses();
-                }
-                
-                if (enableDebugLog)
-                {
-                    Console.WriteLine($"載入了 {customerAddresses.Count} 個客戶地址");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"載入客戶地址時發生錯誤: {ex.Message}");
-            // 如果載入失敗，初始化預設地址
-            InitializeDefaultAddresses();        }
-    }
-    
-    private async Task LoadCustomerContactsAsync()
+      private async Task LoadCustomerContactsAsync()
     {
         try
         {
@@ -484,44 +440,9 @@
             customerContacts = new List<CustomerContact>();
         }
     }
-    
-    private void InitializeNewCustomer()
+      private void InitializeDefaultAddresses()
     {
-        // 確保所有字串屬性都有初始值，避免 null
-        customer.CustomerCode = customer.CustomerCode ?? string.Empty;
-        customer.CompanyName = customer.CompanyName ?? string.Empty;
-        customer.ContactPerson = customer.ContactPerson ?? string.Empty;
-        customer.TaxNumber = customer.TaxNumber ?? string.Empty;
-        customer.CreatedBy = customer.CreatedBy ?? "系統管理員";
-        customer.CreatedDate = DateTime.Now;
-        customer.Status = ERPCore2.Data.Enums.EntityStatus.Active;
-    }
-    
-    private void InitializeDefaultAddresses()
-    {
-        customerAddresses.Clear();
-        
-        // 尋找公司地址類型
-        var companyAddressType = addressTypes.FirstOrDefault(at => at.TypeName.Contains("公司"));
-        
-        // 如果找不到公司地址類型，使用第一個可用的類型
-        if (companyAddressType == null && addressTypes.Any())
-            companyAddressType = addressTypes.First();
-        
-        // 新增預設公司地址
-        if (companyAddressType != null)
-        {
-            customerAddresses.Add(new CustomerAddress
-            {
-                AddressTypeId = companyAddressType.AddressTypeId,
-                IsPrimary = true,
-                Status = ERPCore2.Data.Enums.EntityStatus.Active,
-                PostalCode = string.Empty,
-                City = string.Empty,
-                District = string.Empty,
-                Address = string.Empty
-            });
-        }
+        CustomerAddressService.InitializeDefaultAddresses(customerAddresses, addressTypes);
         
         if (enableDebugLog)
         {
@@ -536,12 +457,42 @@
         try
         {
             isSubmitting = true;
-            errorMessage = string.Empty;
-              if (enableDebugLog)
+            errorMessage = string.Empty;            if (enableDebugLog)
             {
                 LogCustomerState("表單提交前");
                 Console.WriteLine($"準備提交的地址數量: {customerAddresses.Count}");
                 Console.WriteLine($"準備提交的聯絡資料數量: {customerContacts.Count}");
+            }
+              // 驗證聯絡資料
+            var contactValidationResult = CustomerContactService.ValidateCustomerContacts(customerContacts);
+            if (!contactValidationResult.IsSuccess)
+            {
+                errorMessage = contactValidationResult.ErrorMessage;
+                return;
+            }
+            
+            // 確保每種聯絡類型只有一個主要聯絡方式
+            var primaryContactResult = CustomerContactService.EnsureUniquePrimaryContacts(customerContacts);
+            if (!primaryContactResult.IsSuccess)
+            {
+                errorMessage = primaryContactResult.ErrorMessage;
+                return;
+            }
+            
+            // 驗證地址資料
+            var addressValidationResult = CustomerAddressService.ValidateAddresses(customerAddresses);
+            if (!addressValidationResult.IsSuccess)
+            {
+                errorMessage = addressValidationResult.ErrorMessage;
+                return;
+            }
+            
+            // 確保有主要地址
+            var primaryAddressResult = CustomerAddressService.EnsurePrimaryAddressExists(customerAddresses);
+            if (!primaryAddressResult.IsSuccess)
+            {
+                errorMessage = primaryAddressResult.ErrorMessage;
+                return;
             }
             
             ServiceResult result;
@@ -609,28 +560,22 @@
             isSubmitting = false;
         }
     }
-    
-    // 地址管理事件處理方法 (新增和編輯模式都可使用)
+      // 地址管理事件處理方法 (新增和編輯模式都可使用)
     private Task HandleAddAddress()
     {
         try
         {
-            var newAddress = new CustomerAddress
+            var newAddress = CustomerAddressService.CreateNewAddress(customer.CustomerId, customerAddresses.Count);
+            newAddress.AddressTypeId = CustomerAddressService.GetDefaultAddressTypeId(customerAddresses.Count, addressTypes);
+            
+            var result = CustomerAddressService.AddAddress(customerAddresses, newAddress);
+            
+            if (!result.IsSuccess)
             {
-                CustomerId = customer.CustomerId,
-                Status = EntityStatus.Active,
-                IsPrimary = customerAddresses.Count == 0,
-                AddressTypeId = GetDefaultAddressTypeId(customerAddresses.Count),
-                PostalCode = string.Empty,
-                City = string.Empty,
-                District = string.Empty,
-                Address = string.Empty
-            };
-            
-            // 對於新建客戶，只加到本地集合
-            customerAddresses.Add(newAddress);
-            
-            if (enableDebugLog)
+                errorMessage = result.ErrorMessage;
+                Console.WriteLine($"新增地址失敗: {result.ErrorMessage}");
+            }
+            else if (enableDebugLog)
             {
                 Console.WriteLine($"新增地址，目前數量: {customerAddresses.Count}");
             }
@@ -643,113 +588,68 @@
         
         return Task.CompletedTask;
     }
-    
-    private Task HandleRemoveAddress(int index)
+      private Task HandleRemoveAddress(int index)
     {
-        try
+        var result = CustomerAddressService.RemoveAddress(customerAddresses, index);
+        
+        if (!result.IsSuccess)
         {
-            if (customerAddresses.Count > 1 && index < customerAddresses.Count)
-            {
-                var removedAddress = customerAddresses[index];
-                customerAddresses.RemoveAt(index);
-                
-                // 如果刪除的是主要地址，將第一個地址設為主要
-                if (removedAddress.IsPrimary && customerAddresses.Any())
-                {
-                    customerAddresses[0].IsPrimary = true;
-                }
-                
-                if (enableDebugLog)
-                {
-                    Console.WriteLine($"移除地址，目前數量: {customerAddresses.Count}");
-                }
-            }
+            errorMessage = result.ErrorMessage;
+            Console.WriteLine($"移除地址失敗: {result.ErrorMessage}");
         }
-        catch (Exception ex)
+        else if (enableDebugLog)
         {
-            errorMessage = $"移除地址時發生錯誤: {ex.Message}";
-            Console.WriteLine(errorMessage);
+            Console.WriteLine($"移除地址，目前數量: {customerAddresses.Count}");
         }
         
         return Task.CompletedTask;
     }
-    
-    private Task HandleSetPrimaryAddress(int index)
+      private Task HandleSetPrimaryAddress(int index)
     {
-        try
+        var result = CustomerAddressService.SetPrimaryAddress(customerAddresses, index);
+        
+        if (!result.IsSuccess)
         {
-            if (index >= 0 && index < customerAddresses.Count)
-            {
-                // 更新本地集合
-                foreach (var addr in customerAddresses)
-                {
-                    addr.IsPrimary = false;
-                }
-                customerAddresses[index].IsPrimary = true;
-                
-                if (enableDebugLog)
-                {
-                    Console.WriteLine($"設定主要地址: 索引 {index}");
-                }
-            }
+            errorMessage = result.ErrorMessage;
+            Console.WriteLine($"設定主要地址失敗: {result.ErrorMessage}");
         }
-        catch (Exception ex)
+        else if (enableDebugLog)
         {
-            errorMessage = $"設定主要地址時發生錯誤: {ex.Message}";
-            Console.WriteLine(errorMessage);
+            Console.WriteLine($"設定主要地址: 索引 {index}");
         }
         
         return Task.CompletedTask;
     }
-    
-    private Task HandleCopyFromFirstAddress((int targetIndex, bool shouldCopy) args)
+      private Task HandleCopyFromFirstAddress((int targetIndex, bool shouldCopy) args)
     {
-        try
+        if (args.shouldCopy)
         {
-            if (args.shouldCopy && customerAddresses.Count >= 2 && args.targetIndex < customerAddresses.Count)
+            var result = CustomerAddressService.CopyAddressFromFirst(customerAddresses, args.targetIndex);
+            
+            if (!result.IsSuccess)
             {
-                var sourceAddress = customerAddresses[0];
-                var targetAddress = customerAddresses[args.targetIndex];
-                
-                // 本地複製
-                targetAddress.PostalCode = sourceAddress.PostalCode;
-                targetAddress.City = sourceAddress.City;
-                targetAddress.District = sourceAddress.District;
-                targetAddress.Address = sourceAddress.Address;
-                
-                if (enableDebugLog)
-                {
-                    Console.WriteLine($"複製地址從索引 0 到索引 {args.targetIndex}");
-                }
+                errorMessage = result.ErrorMessage;
+                Console.WriteLine($"複製地址失敗: {result.ErrorMessage}");
             }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"複製地址時發生錯誤: {ex.Message}";
-            Console.WriteLine(errorMessage);
+            else if (enableDebugLog)
+            {
+                Console.WriteLine($"複製地址從索引 0 到索引 {args.targetIndex}");
+            }
         }
         
         return Task.CompletedTask;
     }
-    
-    private Task HandleAddressTypeChanged((int index, int? value) args)
+      private Task HandleAddressTypeChanged((int index, int? value) args)
     {
-        try
+        var result = CustomerAddressService.UpdateAddressType(customerAddresses, args.index, args.value);
+        
+        if (!result.IsSuccess)
         {
-            if (args.index < customerAddresses.Count)
-            {
-                customerAddresses[args.index].AddressTypeId = args.value;
-                
-                if (enableDebugLog)
-                {
-                    Console.WriteLine($"地址類型變更: 索引 {args.index}, 新值: {args.value}");
-                }
-            }
+            errorMessage = result.ErrorMessage;
         }
-        catch (Exception ex)
+        else if (enableDebugLog)
         {
-            errorMessage = $"更新地址類型時發生錯誤: {ex.Message}";
-            Console.WriteLine(errorMessage);
+            Console.WriteLine($"地址類型變更: 索引 {args.index}, 新值: {args.value}");
         }
         
         return Task.CompletedTask;
@@ -757,17 +657,11 @@
     
     private Task HandlePostalCodeChanged((int index, string? value) args)
     {
-        try
+        var result = CustomerAddressService.UpdatePostalCode(customerAddresses, args.index, args.value);
+        
+        if (!result.IsSuccess)
         {
-            if (args.index < customerAddresses.Count)
-            {
-                customerAddresses[args.index].PostalCode = args.value;
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"更新郵遞區號時發生錯誤: {ex.Message}";
-            Console.WriteLine(errorMessage);
+            errorMessage = result.ErrorMessage;
         }
         
         return Task.CompletedTask;
@@ -775,17 +669,11 @@
     
     private Task HandleCityChanged((int index, string? value) args)
     {
-        try
+        var result = CustomerAddressService.UpdateCity(customerAddresses, args.index, args.value);
+        
+        if (!result.IsSuccess)
         {
-            if (args.index < customerAddresses.Count)
-            {
-                customerAddresses[args.index].City = args.value;
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"更新城市時發生錯誤: {ex.Message}";
-            Console.WriteLine(errorMessage);
+            errorMessage = result.ErrorMessage;
         }
         
         return Task.CompletedTask;
@@ -793,17 +681,11 @@
     
     private Task HandleDistrictChanged((int index, string? value) args)
     {
-        try
+        var result = CustomerAddressService.UpdateDistrict(customerAddresses, args.index, args.value);
+        
+        if (!result.IsSuccess)
         {
-            if (args.index < customerAddresses.Count)
-            {
-                customerAddresses[args.index].District = args.value;
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"更新行政區時發生錯誤: {ex.Message}";
-            Console.WriteLine(errorMessage);
+            errorMessage = result.ErrorMessage;
         }
         
         return Task.CompletedTask;
@@ -811,36 +693,16 @@
     
     private Task HandleAddressChanged((int index, string? value) args)
     {
-        try
+        var result = CustomerAddressService.UpdateAddress(customerAddresses, args.index, args.value);
+        
+        if (!result.IsSuccess)
         {
-            if (args.index < customerAddresses.Count)
-            {
-                customerAddresses[args.index].Address = args.value;
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"更新地址時發生錯誤: {ex.Message}";
-            Console.WriteLine(errorMessage);
+            errorMessage = result.ErrorMessage;
         }
         
         return Task.CompletedTask;
     }
-    
-    private int? GetDefaultAddressTypeId(int index)
-    {
-        if (!addressTypes.Any()) return null;
-        
-        return index switch
-        {
-            0 => addressTypes.FirstOrDefault(at => at.TypeName.Contains("住宅") || at.TypeName.Contains("公司"))?.AddressTypeId ??
-                 addressTypes.FirstOrDefault()?.AddressTypeId,
-            1 => addressTypes.FirstOrDefault(at => at.TypeName.Contains("通訊") || at.TypeName.Contains("寄信"))?.AddressTypeId ??
-                 addressTypes.Skip(1).FirstOrDefault()?.AddressTypeId,
-            _ => addressTypes.FirstOrDefault()?.AddressTypeId
-        };
-    }
-    
+      
     private Task OnAddressesChanged(List<CustomerAddress> updatedAddresses)
     {
         customerAddresses = updatedAddresses ?? new List<CustomerAddress>();
@@ -914,7 +776,7 @@
         Console.WriteLine($"ContactPerson: '{customer.ContactPerson}' (Length: {customer.ContactPerson?.Length ?? 0})");
         Console.WriteLine($"TaxNumber: '{customer.TaxNumber}' (Length: {customer.TaxNumber?.Length ?? 0})");
         Console.WriteLine($"CustomerTypeId: {customer.CustomerTypeId}");
-        Console.WriteLine($"IndustryId: {customer.IndustryId}");
+        Console.WriteLine($"IndustryTypeId: {customer.IndustryTypeId}");
         Console.WriteLine($"CreatedBy: '{customer.CreatedBy}'");
         Console.WriteLine("================================");
     }
@@ -922,86 +784,38 @@
     {
         Navigation.NavigateTo("/customers");
     }
-    
-    // 完成度追蹤輔助方法
+      // 完成度追蹤輔助方法
     private int GetBasicRequiredFieldsCount()
     {
-        return 2; // CustomerCode 和 CompanyName 是必填欄位
+        return CustomerService.GetBasicRequiredFieldsCount();
     }
     
     private int GetBasicCompletedFieldsCount()
     {
-        int count = 0;
-        
-        if (!string.IsNullOrWhiteSpace(customer.CustomerCode))
-            count++;
-            
-        if (!string.IsNullOrWhiteSpace(customer.CompanyName))
-            count++;
-            
-        return count;
-    }
-      private int GetAddressCompletedFieldsCount()
+        return CustomerService.GetBasicCompletedFieldsCount(customer);
+    }private int GetAddressCompletedFieldsCount()
     {
-        if (!customerAddresses.Any())
-            return 0;
-            
-        // 計算至少有一個完整地址的數量
-        int completedAddresses = customerAddresses.Count(addr => 
-            !string.IsNullOrWhiteSpace(addr.PostalCode) &&
-            !string.IsNullOrWhiteSpace(addr.City) &&
-            !string.IsNullOrWhiteSpace(addr.District) &&
-            !string.IsNullOrWhiteSpace(addr.Address)
-        );
-        
-        return completedAddresses;
+        return CustomerAddressService.GetAddressCompletedFieldsCount(customerAddresses);
     }
-    
-    // 聯絡資訊管理輔助方法
+      // 聯絡資訊管理輔助方法
     private int GetContactCompletedFieldsCount()
     {
-        return customerContacts.Count(c => !string.IsNullOrWhiteSpace(c.ContactValue));
+        return CustomerContactService.GetContactCompletedFieldsCount(customerContacts);
     }
-    
-    private string GetContactValue(string contactTypeName)
+      private string GetContactValue(string contactTypeName)
     {
-        var contactType = contactTypes.FirstOrDefault(ct => ct.TypeName == contactTypeName);
-        if (contactType == null) return string.Empty;
-        
-        var contact = customerContacts.FirstOrDefault(c => c.ContactTypeId == contactType.ContactTypeId);
-        return contact?.ContactValue ?? string.Empty;
+        return CustomerContactService.GetContactValue(customer.CustomerId, contactTypeName, contactTypes, customerContacts);
     }
-    
-    private void UpdateContactValue(string contactTypeName, string value)
+      private void UpdateContactValue(string contactTypeName, string value)
     {
-        var contactType = contactTypes.FirstOrDefault(ct => ct.TypeName == contactTypeName);
-        if (contactType == null) return;
+        var result = CustomerContactService.UpdateContactValue(customer.CustomerId, contactTypeName, value, contactTypes, customerContacts);
         
-        var existingContact = customerContacts.FirstOrDefault(c => c.ContactTypeId == contactType.ContactTypeId);
-        
-        if (!string.IsNullOrWhiteSpace(value))
+        if (!result.IsSuccess)
         {
-            if (existingContact != null)
-            {
-                existingContact.ContactValue = value;
-            }
-            else
-            {
-                customerContacts.Add(new CustomerContact
-                {
-                    CustomerId = customer.CustomerId,
-                    ContactTypeId = contactType.ContactTypeId,
-                    ContactValue = value,
-                    IsPrimary = !customerContacts.Any(c => c.IsPrimary && c.ContactTypeId == contactType.ContactTypeId),
-                    Status = EntityStatus.Active
-                });
-            }
+            errorMessage = result.ErrorMessage;
+            Console.WriteLine($"更新聯絡資訊失敗: {result.ErrorMessage}");
         }
-        else if (existingContact != null)
-        {
-            customerContacts.Remove(existingContact);
-        }
-          if (enableDebugLog)
+        else if (enableDebugLog)
         {
             Console.WriteLine($"聯絡資訊更新: {contactTypeName} = '{value}'");
         }
@@ -1014,8 +828,10 @@
         {
             await contactTypeModal.ShowModal();
         }
-    }    private async Task OnContactTypesChanged()
-    {        // 重新載入聯絡類型資料
+    }    
+    private async Task OnContactTypesChanged()
+    {        
+        // 重新載入聯絡類型資料
         try
         {
             contactTypes = await ContactTypeService.GetActiveAsync();
