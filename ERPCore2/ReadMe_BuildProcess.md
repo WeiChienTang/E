@@ -1,82 +1,82 @@
-# Blazor Server ERP Design Guide
+# Blazor Server ERP 設計指南
 
-## Architecture Overview
+## 架構概覽
 
-This guide provides a systematic approach to building ERP systems using Blazor Server with a simplified, efficient architecture. The architecture follows the dependency flow:
+本指南提供使用 Blazor Server 建構 ERP 系統的系統化方法，採用簡化且高效的架構。架構遵循以下依賴流程：
 
 ```
-Database ↔ DbContext (EF Core) ↔ Service ↔ Blazor Pages/Controllers
+資料庫 ↔ DbContext (EF Core) ↔ Service ↔ Blazor Pages
 ```
 
-### Core Principles
-- **Separation of Concerns**: Each layer has a single responsibility
-- **Dependency Inversion**: Depend on abstractions, not concrete implementations
-- **SOLID Principles**: Maintain clean, maintainable code
-- **Simplicity**: Avoid unnecessary abstractions when Entity Framework Core already provides them
-- **Consistency**: Follow the same patterns across all modules
+### 核心原則
+- **關注分離**：每一層都有單一責任
+- **依賴反轉**：依賴抽象而非具體實作
+- **SOLID 原則**：維持乾淨且可維護的程式碼
+- **簡潔性**：避免不必要的抽象層，因為 Entity Framework Core 已經提供了這些功能
+- **一致性**：在所有模組中遵循相同的模式
 
-### Why This Architecture?
+### 為什麼選擇這個架構？
 
-#### **Entity Framework Core IS the Repository**
-Entity Framework Core already implements the Repository and Unit of Work patterns:
-- `DbContext` = Unit of Work
-- `DbSet<T>` = Repository for entity T
-- Adding another repository layer creates unnecessary complexity
+#### **Entity Framework Core 本身就是完整的資料存取層**
+Entity Framework Core 已經實作了所有必要的資料存取模式：
+- `DbContext` = 工作單元 (Unit of Work)
+- `DbSet<T>` = 實體 T 的資料集合
+- 添加額外的資料存取層會產生不必要的複雜性
 
-#### **Service Layer Benefits**
-- **Single Responsibility**: Handles both business logic and data access
-- **Better Performance**: Direct access to EF Core's full feature set
-- **Easier Maintenance**: Fewer layers to debug and maintain
-- **Modern Approach**: Aligns with current .NET best practices
+#### **Service 層的優點**
+- **單一責任**：處理業務邏輯和資料存取
+- **更好的效能**：直接存取 EF Core 的完整功能集
+- **更容易維護**：更少的層級需要除錯和維護
+- **現代化方法**：符合目前 .NET 最佳實務
 
 ---
 
-## 1. Entity Design
+## 1. 實體設計
 
-### Purpose
-Entities represent your data structure and serve as the foundation of your ERP system.
+### 目的
+實體代表您的資料結構，是 ERP 系統的基礎。
 
-### Design Guidelines
+### 設計準則
 
-#### ✅ **Best Practices**
-- Use meaningful, business-oriented names
-- Include only data properties (no business logic)
-- Follow C# naming conventions
-- Add data annotations for validation
-- Keep entities simple and focused
+#### ✅ **最佳實務**
+- 使用有意義的業務導向名稱
+- 只包含資料屬性（不包含業務邏輯）
+- 遵循 C# 命名慣例
+- 添加資料註解進行驗證
+- 保持實體簡單且專注
 
-#### ❌ **Common Pitfalls**
-- Don't include business methods in entities
-- Avoid complex inheritance hierarchies
-- Don't reference UI-specific properties
+#### ❌ **常見陷阱**
+- 不要在實體中包含業務方法
+- 避免複雜的繼承階層
+- 不要引用 UI 特定屬性
 
-### Template Structure
+### 範本結構
 ```csharp
-public class [EntityName]
+public class [實體名稱]
 {
-    // Primary Key
+    // 主鍵
     public int Id { get; set; }
     
-    // Required Properties
+    // 必要屬性
     [Required]
     [MaxLength(100)]
     public string Name { get; set; } = string.Empty;
     
-    // Optional Properties
+    // 選擇性屬性
     public string? Description { get; set; }
     
-    // Audit Fields
+    // 稽核欄位
     public DateTime CreatedDate { get; set; }
     public DateTime? ModifiedDate { get; set; }
     
-    // Status/State
-    public [EntityName]Status Status { get; set; }
+    // 狀態
+    public [實體名稱]Status Status { get; set; }
     
-    // Foreign Keys (if applicable)
+    // 外鍵（如果適用）
     public int? ParentId { get; set; }
 }
 
-public enum [EntityName]Status
+public enum [實體名稱]Status
 {
     Active = 1,
     Inactive = 2,
@@ -84,36 +84,36 @@ public enum [EntityName]Status
 }
 ```
 
-### Design Checklist
-- [ ] Entity name reflects business domain
-- [ ] All required properties have `[Required]` attribute
-- [ ] String properties have `[MaxLength]` attribute
-- [ ] Audit fields (CreatedDate, ModifiedDate) included
-- [ ] Status enum defined if needed
-- [ ] Foreign key properties follow naming convention
+### 設計檢查清單
+- [ ] 實體名稱反映業務領域
+- [ ] 所有必要屬性都有 `[Required]` 屬性
+- [ ] 字串屬性都有 `[MaxLength]` 屬性
+- [ ] 包含稽核欄位（CreatedDate、ModifiedDate）
+- [ ] 如需要則定義狀態列舉
+- [ ] 外鍵屬性遵循命名慣例
 
 ---
 
-## 2. DbContext Configuration
+## 2. DbContext 設定
 
-### Purpose
-DbContext serves as the bridge between your entities and the database, managing connections and entity mapping.
+### 目的
+DbContext 作為實體和資料庫之間的橋樑，管理連線和實體對應。
 
-### Design Guidelines
+### 設計準則
 
-#### ✅ **Best Practices**
-- Configure entity relationships explicitly
-- Set appropriate field constraints
-- Use meaningful table and column names
-- Configure indexes for performance
-- Handle database connection properly
+#### ✅ **最佳實務**
+- 明確設定實體關係
+- 設定適當的欄位約束
+- 使用有意義的資料表和欄位名稱
+- 為效能設定索引
+- 正確處理資料庫連線
 
-#### ❌ **Common Pitfalls**
-- Don't ignore relationship configurations
-- Avoid hard-coding connection strings
-- Don't skip constraint definitions
+#### ❌ **常見陷阱**
+- 不要忽略關係設定
+- 避免硬編碼連線字串
+- 不要跳過約束定義
 
-### Template Structure
+### 範本結構
 ```csharp
 public class AppDbContext : DbContext
 {
@@ -121,37 +121,37 @@ public class AppDbContext : DbContext
     {
     }
     
-    // DbSets for each entity
-    public DbSet<[EntityName]> [EntityName]s { get; set; }
+    // 每個實體的 DbSet
+    public DbSet<[實體名稱]> [實體名稱]s { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
         
-        // Configure Entity
-        modelBuilder.Entity<[EntityName]>(entity =>
+        // 設定實體
+        modelBuilder.Entity<[實體名稱]>(entity =>
         {
-            // Primary Key
+            // 主鍵
             entity.HasKey(e => e.Id);
             
-            // Required Fields
+            // 必要欄位
             entity.Property(e => e.Name)
                   .IsRequired()
                   .HasMaxLength(100);
             
-            // Optional Fields
+            // 選擇性欄位
             entity.Property(e => e.Description)
                   .HasMaxLength(500);
             
-            // Default Values
+            // 預設值
             entity.Property(e => e.CreatedDate)
                   .HasDefaultValueSql("GETDATE()");
             
-            // Indexes
+            // 索引
             entity.HasIndex(e => e.Name)
                   .IsUnique();
             
-            // Relationships (if applicable)
+            // 關係（如果適用）
             entity.HasOne<ParentEntity>()
                   .WithMany()
                   .HasForeignKey(e => e.ParentId)
@@ -161,40 +161,40 @@ public class AppDbContext : DbContext
 }
 ```
 
-### Configuration Checklist
-- [ ] All entities have DbSet properties
-- [ ] Primary keys explicitly configured
-- [ ] Required properties marked as IsRequired()
-- [ ] String lengths properly set
-- [ ] Indexes created for frequently queried fields
-- [ ] Foreign key relationships properly configured
-- [ ] Default values set where appropriate
+### 設定檢查清單
+- [ ] 所有實體都有 DbSet 屬性
+- [ ] 主鍵明確設定
+- [ ] 必要屬性標記為 IsRequired()
+- [ ] 字串長度正確設定
+- [ ] 為常查詢欄位建立索引
+- [ ] 外鍵關係正確設定
+- [ ] 適當的地方設定預設值
 
-## 3. Service Implementation
+## 3. Service 實作
 
-### Purpose
-Services contain business logic, data access operations, validation, and orchestrate complex workflows using Entity Framework Core directly.
+### 目的
+Service 包含業務邏輯、資料存取操作、驗證，並直接使用 Entity Framework Core 協調複雜的工作流程。
 
-### Design Guidelines
+### 設計準則
 
-#### ✅ **Best Practices**
-- Implement comprehensive business validation
-- Return structured results (ServiceResult pattern)
-- Handle complex business workflows
-- Use EF Core directly for data operations
-- Include proper error messages
-- Implement transaction management when needed
+#### ✅ **最佳實務**
+- 實作完整的業務驗證
+- 回傳結構化結果（ServiceResult 模式）
+- 處理複雜的業務工作流程
+- 直接使用 EF Core 進行資料操作
+- 包含適當的錯誤訊息
+- 需要時實作交易管理
 
-#### ❌ **Common Pitfalls**
-- Don't bypass business rules
-- Avoid tight coupling to UI concerns
-- Don't ignore validation
-- Don't create unnecessary abstractions over EF Core
+#### ❌ **常見陷阱**
+- 不要繞過業務規則
+- 避免與 UI 關注點緊密耦合
+- 不要忽略驗證
+- 不要在 EF Core 上建立不必要的抽象
 
-### Template Structure
+### 範本結構
 ```csharp
-// Request/Response Models
-public class Create[EntityName]Request
+// 請求/回應模型
+public class Create[實體名稱]Request
 {
     [Required]
     [MaxLength(100)]
@@ -204,7 +204,7 @@ public class Create[EntityName]Request
     public string? Description { get; set; }
 }
 
-public class Update[EntityName]Request
+public class Update[實體名稱]Request
 {
     public int Id { get; set; }
     
@@ -216,7 +216,7 @@ public class Update[EntityName]Request
     public string? Description { get; set; }
 }
 
-// Service Result Pattern
+// Service 結果模式
 public class ServiceResult
 {
     public bool IsSuccess { get; set; }
@@ -235,138 +235,138 @@ public class ServiceResult<T> : ServiceResult
     public static new ServiceResult<T> Failure(string error) => new() { IsSuccess = false, ErrorMessage = error };
 }
 
-// Service Interface
-public interface I[EntityName]Service
+// Service 介面
+public interface I[實體名稱]Service
 {
-    Task<List<[EntityName]>> GetAllAsync();
-    Task<[EntityName]?> GetByIdAsync(int id);
-    Task<ServiceResult<[EntityName]>> CreateAsync(Create[EntityName]Request request);
-    Task<ServiceResult<[EntityName]>> UpdateAsync(Update[EntityName]Request request);
+    Task<List<[實體名稱]>> GetAllAsync();
+    Task<[實體名稱]?> GetByIdAsync(int id);
+    Task<ServiceResult<[實體名稱]>> CreateAsync(Create[實體名稱]Request request);
+    Task<ServiceResult<[實體名稱]>> UpdateAsync(Update[實體名稱]Request request);
     Task<ServiceResult> DeleteAsync(int id);
     Task<bool> ExistsAsync(int id);
-    Task<[EntityName]?> GetByNameAsync(string name);
-    Task<(List<[EntityName]> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize);
+    Task<[實體名稱]?> GetByNameAsync(string name);
+    Task<(List<[實體名稱]> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize);
 }
 
-// Service Implementation - Using EF Core Directly
-public class [EntityName]Service : I[EntityName]Service
+// Service 實作 - 直接使用 EF Core
+public class [實體名稱]Service : I[實體名稱]Service
 {
     private readonly AppDbContext _context;
-    private readonly ILogger<[EntityName]Service> _logger;
+    private readonly ILogger<[實體名稱]Service> _logger;
     
-    public [EntityName]Service(AppDbContext context, ILogger<[EntityName]Service> logger)
+    public [實體名稱]Service(AppDbContext context, ILogger<[實體名稱]Service> logger)
     {
         _context = context;
         _logger = logger;
     }
     
-    public async Task<List<[EntityName]>> GetAllAsync()
+    public async Task<List<[實體名稱]>> GetAllAsync()
     {
         try
         {
-            return await _context.[EntityName]s
-                .Where(e => e.Status != [EntityName]Status.Deleted)
+            return await _context.[實體名稱]s
+                .Where(e => e.Status != [實體名稱]Status.Deleted)
                 .OrderBy(e => e.Name)
                 .ToListAsync();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting all {EntityName}s", typeof([EntityName]).Name);
+            _logger.LogError(ex, "取得所有 {EntityName} 時發生錯誤", typeof([實體名稱]).Name);
             throw;
         }
     }
     
-    public async Task<[EntityName]?> GetByIdAsync(int id)
+    public async Task<[實體名稱]?> GetByIdAsync(int id)
     {
         if (id <= 0)
             return null;
         
         try
         {
-            return await _context.[EntityName]s
-                .FirstOrDefaultAsync(e => e.Id == id && e.Status != [EntityName]Status.Deleted);
+            return await _context.[實體名稱]s
+                .FirstOrDefaultAsync(e => e.Id == id && e.Status != [實體名稱]Status.Deleted);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting {EntityName} with ID {Id}", typeof([EntityName]).Name, id);
+            _logger.LogError(ex, "取得 ID 為 {Id} 的 {EntityName} 時發生錯誤", id, typeof([實體名稱]).Name);
             throw;
         }
     }
     
-    public async Task<ServiceResult<[EntityName]>> CreateAsync(Create[EntityName]Request request)
+    public async Task<ServiceResult<[實體名稱]>> CreateAsync(Create[實體名稱]Request request)
     {
         try
         {
-            // Business Validation
+            // 業務驗證
             var validationResult = await ValidateCreateRequestAsync(request);
             if (!validationResult.IsSuccess)
-                return ServiceResult<[EntityName]>.Failure(validationResult.ErrorMessage);
+                return ServiceResult<[實體名稱]>.Failure(validationResult.ErrorMessage);
             
-            // Business Rules - Check for duplicates
-            var existingEntity = await _context.[EntityName]s
-                .FirstOrDefaultAsync(e => e.Name == request.Name && e.Status != [EntityName]Status.Deleted);
+            // 業務規則 - 檢查重複
+            var existingEntity = await _context.[實體名稱]s
+                .FirstOrDefaultAsync(e => e.Name == request.Name && e.Status != [實體名稱]Status.Deleted);
             
             if (existingEntity != null)
-                return ServiceResult<[EntityName]>.Failure("Name already exists");
+                return ServiceResult<[實體名稱]>.Failure("名稱已存在");
             
-            // Create Entity
-            var entity = new [EntityName]
+            // 建立實體
+            var entity = new [實體名稱]
             {
                 Name = request.Name,
                 Description = request.Description,
-                Status = [EntityName]Status.Active,
+                Status = [實體名稱]Status.Active,
                 CreatedDate = DateTime.UtcNow
             };
             
-            // Save to Database
-            _context.[EntityName]s.Add(entity);
+            // 儲存到資料庫
+            _context.[實體名稱]s.Add(entity);
             await _context.SaveChangesAsync();
             
-            _logger.LogInformation("{EntityName} created with ID {Id}", typeof([EntityName]).Name, entity.Id);
-            return ServiceResult<[EntityName]>.Success(entity);
+            _logger.LogInformation("已建立 ID 為 {Id} 的 {EntityName}", entity.Id, typeof([實體名稱]).Name);
+            return ServiceResult<[實體名稱]>.Success(entity);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating {EntityName}", typeof([EntityName]).Name);
-            return ServiceResult<[EntityName]>.Failure("An error occurred while creating the record");
+            _logger.LogError(ex, "建立 {EntityName} 時發生錯誤", typeof([實體名稱]).Name);
+            return ServiceResult<[實體名稱]>.Failure("建立記錄時發生錯誤");
         }
     }
     
-    public async Task<ServiceResult<[EntityName]>> UpdateAsync(Update[EntityName]Request request)
+    public async Task<ServiceResult<[實體名稱]>> UpdateAsync(Update[實體名稱]Request request)
     {
         try
         {
-            // Get existing entity
-            var entity = await _context.[EntityName]s
-                .FirstOrDefaultAsync(e => e.Id == request.Id && e.Status != [EntityName]Status.Deleted);
+            // 取得現有實體
+            var entity = await _context.[實體名稱]s
+                .FirstOrDefaultAsync(e => e.Id == request.Id && e.Status != [實體名稱]Status.Deleted);
             
             if (entity == null)
-                return ServiceResult<[EntityName]>.Failure("Entity not found");
+                return ServiceResult<[實體名稱]>.Failure("找不到實體");
             
-            // Business Rules - Check for duplicates (excluding current entity)
-            var existingEntity = await _context.[EntityName]s
+            // 業務規則 - 檢查重複（排除目前實體）
+            var existingEntity = await _context.[實體名稱]s
                 .FirstOrDefaultAsync(e => e.Name == request.Name && 
                                         e.Id != request.Id && 
-                                        e.Status != [EntityName]Status.Deleted);
+                                        e.Status != [實體名稱]Status.Deleted);
             
             if (existingEntity != null)
-                return ServiceResult<[EntityName]>.Failure("Name already exists");
+                return ServiceResult<[實體名稱]>.Failure("名稱已存在");
             
-            // Update Entity
+            // 更新實體
             entity.Name = request.Name;
             entity.Description = request.Description;
             entity.ModifiedDate = DateTime.UtcNow;
             
-            // Save to Database
+            // 儲存到資料庫
             await _context.SaveChangesAsync();
             
-            _logger.LogInformation("{EntityName} updated with ID {Id}", typeof([EntityName]).Name, entity.Id);
-            return ServiceResult<[EntityName]>.Success(entity);
+            _logger.LogInformation("已更新 ID 為 {Id} 的 {EntityName}", entity.Id, typeof([實體名稱]).Name);
+            return ServiceResult<[實體名稱]>.Success(entity);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating {EntityName} with ID {Id}", typeof([EntityName]).Name, request.Id);
-            return ServiceResult<[EntityName]>.Failure("An error occurred while updating the record");
+            _logger.LogError(ex, "更新 ID 為 {Id} 的 {EntityName} 時發生錯誤", request.Id, typeof([實體名稱]).Name);
+            return ServiceResult<[實體名稱]>.Failure("更新記錄時發生錯誤");
         }
     }
     
@@ -374,55 +374,55 @@ public class [EntityName]Service : I[EntityName]Service
     {
         try
         {
-            var entity = await _context.[EntityName]s
-                .FirstOrDefaultAsync(e => e.Id == id && e.Status != [EntityName]Status.Deleted);
+            var entity = await _context.[實體名稱]s
+                .FirstOrDefaultAsync(e => e.Id == id && e.Status != [實體名稱]Status.Deleted);
             
             if (entity == null)
-                return ServiceResult.Failure("Entity not found");
+                return ServiceResult.Failure("找不到實體");
             
-            // Business Rules - Check for dependencies
-            // Example: Check if entity is being used elsewhere
+            // 業務規則 - 檢查相依性
+            // 範例：檢查實體是否被其他地方使用
             var hasReferences = await _context.SomeRelatedEntities
-                .AnyAsync(r => r.[EntityName]Id == id);
+                .AnyAsync(r => r.[實體名稱]Id == id);
             
             if (hasReferences)
-                return ServiceResult.Failure("Cannot delete: Entity is being used by other records");
+                return ServiceResult.Failure("無法刪除：此實體正被其他記錄使用");
             
-            // Soft Delete
-            entity.Status = [EntityName]Status.Deleted;
+            // 軟刪除
+            entity.Status = [實體名稱]Status.Deleted;
             entity.ModifiedDate = DateTime.UtcNow;
             
             await _context.SaveChangesAsync();
             
-            _logger.LogInformation("{EntityName} deleted with ID {Id}", typeof([EntityName]).Name, id);
+            _logger.LogInformation("已刪除 ID 為 {Id} 的 {EntityName}", id, typeof([實體名稱]).Name);
             return ServiceResult.Success();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting {EntityName} with ID {Id}", typeof([EntityName]).Name, id);
-            return ServiceResult.Failure("An error occurred while deleting the record");
+            _logger.LogError(ex, "刪除 ID 為 {Id} 的 {EntityName} 時發生錯誤", id, typeof([實體名稱]).Name);
+            return ServiceResult.Failure("刪除記錄時發生錯誤");
         }
     }
     
     public async Task<bool> ExistsAsync(int id)
     {
-        return await _context.[EntityName]s
-            .AnyAsync(e => e.Id == id && e.Status != [EntityName]Status.Deleted);
+        return await _context.[實體名稱]s
+            .AnyAsync(e => e.Id == id && e.Status != [實體名稱]Status.Deleted);
     }
     
-    public async Task<[EntityName]?> GetByNameAsync(string name)
+    public async Task<[實體名稱]?> GetByNameAsync(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
             return null;
             
-        return await _context.[EntityName]s
-            .FirstOrDefaultAsync(e => e.Name == name && e.Status != [EntityName]Status.Deleted);
+        return await _context.[實體名稱]s
+            .FirstOrDefaultAsync(e => e.Name == name && e.Status != [實體名稱]Status.Deleted);
     }
     
-    public async Task<(List<[EntityName]> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize)
+    public async Task<(List<[實體名稱]> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize)
     {
-        var query = _context.[EntityName]s
-            .Where(e => e.Status != [EntityName]Status.Deleted);
+        var query = _context.[實體名稱]s
+            .Where(e => e.Status != [實體名稱]Status.Deleted);
         
         var totalCount = await query.CountAsync();
         
@@ -435,38 +435,38 @@ public class [EntityName]Service : I[EntityName]Service
         return (items, totalCount);
     }
     
-    // Complex Business Operations Example
+    // 複雜業務操作範例
     public async Task<ServiceResult> ProcessComplexBusinessOperationAsync(int entityId, SomeBusinessRequest request)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            // Step 1: Get and validate entity
+            // 步驟 1：取得並驗證實體
             var entity = await GetByIdAsync(entityId);
             if (entity == null)
-                return ServiceResult.Failure("Entity not found");
+                return ServiceResult.Failure("找不到實體");
             
-            // Step 2: Business validation
-            if (entity.Status != [EntityName]Status.Active)
-                return ServiceResult.Failure("Operation not allowed for inactive entities");
+            // 步驟 2：業務驗證
+            if (entity.Status != [實體名稱]Status.Active)
+                return ServiceResult.Failure("非啟用狀態的實體不允許此操作");
             
-            // Step 3: Update multiple related entities
+            // 步驟 3：更新多個相關實體
             var relatedEntities = await _context.RelatedEntities
-                .Where(r => r.[EntityName]Id == entityId)
+                .Where(r => r.[實體名稱]Id == entityId)
                 .ToListAsync();
             
             foreach (var related in relatedEntities)
             {
-                // Apply business logic
+                // 套用業務邏輯
                 related.SomeProperty = CalculateSomeValue(related, request);
                 related.ModifiedDate = DateTime.UtcNow;
             }
             
-            // Step 4: Update main entity
+            // 步驟 4：更新主要實體
             entity.SomeCalculatedField = CalculateMainValue(entity, relatedEntities);
             entity.ModifiedDate = DateTime.UtcNow;
             
-            // Step 5: Save all changes
+            // 步驟 5：儲存所有變更
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
             
@@ -475,90 +475,90 @@ public class [EntityName]Service : I[EntityName]Service
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            _logger.LogError(ex, "Error in complex business operation for entity {Id}", entityId);
-            return ServiceResult.Failure("Business operation failed");
+            _logger.LogError(ex, "實體 {Id} 的複雜業務操作發生錯誤", entityId);
+            return ServiceResult.Failure("業務操作失敗");
         }
     }
     
-    private async Task<ServiceResult> ValidateCreateRequestAsync(Create[EntityName]Request request)
+    private async Task<ServiceResult> ValidateCreateRequestAsync(Create[實體名稱]Request request)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
-            return ServiceResult.Failure("Name is required");
+            return ServiceResult.Failure("名稱為必填欄位");
         
         if (request.Name.Length > 100)
-            return ServiceResult.Failure("Name cannot exceed 100 characters");
+            return ServiceResult.Failure("名稱不能超過 100 個字元");
         
-        // Add more business validation rules as needed
+        // 依需要添加更多業務驗證規則
         
         return ServiceResult.Success();
     }
 }
 ```
 
-### Service Checklist
-- [ ] Interface defined with all necessary methods
-- [ ] All methods are async and properly handle exceptions
-- [ ] Service uses EF Core DbContext directly
-- [ ] Business validation implemented
-- [ ] Soft delete implemented (using Status field)
-- [ ] Duplicate checking implemented
-- [ ] Transaction management for complex operations
-- [ ] Proper logging implemented
-- [ ] ServiceResult pattern used consistently
-- [ ] Error messages are user-friendly
+### Service 檢查清單
+- [ ] 介面定義包含所有必要方法
+- [ ] 所有方法都是非同步且正確處理例外
+- [ ] Service 直接使用 EF Core DbContext
+- [ ] 實作業務驗證
+- [ ] 實作軟刪除（使用 Status 欄位）
+- [ ] 實作重複檢查
+- [ ] 複雜操作的交易管理
+- [ ] 實作適當的日誌記錄
+- [ ] 一致使用 ServiceResult 模式
+- [ ] 錯誤訊息對使用者友善
 
 ---
 
-## 4. Blazor Pages Implementation
+## 4. Blazor Pages 實作
 
-### Purpose
-Pages handle user interface, user input, and display data from services.
+### 目的
+Pages 處理使用者介面、使用者輸入，並顯示來自 Service 的資料。
 
-### Design Guidelines
+### 設計準則
 
-#### ✅ **Best Practices**
-- Keep code-behind focused on UI logic
-- Use proper error handling and user feedback
-- Implement loading states
-- Follow consistent UI patterns
-- Use data binding effectively
+#### ✅ **最佳實務**
+- 保持 code-behind 專注於 UI 邏輯
+- 使用適當的錯誤處理和使用者回饋
+- 實作載入狀態
+- 遵循一致的 UI 模式
+- 有效使用資料繫結
 
-#### ❌ **Common Pitfalls**
-- Don't include business logic in pages
-- Avoid direct database access
-- Don't ignore error handling
+#### ❌ **常見陷阱**
+- 不要在頁面中包含業務邏輯
+- 避免直接存取資料庫
+- 不要忽略錯誤處理
 
-### Template Structure
+### 範本結構
 ```razor
-@page "/[entityname]"
-@inject I[EntityName]Service [EntityName]Service
+@page "/[實體名稱小寫]"
+@inject I[實體名稱]Service [實體名稱]Service
 @inject IJSRuntime JSRuntime
 
-<PageTitle>[EntityName] Management</PageTitle>
+<PageTitle>[實體名稱] 管理</PageTitle>
 
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3>[EntityName] Management</h3>
+                <h3>[實體名稱] 管理</h3>
                 <button class="btn btn-primary" @onclick="ShowCreateModal">
-                    <i class="fas fa-plus"></i> Add [EntityName]
+                    <i class="fas fa-plus"></i> 新增 [實體名稱]
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Loading State -->
+    <!-- 載入狀態 -->
     @if (isLoading)
     {
         <div class="text-center">
             <div class="spinner-border" role="status">
-                <span class="visually-hidden">Loading...</span>
+                <span class="visually-hidden">載入中...</span>
             </div>
         </div>
     }
     
-    <!-- Error Message -->
+    <!-- 錯誤訊息 -->
     @if (!string.IsNullOrEmpty(errorMessage))
     {
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -567,7 +567,7 @@ Pages handle user interface, user input, and display data from services.
         </div>
     }
     
-    <!-- Success Message -->
+    <!-- 成功訊息 -->
     @if (!string.IsNullOrEmpty(successMessage))
     {
         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -576,18 +576,18 @@ Pages handle user interface, user input, and display data from services.
         </div>
     }
 
-    <!-- Data Table -->
+    <!-- 資料表格 -->
     @if (entities != null && entities.Any())
     {
         <div class="table-responsive">
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Description</th>
-                        <th>Status</th>
-                        <th>Created Date</th>
-                        <th>Actions</th>
+                        <th>名稱</th>
+                        <th>描述</th>
+                        <th>狀態</th>
+                        <th>建立日期</th>
+                        <th>操作</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -598,7 +598,7 @@ Pages handle user interface, user input, and display data from services.
                             <td>@entity.Description</td>
                             <td>
                                 <span class="badge bg-@GetStatusColor(entity.Status)">
-                                    @entity.Status
+                                    @GetStatusText(entity.Status)
                                 </span>
                             </td>
                             <td>@entity.CreatedDate.ToString("yyyy-MM-dd")</td>
@@ -621,17 +621,17 @@ Pages handle user interface, user input, and display data from services.
     else if (!isLoading)
     {
         <div class="text-center">
-            <p>No records found.</p>
+            <p>找不到記錄。</p>
         </div>
     }
 </div>
 
-<!-- Create/Edit Modal -->
+<!-- 建立/編輯模態視窗 -->
 <div class="modal fade" id="entityModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">@(isEditMode ? "Edit" : "Create") [EntityName]</h5>
+                <h5 class="modal-title">@(isEditMode ? "編輯" : "建立") [實體名稱]</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -639,25 +639,25 @@ Pages handle user interface, user input, and display data from services.
                     <DataAnnotationsValidator />
                     
                     <div class="mb-3">
-                        <label class="form-label">Name *</label>
+                        <label class="form-label">名稱 *</label>
                         <InputText class="form-control" @bind-Value="currentEntity.Name" />
                         <ValidationMessage For="() => currentEntity.Name" />
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label">Description</label>
+                        <label class="form-label">描述</label>
                         <InputTextArea class="form-control" @bind-Value="currentEntity.Description" rows="3" />
                         <ValidationMessage For="() => currentEntity.Description" />
                     </div>
                     
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
                         <button type="submit" class="btn btn-primary" disabled="@isSaving">
                             @if (isSaving)
                             {
                                 <span class="spinner-border spinner-border-sm me-2"></span>
                             }
-                            @(isEditMode ? "Update" : "Create")
+                            @(isEditMode ? "更新" : "建立")
                         </button>
                     </div>
                 </EditForm>
@@ -667,8 +667,8 @@ Pages handle user interface, user input, and display data from services.
 </div>
 
 @code {
-    private List<[EntityName]>? entities;
-    private Create[EntityName]Request currentEntity = new();
+    private List<[實體名稱]>? entities;
+    private Create[實體名稱]Request currentEntity = new();
     private bool isLoading = false;
     private bool isSaving = false;
     private bool isEditMode = false;
@@ -687,11 +687,11 @@ Pages handle user interface, user input, and display data from services.
         try
         {
             isLoading = true;
-            entities = await [EntityName]Service.GetAllAsync();
+            entities = await [實體名稱]Service.GetAllAsync();
         }
         catch (Exception ex)
         {
-            errorMessage = "Failed to load data. Please try again.";
+            errorMessage = "載入資料失敗，請重試。";
         }
         finally
         {
@@ -701,15 +701,15 @@ Pages handle user interface, user input, and display data from services.
 
     private void ShowCreateModal()
     {
-        currentEntity = new Create[EntityName]Request();
+        currentEntity = new Create[實體名稱]Request();
         isEditMode = false;
         editingId = 0;
         ShowModal();
     }
 
-    private void EditEntity([EntityName] entity)
+    private void EditEntity([實體名稱] entity)
     {
-        currentEntity = new Create[EntityName]Request
+        currentEntity = new Create[實體名稱]Request
         {
             Name = entity.Name,
             Description = entity.Description
@@ -730,23 +730,23 @@ Pages handle user interface, user input, and display data from services.
 
             if (isEditMode)
             {
-                var updateRequest = new Update[EntityName]Request
+                var updateRequest = new Update[實體名稱]Request
                 {
                     Id = editingId,
                     Name = currentEntity.Name,
                     Description = currentEntity.Description
                 };
-                result = await [EntityName]Service.UpdateAsync(updateRequest);
+                result = await [實體名稱]Service.UpdateAsync(updateRequest);
             }
             else
             {
-                var createResult = await [EntityName]Service.CreateAsync(currentEntity);
+                var createResult = await [實體名稱]Service.CreateAsync(currentEntity);
                 result = createResult;
             }
 
             if (result.IsSuccess)
             {
-                successMessage = isEditMode ? "Updated successfully!" : "Created successfully!";
+                successMessage = isEditMode ? "更新成功！" : "建立成功！";
                 await HideModal();
                 await LoadEntitiesAsync();
             }
@@ -757,7 +757,7 @@ Pages handle user interface, user input, and display data from services.
         }
         catch (Exception ex)
         {
-            errorMessage = "An error occurred. Please try again.";
+            errorMessage = "發生錯誤，請重試。";
         }
         finally
         {
@@ -765,17 +765,17 @@ Pages handle user interface, user input, and display data from services.
         }
     }
 
-    private async Task DeleteEntity([EntityName] entity)
+    private async Task DeleteEntity([實體名稱] entity)
     {
-        if (await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete '{entity.Name}'?"))
+        if (await JSRuntime.InvokeAsync<bool>("confirm", $"您確定要刪除 '{entity.Name}' 嗎？"))
         {
             try
             {
-                var result = await [EntityName]Service.DeleteAsync(entity.Id);
+                var result = await [實體名稱]Service.DeleteAsync(entity.Id);
                 
                 if (result.IsSuccess)
                 {
-                    successMessage = "Deleted successfully!";
+                    successMessage = "刪除成功！";
                     await LoadEntitiesAsync();
                 }
                 else
@@ -785,7 +785,7 @@ Pages handle user interface, user input, and display data from services.
             }
             catch (Exception ex)
             {
-                errorMessage = "Failed to delete. Please try again.";
+                errorMessage = "刪除失敗，請重試。";
             }
         }
     }
@@ -813,46 +813,57 @@ Pages handle user interface, user input, and display data from services.
     private void ClearError() => errorMessage = string.Empty;
     private void ClearSuccess() => successMessage = string.Empty;
 
-    private string GetStatusColor([EntityName]Status status)
+    private string GetStatusColor([實體名稱]Status status)
     {
         return status switch
         {
-            [EntityName]Status.Active => "success",
-            [EntityName]Status.Inactive => "warning",
-            [EntityName]Status.Deleted => "danger",
+            [實體名稱]Status.Active => "success",
+            [實體名稱]Status.Inactive => "warning",
+            [實體名稱]Status.Deleted => "danger",
             _ => "secondary"
+        };
+    }
+    
+    private string GetStatusText([實體名稱]Status status)
+    {
+        return status switch
+        {
+            [實體名稱]Status.Active => "啟用",
+            [實體名稱]Status.Inactive => "停用",
+            [實體名稱]Status.Deleted => "已刪除",
+            _ => "未知"
         };
     }
 }
 ```
 
-### Pages Checklist
-- [ ] Proper error handling implemented
-- [ ] Loading states shown to users
-- [ ] Success/error messages displayed
-- [ ] Form validation included
-- [ ] Confirmation dialogs for destructive actions
-- [ ] Responsive design considerations
-- [ ] Consistent UI patterns followed
+### Pages 檢查清單
+- [ ] 實作適當的錯誤處理
+- [ ] 向使用者顯示載入狀態
+- [ ] 顯示成功/錯誤訊息
+- [ ] 包含表單驗證
+- [ ] 對破壞性動作提供確認對話框
+- [ ] 考慮響應式設計
+- [ ] 遵循一致的 UI 模式
 
 ---
 
-## 5. Dependency Injection Registration
+## 5. 依賴注入註冊
 
-### Purpose
-Configure all services and dependencies in the application startup.
+### 目的
+在應用程式啟動時設定所有服務和相依性。
 
-### Template Structure
+### 範本結構
 ```csharp
 // Program.cs
 var builder = WebApplication.CreateBuilder(args);
 
-// Database Configuration
+// 資料庫設定
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Service Registration (No Repository needed!)
-builder.Services.AddScoped<I[EntityName]Service, [EntityName]Service>();
+// Service 註冊
+builder.Services.AddScoped<I[實體名稱]Service, [實體名稱]Service>();
 
 // Blazor Server
 builder.Services.AddRazorPages();
@@ -860,7 +871,7 @@ builder.Services.AddServerSideBlazor();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+// 設定 HTTP 請求管線
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
@@ -878,24 +889,23 @@ app.MapFallbackToPage("/_Host");
 app.Run();
 ```
 
-### Registration Checklist
-- [ ] DbContext registered with connection string
-- [ ] All services registered with their interfaces
-- [ ] Proper service lifetimes chosen (Scoped for most cases)
-- [ ] No repository registrations needed
+### 註冊檢查清單
+- [ ] DbContext 已使用連線字串註冊
+- [ ] 所有服務都已使用其介面註冊
+- [ ] 選擇適當的服務生命週期（大多數情況下使用 Scoped）
 
 ---
 
-## Testing Strategy
+## 測試策略
 
-### Unit Testing with EF Core In-Memory Database
+### 使用 EF Core In-Memory 資料庫進行單元測試
 ```csharp
 [TestFixture]
-public class [EntityName]ServiceTests
+public class [實體名稱]ServiceTests
 {
     private AppDbContext _context;
-    private [EntityName]Service _service;
-    private ILogger<[EntityName]Service> _logger;
+    private [實體名稱]Service _service;
+    private ILogger<[實體名稱]Service> _logger;
 
     [SetUp]
     public void Setup()
@@ -905,8 +915,8 @@ public class [EntityName]ServiceTests
             .Options;
 
         _context = new AppDbContext(options);
-        _logger = new Mock<ILogger<[EntityName]Service>>().Object;
-        _service = new [EntityName]Service(_context, _logger);
+        _logger = new Mock<ILogger<[實體名稱]Service>>().Object;
+        _service = new [實體名稱]Service(_context, _logger);
     }
 
     [TearDown]
@@ -916,13 +926,13 @@ public class [EntityName]ServiceTests
     }
 
     [Test]
-    public async Task CreateAsync_ShouldReturnSuccess_WhenValidData()
+    public async Task CreateAsync_應該回傳成功_當資料有效時()
     {
         // Arrange
-        var request = new Create[EntityName]Request
+        var request = new Create[實體名稱]Request
         {
-            Name = "Test Entity",
-            Description = "Test Description"
+            Name = "測試實體",
+            Description = "測試描述"
         };
 
         // Act
@@ -931,26 +941,26 @@ public class [EntityName]ServiceTests
         // Assert
         Assert.IsTrue(result.IsSuccess);
         Assert.IsNotNull(result.Data);
-        Assert.AreEqual("Test Entity", result.Data.Name);
+        Assert.AreEqual("測試實體", result.Data.Name);
     }
 
     [Test]
-    public async Task CreateAsync_ShouldReturnFailure_WhenDuplicateName()
+    public async Task CreateAsync_應該回傳失敗_當名稱重複時()
     {
         // Arrange
-        var existingEntity = new [EntityName]
+        var existingEntity = new [實體名稱]
         {
-            Name = "Existing Entity",
-            Status = [EntityName]Status.Active,
+            Name = "現有實體",
+            Status = [實體名稱]Status.Active,
             CreatedDate = DateTime.UtcNow
         };
-        _context.[EntityName]s.Add(existingEntity);
+        _context.[實體名稱]s.Add(existingEntity);
         await _context.SaveChangesAsync();
 
-        var request = new Create[EntityName]Request
+        var request = new Create[實體名稱]Request
         {
-            Name = "Existing Entity",
-            Description = "Test Description"
+            Name = "現有實體",
+            Description = "測試描述"
         };
 
         // Act
@@ -958,31 +968,27 @@ public class [EntityName]ServiceTests
 
         // Assert
         Assert.IsFalse(result.IsSuccess);
-        Assert.AreEqual("Name already exists", result.ErrorMessage);
+        Assert.AreEqual("名稱已存在", result.ErrorMessage);
     }
 }
 ```
 
-### Integration Testing
-- Test complete workflows end-to-end
-- Test database operations with real database
-- Test API endpoints if applicable
+### 整合測試
+- 測試完整的端到端工作流程
+- 使用真實資料庫測試資料庫操作
+- 如適用，測試 API 端點
 
 ---
 
-## 6. Dependency Injection Registration
+## 一致性準則
 
----
+### 命名慣例
+- **實體**：單數名詞（Customer、Order、Product）
+- **DbSets**：複數名詞（Customers、Orders、Products）  
+- **Services**：[實體]Service
+- **介面**：I[實體]Service
 
-## Consistency Guidelines
-
-### Naming Conventions
-- **Entities**: Singular nouns (Customer, Order, Product)
-- **DbSets**: Plural nouns (Customers, Orders, Products)  
-- **Services**: [Entity]Service
-- **Interfaces**: I[Entity]Service
-
-### File Organization
+### 檔案組織
 ```
 /Data
   /Entities
@@ -1003,83 +1009,69 @@ public class [EntityName]ServiceTests
     Edit.razor
 ```
 
-### Simplified Architecture Benefits
+### 簡化架構的優點
 
-#### **Performance**
-- Direct EF Core access provides optimal performance
-- No unnecessary data mapping between layers
-- Full access to EF Core's advanced features (Include, Select, etc.)
+#### **效能**
+- 直接存取 EF Core 提供最佳效能
+- 沒有不必要的層級間資料對應
+- 完全存取 EF Core 的進階功能（Include、Select 等）
 
-#### **Maintainability**
-- Fewer layers = easier debugging
-- Less boilerplate code to maintain
-- Single point of truth for business logic
+#### **可維護性**
+- 更少的層級 = 更容易除錯
+- 更少的樣板程式碼需要維護
+- 業務邏輯的單一真相來源
 
-#### **Testability**
-- EF Core In-Memory Database for unit testing
-- Easy to mock DbContext for isolated testing
-- No complex repository mocking required
+#### **可測試性**
+- 使用 EF Core In-Memory 資料庫進行單元測試
+- 容易模擬 DbContext 進行隔離測試
+- 不需要複雜的模擬
 
-#### **Modern Approach**
-- Aligns with Microsoft's recommendations
-- Leverages EF Core's built-in patterns
-- Reduces over-engineering
+#### **現代化方法**
+- 符合微軟的建議
+- 善用 EF Core 的內建模式
+- 減少過度工程
 
-### Code Quality Standards
-- Use async/await consistently
-- Implement proper error handling
-- Follow C# coding conventions
-- Add XML documentation for public APIs
-- Use meaningful variable and method names
-- Keep methods focused and single-purpose
-
----
-
-## Testing Strategy
-
-### Unit Testing
-- Test services with mocked repositories
-- Test repository logic with in-memory database
-- Test business validation logic
-
-### Integration Testing
-- Test complete workflows end-to-end
-- Test database operations
-- Test API endpoints if applicable
+### 程式碼品質標準
+- 一致使用 async/await
+- 實作適當的錯誤處理
+- 遵循 C# 編碼慣例
+- 為公共 API 添加 XML 文件
+- 使用有意義的變數和方法名稱
+- 保持方法專注且單一目的
 
 ---
 
-### Common Patterns to Follow
+### 要遵循的常見模式
 
-### Error Handling
-- Use ServiceResult pattern for business operations
-- Provide user-friendly error messages
-- Log technical errors for debugging
-- Handle database exceptions gracefully
+### 錯誤處理
+- 對業務操作使用 ServiceResult 模式
+- 提供對使用者友善的錯誤訊息
+- 記錄技術錯誤以供除錯
+- 優雅地處理資料庫例外
 
-### Validation
-- Use data annotations on entities and request models
-- Implement business validation in services
-- Provide clear validation feedback to users
+### 驗證
+- 在實體和請求模型上使用資料註解
+- 在服務中實作業務驗證
+- 向使用者提供清晰的驗證回饋
 
-### Transaction Management
-- Use EF Core transactions for complex operations
-- Ensure data consistency across multiple operations
-- Implement proper rollback mechanisms
+### 交易管理
+- 對複雜操作使用 EF Core 交易
+- 確保多個操作間的資料一致性
+- 實作適當的回滾機制
 
-### Security Considerations
-- Validate all user inputs
-- Implement proper authorization
-- Sanitize data before database operations
-- Use parameterized queries (EF Core handles this automatically)
+### 安全性考量
+- 驗證所有使用者輸入
+- 實作適當的授權
+- 在資料庫操作前清理資料
+- 使用參數化查詢（EF Core 自動處理）
 
-### Performance Optimization
-- Use async/await consistently
-- Implement proper indexing in database
-- Use Select projections for large datasets
-- Implement pagination for large result sets
-- Use Include() judiciously to avoid N+1 queries
+### 效能最佳化
+- 一致使用 async/await
+- 在資料庫中實作適當的索引
+- 對大型資料集使用 Select 投影
+- 對大型結果集實作分頁
+- 謹慎使用 Include() 以避免 N+1 查詢
 
 ---
 
-This guide provides a modern, efficient foundation for building ERP systems using Blazor Server with Entity Framework Core. By eliminating the unnecessary Repository layer, you get better performance, easier maintenance, and cleaner code while still following SOLID principles and maintaining testability.
+本指南提供了使用 Blazor Server 和 Entity Framework Core 建構 ERP 系統的現代、高效基礎。通過簡化架構，您可以獲得更好的效能、更容易的維護和更乾淨的程式碼，同時仍然遵循 SOLID 原則並保持可測試性。

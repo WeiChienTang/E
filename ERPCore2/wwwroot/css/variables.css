@@ -239,6 +239,37 @@
   font-weight: 600 !important;
 }
 
+/* FormSection 標題樣式 - 使用更高優先級的選擇器 */
+.card-header.form-section-header-basic {
+  background-color: var(--primary-blue) !important;
+  color: var(--primary-white) !important;
+  border-color: var(--primary-blue) !important;
+}
+
+.card-header.form-section-header-contact {
+  background-color: var(--info-color) !important;
+  color: var(--primary-white) !important;
+  border-color: var(--info-color) !important;
+}
+
+.card-header.form-section-header-address {
+  background-color: var(--success-color) !important;
+  color: var(--primary-white) !important;
+  border-color: var(--success-color) !important;
+}
+
+.card-header.form-section-header-financial {
+  background-color: var(--warning-color) !important;
+  color: var(--primary-white) !important;
+  border-color: var(--warning-color) !important;
+}
+
+.card-header.form-section-header-system {
+  background-color: var(--text-secondary) !important;
+  color: var(--primary-white) !important;
+  border-color: var(--text-secondary) !important;
+}
+
 /* 卡片樣式 */
 .card {
   background-color: var(--bg-primary) !important;

@@ -79,24 +79,24 @@
             classes.Add(CssClass);
         }
         
-        return string.Join(" ", classes);
-    }
-    
+        return string.Join(" ", classes);    }
+
     private string GetHeaderClass()
     {
         return SectionType switch
         {
-            FormSectionType.Basic => "bg-primary text-white",
-            FormSectionType.Contact => "bg-info text-white", 
-            FormSectionType.Address => "bg-success text-white",
-            FormSectionType.Financial => "bg-warning text-dark",
-            FormSectionType.System => "bg-secondary text-white",
-            _ => "bg-primary text-white"
+            FormSectionType.Basic => "form-section-header-basic",
+            FormSectionType.Contact => "form-section-header-contact", 
+            FormSectionType.Address => "form-section-header-address",
+            FormSectionType.Financial => "form-section-header-financial",
+            FormSectionType.System => "form-section-header-system",
+            _ => "form-section-header-basic"
         };
     }
     
     private string GetTitleClass()
     {
+        // 所有區塊類型都使用白色文字，因為自訂樣式已經確保背景色有足夠對比
         return "text-white";
     }
     
@@ -107,6 +107,7 @@
     
     private string GetStatusTextClass()
     {
+        // 所有區塊類型都使用白色半透明文字，完成時加粗
         var baseClass = "text-white-50";
         return IsComplete ? $"{baseClass} fw-bold" : baseClass;
     }

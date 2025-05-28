@@ -43,13 +43,13 @@
                                       IconClass="fas fa-exclamation-triangle" />
                     }
                     else if (!isLoading)
-                    {                        <EditForm Model="@customer" OnValidSubmit="@HandleSubmit">
-                            <DataAnnotationsValidator />
-                            
-                            <!-- 基本資訊區塊 -->
+                    {                        
+                        <EditForm Model="@customer" OnValidSubmit="@HandleSubmit">
+                            <DataAnnotationsValidator />                            
+                            <!-- 基本資訊區塊 -->                            
                             <FormSectionComponent Title="基本資訊" 
                                                 IconClass="fas fa-info-circle"
-                                                SectionType="FormSectionType.Basic"
+                                                SectionType="@FormSectionType.Basic"
                                                 RequiredFieldsCount="@GetBasicRequiredFieldsCount()"
                                                 CompletedFieldsCount="@GetBasicCompletedFieldsCount()">
                                 <div class="row">
@@ -116,10 +116,9 @@
                                     </div>
                                 </div>                            </FormSectionComponent>
                             
-                            <!-- 聯絡資訊區塊 -->
-                            <FormSectionComponent Title="聯絡資訊" 
+                            <!-- 聯絡資訊區塊 -->                            <FormSectionComponent Title="聯絡資訊" 
                                                 IconClass="fas fa-phone"
-                                                SectionType="FormSectionType.Contact"
+                                                SectionType="@FormSectionType.Contact"
                                                 RequiredFieldsCount="0"
                                                 CompletedFieldsCount="@GetContactCompletedFieldsCount()">
                                 <div class="row">
@@ -174,10 +173,9 @@
                             
                             @if (IsEditMode)
                             {
-                                <!-- 系統資訊區塊 (僅編輯模式顯示) -->
-                                <FormSectionComponent Title="系統資訊" 
+                                <!-- 系統資訊區塊 (僅編輯模式顯示) -->                                <FormSectionComponent Title="系統資訊" 
                                                     IconClass="fas fa-cog"
-                                                    SectionType="FormSectionType.System"
+                                                    SectionType="@FormSectionType.System"
                                                     RequiredFieldsCount="1"
                                                     CompletedFieldsCount="@(customer.Status != EntityStatus.Default ? 1 : 0)">
                                     <div class="row">
@@ -220,10 +218,9 @@
                             }
                             else
                             {
-                                <!-- 新增模式的建立者資訊 -->
-                                <FormSectionComponent Title="建立資訊" 
+                                <!-- 新增模式的建立者資訊 -->                                <FormSectionComponent Title="建立資訊" 
                                                     IconClass="fas fa-user-plus"
-                                                    SectionType="FormSectionType.System"
+                                                    SectionType="@FormSectionType.System"
                                                     RequiredFieldsCount="0"
                                                     CompletedFieldsCount="1">
                                     <div class="row">
@@ -239,10 +236,9 @@
                                 </FormSectionComponent>
                             }
                             
-                            <!-- 地址資訊區塊 -->
-                            <FormSectionComponent Title="地址資訊" 
+                            <!-- 地址資訊區塊 -->                            <FormSectionComponent Title="地址資訊" 
                                                 IconClass="fas fa-map-marker-alt"
-                                                SectionType="FormSectionType.Address"
+                                                SectionType="@FormSectionType.Address"
                                                 RequiredFieldsCount="0"
                                                 CompletedFieldsCount="@GetAddressCompletedFieldsCount()">
                                 <AddressManagement Addresses="@customerAddresses"
