@@ -105,8 +105,7 @@ namespace ERPCore2.Data.Context
                       .HasDefaultValue(EntityStatus.Active)
                       .HasSentinel(EntityStatus.Default);
             });
-            
-            // Configure ContactType Entity
+              // Configure ContactType Entity
             modelBuilder.Entity<ContactType>(entity =>
             {
                 entity.HasKey(e => e.ContactTypeId);
@@ -114,6 +113,22 @@ namespace ERPCore2.Data.Context
                 entity.Property(e => e.TypeName)
                       .IsRequired()
                       .HasMaxLength(20);
+                      
+                entity.Property(e => e.Description)
+                      .HasMaxLength(100);
+                      
+                entity.Property(e => e.CreatedBy)
+                      .HasMaxLength(50);
+                      
+                entity.Property(e => e.ModifiedBy)
+                      .HasMaxLength(50);
+                      
+                entity.Property(e => e.CreatedDate)
+                      .HasDefaultValueSql("GETDATE()");
+                      
+                entity.Property(e => e.Status)
+                      .HasDefaultValue(EntityStatus.Active)
+                      .HasSentinel(EntityStatus.Default);
             });
             
             // Configure AddressType Entity

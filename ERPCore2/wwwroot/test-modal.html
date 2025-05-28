@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bootstrap Modal 測試</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Bootstrap Modal 測試</h1>
+        <button type="button" class="btn btn-primary" onclick="testShowModal()">
+            測試顯示 Modal
+        </button>
+        
+        <button type="button" class="btn btn-secondary" onclick="testBootstrapLoaded()">
+            檢查 Bootstrap 是否載入
+        </button>
+        
+        <div id="result" class="mt-3"></div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="testModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">測試 Modal</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>這是一個測試用的 Modal 視窗。</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Bootstrap Modal Helper Functions for Blazor
+        window.bootstrapHelpers = {
+            showModal: function (modalId) {
+                try {
+                    const modalElement = document.getElementById(modalId);
+                    if (modalElement) {
+                        const modal = new bootstrap.Modal(modalElement);
+                        modal.show();
+                        return true;
+                    } else {
+                        console.error('Modal element not found: ' + modalId);
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Error showing modal:', error);
+                    return false;
+                }
+            },
+
+            hideModal: function (modalId) {
+                try {
+                    const modalElement = document.getElementById(modalId);
+                    if (modalElement) {
+                        const modal = bootstrap.Modal.getInstance(modalElement);
+                        if (modal) {
+                            modal.hide();
+                        }
+                        return true;
+                    } else {
+                        console.error('Modal element not found: ' + modalId);
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Error hiding modal:', error);
+                    return false;
+                }
+            },
+
+            isBootstrapLoaded: function () {
+                return typeof bootstrap !== 'undefined';
+            }
+        };
+
+        function testShowModal() {
+            const result = window.bootstrapHelpers.showModal('testModal');
+            document.getElementById('result').innerHTML = `<div class="alert alert-${result ? 'success' : 'danger'}">
+                顯示 Modal 結果: ${result ? '成功' : '失敗'}
+            </div>`;
+        }
+
+        function testBootstrapLoaded() {
+            const isLoaded = window.bootstrapHelpers.isBootstrapLoaded();
+            document.getElementById('result').innerHTML = `<div class="alert alert-${isLoaded ? 'success' : 'danger'}">
+                Bootstrap 載入狀態: ${isLoaded ? '已載入' : '未載入'}
+            </div>`;
+        }
+    </script>
+</body>
+</html>

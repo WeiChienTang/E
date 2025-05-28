@@ -7,7 +7,7 @@ namespace ERPCore2.Data.Entities
     {
         // Primary Key
         public int AddressId { get; set; }
-          // Foreign Keys
+        // Foreign Keys
         [Display(Name = "客戶")]
         public int CustomerId { get; set; }
         

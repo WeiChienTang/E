@@ -3,6 +3,7 @@ using ERPCore2.Data;
 using ERPCore2.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Services;
+using ERPCore2.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Service Registration (No Repository needed!)
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IAddressService, AddressService>();
+builder.Services.AddScoped<IContactTypeService, ContactTypeService>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

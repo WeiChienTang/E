@@ -1,5 +1,6 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
+using ERPCore2.Data.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERPCore2.Data
@@ -18,15 +19,37 @@ namespace ERPCore2.Data
             if (await context.ContactTypes.AnyAsync())
             {
                 return; // 資料已存在
-            }
-
-            // 新增聯絡類型資料
+            }            // 新增聯絡類型資料
             var contactTypes = new[]
             {
-                new ContactType { TypeName = "電話" },
-                new ContactType { TypeName = "手機" },
-                new ContactType { TypeName = "Email" },
-                new ContactType { TypeName = "傳真" }
+                new ContactType { 
+                    TypeName = "電話", 
+                    Description = "固定電話號碼",
+                    CreatedDate = DateTime.Now,
+                    CreatedBy = "System",
+                    Status = EntityStatus.Active
+                },
+                new ContactType { 
+                    TypeName = "手機", 
+                    Description = "行動電話號碼",
+                    CreatedDate = DateTime.Now,
+                    CreatedBy = "System",
+                    Status = EntityStatus.Active
+                },
+                new ContactType { 
+                    TypeName = "Email", 
+                    Description = "電子郵件地址",
+                    CreatedDate = DateTime.Now,
+                    CreatedBy = "System",
+                    Status = EntityStatus.Active
+                },
+                new ContactType { 
+                    TypeName = "傳真", 
+                    Description = "傳真號碼",
+                    CreatedDate = DateTime.Now,
+                    CreatedBy = "System",
+                    Status = EntityStatus.Active
+                }
             };
 
             await context.ContactTypes.AddRangeAsync(contactTypes);

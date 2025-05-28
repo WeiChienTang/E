@@ -2,10 +2,12 @@
 @page "/customers/{CustomerId:int}/edit"
 @inject ICustomerService CustomerService
 @inject IAddressService AddressService
+@inject IContactTypeService ContactTypeService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
+@using ERPCore2.Services.Interfaces
 @using ERPCore2.Components.Shared.Buttons
 @using ERPCore2.Components.Shared.Alerts
 @using ERPCore2.Components.Shared.Headers
@@ -23,7 +25,8 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <div class="card">                <PageHeaderComponent Title="@GetPageTitle()" IconClass="@GetPageIcon()">
+            <div class="card">                
+                <PageHeaderComponent Title="@GetPageTitle()" IconClass="@GetPageIcon()">
                     <Actions>
                         <ButtonComponent Text="返回列表" 
                                        Variant="ButtonVariant.OutlineSecondary" 
@@ -80,30 +83,30 @@
                                     </div>
                                 </div>
                                 
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <SelectComponent TValue="int?"
-                                                       Id="customerType" 
-                                                       Label="客戶類型"
-                                                       Value="@customer.CustomerTypeId"
-                                                       ValueChanged="@(value => { customer.CustomerTypeId = value; LogChange("CustomerTypeId", value?.ToString() ?? "null"); StateHasChanged(); })"
-                                                       Items="customerTypes"
-                                                       GetItemText="@(item => ((CustomerType)item).TypeName)"
-                                                       GetItemValue="@(item => ((CustomerType)item).CustomerTypeId)"
-                                                       EmptyOptionText="請選擇客戶類型..." />
+                                <div class="row">                                    <div class="col-md-4">
+                                        <DatabaseSelectWithManagementComponent TValue="int?" TEntity="CustomerType"
+                                                                             Id="customerType" 
+                                                                             Label="客戶類型"
+                                                                             Value="@customer.CustomerTypeId"
+                                                                             ValueChanged="@((int? value) => { customer.CustomerTypeId = value; LogChange("CustomerTypeId", value?.ToString() ?? "null"); StateHasChanged(); })"
+                                                                             LoadDataFunc="@(() => CustomerService.GetCustomerTypesAsync())"
+                                                                             GetItemText="@((CustomerType item) => item.TypeName)"
+                                                                             GetItemValue="@((CustomerType item) => (object)item.CustomerTypeId)"
+                                                                             EmptyOptionText="請選擇客戶類型..."
+                                                                             ShowManagementButton="false" />
                                         <ValidationMessage For="@(() => customer.CustomerTypeId)" class="text-danger" />
                                     </div>
-                                    
-                                    <div class="col-md-4">
-                                        <SelectComponent TValue="int?"
+                                      <div class="col-md-4">
+                                        <DatabaseSelectWithManagementComponent TValue="int?" TEntity="Industry"
                                                        Id="industry" 
                                                        Label="行業別"
                                                        Value="@customer.IndustryId"
-                                                       ValueChanged="@(value => { customer.IndustryId = value; LogChange("IndustryId", value?.ToString() ?? "null"); StateHasChanged(); })"
-                                                       Items="industries"
-                                                       GetItemText="@(item => ((Industry)item).IndustryName)"
-                                                       GetItemValue="@(item => ((Industry)item).IndustryId)"
-                                                       EmptyOptionText="請選擇行業別..." />
+                                                       ValueChanged="@((int? value) => { customer.IndustryId = value; LogChange("IndustryId", value?.ToString() ?? "null"); StateHasChanged(); })"
+                                                       LoadDataFunc="@(() => CustomerService.GetIndustriesAsync())"
+                                                       GetItemText="@((Industry item) => item.IndustryName)"
+                                                       GetItemValue="@((Industry item) => (object)item.IndustryId)"
+                                                       EmptyOptionText="請選擇行業別..."
+                                                       ShowManagementButton="false" />
                                         <ValidationMessage For="@(() => customer.IndustryId)" class="text-danger" />
                                     </div>
                                     
@@ -113,14 +116,30 @@
                                                       Value="@customer.ContactPerson"
                                                       ValueChanged="@(value => { customer.ContactPerson = value; LogChange("ContactPerson", value); })" />
                                         <ValidationMessage For="@(() => customer.ContactPerson)" class="text-danger" />
-                                    </div>
-                                </div>                            </FormSectionComponent>
-                            
-                            <!-- 聯絡資訊區塊 -->                            <FormSectionComponent Title="聯絡資訊" 
+                                    </div>                                </div>
+                            </FormSectionComponent>
+                                <!-- 聯絡資訊區塊 -->                            
+                            <FormSectionComponent Title="聯絡資訊" 
                                                 IconClass="fas fa-phone"
                                                 SectionType="@FormSectionType.Contact"
                                                 RequiredFieldsCount="0"
                                                 CompletedFieldsCount="@GetContactCompletedFieldsCount()">
+                                  <!-- 理想的聯絡類型選擇器（示範用，實際可能需要自定義組件）-->                                
+                                <DatabaseSelectWithManagementComponent TValue="int?" TEntity="ContactType"
+                                                                       Id="contactTypeSelect" 
+                                                                       Label="選擇聯絡類型"
+                                                                       Value="@selectedContactTypeId"
+                                                                       ValueChanged="@((int? value) => selectedContactTypeId = value)"
+                                                                       LoadDataFunc="@(() => ContactTypeService.GetActiveAsync())"
+                                                                       GetItemText="@((ContactType item) => item.TypeName)"
+                                                                       GetItemValue="@((ContactType item) => (object)item.ContactTypeId)"
+                                                                       EmptyOptionText="請選擇聯絡類型..."
+                                                                       ManagementButtonTitle="管理聯絡類型"
+                                                                       OnManagementClick="ShowContactTypeModal"
+                                                                       OnDataRefreshed="OnContactTypeDataRefreshed" />
+                                
+                                <!-- 原有的硬編碼聯絡方式輸入 -->
+                                
                                 <div class="row">
                                     <div class="col-md-4">
                                         <InputComponent Id="phone" 
@@ -166,14 +185,15 @@
                                                       Value="@GetContactValue("網站")"
                                                       ValueChanged="@(value => UpdateContactValue("網站", value))"
                                                       InputType="url"
-                                                      Placeholder="https://www.company.com" />
+                                                      Placeholder="https://www.company.com" />                                    
                                     </div>
                                 </div>
                             </FormSectionComponent>
                             
                             @if (IsEditMode)
                             {
-                                <!-- 系統資訊區塊 (僅編輯模式顯示) -->                                <FormSectionComponent Title="系統資訊" 
+                                <!-- 系統資訊區塊 (僅編輯模式顯示) -->                                
+                                <FormSectionComponent Title="系統資訊" 
                                                     IconClass="fas fa-cog"
                                                     SectionType="@FormSectionType.System"
                                                     RequiredFieldsCount="1"
@@ -218,7 +238,8 @@
                             }
                             else
                             {
-                                <!-- 新增模式的建立者資訊 -->                                <FormSectionComponent Title="建立資訊" 
+                                <!-- 新增模式的建立者資訊 -->                                
+                                <FormSectionComponent Title="建立資訊" 
                                                     IconClass="fas fa-user-plus"
                                                     SectionType="@FormSectionType.System"
                                                     RequiredFieldsCount="0"
@@ -236,7 +257,8 @@
                                 </FormSectionComponent>
                             }
                             
-                            <!-- 地址資訊區塊 -->                            <FormSectionComponent Title="地址資訊" 
+                            <!-- 地址資訊區塊 -->                            
+                            <FormSectionComponent Title="地址資訊" 
                                                 IconClass="fas fa-map-marker-alt"
                                                 SectionType="@FormSectionType.Address"
                                                 RequiredFieldsCount="0"
@@ -289,15 +311,39 @@
 <!-- 載入 Font Awesome 圖示 -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 
-@code {
-    [Parameter] public int? CustomerId { get; set; }
-      private Customer customer = new();
+<!-- ContactType 管理模態視窗 -->
+<GenericManagementModal @ref="contactTypeModal" 
+                       TEntity="ContactType"
+                       ModalId="contactTypeManagementModal"
+                       Title="聯絡類型管理"
+                       EntityDisplayName="聯絡類型"
+                       IconClass="fas fa-phone"
+                       LoadingText="載入聯絡類型資料中..."
+                       Service="ContactTypeService"
+                       OnDataChanged="OnContactTypesChanged"                       
+                       GetEntityId="GetContactTypeId"
+                       GetEntityStatus="GetContactTypeStatus"
+                       SetCreatedBy="SetContactTypeCreatedBy"
+                       SetEntityStatus="SetContactTypeStatus"
+                       CreateFormContent="CreateContactTypeForm"
+                       TableHeaders="ContactTypeTableHeaders"
+                       TableRowContent="ContactTypeTableRow" />
+
+@code {    [Parameter] public int? CustomerId { get; set; }
+    
+    private Customer customer = new();
     private List<CustomerType> customerTypes = new();
     private List<Industry> industries = new();
     private List<AddressType> addressTypes = new();
     private List<ContactType> contactTypes = new();
     private List<CustomerAddress> customerAddresses = new();
     private List<CustomerContact> customerContacts = new();
+    
+    // 用於示範理想用法的變數
+    private int? selectedContactTypeId;
+    
+    // 模態組件引用
+    private GenericManagementModal<ContactType> contactTypeModal = default!;
     
     private bool isLoading = true;
     private bool isSubmitting = false;
@@ -317,16 +363,19 @@
     
     protected override async Task OnInitializedAsync()
     {
-        await LoadDataAsync();
-    }
-      private async Task LoadDataAsync()
-    {        try
+        await LoadDataAsync();    }
+      
+    private async Task LoadDataAsync()
+    {
+        try
         {
-            // 載入客戶類型、行業別、地址類型和聯絡類型的下拉選項
+            // 載入客戶類型、行業別、地址類型和聯絡類型的下拉選項            
             customerTypes = await CustomerService.GetCustomerTypesAsync();
             industries = await CustomerService.GetIndustriesAsync();
             addressTypes = await CustomerService.GetAddressTypesAsync();
-            contactTypes = await CustomerService.GetContactTypesAsync();
+
+            // 使用 ContactTypeService 載入聯絡類型
+            contactTypes = await ContactTypeService.GetActiveAsync();
             
             if (IsEditMode)
             {
@@ -952,10 +1001,149 @@
         {
             customerContacts.Remove(existingContact);
         }
-        
-        if (enableDebugLog)
+          if (enableDebugLog)
         {
             Console.WriteLine($"聯絡資訊更新: {contactTypeName} = '{value}'");
         }
+    }
+
+    // ContactType 管理模態相關方法
+    private async Task ShowContactTypeModal()
+    {
+        if (contactTypeModal != null)
+        {
+            await contactTypeModal.ShowModal();
+        }
+    }    private async Task OnContactTypesChanged()
+    {        // 重新載入聯絡類型資料
+        try
+        {
+            contactTypes = await ContactTypeService.GetActiveAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"重新載入聯絡類型失敗: {ex.Message}");
+        }
+    }    
+    // GenericManagementModal 的委派方法
+    private int GetContactTypeId(ContactType contactType) => contactType.ContactTypeId;
+    private EntityStatus GetContactTypeStatus(ContactType contactType) => contactType.Status;
+    private void SetContactTypeCreatedBy(ContactType contactType, string user) => contactType.CreatedBy = user;
+    private void SetContactTypeStatus(ContactType contactType, EntityStatus status) => contactType.Status = status;
+
+    // RenderFragment 方法
+    private RenderFragment<ContactType> CreateContactTypeForm => context => __builder =>
+    {
+        <div class="row">
+            <div class="col-md-8">
+                <div class="form-group mb-3">
+                    <label for="typeName" class="form-label">聯絡類型名稱 <span class="text-danger">*</span></label>
+                    <InputText id="typeName" 
+                              @bind-Value="context.TypeName" 
+                              class="form-control" 
+                              placeholder="請輸入聯絡類型名稱"
+                              maxlength="20" />
+                    <ValidationMessage For="@(() => context.TypeName)" />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group mb-3">
+                    <label class="form-label">字元數</label>
+                    <div class="form-control-plaintext">
+                        @(context.TypeName?.Length ?? 0) / 20
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group mb-3">
+            <label for="description" class="form-label">描述</label>
+            <InputTextArea id="description" 
+                          @bind-Value="context.Description" 
+                          class="form-control" 
+                          placeholder="請輸入描述（選填）"
+                          rows="3"
+                          maxlength="100" />
+            <ValidationMessage For="@(() => context.Description)" />
+            <div class="form-text">
+                @(context.Description?.Length ?? 0) / 100 字元
+            </div>
+        </div>
+    };
+
+    private RenderFragment ContactTypeTableHeaders => __builder =>
+    {
+        <th>名稱</th>
+        <th>描述</th>
+        <th>狀態</th>
+        <th>建立日期</th>
+    };
+
+    private RenderFragment<ContactType> ContactTypeTableRow => context => __builder =>
+    {
+        <td>
+            <strong>@context.TypeName</strong>
+        </td>
+        <td>
+            <span class="text-muted">
+                @(string.IsNullOrEmpty(context.Description) ? "無" : context.Description)
+            </span>
+        </td>
+        <td>
+            @if (context.Status == EntityStatus.Active)
+            {
+                <span class="badge bg-success">啟用</span>
+            }
+            else if (context.Status == EntityStatus.Inactive)
+            {
+                <span class="badge bg-warning">停用</span>
+            }
+            else
+            {
+                <span class="badge bg-secondary">已刪除</span>
+            }
+        </td>
+        <td>
+            <small class="text-muted">
+                @context.CreatedDate.ToString("yyyy/MM/dd HH:mm")
+                <br />
+                <span class="text-muted">by @context.CreatedBy</span>
+            </small>
+        </td>
+    };
+
+    // DatabaseSelectComponent 委派方法
+    private async Task<List<ContactType>> LoadContactTypes()
+    {
+        return await ContactTypeService.GetActiveAsync();
+    }
+    
+    private string GetContactTypeText(ContactType contactType)
+    {
+        return contactType.TypeName;
+    }
+    
+    private object GetContactTypeValue(ContactType contactType)
+    {
+        return contactType.ContactTypeId;
+    }
+      private async Task OnContactTypeChanged(int? value)
+    {
+        selectedContactTypeId = value;
+        await Task.CompletedTask;
+    }
+    
+    private async Task OnContactTypeDataRefreshed()
+    {
+        // 當聯絡類型資料重新載入後的處理
+        // 這個方法會在 DatabaseSelectWithManagementComponent 的 OnDataRefreshed 事件中被呼叫
+        if (enableDebugLog)
+        {
+            Console.WriteLine("聯絡類型資料已重新載入");
+        }
+        
+        // 可以在這裡執行額外的資料同步邏輯，目前暫時保持空的實作
+        await Task.CompletedTask;
     }
 }

@@ -168,6 +168,56 @@ Components/Shared/
 - `MinAddressCount` (int) - 最少地址數量，預設 1
 - 各種事件回呼：`OnAddAddress`, `OnRemoveAddress`, `OnSetPrimaryAddress` 等
 
+### DatabaseSelectWithManagementComponent<TValue, TEntity>.razor
+**用途**：結合資料庫載入下拉選單和管理按鈕的複合組件
+
+**參數**：
+- `Id` (string) - 欄位 ID
+- `Label` (string) - 標籤文字
+- `Value` (TValue?) - 選中值
+- `ValueChanged` (EventCallback<TValue?>) - 值變更事件
+- `GetItemText` (Func<TEntity, string>) - 取得選項顯示文字的函數
+- `GetItemValue` (Func<TEntity, object>) - 取得選項值的函數
+- `IsRequired` (bool) - 是否必填
+- `IsDisabled` (bool) - 是否禁用
+- `ShowEmptyOption` (bool) - 是否顯示空選項
+- `EmptyOptionText` (string) - 空選項文字
+- `CssClass` (string) - 額外的 CSS 類別
+- `HelpText` (string) - 說明文字
+- `LoadDataFunc` (Func<Task<List<TEntity>>>) - 載入資料的函數
+- `AutoLoad` (bool) - 是否自動載入
+- `RefreshOnParametersSet` (bool) - 參數變更時是否重新載入
+- `ShowManagementButton` (bool) - 是否顯示管理按鈕
+- `ManagementButtonText` (string) - 管理按鈕文字
+- `ManagementButtonVariant` (ButtonVariant) - 管理按鈕樣式
+- `ManagementButtonSize` (ButtonSize) - 管理按鈕大小
+- `ManagementButtonIcon` (string) - 管理按鈕圖示
+- `ManagementButtonTitle` (string) - 管理按鈕提示文字
+- `OnManagementClick` (EventCallback) - 管理按鈕點擊事件
+- `OnDataRefreshed` (EventCallback) - 資料重新載入事件
+
+**使用範例**：
+```html
+<DatabaseSelectWithManagementComponent TValue="int?" TEntity="ContactType"
+                                     Id="contactType" 
+                                     Label="聯絡類型"
+                                     Value="@selectedContactTypeId"
+                                     ValueChanged="@(value => selectedContactTypeId = value)"
+                                     LoadDataFunc="@(() => ContactTypeService.GetActiveAsync())"
+                                     GetItemText="@(item => item.TypeName)"
+                                     GetItemValue="@(item => item.ContactTypeId)"
+                                     EmptyOptionText="請選擇聯絡類型..."
+                                     ManagementButtonTitle="管理聯絡類型"
+                                     OnManagementClick="ShowContactTypeModal" />
+```
+
+**特色**：
+- 整合下拉選單和管理按鈕，提供完整的選擇和管理體驗
+- 支援自動從資料庫載入資料
+- 可自訂管理按鈕的外觀和行為
+- 支援資料重新載入通知
+- 可選擇性顯示或隱藏管理按鈕
+
 ### FormSectionComponent.razor
 **用途**：表單區塊組件，提供表單欄位分組和完成度指示
 

@@ -3,222 +3,59 @@
 ## 概述
 Services 資料夾包含了 ERPCore2 系統的業務邏輯層實作，負責處理業務規則、資料驗證、商業邏輯封裝，並直接使用 EF Core DbContext 進行資料操作。
 
-**重要：本系統已簡化架構，移除 Repository 層，Service 層直接使用 EF Core，並且不使用 DTO，直接操作 Entity 模型。**
-
-## 資料夾結構
-
-```
-Services/
-├── CustomerService.cs        # 客戶服務實作
-├── AddressService.cs         # 地址管理服務實作
-├── ServiceResult.cs          # 服務層回傳結果類別
-├── Interfaces/               # 服務介面
-│   ├── ICustomerService.cs   # 客戶服務介面
-│   └── IAddressService.cs    # 地址管理服務介面
-└── README_Services.md        # 本說明文檔
-```
-
+**核心設計理念：簡化架構，移除 Repository 層，Service 直接使用 EF Core，不使用 DTO，直接操作 Entity 模型。**
 
 ## 命名規範
 
-### 命名空間命名方式
-所有 Services 資料夾下的檔案均使用統一的命名空間：
+### 命名空間
+所有 Services 資料夾下的檔案統一使用：`ERPCore2.Services`
 
-- ✅ **統一命名空間**：`ERPCore2.Services`
+### 檔案命名
+- **服務實作**：`[業務領域]Service.cs`（如：CustomerService.cs）
+- **服務介面**：`I[業務領域]Service.cs`（如：ICustomerService.cs）
+- **結果類別**：`ServiceResult.cs`
 
-### 實際命名範例
-- `Services/CustomerService.cs` → `namespace ERPCore2.Services`
-- `Services/AddressService.cs` → `namespace ERPCore2.Services`
-- `Services/ServiceResult.cs` → `namespace ERPCore2.Services`
-- `Services/Interfaces/ICustomerService.cs` → `namespace ERPCore2.Services`
-- `Services/Interfaces/IAddressService.cs` → `namespace ERPCore2.Services`
+---
 
-## 簡化架構設計原則
+## 架構設計原則
 
-### 🏗️ 為什麼移除 Repository 層？
-- **EF Core 本身就是 Repository 模式**：DbContext 和 DbSet 已經提供了完整的資料存取抽象
-- **避免過度設計**：額外的 Repository 層只是增加了不必要的複雜性
-- **更直接的資料操作**：可以直接使用 LINQ、Include() 等 EF Core 功能
-- **更好的效能**：減少資料轉換和抽象層的開銷
+### 為什麼簡化架構？
+- **EF Core 本身就是完整的資料存取層**：DbContext 和 DbSet 已提供完整功能
+- **避免過度設計**：移除不必要的 Repository 和 DTO 層
+- **更直接的操作**：充分利用 EF Core 的 LINQ、Include 等功能
+- **更好的效能**：減少資料轉換和抽象層開銷
 
-### 🎯 為什麼不使用 DTO？
-- **減少程式碼複雜度**：避免建立大量的 DTO 類別和對應的轉換邏輯
-- **Entity 設計良好**：我們的 Entity 模型已經包含了適當的驗證屬性和結構
-- **避免資料轉換開銷**：直接操作 Entity 避免了 Entity ↔ DTO 的轉換成本
-- **更簡潔的 API**：Service 方法直接接受和回傳 Entity，使用更直觀
-- **利用 EF Core 變更追蹤**：直接操作 Entity 可以充分利用 EF Core 的變更追蹤功能
-
-### 🧠 Service 層新職責（直接使用 EF Core + Entity）
-Service 層現在負責**完整的業務邏輯和資料存取**，主要包括：
-
-- **直接的 EF Core 資料操作**：使用 DbContext 進行 CRUD 操作
-- **業務規則驗證**：檢查業務邏輯限制和資料完整性
-- **Entity 驗證**：使用 DataAnnotations 和自定義驗證邏輯
-- **實體狀態管理**：設定稽核欄位（CreatedDate、ModifiedBy 等）
+### Service 層職責
+- **直接的 EF Core 資料操作**：使用 DbContext 進行 CRUD
+- **業務規則驗證**：檢查業務邏輯和資料完整性
+- **Entity 驗證**：使用 DataAnnotations 驗證
+- **稽核欄位管理**：設定 CreatedDate、ModifiedBy 等
 - **關聯資料載入**：使用 Include() 載入相關實體
-- **錯誤處理**：使用 ServiceResult 包裝業務操作結果
-- **事務管理**：處理跨多個實體的操作
+- **錯誤處理**：使用 ServiceResult 封裝結果
+- **交易管理**：處理複雜的跨實體操作
 
+---
+
+## Service 標準結構
+
+### 1. 服務介面定義
 ```csharp
-// ✅ Service 直接使用 EF Core 和 Entity
-public async Task<ServiceResult<Customer>> CreateAsync(Customer customer)
+public interface ICustomerService
 {
-    try
-    {
-        // 1. 業務驗證（直接驗證 Entity）
-        var validationResult = ValidateCustomer(customer);
-        if (!validationResult.IsSuccess)
-            return ServiceResult<Customer>.Failure(validationResult.ErrorMessage);
-        
-        // 2. 業務規則檢查（直接使用 EF Core）
-        var existingCustomer = await _context.Customers
-            .FirstOrDefaultAsync(c => c.CustomerCode == customer.CustomerCode && c.Status != EntityStatus.Deleted);
-        if (existingCustomer != null)
-            return ServiceResult<Customer>.Failure("客戶代碼已存在");
-        
-        // 3. 設定業務相關欄位
-        customer.CreatedDate = DateTime.Now;
-        customer.CreatedBy = "系統管理員";
-        customer.Status = EntityStatus.Active;
-        
-        // 4. 直接使用 EF Core 儲存
-        _context.Customers.Add(customer);
-        await _context.SaveChangesAsync();
-        
-        return ServiceResult<Customer>.Success(customer);
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "Error creating customer");
-        return ServiceResult<Customer>.Failure($"新增客戶時發生錯誤: {ex.Message}");
-    }
+    // 基本 CRUD 操作
+    Task<List<Customer>> GetAllAsync();
+    Task<Customer?> GetByIdAsync(int id);
+    Task<ServiceResult<Customer>> CreateAsync(Customer customer);
+    Task<ServiceResult<Customer>> UpdateAsync(Customer customer);
+    Task<ServiceResult> DeleteAsync(int id);
+    
+    // 業務特定方法
+    Task<bool> IsCustomerCodeExistsAsync(string customerCode, int? excludeId = null);
+    Task<List<Customer>> SearchAsync(string searchTerm);
 }
 ```
 
-## 實際使用場景
-
-### 📊 UI 層直接使用 Service（推薦方式）
-```csharp
-@inject ICustomerService CustomerService
-
-@code {
-    private List<Customer> customers = new();
-    private Customer newCustomer = new();
-    
-    protected override async Task OnInitializedAsync()
-    {
-        // ✅ 使用 Service 獲取資料（包含業務邏輯）
-        customers = await CustomerService.GetAllAsync();
-    }
-    
-    private async Task CreateCustomer()
-    {
-        // ✅ 使用 Service 進行業務操作（直接傳遞 Entity）
-        var result = await CustomerService.CreateAsync(newCustomer);
-        
-        if (result.IsSuccess)
-        {
-            // 成功處理 - result.Data 就是 Customer Entity
-            customers.Add(result.Data);
-            newCustomer = new Customer(); // 重置表單
-        }
-        else
-        {
-            // 顯示業務錯誤訊息
-            ShowError(result.ErrorMessage);
-        }
-    }
-}
-```
-
-### 🔧 Service 方法範例（Entity-First 設計）
-```csharp
-public class CustomerService : ICustomerService
-{
-    private readonly AppDbContext _context;
-    
-    // ✅ 直接回傳 Entity List
-    public async Task<List<Customer>> GetAllAsync()
-    {
-        return await _context.Customers
-            .Where(c => c.Status != EntityStatus.Deleted)
-            .Include(c => c.CustomerType)    // 載入關聯資料
-            .Include(c => c.Industry)
-            .OrderBy(c => c.CompanyName)
-            .ToListAsync();
-    }
-    
-    // ✅ 直接接受 Entity 參數
-    public async Task<ServiceResult<Customer>> CreateAsync(Customer customer)
-    {
-        // 業務邏輯處理...
-        _context.Customers.Add(customer);
-        await _context.SaveChangesAsync();
-        return ServiceResult<Customer>.Success(customer);
-    }
-    
-    // ✅ 直接接受 Entity 參數進行更新
-    public async Task<ServiceResult<Customer>> UpdateAsync(Customer customer)
-    {
-        // 業務邏輯處理...
-        _context.Customers.Update(customer);
-        await _context.SaveChangesAsync();
-        return ServiceResult<Customer>.Success(customer);
-    }
-}
-```
-
-## Service 設計原則（Entity-First 方法）
-
-### 1. 直接使用 Entity，不使用 DTO
-所有 Service 方法都直接操作 Entity 模型：
-
-```csharp
-// ✅ 正確：直接接受和回傳 Entity
-public async Task<ServiceResult<Customer>> CreateAsync(Customer customer)
-public async Task<ServiceResult<Customer>> UpdateAsync(Customer customer)
-public async Task<List<Customer>> GetAllAsync()
-public async Task<Customer?> GetByIdAsync(int id)
-
-// ❌ 避免：不需要建立 DTO
-// public async Task<ServiceResult<CustomerDto>> CreateAsync(CreateCustomerDto dto)
-// public async Task<List<CustomerDto>> GetAllAsync()
-```
-
-### 2. 利用 Entity 的 DataAnnotations
-直接使用 Entity 上的驗證屬性：
-
-```csharp
-public class Customer
-{
-    [Required(ErrorMessage = "客戶代碼為必填")]
-    [MaxLength(20, ErrorMessage = "客戶代碼不可超過20個字元")]
-    public string CustomerCode { get; set; } = string.Empty;
-    
-    [Required(ErrorMessage = "公司名稱為必填")]
-    [MaxLength(100, ErrorMessage = "公司名稱不可超過100個字元")]
-    public string CompanyName { get; set; } = string.Empty;
-}
-
-// Service 中的驗證邏輯
-private ServiceResult ValidateCustomer(Customer customer)
-{
-    var context = new ValidationContext(customer);
-    var results = new List<ValidationResult>();
-    
-    if (!Validator.TryValidateObject(customer, context, results, true))
-    {
-        var errors = results.Select(r => r.ErrorMessage ?? "驗證錯誤").ToList();
-        return ServiceResult.ValidationFailure(errors);
-    }
-    
-    return ServiceResult.Success();
-}
-```
-
-### 3. 依賴注入（直接使用 DbContext）
-Service 直接注入 DbContext，不需要 Repository：
-
+### 2. 服務實作結構
 ```csharp
 public class CustomerService : ICustomerService
 {
@@ -231,135 +68,95 @@ public class CustomerService : ICustomerService
         _logger = logger;
     }
     
-    // 直接使用 EF Core 功能
-    public async Task<List<Customer>> GetAllAsync()
-    {
-        return await _context.Customers
-            .Where(c => c.Status != EntityStatus.Deleted)
-            .Include(c => c.CustomerType)      // 載入關聯資料
-            .Include(c => c.Industry)
-            .OrderBy(c => c.CompanyName)
-            .ToListAsync();
-    }
+    // 實作方法...
 }
 ```
 
-### 4. 充分利用 EF Core 功能
-直接使用 EF Core 的強大功能：
-
+### 3. ServiceResult 使用模式
 ```csharp
-// ✅ 使用 Include 載入關聯資料
-public async Task<Customer?> GetByIdAsync(int id)
+// 成功結果
+return ServiceResult<Customer>.Success(customer);
+
+// 失敗結果
+return ServiceResult<Customer>.Failure("錯誤訊息");
+
+// 驗證失敗
+return ServiceResult.ValidationFailure(validationErrors);
+```
+
+---
+
+## Service 方法設計規範
+
+### 基本 CRUD 模式
+
+#### GetAll 方法
+```csharp
+public async Task<List<Customer>> GetAllAsync()
 {
     return await _context.Customers
+        .Where(c => c.Status != EntityStatus.Deleted)
         .Include(c => c.CustomerType)
         .Include(c => c.Industry)
-        .Include(c => c.CustomerContacts)
-        .Include(c => c.CustomerAddresses)
-        .FirstOrDefaultAsync(c => c.CustomerId == id && c.Status != EntityStatus.Deleted);
-}
-
-// ✅ 使用複雜的 LINQ 查詢
-public async Task<List<Customer>> SearchAsync(string searchTerm, EntityStatus? status = null)
-{
-    var query = _context.Customers.AsQueryable();
-    
-    if (!string.IsNullOrWhiteSpace(searchTerm))
-    {
-        query = query.Where(c => 
-            c.CustomerCode.Contains(searchTerm) || 
-            c.CompanyName.Contains(searchTerm) ||
-            c.ContactPerson.Contains(searchTerm));
-    }
-    
-    if (status.HasValue)
-        query = query.Where(c => c.Status == status.Value);
-    else
-        query = query.Where(c => c.Status != EntityStatus.Deleted);
-    
-    return await query
-        .Include(c => c.CustomerType)
-        .OrderBy(c => c.CustomerCode)
+        .OrderBy(c => c.CompanyName)
         .ToListAsync();
 }
 ```
 
-## 檔案按資料夾分類
-
-### 當前結構
+#### Create 方法
+```csharp
+public async Task<ServiceResult<Customer>> CreateAsync(Customer customer)
+{
+    try
+    {
+        // 1. 業務驗證
+        var validationResult = await ValidateCustomerAsync(customer);
+        if (!validationResult.IsSuccess)
+            return ServiceResult<Customer>.Failure(validationResult.ErrorMessage);
+        
+        // 2. 業務規則檢查
+        if (await IsCustomerCodeExistsAsync(customer.CustomerCode))
+            return ServiceResult<Customer>.Failure("客戶代碼已存在");
+        
+        // 3. 設定系統欄位
+        customer.CreatedDate = DateTime.Now;
+        customer.CreatedBy = "系統管理員";
+        customer.Status = EntityStatus.Active;
+        
+        // 4. 儲存資料
+        _context.Customers.Add(customer);
+        await _context.SaveChangesAsync();
+        
+        return ServiceResult<Customer>.Success(customer);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "建立客戶時發生錯誤");
+        return ServiceResult<Customer>.Failure("建立客戶時發生錯誤");
+    }
+}
 ```
-Services/
-├── Customers/                    # 客戶管理服務
-│   ├── CustomerService.cs       # 客戶服務實作
-│   └── Interfaces/
-│       └── ICustomerService.cs  # 客戶服務介面
-├── Results/                      # 通用結果類別
-│   └── ServiceResult.cs         # 服務操作結果封裝
-└── README_Services.md            # 本說明文檔
-```
 
-### 未來擴展建議
-隨著系統成長，建議按業務模組分類：
-
-```
-Services/
-├── Customers/          # 客戶管理服務
-│   ├── CustomerService.cs
-│   └── Interfaces/
-├── Products/           # 產品管理服務（未來）
-│   ├── ProductService.cs
-│   └── Interfaces/
-├── Orders/             # 訂單管理服務（未來）
-│   ├── OrderService.cs
-│   └── Interfaces/
-├── Inventory/          # 庫存管理服務（未來）
-├── Accounting/         # 會計管理服務（未來）
-├── Results/            # 通用結果類別
-└── Common/             # 共用服務（未來）
-```
-
-
-## 最佳實踐（Entity-First 架構）
-
-1. **直接使用 Entity**：不建立 DTO，直接操作業務實體模型
-2. **EF Core 優先**：充分利用 EF Core 的功能，如 Include、LINQ、變更追蹤等
-3. **業務邏輯集中**：將所有業務規則、驗證邏輯集中在 Service 層
-4. **錯誤處理統一**：使用 ServiceResult 處理所有業務操作結果
-5. **介面設計**：為每個 Service 設計清楚的介面，便於測試和替換
-6. **事務管理**：在 Service 層使用 DbContext 的事務功能處理複雜操作
-7. **效能考量**：適當使用 AsNoTracking()、分頁查詢等最佳化技術
-
-## 範例：完整的 Entity-First Service 方法
-
+#### Update 方法
 ```csharp
 public async Task<ServiceResult<Customer>> UpdateAsync(Customer customer)
 {
     try
     {
-        // 1. 檢查實體是否存在
-        var existingCustomer = await _context.Customers
-            .FirstOrDefaultAsync(c => c.CustomerId == customer.CustomerId && c.Status != EntityStatus.Deleted);
+        // 1. 檢查實體存在
+        var existingCustomer = await GetByIdAsync(customer.CustomerId);
         if (existingCustomer == null)
             return ServiceResult<Customer>.Failure("客戶不存在");
         
-        // 2. Entity 驗證（使用 DataAnnotations）
-        var validationResult = ValidateCustomer(customer);
-        if (!validationResult.IsSuccess)
-            return ServiceResult<Customer>.Failure(validationResult.ErrorMessage);
-        
-        // 3. 業務規則檢查（避免重複代碼）
-        var duplicateCustomer = await _context.Customers
-            .FirstOrDefaultAsync(c => c.CustomerCode == customer.CustomerCode && 
-                                     c.CustomerId != customer.CustomerId && 
-                                     c.Status != EntityStatus.Deleted);
-        if (duplicateCustomer != null)
+        // 2. 業務規則檢查
+        if (await IsCustomerCodeExistsAsync(customer.CustomerCode, customer.CustomerId))
             return ServiceResult<Customer>.Failure("客戶代碼已存在");
         
-        // 4. 設定稽核欄位
+        // 3. 設定稽核欄位
         customer.ModifiedDate = DateTime.Now;
-        customer.ModifiedBy = "系統管理員"; // 可從認證系統獲取
+        customer.ModifiedBy = "系統管理員";
         
-        // 5. 直接使用 EF Core 更新
+        // 4. 更新資料
         _context.Customers.Update(customer);
         await _context.SaveChangesAsync();
         
@@ -367,55 +164,217 @@ public async Task<ServiceResult<Customer>> UpdateAsync(Customer customer)
     }
     catch (Exception ex)
     {
-        _logger.LogError(ex, "Error updating customer with ID {CustomerId}", customer.CustomerId);
-        return ServiceResult<Customer>.Failure($"更新客戶時發生錯誤: {ex.Message}");
+        _logger.LogError(ex, "更新客戶時發生錯誤 ID: {CustomerId}", customer.CustomerId);
+        return ServiceResult<Customer>.Failure("更新客戶時發生錯誤");
     }
 }
 ```
 
-這樣的設計確保了：
-- **簡潔性**：沒有不必要的抽象層和資料轉換
-- **效能**：直接使用 EF Core，充分利用其最佳化功能
-- **可維護性**：業務邏輯集中，程式碼結構清楚
-- **可測試性**：透過介面注入，便於單元測試
-- **擴展性**：可以輕鬆加入新的業務邏輯和驗證規則
-
-## 已實作的服務
-
-### 1. CustomerService (客戶服務)
-- **功能**：完整的客戶 CRUD 操作
-- **特色**：包含客戶資料驗證、業務規則檢查、相關資料載入
-- **檔案位置**：`Services/CustomerService.cs` 和 `Services/Interfaces/ICustomerService.cs`
-
-### 2. AddressService (地址管理服務)
-- **功能**：客戶地址的完整管理，包含主要地址設定、地址複製等業務邏輯
-- **特色**：
-  - 自動主要地址管理（確保客戶至少有一個主要地址）
-  - 地址複製功能
-  - 地址類型驗證
-  - 與 AddressManagement.razor 元件整合
-- **檔案位置**：`Services/AddressService.cs` 和 `Services/Interfaces/IAddressService.cs`
-
-#### AddressService 主要方法：
+#### Delete 方法（軟刪除）
 ```csharp
-// 取得地址相關資料
-Task<List<AddressType>> GetAddressTypesAsync();
-Task<List<CustomerAddress>> GetAddressesByCustomerIdAsync(int customerId);
-Task<CustomerAddress?> GetPrimaryAddressAsync(int customerId);
-
-// 地址業務邏輯操作
-Task<ServiceResult<CustomerAddress>> CreateAddressAsync(CustomerAddress address);
-Task<ServiceResult<CustomerAddress>> UpdateAddressAsync(CustomerAddress address);
-Task<ServiceResult> DeleteAddressAsync(int addressId);
-Task<ServiceResult> SetPrimaryAddressAsync(int customerId, int addressId);
-
-// 地址業務規則和輔助方法
-Task<ServiceResult> ValidateAddressAsync(CustomerAddress address);
-Task<ServiceResult> EnsureCustomerHasPrimaryAddressAsync(int customerId);
-Task<ServiceResult<CustomerAddress>> CopyFromAddressAsync(CustomerAddress sourceAddress, int targetCustomerId, int? targetAddressTypeId = null);
+public async Task<ServiceResult> DeleteAsync(int id)
+{
+    try
+    {
+        var customer = await GetByIdAsync(id);
+        if (customer == null)
+            return ServiceResult.Failure("客戶不存在");
+        
+        // 業務規則檢查（如檢查是否有關聯訂單等）
+        var hasOrders = await _context.Orders.AnyAsync(o => o.CustomerId == id);
+        if (hasOrders)
+            return ServiceResult.Failure("客戶有關聯訂單，無法刪除");
+        
+        // 軟刪除
+        customer.Status = EntityStatus.Deleted;
+        customer.ModifiedDate = DateTime.Now;
+        customer.ModifiedBy = "系統管理員";
+        
+        await _context.SaveChangesAsync();
+        return ServiceResult.Success();
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "刪除客戶時發生錯誤 ID: {CustomerId}", id);
+        return ServiceResult.Failure("刪除客戶時發生錯誤");
+    }
+}
 ```
 
-### 3. ServiceResult (服務結果封裝)
-- **功能**：統一的服務層回傳結果格式
-- **特色**：支援成功/失敗狀態、錯誤訊息、驗證錯誤集合
-- **檔案位置**：`Services/ServiceResult.cs`
+---
+
+## 驗證和業務規則
+
+### Entity 驗證
+```csharp
+private async Task<ServiceResult> ValidateCustomerAsync(Customer customer)
+{
+    // 使用 DataAnnotations 驗證
+    var context = new ValidationContext(customer);
+    var results = new List<ValidationResult>();
+    
+    if (!Validator.TryValidateObject(customer, context, results, true))
+    {
+        var errors = results.Select(r => r.ErrorMessage ?? "驗證錯誤").ToList();
+        return ServiceResult.ValidationFailure(errors);
+    }
+    
+    // 額外的業務驗證
+    if (string.IsNullOrWhiteSpace(customer.CustomerCode))
+        return ServiceResult.Failure("客戶代碼為必填");
+    
+    return ServiceResult.Success();
+}
+```
+
+### 重複檢查
+```csharp
+public async Task<bool> IsCustomerCodeExistsAsync(string customerCode, int? excludeId = null)
+{
+    var query = _context.Customers
+        .Where(c => c.CustomerCode == customerCode && c.Status != EntityStatus.Deleted);
+    
+    if (excludeId.HasValue)
+        query = query.Where(c => c.CustomerId != excludeId.Value);
+    
+    return await query.AnyAsync();
+}
+```
+
+---
+
+## 複雜業務操作
+
+### 使用交易
+```csharp
+public async Task<ServiceResult> ComplexBusinessOperationAsync(int customerId, SomeRequest request)
+{
+    using var transaction = await _context.Database.BeginTransactionAsync();
+    try
+    {
+        // 步驟 1：業務邏輯處理
+        var customer = await GetByIdAsync(customerId);
+        if (customer == null)
+            throw new ArgumentException("客戶不存在");
+        
+        // 步驟 2：更新多個相關實體
+        var addresses = await _context.CustomerAddresses
+            .Where(a => a.CustomerId == customerId)
+            .ToListAsync();
+        
+        foreach (var address in addresses)
+        {
+            // 業務邏輯處理
+            address.ModifiedDate = DateTime.Now;
+        }
+        
+        // 步驟 3：儲存變更
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+        
+        return ServiceResult.Success();
+    }
+    catch (Exception ex)
+    {
+        await transaction.RollbackAsync();
+        _logger.LogError(ex, "複雜業務操作失敗 CustomerId: {CustomerId}", customerId);
+        return ServiceResult.Failure("操作失敗");
+    }
+}
+```
+
+---
+
+## 效能最佳化
+
+### 查詢最佳化
+```csharp
+// 使用 AsNoTracking 提升查詢效能（只讀情況）
+public async Task<List<Customer>> GetCustomersForDisplayAsync()
+{
+    return await _context.Customers
+        .AsNoTracking()
+        .Where(c => c.Status == EntityStatus.Active)
+        .Include(c => c.CustomerType)
+        .ToListAsync();
+}
+
+// 分頁查詢
+public async Task<(List<Customer> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize)
+{
+    var query = _context.Customers
+        .Where(c => c.Status != EntityStatus.Deleted);
+    
+    var totalCount = await query.CountAsync();
+    
+    var items = await query
+        .Include(c => c.CustomerType)
+        .OrderBy(c => c.CompanyName)
+        .Skip((pageNumber - 1) * pageSize)
+        .Take(pageSize)
+        .ToListAsync();
+    
+    return (items, totalCount);
+}
+```
+
+---
+
+## 依賴注入註冊
+
+### Program.cs 設定
+```csharp
+// 資料庫註冊
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
+// 服務註冊
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IAddressService, AddressService>();
+```
+
+---
+
+## 開發檢查清單
+
+### 建立新服務時
+- [ ] 建立服務介面和實作類別
+- [ ] 使用正確的命名空間 `ERPCore2.Services`
+- [ ] 注入 DbContext 和 ILogger
+- [ ] 實作基本 CRUD 方法
+- [ ] 使用 ServiceResult 封裝回傳結果
+- [ ] 包含適當的業務驗證
+- [ ] 實作軟刪除邏輯
+- [ ] 加入錯誤處理和日誌記錄
+- [ ] 在 Program.cs 中註冊服務
+
+### 方法設計檢查
+- [ ] 所有異步方法使用 async/await
+- [ ] 適當使用 Include() 載入關聯資料
+- [ ] 實作業務規則驗證
+- [ ] 設定稽核欄位（CreatedDate、ModifiedBy 等）
+- [ ] 使用軟刪除而非硬刪除
+- [ ] 複雜操作使用交易管理
+- [ ] 包含適當的例外處理
+
+### 效能考量
+- [ ] 只讀查詢使用 AsNoTracking()
+- [ ] 大量資料查詢實作分頁
+- [ ] 避免 N+1 查詢問題
+- [ ] 適當使用 Select 投影減少資料傳輸
+
+---
+
+## 常見模式摘要
+
+- **錯誤處理**：統一使用 ServiceResult 模式
+- **驗證**：結合 DataAnnotations 和業務驗證
+- **軟刪除**：使用 EntityStatus.Deleted 標記
+- **稽核欄位**：自動設定 CreatedDate、ModifiedDate 等
+- **關聯載入**：適當使用 Include() 避免延遲載入問題
+- **交易管理**：複雜操作使用 EF Core 交易
+- **日誌記錄**：記錄重要操作和錯誤資訊
+
+---
+
+*本指南提供 Service 層的標準設計模式和最佳實踐。通過遵循這些原則，可以建構出一致、可維護且高效能的業務邏輯層。*
