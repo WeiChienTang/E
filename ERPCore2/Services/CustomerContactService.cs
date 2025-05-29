@@ -7,16 +7,16 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 客戶聯絡資料服務實作 - 處理客戶聯絡資料的業務邏輯
+    /// 客戶聯絡資料服務實作 - 使用 DbContextFactory 解決並發問題
     /// </summary>
     public class CustomerContactService : ICustomerContactService
     {
-        private readonly AppDbContext _context;
+        private readonly IDbContextFactory<AppDbContext> _contextFactory;
         private readonly ILogger<CustomerContactService> _logger;
 
-        public CustomerContactService(AppDbContext context, ILogger<CustomerContactService> logger)
+        public CustomerContactService(IDbContextFactory<AppDbContext> contextFactory, ILogger<CustomerContactService> logger)
         {
-            _context = context;
+            _contextFactory = contextFactory;
             _logger = logger;
         }
 

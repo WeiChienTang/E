@@ -5,17 +5,18 @@ using ERPCore2.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERPCore2.Services
-{    /// <summary>
-    /// 聯絡類型服務實作 - 直接使用 EF Core
+{
+    /// <summary>
+    /// 聯絡類型服務實作 - 使用 DbContextFactory 避免並發問題
     /// </summary>
     public class ContactTypeService : IContactTypeService, IGenericManagementService<ContactType>
     {
-        private readonly AppDbContext _context;
+        private readonly IDbContextFactory<AppDbContext> _contextFactory;
         private readonly ILogger<ContactTypeService> _logger;
 
-        public ContactTypeService(AppDbContext context, ILogger<ContactTypeService> logger)
+        public ContactTypeService(IDbContextFactory<AppDbContext> contextFactory, ILogger<ContactTypeService> logger)
         {
-            _context = context;
+            _contextFactory = contextFactory;
             _logger = logger;
         }
 
@@ -23,7 +24,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _context.ContactTypes
+                using var context = _contextFactory.CreateDbContext();
+                return await context.ContactTypes
                     .Where(ct => ct.Status != EntityStatus.Deleted)
                     .OrderBy(ct => ct.TypeName)
                     .ToListAsync();
@@ -39,7 +41,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _context.ContactTypes
+                using var context = _contextFactory.CreateDbContext();
+                return await context.ContactTypes
                     .Where(ct => ct.Status == EntityStatus.Active)
                     .OrderBy(ct => ct.TypeName)
                     .ToListAsync();
@@ -55,7 +58,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _context.ContactTypes
+                using var context = _contextFactory.CreateDbContext();
+                return await context.ContactTypes
                     .Where(ct => ct.ContactTypeId == id && ct.Status != EntityStatus.Deleted)
                     .FirstOrDefaultAsync();
             }
@@ -75,8 +79,11 @@ namespace ERPCore2.Services
                 if (!validationResult.IsSuccess)
                     return ServiceResult<ContactType>.Failure(validationResult.ErrorMessage!);
 
+                using var context = _contextFactory.CreateDbContext();
+                
                 // 檢查重複名稱
-                var isDuplicate = await IsTypeNameExistsAsync(contactType.TypeName);
+                var isDuplicate = await context.ContactTypes
+                    .AnyAsync(ct => ct.TypeName == contactType.TypeName && ct.Status != EntityStatus.Deleted);
                 if (isDuplicate)
                     return ServiceResult<ContactType>.Failure("聯絡類型名稱已存在");
 
@@ -85,8 +92,8 @@ namespace ERPCore2.Services
                 contactType.CreatedBy = "System"; // TODO: 從認證取得使用者
                 contactType.Status = EntityStatus.Active;
 
-                _context.ContactTypes.Add(contactType);
-                await _context.SaveChangesAsync();
+                context.ContactTypes.Add(contactType);
+                await context.SaveChangesAsync();
 
                 _logger.LogInformation("Successfully created contact type {TypeName} with ID {ContactTypeId}", 
                     contactType.TypeName, contactType.ContactTypeId);
@@ -109,13 +116,21 @@ namespace ERPCore2.Services
                 if (!validationResult.IsSuccess)
                     return ServiceResult<ContactType>.Failure(validationResult.ErrorMessage!);
 
+                using var context = _contextFactory.CreateDbContext();
+                
                 // 取得現有資料
-                var existingContactType = await GetByIdAsync(contactType.ContactTypeId);
+                var existingContactType = await context.ContactTypes
+                    .Where(ct => ct.ContactTypeId == contactType.ContactTypeId && ct.Status != EntityStatus.Deleted)
+                    .FirstOrDefaultAsync();
+                    
                 if (existingContactType == null)
                     return ServiceResult<ContactType>.Failure("聯絡類型不存在");
 
                 // 檢查重複名稱（排除自己）
-                var isDuplicate = await IsTypeNameExistsAsync(contactType.TypeName, contactType.ContactTypeId);
+                var isDuplicate = await context.ContactTypes
+                    .AnyAsync(ct => ct.TypeName == contactType.TypeName && 
+                                  ct.ContactTypeId != contactType.ContactTypeId && 
+                                  ct.Status != EntityStatus.Deleted);
                 if (isDuplicate)
                     return ServiceResult<ContactType>.Failure("聯絡類型名稱已存在");
 
@@ -125,7 +140,7 @@ namespace ERPCore2.Services
                 existingContactType.ModifiedDate = DateTime.Now;
                 existingContactType.ModifiedBy = "System"; // TODO: 從認證取得使用者
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
                 _logger.LogInformation("Successfully updated contact type {ContactTypeId}", contactType.ContactTypeId);
 
@@ -142,12 +157,17 @@ namespace ERPCore2.Services
         {
             try
             {
-                var contactType = await GetByIdAsync(id);
+                using var context = _contextFactory.CreateDbContext();
+                
+                var contactType = await context.ContactTypes
+                    .Where(ct => ct.ContactTypeId == id && ct.Status != EntityStatus.Deleted)
+                    .FirstOrDefaultAsync();
+                    
                 if (contactType == null)
                     return ServiceResult.Failure("聯絡類型不存在");
 
                 // 檢查是否有關聯的客戶聯絡資料
-                var hasRelatedContacts = await _context.CustomerContacts
+                var hasRelatedContacts = await context.CustomerContacts
                     .AnyAsync(cc => cc.ContactTypeId == id && cc.Status != EntityStatus.Deleted);
 
                 if (hasRelatedContacts)
@@ -158,7 +178,7 @@ namespace ERPCore2.Services
                 contactType.ModifiedDate = DateTime.Now;
                 contactType.ModifiedBy = "System"; // TODO: 從認證取得使用者
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
                 _logger.LogInformation("Successfully deleted contact type {ContactTypeId}", id);
 
@@ -171,12 +191,16 @@ namespace ERPCore2.Services
             }
         }
 
-        // IGenericManagementService<ContactType> 實作的缺失方法
         public async Task<ServiceResult> ToggleStatusAsync(int id, EntityStatus newStatus)
         {
             try
             {
-                var contactType = await GetByIdAsync(id);
+                using var context = _contextFactory.CreateDbContext();
+                
+                var contactType = await context.ContactTypes
+                    .Where(ct => ct.ContactTypeId == id && ct.Status != EntityStatus.Deleted)
+                    .FirstOrDefaultAsync();
+                    
                 if (contactType == null)
                     return ServiceResult.Failure("聯絡類型不存在");
 
@@ -184,7 +208,7 @@ namespace ERPCore2.Services
                 contactType.ModifiedDate = DateTime.Now;
                 contactType.ModifiedBy = "System"; // TODO: 從認證取得使用者
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
                 _logger.LogInformation("Successfully updated status for contact type {ContactTypeId} to {Status}", 
                     id, newStatus);
@@ -198,35 +222,16 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<bool> IsNameExistsAsync(string name, int? excludeId = null)
-        {
-            try
-            {
-                var query = _context.ContactTypes
-                    .Where(ct => ct.TypeName == name && ct.Status != EntityStatus.Deleted);
-
-                if (excludeId.HasValue)
-                    query = query.Where(ct => ct.ContactTypeId != excludeId.Value);
-
-                return await query.AnyAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error checking if contact type name exists {TypeName}", name);
-                throw;
-            }
-        }        // 保留原有的方法作為別名
-        public async Task<bool> IsTypeNameExistsAsync(string typeName, int? excludeId = null)
-        {
-            return await IsNameExistsAsync(typeName, excludeId);
-        }
-
-        // IContactTypeService 和 IGenericManagementService 都需要的 ToggleStatusAsync(int id) 方法
         public async Task<ServiceResult> ToggleStatusAsync(int id)
         {
             try
             {
-                var contactType = await GetByIdAsync(id);
+                using var context = _contextFactory.CreateDbContext();
+                
+                var contactType = await context.ContactTypes
+                    .Where(ct => ct.ContactTypeId == id && ct.Status != EntityStatus.Deleted)
+                    .FirstOrDefaultAsync();
+                    
                 if (contactType == null)
                     return ServiceResult.Failure("聯絡類型不存在");
 
@@ -238,7 +243,7 @@ namespace ERPCore2.Services
                 contactType.ModifiedDate = DateTime.Now;
                 contactType.ModifiedBy = "System"; // TODO: 從認證取得使用者
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
                 _logger.LogInformation("Successfully toggled status for contact type {ContactTypeId} to {Status}", 
                     id, contactType.Status);
@@ -252,11 +257,39 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<bool> IsNameExistsAsync(string name, int? excludeId = null)
+        {
+            try
+            {
+                using var context = _contextFactory.CreateDbContext();
+                
+                var query = context.ContactTypes
+                    .Where(ct => ct.TypeName == name && ct.Status != EntityStatus.Deleted);
+
+                if (excludeId.HasValue)
+                    query = query.Where(ct => ct.ContactTypeId != excludeId.Value);
+
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking if contact type name exists {TypeName}", name);
+                throw;
+            }
+        }
+
+        public async Task<bool> IsTypeNameExistsAsync(string typeName, int? excludeId = null)
+        {
+            return await IsNameExistsAsync(typeName, excludeId);
+        }
+
         public async Task<(List<ContactType> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize)
         {
             try
             {
-                var query = _context.ContactTypes
+                using var context = _contextFactory.CreateDbContext();
+                
+                var query = context.ContactTypes
                     .Where(ct => ct.Status != EntityStatus.Deleted);
 
                 var totalCount = await query.CountAsync();

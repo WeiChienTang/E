@@ -1,45 +1,64 @@
 @namespace ERPCore2.Components.Shared.Modals
-@typeparam TEntity where TEntity : class, new()
 @using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
 @using ERPCore2.Services.Interfaces
 @using static ERPCore2.Components.Shared.Buttons.ButtonComponent
 @using static ERPCore2.Components.Shared.Alerts.AlertComponent
 
+@inject IIndustryTypeService IndustryTypeService
 @inject IJSRuntime JSRuntime
 
-@* 通用管理模態視窗 - 可用於管理各種類型的實體資料 *@
+@* IndustryType 管理模態視窗 - 用於管理行業類型的小型阻擋式視窗 *@
 
 <div class="modal fade" id="@ModalId" tabindex="-1" aria-labelledby="@($"{ModalId}Label")" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="@($"{ModalId}Label")">
-                    <i class="@IconClass me-2"></i>
-                    @Title
+                    <i class="fas fa-industry me-2"></i>
+                    行業類型管理
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="關閉" @onclick="CloseModal"></button>
             </div>
             
             <div class="modal-body">
                 <LoadingComponent IsLoading="@isLoading" 
-                                LoadingText="@LoadingText" 
+                                LoadingText="載入行業類型資料中..." 
                                 ShowText="true" />
 
                 @if (!isLoading)
                 {
-                    <!-- 新增表單 -->
+                    <!-- 新增行業類型表單 -->
                     <div class="card mb-3">
                         <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="fas fa-plus text-primary me-2"></i>
-                                新增@EntityDisplayName
+                                新增行業類型
                             </h6>
                         </div>
                         <div class="card-body">
-                            <EditForm Model="@newEntity" OnValidSubmit="@CreateEntity">
+                            <EditForm Model="@newIndustryType" OnValidSubmit="@CreateIndustryType">
                                 <DataAnnotationsValidator />
                                 
-                                @CreateFormContent(newEntity)
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <InputComponent Id="industryTypeName" 
+                                                      Label="行業類型名稱" 
+                                                      Value="@newIndustryType.IndustryTypeName"
+                                                      ValueChanged="@(value => newIndustryType.IndustryTypeName = value)"
+                                                      IsRequired="true"
+                                                      Placeholder="例如：製造業、服務業..." />
+                                        <ValidationMessage For="@(() => newIndustryType.IndustryTypeName)" class="text-danger" />
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <InputComponent Id="industryTypeCode" 
+                                                      Label="行業類型代碼" 
+                                                      Value="@newIndustryType.IndustryTypeCode"
+                                                      ValueChanged="@(value => newIndustryType.IndustryTypeCode = value)"
+                                                      Placeholder="例如：MANU、SERV..." />
+                                    </div>
+                                </div>
                                 
                                 <div class="d-flex justify-content-end mt-3">
                                     <ButtonComponent Text="新增" 
@@ -52,49 +71,66 @@
                         </div>
                     </div>
 
-                    <!-- 現有資料列表 -->
+                    <!-- 現有行業類型列表 -->
                     <div class="card">
                         <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="fas fa-list text-info me-2"></i>
-                                現有@EntityDisplayName
-                                <span class="badge bg-info">@entities.Count</span>
+                                現有行業類型
+                                <span class="badge bg-info">@industryTypes.Count</span>
                             </h6>
                         </div>
                         <div class="card-body">
-                            @if (entities.Any())
-                            {                                <div class="table-responsive">
+                            @if (industryTypes.Any())
+                            {
+                                <div class="table-responsive">
                                     <table class="table table-hover">
                                         <thead class="table-light">
                                             <tr>
-                                                @TableHeaders
+                                                <th>行業類型名稱</th>
+                                                <th>代碼</th>
+                                                <th>狀態</th>
+                                                <th>建立日期</th>
                                                 <th class="text-end">操作</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach (var entity in entities)
+                                            @foreach (var industryType in industryTypes)
                                             {
-                                                <tr class="@(GetEntityStatus(entity) == EntityStatus.Inactive ? "table-secondary" : "")">
-                                                    @TableRowContent(entity)
+                                                <tr class="@(industryType.Status == EntityStatus.Inactive ? "table-secondary" : "")">
+                                                    <td>
+                                                        <strong>@industryType.IndustryTypeName</strong>
+                                                    </td>
+                                                    <td>
+                                                        <small class="text-muted">@(string.IsNullOrWhiteSpace(industryType.IndustryTypeCode) ? "無代碼" : industryType.IndustryTypeCode)</small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge @(industryType.Status == EntityStatus.Active ? "bg-success" : "bg-secondary")">
+                                                            @GetStatusText(industryType.Status)
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <small class="text-muted">@industryType.CreatedDate.ToString("yyyy/MM/dd")</small>
+                                                    </td>
                                                     <td class="text-end">
                                                         <div class="btn-group btn-group-sm" role="group">
-                                                            @if (GetEntityStatus(entity) == EntityStatus.Active)
+                                                            @if (industryType.Status == EntityStatus.Active)
                                                             {
                                                                 <ButtonComponent Text="" 
                                                                                Variant="ButtonVariant.OutlineSecondary" 
                                                                                Size="ButtonSize.Small"
                                                                                IconClass="fas fa-pause"
                                                                                Title="停用"
-                                                                               OnClick="@(() => ToggleEntityStatus(GetEntityId(entity), EntityStatus.Inactive))" />
-                                                            }                                            
+                                                                               OnClick="@(() => ToggleIndustryTypeStatus(industryType.IndustryTypeId, EntityStatus.Inactive))" />
+                                                            }
                                                             else
                                                             {
                                                                 <ButtonComponent Text="" 
-                                                                            Variant="ButtonVariant.Success" 
-                                                                            Size="ButtonSize.Small"
-                                                                            IconClass="fas fa-play"
-                                                                            Title="啟用"
-                                                                            OnClick="@(() => ToggleEntityStatus(GetEntityId(entity), EntityStatus.Active))" />
+                                                                               Variant="ButtonVariant.Success" 
+                                                                               Size="ButtonSize.Small"
+                                                                               IconClass="fas fa-play"
+                                                                               Title="啟用"
+                                                                               OnClick="@(() => ToggleIndustryTypeStatus(industryType.IndustryTypeId, EntityStatus.Active))" />
                                                             }
                                                             
                                                             <ButtonComponent Text="" 
@@ -102,7 +138,7 @@
                                                                            Size="ButtonSize.Small"
                                                                            IconClass="fas fa-trash"
                                                                            Title="刪除"
-                                                                           OnClick="@(() => DeleteEntity(GetEntityId(entity)))" />
+                                                                           OnClick="@(() => DeleteIndustryType(industryType.IndustryTypeId))" />
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -115,7 +151,7 @@
                             {
                                 <div class="text-center py-4">
                                     <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
-                                    <p class="text-muted">尚未建立任何@EntityDisplayName</p>
+                                    <p class="text-muted">尚未建立任何行業類型</p>
                                 </div>
                             }
                         </div>
@@ -152,90 +188,64 @@
 </div>
 
 @code {
-    // 必要參數
-    [Parameter] public string ModalId { get; set; } = "genericModal";
-    [Parameter] public string Title { get; set; } = "資料管理";
-    [Parameter] public string EntityDisplayName { get; set; } = "資料";
-    [Parameter] public string IconClass { get; set; } = "fas fa-cog";
-    [Parameter] public string LoadingText { get; set; } = "載入資料中...";
-    [Parameter] public IGenericManagementService<TEntity> Service { get; set; } = default!;
-    [Parameter] public EventCallback OnDataChanged { get; set; }
+    [Parameter] public string ModalId { get; set; } = "industryTypeModal";
+    [Parameter] public EventCallback OnIndustryTypesChanged { get; set; }
 
-    // 內容渲染委派
-    [Parameter] public RenderFragment<TEntity> CreateFormContent { get; set; } = default!;
-    [Parameter] public RenderFragment TableHeaders { get; set; } = default!;
-    [Parameter] public RenderFragment<TEntity> TableRowContent { get; set; } = default!;
-
-    // 實體特定委派
-    [Parameter] public Func<TEntity, int> GetEntityId { get; set; } = default!;
-    [Parameter] public Func<TEntity, EntityStatus> GetEntityStatus { get; set; } = default!;
-    [Parameter] public Action<TEntity, string> SetCreatedBy { get; set; } = default!;
-    [Parameter] public Action<TEntity, EntityStatus> SetEntityStatus { get; set; } = default!;    private List<TEntity> entities = new();
-    private TEntity newEntity = new();
+    private List<IndustryType> industryTypes = new();
+    private IndustryType newIndustryType = new();
     private bool isLoading = true;
     private bool isSubmitting = false;
     private string errorMessage = string.Empty;
     private string successMessage = string.Empty;
-    private readonly SemaphoreSlim _operationSemaphore = new(1, 1);
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadEntities();
-    }public async Task ShowModal()
+        await LoadIndustryTypes();
+    }
+
+    public async Task ShowModal()
     {
         // 重新載入最新資料
-        await LoadEntities();
+        await LoadIndustryTypes();
         
-        // 使用自定義的 JavaScript 函數顯示模態視窗
+        // 使用 bootstrap-helpers 顯示模態視窗
         await JSRuntime.InvokeVoidAsync("bootstrapHelpers.showModal", ModalId);
     }
 
     private async Task CloseModal()
     {
-        // 使用自定義的 JavaScript 函數隱藏模態視窗
+        // 使用 bootstrap-helpers 隱藏模態視窗
         await JSRuntime.InvokeVoidAsync("bootstrapHelpers.hideModal", ModalId);
         
-        // 通知父組件資料已變更
-        if (OnDataChanged.HasDelegate)
+        // 通知父組件行業類型已變更
+        if (OnIndustryTypesChanged.HasDelegate)
         {
-            await OnDataChanged.InvokeAsync();
-        }
-    }    private async Task LoadEntities()
-    {
-        await _operationSemaphore.WaitAsync();
-        try
-        {
-            await LoadEntitiesInternal();
-        }
-        finally
-        {
-            _operationSemaphore.Release();
+            await OnIndustryTypesChanged.InvokeAsync();
         }
     }
 
-    private async Task LoadEntitiesInternal()
+    private async Task LoadIndustryTypes()
     {
         try
         {
             isLoading = true;
             StateHasChanged();
 
-            entities = await Service.GetAllAsync();
+            industryTypes = await IndustryTypeService.GetAllAsync();
         }
         catch (Exception ex)
         {
-            errorMessage = $"載入{EntityDisplayName}時發生錯誤：{ex.Message}";
+            errorMessage = $"載入行業類型時發生錯誤：{ex.Message}";
         }
         finally
         {
             isLoading = false;
             StateHasChanged();
         }
-    }private async Task CreateEntity()
+    }
+
+    private async Task CreateIndustryType()
     {
-        if (isSubmitting) return; // 防止重複提交
-        
-        await _operationSemaphore.WaitAsync();
         try
         {
             isSubmitting = true;
@@ -243,94 +253,89 @@
             StateHasChanged();
 
             // 設定預設值
-            SetCreatedBy(newEntity, "系統管理員"); // 實際應用中應該從使用者身份取得
-            SetEntityStatus(newEntity, EntityStatus.Active);
+            newIndustryType.CreatedBy = "系統管理員"; // 實際應用中應該從使用者身份取得
+            newIndustryType.Status = EntityStatus.Active;
 
-            var result = await Service.CreateAsync(newEntity);
+            var result = await IndustryTypeService.CreateAsync(newIndustryType);
             
             if (result.IsSuccess)
             {
-                successMessage = $"{EntityDisplayName}新增成功！";
-                newEntity = new TEntity(); // 重置表單
-                await LoadEntitiesInternal(); // 使用內部方法避免重複鎖定
+                successMessage = "行業類型新增成功！";
+                newIndustryType = new IndustryType(); // 重置表單
+                await LoadIndustryTypes(); // 重新載入列表
             }
             else
             {
-                errorMessage = result.ErrorMessage ?? $"新增{EntityDisplayName}失敗";
+                errorMessage = result.ErrorMessage ?? "新增行業類型失敗";
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"新增{EntityDisplayName}時發生錯誤：{ex.Message}";
+            errorMessage = $"新增行業類型時發生錯誤：{ex.Message}";
         }
         finally
         {
             isSubmitting = false;
-            _operationSemaphore.Release();
             StateHasChanged();
         }
-    }    private async Task ToggleEntityStatus(int entityId, EntityStatus newStatus)
+    }
+
+    private async Task ToggleIndustryTypeStatus(int industryTypeId, EntityStatus newStatus)
     {
-        await _operationSemaphore.WaitAsync();
         try
         {
             ClearMessages();
 
-            var result = await Service.ToggleStatusAsync(entityId, newStatus);
+            var result = await IndustryTypeService.ToggleStatusAsync(industryTypeId);
             
             if (result.IsSuccess)
             {
-                successMessage = $"{EntityDisplayName}狀態已更新為{GetStatusText(newStatus)}";
-                await LoadEntitiesInternal(); // 使用內部方法避免重複鎖定
+                successMessage = $"行業類型狀態已更新";
+                await LoadIndustryTypes(); // 重新載入列表
             }
             else
             {
-                errorMessage = result.ErrorMessage ?? $"更新{EntityDisplayName}狀態失敗";
+                errorMessage = result.ErrorMessage ?? "更新行業類型狀態失敗";
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"更新{EntityDisplayName}狀態時發生錯誤：{ex.Message}";
+            errorMessage = $"更新行業類型狀態時發生錯誤：{ex.Message}";
         }
-        finally
-        {
-            _operationSemaphore.Release();
-            StateHasChanged();
-        }
-    }    private async Task DeleteEntity(int entityId)
+
+        StateHasChanged();
+    }
+
+    private async Task DeleteIndustryType(int industryTypeId)
     {
-        await _operationSemaphore.WaitAsync();
         try
         {
             // 使用 JavaScript 確認對話框
-            bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"確定要刪除此{EntityDisplayName}嗎？此操作無法復原。");
+            bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "確定要刪除此行業類型嗎？此操作無法復原。");
             
             if (!confirmed)
                 return;
 
             ClearMessages();
 
-            var result = await Service.DeleteAsync(entityId);
+            var result = await IndustryTypeService.DeleteAsync(industryTypeId);
             
             if (result.IsSuccess)
             {
-                successMessage = $"{EntityDisplayName}已刪除";
-                await LoadEntitiesInternal(); // 使用內部方法避免重複鎖定
+                successMessage = "行業類型已刪除";
+                await LoadIndustryTypes(); // 重新載入列表
             }
             else
             {
-                errorMessage = result.ErrorMessage ?? $"刪除{EntityDisplayName}失敗";
+                errorMessage = result.ErrorMessage ?? "刪除行業類型失敗";
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"刪除{EntityDisplayName}時發生錯誤：{ex.Message}";
+            errorMessage = $"刪除行業類型時發生錯誤：{ex.Message}";
         }
-        finally
-        {
-            _operationSemaphore.Release();
-            StateHasChanged();
-        }
+
+        StateHasChanged();
     }
 
     private string GetStatusText(EntityStatus status)

@@ -6,23 +6,25 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 客戶服務實作 - 直接使用 EF Core，無需 Repository 和 DTO
+    /// 客戶服務實作 - 使用 DbContextFactory 解決並發問題
     /// </summary>
     public class CustomerService : ICustomerService
     {
-        private readonly AppDbContext _context;
+        private readonly IDbContextFactory<AppDbContext> _contextFactory;
         private readonly ILogger<CustomerService> _logger;
 
-        public CustomerService(AppDbContext context, ILogger<CustomerService> logger)
+        public CustomerService(IDbContextFactory<AppDbContext> contextFactory, ILogger<CustomerService> logger)
         {
-            _context = context;
+            _contextFactory = contextFactory;
             _logger = logger;
         }
 
         public async Task<List<Customer>> GetAllAsync()
         {
             try
-            {                return await _context.Customers
+            {
+                using var context = _contextFactory.CreateDbContext();
+                return await context.Customers
                     .Where(c => c.Status != EntityStatus.Deleted)
                     .Include(c => c.CustomerType)
                     .Include(c => c.IndustryType)
@@ -42,7 +44,9 @@ namespace ERPCore2.Services
                 return null;
 
             try
-            {                return await _context.Customers
+            {
+                using var context = _contextFactory.CreateDbContext();
+                return await context.Customers
                     .Include(c => c.CustomerType)
                     .Include(c => c.IndustryType)
                     .Include(c => c.CustomerContacts)
@@ -54,126 +58,102 @@ namespace ERPCore2.Services
                 _logger.LogError(ex, "Error getting customer with ID {CustomerId}", id);
                 throw;
             }
-        }        public async Task<ServiceResult<Customer>> CreateAsync(Customer customer)
+        }
+
+        public async Task<ServiceResult<Customer>> CreateAsync(Customer customer)
         {
             try
             {
-                Console.WriteLine("=== CustomerService.CreateAsync 開始 ===");
+                using var context = _contextFactory.CreateDbContext();
                 
-                // Business Validation
-                var validationResult = ValidateCustomer(customer);
-                if (!validationResult.IsSuccess)
-                {
-                    Console.WriteLine($"驗證失敗: {validationResult.ErrorMessage}");
-                    return ServiceResult<Customer>.Failure(validationResult.ErrorMessage);
-                }
+                Console.WriteLine("=== CustomerService.CreateAsync 開始 ===");
+                Console.WriteLine($"客戶名稱: {customer.CompanyName}");
+                Console.WriteLine($"客戶代碼: {customer.CustomerCode}");
 
-                Console.WriteLine("基本驗證通過，檢查重複資料...");
-
-                // Business Rules - Check for duplicate customer code
-                var existingCustomer = await _context.Customers
+                // 1. 先檢查是否已存在相同代碼的客戶
+                var existingCustomer = await context.Customers
                     .FirstOrDefaultAsync(c => c.CustomerCode == customer.CustomerCode && c.Status != EntityStatus.Deleted);
 
                 if (existingCustomer != null)
                 {
-                    Console.WriteLine($"客戶代碼重複: {customer.CustomerCode}");
-                    return ServiceResult<Customer>.Failure("客戶代碼已存在");
+                    Console.WriteLine($"客戶代碼 {customer.CustomerCode} 已存在");
+                    return ServiceResult<Customer>.Failure($"客戶代碼 '{customer.CustomerCode}' 已經存在");
                 }
 
-                // Check for duplicate company name
-                var existingCompany = await _context.Customers
+                // 2. 檢查公司名稱是否重複
+                var existingCompany = await context.Customers
                     .FirstOrDefaultAsync(c => c.CompanyName == customer.CompanyName && c.Status != EntityStatus.Deleted);
 
                 if (existingCompany != null)
                 {
-                    Console.WriteLine($"公司名稱重複: {customer.CompanyName}");
-                    return ServiceResult<Customer>.Failure("公司名稱已存在");
+                    Console.WriteLine($"公司名稱 {customer.CompanyName} 已存在");
+                    return ServiceResult<Customer>.Failure($"公司名稱 '{customer.CompanyName}' 已經存在");
                 }
 
-                Console.WriteLine("無重複資料，檢查外鍵...");
-
-                // Validate foreign keys
+                // 3. 驗證客戶類型和行業類型是否存在
                 if (customer.CustomerTypeId.HasValue)
                 {
-                    var customerTypeExists = await _context.CustomerTypes
-                        .AnyAsync(ct => ct.CustomerTypeId == customer.CustomerTypeId && ct.Status != EntityStatus.Deleted);
+                    var customerTypeExists = await context.CustomerTypes
+                        .AnyAsync(ct => ct.CustomerTypeId == customer.CustomerTypeId.Value && ct.Status != EntityStatus.Deleted);
                     if (!customerTypeExists)
                     {
-                        Console.WriteLine($"客戶類型不存在: {customer.CustomerTypeId}");
-                        return ServiceResult<Customer>.Failure("客戶類型不存在");
+                        return ServiceResult<Customer>.Failure("指定的客戶類型不存在");
                     }
-                }                if (customer.IndustryTypeId.HasValue)
+                }
+
+                if (customer.IndustryTypeId.HasValue)
                 {
-                    var industryExists = await _context.IndustryTypes
-                        .AnyAsync(i => i.IndustryTypeId == customer.IndustryTypeId && i.Status != EntityStatus.Deleted);
+                    var industryExists = await context.IndustryTypes
+                        .AnyAsync(it => it.IndustryTypeId == customer.IndustryTypeId.Value && it.Status != EntityStatus.Deleted);
                     if (!industryExists)
                     {
-                        Console.WriteLine($"行業類型不存在: {customer.IndustryTypeId}");
-                        return ServiceResult<Customer>.Failure("行業類型不存在");
+                        return ServiceResult<Customer>.Failure("指定的行業類型不存在");
                     }
                 }
 
-                Console.WriteLine("外鍵檢查通過，設定審計欄位...");
-
-                // Set audit fields
-                customer.Status = EntityStatus.Active;
-                customer.CreatedDate = DateTime.UtcNow;
-                customer.CreatedBy = "System"; // TODO: Replace with actual user when authentication is implemented                Console.WriteLine($"準備儲存客戶資料到資料庫: {customer.CustomerCode} - {customer.CompanyName}");
-
-                // Validate addresses if any
-                if (customer.CustomerAddresses?.Any() == true)
-                {
-                    var addressValidationResult = ValidateAddresses(customer.CustomerAddresses);
-                    if (!addressValidationResult.IsSuccess)
-                    {
-                        Console.WriteLine($"地址驗證失敗: {addressValidationResult.ErrorMessage}");
-                        return ServiceResult<Customer>.Failure(addressValidationResult.ErrorMessage);
-                    }
-
-                    // Set CustomerId for addresses and audit fields
-                    foreach (var address in customer.CustomerAddresses)
-                    {
-                        address.Status = EntityStatus.Active;
-                    }
-                }
-
-                // Save to Database with transaction
-                using var transaction = await _context.Database.BeginTransactionAsync();
+                // 4. 開始交易
+                using var transaction = await context.Database.BeginTransactionAsync();
                 try
                 {
-                    _context.Customers.Add(customer);
-                    await _context.SaveChangesAsync();
+                    // 設定基本欄位
+                    customer.Status = EntityStatus.Active;
+                    customer.CreatedAt = DateTime.Now;
+                    customer.UpdatedAt = DateTime.Now;
+
+                    context.Customers.Add(customer);
+                    await context.SaveChangesAsync();
 
                     Console.WriteLine($"客戶建立成功，ID: {customer.CustomerId}");
-                    
-                    // Update CustomerId for addresses
-                    if (customer.CustomerAddresses?.Any() == true)
+
+                    // 如果有聯絡人，一併建立
+                    if (customer.CustomerContacts?.Any() == true)
                     {
-                        foreach (var address in customer.CustomerAddresses)
+                        foreach (var contact in customer.CustomerContacts)
                         {
-                            address.CustomerId = customer.CustomerId;
+                            contact.CustomerId = customer.CustomerId;
+                            contact.Status = EntityStatus.Active;
+                            contact.CreatedAt = DateTime.Now;
+                            contact.UpdatedAt = DateTime.Now;
                         }
-                        await _context.SaveChangesAsync();
-                        Console.WriteLine($"地址資料建立成功，共 {customer.CustomerAddresses.Count} 筆");
+                        await context.SaveChangesAsync();
                     }
 
                     await transaction.CommitAsync();
-                    _logger.LogInformation("Customer created with ID {CustomerId} and {AddressCount} addresses", 
-                        customer.CustomerId, customer.CustomerAddresses?.Count ?? 0);
+                    Console.WriteLine("=== CustomerService.CreateAsync 完成 ===");
                     return ServiceResult<Customer>.Success(customer);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
+                    Console.WriteLine($"建立客戶時發生錯誤: {ex.Message}");
                     throw;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"建立客戶時發生例外: {ex.Message}");
-                Console.WriteLine($"StackTrace: {ex.StackTrace}");
-                _logger.LogError(ex, "Error creating customer");
-                return ServiceResult<Customer>.Failure("創建客戶時發生錯誤");
+                Console.WriteLine($"CustomerService.CreateAsync 發生例外: {ex.Message}");
+                _logger.LogError(ex, "Error creating customer {CustomerCode}", customer.CustomerCode);
+                return ServiceResult<Customer>.Failure($"建立客戶時發生錯誤: {ex.Message}");
             }
         }
 
@@ -181,169 +161,231 @@ namespace ERPCore2.Services
         {
             try
             {
-                // Get existing customer
-                var existingCustomer = await _context.Customers
+                using var context = _contextFactory.CreateDbContext();
+                
+                var existingCustomer = await context.Customers
                     .FirstOrDefaultAsync(c => c.CustomerId == customer.CustomerId && c.Status != EntityStatus.Deleted);
 
                 if (existingCustomer == null)
+                {
                     return ServiceResult<Customer>.Failure("客戶不存在");
-
-                // Business Validation
-                var validationResult = ValidateCustomer(customer);
-                if (!validationResult.IsSuccess)
-                    return ServiceResult<Customer>.Failure(validationResult.ErrorMessage);
-
-                // Business Rules - Check for duplicate customer code (excluding current customer)
-                var duplicateCode = await _context.Customers
-                    .FirstOrDefaultAsync(c => c.CustomerCode == customer.CustomerCode &&
-                                           c.CustomerId != customer.CustomerId &&
-                                           c.Status != EntityStatus.Deleted);
-
-                if (duplicateCode != null)
-                    return ServiceResult<Customer>.Failure("客戶代碼已存在");
-
-                // Check for duplicate company name (excluding current customer)
-                var duplicateCompany = await _context.Customers
-                    .FirstOrDefaultAsync(c => c.CompanyName == customer.CompanyName &&
-                                           c.CustomerId != customer.CustomerId &&
-                                           c.Status != EntityStatus.Deleted);
-
-                if (duplicateCompany != null)
-                    return ServiceResult<Customer>.Failure("公司名稱已存在");
-
-                // Validate foreign keys
-                if (customer.CustomerTypeId.HasValue)
-                {
-                    var customerTypeExists = await _context.CustomerTypes
-                        .AnyAsync(ct => ct.CustomerTypeId == customer.CustomerTypeId && ct.Status != EntityStatus.Deleted);
-                    if (!customerTypeExists)
-                        return ServiceResult<Customer>.Failure("客戶類型不存在");
-                }                if (customer.IndustryTypeId.HasValue)
-                {
-                    var industryExists = await _context.IndustryTypes
-                        .AnyAsync(i => i.IndustryTypeId == customer.IndustryTypeId && i.Status != EntityStatus.Deleted);
-                    if (!industryExists)
-                        return ServiceResult<Customer>.Failure("行業類型不存在");
                 }
 
-                // Update Customer properties
+                // 檢查代碼是否與其他客戶重複
+                var duplicateCode = await context.Customers
+                    .AnyAsync(c => c.CustomerCode == customer.CustomerCode && 
+                                  c.CustomerId != customer.CustomerId && 
+                                  c.Status != EntityStatus.Deleted);
+
+                if (duplicateCode)
+                {
+                    return ServiceResult<Customer>.Failure($"客戶代碼 '{customer.CustomerCode}' 已經存在");
+                }
+
+                // 檢查公司名稱是否與其他客戶重複
+                var duplicateCompany = await context.Customers
+                    .AnyAsync(c => c.CompanyName == customer.CompanyName && 
+                                  c.CustomerId != customer.CustomerId && 
+                                  c.Status != EntityStatus.Deleted);
+
+                if (duplicateCompany)
+                {
+                    return ServiceResult<Customer>.Failure($"公司名稱 '{customer.CompanyName}' 已經存在");
+                }
+
+                // 驗證客戶類型和行業類型是否存在
+                if (customer.CustomerTypeId.HasValue)
+                {
+                    var customerTypeExists = await context.CustomerTypes
+                        .AnyAsync(ct => ct.CustomerTypeId == customer.CustomerTypeId.Value && ct.Status != EntityStatus.Deleted);
+                    if (!customerTypeExists)
+                    {
+                        return ServiceResult<Customer>.Failure("指定的客戶類型不存在");
+                    }
+                }
+
+                if (customer.IndustryTypeId.HasValue)
+                {
+                    var industryExists = await context.IndustryTypes
+                        .AnyAsync(it => it.IndustryTypeId == customer.IndustryTypeId.Value && it.Status != EntityStatus.Deleted);
+                    if (!industryExists)
+                    {
+                        return ServiceResult<Customer>.Failure("指定的行業類型不存在");
+                    }
+                }
+
+                // 更新欄位
                 existingCustomer.CustomerCode = customer.CustomerCode;
                 existingCustomer.CompanyName = customer.CompanyName;
-                existingCustomer.ContactPerson = customer.ContactPerson;
-                existingCustomer.TaxNumber = customer.TaxNumber;                existingCustomer.CustomerTypeId = customer.CustomerTypeId;
+                existingCustomer.CompanyNameEn = customer.CompanyNameEn;
+                existingCustomer.TaxId = customer.TaxId;
+                existingCustomer.CustomerTypeId = customer.CustomerTypeId;
                 existingCustomer.IndustryTypeId = customer.IndustryTypeId;
-                existingCustomer.ModifiedDate = DateTime.UtcNow;
-                existingCustomer.ModifiedBy = "System"; // TODO: Replace with actual user when authentication is implemented
+                existingCustomer.ContactPerson = customer.ContactPerson;
+                existingCustomer.Phone = customer.Phone;
+                existingCustomer.Email = customer.Email;
+                existingCustomer.UpdatedAt = DateTime.Now;
 
-                // Save to Database
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Customer updated with ID {CustomerId}", customer.CustomerId);
+                await context.SaveChangesAsync();
                 return ServiceResult<Customer>.Success(existingCustomer);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating customer with ID {CustomerId}", customer.CustomerId);
-                return ServiceResult<Customer>.Failure("更新客戶時發生錯誤");
+                _logger.LogError(ex, "Error updating customer {CustomerId}", customer.CustomerId);
+                return ServiceResult<Customer>.Failure($"更新客戶時發生錯誤: {ex.Message}");
             }
         }
 
-        public async Task<ServiceResult> DeleteAsync(int id)
+        public async Task<ServiceResult<bool>> DeleteAsync(int id)
         {
             try
             {
-                var customer = await _context.Customers
+                using var context = _contextFactory.CreateDbContext();
+                
+                var customer = await context.Customers
                     .FirstOrDefaultAsync(c => c.CustomerId == id && c.Status != EntityStatus.Deleted);
 
                 if (customer == null)
-                    return ServiceResult.Failure("客戶不存在");
+                {
+                    return ServiceResult<bool>.Failure("客戶不存在");
+                }
 
-                // Business Rules - Check for dependencies
-                var hasContacts = await _context.CustomerContacts
-                    .AnyAsync(cc => cc.CustomerId == id);
+                // 檢查是否有關聯的聯絡人
+                var hasContacts = await context.CustomerContacts
+                    .AnyAsync(cc => cc.CustomerId == id && cc.Status != EntityStatus.Deleted);
 
-                var hasAddresses = await _context.CustomerAddresses
-                    .AnyAsync(ca => ca.CustomerId == id);
+                if (hasContacts)
+                {
+                    return ServiceResult<bool>.Failure("無法刪除有聯絡人記錄的客戶");
+                }
 
-                if (hasContacts || hasAddresses)
-                    return ServiceResult.Failure("無法刪除：客戶有相關聯絡人或地址資料");
+                // 檢查是否有關聯的地址
+                var hasAddresses = await context.CustomerAddresses
+                    .AnyAsync(ca => ca.CustomerId == id && ca.Status != EntityStatus.Deleted);
 
-                // Soft Delete
+                if (hasAddresses)
+                {
+                    return ServiceResult<bool>.Failure("無法刪除有地址記錄的客戶");
+                }
+
+                // 軟刪除
                 customer.Status = EntityStatus.Deleted;
-                customer.ModifiedDate = DateTime.UtcNow;
-                customer.ModifiedBy = "System"; // TODO: Replace with actual user when authentication is implemented
+                customer.UpdatedAt = DateTime.Now;
 
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Customer deleted with ID {CustomerId}", id);
-                return ServiceResult.Success();
+                await context.SaveChangesAsync();
+                return ServiceResult<bool>.Success(true);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting customer with ID {CustomerId}", id);
-                return ServiceResult.Failure("刪除客戶時發生錯誤");
+                _logger.LogError(ex, "Error deleting customer {CustomerId}", id);
+                return ServiceResult<bool>.Failure($"刪除客戶時發生錯誤: {ex.Message}");
             }
         }
 
-        public async Task<bool> ExistsAsync(int id)
+        public async Task<List<Customer>> SearchAsync(string searchTerm)
         {
-            return await _context.Customers
-                .AnyAsync(c => c.CustomerId == id && c.Status != EntityStatus.Deleted);
-        }
+            if (string.IsNullOrWhiteSpace(searchTerm))
+            {
+                return new List<Customer>();
+            }
 
-        public async Task<Customer?> GetByCustomerCodeAsync(string customerCode)
-        {
-            if (string.IsNullOrWhiteSpace(customerCode))
-                return null;            return await _context.Customers
-                .Include(c => c.CustomerType)
-                .Include(c => c.IndustryType)
-                .FirstOrDefaultAsync(c => c.CustomerCode == customerCode && c.Status != EntityStatus.Deleted);
-        }
-
-        public async Task<List<Customer>> GetByCompanyNameAsync(string companyName)
-        {
-            if (string.IsNullOrWhiteSpace(companyName))
-                return new List<Customer>();            return await _context.Customers
-                .Where(c => c.CompanyName.Contains(companyName) && c.Status != EntityStatus.Deleted)
-                .Include(c => c.CustomerType)
-                .Include(c => c.IndustryType)
-                .OrderBy(c => c.CompanyName)
-                .ToListAsync();
-        }
-
-        public async Task<(List<Customer> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize)
-        {            var query = _context.Customers
-                .Where(c => c.Status != EntityStatus.Deleted)
-                .Include(c => c.CustomerType)
-                .Include(c => c.IndustryType);
-
-            var totalCount = await query.CountAsync();
-
-            var items = await query
-                .OrderBy(c => c.CompanyName)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            return (items, totalCount);
+            try
+            {
+                using var context = _contextFactory.CreateDbContext();
+                return await context.Customers
+                    .Where(c => c.Status != EntityStatus.Deleted &&
+                               (c.CompanyName.Contains(searchTerm) ||
+                                c.CustomerCode.Contains(searchTerm) ||
+                                (c.ContactPerson != null && c.ContactPerson.Contains(searchTerm))))
+                    .Include(c => c.CustomerType)
+                    .Include(c => c.IndustryType)
+                    .OrderBy(c => c.CompanyName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching customers with term {SearchTerm}", searchTerm);
+                return new List<Customer>();
+            }
         }
 
         public async Task<List<Customer>> GetActiveCustomersAsync()
-        {            return await _context.Customers
-                .Where(c => c.Status == EntityStatus.Active)
-                .Include(c => c.CustomerType)
-                .Include(c => c.IndustryType)
-                .OrderBy(c => c.CompanyName)
-                .ToListAsync();
+        {
+            try
+            {
+                using var context = _contextFactory.CreateDbContext();
+                return await context.Customers
+                    .Where(c => c.Status == EntityStatus.Active)
+                    .Include(c => c.CustomerType)
+                    .Include(c => c.IndustryType)
+                    .OrderBy(c => c.CompanyName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting active customers");
+                return new List<Customer>();
+            }
         }
 
-        // 新增方法用於支持下拉列表
+        public async Task<(List<Customer> Data, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, string? searchTerm = null)
+        {
+            try
+            {
+                using var context = _contextFactory.CreateDbContext();
+                var query = context.Customers
+                    .Where(c => c.Status != EntityStatus.Deleted)
+                    .Include(c => c.CustomerType)
+                    .Include(c => c.IndustryType);
+
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    query = query.Where(c => c.CompanyName.Contains(searchTerm) ||
+                                           c.CustomerCode.Contains(searchTerm) ||
+                                           (c.ContactPerson != null && c.ContactPerson.Contains(searchTerm)));
+                }
+
+                var totalCount = await query.CountAsync();
+                var data = await query
+                    .OrderBy(c => c.CompanyName)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (data, totalCount);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting paged customers");
+                return (new List<Customer>(), 0);
+            }
+        }
+
+        public async Task<bool> IsCustomerCodeExistsAsync(string customerCode, int? excludeId = null)
+        {
+            try
+            {
+                using var context = _contextFactory.CreateDbContext();
+                return await context.Customers
+                    .Where(c => c.CustomerCode == customerCode && c.Status != EntityStatus.Deleted)
+                    .Where(c => !excludeId.HasValue || c.CustomerId != excludeId.Value)
+                    .AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking if customer code exists {CustomerCode}", customerCode);
+                throw;
+            }
+        }
+
+        #region 關聯資料
         public async Task<List<CustomerType>> GetCustomerTypesAsync()
         {
             try
             {
-                return await _context.CustomerTypes
-                    .Where(ct => ct.Status == EntityStatus.Active)
+                using var context = _contextFactory.CreateDbContext();
+                return await context.CustomerTypes
+                    .Where(ct => ct.Status != EntityStatus.Deleted)
                     .OrderBy(ct => ct.TypeName)
                     .ToListAsync();
             }
@@ -352,18 +394,21 @@ namespace ERPCore2.Services
                 _logger.LogError(ex, "Error getting customer types");
                 throw;
             }
-        }        public async Task<List<IndustryType>> GetIndustryTypesAsync()
+        }
+
+        public async Task<List<IndustryType>> GetIndustryTypesAsync()
         {
             try
             {
-                return await _context.IndustryTypes
-                    .Where(i => i.Status == EntityStatus.Active)
-                    .OrderBy(i => i.IndustryTypeName)
+                using var context = _contextFactory.CreateDbContext();
+                return await context.IndustryTypes
+                    .Where(it => it.Status != EntityStatus.Deleted)
+                    .OrderBy(it => it.IndustryName)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting industries");
+                _logger.LogError(ex, "Error getting industry types");
                 throw;
             }
         }
@@ -372,7 +417,9 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _context.ContactTypes
+                using var context = _contextFactory.CreateDbContext();
+                return await context.ContactTypes
+                    .Where(ct => ct.Status != EntityStatus.Deleted)
                     .OrderBy(ct => ct.TypeName)
                     .ToListAsync();
             }
@@ -381,12 +428,15 @@ namespace ERPCore2.Services
                 _logger.LogError(ex, "Error getting contact types");
                 throw;
             }
-        }        public async Task<List<AddressType>> GetAddressTypesAsync()
+        }
+
+        public async Task<List<AddressType>> GetAddressTypesAsync()
         {
             try
             {
-                return await _context.AddressTypes
-                    .Where(at => at.Status == EntityStatus.Active)
+                using var context = _contextFactory.CreateDbContext();
+                return await context.AddressTypes
+                    .Where(at => at.Status != EntityStatus.Deleted)
                     .OrderBy(at => at.TypeName)
                     .ToListAsync();
             }
@@ -396,102 +446,85 @@ namespace ERPCore2.Services
                 throw;
             }
         }
+        #endregion
 
-        // 聯絡資料管理方法
+        #region 客戶聯絡人管理
         public async Task<List<CustomerContact>> GetCustomerContactsAsync(int customerId)
         {
             try
             {
-                return await _context.CustomerContacts
+                using var context = _contextFactory.CreateDbContext();
+                return await context.CustomerContacts
                     .Where(cc => cc.CustomerId == customerId && cc.Status != EntityStatus.Deleted)
                     .Include(cc => cc.ContactType)
-                    .OrderByDescending(cc => cc.IsPrimary)
-                    .ThenBy(cc => cc.ContactId)
+                    .OrderBy(cc => cc.ContactName)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting contacts for customer {CustomerId}", customerId);
+                _logger.LogError(ex, "Error getting customer contacts for {CustomerId}", customerId);
                 throw;
             }
         }
 
-        public async Task<ServiceResult> UpdateCustomerContactsAsync(int customerId, List<CustomerContact> contacts)
+        public async Task<ServiceResult<bool>> UpdateCustomerContactsAsync(int customerId, List<CustomerContact> contacts)
         {
             try
             {
-                // 使用交易確保資料一致性
-                using var transaction = await _context.Database.BeginTransactionAsync();
+                using var context = _contextFactory.CreateDbContext();
+                using var transaction = await context.Database.BeginTransactionAsync();
                 
                 try
                 {
-                    // 1. 取得現有聯絡資料
-                    var existingContacts = await _context.CustomerContacts
+                    // 取得現有聯絡人
+                    var existingContacts = await context.CustomerContacts
                         .Where(cc => cc.CustomerId == customerId && cc.Status != EntityStatus.Deleted)
                         .ToListAsync();
 
-                    // 2. 處理需要刪除的聯絡資料 (現有聯絡資料中不在新聯絡資料列表中的)
-                    var contactsToDelete = existingContacts
-                        .Where(existing => !contacts.Any(contact => contact.ContactId == existing.ContactId))
-                        .ToList();
-
-                    foreach (var contactToDelete in contactsToDelete)
+                    // 刪除不在新清單中的聯絡人
+                    foreach (var existing in existingContacts)
                     {
-                        contactToDelete.Status = EntityStatus.Deleted;
+                        if (!contacts.Any(c => c.CustomerContactId == existing.CustomerContactId))
+                        {
+                            existing.Status = EntityStatus.Deleted;
+                            existing.UpdatedAt = DateTime.Now;
+                        }
                     }
 
-                    // 3. 處理新增和更新的聯絡資料
+                    // 新增或更新聯絡人
                     foreach (var contact in contacts)
                     {
-                        contact.CustomerId = customerId; // 確保 CustomerId 正確
-                        
-                        if (contact.ContactId == 0)
+                        if (contact.CustomerContactId == 0)
                         {
-                            // 新增聯絡資料
+                            // 新增
+                            contact.CustomerId = customerId;
                             contact.Status = EntityStatus.Active;
-                            _context.CustomerContacts.Add(contact);
+                            contact.CreatedAt = DateTime.Now;
+                            contact.UpdatedAt = DateTime.Now;
+                            context.CustomerContacts.Add(contact);
                         }
                         else
                         {
-                            // 更新現有聯絡資料
-                            var existingContact = existingContacts.FirstOrDefault(ec => ec.ContactId == contact.ContactId);
-                            if (existingContact != null)
+                            // 更新
+                            var existing = existingContacts.FirstOrDefault(ec => ec.CustomerContactId == contact.CustomerContactId);
+                            if (existing != null)
                             {
-                                // 更新屬性
-                                existingContact.ContactTypeId = contact.ContactTypeId;
-                                existingContact.ContactValue = contact.ContactValue;
-                                existingContact.IsPrimary = contact.IsPrimary;
-                                existingContact.Status = contact.Status;
+                                existing.ContactName = contact.ContactName;
+                                existing.ContactTypeId = contact.ContactTypeId;
+                                existing.Phone = contact.Phone;
+                                existing.Email = contact.Email;
+                                existing.Title = contact.Title;
+                                existing.Department = contact.Department;
+                                existing.UpdatedAt = DateTime.Now;
                             }
                         }
                     }
 
-                    // 4. 確保每種聯絡類型只有一個主要聯絡方式
-                    var contactTypes = contacts.Where(c => c.ContactTypeId.HasValue)
-                                             .GroupBy(c => c.ContactTypeId)
-                                             .ToList();
-
-                    foreach (var contactTypeGroup in contactTypes)
-                    {
-                        var primaryContacts = contactTypeGroup.Where(c => c.IsPrimary).ToList();
-                        if (primaryContacts.Count > 1)
-                        {
-                            // 如果有多個主要聯絡方式，只保留第一個
-                            for (int i = 1; i < primaryContacts.Count; i++)
-                            {
-                                primaryContacts[i].IsPrimary = false;
-                            }
-                        }
-                    }
-
-                    await _context.SaveChangesAsync();
+                    await context.SaveChangesAsync();
                     await transaction.CommitAsync();
-
-                    _logger.LogInformation("Successfully updated {ContactCount} contacts for customer {CustomerId}", 
-                        contacts.Count, customerId);
-                    return ServiceResult.Success();
+                    return ServiceResult<bool>.Success(true);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
                     throw;
@@ -499,149 +532,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating contacts for customer {CustomerId}", customerId);
-                return ServiceResult.Failure($"更新客戶聯絡資料時發生錯誤: {ex.Message}");
+                _logger.LogError(ex, "Error updating customer contacts for {CustomerId}", customerId);
+                return ServiceResult<bool>.Failure($"更新聯絡人時發生錯誤: {ex.Message}");
             }
         }
-
-        private ServiceResult ValidateCustomer(Customer customer)
-        {
-            var errors = new List<string>();
-
-            Console.WriteLine("=== 服務端驗證除錯資訊 ===");
-            Console.WriteLine($"CustomerCode: '{customer.CustomerCode}' (IsNullOrWhiteSpace: {string.IsNullOrWhiteSpace(customer.CustomerCode)})");
-            Console.WriteLine($"CompanyName: '{customer.CompanyName}' (IsNullOrWhiteSpace: {string.IsNullOrWhiteSpace(customer.CompanyName)})");
-
-            if (string.IsNullOrWhiteSpace(customer.CustomerCode))
-                errors.Add("客戶代碼為必填");
-
-            if (string.IsNullOrWhiteSpace(customer.CompanyName))
-                errors.Add("公司名稱為必填");
-
-            if (customer.CustomerCode?.Length > 20)
-                errors.Add("客戶代碼不可超過20個字元");
-
-            if (customer.CompanyName?.Length > 100)
-                errors.Add("公司名稱不可超過100個字元");
-
-            if (!string.IsNullOrEmpty(customer.ContactPerson) && customer.ContactPerson.Length > 50)
-                errors.Add("聯絡人不可超過50個字元");
-
-            if (!string.IsNullOrEmpty(customer.TaxNumber) && customer.TaxNumber.Length > 20)
-                errors.Add("統一編號不可超過20個字元");
-
-            Console.WriteLine($"驗證錯誤數量: {errors.Count}");
-            if (errors.Any())
-            {
-                Console.WriteLine("驗證錯誤:");
-                errors.ForEach(error => Console.WriteLine($"  - {error}"));
-                return ServiceResult.ValidationFailure(errors);
-            }
-
-            Console.WriteLine("驗證通過");
-            return ServiceResult.Success();
-        }        private ServiceResult ValidateAddresses(ICollection<CustomerAddress> addresses)
-        {
-            var errors = new List<string>();
-
-            if (addresses == null || !addresses.Any())
-            {
-                return ServiceResult.Success(); // 地址為選填
-            }
-
-            var primaryCount = addresses.Count(a => a.IsPrimary);
-            if (primaryCount == 0)
-            {
-                errors.Add("至少需要設定一個主要地址");
-            }
-            else if (primaryCount > 1)
-            {
-                errors.Add("只能設定一個主要地址");
-            }
-
-            for (int i = 0; i < addresses.Count; i++)
-            {
-                var address = addresses.ElementAt(i);
-                var prefix = $"地址 {i + 1}";
-
-                // 基本長度驗證
-                if (!string.IsNullOrEmpty(address.PostalCode) && address.PostalCode.Length > 10)
-                    errors.Add($"{prefix}: 郵遞區號不可超過10個字元");
-
-                if (!string.IsNullOrEmpty(address.City) && address.City.Length > 50)
-                    errors.Add($"{prefix}: 城市不可超過50個字元");
-
-                if (!string.IsNullOrEmpty(address.District) && address.District.Length > 50)
-                    errors.Add($"{prefix}: 行政區不可超過50個字元");
-
-                if (!string.IsNullOrEmpty(address.Address) && address.Address.Length > 200)
-                    errors.Add($"{prefix}: 地址不可超過200個字元");
-
-                // 檢查是否有實際的地址內容
-                var hasContent = !string.IsNullOrWhiteSpace(address.PostalCode) ||
-                               !string.IsNullOrWhiteSpace(address.City) ||
-                               !string.IsNullOrWhiteSpace(address.District) ||
-                               !string.IsNullOrWhiteSpace(address.Address);
-
-                if (!hasContent && address.AddressTypeId.HasValue)
-                    errors.Add($"{prefix}: 已選擇地址類型但未填寫地址資訊");
-
-                // 如果有地址內容，檢查是否至少填寫了基本欄位
-                if (hasContent)
-                {
-                    if (string.IsNullOrWhiteSpace(address.City) && string.IsNullOrWhiteSpace(address.Address))
-                        errors.Add($"{prefix}: 至少需要填寫城市或詳細地址");
-                }
-            }            Console.WriteLine($"地址驗證完成，錯誤數量: {errors.Count}");
-            if (errors.Any())
-            {
-                Console.WriteLine("地址驗證錯誤:");
-                errors.ForEach(error => Console.WriteLine($"  - {error}"));
-                return ServiceResult.ValidationFailure(errors);
-            }            return ServiceResult.Success();
-        }
-
-        /// <summary>
-        /// 初始化新客戶的預設值
-        /// </summary>
-        /// <param name="customer">要初始化的客戶物件</param>
-        public void InitializeNewCustomer(Customer customer)
-        {
-            // 確保所有字串屬性都有初始值，避免 null
-            customer.CustomerCode = customer.CustomerCode ?? string.Empty;
-            customer.CompanyName = customer.CompanyName ?? string.Empty;
-            customer.ContactPerson = customer.ContactPerson ?? string.Empty;
-            customer.TaxNumber = customer.TaxNumber ?? string.Empty;
-            customer.CreatedBy = customer.CreatedBy ?? "系統管理員";
-            customer.CreatedDate = DateTime.Now;
-            customer.Status = EntityStatus.Active;
-        }
-        
-        /// <summary>
-        /// 取得基本必填欄位數量
-        /// </summary>
-        /// <returns>必填欄位數量</returns>
-        public int GetBasicRequiredFieldsCount()
-        {
-            return 2; // CustomerCode 和 CompanyName 是必填欄位
-        }
-        
-        /// <summary>
-        /// 取得已完成的基本必填欄位數量
-        /// </summary>
-        /// <param name="customer">客戶物件</param>
-        /// <returns>已完成的必填欄位數量</returns>
-        public int GetBasicCompletedFieldsCount(Customer customer)
-        {
-            int count = 0;
-            
-            if (!string.IsNullOrWhiteSpace(customer.CustomerCode))
-                count++;
-                
-            if (!string.IsNullOrWhiteSpace(customer.CompanyName))
-                count++;
-                
-            return count;
-        }
+        #endregion
     }
 }

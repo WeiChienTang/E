@@ -2,32 +2,33 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.Logging;
 
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 地址管理服務實作 - 直接使用 EF Core，無需 Repository 和 DTO
+    /// 地址管理服務實作 - 使用 DbContextFactory 避免並發問題
     /// </summary>
     public class AddressService : IAddressService
     {
-        private readonly AppDbContext _context;
+        private readonly IDbContextFactory<AppDbContext> _contextFactory;
         private readonly ILogger<AddressService> _logger;
 
-        public AddressService(AppDbContext context, ILogger<AddressService> logger)
+        public AddressService(IDbContextFactory<AppDbContext> contextFactory, ILogger<AddressService> logger)
         {
-            _context = context;
+            _contextFactory = contextFactory;
             _logger = logger;
         }
 
-        #region 取得地址相關資料
+        #region 地址資料查詢
 
         public async Task<List<AddressType>> GetAddressTypesAsync()
         {
             try
             {
-                return await _context.AddressTypes
-                    .Where(at => at.Status != EntityStatus.Deleted)
+                using var context = _contextFactory.CreateDbContext();
+                return await context.AddressTypes
+                    .Where(at => at.Status == EntityStatus.Active)
                     .OrderBy(at => at.TypeName)
                     .ToListAsync();
             }
@@ -42,11 +43,12 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _context.CustomerAddresses
-                    .Where(ca => ca.CustomerId == customerId && ca.Status != EntityStatus.Deleted)
+                using var context = _contextFactory.CreateDbContext();
+                return await context.CustomerAddresses
                     .Include(ca => ca.AddressType)
-                    .OrderByDescending(ca => ca.IsPrimary)
-                    .ThenBy(ca => ca.AddressId)
+                    .Where(ca => ca.CustomerId == customerId && ca.Status != EntityStatus.Deleted)
+                    .OrderBy(ca => ca.IsPrimary ? 0 : 1) // 主要地址排在前面
+                    .ThenBy(ca => ca.AddressType!.TypeName)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -60,10 +62,12 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _context.CustomerAddresses
-                    .Where(ca => ca.CustomerId == customerId && ca.IsPrimary && ca.Status != EntityStatus.Deleted)
+                using var context = _contextFactory.CreateDbContext();
+                return await context.CustomerAddresses
                     .Include(ca => ca.AddressType)
-                    .FirstOrDefaultAsync();
+                    .FirstOrDefaultAsync(ca => ca.CustomerId == customerId && 
+                                             ca.IsPrimary && 
+                                             ca.Status != EntityStatus.Deleted);
             }
             catch (Exception ex)
             {
@@ -74,55 +78,44 @@ namespace ERPCore2.Services
 
         #endregion
 
-        #region 地址業務邏輯操作
+        #region 地址 CRUD 操作
 
         public async Task<ServiceResult<CustomerAddress>> CreateAddressAsync(CustomerAddress address)
         {
             try
             {
-                // 1. 驗證地址資料
+                using var context = _contextFactory.CreateDbContext();
+
+                // 驗證地址
                 var validationResult = await ValidateAddressAsync(address);
                 if (!validationResult.IsSuccess)
                     return ServiceResult<CustomerAddress>.Failure(validationResult.ErrorMessage);
 
-                // 2. 檢查客戶是否存在
-                var customerExists = await _context.Customers
+                // 確保客戶存在
+                var customerExists = await context.Customers
                     .AnyAsync(c => c.CustomerId == address.CustomerId && c.Status != EntityStatus.Deleted);
                 if (!customerExists)
                     return ServiceResult<CustomerAddress>.Failure("客戶不存在");
 
-                // 3. 如果設為主要地址，清除其他主要地址標記
+                // 如果設為主要地址，需要先清除其他主要地址
                 if (address.IsPrimary)
                 {
-                    await ClearPrimaryAddressAsync(address.CustomerId);
+                    await ClearPrimaryAddressesAsync(context, address.CustomerId);
                 }
 
-                // 4. 如果是客戶的第一個地址，自動設為主要地址
-                var existingAddressCount = await _context.CustomerAddresses
-                    .CountAsync(ca => ca.CustomerId == address.CustomerId && ca.Status != EntityStatus.Deleted);
-                if (existingAddressCount == 0)
-                {
-                    address.IsPrimary = true;
-                }
-
-                // 5. 設定稽核欄位
+                // 設定預設值
                 address.Status = EntityStatus.Active;
 
-                // 6. 儲存地址
-                _context.CustomerAddresses.Add(address);
-                await _context.SaveChangesAsync();
+                context.CustomerAddresses.Add(address);
+                await context.SaveChangesAsync();
 
-                // 7. 重新載入包含關聯資料的地址
-                var savedAddress = await _context.CustomerAddresses
-                    .Include(ca => ca.AddressType)
-                    .FirstOrDefaultAsync(ca => ca.AddressId == address.AddressId);
-
-                return ServiceResult<CustomerAddress>.Success(savedAddress!);
+                _logger.LogInformation("Created address for customer {CustomerId}", address.CustomerId);
+                return ServiceResult<CustomerAddress>.Success(address);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating address for customer {CustomerId}", address.CustomerId);
-                return ServiceResult<CustomerAddress>.Failure($"新增地址時發生錯誤: {ex.Message}");
+                return ServiceResult<CustomerAddress>.Failure($"建立地址時發生錯誤: {ex.Message}");
             }
         }
 
@@ -130,33 +123,38 @@ namespace ERPCore2.Services
         {
             try
             {
-                // 1. 檢查地址是否存在
-                var existingAddress = await _context.CustomerAddresses
-                    .FirstOrDefaultAsync(ca => ca.AddressId == address.AddressId && ca.Status != EntityStatus.Deleted);
+                using var context = _contextFactory.CreateDbContext();
+
+                var existingAddress = await context.CustomerAddresses
+                    .FirstOrDefaultAsync(ca => ca.AddressId == address.AddressId);
+
                 if (existingAddress == null)
                     return ServiceResult<CustomerAddress>.Failure("地址不存在");
 
-                // 2. 驗證地址資料
+                // 驗證地址
                 var validationResult = await ValidateAddressAsync(address);
                 if (!validationResult.IsSuccess)
                     return ServiceResult<CustomerAddress>.Failure(validationResult.ErrorMessage);
 
-                // 3. 如果設為主要地址，清除其他主要地址標記
+                // 如果設為主要地址，需要先清除其他主要地址
                 if (address.IsPrimary && !existingAddress.IsPrimary)
                 {
-                    await ClearPrimaryAddressAsync(address.CustomerId);
+                    await ClearPrimaryAddressesAsync(context, address.CustomerId);
                 }
 
-                // 4. 更新地址資料
-                _context.Entry(existingAddress).CurrentValues.SetValues(address);
-                await _context.SaveChangesAsync();
+                // 更新屬性
+                existingAddress.AddressTypeId = address.AddressTypeId;
+                existingAddress.PostalCode = address.PostalCode;
+                existingAddress.City = address.City;
+                existingAddress.District = address.District;
+                existingAddress.Address = address.Address;
+                existingAddress.IsPrimary = address.IsPrimary;
 
-                // 5. 重新載入包含關聯資料的地址
-                var updatedAddress = await _context.CustomerAddresses
-                    .Include(ca => ca.AddressType)
-                    .FirstOrDefaultAsync(ca => ca.AddressId == address.AddressId);
+                await context.SaveChangesAsync();
 
-                return ServiceResult<CustomerAddress>.Success(updatedAddress!);
+                _logger.LogInformation("Updated address {AddressId} for customer {CustomerId}", 
+                    address.AddressId, address.CustomerId);
+                return ServiceResult<CustomerAddress>.Success(existingAddress);
             }
             catch (Exception ex)
             {
@@ -169,30 +167,41 @@ namespace ERPCore2.Services
         {
             try
             {
-                var address = await _context.CustomerAddresses
-                    .FirstOrDefaultAsync(ca => ca.AddressId == addressId && ca.Status != EntityStatus.Deleted);
+                using var context = _contextFactory.CreateDbContext();
+
+                var address = await context.CustomerAddresses
+                    .FirstOrDefaultAsync(ca => ca.AddressId == addressId);
+
                 if (address == null)
                     return ServiceResult.Failure("地址不存在");
 
-                // 檢查是否為主要地址，如果是且還有其他地址，需要重新指定主要地址
-                if (address.IsPrimary)
-                {
-                    var otherAddresses = await _context.CustomerAddresses
-                        .Where(ca => ca.CustomerId == address.CustomerId && 
-                                    ca.AddressId != addressId && 
-                                    ca.Status != EntityStatus.Deleted)
-                        .ToListAsync();
+                // 檢查是否為客戶的唯一地址
+                var customerAddressCount = await context.CustomerAddresses
+                    .CountAsync(ca => ca.CustomerId == address.CustomerId && 
+                                    ca.Status != EntityStatus.Deleted);
 
-                    if (otherAddresses.Any())
-                    {
-                        otherAddresses.First().IsPrimary = true;
-                    }
-                }
+                if (customerAddressCount <= 1)
+                    return ServiceResult.Failure("客戶至少需要保留一個地址");
 
                 // 軟刪除
                 address.Status = EntityStatus.Deleted;
-                await _context.SaveChangesAsync();
 
+                // 如果刪除的是主要地址，需要設定另一個地址為主要地址
+                if (address.IsPrimary)
+                {
+                    var newPrimaryAddress = await context.CustomerAddresses
+                        .FirstOrDefaultAsync(ca => ca.CustomerId == address.CustomerId && 
+                                           ca.AddressId != addressId && 
+                                           ca.Status != EntityStatus.Deleted);
+                    
+                    if (newPrimaryAddress != null)
+                        newPrimaryAddress.IsPrimary = true;
+                }
+
+                await context.SaveChangesAsync();
+
+                _logger.LogInformation("Deleted address {AddressId} for customer {CustomerId}", 
+                    addressId, address.CustomerId);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -202,30 +211,41 @@ namespace ERPCore2.Services
             }
         }
 
+        #endregion
+
+        #region 地址業務邏輯
+
         public async Task<ServiceResult> SetPrimaryAddressAsync(int customerId, int addressId)
         {
             try
             {
-                // 檢查地址是否屬於該客戶
-                var address = await _context.CustomerAddresses
+                using var context = _contextFactory.CreateDbContext();
+
+                // 檢查地址是否存在且屬於該客戶
+                var address = await context.CustomerAddresses
                     .FirstOrDefaultAsync(ca => ca.AddressId == addressId && 
-                                              ca.CustomerId == customerId && 
-                                              ca.Status != EntityStatus.Deleted);
+                                             ca.CustomerId == customerId && 
+                                             ca.Status != EntityStatus.Deleted);
+
                 if (address == null)
                     return ServiceResult.Failure("地址不存在或不屬於該客戶");
 
-                // 清除該客戶的所有主要地址標記
-                await ClearPrimaryAddressAsync(customerId);
+                // 清除其他主要地址
+                await ClearPrimaryAddressesAsync(context, customerId);
 
                 // 設定新的主要地址
                 address.IsPrimary = true;
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
+                _logger.LogInformation("Set address {AddressId} as primary for customer {CustomerId}", 
+                    addressId, customerId);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error setting primary address {AddressId} for customer {CustomerId}", addressId, customerId);                return ServiceResult.Failure($"設定主要地址時發生錯誤: {ex.Message}");
+                _logger.LogError(ex, "Error setting primary address {AddressId} for customer {CustomerId}", 
+                    addressId, customerId);
+                return ServiceResult.Failure($"設定主要地址時發生錯誤: {ex.Message}");
             }
         }
 
@@ -233,83 +253,71 @@ namespace ERPCore2.Services
         {
             try
             {
-                // 使用交易確保資料一致性
-                using var transaction = await _context.Database.BeginTransactionAsync();
-                
-                try
+                using var context = _contextFactory.CreateDbContext();
+
+                // 驗證所有地址
+                foreach (var address in addresses)
                 {
-                    // 1. 取得現有地址
-                    var existingAddresses = await _context.CustomerAddresses
-                        .Where(ca => ca.CustomerId == customerId && ca.Status != EntityStatus.Deleted)
-                        .ToListAsync();
+                    var validationResult = await ValidateAddressAsync(address);
+                    if (!validationResult.IsSuccess)
+                        return ServiceResult.Failure($"地址驗證失敗: {validationResult.ErrorMessage}");
+                }
 
-                    // 2. 處理需要刪除的地址 (現有地址中不在新地址列表中的)
-                    var addressesToDelete = existingAddresses
-                        .Where(existing => !addresses.Any(addr => addr.AddressId == existing.AddressId))
-                        .ToList();
+                // 確保只有一個主要地址
+                var primaryCount = addresses.Count(a => a.IsPrimary);
+                if (primaryCount == 0)
+                    return ServiceResult.Failure("至少需要設定一個主要地址");
+                if (primaryCount > 1)
+                    return ServiceResult.Failure("只能設定一個主要地址");
 
-                    foreach (var addressToDelete in addressesToDelete)
+                // 取得現有地址
+                var existingAddresses = await context.CustomerAddresses
+                    .Where(ca => ca.CustomerId == customerId)
+                    .ToListAsync();
+
+                // 更新或新增地址
+                foreach (var address in addresses)
+                {
+                    address.CustomerId = customerId;
+                    
+                    if (address.AddressId == 0)
                     {
-                        addressToDelete.Status = EntityStatus.Deleted;
+                        // 新地址
+                        address.Status = EntityStatus.Active;
+                        context.CustomerAddresses.Add(address);
                     }
-
-                    // 3. 處理新增和更新的地址
-                    foreach (var address in addresses)
+                    else
                     {
-                        address.CustomerId = customerId; // 確保 CustomerId 正確
+                        // 更新現有地址
+                        var existingAddress = existingAddresses
+                            .FirstOrDefault(ea => ea.AddressId == address.AddressId);
                         
-                        if (address.AddressId == 0)
+                        if (existingAddress != null)
                         {
-                            // 新增地址
-                            address.Status = EntityStatus.Active;
-                            _context.CustomerAddresses.Add(address);
-                        }
-                        else
-                        {
-                            // 更新現有地址
-                            var existingAddress = existingAddresses.FirstOrDefault(ea => ea.AddressId == address.AddressId);
-                            if (existingAddress != null)
-                            {
-                                // 更新屬性
-                                existingAddress.AddressTypeId = address.AddressTypeId;
-                                existingAddress.PostalCode = address.PostalCode;
-                                existingAddress.City = address.City;
-                                existingAddress.District = address.District;
-                                existingAddress.Address = address.Address;
-                                existingAddress.IsPrimary = address.IsPrimary;
-                                existingAddress.Status = address.Status;
-                            }
+                            existingAddress.AddressTypeId = address.AddressTypeId;
+                            existingAddress.PostalCode = address.PostalCode;
+                            existingAddress.City = address.City;
+                            existingAddress.District = address.District;
+                            existingAddress.Address = address.Address;
+                            existingAddress.IsPrimary = address.IsPrimary;
                         }
                     }
-
-                    // 4. 確保只有一個主要地址
-                    var primaryAddresses = addresses.Where(a => a.IsPrimary).ToList();
-                    if (primaryAddresses.Count > 1)
-                    {
-                        // 如果有多個主要地址，只保留第一個
-                        for (int i = 1; i < primaryAddresses.Count; i++)
-                        {
-                            primaryAddresses[i].IsPrimary = false;
-                        }
-                    }
-                    else if (primaryAddresses.Count == 0 && addresses.Any())
-                    {
-                        // 如果沒有主要地址，將第一個設為主要
-                        addresses.First().IsPrimary = true;
-                    }
-
-                    await _context.SaveChangesAsync();
-                    await transaction.CommitAsync();
-
-                    _logger.LogInformation("Successfully updated {AddressCount} addresses for customer {CustomerId}", 
-                        addresses.Count, customerId);
-                    return ServiceResult.Success();
                 }
-                catch (Exception)
+
+                // 標記刪除未在新清單中的地址
+                var newAddressIds = addresses.Where(a => a.AddressId > 0).Select(a => a.AddressId);
+                var addressesToDelete = existingAddresses
+                    .Where(ea => !newAddressIds.Contains(ea.AddressId) && ea.Status != EntityStatus.Deleted);
+
+                foreach (var addressToDelete in addressesToDelete)
                 {
-                    await transaction.RollbackAsync();
-                    throw;
+                    addressToDelete.Status = EntityStatus.Deleted;
                 }
+
+                await context.SaveChangesAsync();
+
+                _logger.LogInformation("Updated addresses for customer {CustomerId}", customerId);
+                return ServiceResult.Success();
             }
             catch (Exception ex)
             {
@@ -324,55 +332,84 @@ namespace ERPCore2.Services
 
         public async Task<ServiceResult> ValidateAddressAsync(CustomerAddress address)
         {
-            var validationResults = new List<ValidationResult>();
-            var validationContext = new ValidationContext(address);
-
-            // 使用 DataAnnotations 驗證
-            if (!Validator.TryValidateObject(address, validationContext, validationResults, true))
+            try
             {
-                var errors = validationResults.Select(vr => vr.ErrorMessage ?? "驗證錯誤").ToList();
-                return ServiceResult.ValidationFailure(errors);
-            }
+                var errors = new List<string>();
 
-            // 業務規則驗證
-            if (address.AddressTypeId.HasValue)
-            {
-                var addressTypeExists = await _context.AddressTypes
-                    .AnyAsync(at => at.AddressTypeId == address.AddressTypeId && at.Status != EntityStatus.Deleted);
-                if (!addressTypeExists)
+                // 檢查必要欄位
+                if (address.CustomerId <= 0)
+                    errors.Add("客戶ID無效");
+
+                // 檢查長度限制
+                if (!string.IsNullOrEmpty(address.PostalCode) && address.PostalCode.Length > 10)
+                    errors.Add("郵遞區號不可超過10個字元");
+
+                if (!string.IsNullOrEmpty(address.City) && address.City.Length > 50)
+                    errors.Add("城市不可超過50個字元");
+
+                if (!string.IsNullOrEmpty(address.District) && address.District.Length > 50)
+                    errors.Add("行政區不可超過50個字元");
+
+                if (!string.IsNullOrEmpty(address.Address) && address.Address.Length > 200)
+                    errors.Add("地址不可超過200個字元");
+
+                // 檢查地址類型是否存在
+                if (address.AddressTypeId.HasValue)
                 {
-                    return ServiceResult.Failure("指定的地址類型不存在");
+                    using var context = _contextFactory.CreateDbContext();
+                    var addressTypeExists = await context.AddressTypes
+                        .AnyAsync(at => at.AddressTypeId == address.AddressTypeId.Value && 
+                                      at.Status == EntityStatus.Active);
+                    
+                    if (!addressTypeExists)
+                        errors.Add("指定的地址類型不存在或已停用");
                 }
-            }
 
-            return ServiceResult.Success();
+                if (errors.Any())
+                    return ServiceResult.ValidationFailure(errors);
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating address");
+                return ServiceResult.Failure("驗證地址時發生錯誤");
+            }
         }
 
         public async Task<ServiceResult> EnsureCustomerHasPrimaryAddressAsync(int customerId)
         {
             try
             {
-                var primaryAddress = await GetPrimaryAddressAsync(customerId);
-                if (primaryAddress != null)
-                    return ServiceResult.Success();
+                using var context = _contextFactory.CreateDbContext();
 
-                // 如果沒有主要地址，將第一個有效地址設為主要
-                var firstAddress = await _context.CustomerAddresses
-                    .Where(ca => ca.CustomerId == customerId && ca.Status != EntityStatus.Deleted)
-                    .FirstOrDefaultAsync();
+                var primaryAddress = await context.CustomerAddresses
+                    .FirstOrDefaultAsync(ca => ca.CustomerId == customerId && 
+                                             ca.IsPrimary && 
+                                             ca.Status != EntityStatus.Deleted);
 
-                if (firstAddress != null)
+                if (primaryAddress == null)
                 {
-                    firstAddress.IsPrimary = true;
-                    await _context.SaveChangesAsync();
+                    // 尋找第一個可用的地址設為主要地址
+                    var firstAddress = await context.CustomerAddresses
+                        .FirstOrDefaultAsync(ca => ca.CustomerId == customerId && 
+                                                 ca.Status != EntityStatus.Deleted);
+
+                    if (firstAddress != null)
+                    {
+                        firstAddress.IsPrimary = true;
+                        await context.SaveChangesAsync();
+                        
+                        _logger.LogInformation("Set first address as primary for customer {CustomerId}", customerId);
+                    }
                 }
 
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error ensuring customer {CustomerId} has primary address", customerId);
-                return ServiceResult.Failure($"確保主要地址時發生錯誤: {ex.Message}");
+                _logger.LogError(ex, "Error ensuring customer has primary address for customer {CustomerId}", customerId);
+                return ServiceResult.Failure($"確保客戶有主要地址時發生錯誤: {ex.Message}");
             }
         }
 
@@ -400,69 +437,89 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error copying address for customer {CustomerId}", targetCustomerId);
+                _logger.LogError(ex, "Error copying address from customer {SourceCustomerId} to {TargetCustomerId}", 
+                    sourceAddress.CustomerId, targetCustomerId);
                 return ServiceResult<CustomerAddress>.Failure($"複製地址時發生錯誤: {ex.Message}");
             }
-        }        public async Task<int?> GetDefaultAddressTypeIdAsync(string addressTypeName)
+        }
+
+        public async Task<int?> GetDefaultAddressTypeIdAsync(string addressTypeName)
         {
             try
             {
-                var addressType = await _context.AddressTypes
-                    .FirstOrDefaultAsync(at => at.TypeName.Contains(addressTypeName) && at.Status != EntityStatus.Deleted);
+                using var context = _contextFactory.CreateDbContext();
+                var addressType = await context.AddressTypes
+                    .FirstOrDefaultAsync(at => at.TypeName.Contains(addressTypeName) && 
+                                             at.Status == EntityStatus.Active);
+
                 return addressType?.AddressTypeId;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting default address type for {AddressTypeName}", addressTypeName);
-                return null;
+                _logger.LogError(ex, "Error getting default address type ID for name {AddressTypeName}", addressTypeName);
+                throw;
             }
-        }        /// <summary>
-        /// 取得客戶地址，如果沒有地址則初始化預設地址
-        /// </summary>
-        /// <param name="customerId">客戶ID</param>
-        /// <param name="addressTypes">地址類型列表</param>
-        /// <returns>客戶地址列表</returns>
+        }
+
         public async Task<List<CustomerAddress>> GetAddressesWithDefaultAsync(int customerId, List<AddressType> addressTypes)
         {
-            var addresses = await GetAddressesByCustomerIdAsync(customerId);
-            var result = addresses?.ToList() ?? new List<CustomerAddress>();
-            
-            if (!result.Any())
+            try
             {
-                // 使用靜態方法來初始化預設地址
-                var defaultAddress = new CustomerAddress
+                var addresses = await GetAddressesByCustomerIdAsync(customerId);
+
+                // 如果客戶沒有地址，建立預設地址
+                if (!addresses.Any() && addressTypes.Any())
                 {
-                    CustomerId = customerId,
-                    Status = EntityStatus.Active,
-                    IsPrimary = true,
-                    PostalCode = string.Empty,
-                    City = string.Empty,
-                    District = string.Empty,
-                    Address = string.Empty,
-                    AddressTypeId = addressTypes.FirstOrDefault(at => at.TypeName.Contains("公司") || at.TypeName.Contains("營業"))?.AddressTypeId
-                };
-                
-                result.Add(defaultAddress);
-                
-                _logger.LogInformation("Initialized default address for customer {CustomerId}", customerId);
+                    var defaultAddressType = addressTypes.FirstOrDefault(at => at.TypeName.Contains("公司")) ??
+                                           addressTypes.FirstOrDefault();
+
+                    if (defaultAddressType != null)
+                    {
+                        var defaultAddress = new CustomerAddress
+                        {
+                            CustomerId = customerId,
+                            AddressTypeId = defaultAddressType.AddressTypeId,
+                            IsPrimary = true,
+                            Status = EntityStatus.Active,
+                            PostalCode = string.Empty,
+                            City = string.Empty,
+                            District = string.Empty,
+                            Address = string.Empty
+                        };
+
+                        var createResult = await CreateAddressAsync(defaultAddress);
+                        if (createResult.IsSuccess && createResult.Data != null)
+                        {
+                            // 重新載入以包含 AddressType 導航屬性
+                            addresses = await GetAddressesByCustomerIdAsync(customerId);
+                        }
+                    }
+                }
+
+                return addresses;
             }
-            
-            return result;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting addresses with default for customer {CustomerId}", customerId);
+                throw;
+            }
         }
 
         #endregion
 
-        #region 私有方法
+        #region 私有輔助方法
 
-        private async Task ClearPrimaryAddressAsync(int customerId)
+        private async Task ClearPrimaryAddressesAsync(AppDbContext context, int customerId)
         {
-            var primaryAddresses = await _context.CustomerAddresses
-                .Where(ca => ca.CustomerId == customerId && ca.IsPrimary && ca.Status != EntityStatus.Deleted)
+            var primaryAddresses = await context.CustomerAddresses
+                .Where(ca => ca.CustomerId == customerId && 
+                           ca.IsPrimary && 
+                           ca.Status != EntityStatus.Deleted)
                 .ToListAsync();
 
-            foreach (var addr in primaryAddresses)
+            foreach (var address in primaryAddresses)
             {
-                addr.IsPrimary = false;
+                address.IsPrimary = false;
             }
         }
 

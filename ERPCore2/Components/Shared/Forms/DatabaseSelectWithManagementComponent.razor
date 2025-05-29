@@ -45,14 +45,13 @@
         <!-- 管理按鈕區域 -->
         @if (ShowManagementButton)
         {
-            <div class="flex-shrink-0">
-                <ButtonComponent Text="@ManagementButtonText" 
+            <div class="flex-shrink-0">                <ButtonComponent Text="@ManagementButtonText" 
                                Variant="@ManagementButtonVariant" 
                                Size="@ManagementButtonSize"
                                IconClass="@ManagementButtonIcon"
                                Title="@ManagementButtonTitle"
-                               OnClick="OnManagementClick"
-                               IsDisabled="@(IsDisabled || isLoading)" />
+                               OnClick="HandleManagementClick"
+                               IsDisabled="@(IsDisabled || isLoading || isManagementOperationInProgress)" />
             </div>
         }
     </div>
@@ -98,17 +97,24 @@
     [Parameter] public string ManagementButtonIcon { get; set; } = "fas fa-cog";
     [Parameter] public string ManagementButtonTitle { get; set; } = "管理資料";
     [Parameter] public EventCallback OnManagementClick { get; set; }
-    
-    // 資料重新載入事件
+      // 資料重新載入事件
     [Parameter] public EventCallback OnDataRefreshed { get; set; }
     
     private List<TEntity> items = new();
     private bool isLoading = false;
-    private bool hasLoaded = false;  
+    private bool hasLoaded = false;    private bool isManagementOperationInProgress = false; // 防止重複點擊管理按鈕
+    private static readonly Random _random = new();
+    
     protected override async Task OnInitializedAsync()
     {
         if (AutoLoad && !hasLoaded)
         {
+            // 添加小幅隨機延遲以避免多個組件同時初始化造成的 DbContext 並發問題
+            var delayMs = _random.Next(0, 100); // 0-100ms 隨機延遲
+            if (delayMs > 0)
+            {
+                await Task.Delay(delayMs);
+            }
             await LoadDataAsync();
         }
     }
@@ -201,6 +207,27 @@
         if (!EqualityComparer<TValue?>.Default.Equals(oldValue, Value) && ValueChanged.HasDelegate)
         {
             await ValueChanged.InvokeAsync(Value);
+        }
+    }
+    
+    private async Task HandleManagementClick()
+    {
+        if (isManagementOperationInProgress) return;
+        
+        isManagementOperationInProgress = true;
+        StateHasChanged();
+        
+        try
+        {
+            if (OnManagementClick.HasDelegate)
+            {
+                await OnManagementClick.InvokeAsync();
+            }
+        }
+        finally
+        {
+            isManagementOperationInProgress = false;
+            StateHasChanged();
         }
     }
 }
