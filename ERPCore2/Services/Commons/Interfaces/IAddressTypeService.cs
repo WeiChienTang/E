@@ -3,7 +3,7 @@ using ERPCore2.Data.Entities;
 namespace ERPCore2.Services.Interfaces
 {
     /// <summary>
-    /// 地址類型服務介面 - 管理地址類型的 CRUD 操作
+    /// 地址類型服務介面
     /// </summary>
     public interface IAddressTypeService : IGenericManagementService<AddressType>
     {

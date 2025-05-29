@@ -3,7 +3,7 @@ using ERPCore2.Data.Entities;
 namespace ERPCore2.Services.Interfaces
 {
     /// <summary>
-    /// 聯絡類型服務介面 - 管理聯絡類型的 CRUD 操作
+    /// 聯絡類型服務介面
     /// </summary>
     public interface IContactTypeService : IGenericManagementService<ContactType>
     {

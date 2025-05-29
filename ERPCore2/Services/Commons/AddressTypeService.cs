@@ -8,9 +8,9 @@ using Microsoft.Extensions.Logging;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 地址類型服務實作 - 使用 DbContextFactory 避免並發問題
+    /// 地址類型服務實作
     /// </summary>
-    public class AddressTypeService : IAddressTypeService, IGenericManagementService<AddressType>
+    public class AddressTypeService : IAddressTypeService
     {
         private readonly IDbContextFactory<AppDbContext> _contextFactory;
         private readonly ILogger<AddressTypeService> _logger;

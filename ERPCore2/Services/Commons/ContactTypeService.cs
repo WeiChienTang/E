@@ -7,9 +7,9 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 聯絡類型服務實作 - 使用 DbContextFactory 避免並發問題
+    /// 聯絡類型服務實作
     /// </summary>
-    public class ContactTypeService : IContactTypeService, IGenericManagementService<ContactType>
+    public class ContactTypeService : IContactTypeService
     {
         private readonly IDbContextFactory<AppDbContext> _contextFactory;
         private readonly ILogger<ContactTypeService> _logger;

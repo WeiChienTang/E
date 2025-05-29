@@ -17,12 +17,7 @@ namespace ERPCore2.Services.Interfaces
         /// <summary>
         /// 取得客戶的主要地址
         /// </summary>
-        Task<CustomerAddress?> GetPrimaryAddressAsync(int customerId);
-        
-        /// <summary>
-        /// 根據地址ID取得地址
-        /// </summary>
-        Task<CustomerAddress?> GetByIdAsync(int addressId);
+        Task<CustomerAddress?> GetPrimaryAddressAsync(int customerId);    
         
         #endregion
 
