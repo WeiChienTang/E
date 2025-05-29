@@ -1,11 +1,11 @@
 using ERPCore2.Data.Entities;
 
-namespace ERPCore2.Services
+namespace ERPCore2.Services.Interfaces
 {
     /// <summary>
-    /// 客戶服務介面 - 直接使用 Entity，無需 DTO
+    /// 客戶服務介面
     /// </summary>
-    public interface ICustomerService
+    public interface ICustomerService : IGenericManagementService<Customer>
     {
         Task<List<Customer>> GetAllAsync();
         Task<Customer?> GetByIdAsync(int id);

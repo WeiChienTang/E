@@ -5,7 +5,7 @@ namespace ERPCore2.Services.Interfaces
     /// <summary>
     /// 客戶聯絡資料服務介面
     /// </summary>
-    public interface ICustomerContactService
+    public interface ICustomerContactService : IGenericManagementService<CustomerContact>
     {
         /// <summary>
         /// 根據聯絡類型名稱取得客戶的聯絡資料值

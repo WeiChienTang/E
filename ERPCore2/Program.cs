@@ -17,7 +17,6 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
 
 // Service Registration (No Repository needed!)
 builder.Services.AddScoped<ICustomerService, CustomerService>();
-builder.Services.AddScoped<IAddressService, AddressService>();
 builder.Services.AddScoped<IContactTypeService, ContactTypeService>();
 builder.Services.AddScoped<ICustomerContactService, CustomerContactService>();
 builder.Services.AddScoped<ICustomerAddressService, CustomerAddressService>();
