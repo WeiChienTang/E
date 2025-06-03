@@ -16,7 +16,8 @@ namespace ERPCore2.Data.Context
         public DbSet<IndustryType> IndustryTypes { get; set; }
         public DbSet<ContactType> ContactTypes { get; set; }
         public DbSet<AddressType> AddressTypes { get; set; }
-        public DbSet<CustomerContact> CustomerContacts { get; set; }        public DbSet<CustomerAddress> CustomerAddresses { get; set; }
+        public DbSet<CustomerContact> CustomerContacts { get; set; }
+        public DbSet<CustomerAddress> CustomerAddresses { get; set; }
           protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

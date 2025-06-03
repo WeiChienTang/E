@@ -21,6 +21,7 @@ builder.Services.AddScoped<IContactTypeService, ContactTypeService>();
 builder.Services.AddScoped<ICustomerContactService, CustomerContactService>();
 builder.Services.AddScoped<ICustomerAddressService, CustomerAddressService>();
 builder.Services.AddScoped<ICustomerTypeService, CustomerTypeService>();
+builder.Services.AddScoped<IAddressTypeService, AddressTypeService>();
 builder.Services.AddScoped<IIndustryTypeService, IndustryTypeService>();
 
 // Add services to the container.

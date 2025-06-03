@@ -3,7 +3,7 @@
 ## 概述
 Services 資料夾包含了 ERPCore2 系統的業務邏輯層實作，負責處理業務規則、資料驗證、商業邏輯封裝，並直接使用 EF Core DbContext 進行資料操作。
 
-**核心設計理念：簡化架構，移除 Repository 層，Service 直接使用 EF Core，不使用 DTO，直接操作 Entity 模型。**
+**核心設計理念：使用通用服務基底類別 `GenericManagementService<T>`，避免重複的 CRUD 操作代碼，提供統一的服務模式。**
 
 ## 命名規範
 
@@ -13,308 +13,166 @@ Services 資料夾包含了 ERPCore2 系統的業務邏輯層實作，負責處�
 ### 檔案命名
 - **服務實作**：`[業務領域]Service.cs`（如：CustomerService.cs）
 - **服務介面**：`I[業務領域]Service.cs`（如：ICustomerService.cs）
+- **通用服務基底**：`GenericManagementService<T>.cs`
 - **結果類別**：`ServiceResult.cs`
 
 ---
 
 ## 架構設計原則
 
-### 為什麼簡化架構？
-- **EF Core 本身就是完整的資料存取層**：DbContext 和 DbSet 已提供完整功能
-- **避免過度設計**：移除不必要的 Repository 和 DTO 層
-- **更直接的操作**：充分利用 EF Core 的 LINQ、Include 等功能
-- **更好的效能**：減少資料轉換和抽象層開銷
+### 通用服務模式
+- **GenericManagementService<T>**：提供標準 CRUD 操作，所有服務都應繼承此基底類別
+- **專用服務介面**：每個業務領域建立專屬的 I[業務領域]Service 介面
+- **業務特定功能**：將專門的業務邏輯實作在子類別中
+- **統一錯誤處理**：使用 ServiceResult 封裝操作結果
+
+### 實體屬性命名規範
+- **Entity 屬性名稱**：統一採用 Entity 中定義的屬性名稱，例如 `Id`
+- **外鍵屬性命名**：外鍵屬性使用全名格式 `[表名稱]Id`，例如 `ContactTypeId`、`CustomerTypeId`
+- **避免映射屬性**：不使用 `[NotMapped]` 或其他映射技術，直接使用實體中定義的屬性
+- **一致性原則**：確保資料庫、實體模型、服務層和 UI 層使用相同的屬性名稱
+
+### 為什麼使用通用服務？
+- **避免重複代碼**：基本 CRUD 操作在 `GenericManagementService<T>` 中統一實作
+- **一致性操作**：所有實體都有相同的基本操作模式
+- **更容易維護**：修改基本功能時只需更新基底類別
+- **標準化開發**：新增服務時遵循相同的開發模式
 
 ### Service 層職責
-- **直接的 EF Core 資料操作**：使用 DbContext 進行 CRUD
-- **業務規則驗證**：檢查業務邏輯和資料完整性
-- **Entity 驗證**：使用 DataAnnotations 驗證
-- **稽核欄位管理**：設定 CreatedDate、ModifiedBy 等
+- **繼承通用功能**：從 `GenericManagementService<T>` 繼承基本 CRUD 操作
+- **業務特定邏輯**：實作專門的業務規則和驗證
 - **關聯資料載入**：使用 Include() 載入相關實體
 - **錯誤處理**：使用 ServiceResult 封裝結果
-- **交易管理**：處理複雜的跨實體操作
+- **稽核欄位管理**：自動設定 CreatedAt、UpdatedAt、CreatedBy、UpdatedBy
+- **軟刪除管理**：使用 IsDeleted 標記進行軟刪除
 
 ---
 
-## Service 標準結構
+## Service 開發模式
 
-### 1. 服務介面定義
+### 1. 建立專用服務介面
 ```csharp
-public interface ICustomerService
+public interface ICustomerService : IGenericManagementService<Customer>
 {
-    // 基本 CRUD 操作
-    Task<List<Customer>> GetAllAsync();
-    Task<Customer?> GetByIdAsync(int id);
-    Task<ServiceResult<Customer>> CreateAsync(Customer customer);
-    Task<ServiceResult<Customer>> UpdateAsync(Customer customer);
-    Task<ServiceResult> DeleteAsync(int id);
-    
     // 業務特定方法
     Task<bool> IsCustomerCodeExistsAsync(string customerCode, int? excludeId = null);
-    Task<List<Customer>> SearchAsync(string searchTerm);
+    Task<List<Customer>> GetByIndustryTypeAsync(int industryTypeId);
+    Task<ServiceResult> UpdateCustomerStatusAsync(int customerId, EntityStatus status);
 }
 ```
 
-### 2. 服務實作結構
+### 2. 實作服務類別
 ```csharp
-public class CustomerService : ICustomerService
+public class CustomerService : GenericManagementService<Customer>, ICustomerService
 {
-    private readonly AppDbContext _context;
-    private readonly ILogger<CustomerService> _logger;
-    
-    public CustomerService(AppDbContext context, ILogger<CustomerService> logger)
+    public CustomerService(AppDbContext context) : base(context)
     {
-        _context = context;
-        _logger = logger;
     }
     
-    // 實作方法...
-}
-```
-
-### 3. ServiceResult 使用模式
-```csharp
-// 成功結果
-return ServiceResult<Customer>.Success(customer);
-
-// 失敗結果
-return ServiceResult<Customer>.Failure("錯誤訊息");
-
-// 驗證失敗
-return ServiceResult.ValidationFailure(validationErrors);
-```
-
----
-
-## Service 方法設計規範
-
-### 基本 CRUD 模式
-
-#### GetAll 方法
-```csharp
-public async Task<List<Customer>> GetAllAsync()
-{
-    return await _context.Customers
-        .Where(c => c.Status != EntityStatus.Deleted)
-        .Include(c => c.CustomerType)
-        .Include(c => c.Industry)
-        .OrderBy(c => c.CompanyName)
-        .ToListAsync();
-}
-```
-
-#### Create 方法
-```csharp
-public async Task<ServiceResult<Customer>> CreateAsync(Customer customer)
-{
-    try
+    // 覆寫基底方法（如需要）
+    public override async Task<List<Customer>> GetAllAsync()
     {
-        // 1. 業務驗證
-        var validationResult = await ValidateCustomerAsync(customer);
-        if (!validationResult.IsSuccess)
-            return ServiceResult<Customer>.Failure(validationResult.ErrorMessage);
-        
-        // 2. 業務規則檢查
-        if (await IsCustomerCodeExistsAsync(customer.CustomerCode))
-            return ServiceResult<Customer>.Failure("客戶代碼已存在");
-        
-        // 3. 設定系統欄位
-        customer.CreatedDate = DateTime.Now;
-        customer.CreatedBy = "系統管理員";
-        customer.Status = EntityStatus.Active;
-        
-        // 4. 儲存資料
-        _context.Customers.Add(customer);
-        await _context.SaveChangesAsync();
-        
-        return ServiceResult<Customer>.Success(customer);
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "建立客戶時發生錯誤");
-        return ServiceResult<Customer>.Failure("建立客戶時發生錯誤");
-    }
-}
-```
-
-#### Update 方法
-```csharp
-public async Task<ServiceResult<Customer>> UpdateAsync(Customer customer)
-{
-    try
-    {
-        // 1. 檢查實體存在
-        var existingCustomer = await GetByIdAsync(customer.CustomerId);
-        if (existingCustomer == null)
-            return ServiceResult<Customer>.Failure("客戶不存在");
-        
-        // 2. 業務規則檢查
-        if (await IsCustomerCodeExistsAsync(customer.CustomerCode, customer.CustomerId))
-            return ServiceResult<Customer>.Failure("客戶代碼已存在");
-        
-        // 3. 設定稽核欄位
-        customer.ModifiedDate = DateTime.Now;
-        customer.ModifiedBy = "系統管理員";
-        
-        // 4. 更新資料
-        _context.Customers.Update(customer);
-        await _context.SaveChangesAsync();
-        
-        return ServiceResult<Customer>.Success(customer);
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "更新客戶時發生錯誤 ID: {CustomerId}", customer.CustomerId);
-        return ServiceResult<Customer>.Failure("更新客戶時發生錯誤");
-    }
-}
-```
-
-#### Delete 方法（軟刪除）
-```csharp
-public async Task<ServiceResult> DeleteAsync(int id)
-{
-    try
-    {
-        var customer = await GetByIdAsync(id);
-        if (customer == null)
-            return ServiceResult.Failure("客戶不存在");
-        
-        // 業務規則檢查（如檢查是否有關聯訂單等）
-        var hasOrders = await _context.Orders.AnyAsync(o => o.CustomerId == id);
-        if (hasOrders)
-            return ServiceResult.Failure("客戶有關聯訂單，無法刪除");
-        
-        // 軟刪除
-        customer.Status = EntityStatus.Deleted;
-        customer.ModifiedDate = DateTime.Now;
-        customer.ModifiedBy = "系統管理員";
-        
-        await _context.SaveChangesAsync();
-        return ServiceResult.Success();
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "刪除客戶時發生錯誤 ID: {CustomerId}", id);
-        return ServiceResult.Failure("刪除客戶時發生錯誤");
-    }
-}
-```
-
----
-
-## 驗證和業務規則
-
-### Entity 驗證
-```csharp
-private async Task<ServiceResult> ValidateCustomerAsync(Customer customer)
-{
-    // 使用 DataAnnotations 驗證
-    var context = new ValidationContext(customer);
-    var results = new List<ValidationResult>();
-    
-    if (!Validator.TryValidateObject(customer, context, results, true))
-    {
-        var errors = results.Select(r => r.ErrorMessage ?? "驗證錯誤").ToList();
-        return ServiceResult.ValidationFailure(errors);
-    }
-    
-    // 額外的業務驗證
-    if (string.IsNullOrWhiteSpace(customer.CustomerCode))
-        return ServiceResult.Failure("客戶代碼為必填");
-    
-    return ServiceResult.Success();
-}
-```
-
-### 重複檢查
-```csharp
-public async Task<bool> IsCustomerCodeExistsAsync(string customerCode, int? excludeId = null)
-{
-    var query = _context.Customers
-        .Where(c => c.CustomerCode == customerCode && c.Status != EntityStatus.Deleted);
-    
-    if (excludeId.HasValue)
-        query = query.Where(c => c.CustomerId != excludeId.Value);
-    
-    return await query.AnyAsync();
-}
-```
-
----
-
-## 複雜業務操作
-
-### 使用交易
-```csharp
-public async Task<ServiceResult> ComplexBusinessOperationAsync(int customerId, SomeRequest request)
-{
-    using var transaction = await _context.Database.BeginTransactionAsync();
-    try
-    {
-        // 步驟 1：業務邏輯處理
-        var customer = await GetByIdAsync(customerId);
-        if (customer == null)
-            throw new ArgumentException("客戶不存在");
-        
-        // 步驟 2：更新多個相關實體
-        var addresses = await _context.CustomerAddresses
-            .Where(a => a.CustomerId == customerId)
+        return await _dbSet
+            .Include(c => c.CustomerType)
+            .Include(c => c.IndustryType)
+            .Where(c => !c.IsDeleted)
+            .OrderBy(c => c.CompanyName)
             .ToListAsync();
-        
-        foreach (var address in addresses)
-        {
-            // 業務邏輯處理
-            address.ModifiedDate = DateTime.Now;
-        }
-        
-        // 步驟 3：儲存變更
-        await _context.SaveChangesAsync();
-        await transaction.CommitAsync();
-        
-        return ServiceResult.Success();
     }
-    catch (Exception ex)
+    
+    // 實作業務特定方法
+    public async Task<bool> IsCustomerCodeExistsAsync(string customerCode, int? excludeId = null)
     {
-        await transaction.RollbackAsync();
-        _logger.LogError(ex, "複雜業務操作失敗 CustomerId: {CustomerId}", customerId);
-        return ServiceResult.Failure("操作失敗");
+        var query = _dbSet.Where(c => c.CustomerCode == customerCode && !c.IsDeleted);
+        
+        if (excludeId.HasValue)
+            query = query.Where(c => c.Id != excludeId.Value);
+            
+        return await query.AnyAsync();
+    }
+    
+    // 覆寫驗證方法
+    public override async Task<ServiceResult> ValidateAsync(Customer entity)
+    {
+        // 先執行基底驗證
+        var baseResult = await base.ValidateAsync(entity);
+        if (!baseResult.IsSuccess)
+            return baseResult;
+            
+        // 額外的業務驗證
+        if (await IsCustomerCodeExistsAsync(entity.CustomerCode, entity.Id))
+            return ServiceResult.Failure("客戶代碼已存在");
+            
+        return ServiceResult.Success();
     }
 }
 ```
 
 ---
 
-## 效能最佳化
+## GenericManagementService 提供的功能
 
-### 查詢最佳化
+### 基本 CRUD 操作
+- `GetAllAsync()` - 取得所有資料（不含已刪除）
+- `GetActiveAsync()` - 取得所有啟用的資料
+- `GetByIdAsync(int id)` - 根據 ID 取得單一資料
+- `CreateAsync(T entity)` - 建立新資料
+- `UpdateAsync(T entity)` - 更新資料
+- `DeleteAsync(int id)` - 軟刪除資料
+
+### 批次操作
+- `CreateBatchAsync(List<T> entities)` - 批次建立
+- `UpdateBatchAsync(List<T> entities)` - 批次更新
+- `DeleteBatchAsync(List<int> ids)` - 批次刪除
+
+### 查詢操作
+- `GetPagedAsync(int pageNumber, int pageSize, string? searchTerm)` - 分頁查詢
+- `SearchAsync(string searchTerm)` - 條件查詢（需子類別實作）
+- `ExistsAsync(int id)` - 檢查資料是否存在
+- `GetCountAsync()` - 取得資料總數
+
+### 狀態管理
+- `SetStatusAsync(int id, EntityStatus status)` - 設定特定狀態
+- `ToggleStatusAsync(int id)` - 切換狀態
+- `SetStatusBatchAsync(List<int> ids, EntityStatus status)` - 批次設定狀態
+
+### 驗證功能
+- `ValidateAsync(T entity)` - 驗證實體資料（可覆寫）
+- `IsNameExistsAsync(string name, int? excludeId)` - 檢查名稱是否存在
+
+---
+
+## 覆寫基底方法的時機
+
+### 何時需要覆寫？
+1. **GetAllAsync()** - 需要載入關聯資料或特殊排序
+2. **SearchAsync()** - 實作特定的搜尋邏輯
+3. **ValidateAsync()** - 添加額外的業務驗證規則
+4. **IsNameExistsAsync()** - 實體沒有標準名稱欄位時
+
+### 覆寫範例
 ```csharp
-// 使用 AsNoTracking 提升查詢效能（只讀情況）
-public async Task<List<Customer>> GetCustomersForDisplayAsync()
+public override async Task<List<Customer>> GetAllAsync()
 {
-    return await _context.Customers
-        .AsNoTracking()
-        .Where(c => c.Status == EntityStatus.Active)
+    return await _dbSet
         .Include(c => c.CustomerType)
+        .Include(c => c.IndustryType)
+        .Where(c => !c.IsDeleted)
+        .OrderBy(c => c.CompanyName)
         .ToListAsync();
 }
 
-// 分頁查詢
-public async Task<(List<Customer> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize)
+public override async Task<List<Customer>> SearchAsync(string searchTerm)
 {
-    var query = _context.Customers
-        .Where(c => c.Status != EntityStatus.Deleted);
-    
-    var totalCount = await query.CountAsync();
-    
-    var items = await query
+    if (string.IsNullOrWhiteSpace(searchTerm))
+        return await GetAllAsync();
+        
+    return await _dbSet
         .Include(c => c.CustomerType)
-        .OrderBy(c => c.CompanyName)
-        .Skip((pageNumber - 1) * pageSize)
-        .Take(pageSize)
+        .Where(c => !c.IsDeleted && 
+                   (c.CompanyName.Contains(searchTerm) || 
+                    c.CustomerCode.Contains(searchTerm)))
         .ToListAsync();
-    
-    return (items, totalCount);
 }
 ```
 
@@ -330,7 +188,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // 服務註冊
 builder.Services.AddScoped<ICustomerService, CustomerService>();
-builder.Services.AddScoped<IAddressService, AddressService>();
+builder.Services.AddScoped<IAddressTypeService, AddressTypeService>();
+builder.Services.AddScoped<IContactTypeService, ContactTypeService>();
 ```
 
 ---
@@ -338,43 +197,35 @@ builder.Services.AddScoped<IAddressService, AddressService>();
 ## 開發檢查清單
 
 ### 建立新服務時
-- [ ] 建立服務介面和實作類別
+- [ ] 建立專用服務介面，繼承 `IGenericManagementService<T>`
+- [ ] 建立服務實作類別，繼承 `GenericManagementService<T>`
 - [ ] 使用正確的命名空間 `ERPCore2.Services`
-- [ ] 注入 DbContext 和 ILogger
-- [ ] 實作基本 CRUD 方法
-- [ ] 使用 ServiceResult 封裝回傳結果
-- [ ] 包含適當的業務驗證
-- [ ] 實作軟刪除邏輯
-- [ ] 加入錯誤處理和日誌記錄
+- [ ] 實作業務特定方法（如果需要）
+- [ ] 覆寫基底方法（如果需要特殊邏輯）
 - [ ] 在 Program.cs 中註冊服務
 
-### 方法設計檢查
-- [ ] 所有異步方法使用 async/await
-- [ ] 適當使用 Include() 載入關聯資料
-- [ ] 實作業務規則驗證
-- [ ] 設定稽核欄位（CreatedDate、ModifiedBy 等）
-- [ ] 使用軟刪除而非硬刪除
-- [ ] 複雜操作使用交易管理
-- [ ] 包含適當的例外處理
+### 覆寫方法檢查
+- [ ] 需要關聯資料時覆寫 `GetAllAsync()`
+- [ ] 實作特定搜尋邏輯時覆寫 `SearchAsync()`
+- [ ] 有額外驗證需求時覆寫 `ValidateAsync()`
+- [ ] 實體無標準名稱欄位時覆寫 `IsNameExistsAsync()`
 
 ### 效能考量
 - [ ] 只讀查詢使用 AsNoTracking()
-- [ ] 大量資料查詢實作分頁
+- [ ] 適當使用 Include() 載入關聯資料
 - [ ] 避免 N+1 查詢問題
-- [ ] 適當使用 Select 投影減少資料傳輸
 
 ---
 
 ## 常見模式摘要
 
+- **繼承模式**：所有服務繼承 `GenericManagementService<T>`
+- **介面設計**：專用介面繼承 `IGenericManagementService<T>`
 - **錯誤處理**：統一使用 ServiceResult 模式
-- **驗證**：結合 DataAnnotations 和業務驗證
-- **軟刪除**：使用 EntityStatus.Deleted 標記
-- **稽核欄位**：自動設定 CreatedDate、ModifiedDate 等
-- **關聯載入**：適當使用 Include() 避免延遲載入問題
-- **交易管理**：複雜操作使用 EF Core 交易
-- **日誌記錄**：記錄重要操作和錯誤資訊
+- **軟刪除**：使用 IsDeleted 標記
+- **稽核欄位**：自動設定 CreatedAt、UpdatedAt、CreatedBy、UpdatedBy
+- **狀態管理**：使用 EntityStatus 枚舉
 
 ---
 
-*本指南提供 Service 層的標準設計模式和最佳實踐。通過遵循這些原則，可以建構出一致、可維護且高效能的業務邏輯層。*
+*本指南提供基於 GenericManagementService 的 Service 層開發模式。通過繼承通用服務基底類別，可以大幅減少重複代碼，提高開發效率和代碼一致性。*

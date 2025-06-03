@@ -955,7 +955,7 @@
         }
     }
     // GenericManagementModal 的委派方法
-    private int GetContactTypeId(ContactType contactType) => contactType.ContactTypeId;
+    private int GetContactTypeId(ContactType contactType) => contactType.Id;
     private EntityStatus GetContactTypeStatus(ContactType contactType) => contactType.Status;
     private void SetContactTypeCreatedBy(ContactType contactType, string user) => contactType.CreatedBy = user;
     private void SetContactTypeStatus(ContactType contactType, EntityStatus status) => contactType.Status = status;

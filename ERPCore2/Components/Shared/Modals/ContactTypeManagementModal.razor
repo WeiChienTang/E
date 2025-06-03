@@ -120,7 +120,7 @@
                                                                                Size="ButtonSize.Small"
                                                                                IconClass="fas fa-pause"
                                                                                Title="停用"
-                                                                               OnClick="@(() => ToggleContactTypeStatus(contactType.ContactTypeId, EntityStatus.Inactive))" />
+                                                                               OnClick="@(() => ToggleContactTypeStatus(contactType.Id, EntityStatus.Inactive))" />
                                                             }
                                                             else
                                                             {
@@ -129,7 +129,7 @@
                                                                                Size="ButtonSize.Small"
                                                                                IconClass="fas fa-play"
                                                                                Title="啟用"
-                                                                               OnClick="@(() => ToggleContactTypeStatus(contactType.ContactTypeId, EntityStatus.Active))" />
+                                                                               OnClick="@(() => ToggleContactTypeStatus(contactType.Id, EntityStatus.Active))" />
                                                             }
                                                             
                                                             <ButtonComponent Text="" 
@@ -137,7 +137,7 @@
                                                                            Size="ButtonSize.Small"
                                                                            IconClass="fas fa-trash"
                                                                            Title="刪除"
-                                                                           OnClick="@(() => DeleteContactType(contactType.ContactTypeId))" />
+                                                                           OnClick="@(() => DeleteContactType(contactType.Id))" />
                                                         </div>
                                                     </td>
                                                 </tr>

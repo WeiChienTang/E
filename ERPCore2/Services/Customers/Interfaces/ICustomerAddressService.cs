@@ -7,67 +7,47 @@ namespace ERPCore2.Services.Interfaces
     /// </summary>
     public interface ICustomerAddressService : IGenericManagementService<CustomerAddress>
     {
-        #region 資料查詢
+        #region 業務特定查詢方法
         
         /// <summary>
-        /// 取得客戶的所有地址
+        /// 根據客戶ID取得地址清單
         /// </summary>
-        Task<List<CustomerAddress>> GetAddressesByCustomerIdAsync(int customerId);
+        Task<List<CustomerAddress>> GetByCustomerIdAsync(int customerId);
         
         /// <summary>
         /// 取得客戶的主要地址
         /// </summary>
-        Task<CustomerAddress?> GetPrimaryAddressAsync(int customerId);    
-        
-        #endregion
-
-        #region CRUD 操作
+        Task<CustomerAddress?> GetPrimaryAddressAsync(int customerId);
         
         /// <summary>
-        /// 建立新地址
+        /// 根據地址類型取得地址清單
         /// </summary>
-        Task<ServiceResult<CustomerAddress>> CreateAddressAsync(CustomerAddress address);
-        
-        /// <summary>
-        /// 更新地址
-        /// </summary>
-        Task<ServiceResult<CustomerAddress>> UpdateAddressAsync(CustomerAddress address);
-        
-        /// <summary>
-        /// 刪除地址（軟刪除）
-        /// </summary>
-        Task<ServiceResult<bool>> DeleteAddressAsync(int addressId);
-        
-        /// <summary>
-        /// 批量更新客戶地址
-        /// </summary>
-        Task<ServiceResult<bool>> UpdateCustomerAddressesAsync(int customerId, List<CustomerAddress> addresses);
+        Task<List<CustomerAddress>> GetByAddressTypeAsync(int addressTypeId);
         
         #endregion
 
         #region 業務邏輯操作
-        
-        /// <summary>
+          /// <summary>
         /// 設定主要地址
         /// </summary>
-        Task<ServiceResult<bool>> SetPrimaryAddressAsync(int addressId);
+        Task<ServiceResult> SetPrimaryAddressAsync(int addressId);
         
         /// <summary>
-        /// 複製地址到另一個客戶
+        /// 複製地址到其他客戶
         /// </summary>
         Task<ServiceResult<CustomerAddress>> CopyAddressToCustomerAsync(CustomerAddress sourceAddress, int targetCustomerId, int? targetAddressTypeId = null);
         
         /// <summary>
-        /// 確保客戶有主要地址
+        /// 確保客戶至少有一個主要地址
         /// </summary>
         Task<ServiceResult> EnsureCustomerHasPrimaryAddressAsync(int customerId);
         
         #endregion
 
         #region 記憶體操作方法（用於UI編輯）
-        
+
         /// <summary>
-        /// 建立新的地址物件（記憶體操作）
+        /// 建立新地址物件（記憶體操作）
         /// </summary>
         CustomerAddress CreateNewAddress(int customerId, int addressCount);
         
@@ -132,37 +112,12 @@ namespace ERPCore2.Services.Interfaces
         /// <summary>
         /// 驗證地址清單
         /// </summary>
-        ServiceResult ValidateAddresses(List<CustomerAddress> addresses);
+        ServiceResult ValidateAddressList(List<CustomerAddress> addresses);
         
         /// <summary>
-        /// 驗證單一地址
+        /// 取得地址完成度統計
         /// </summary>
-        Task<ServiceResult> ValidateAddressAsync(CustomerAddress address);
-        
-        /// <summary>
-        /// 確保主要地址存在（記憶體操作）
-        /// </summary>
-        ServiceResult EnsurePrimaryAddressExists(List<CustomerAddress> addresses);
-        
-        /// <summary>
-        /// 計算已完成的地址欄位數量
-        /// </summary>
-        int GetAddressCompletedFieldsCount(List<CustomerAddress> addresses);
-        
-        /// <summary>
-        /// 取得預設地址類型ID
-        /// </summary>
-        int? GetDefaultAddressTypeId(int addressIndex, List<AddressType> addressTypes);
-        
-        /// <summary>
-        /// 根據名稱取得預設地址類型ID
-        /// </summary>
-        Task<int?> GetDefaultAddressTypeIdAsync(string addressTypeName);
-        
-        /// <summary>
-        /// 取得地址（包含預設地址初始化）
-        /// </summary>
-        Task<List<CustomerAddress>> GetAddressesWithDefaultAsync(int customerId, List<AddressType> addressTypes);
+        int GetCompletedAddressCount(List<CustomerAddress> addresses);
         
         #endregion
     }

@@ -3,32 +3,84 @@ using ERPCore2.Data.Entities;
 namespace ERPCore2.Services.Interfaces
 {
     /// <summary>
-    /// 客戶服務介面
+    /// 客戶服務介面 - 繼承通用管理服務
     /// </summary>
     public interface ICustomerService : IGenericManagementService<Customer>
     {
-        Task<List<Customer>> GetAllAsync();
-        Task<Customer?> GetByIdAsync(int id);
-        Task<ServiceResult<Customer>> CreateAsync(Customer customer);
-        Task<ServiceResult<Customer>> UpdateAsync(Customer customer);
-        Task<ServiceResult> DeleteAsync(int id);
-        Task<bool> ExistsAsync(int id);
+        #region 業務特定查詢方法
+        
+        /// <summary>
+        /// 根據客戶代碼取得客戶
+        /// </summary>
         Task<Customer?> GetByCustomerCodeAsync(string customerCode);
+        
+        /// <summary>
+        /// 根據公司名稱搜尋客戶
+        /// </summary>
         Task<List<Customer>> GetByCompanyNameAsync(string companyName);
-        Task<(List<Customer> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize);
-        Task<List<Customer>> GetActiveCustomersAsync();
-          // 新增方法用於支持下拉列表
+        
+        /// <summary>
+        /// 檢查客戶代碼是否已存在
+        /// </summary>
+        Task<bool> IsCustomerCodeExistsAsync(string customerCode, int? excludeId = null);
+        
+        #endregion
+
+        #region 關聯資料查詢
+        
+        /// <summary>
+        /// 取得客戶類型清單
+        /// </summary>
         Task<List<CustomerType>> GetCustomerTypesAsync();
+        
+        /// <summary>
+        /// 取得行業類型清單
+        /// </summary>
         Task<List<IndustryType>> GetIndustryTypesAsync();
+        
+        /// <summary>
+        /// 取得聯絡類型清單
+        /// </summary>
         Task<List<ContactType>> GetContactTypesAsync();
+        
+        /// <summary>
+        /// 取得地址類型清單
+        /// </summary>
         Task<List<AddressType>> GetAddressTypesAsync();
-          // 聯絡資料管理方法
+        
+        #endregion
+
+        #region 聯絡資料管理
+        
+        /// <summary>
+        /// 取得客戶聯絡資料
+        /// </summary>
         Task<List<CustomerContact>> GetCustomerContactsAsync(int customerId);
+        
+        /// <summary>
+        /// 更新客戶聯絡資料
+        /// </summary>
         Task<ServiceResult> UpdateCustomerContactsAsync(int customerId, List<CustomerContact> contacts);
         
-        // 客戶初始化和完成度計算方法
+        #endregion
+
+        #region 輔助方法
+        
+        /// <summary>
+        /// 初始化新客戶
+        /// </summary>
         void InitializeNewCustomer(Customer customer);
+        
+        /// <summary>
+        /// 取得基本必填欄位數量
+        /// </summary>
         int GetBasicRequiredFieldsCount();
+        
+        /// <summary>
+        /// 取得基本完成欄位數量
+        /// </summary>
         int GetBasicCompletedFieldsCount(Customer customer);
+        
+        #endregion
     }
 }
