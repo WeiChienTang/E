@@ -2,273 +2,119 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services.Interfaces;
+using ERPCore2.Services.GenericManagementService;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 行業類型服務實作 - 使用 DbContextFactory 避免並發問題
+    /// 行業類型服務實作 - 繼承 GenericManagementService
     /// </summary>
-    public class IndustryTypeService : IIndustryTypeService, IGenericManagementService<IndustryType>
+    public class IndustryTypeService : GenericManagementService<IndustryType>, IIndustryTypeService
     {
-        private readonly IDbContextFactory<AppDbContext> _contextFactory;
         private readonly ILogger<IndustryTypeService> _logger;
 
-        public IndustryTypeService(IDbContextFactory<AppDbContext> contextFactory, ILogger<IndustryTypeService> logger)
+        public IndustryTypeService(AppDbContext context, ILogger<IndustryTypeService> logger) : base(context)
         {
-            _contextFactory = contextFactory;
             _logger = logger;
         }
 
-        public async Task<List<IndustryType>> GetAllAsync()
+        #region 覆寫基底方法
+
+        public override async Task<List<IndustryType>> GetAllAsync()
         {
-            try
-            {
-                using var context = _contextFactory.CreateDbContext();
-                return await context.IndustryTypes
-                    .Where(it => it.Status != EntityStatus.Deleted)
-                    .OrderBy(it => it.IndustryTypeName)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting all industry types");
-                throw;
-            }
+            return await _dbSet
+                .Where(it => !it.IsDeleted)
+                .OrderBy(it => it.IndustryTypeName)
+                .ToListAsync();
         }
 
-        public async Task<List<IndustryType>> GetActiveAsync()
+        public override async Task<List<IndustryType>> SearchAsync(string searchTerm)
         {
-            try
-            {
-                using var context = _contextFactory.CreateDbContext();
-                return await context.IndustryTypes
-                    .Where(it => it.Status == EntityStatus.Active)
-                    .OrderBy(it => it.IndustryTypeName)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting active industry types");
-                throw;
-            }
+            if (string.IsNullOrWhiteSpace(searchTerm))
+                return await GetAllAsync();
+
+            var lowerSearchTerm = searchTerm.ToLower();
+            return await _dbSet
+                .Where(it => !it.IsDeleted &&
+                           (it.IndustryTypeName.ToLower().Contains(lowerSearchTerm) ||
+                            (it.IndustryTypeCode != null && it.IndustryTypeCode.ToLower().Contains(lowerSearchTerm))))
+                .OrderBy(it => it.IndustryTypeName)
+                .ToListAsync();
         }
 
-        public async Task<IndustryType?> GetByIdAsync(int id)
+        public override async Task<ServiceResult> ValidateAsync(IndustryType entity)
         {
-            try
-            {
-                using var context = _contextFactory.CreateDbContext();
-                return await context.IndustryTypes
-                    .Where(it => it.IndustryTypeId == id && it.Status != EntityStatus.Deleted)
-                    .FirstOrDefaultAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting industry type by id {IndustryTypeId}", id);
-                throw;
-            }
-        }
+            var errors = new List<string>();
 
-        public async Task<ServiceResult<IndustryType>> CreateAsync(IndustryType industryType)
-        {
-            try
-            {
-                // 驗證
-                var validationResult = ValidateIndustryType(industryType);
-                if (!validationResult.IsSuccess)
-                    return ServiceResult<IndustryType>.Failure(validationResult.ErrorMessage!);
+            // 檢查必要欄位
+            if (string.IsNullOrWhiteSpace(entity.IndustryTypeName))
+                errors.Add("行業類型名稱為必填");
 
-                using var context = _contextFactory.CreateDbContext();
-                
-                // 檢查重複名稱
-                var isDuplicate = await context.IndustryTypes
-                    .AnyAsync(it => it.IndustryTypeName == industryType.IndustryTypeName && it.Status != EntityStatus.Deleted);
+            // 檢查長度限制
+            if (entity.IndustryTypeName?.Length > 100)
+                errors.Add("行業類型名稱不可超過100個字元");
+
+            if (!string.IsNullOrEmpty(entity.IndustryTypeCode) && entity.IndustryTypeCode.Length > 10)
+                errors.Add("行業類型代碼不可超過10個字元");
+
+            // 檢查名稱重複
+            if (!string.IsNullOrWhiteSpace(entity.IndustryTypeName))
+            {
+                var isDuplicate = await _dbSet
+                    .Where(it => it.IndustryTypeName == entity.IndustryTypeName && !it.IsDeleted)
+                    .Where(it => it.Id != entity.Id) // 排除自己
+                    .AnyAsync();
+
                 if (isDuplicate)
-                    return ServiceResult<IndustryType>.Failure("行業類型名稱已存在");
-
-                // 設定稽核欄位
-                industryType.CreatedDate = DateTime.Now;
-                industryType.CreatedBy = "System"; // TODO: 從認證取得使用者
-                industryType.Status = EntityStatus.Active;
-
-                context.IndustryTypes.Add(industryType);
-                await context.SaveChangesAsync();
-
-                _logger.LogInformation("Successfully created industry type {IndustryTypeName} with ID {IndustryTypeId}", 
-                    industryType.IndustryTypeName, industryType.IndustryTypeId);
-
-                return ServiceResult<IndustryType>.Success(industryType);
+                    errors.Add("行業類型名稱已存在");
             }
-            catch (Exception ex)
+
+            // 檢查代碼重複
+            if (!string.IsNullOrWhiteSpace(entity.IndustryTypeCode))
             {
-                _logger.LogError(ex, "Error creating industry type {IndustryTypeName}", industryType.IndustryTypeName);
-                return ServiceResult<IndustryType>.Failure("建立行業類型時發生錯誤");
+                var isCodeDuplicate = await _dbSet
+                    .Where(it => it.IndustryTypeCode == entity.IndustryTypeCode && !it.IsDeleted)
+                    .Where(it => it.Id != entity.Id) // 排除自己
+                    .AnyAsync();
+
+                if (isCodeDuplicate)
+                    errors.Add("行業類型代碼已存在");
             }
+
+            if (errors.Any())
+                return ServiceResult.Failure(string.Join("; ", errors));
+
+            return ServiceResult.Success();
         }
 
-        public async Task<ServiceResult<IndustryType>> UpdateAsync(IndustryType industryType)
+        protected override async Task<ServiceResult> CanDeleteAsync(IndustryType entity)
+        {
+            // 檢查是否有關聯的客戶
+            var hasRelatedCustomers = await _context.Customers
+                .AnyAsync(c => c.IndustryTypeId == entity.Id && !c.IsDeleted);
+
+            if (hasRelatedCustomers)
+                return ServiceResult.Failure("無法刪除，此行業類型已被客戶使用");
+
+            return ServiceResult.Success();
+        }        // 移除重複的 DeleteAsync 覆寫，使用基底類別的實作
+        // 基底類別已提供完整的刪除功能，包含 CanDeleteAsync 的檢查
+
+        #endregion
+
+        #region 業務特定方法
+
+        public override async Task<bool> IsNameExistsAsync(string name, int? excludeId = null)
         {
             try
             {
-                // 驗證
-                var validationResult = ValidateIndustryType(industryType);
-                if (!validationResult.IsSuccess)
-                    return ServiceResult<IndustryType>.Failure(validationResult.ErrorMessage!);
-
-                using var context = _contextFactory.CreateDbContext();
-                
-                // 取得現有資料
-                var existingIndustryType = await context.IndustryTypes
-                    .Where(it => it.IndustryTypeId == industryType.IndustryTypeId && it.Status != EntityStatus.Deleted)
-                    .FirstOrDefaultAsync();
-                    
-                if (existingIndustryType == null)
-                    return ServiceResult<IndustryType>.Failure("行業類型不存在");
-
-                // 檢查重複名稱（排除自己）
-                var isDuplicate = await context.IndustryTypes
-                    .AnyAsync(it => it.IndustryTypeName == industryType.IndustryTypeName && 
-                                  it.IndustryTypeId != industryType.IndustryTypeId && 
-                                  it.Status != EntityStatus.Deleted);
-                if (isDuplicate)
-                    return ServiceResult<IndustryType>.Failure("行業類型名稱已存在");
-
-                // 更新屬性
-                existingIndustryType.IndustryTypeName = industryType.IndustryTypeName;
-                existingIndustryType.IndustryTypeCode = industryType.IndustryTypeCode;
-                existingIndustryType.ModifiedDate = DateTime.Now;
-                existingIndustryType.ModifiedBy = "System"; // TODO: 從認證取得使用者
-
-                await context.SaveChangesAsync();
-
-                _logger.LogInformation("Successfully updated industry type {IndustryTypeId}", industryType.IndustryTypeId);
-
-                return ServiceResult<IndustryType>.Success(existingIndustryType);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating industry type {IndustryTypeId}", industryType.IndustryTypeId);
-                return ServiceResult<IndustryType>.Failure("更新行業類型時發生錯誤");
-            }
-        }
-
-        public async Task<ServiceResult> DeleteAsync(int id)
-        {
-            try
-            {
-                using var context = _contextFactory.CreateDbContext();
-                
-                var industryType = await context.IndustryTypes
-                    .Where(it => it.IndustryTypeId == id && it.Status != EntityStatus.Deleted)
-                    .FirstOrDefaultAsync();
-                    
-                if (industryType == null)
-                    return ServiceResult.Failure("行業類型不存在");
-
-                // 檢查是否有關聯的客戶
-                var hasRelatedCustomers = await context.Customers
-                    .AnyAsync(c => c.IndustryTypeId == id && c.Status != EntityStatus.Deleted);
-
-                if (hasRelatedCustomers)
-                    return ServiceResult.Failure("無法刪除，此行業類型已被客戶使用");
-
-                // 軟刪除
-                industryType.Status = EntityStatus.Deleted;
-                industryType.ModifiedDate = DateTime.Now;
-                industryType.ModifiedBy = "System"; // TODO: 從認證取得使用者
-
-                await context.SaveChangesAsync();
-
-                _logger.LogInformation("Successfully deleted industry type {IndustryTypeId}", id);
-
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting industry type {IndustryTypeId}", id);
-                return ServiceResult.Failure("刪除行業類型時發生錯誤");
-            }
-        }
-
-        public async Task<ServiceResult> ToggleStatusAsync(int id, EntityStatus newStatus)
-        {
-            try
-            {
-                using var context = _contextFactory.CreateDbContext();
-                
-                var industryType = await context.IndustryTypes
-                    .Where(it => it.IndustryTypeId == id && it.Status != EntityStatus.Deleted)
-                    .FirstOrDefaultAsync();
-                    
-                if (industryType == null)
-                    return ServiceResult.Failure("行業類型不存在");
-
-                industryType.Status = newStatus;
-                industryType.ModifiedDate = DateTime.Now;
-                industryType.ModifiedBy = "System"; // TODO: 從認證取得使用者
-
-                await context.SaveChangesAsync();
-
-                _logger.LogInformation("Successfully updated status for industry type {IndustryTypeId} to {Status}", 
-                    id, newStatus);
-
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating status for industry type {IndustryTypeId}", id);
-                return ServiceResult.Failure("變更行業類型狀態時發生錯誤");
-            }
-        }
-
-        public async Task<ServiceResult> ToggleStatusAsync(int id)
-        {
-            try
-            {
-                using var context = _contextFactory.CreateDbContext();
-                
-                var industryType = await context.IndustryTypes
-                    .Where(it => it.IndustryTypeId == id && it.Status != EntityStatus.Deleted)
-                    .FirstOrDefaultAsync();
-                    
-                if (industryType == null)
-                    return ServiceResult.Failure("行業類型不存在");
-
-                // 切換狀態（Active <-> Inactive）
-                industryType.Status = industryType.Status == EntityStatus.Active 
-                    ? EntityStatus.Inactive 
-                    : EntityStatus.Active;
-                
-                industryType.ModifiedDate = DateTime.Now;
-                industryType.ModifiedBy = "System"; // TODO: 從認證取得使用者
-
-                await context.SaveChangesAsync();
-
-                _logger.LogInformation("Successfully toggled status for industry type {IndustryTypeId} to {Status}", 
-                    id, industryType.Status);
-
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error toggling status for industry type {IndustryTypeId}", id);
-                return ServiceResult.Failure("變更行業類型狀態時發生錯誤");
-            }
-        }
-
-        public async Task<bool> IsNameExistsAsync(string name, int? excludeId = null)
-        {
-            try
-            {
-                using var context = _contextFactory.CreateDbContext();
-                
-                var query = context.IndustryTypes
-                    .Where(it => it.IndustryTypeName == name && it.Status != EntityStatus.Deleted);
+                var query = _dbSet
+                    .Where(it => it.IndustryTypeName == name && !it.IsDeleted);
 
                 if (excludeId.HasValue)
-                    query = query.Where(it => it.IndustryTypeId != excludeId.Value);
+                    query = query.Where(it => it.Id != excludeId.Value);
 
                 return await query.AnyAsync();
             }
@@ -277,52 +123,36 @@ namespace ERPCore2.Services
                 _logger.LogError(ex, "Error checking if industry type name exists {IndustryTypeName}", name);
                 throw;
             }
-        }
-
-        public async Task<bool> IsIndustryTypeNameExistsAsync(string industryTypeName, int? excludeId = null)
+        }        public async Task<bool> IsIndustryTypeNameExistsAsync(string industryTypeName, int? excludeId = null)
         {
             return await IsNameExistsAsync(industryTypeName, excludeId);
         }
 
-        public async Task<(List<IndustryType> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize)
+        public async Task<bool> IsIndustryTypeCodeExistsAsync(string industryTypeCode, int? excludeId = null)
         {
             try
             {
-                using var context = _contextFactory.CreateDbContext();
-                
-                var query = context.IndustryTypes
-                    .Where(it => it.Status != EntityStatus.Deleted);
+                if (string.IsNullOrWhiteSpace(industryTypeCode))
+                    return false;
 
-                var totalCount = await query.CountAsync();
+                var query = _dbSet
+                    .Where(it => it.IndustryTypeCode == industryTypeCode && !it.IsDeleted);
 
-                var items = await query
-                    .OrderBy(it => it.IndustryTypeName)
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync();
+                if (excludeId.HasValue)
+                    query = query.Where(it => it.Id != excludeId.Value);
 
-                return (items, totalCount);
+                return await query.AnyAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting paged industry types for page {PageNumber}, size {PageSize}", 
-                    pageNumber, pageSize);
+                _logger.LogError(ex, "Error checking if industry type code exists {IndustryTypeCode}", industryTypeCode);
                 throw;
             }
-        }
-
-        private ServiceResult ValidateIndustryType(IndustryType industryType)
+        }        public async Task<(List<IndustryType> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize)
         {
-            if (string.IsNullOrWhiteSpace(industryType.IndustryTypeName))
-                return ServiceResult.Failure("行業類型名稱為必填");
-
-            if (industryType.IndustryTypeName.Length > 30)
-                return ServiceResult.Failure("行業類型名稱不可超過30個字元");
-
-            if (!string.IsNullOrEmpty(industryType.IndustryTypeCode) && industryType.IndustryTypeCode.Length > 10)
-                return ServiceResult.Failure("行業類型代碼不可超過10個字元");
-
-            return ServiceResult.Success();
+            return await GetPagedAsync(pageNumber, pageSize, null);
         }
+
+        #endregion
     }
 }

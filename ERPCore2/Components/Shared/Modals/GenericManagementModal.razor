@@ -276,11 +276,12 @@
         {
             ClearMessages();
 
-            var result = await Service.ToggleStatusAsync(entityId, newStatus);
+            // 使用基底類別的 ToggleStatusAsync 方法，它會自動切換狀態
+            var result = await Service.ToggleStatusAsync(entityId);
             
             if (result.IsSuccess)
             {
-                successMessage = $"{EntityDisplayName}狀態已更新為{GetStatusText(newStatus)}";
+                successMessage = $"{EntityDisplayName}狀態已更新";
                 await LoadEntitiesInternal(); // 使用內部方法避免重複鎖定
             }
             else
@@ -297,7 +298,7 @@
             _operationSemaphore.Release();
             StateHasChanged();
         }
-    }    private async Task DeleteEntity(int entityId)
+    }private async Task DeleteEntity(int entityId)
     {
         await _operationSemaphore.WaitAsync();
         try
