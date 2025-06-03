@@ -184,12 +184,11 @@
                             
                             @if (IsEditMode)
                             {
-                                <!-- 系統資訊區塊 (僅編輯模式顯示) -->                                
-                                <FormSectionComponent Title="系統資訊" 
+                                <!-- 系統資訊區塊 (僅編輯模式顯示) -->                                  <FormSectionComponent Title="系統資訊" 
                                                     IconClass="fas fa-cog"
                                                     SectionType="@FormSectionType.System"
                                                     RequiredFieldsCount="1"
-                                                    CompletedFieldsCount="@(customer.Status != EntityStatus.Default ? 1 : 0)">
+                                                    CompletedFieldsCount="1">
                                     <div class="row">
                                         <div class="col-md-3">
                                             <SelectComponent TValue="EntityStatus"

@@ -17,88 +17,38 @@ Data 資料夾包含了 ERPCore2 系統的資料存取層相關檔案，主要�
 - `Data/Entities/Industries/Industry.cs` → `namespace ERPCore2.Data.Entities`
 - `Data/Context/AppDbContext.cs` → `namespace ERPCore2.Data.Context`
 - `Data/Enums/CommonEnums.cs` → `namespace ERPCore2.Data.Enums`
-
 ---
-
-## 實體設計規範
-
-### 必要屬性標籤
-
-#### 1. **主鍵設計**
-```csharp
-// 主鍵命名格式：[實體名稱]Id
-public int CustomerId { get; set; }
-public int AddressTypeId { get; set; }
-```
-
-#### 2. **必要欄位標籤**
-```csharp
-[Required(ErrorMessage = "欄位名稱為必填")]
-[MaxLength(長度, ErrorMessage = "欄位名稱不可超過N個字元")]
-[Display(Name = "中文顯示名稱")]
-public string PropertyName { get; set; } = string.Empty;
-```
-
-**範例：**
-```csharp
-[Required(ErrorMessage = "客戶代碼為必填")]
-[MaxLength(20, ErrorMessage = "客戶代碼不可超過20個字元")]
-[Display(Name = "客戶代碼")]
-public string CustomerCode { get; set; } = string.Empty;
-```
-
-#### 3. **選擇性欄位標籤**
-```csharp
-[MaxLength(長度, ErrorMessage = "欄位名稱不可超過N個字元")]
-[Display(Name = "中文顯示名稱")]
-public string? PropertyName { get; set; }
-```
-
-**範例：**
-```csharp
-[MaxLength(100, ErrorMessage = "描述不可超過100個字元")]
-[Display(Name = "描述")]
-public string? Description { get; set; }
-```
-
-#### 4. **外鍵標籤**
-```csharp
-[Display(Name = "關聯實體名稱")]
-public int? RelatedEntityId { get; set; }
-```
-
-**範例：**
-```csharp
-[Display(Name = "客戶類型")]
-public int? CustomerTypeId { get; set; }
-```
-
-#### 5. **布林值標籤**
-```csharp
-[Display(Name = "中文顯示名稱")]
-public bool PropertyName { get; set; } = false;
-```
-
-**範例：**
-```csharp
-[Display(Name = "是否為主要地址")]
-public bool IsPrimary { get; set; } = false;
-```
 
 ### 標準實體結構
 
 每個實體都應包含以下標準結構：
+1. 包含必要標籤
+2. 繼承 BaseEntity 檔案位置 : `Data/BaseEntity`
 
+#### BaseEntity 已包含的屬性
+所有繼承 `BaseEntity` 的實體都會自動擁有以下屬性，**請勿重複定義**：
+
+- `Id` (int) - 主鍵 ID
+- `Status` (EntityStatus) - 實體狀態
+- `IsDeleted` (bool) - 軟刪除標記
+- `CreatedAt` (DateTime) - 建立時間
+- `UpdatedAt` (DateTime?) - 最後更新時間
+- `CreatedBy` (string?) - 建立者 ID
+- `UpdatedBy` (string?) - 最後更新者 ID
+
+#### 新實體範例
 ```csharp
 using System.ComponentModel.DataAnnotations;
 using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Data.Entities
 {
-    public class YourEntity
+    /// <summary>
+    /// 您的實體類別 - 繼承 BaseEntity 後自動包含基礎屬性
+    /// </summary>
+    public class YourEntity : BaseEntity
     {
-        // 主鍵
-        public int YourEntityId { get; set; }
+        // ⚠️ 注意：不要重複定義 Id、Status、IsDeleted、CreatedAt、UpdatedAt、CreatedBy、UpdatedBy
         
         // 必要屬性
         [Required(ErrorMessage = "名稱為必填")]
@@ -114,25 +64,6 @@ namespace ERPCore2.Data.Entities
         // 外鍵（如果適用）
         [Display(Name = "相關實體")]
         public int? RelatedEntityId { get; set; }
-        
-        // 稽核欄位（依需要）
-        [Display(Name = "建立日期")]
-        public DateTime CreatedDate { get; set; }
-        
-        [MaxLength(50, ErrorMessage = "建立者不可超過50個字元")]
-        [Display(Name = "建立者")]
-        public string? CreatedBy { get; set; }
-        
-        [Display(Name = "修改日期")]
-        public DateTime? ModifiedDate { get; set; }
-        
-        [MaxLength(50, ErrorMessage = "修改者不可超過50個字元")]
-        [Display(Name = "修改者")]
-        public string? ModifiedBy { get; set; }
-        
-        // 狀態欄位（必要）
-        [Display(Name = "狀態")]
-        public EntityStatus Status { get; set; } = EntityStatus.Default;
         
         // 導航屬性
         public RelatedEntity? RelatedEntity { get; set; }
@@ -171,46 +102,14 @@ public int? OptionalEntityId { get; set; }
 public OptionalEntity? OptionalEntity { get; set; }
 ```
 
-### 常見欄位模式
-
-#### 稽核欄位組合
-```csharp
-[Display(Name = "建立日期")]
-public DateTime CreatedDate { get; set; }
-
-[MaxLength(50, ErrorMessage = "建立者不可超過50個字元")]
-[Display(Name = "建立者")]
-public string? CreatedBy { get; set; }
-
-[Display(Name = "修改日期")]
-public DateTime? ModifiedDate { get; set; }
-
-[MaxLength(50, ErrorMessage = "修改者不可超過50個字元")]
-[Display(Name = "修改者")]
-public string? ModifiedBy { get; set; }
-```
-
-#### 狀態欄位（必要）
-```csharp
-[Display(Name = "狀態")]
-public EntityStatus Status { get; set; } = EntityStatus.Default;
-```
-
-#### 主要標記欄位
-```csharp
-[Display(Name = "是否為主要")]
-public bool IsPrimary { get; set; } = false;
-```
-
----
-
 ## 開發檢查清單
 
 建立新實體時，請確認以下項目：
 
 ### 基本結構
 - [ ] 使用正確的命名空間 `ERPCore2.Data.Entities`
-- [ ] 主鍵命名格式為 `[實體名稱]Id`
+- [ ] 繼承 `BaseEntity` 類別
+- [ ] **不可重複定義** BaseEntity 已包含的屬性（Id、Status、IsDeleted、CreatedAt、UpdatedAt、CreatedBy、UpdatedBy）
 - [ ] 包含 `using System.ComponentModel.DataAnnotations;`
 - [ ] 包含 `using ERPCore2.Data.Enums;`
 
@@ -220,11 +119,6 @@ public bool IsPrimary { get; set; } = false;
 - [ ] 所有屬性都有 `[Display(Name = "中文名稱")]` 標籤
 - [ ] 錯誤訊息使用繁體中文
 - [ ] 字串屬性初始化為 `string.Empty` 或可空類型
-
-### 標準欄位
-- [ ] 包含 `EntityStatus Status` 欄位，預設值為 `EntityStatus.Default`
-- [ ] 依需要包含稽核欄位（CreatedDate, CreatedBy, ModifiedDate, ModifiedBy）
-- [ ] 選擇性外鍵使用可空類型 `int?`
 
 ### 導航屬性
 - [ ] 正確設定父子關係的導航屬性

@@ -1,17 +1,21 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Data.Entities
 {
-    public class CustomerAddress
+    /// <summary>
+    /// 客戶地址實體 - 定義客戶的地址資訊
+    /// </summary>
+    public class CustomerAddress : BaseEntity
     {
-        // Primary Key
-        public int AddressId { get; set; }
         // Foreign Keys
         [Display(Name = "客戶")]
+        [ForeignKey(nameof(Customer))]
         public int CustomerId { get; set; }
         
         [Display(Name = "地址類型")]
+        [ForeignKey(nameof(AddressType))]
         public int? AddressTypeId { get; set; }
         
         // Optional Properties
@@ -33,9 +37,6 @@ namespace ERPCore2.Data.Entities
         
         [Display(Name = "是否為主要地址")]
         public bool IsPrimary { get; set; } = false;
-          // Status
-        [Display(Name = "狀態")]
-        public EntityStatus Status { get; set; } = EntityStatus.Default;
         
         // Navigation Properties
         public Customer Customer { get; set; } = null!;

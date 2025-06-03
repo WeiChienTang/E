@@ -13,14 +13,12 @@ namespace ERPCore2.Data
         /// </summary>
         [Display(Name = "ID")]
         [Required(ErrorMessage = "請設定 ID")]
-        public int Id { get; set; }
-
-        /// <summary>
+        public int Id { get; set; }        /// <summary>
         /// 實體狀態
         /// </summary>
         [Display(Name = "實體狀態")]
         [Required(ErrorMessage = "請設定實體狀態")]
-        public EntityStatus Status { get; set; } = EntityStatus.Default;
+        public EntityStatus Status { get; set; } = EntityStatus.Active;
 
         /// <summary>
         /// 是否已刪除（軟刪除標記）

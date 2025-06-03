@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Data;
+using ERPCore2.Data.Context;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services.Interfaces;
 
@@ -12,10 +13,10 @@ namespace ERPCore2.Services.GenericManagementService
     public abstract class GenericManagementService<T> : IGenericManagementService<T> 
         where T : BaseEntity
     {
-        protected readonly ApplicationDbContext _context;
+        protected readonly AppDbContext _context;
         protected readonly DbSet<T> _dbSet;
 
-        protected GenericManagementService(ApplicationDbContext context)
+        protected GenericManagementService(AppDbContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _dbSet = _context.Set<T>();

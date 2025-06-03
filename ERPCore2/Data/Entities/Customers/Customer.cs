@@ -1,13 +1,16 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Data.Entities
 {
-    public class Customer
+    /// <summary>
+    /// 客戶實體 - 定義客戶基本資訊
+    /// </summary>
+    [Index(nameof(CustomerCode), IsUnique = true)]
+    public class Customer : BaseEntity
     {
-        // Primary Key
-        public int CustomerId { get; set; }
-        
         // Required Properties
         [Required(ErrorMessage = "客戶代碼為必填")]
         [MaxLength(20, ErrorMessage = "客戶代碼不可超過20個字元")]
@@ -30,28 +33,14 @@ namespace ERPCore2.Data.Entities
         
         // Foreign Keys
         [Display(Name = "客戶類型")]
+        [ForeignKey(nameof(CustomerType))]
         public int? CustomerTypeId { get; set; }
-          [Display(Name = "行業類型")]
+        
+        [Display(Name = "行業類型")]
+        [ForeignKey(nameof(IndustryType))]
         public int? IndustryTypeId { get; set; }
         
-        // Audit Fields
-        [Display(Name = "建立日期")]
-        public DateTime CreatedDate { get; set; }
-        
-        [MaxLength(50, ErrorMessage = "建立者不可超過50個字元")]
-        [Display(Name = "建立者")]
-        public string? CreatedBy { get; set; }
-        
-        [Display(Name = "修改日期")]
-        public DateTime? ModifiedDate { get; set; }
-        
-        [MaxLength(50, ErrorMessage = "修改者不可超過50個字元")]
-        [Display(Name = "修改者")]
-        public string? ModifiedBy { get; set; }
-          // Status
-        [Display(Name = "狀態")]
-        public EntityStatus Status { get; set; } = EntityStatus.Default;
-          // Navigation Properties
+        // Navigation Properties
         public CustomerType? CustomerType { get; set; }
         public IndustryType? IndustryType { get; set; }
         public ICollection<CustomerContact> CustomerContacts { get; set; } = new List<CustomerContact>();

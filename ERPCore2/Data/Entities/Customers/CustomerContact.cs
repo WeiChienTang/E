@@ -1,19 +1,22 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Data.Entities
 {
-    public class CustomerContact
+    /// <summary>
+    /// 客戶聯絡方式實體 - 定義客戶的聯絡資訊
+    /// </summary>
+    public class CustomerContact : BaseEntity
     {
-        // Primary Key
-        public int ContactId { get; set; }
-        
         // Foreign Keys
         [Required(ErrorMessage = "客戶為必填")]
         [Display(Name = "客戶")]
+        [ForeignKey(nameof(Customer))]
         public int CustomerId { get; set; }
         
         [Display(Name = "聯絡類型")]
+        [ForeignKey(nameof(ContactType))]
         public int? ContactTypeId { get; set; }
         
         // Required Properties
@@ -25,9 +28,6 @@ namespace ERPCore2.Data.Entities
         // Optional Properties
         [Display(Name = "是否為主要聯絡方式")]
         public bool IsPrimary { get; set; } = false;
-          // Status
-        [Display(Name = "狀態")]
-        public EntityStatus Status { get; set; } = EntityStatus.Default;
         
         // Navigation Properties
         public Customer Customer { get; set; } = null!;
