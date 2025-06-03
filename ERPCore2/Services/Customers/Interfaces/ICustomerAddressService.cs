@@ -42,6 +42,16 @@ namespace ERPCore2.Services.Interfaces
         /// </summary>
         Task<ServiceResult> EnsureCustomerHasPrimaryAddressAsync(int customerId);
         
+        /// <summary>
+        /// 取得客戶地址清單並初始化預設地址（如果需要）
+        /// </summary>
+        Task<List<CustomerAddress>> GetAddressesWithDefaultAsync(int customerId, List<AddressType> addressTypes);
+        
+        /// <summary>
+        /// 更新客戶的所有地址資料
+        /// </summary>
+        Task<ServiceResult> UpdateCustomerAddressesAsync(int customerId, List<CustomerAddress> addresses);
+        
         #endregion
 
         #region 記憶體操作方法（用於UI編輯）
@@ -55,6 +65,11 @@ namespace ERPCore2.Services.Interfaces
         /// 初始化預設地址清單（記憶體操作）
         /// </summary>
         void InitializeDefaultAddresses(List<CustomerAddress> addressList, List<AddressType> addressTypes);
+        
+        /// <summary>
+        /// 取得預設地址類型ID（記憶體操作）
+        /// </summary>
+        int? GetDefaultAddressTypeId(int addressCount, List<AddressType> addressTypes);
         
         /// <summary>
         /// 新增地址到清單（記憶體操作）
@@ -115,9 +130,18 @@ namespace ERPCore2.Services.Interfaces
         ServiceResult ValidateAddressList(List<CustomerAddress> addresses);
         
         /// <summary>
+        /// 確保地址清單中有主要地址（記憶體操作）
+        /// </summary>
+        ServiceResult EnsurePrimaryAddressExists(List<CustomerAddress> addresses);
+          /// <summary>
         /// 取得地址完成度統計
         /// </summary>
         int GetCompletedAddressCount(List<CustomerAddress> addresses);
+        
+        /// <summary>
+        /// 取得地址已完成欄位數量
+        /// </summary>
+        int GetAddressCompletedFieldsCount(List<CustomerAddress> addresses);
         
         #endregion
     }

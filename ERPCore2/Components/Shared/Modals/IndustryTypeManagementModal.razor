@@ -108,9 +108,8 @@
                                                         <span class="badge @(industryType.Status == EntityStatus.Active ? "bg-success" : "bg-secondary")">
                                                             @GetStatusText(industryType.Status)
                                                         </span>
-                                                    </td>
-                                                    <td>
-                                                        <small class="text-muted">@industryType.CreatedDate.ToString("yyyy/MM/dd")</small>
+                                                    </td>                                                    <td>
+                                                        <small class="text-muted">@industryType.CreatedAt.ToString("yyyy/MM/dd")</small>
                                                     </td>
                                                     <td class="text-end">
                                                         <div class="btn-group btn-group-sm" role="group">
@@ -121,7 +120,7 @@
                                                                                Size="ButtonSize.Small"
                                                                                IconClass="fas fa-pause"
                                                                                Title="停用"
-                                                                               OnClick="@(() => ToggleIndustryTypeStatus(industryType.IndustryTypeId, EntityStatus.Inactive))" />
+                                                                               OnClick="@(() => ToggleIndustryTypeStatus(industryType.Id, EntityStatus.Inactive))" />
                                                             }
                                                             else
                                                             {
@@ -130,7 +129,7 @@
                                                                                Size="ButtonSize.Small"
                                                                                IconClass="fas fa-play"
                                                                                Title="啟用"
-                                                                               OnClick="@(() => ToggleIndustryTypeStatus(industryType.IndustryTypeId, EntityStatus.Active))" />
+                                                                               OnClick="@(() => ToggleIndustryTypeStatus(industryType.Id, EntityStatus.Active))" />
                                                             }
                                                             
                                                             <ButtonComponent Text="" 
@@ -138,7 +137,7 @@
                                                                            Size="ButtonSize.Small"
                                                                            IconClass="fas fa-trash"
                                                                            Title="刪除"
-                                                                           OnClick="@(() => DeleteIndustryType(industryType.IndustryTypeId))" />
+                                                                           OnClick="@(() => DeleteIndustryType(industryType.Id))" />
                                                         </div>
                                                     </td>
                                                 </tr>

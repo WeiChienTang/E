@@ -1,7 +1,6 @@
 @page "/customers/create"
 @page "/customers/{CustomerId:int}/edit"
 @inject ICustomerService CustomerService
-@inject IAddressService AddressService
 @inject IContactTypeService ContactTypeService
 @inject ICustomerContactService CustomerContactService
 @inject ICustomerAddressService CustomerAddressService
@@ -96,7 +95,7 @@
                                                                                 ValueChanged="@((int? value) => { customer.CustomerTypeId = value; LogChange("CustomerTypeId", value?.ToString() ?? "null"); StateHasChanged(); })"
                                                                                 LoadDataFunc="@(() => CustomerService.GetCustomerTypesAsync())"
                                                                                 GetItemText="@((CustomerType item) => item.TypeName)"
-                                                                                GetItemValue="@((CustomerType item) => (object)item.CustomerTypeId)"
+                                                                                GetItemValue="@((CustomerType item) => (object)item.Id)"
                                                                                 EmptyOptionText="請選擇客戶類型..."
                                                                                 ShowManagementButton="true"
                                                                                 OnManagementClick="ShowCustomerTypeModal" />
@@ -109,7 +108,7 @@
                                                                                 ValueChanged="@((int? value) => { customer.IndustryTypeId = value; LogChange("IndustryTypeId", value?.ToString() ?? "null"); StateHasChanged(); })"
                                                                                 LoadDataFunc="@(() => CustomerService.GetIndustryTypesAsync())"
                                                                                 GetItemText="@((IndustryType item) => item.IndustryTypeName)"
-                                                                                GetItemValue="@((IndustryType item) => (object)item.IndustryTypeId)"
+                                                                                GetItemValue="@((IndustryType item) => (object)item.Id)"
                                                                                 EmptyOptionText="請選擇行業類型..."
                                                                                 ShowManagementButton="true"
                                                                                 OnManagementClick="ShowIndustryTypeModal" />
@@ -205,16 +204,14 @@
                                         
                                         <div class="col-md-3">
                                             <InputComponent Id="modifiedBy" 
-                                                          Label="修改者" 
-                                                          Value="@customer.ModifiedBy"
-                                                          ValueChanged="@(value => customer.ModifiedBy = value)" />
-                                            <ValidationMessage For="@(() => customer.ModifiedBy)" class="text-danger" />
+                                                          Label="修改者"                                                          Value="@customer.UpdatedBy"
+                                                          ValueChanged="@(value => customer.UpdatedBy = value)" />
+                                            <ValidationMessage For="@(() => customer.UpdatedBy)" class="text-danger" />
                                         </div>
                                         
-                                        <div class="col-md-3">
-                                            <InputComponent Id="createdDate" 
+                                        <div class="col-md-3">                                            <InputComponent Id="createdDate" 
                                                           Label="建立日期" 
-                                                          Value="@customer.CreatedDate.ToString("yyyy-MM-dd HH:mm")"
+                                                          Value="@customer.CreatedAt.ToString("yyyy-MM-dd HH:mm")"
                                                           IsReadOnly="true" />
                                         </div>
                                         
@@ -451,9 +448,8 @@
         // 填入現有資料
         customerCode = existingCustomer.CustomerCode;
         customer = existingCustomer;
-        customer.ModifiedBy = "系統管理員"; // 可以從認證系統獲取
-          // 載入客戶地址資料（使用新的簡化方法）
-        customerAddresses = await AddressService.GetAddressesWithDefaultAsync(CustomerId.Value, addressTypes);
+        customer.UpdatedBy = "系統管理員"; // 可以從認證系統獲取        // 載入客戶地址資料（使用新的簡化方法）
+        customerAddresses = await CustomerAddressService.GetAddressesWithDefaultAsync(CustomerId.Value, addressTypes);
         
         // 載入客戶聯絡資料
         customerContacts = (await CustomerService.GetCustomerContactsAsync(CustomerId.Value)).ToList();
@@ -519,9 +515,8 @@
                 errorMessage = primaryContactResult.ErrorMessage;
                 return;
             }
-            
-            // 驗證地址資料
-            var addressValidationResult = CustomerAddressService.ValidateAddresses(customerAddresses);
+              // 驗證地址資料
+            var addressValidationResult = CustomerAddressService.ValidateAddressList(customerAddresses);
             if (!addressValidationResult.IsSuccess)
             {
                 errorMessage = addressValidationResult.ErrorMessage;
@@ -549,7 +544,7 @@
                 {
                     try
                     {
-                        await AddressService.UpdateCustomerAddressesAsync(customer.CustomerId, customerAddresses);
+                        await CustomerAddressService.UpdateCustomerAddressesAsync(customer.Id, customerAddresses);
                     }
                     catch (Exception ex)
                     {
@@ -563,7 +558,7 @@
                 {
                     try
                     {
-                        await CustomerService.UpdateCustomerContactsAsync(customer.CustomerId, customerContacts);
+                        await CustomerService.UpdateCustomerContactsAsync(customer.Id, customerContacts);
                     }
                     catch (Exception ex)
                     {
@@ -606,7 +601,7 @@
     {
         try
         {
-            var newAddress = CustomerAddressService.CreateNewAddress(customer.CustomerId, customerAddresses.Count);
+            var newAddress = CustomerAddressService.CreateNewAddress(customer.Id, customerAddresses.Count);
             newAddress.AddressTypeId = CustomerAddressService.GetDefaultAddressTypeId(customerAddresses.Count, addressTypes);
             
             var result = CustomerAddressService.AddAddress(customerAddresses, newAddress);
@@ -845,11 +840,11 @@
     }
       private string GetContactValue(string contactTypeName)
     {
-        return CustomerContactService.GetContactValue(customer.CustomerId, contactTypeName, contactTypes, customerContacts);
+        return CustomerContactService.GetContactValue(customer.Id, contactTypeName, contactTypes, customerContacts);
     }
       private void UpdateContactValue(string contactTypeName, string value)
     {
-        var result = CustomerContactService.UpdateContactValue(customer.CustomerId, contactTypeName, value, contactTypes, customerContacts);
+        var result = CustomerContactService.UpdateContactValue(customer.Id, contactTypeName, value, contactTypes, customerContacts);
         
         if (!result.IsSuccess)
         {
@@ -958,16 +953,12 @@
     private int GetContactTypeId(ContactType contactType) => contactType.Id;
     private EntityStatus GetContactTypeStatus(ContactType contactType) => contactType.Status;
     private void SetContactTypeCreatedBy(ContactType contactType, string user) => contactType.CreatedBy = user;
-    private void SetContactTypeStatus(ContactType contactType, EntityStatus status) => contactType.Status = status;
-
-    // CustomerType 的委派方法
-    private int GetCustomerTypeId(CustomerType customerType) => customerType.CustomerTypeId;
+    private void SetContactTypeStatus(ContactType contactType, EntityStatus status) => contactType.Status = status;    // CustomerType 的委派方法
+    private int GetCustomerTypeId(CustomerType customerType) => customerType.Id;
     private EntityStatus GetCustomerTypeStatus(CustomerType customerType) => customerType.Status;
     private void SetCustomerTypeCreatedBy(CustomerType customerType, string user) => customerType.CreatedBy = user;
-    private void SetCustomerTypeStatus(CustomerType customerType, EntityStatus status) => customerType.Status = status;
-
-    // IndustryType 的委派方法
-    private int GetIndustryTypeId(IndustryType industryType) => industryType.IndustryTypeId;
+    private void SetCustomerTypeStatus(CustomerType customerType, EntityStatus status) => customerType.Status = status;    // IndustryType 的委派方法
+    private int GetIndustryTypeId(IndustryType industryType) => industryType.Id;
     private EntityStatus GetIndustryTypeStatus(IndustryType industryType) => industryType.Status;
     private void SetIndustryTypeCreatedBy(IndustryType industryType, string user) => industryType.CreatedBy = user;
     private void SetIndustryTypeStatus(IndustryType industryType, EntityStatus status) => industryType.Status = status;
@@ -1018,9 +1009,7 @@
         <th>描述</th>
         <th>狀態</th>
         <th>建立日期</th>
-    };
-
-    private RenderFragment<ContactType> ContactTypeTableRow => context => __builder =>
+    };    private RenderFragment<ContactType> ContactTypeTableRow => context => __builder =>
     {
         <td>
             <strong>@context.TypeName</strong>
@@ -1046,7 +1035,7 @@
         </td>
         <td>
             <small class="text-muted">
-                @context.CreatedDate.ToString("yyyy/MM/dd HH:mm")
+                @context.CreatedAt.ToString("yyyy/MM/dd HH:mm")
                 <br />
                 <span class="text-muted">by @context.CreatedBy</span>
             </small>
@@ -1099,9 +1088,7 @@
         <th>描述</th>
         <th>狀態</th>
         <th>建立日期</th>
-    };
-
-    private RenderFragment<CustomerType> CustomerTypeTableRow => context => __builder =>
+    };    private RenderFragment<CustomerType> CustomerTypeTableRow => context => __builder =>
     {
         <td>
             <strong>@context.TypeName</strong>
@@ -1127,12 +1114,12 @@
         </td>
         <td>
             <small class="text-muted">
-                @context.CreatedDate.ToString("yyyy/MM/dd HH:mm")
+                @context.CreatedAt.ToString("yyyy/MM/dd HH:mm")
                 <br />
                 <span class="text-muted">by @context.CreatedBy</span>
             </small>
         </td>
-    };    // IndustryType RenderFragment 方法
+    };// IndustryType RenderFragment 方法
     private RenderFragment<IndustryType> CreateIndustryTypeForm => context => __builder =>
     {
         <div class="row">
@@ -1201,7 +1188,7 @@
         </td>
         <td>
             <small class="text-muted">
-                @context.CreatedDate.ToString("yyyy/MM/dd HH:mm")
+                @context.CreatedAt.ToString("yyyy/MM/dd HH:mm")
                 <br />
                 <span class="text-muted">by @context.CreatedBy</span>
             </small>

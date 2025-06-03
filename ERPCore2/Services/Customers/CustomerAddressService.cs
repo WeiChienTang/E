@@ -5,6 +5,7 @@ using ERPCore2.Services.Interfaces;
 using ERPCore2.Services.GenericManagementService;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace ERPCore2.Services
 {
@@ -279,6 +280,79 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<List<CustomerAddress>> GetAddressesWithDefaultAsync(int customerId, List<AddressType> addressTypes)
+        {
+            try
+            {
+                // 取得現有的客戶地址
+                var existingAddresses = await GetByCustomerIdAsync(customerId);
+                
+                // 如果沒有地址，初始化預設地址
+                if (!existingAddresses.Any())
+                {
+                    var defaultAddresses = new List<CustomerAddress>();
+                    InitializeDefaultAddresses(defaultAddresses, addressTypes);
+                    
+                    // 設定客戶ID
+                    foreach (var address in defaultAddresses)
+                    {
+                        address.CustomerId = customerId;
+                    }
+                    
+                    return defaultAddresses;
+                }
+                
+                return existingAddresses;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting addresses with default for customer {CustomerId}", customerId);
+                throw;
+            }
+        }
+
+        public async Task<ServiceResult> UpdateCustomerAddressesAsync(int customerId, List<CustomerAddress> addresses)
+        {
+            try
+            {
+                // 驗證客戶是否存在
+                var customerExists = await _context.Customers
+                    .AnyAsync(c => c.Id == customerId && !c.IsDeleted);
+                
+                if (!customerExists)
+                    return ServiceResult.Failure("客戶不存在");
+
+                // 取得現有地址
+                var existingAddresses = await _dbSet
+                    .Where(ca => ca.CustomerId == customerId)
+                    .ToListAsync();
+
+                // 刪除現有地址
+                _context.CustomerAddresses.RemoveRange(existingAddresses);
+
+                // 新增更新的地址
+                foreach (var address in addresses.Where(a => !string.IsNullOrWhiteSpace(a.Address) || 
+                                                            !string.IsNullOrWhiteSpace(a.City)))
+                {
+                    address.CustomerId = customerId;
+                    address.CreatedAt = DateTime.UtcNow;
+                    address.CreatedBy = "System"; // TODO: 從認證取得使用者
+                    address.Status = EntityStatus.Active;
+                    _context.CustomerAddresses.Add(address);
+                }
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Successfully updated addresses for customer {CustomerId}", customerId);
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating customer addresses for customer {CustomerId}", customerId);
+                return ServiceResult.Failure("更新客戶地址時發生錯誤");
+            }
+        }
+
         #endregion
 
         #region 記憶體操作方法（用於UI編輯）
@@ -321,6 +395,22 @@ namespace ERPCore2.Services
                     addressList.Add(newAddress);
                 }
             }
+        }
+
+        public int? GetDefaultAddressTypeId(int addressCount, List<AddressType> addressTypes)
+        {
+            // 根據地址數量決定預設的地址類型
+            var defaultTypes = new[] { "營業地址", "聯絡地址", "發票地址" };
+            
+            if (addressCount < defaultTypes.Length)
+            {
+                var typeName = defaultTypes[addressCount];
+                var addressType = addressTypes.FirstOrDefault(at => at.TypeName == typeName);
+                return addressType?.Id;
+            }
+            
+            // 如果超出預設類型，返回第一個可用的類型
+            return addressTypes.FirstOrDefault()?.Id;
         }
 
         public ServiceResult AddAddress(List<CustomerAddress> addressList, CustomerAddress newAddress)
@@ -565,7 +655,42 @@ namespace ERPCore2.Services
             return ServiceResult.Success();
         }
 
-        public int GetCompletedAddressCount(List<CustomerAddress> addresses)
+        public ServiceResult EnsurePrimaryAddressExists(List<CustomerAddress> addresses)
+        {
+            if (addresses == null || addresses.Count == 0)
+                return ServiceResult.Failure("沒有地址資料");
+
+            // 檢查是否有主要地址
+            var primaryCount = addresses.Count(a => a.IsPrimary);
+              if (primaryCount == 0)
+            {
+                // 如果沒有主要地址，將第一個設為主要
+                addresses[0].IsPrimary = true;
+                return ServiceResult.Success();
+            }
+            else if (primaryCount > 1)
+            {
+                // 如果有多個主要地址，只保留第一個
+                bool firstPrimaryFound = false;
+                foreach (var address in addresses)
+                {
+                    if (address.IsPrimary)
+                    {
+                        if (firstPrimaryFound)
+                        {
+                            address.IsPrimary = false;
+                        }
+                        else
+                        {
+                            firstPrimaryFound = true;
+                        }
+                    }
+                }
+                return ServiceResult.Success();
+            }
+
+            return ServiceResult.Success();
+        }        public int GetCompletedAddressCount(List<CustomerAddress> addresses)
         {
             if (addresses == null)
                 return 0;
@@ -573,6 +698,25 @@ namespace ERPCore2.Services
             return addresses.Count(a =>
                 !string.IsNullOrWhiteSpace(a.Address) &&
                 !string.IsNullOrWhiteSpace(a.City));
+        }
+
+        public int GetAddressCompletedFieldsCount(List<CustomerAddress> addresses)
+        {
+            if (addresses == null || !addresses.Any())
+                return 0;
+
+            int completedFields = 0;
+            
+            foreach (var address in addresses)
+            {
+                if (address.AddressTypeId > 0) completedFields++;
+                if (!string.IsNullOrWhiteSpace(address.PostalCode)) completedFields++;
+                if (!string.IsNullOrWhiteSpace(address.City)) completedFields++;
+                if (!string.IsNullOrWhiteSpace(address.District)) completedFields++;
+                if (!string.IsNullOrWhiteSpace(address.Address)) completedFields++;
+            }
+
+            return completedFields;
         }
 
         #endregion

@@ -3,6 +3,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @using ERPCore2.Services
+@using ERPCore2.Services.Interfaces
 @using ERPCore2.Components.Shared.Details
 @using static ERPCore2.Components.Shared.Buttons.ButtonComponent
 @using static ERPCore2.Components.Shared.Alerts.AlertComponent
@@ -90,7 +91,7 @@
                         <!-- 系統資訊 -->
                         <DetailSectionComponent Title="系統資訊" IconClass="fas fa-cog text-secondary">
                             <div class="col-md-6">
-                                <DetailItemComponent Label="建立日期" Value="@customer.CreatedDate.ToString("yyyy/MM/dd HH:mm:ss")" />
+                                <DetailItemComponent Label="建立日期" Value="@customer.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")" />
                             </div>
                             
                             <div class="col-md-6">
@@ -98,11 +99,11 @@
                             </div>
                             
                             <div class="col-md-6">
-                                <DetailItemComponent Label="修改日期" Value="@(customer.ModifiedDate?.ToString("yyyy/MM/dd HH:mm:ss"))" />
+                                <DetailItemComponent Label="修改日期" Value="@(customer.UpdatedAt?.ToString("yyyy/MM/dd HH:mm:ss"))" />
                             </div>
                             
                             <div class="col-md-6">
-                                <DetailItemComponent Label="修改者" Value="@customer.ModifiedBy" />
+                                <DetailItemComponent Label="修改者" Value="@customer.UpdatedBy" />
                             </div>
                         </DetailSectionComponent>                        
                         <!-- 相關資料 -->
@@ -250,9 +251,8 @@
         try
         {
             // 更新客戶狀態
-            customer.Status = newStatus;
-            customer.ModifiedBy = "系統管理員";
-            customer.ModifiedDate = DateTime.UtcNow;
+            customer.Status = newStatus;            customer.UpdatedBy = "系統管理員";
+            customer.UpdatedAt = DateTime.UtcNow;
             
             var result = await CustomerService.UpdateAsync(customer);
             
@@ -282,7 +282,7 @@
         {
             try
             {
-                var result = await CustomerService.DeleteAsync(customer.CustomerId);
+                var result = await CustomerService.DeleteAsync(customer.Id);
                 
                 if (result.IsSuccess)
                 {

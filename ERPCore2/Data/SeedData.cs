@@ -21,32 +21,31 @@ namespace ERPCore2.Data
                 return; // 資料已存在
             }            // 新增聯絡類型資料
             var contactTypes = new[]
-            {
-                new ContactType { 
+            {                new ContactType { 
                     TypeName = "電話", 
                     Description = "固定電話號碼",
-                    CreatedDate = DateTime.Now,
+                    CreatedAt = DateTime.Now,
                     CreatedBy = "System",
                     Status = EntityStatus.Active
                 },
                 new ContactType { 
                     TypeName = "手機", 
                     Description = "行動電話號碼",
-                    CreatedDate = DateTime.Now,
+                    CreatedAt = DateTime.Now,
                     CreatedBy = "System",
                     Status = EntityStatus.Active
                 },
                 new ContactType { 
                     TypeName = "Email", 
                     Description = "電子郵件地址",
-                    CreatedDate = DateTime.Now,
+                    CreatedAt = DateTime.Now,
                     CreatedBy = "System",
                     Status = EntityStatus.Active
                 },
                 new ContactType { 
                     TypeName = "傳真", 
                     Description = "傳真號碼",
-                    CreatedDate = DateTime.Now,
+                    CreatedAt = DateTime.Now,
                     CreatedBy = "System",
                     Status = EntityStatus.Active
                 }

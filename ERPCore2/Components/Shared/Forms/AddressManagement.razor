@@ -46,7 +46,7 @@
                                                ValueChanged="@(value => OnAddressTypeChanged.InvokeAsync((index, value)))"
                                                Items="AddressTypes"
                                                GetItemText="@(item => ((AddressType)item).TypeName)"
-                                               GetItemValue="@(item => ((AddressType)item).AddressTypeId)"
+                                               GetItemValue="@(item => ((AddressType)item).Id)"
                                                EmptyOptionText="請選擇地址類型..." />
                             </div>
                             

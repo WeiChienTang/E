@@ -107,9 +107,8 @@
                                                         <span class="badge @(contactType.Status == EntityStatus.Active ? "bg-success" : "bg-secondary")">
                                                             @GetStatusText(contactType.Status)
                                                         </span>
-                                                    </td>
-                                                    <td>
-                                                        <small class="text-muted">@contactType.CreatedDate.ToString("yyyy/MM/dd")</small>
+                                                    </td>                                                    <td>
+                                                        <small class="text-muted">@contactType.CreatedAt.ToString("yyyy/MM/dd")</small>
                                                     </td>
                                                     <td class="text-end">
                                                         <div class="btn-group btn-group-sm" role="group">
@@ -283,7 +282,7 @@
         {
             ClearMessages();
 
-            var result = await ContactTypeService.ToggleStatusAsync(contactTypeId, newStatus);
+            var result = await ContactTypeService.ToggleStatusAsync(contactTypeId);
             
             if (result.IsSuccess)
             {

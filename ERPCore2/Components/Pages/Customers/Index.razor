@@ -2,6 +2,7 @@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
+@using ERPCore2.Services.Interfaces
 @using Microsoft.AspNetCore.Components.Web
 @using ERPCore2.Components.Shared.Buttons
 @using ERPCore2.Components.Shared.Alerts
@@ -91,7 +92,7 @@
                                 <td>
                                     <StatusBadgeComponent Status="customer.Status" />
                                 </td>
-                                <td>@customer.CreatedDate.ToString("yyyy/MM/dd")</td>
+                                <td>@customer.CreatedAt.ToString("yyyy/MM/dd")</td>
                             </RowTemplate>
                             <ActionsTemplate Context="customer">
                                 <div class="btn-group" role="group">                                    
@@ -100,21 +101,21 @@
                                         Size="ButtonSize.Small"
                                         IconClass="fas fa-eye" 
                                         Title="檢視"
-                                        OnClick="() => NavigateToView(customer.CustomerId)" />       
+                                        OnClick="() => NavigateToView(customer.Id)" />       
 
                                     <ButtonComponent Text="" 
                                         Variant="ButtonVariant.OutlineWarning" 
                                         Size="ButtonSize.Small"
                                         IconClass="fas fa-edit" 
                                         Title="編輯"
-                                        OnClick="() => NavigateToEdit(customer.CustomerId)" />       
+                                        OnClick="() => NavigateToEdit(customer.Id)" />       
 
                                     <ButtonComponent Text="" 
                                         Variant="ButtonVariant.OutlineDanger" 
                                         Size="ButtonSize.Small"
                                         IconClass="fas fa-trash" 
                                         Title="刪除"
-                                        OnClick="() => ConfirmDelete(customer.CustomerId, customer.CompanyName)" />
+                                        OnClick="() => ConfirmDelete(customer.Id, customer.CompanyName)" />
                                 </div>
                             </ActionsTemplate>
                         </TableComponent>
