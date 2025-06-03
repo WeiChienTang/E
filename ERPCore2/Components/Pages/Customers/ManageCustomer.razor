@@ -87,7 +87,8 @@
                                     </div>
                                 </div>
                                 
-                                <div class="row">                                    <div class="col-md-4">
+                                <div class="row">                                    
+                                    <div class="col-md-4">
                                         <DatabaseSelectWithManagementComponent TValue="int?" TEntity="CustomerType"
                                                                                 Id="customerType" 
                                                                                 Label="客戶類型"
@@ -100,7 +101,8 @@
                                                                                 ShowManagementButton="true"
                                                                                 OnManagementClick="ShowCustomerTypeModal" />
                                         <ValidationMessage For="@(() => customer.CustomerTypeId)" class="text-danger" />
-                                    </div>                                      <div class="col-md-4">
+                                    </div>                                      
+                                    <div class="col-md-4">
                                         <DatabaseSelectWithManagementComponent TValue="int?" TEntity="IndustryType"
                                                                                 Id="industryType" 
                                                                                 Label="行業類型"
