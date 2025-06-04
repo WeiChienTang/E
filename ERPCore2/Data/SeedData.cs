@@ -4,13 +4,12 @@ using ERPCore2.Data.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERPCore2.Data
-{
-    public static class SeedData
+{    public static class SeedData
     {
         public static async Task InitializeAsync(IServiceProvider serviceProvider)
         {
-            using var context = new AppDbContext(
-                serviceProvider.GetRequiredService<DbContextOptions<AppDbContext>>());
+            using var scope = serviceProvider.CreateScope();
+            using var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
             // 確保資料庫已建立
             await context.Database.EnsureCreatedAsync();

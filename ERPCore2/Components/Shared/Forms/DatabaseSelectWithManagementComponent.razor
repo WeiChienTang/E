@@ -104,13 +104,12 @@
     private bool isLoading = false;
     private bool hasLoaded = false;    private bool isManagementOperationInProgress = false; // 防止重複點擊管理按鈕
     private static readonly Random _random = new();
-    
-    protected override async Task OnInitializedAsync()
+      protected override async Task OnInitializedAsync()
     {
         if (AutoLoad && !hasLoaded)
         {
-            // 添加小幅隨機延遲以避免多個組件同時初始化造成的 DbContext 並發問題
-            var delayMs = _random.Next(0, 100); // 0-100ms 隨機延遲
+            // 增加隨機延遲範圍以更好地避免多個組件同時初始化造成的 DbContext 並發問題
+            var delayMs = _random.Next(50, 300); // 50-300ms 隨機延遲
             if (delayMs > 0)
             {
                 await Task.Delay(delayMs);

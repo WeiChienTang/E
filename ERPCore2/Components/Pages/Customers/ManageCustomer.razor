@@ -390,14 +390,26 @@
     {
         await LoadDataAsync();
     }
-      
     private async Task LoadDataAsync()
     {
+        // 使用信號量防止並發載入
+        if (!await _dataRefreshSemaphore.WaitAsync(5000)) // 等待最多5秒
+        {
+            errorMessage = "載入資料超時，請重新整理頁面";
+            return;
+        }
+
         try
-        {            // 載入客戶類型、行業類型、地址類型和聯絡類型的下拉選項            
+        {            
+            // 序列化載入各種類型資料，避免 DbContext 並發問題
             customerTypes = await CustomerService.GetCustomerTypesAsync();
+            await Task.Delay(10); // 短暫延遲
+            
             industryTypes = await CustomerService.GetIndustryTypesAsync();
+            await Task.Delay(10); // 短暫延遲
+            
             addressTypes = await CustomerService.GetAddressTypesAsync();
+            await Task.Delay(10); // 短暫延遲
 
             // 使用 ContactTypeService 載入聯絡類型
             contactTypes = await ContactTypeService.GetActiveAsync();
@@ -424,8 +436,7 @@
                 Console.WriteLine($"CustomerAddresses count: {customerAddresses.Count}");
                 Console.WriteLine($"CustomerContacts count: {customerContacts.Count}");
                 LogCustomerState("初始化完成");
-            }
-        }
+            }        }
         catch (Exception ex)
         {
             errorMessage = $"載入資料時發生錯誤: {ex.Message}";
@@ -434,8 +445,9 @@
         finally
         {
             isLoading = false;
+            _dataRefreshSemaphore.Release(); // 釋放信號量
         }
-    }    private async Task LoadExistingCustomerAsync()
+    }private async Task LoadExistingCustomerAsync()
     {
         if (!CustomerId.HasValue) return;
         

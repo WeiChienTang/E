@@ -7,7 +7,11 @@ using ERPCore2.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Database Configuration
+// Database Configuration - 使用 DbContextFactory 解決並發問題
+builder.Services.AddDbContextFactory<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// 保留舊的 DbContext 註冊以支援現有的依賴注入
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -48,7 +52,8 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
-        await ERPCore2.Data.SeedData.InitializeAsync(services);
+        // 暫時註釋掉種子資料初始化，專注於測試並發問題修復
+        // await ERPCore2.Data.SeedData.InitializeAsync(services);
     }
     catch (Exception ex)
     {
