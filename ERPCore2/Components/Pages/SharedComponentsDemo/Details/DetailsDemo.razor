@@ -1,0 +1,346 @@
+@page "/sharedcomponentsdemo/details"
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Badges
+@using static ERPCore2.Components.Shared.Badges.StatusBadgeComponent
+@rendermode InteractiveServer
+
+<PageTitle>Details 元件展示</PageTitle>
+
+<div class="container-fluid">
+    <h1 class="h3 mb-4">Details 元件展示</h1>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Details 元件範例</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">
+                        Details 元件用於結構化顯示詳細資訊，包含 DetailSectionComponent 和 DetailItemComponent，
+                        提供清晰的資料呈現和組織方式。
+                    </p>
+                    
+                    <h6>範例 1: 基本客戶詳細資料</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <DetailSectionComponent Title="基本資訊" IconClass="bi bi-person-circle">
+                            <div class="col-md-6">
+                                <DetailItemComponent Label="客戶編號" Value="@sampleCustomer.Code" IconClass="bi bi-hash" />
+                            </div>
+                            <div class="col-md-6">
+                                <DetailItemComponent Label="客戶名稱" Value="@sampleCustomer.Name" IconClass="bi bi-building" />
+                            </div>
+                            <div class="col-md-6">
+                                <DetailItemComponent Label="統一編號" Value="@sampleCustomer.TaxId" IconClass="bi bi-credit-card-2-front" />
+                            </div>
+                            <div class="col-md-6">
+                                <DetailItemComponent Label="客戶類型" Value="@sampleCustomer.Type" IconClass="bi bi-tags" />
+                            </div>
+                        </DetailSectionComponent>
+                        
+                        <DetailSectionComponent Title="聯絡資訊" IconClass="bi bi-telephone">
+                            <div class="col-md-6">
+                                <DetailItemComponent Label="電話" Value="@sampleCustomer.Phone" IconClass="bi bi-phone" />
+                            </div>
+                            <div class="col-md-6">
+                                <DetailItemComponent Label="電子郵件" Value="@sampleCustomer.Email" IconClass="bi bi-envelope" />
+                            </div>
+                            <div class="col-md-12">
+                                <DetailItemComponent Label="地址" Value="@sampleCustomer.Address" IconClass="bi bi-geo-alt" />
+                            </div>
+                        </DetailSectionComponent>
+                        
+                        <DetailSectionComponent Title="狀態資訊" IconClass="bi bi-info-circle" ShowDivider="false">
+                            <div class="col-md-4">
+                                <DetailItemComponent Label="目前狀態" IconClass="bi bi-circle-fill">
+                                    <StatusBadgeComponent Status="@sampleCustomer.Status" IconClass="@GetStatusIcon(sampleCustomer.Status)" />
+                                </DetailItemComponent>
+                            </div>
+                            <div class="col-md-4">
+                                <DetailItemComponent Label="VIP 等級" IconClass="bi bi-star">
+                                    @if (sampleCustomer.IsVip)
+                                    {
+                                        <StatusBadgeComponent Status="EntityStatus.Active" 
+                                                            CustomText="@sampleCustomer.VipLevel" 
+                                                            IconClass="bi bi-gem" />
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">一般客戶</span>
+                                    }
+                                </DetailItemComponent>
+                            </div>
+                            <div class="col-md-4">
+                                <DetailItemComponent Label="建立日期" Value="@sampleCustomer.CreatedDate.ToString("yyyy/MM/dd")" IconClass="bi bi-calendar" />
+                            </div>
+                        </DetailSectionComponent>
+                    </div>
+                    
+                    <h6>範例 2: 空值和預設文字處理</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <DetailSectionComponent Title="空值展示" IconClass="bi bi-question-circle">
+                            <div class="col-md-4">
+                                <DetailItemComponent Label="空值 (預設)" Value="@emptyValue" />
+                            </div>
+                            <div class="col-md-4">
+                                <DetailItemComponent Label="空值 (自訂)" Value="@emptyValue" EmptyText="無資料" />
+                            </div>
+                            <div class="col-md-4">
+                                <DetailItemComponent Label="空值 (特殊)" Value="@emptyValue" EmptyText="🚫 未設定" />
+                            </div>
+                        </DetailSectionComponent>
+                    </div>
+                    
+                    <h6>範例 3: 自訂內容展示</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <DetailSectionComponent Title="豐富內容展示" IconClass="bi bi-palette">
+                            <div class="col-md-6">
+                                <DetailItemComponent Label="產品清單" IconClass="bi bi-list-ul">
+                                    <ul class="mb-0">
+                                        <li>水泥磚塊 <span class="badge bg-success">熱銷</span></li>
+                                        <li>紅磚材料 <span class="badge bg-warning text-dark">普通</span></li>
+                                        <li>特殊磚材 <span class="badge bg-info">新品</span></li>
+                                    </ul>
+                                </DetailItemComponent>
+                            </div>
+                            <div class="col-md-6">
+                                <DetailItemComponent Label="快速操作" IconClass="bi bi-tools">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-primary" @onclick="@(() => ShowMessage("編輯客戶"))">
+                                            <i class="bi bi-pencil"></i> 編輯
+                                        </button>
+                                        <button type="button" class="btn btn-outline-success" @onclick="@(() => ShowMessage("聯絡客戶"))">
+                                            <i class="bi bi-telephone"></i> 聯絡
+                                        </button>
+                                        <button type="button" class="btn btn-outline-info" @onclick="@(() => ShowMessage("查看訂單"))">
+                                            <i class="bi bi-receipt"></i> 訂單
+                                        </button>
+                                    </div>
+                                </DetailItemComponent>
+                            </div>
+                            <div class="col-md-12">
+                                <DetailItemComponent Label="交易統計" IconClass="bi bi-graph-up">
+                                    <div class="row text-center">
+                                        <div class="col-3">
+                                            <div class="border rounded p-2">
+                                                <div class="h5 text-primary mb-0">15</div>
+                                                <small class="text-muted">總訂單</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="border rounded p-2">
+                                                <div class="h5 text-success mb-0">$125,600</div>
+                                                <small class="text-muted">總金額</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="border rounded p-2">
+                                                <div class="h5 text-warning mb-0">3</div>
+                                                <small class="text-muted">待付款</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="border rounded p-2">
+                                                <div class="h5 text-info mb-0">98%</div>
+                                                <small class="text-muted">滿意度</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </DetailItemComponent>
+                            </div>
+                        </DetailSectionComponent>
+                    </div>
+                    
+                    <h6>範例 4: 樣式自訂</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <DetailSectionComponent Title="自訂樣式展示" IconClass="bi bi-brush" TitleClass="text-success">
+                            <div class="col-md-6">
+                                <DetailItemComponent Label="重要資訊" 
+                                                   Value="高優先級客戶" 
+                                                   IconClass="bi bi-exclamation-triangle-fill text-warning" 
+                                                   LabelClass="text-danger fw-bold" 
+                                                   ValueClass="text-danger fw-bold" />
+                            </div>
+                            <div class="col-md-6">
+                                <DetailItemComponent Label="次要資訊" 
+                                                   Value="一般備註資訊" 
+                                                   IconClass="bi bi-info-circle text-muted" 
+                                                   LabelClass="text-muted" 
+                                                   ValueClass="text-muted small" />
+                            </div>
+                        </DetailSectionComponent>
+                    </div>
+                    
+                    <h6>範例 5: 多層次資料結構</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <DetailSectionComponent Title="訂單歷史" IconClass="bi bi-clock-history">
+                            @foreach (var order in sampleOrders)
+                            {
+                                <div class="col-12 mb-3">
+                                    <div class="card">
+                                        <div class="card-header py-2">
+                                            <h6 class="mb-0">訂單 #@order.OrderNumber</h6>
+                                        </div>
+                                        <div class="card-body py-2">
+                                            <div class="row">
+                                                <div class="col-md-3">
+                                                    <DetailItemComponent Label="訂單日期" Value="@order.OrderDate.ToString("yyyy/MM/dd")" />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <DetailItemComponent Label="訂單金額" Value="@order.Amount.ToString("C")" />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <DetailItemComponent Label="訂單狀態">
+                                                        <StatusBadgeComponent Status="@order.Status" 
+                                                                            CustomText="@order.StatusText" 
+                                                                            IconClass="@GetOrderStatusIcon(order.Status)" 
+                                                                            Size="BadgeSize.Small" />
+                                                    </DetailItemComponent>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <DetailItemComponent Label="產品數量" Value="@order.ItemCount.ToString()" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </DetailSectionComponent>
+                    </div>
+                    
+                    <h6>範例 6: 響應式佈局</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <DetailSectionComponent Title="響應式展示" IconClass="bi bi-phone" ShowDivider="false">
+                            <div class="col-lg-3 col-md-6">
+                                <DetailItemComponent Label="大螢幕 1/4" Value="桌面顯示" IconClass="bi bi-display" />
+                            </div>
+                            <div class="col-lg-3 col-md-6">
+                                <DetailItemComponent Label="平板 1/2" Value="平板顯示" IconClass="bi bi-tablet" />
+                            </div>
+                            <div class="col-lg-3 col-md-6">
+                                <DetailItemComponent Label="手機全寬" Value="手機顯示" IconClass="bi bi-phone" />
+                            </div>
+                            <div class="col-lg-3 col-md-6">
+                                <DetailItemComponent Label="彈性佈局" Value="自適應" IconClass="bi bi-arrows-expand" />
+                            </div>
+                        </DetailSectionComponent>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    @if (!string.IsNullOrEmpty(actionMessage))
+    {
+        <div class="alert alert-info alert-dismissible fade show mt-3" role="alert">
+            <i class="bi bi-info-circle me-2"></i>
+            @actionMessage
+            <button type="button" class="btn-close" @onclick="@(() => actionMessage = string.Empty)"></button>
+        </div>
+    }
+</div>
+
+@code {
+    private string actionMessage = string.Empty;
+    private string? emptyValue = null;
+    
+    // 範例客戶資料
+    private SampleCustomer sampleCustomer = new()
+    {
+        Code = "C001",
+        Name = "台北建材有限公司",
+        TaxId = "12345678",
+        Type = "企業客戶",
+        Phone = "(02) 2123-4567",
+        Email = "info@taipei-building.com",
+        Address = "台北市信義區信義路五段7號",
+        Status = EntityStatus.Active,
+        IsVip = true,
+        VipLevel = "金牌",
+        CreatedDate = new DateTime(2023, 3, 15)
+    };
+    
+    // 範例訂單資料
+    private List<SampleOrder> sampleOrders = new()
+    {
+        new SampleOrder 
+        { 
+            OrderNumber = "ORD-2024-001", 
+            OrderDate = new DateTime(2024, 11, 15), 
+            Amount = 45600, 
+            Status = EntityStatus.Active, 
+            StatusText = "進行中", 
+            ItemCount = 8 
+        },
+        new SampleOrder 
+        { 
+            OrderNumber = "ORD-2024-002", 
+            OrderDate = new DateTime(2024, 10, 28), 
+            Amount = 32400, 
+            Status = EntityStatus.Inactive, 
+            StatusText = "已完成", 
+            ItemCount = 5 
+        },
+        new SampleOrder 
+        { 
+            OrderNumber = "ORD-2024-003", 
+            OrderDate = new DateTime(2024, 9, 12), 
+            Amount = 18900, 
+            Status = EntityStatus.Deleted, 
+            StatusText = "已取消", 
+            ItemCount = 3 
+        }
+    };
+    
+    private void ShowMessage(string message)
+    {
+        actionMessage = message;
+    }
+    
+    private string GetStatusIcon(EntityStatus status)
+    {
+        return status switch
+        {
+            EntityStatus.Active => "bi bi-check-circle-fill",
+            EntityStatus.Inactive => "bi bi-pause-circle-fill",
+            EntityStatus.Deleted => "bi bi-x-circle-fill",
+            _ => "bi bi-question-circle-fill"
+        };
+    }
+    
+    private string GetOrderStatusIcon(EntityStatus status)
+    {
+        return status switch
+        {
+            EntityStatus.Active => "bi bi-arrow-clockwise",
+            EntityStatus.Inactive => "bi bi-check-circle",
+            EntityStatus.Deleted => "bi bi-x-circle",
+            _ => "bi bi-question-circle"
+        };
+    }
+    
+    private class SampleCustomer
+    {
+        public string Code { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string TaxId { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public EntityStatus Status { get; set; }
+        public bool IsVip { get; set; }
+        public string VipLevel { get; set; } = string.Empty;
+        public DateTime CreatedDate { get; set; }
+    }
+    
+    private class SampleOrder
+    {
+        public string OrderNumber { get; set; } = string.Empty;
+        public DateTime OrderDate { get; set; }
+        public decimal Amount { get; set; }
+        public EntityStatus Status { get; set; }
+        public string StatusText { get; set; } = string.Empty;
+        public int ItemCount { get; set; }
+    }
+}
