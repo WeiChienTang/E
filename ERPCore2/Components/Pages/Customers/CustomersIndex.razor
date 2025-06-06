@@ -9,6 +9,7 @@
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Components.Shared.Loading
 @using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.Modals
 @using static ERPCore2.Components.Shared.Buttons.ButtonComponent
 @using static ERPCore2.Components.Shared.Alerts.AlertComponent
 @inject ICustomerService CustomerService
@@ -75,10 +76,13 @@
                                     ShowText="true" />
                       @if (!isLoading)
                     {
-                        <!-- 客戶列表 -->                        <TableComponent TItem="Customer" 
+                        <!-- 客戶列表 -->                        
+                        <TableComponent TItem="Customer" 
                                       Items="customers"
                                       Headers="tableHeaders"
                                       ShowActions="false"
+                                      EnableRowClick="true"
+                                      OnRowClick="ShowCustomerDetail"
                                       EmptyMessage="沒有找到符合條件的客戶資料">
                             <RowTemplate Context="customer">
                                 <td>
@@ -97,10 +101,14 @@
                         </TableComponent>
                     }
                 </div>
-            </div>
-        </div>    
+            </div>        </div>    
         </div>
 </div>
+
+<!-- 客戶詳細資料模態對話框 -->
+<ERPCore2.Components.Shared.Modals.CustomerDetailModal @ref="customerDetailModal" 
+                    Customer="selectedCustomer" 
+                    OnClose="OnModalClose" />
 
 @code {
     private List<Customer> customers = new();
@@ -111,6 +119,10 @@
     
     private bool isLoading = true;    private string errorMessage = string.Empty;
     private string successMessage = string.Empty;
+    
+    // 模態相關變數
+    private CustomerDetailModal customerDetailModal = default!;
+    private Customer? selectedCustomer;
     
     private List<string> tableHeaders = new()
     {
@@ -255,8 +267,7 @@
             }
         }
     }
-    
-    private string GetStatusFilterText(EntityStatus status)
+      private string GetStatusFilterText(EntityStatus status)
     {
         return status switch
         {
@@ -264,5 +275,22 @@
             EntityStatus.Inactive => "停用",
             _ => status.ToString()
         };
+    }    // 模態相關方法
+    private async Task ShowCustomerDetail(Customer customer)
+    {
+        Console.WriteLine($"🔵 步驟1: 接收到點擊的客戶: {customer.CompanyName}");
+        
+        selectedCustomer = customer;
+        Console.WriteLine($"🔵 步驟2: 已設定 selectedCustomer = {selectedCustomer?.CompanyName}");
+        Console.WriteLine($"🔵 步驟3: Blazor 現在會自動將 selectedCustomer 傳遞給 CustomerDetailModal.Customer 參數");
+        
+        await customerDetailModal.ShowAsync();
+        Console.WriteLine($"🔵 步驟4: 模態視窗已顯示");
+    }
+    
+    private void OnModalClose()
+    {
+        selectedCustomer = null;
+        StateHasChanged();
     }
 }

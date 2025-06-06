@@ -18,12 +18,13 @@
                 </tr>
             </thead>
         }
-        <tbody>
-            @if (Items != null && Items.Any())
+        <tbody>            @if (Items != null && Items.Any())
             {
                 @foreach (var item in Items)
                 {
-                    <tr class="@GetRowClass(item)">
+                    <tr class="@GetRowClass(item)" 
+                        @onclick="() => HandleRowClick(item)"
+                        style="@(EnableRowClick ? $"cursor: {RowClickCursor};" : "")">
                         @RowTemplate(item)
                         @if (ShowActions && ActionsTemplate != null)
                         {
@@ -67,10 +68,12 @@
     [Parameter] public bool IsHoverable { get; set; } = true;
     [Parameter] public bool IsBordered { get; set; } = false;
     [Parameter] public TableSize Size { get; set; } = TableSize.Normal;
-    [Parameter] public string CssClass { get; set; } = string.Empty;
-    [Parameter] public string EmptyMessage { get; set; } = "沒有找到資料";
+    [Parameter] public string CssClass { get; set; } = string.Empty;    [Parameter] public string EmptyMessage { get; set; } = "沒有找到資料";
     [Parameter] public string ActionsHeader { get; set; } = "操作";
     [Parameter] public Func<TItem, string>? GetRowCssClass { get; set; }
+    [Parameter] public EventCallback<TItem> OnRowClick { get; set; }
+    [Parameter] public bool EnableRowClick { get; set; } = false;
+    [Parameter] public string RowClickCursor { get; set; } = "pointer";
 
     private string GetTableClass()
     {
@@ -91,7 +94,9 @@
             classes.Add(CssClass);
             
         return string.Join(" ", classes.Where(c => !string.IsNullOrEmpty(c)));
-    }    private string GetHeaderClass()
+    }    
+
+    private string GetHeaderClass()
     {
         return "table-header-primary"; // 使用主要藍色標題，符合設計風格
     }
@@ -101,12 +106,20 @@
         if (GetRowCssClass != null)
             return GetRowCssClass(item) ?? "";
         return "";
-    }
-
+    }    
+    
     private int GetColspan()
     {
         var headerCount = Headers?.Count ?? 0;
         return ShowActions ? headerCount + 1 : headerCount;
+    }
+
+    private async Task HandleRowClick(TItem item)
+    {
+        if (EnableRowClick && OnRowClick.HasDelegate)
+        {
+            await OnRowClick.InvokeAsync(item);
+        }
     }
 
     public enum TableSize

@@ -1,0 +1,197 @@
+@namespace ERPCore2.Components.Shared.Modals
+@using ERPCore2.Data.Entities
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div class="modal fade" id="customerDetailModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">客戶詳細資料</h5>
+                <button type="button" class="btn-close" @onclick="CloseModal"></button>
+            </div>
+            <div class="modal-body">
+                @if (Customer != null)
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">基本資料</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <strong>客戶代碼：</strong>
+                                        <span>@Customer.CustomerCode</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>公司名稱：</strong>
+                                        <span>@Customer.CompanyName</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>聯絡人：</strong>
+                                        <span>@Customer.ContactPerson</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>統一編號：</strong>
+                                        <span>@Customer.TaxNumber</span>
+                                    </div>                                    @if (Customer.CustomerType != null)
+                                    {
+                                        <div class="mb-2">
+                                            <strong>客戶類型：</strong>
+                                            <span>@Customer.CustomerType.TypeName</span>
+                                        </div>
+                                    }
+                                    @if (Customer.IndustryType != null)
+                                    {
+                                        <div class="mb-2">
+                                            <strong>行業類型：</strong>
+                                            <span>@Customer.IndustryType.IndustryTypeName</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">聯絡資訊</h6>
+                                </div>
+                                <div class="card-body">
+                                    @if (Customer.CustomerContacts?.Any() == true)
+                                    {                                        @foreach (var contact in Customer.CustomerContacts)
+                                        {
+                                            <div class="mb-3 p-2 border rounded">
+                                                @if (contact.IsPrimary)
+                                                {
+                                                    <span class="badge bg-primary mb-1">主要聯絡方式</span>
+                                                }
+                                                @if (!string.IsNullOrEmpty(contact.ContactValue))
+                                                {
+                                                    <div><strong>聯絡內容：</strong>@contact.ContactValue</div>
+                                                }
+                                                @if (contact.ContactType != null)
+                                                {
+                                                    <div><strong>類型：</strong>@contact.ContactType.TypeName</div>
+                                                }
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted">無聯絡資訊</p>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">地址資訊</h6>
+                                </div>
+                                <div class="card-body">
+                                    @if (Customer.CustomerAddresses?.Any() == true)
+                                    {
+                                        <div class="row">
+                                            @foreach (var address in Customer.CustomerAddresses)
+                                            {                                                <div class="col-md-6 mb-3">
+                                                    <div class="p-3 border rounded">
+                                                        @if (address.IsPrimary)
+                                                        {
+                                                            <span class="badge bg-success mb-2">主要地址</span>
+                                                        }
+                                                        @if (address.AddressType != null)
+                                                        {
+                                                            <div><strong>類型：</strong>@address.AddressType.TypeName</div>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(address.Address))
+                                                        {
+                                                            <div><strong>地址：</strong>@address.Address</div>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(address.City))
+                                                        {
+                                                            <div><strong>城市：</strong>@address.City</div>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(address.District))
+                                                        {
+                                                            <div><strong>行政區：</strong>@address.District</div>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(address.PostalCode))
+                                                        {
+                                                            <div><strong>郵遞區號：</strong>@address.PostalCode</div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted">無地址資訊</p>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-center text-muted">無客戶資料</p>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="CloseModal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Customer? Customer { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private IJSObjectReference? modalInstance;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            modalInstance = await JS.InvokeAsync<IJSObjectReference>("eval", 
+                "new bootstrap.Modal(document.getElementById('customerDetailModal'))");
+        }
+    }
+
+    public async Task ShowAsync()
+    {
+        if (modalInstance != null)
+        {
+            await modalInstance.InvokeVoidAsync("show");
+        }
+    }
+
+    public async Task HideAsync()
+    {
+        if (modalInstance != null)
+        {
+            await modalInstance.InvokeVoidAsync("hide");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        await HideAsync();
+        await OnClose.InvokeAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (modalInstance != null)
+        {
+            await modalInstance.DisposeAsync();
+        }
+    }
+}
