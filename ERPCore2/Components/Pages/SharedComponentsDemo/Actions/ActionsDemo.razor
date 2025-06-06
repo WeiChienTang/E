@@ -1,0 +1,200 @@
+@page "/sharedcomponentsdemo/actions"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Services
+@using ERPCore2.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Web
+@using ERPCore2.Components.Shared.Actions
+@using ERPCore2.Components.Shared.Buttons
+@using static ERPCore2.Components.Shared.Buttons.ButtonComponent
+@rendermode InteractiveServer
+
+<PageTitle>Actions 元件展示</PageTitle>
+
+<div class="container-fluid">
+    <h1 class="h3 mb-4">Actions 元件展示</h1>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">PageActionBar 元件範例</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">
+                        PageActionBar 元件用於在頁面頂部顯示主要和次要操作按鈕。通常用於列表頁面或詳細頁面的操作區域。
+                    </p>
+                    
+                    <h6>範例 1: 基本用法 - 主要和次要操作</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <PageActionBar>
+                            <PrimaryActions>
+                                <ButtonComponent Text="新增客戶" 
+                                               Variant="ButtonVariant.Primary" 
+                                               IconClass="bi bi-plus-circle"
+                                               OnClick="@HandleAddCustomer" />
+                                <ButtonComponent Text="匯出資料" 
+                                               Variant="ButtonVariant.Success" 
+                                               IconClass="bi bi-download"
+                                               OnClick="@HandleExport" />
+                            </PrimaryActions>
+                            <SecondaryActions>                                <ButtonComponent Text="重新整理" 
+                                               Variant="ButtonVariant.OutlinePrimary" 
+                                               IconClass="bi bi-arrow-clockwise"
+                                               OnClick="@HandleRefresh" />
+                                <ButtonComponent Text="設定" 
+                                               Variant="ButtonVariant.Secondary" 
+                                               IconClass="bi bi-gear"
+                                               OnClick="@HandleSettings" />
+                            </SecondaryActions>
+                        </PageActionBar>
+                    </div>
+                    
+                    <h6>範例 2: 只有主要操作</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <PageActionBar>
+                            <PrimaryActions>
+                                <ButtonComponent Text="儲存" 
+                                               Variant="ButtonVariant.Primary" 
+                                               IconClass="bi bi-save"
+                                               OnClick="@HandleSave" />                                <ButtonComponent Text="取消" 
+                                               Variant="ButtonVariant.OutlineSecondary" 
+                                               OnClick="@HandleCancel" />
+                            </PrimaryActions>
+                        </PageActionBar>
+                    </div>
+                    
+                    <h6>範例 3: 載入狀態按鈕</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <PageActionBar>
+                            <PrimaryActions>
+                                <ButtonComponent Text="@(isProcessing ? "處理中..." : "提交資料")" 
+                                               Variant="ButtonVariant.Primary" 
+                                               IconClass="bi bi-check-circle"
+                                               IsLoading="@isProcessing"
+                                               IsDisabled="@isProcessing"
+                                               OnClick="@HandleSubmit" />
+                                <ButtonComponent Text="重設" 
+                                               Variant="ButtonVariant.Warning" 
+                                               IconClass="bi bi-arrow-counterclockwise"
+                                               OnClick="@HandleReset" />
+                            </PrimaryActions>
+                            <SecondaryActions>
+                                <ButtonComponent Text="預覽" 
+                                               Variant="ButtonVariant.Info" 
+                                               IconClass="bi bi-eye"
+                                               OnClick="@HandlePreview" />
+                            </SecondaryActions>
+                        </PageActionBar>
+                    </div>
+                    
+                    <h6>範例 4: 危險操作</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <PageActionBar>
+                            <PrimaryActions>
+                                <ButtonComponent Text="編輯" 
+                                               Variant="ButtonVariant.Primary" 
+                                               IconClass="bi bi-pencil"
+                                               OnClick="@HandleEdit" />
+                            </PrimaryActions>
+                            <SecondaryActions>
+                                <ButtonComponent Text="刪除" 
+                                               Variant="ButtonVariant.Danger" 
+                                               IconClass="bi bi-trash"
+                                               OnClick="@HandleDelete" />
+                                <ButtonComponent Text="封存" 
+                                               Variant="ButtonVariant.Warning" 
+                                               IconClass="bi bi-archive"
+                                               OnClick="@HandleArchive" />
+                            </SecondaryActions>
+                        </PageActionBar>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    @if (!string.IsNullOrEmpty(actionMessage))
+    {
+        <div class="alert alert-info alert-dismissible fade show mt-3" role="alert">
+            <i class="bi bi-info-circle me-2"></i>
+            @actionMessage
+            <button type="button" class="btn-close" @onclick="@(() => actionMessage = string.Empty)"></button>
+        </div>
+    }
+</div>
+
+@code {
+    private string actionMessage = string.Empty;
+    private bool isProcessing = false;
+    
+    // 假的資料和方法用於展示
+    private void HandleAddCustomer()
+    {
+        actionMessage = "點擊了新增客戶按鈕";
+    }
+    
+    private void HandleExport()
+    {
+        actionMessage = "開始匯出資料...";
+    }
+    
+    private void HandleRefresh()
+    {
+        actionMessage = "重新整理頁面資料";
+    }
+    
+    private void HandleSettings()
+    {
+        actionMessage = "開啟設定選項";
+    }
+    
+    private void HandleSave()
+    {
+        actionMessage = "資料已儲存";
+    }
+    
+    private void HandleCancel()
+    {
+        actionMessage = "操作已取消";
+    }
+    
+    private async Task HandleSubmit()
+    {
+        isProcessing = true;
+        actionMessage = "開始提交資料...";
+        StateHasChanged();
+        
+        // 模擬處理時間
+        await Task.Delay(3000);
+        
+        isProcessing = false;
+        actionMessage = "資料提交完成！";
+        StateHasChanged();
+    }
+    
+    private void HandleReset()
+    {
+        actionMessage = "表單已重設";
+    }
+    
+    private void HandlePreview()
+    {
+        actionMessage = "開啟預覽模式";
+    }
+    
+    private void HandleEdit()
+    {
+        actionMessage = "進入編輯模式";
+    }
+    
+    private void HandleDelete()
+    {
+        actionMessage = "確認要刪除此項目嗎？";
+    }
+    
+    private void HandleArchive()
+    {
+        actionMessage = "項目已封存";
+    }
+}

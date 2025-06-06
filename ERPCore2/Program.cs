@@ -7,22 +7,8 @@ using ERPCore2.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Database Configuration - 使用 DbContextFactory 解決並發問題
-builder.Services.AddDbContextFactory<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// 保留舊的 DbContext 註冊以支援現有的依賴注入
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// Service Registration (No Repository needed!)
-builder.Services.AddScoped<ICustomerService, CustomerService>();
-builder.Services.AddScoped<IContactTypeService, ContactTypeService>();
-builder.Services.AddScoped<ICustomerContactService, CustomerContactService>();
-builder.Services.AddScoped<ICustomerAddressService, CustomerAddressService>();
-builder.Services.AddScoped<ICustomerTypeService, CustomerTypeService>();
-builder.Services.AddScoped<IAddressTypeService, AddressTypeService>();
-builder.Services.AddScoped<IIndustryTypeService, IndustryTypeService>();
+// 註冊應用程式服務
+builder.Services.AddApplicationServices(builder.Configuration.GetConnectionString("DefaultConnection")!);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

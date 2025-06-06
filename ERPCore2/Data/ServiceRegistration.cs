@@ -1,0 +1,60 @@
+using ERPCore2.Data.Context;
+using ERPCore2.Services;
+using ERPCore2.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
+
+namespace ERPCore2.Data
+{
+    /// <summary>
+    /// 服務註冊配置類別
+    /// 統一管理依賴注入服務註冊，保持 Program.cs 整潔
+    /// </summary>
+    public static class ServiceRegistration
+    {
+        /// <summary>
+        /// 註冊資料庫相關服務
+        /// </summary>
+        /// <param name="services">服務集合</param>
+        /// <param name="connectionString">資料庫連接字串</param>
+        public static void AddDatabaseServices(this IServiceCollection services, string connectionString)
+        {
+            // Database Configuration - 使用 DbContextFactory 解決並發問題
+            services.AddDbContextFactory<AppDbContext>(options =>
+                options.UseSqlServer(connectionString));
+        }
+
+        /// <summary>
+        /// 註冊業務邏輯服務
+        /// </summary>
+        /// <param name="services">服務集合</param>
+        public static void AddServices(this IServiceCollection services)
+        {
+            // 客戶相關服務
+            services.AddScoped<ICustomerService, CustomerService>();
+            services.AddScoped<ICustomerContactService, CustomerContactService>();
+            services.AddScoped<ICustomerAddressService, CustomerAddressService>();
+            services.AddScoped<ICustomerTypeService, CustomerTypeService>();
+
+            // 共用資料服務
+            services.AddScoped<IContactTypeService, ContactTypeService>();
+            services.AddScoped<IAddressTypeService, AddressTypeService>();
+
+            // 行業類型服務
+            services.AddScoped<IIndustryTypeService, IndustryTypeService>();
+        }
+
+        /// <summary>
+        /// 註冊所有應用程式服務
+        /// </summary>
+        /// <param name="services">服務集合</param>
+        /// <param name="connectionString">資料庫連接字串</param>
+        public static void AddApplicationServices(this IServiceCollection services, string connectionString)
+        {
+            // 註冊資料庫服務
+            services.AddDatabaseServices(connectionString);
+
+            // 註冊業務邏輯服務
+            services.AddServices();
+        }
+    }
+}

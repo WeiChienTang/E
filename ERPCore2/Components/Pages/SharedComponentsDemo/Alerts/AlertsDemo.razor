@@ -1,0 +1,253 @@
+@page "/sharedcomponentsdemo/alerts"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Services
+@using ERPCore2.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Web
+@using ERPCore2.Components.Shared.Alerts
+@using ERPCore2.Components.Shared.Buttons
+@using static ERPCore2.Components.Shared.Alerts.AlertComponent
+@using static ERPCore2.Components.Shared.Buttons.ButtonComponent
+@rendermode InteractiveServer
+
+<PageTitle>Alerts 元件展示</PageTitle>
+
+<div class="container-fluid">
+    <h1 class="h3 mb-4">Alerts 元件展示</h1>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">AlertComponent 元件範例</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">
+                        AlertComponent 元件用於顯示重要訊息、警告、錯誤或成功提示。支援不同的類型、圖示和可關閉功能。
+                    </p>
+                    
+                    <h6>範例 1: 基本警告類型</h6>
+                    <div class="border p-3 mb-4">
+                        <AlertComponent Message="這是一個資訊提示訊息" 
+                                      Type="AlertType.Info" 
+                                      IconClass="bi bi-info-circle-fill" />
+                        
+                        <AlertComponent Message="操作成功完成！" 
+                                      Type="AlertType.Success" 
+                                      IconClass="bi bi-check-circle-fill" />
+                        
+                        <AlertComponent Message="請注意此操作可能會影響系統效能" 
+                                      Type="AlertType.Warning" 
+                                      IconClass="bi bi-exclamation-triangle-fill" />
+                        
+                        <AlertComponent Message="發生錯誤，請聯繫系統管理員" 
+                                      Type="AlertType.Danger" 
+                                      IconClass="bi bi-x-circle-fill" />
+                    </div>
+                    
+                    <h6>範例 2: 可關閉的警告</h6>
+                    <div class="border p-3 mb-4">
+                        <AlertComponent Message="@dismissibleMessage1" 
+                                      Type="AlertType.Info" 
+                                      IsVisible="@showDismissible1"
+                                      IsDismissible="true"
+                                      OnDismiss="@HandleDismiss1"
+                                      IconClass="bi bi-lightbulb-fill" />
+                        
+                        <AlertComponent Message="@dismissibleMessage2" 
+                                      Type="AlertType.Warning" 
+                                      IsVisible="@showDismissible2"
+                                      IsDismissible="true"
+                                      OnDismiss="@HandleDismiss2"
+                                      IconClass="bi bi-exclamation-triangle-fill" />
+                        
+                        @if (!showDismissible1 || !showDismissible2)
+                        {                            <ButtonComponent Text="重新顯示警告" 
+                                           Variant="ButtonVariant.OutlinePrimary" 
+                                           OnClick="@RestoreAlerts" 
+                                           Size="ButtonSize.Small" />
+                        }
+                    </div>
+                    
+                    <h6>範例 3: 不可關閉的重要警告</h6>
+                    <div class="border p-3 mb-4">
+                        <AlertComponent Message="系統維護通知：本系統將於今晚 23:00 - 01:00 進行維護，期間無法使用。" 
+                                      Type="AlertType.Warning" 
+                                      IsDismissible="false"
+                                      IconClass="bi bi-tools" />
+                        
+                        <AlertComponent Message="緊急公告：發現安全漏洞，請立即更新您的密碼。" 
+                                      Type="AlertType.Danger" 
+                                      IsDismissible="false"
+                                      IconClass="bi bi-shield-exclamation" />
+                    </div>
+                    
+                    <h6>範例 4: 帶有自訂內容的警告</h6>
+                    <div class="border p-3 mb-4">
+                        <AlertComponent Type="AlertType.Success" 
+                                      IsDismissible="true"
+                                      IconClass="bi bi-check-circle-fill">
+                            <strong>訂單處理完成！</strong><br />
+                            訂單編號：#ORDER-2024-001234<br />
+                            預計送達時間：2025年6月8日<br />
+                            <a href="#" class="alert-link">查看訂單詳情</a>
+                        </AlertComponent>
+                        
+                        <AlertComponent Type="AlertType.Info" 
+                                      IsDismissible="true"
+                                      IconClass="bi bi-info-circle-fill">
+                            <h6 class="alert-heading">新功能上線！</h6>
+                            我們很高興宣布以下新功能已經上線：
+                            <ul class="mb-0 mt-2">
+                                <li>批量客戶匯入功能</li>
+                                <li>進階報表系統</li>
+                                <li>自動備份機制</li>
+                            </ul>
+                        </AlertComponent>
+                    </div>
+                    
+                    <h6>範例 5: 動態警告控制</h6>
+                    <div class="border p-3 mb-4">
+                        <div class="mb-3">
+                            <ButtonComponent Text="顯示成功訊息" 
+                                           Variant="ButtonVariant.Success" 
+                                           OnClick="@(() => ShowDynamicAlert(AlertType.Success, "操作成功完成！", "bi bi-check-circle-fill"))" 
+                                           Size="ButtonSize.Small" />
+                            
+                            <ButtonComponent Text="顯示警告訊息" 
+                                           Variant="ButtonVariant.Warning" 
+                                           OnClick="@(() => ShowDynamicAlert(AlertType.Warning, "請注意此操作的風險", "bi bi-exclamation-triangle-fill"))" 
+                                           Size="ButtonSize.Small" />
+                            
+                            <ButtonComponent Text="顯示錯誤訊息" 
+                                           Variant="ButtonVariant.Danger" 
+                                           OnClick="@(() => ShowDynamicAlert(AlertType.Danger, "操作失敗，請重試", "bi bi-x-circle-fill"))" 
+                                           Size="ButtonSize.Small" />
+                            
+                            <ButtonComponent Text="顯示資訊訊息" 
+                                           Variant="ButtonVariant.Info" 
+                                           OnClick="@(() => ShowDynamicAlert(AlertType.Info, "這是一個提示訊息", "bi bi-info-circle-fill"))" 
+                                           Size="ButtonSize.Small" />
+                        </div>
+                        
+                        <AlertComponent Message="@dynamicMessage" 
+                                      Type="@dynamicType" 
+                                      IsVisible="@showDynamicAlert"
+                                      IsDismissible="true"
+                                      OnDismiss="@HandleDynamicDismiss"
+                                      IconClass="@dynamicIcon" />
+                    </div>
+                    
+                    <h6>範例 6: 表單驗證警告</h6>
+                    <div class="border p-3 mb-4">
+                        <div class="mb-3">
+                            <label class="form-label">客戶名稱</label>
+                            <input type="text" class="form-control @(isNameValid ? "" : "is-invalid")" 
+                                   @bind="customerName" @oninput="ValidateName" placeholder="請輸入客戶名稱" />
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">電子郵件</label>
+                            <input type="email" class="form-control @(isEmailValid ? "" : "is-invalid")" 
+                                   @bind="customerEmail" @oninput="ValidateEmail" placeholder="請輸入電子郵件" />
+                        </div>
+                        
+                        <AlertComponent Message="@validationMessage" 
+                                      Type="AlertType.Danger" 
+                                      IsVisible="@(!isFormValid && !string.IsNullOrEmpty(validationMessage))"
+                                      IsDismissible="false"
+                                      IconClass="bi bi-exclamation-triangle-fill" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // 可關閉警告的狀態
+    private bool showDismissible1 = true;
+    private bool showDismissible2 = true;
+    private string dismissibleMessage1 = "這是一個可以關閉的提示訊息，點擊右上角的 X 來關閉它。";
+    private string dismissibleMessage2 = "這是另一個可關閉的警告訊息，展示如何處理關閉事件。";
+    
+    // 動態警告的狀態
+    private bool showDynamicAlert = false;
+    private string dynamicMessage = string.Empty;
+    private AlertType dynamicType = AlertType.Info;
+    private string dynamicIcon = string.Empty;
+    
+    // 表單驗證狀態
+    private string customerName = string.Empty;
+    private string customerEmail = string.Empty;
+    private bool isNameValid = true;
+    private bool isEmailValid = true;
+    private string validationMessage = string.Empty;
+    
+    private bool isFormValid => isNameValid && isEmailValid;
+    
+    // 處理可關閉警告的關閉事件
+    private void HandleDismiss1()
+    {
+        showDismissible1 = false;
+    }
+    
+    private void HandleDismiss2()
+    {
+        showDismissible2 = false;
+    }
+    
+    private void RestoreAlerts()
+    {
+        showDismissible1 = true;
+        showDismissible2 = true;
+    }
+    
+    // 處理動態警告
+    private void ShowDynamicAlert(AlertType type, string message, string icon)
+    {
+        dynamicType = type;
+        dynamicMessage = message;
+        dynamicIcon = icon;
+        showDynamicAlert = true;
+    }
+    
+    private void HandleDynamicDismiss()
+    {
+        showDynamicAlert = false;
+    }
+    
+    // 表單驗證
+    private void ValidateName(ChangeEventArgs e)
+    {
+        customerName = e.Value?.ToString() ?? string.Empty;
+        isNameValid = !string.IsNullOrWhiteSpace(customerName) && customerName.Length >= 2;
+        UpdateValidationMessage();
+    }
+    
+    private void ValidateEmail(ChangeEventArgs e)
+    {
+        customerEmail = e.Value?.ToString() ?? string.Empty;
+        isEmailValid = string.IsNullOrEmpty(customerEmail) || 
+                      System.Text.RegularExpressions.Regex.IsMatch(customerEmail, 
+                          @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+        UpdateValidationMessage();
+    }
+    
+    private void UpdateValidationMessage()
+    {
+        var errors = new List<string>();
+        
+        if (!isNameValid)
+        {
+            errors.Add("客戶名稱至少需要2個字元");
+        }
+        
+        if (!isEmailValid)
+        {
+            errors.Add("請輸入有效的電子郵件格式");
+        }
+        
+        validationMessage = errors.Any() ? $"表單驗證錯誤：{string.Join("、", errors)}" : string.Empty;
+    }
+}

@@ -18,10 +18,13 @@ namespace ERPCore2.Data
             if (await context.ContactTypes.AnyAsync())
             {
                 return; // 資料已存在
-            }            // 新增聯絡類型資料
+            }
+
+            // 新增聯絡類型資料
             var contactTypes = new[]
-            {                new ContactType { 
-                    TypeName = "電話", 
+            {
+                new ContactType {
+                    TypeName = "電話",
                     Description = "固定電話號碼",
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System",
