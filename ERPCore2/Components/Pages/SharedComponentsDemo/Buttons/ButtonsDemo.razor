@@ -1,0 +1,326 @@
+@page "/sharedcomponentsdemo/buttons"
+@using ERPCore2.Components.Shared.Buttons
+@using static ERPCore2.Components.Shared.Buttons.ButtonComponent
+@rendermode InteractiveServer
+
+<PageTitle>Buttons 元件展示</PageTitle>
+
+<div class="container-fluid">
+    <h1 class="h3 mb-4">Buttons 元件展示</h1>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">ButtonComponent 元件範例</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">
+                        ButtonComponent 元件提供統一的按鈕樣式，支援多種變體、尺寸、圖示和狀態。
+                    </p>
+                    
+                    <h6>範例 1: 基本按鈕變體</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">主要按鈕:</label>
+                                <br>
+                                <ButtonComponent Text="主要按鈕" Variant="ButtonVariant.Primary" OnClick="@(() => ShowMessage("點擊了主要按鈕"))" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">次要按鈕:</label>
+                                <br>
+                                <ButtonComponent Text="次要按鈕" Variant="ButtonVariant.Secondary" OnClick="@(() => ShowMessage("點擊了次要按鈕"))" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">成功按鈕:</label>
+                                <br>
+                                <ButtonComponent Text="成功按鈕" Variant="ButtonVariant.Success" OnClick="@(() => ShowMessage("點擊了成功按鈕"))" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">警告按鈕:</label>
+                                <br>
+                                <ButtonComponent Text="警告按鈕" Variant="ButtonVariant.Warning" OnClick="@(() => ShowMessage("點擊了警告按鈕"))" />
+                            </div>
+                        </div>
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-3">
+                                <label class="form-label">危險按鈕:</label>
+                                <br>
+                                <ButtonComponent Text="危險按鈕" Variant="ButtonVariant.Danger" OnClick="@(() => ShowMessage("點擊了危險按鈕"))" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">資訊按鈕:</label>
+                                <br>
+                                <ButtonComponent Text="資訊按鈕" Variant="ButtonVariant.Info" OnClick="@(() => ShowMessage("點擊了資訊按鈕"))" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>範例 2: 外框按鈕變體</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">外框主要:</label>
+                                <br>
+                                <ButtonComponent Text="外框主要" Variant="ButtonVariant.OutlinePrimary" OnClick="@(() => ShowMessage("點擊了外框主要按鈕"))" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">外框次要:</label>
+                                <br>
+                                <ButtonComponent Text="外框次要" Variant="ButtonVariant.OutlineSecondary" OnClick="@(() => ShowMessage("點擊了外框次要按鈕"))" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">外框警告:</label>
+                                <br>
+                                <ButtonComponent Text="外框警告" Variant="ButtonVariant.OutlineWarning" OnClick="@(() => ShowMessage("點擊了外框警告按鈕"))" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">外框危險:</label>
+                                <br>
+                                <ButtonComponent Text="外框危險" Variant="ButtonVariant.OutlineDanger" OnClick="@(() => ShowMessage("點擊了外框危險按鈕"))" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>範例 3: 帶圖示的按鈕</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">新增:</label>
+                                <br>
+                                <ButtonComponent Text="新增" 
+                                               Variant="ButtonVariant.Primary" 
+                                               IconClass="bi bi-plus-circle" 
+                                               OnClick="@(() => ShowMessage("新增操作"))" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">編輯:</label>
+                                <br>
+                                <ButtonComponent Text="編輯" 
+                                               Variant="ButtonVariant.Warning" 
+                                               IconClass="bi bi-pencil-square" 
+                                               OnClick="@(() => ShowMessage("編輯操作"))" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">刪除:</label>
+                                <br>
+                                <ButtonComponent Text="刪除" 
+                                               Variant="ButtonVariant.Danger" 
+                                               IconClass="bi bi-trash" 
+                                               OnClick="@(() => ShowMessage("刪除操作"))" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">下載:</label>
+                                <br>
+                                <ButtonComponent Text="下載" 
+                                               Variant="ButtonVariant.Success" 
+                                               IconClass="bi bi-download" 
+                                               OnClick="@(() => ShowMessage("下載操作"))" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>範例 4: 只有圖示的按鈕</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-3">
+                                <label class="form-label">圖示按鈕:</label>
+                                <br>
+                                <ButtonComponent Variant="ButtonVariant.Primary" 
+                                               IconClass="bi bi-heart" 
+                                               Title="喜歡" 
+                                               OnClick="@(() => ShowMessage("點擊了喜歡"))" />
+                                <ButtonComponent Variant="ButtonVariant.Info" 
+                                               IconClass="bi bi-share" 
+                                               Title="分享" 
+                                               CssClass="ms-2"
+                                               OnClick="@(() => ShowMessage("點擊了分享"))" />
+                                <ButtonComponent Variant="ButtonVariant.Success" 
+                                               IconClass="bi bi-bookmark" 
+                                               Title="收藏" 
+                                               CssClass="ms-2"
+                                               OnClick="@(() => ShowMessage("點擊了收藏"))" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>範例 5: 不同尺寸的按鈕</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-4">
+                                <label class="form-label">小型按鈕:</label>
+                                <br>
+                                <ButtonComponent Text="小型" 
+                                               Variant="ButtonVariant.Primary" 
+                                               Size="ButtonSize.Small" 
+                                               IconClass="bi bi-star"
+                                               OnClick="@(() => ShowMessage("小型按鈕"))" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">標準按鈕:</label>
+                                <br>
+                                <ButtonComponent Text="標準" 
+                                               Variant="ButtonVariant.Primary" 
+                                               Size="ButtonSize.Normal" 
+                                               IconClass="bi bi-star"
+                                               OnClick="@(() => ShowMessage("標準按鈕"))" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">大型按鈕:</label>
+                                <br>
+                                <ButtonComponent Text="大型" 
+                                               Variant="ButtonVariant.Primary" 
+                                               Size="ButtonSize.Large" 
+                                               IconClass="bi bi-star"
+                                               OnClick="@(() => ShowMessage("大型按鈕"))" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>範例 6: 按鈕狀態</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">載入中:</label>
+                                <br>
+                                <ButtonComponent Text="@(isLoading ? "處理中..." : "提交")" 
+                                               Variant="ButtonVariant.Primary" 
+                                               IsLoading="@isLoading"
+                                               IsDisabled="@isLoading"
+                                               OnClick="@HandleAsyncOperation" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">禁用狀態:</label>
+                                <br>
+                                <ButtonComponent Text="禁用按鈕" 
+                                               Variant="ButtonVariant.Secondary" 
+                                               IsDisabled="true"
+                                               IconClass="bi bi-ban" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">提交按鈕:</label>
+                                <br>
+                                <ButtonComponent Text="提交表單" 
+                                               Variant="ButtonVariant.Success" 
+                                               IsSubmit="true"
+                                               IconClass="bi bi-check2" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">切換狀態:</label>
+                                <br>
+                                <ButtonComponent Text="@(isToggled ? "已啟用" : "已停用")" 
+                                               Variant="@(isToggled ? ButtonVariant.Success : ButtonVariant.OutlineSecondary)" 
+                                               IconClass="@(isToggled ? "bi bi-toggle-on" : "bi bi-toggle-off")"
+                                               OnClick="@(() => { isToggled = !isToggled; ShowMessage($"狀態切換為：{(isToggled ? "啟用" : "停用")}"); })" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>範例 7: 常見應用場景</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <h6 class="text-muted">表單操作:</h6>
+                                <ButtonComponent Text="儲存" 
+                                               Variant="ButtonVariant.Primary" 
+                                               IconClass="bi bi-floppy" 
+                                               OnClick="@(() => ShowMessage("表單已儲存"))" />
+                                <ButtonComponent Text="重設" 
+                                               Variant="ButtonVariant.OutlineSecondary" 
+                                               IconClass="bi bi-arrow-clockwise" 
+                                               CssClass="ms-2"
+                                               OnClick="@(() => ShowMessage("表單已重設"))" />
+                                <ButtonComponent Text="取消" 
+                                               Variant="ButtonVariant.OutlineDanger" 
+                                               IconClass="bi bi-x-circle" 
+                                               CssClass="ms-2"
+                                               OnClick="@(() => ShowMessage("操作已取消"))" />
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-muted">資料操作:</h6>
+                                <ButtonComponent Text="匯出 Excel" 
+                                               Variant="ButtonVariant.Success" 
+                                               IconClass="bi bi-file-earmark-excel" 
+                                               OnClick="@(() => ShowMessage("開始匯出 Excel"))" />
+                                <ButtonComponent Text="列印" 
+                                               Variant="ButtonVariant.Info" 
+                                               IconClass="bi bi-printer" 
+                                               CssClass="ms-2"
+                                               OnClick="@(() => ShowMessage("開始列印"))" />
+                                <ButtonComponent Text="重新載入" 
+                                               Variant="ButtonVariant.OutlinePrimary" 
+                                               IconClass="bi bi-arrow-repeat" 
+                                               CssClass="ms-2"
+                                               OnClick="@(() => ShowMessage("重新載入資料"))" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>範例 8: 自訂按鈕樣式</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">自訂 CSS 類別:</label>
+                                <br>
+                                <ButtonComponent Text="圓角按鈕" 
+                                               Variant="ButtonVariant.Primary" 
+                                               CssClass="rounded-pill" 
+                                               IconClass="bi bi-circle"
+                                               OnClick="@(() => ShowMessage("圓角按鈕樣式"))" />
+                                <ButtonComponent Text="陰影按鈕" 
+                                               Variant="ButtonVariant.Success" 
+                                               CssClass="shadow-lg ms-2" 
+                                               IconClass="bi bi-magic"
+                                               OnClick="@(() => ShowMessage("陰影按鈕樣式"))" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">自訂標題:</label>
+                                <br>
+                                <ButtonComponent Text="hover 我" 
+                                               Variant="ButtonVariant.Info" 
+                                               Title="這是自訂的提示文字" 
+                                               IconClass="bi bi-info-circle"
+                                               OnClick="@(() => ShowMessage("顯示了提示文字"))" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    @if (!string.IsNullOrEmpty(actionMessage))
+    {
+        <div class="alert alert-info alert-dismissible fade show mt-3" role="alert">
+            <i class="bi bi-info-circle me-2"></i>
+            @actionMessage
+            <button type="button" class="btn-close" @onclick="@(() => actionMessage = string.Empty)"></button>
+        </div>
+    }
+</div>
+
+@code {
+    private string actionMessage = string.Empty;
+    private bool isLoading = false;
+    private bool isToggled = false;
+    
+    private void ShowMessage(string message)
+    {
+        actionMessage = message;
+    }
+    
+    private async Task HandleAsyncOperation()
+    {
+        isLoading = true;
+        actionMessage = "開始執行異步操作...";
+        StateHasChanged();
+        
+        // 模擬異步操作
+        await Task.Delay(3000);
+        
+        isLoading = false;
+        actionMessage = "異步操作完成！";
+        StateHasChanged();
+    }
+}
