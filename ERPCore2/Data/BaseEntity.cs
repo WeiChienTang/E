@@ -45,12 +45,18 @@ namespace ERPCore2.Data
         [Display(Name = "建立者")]
         [MaxLength(50)]
         public string? CreatedBy { get; set; }
-        
-        /// <summary>
+          /// <summary>
         /// 最後更新者 ID
         /// </summary>
         [Display(Name = "修改者")]
         [MaxLength(50)]
         public string? UpdatedBy { get; set; }
+        
+        /// <summary>
+        /// 備註
+        /// </summary>
+        [Display(Name = "備註")]
+        [MaxLength(500)]
+        public string? Remarks { get; set; }
     }
 }
