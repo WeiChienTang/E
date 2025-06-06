@@ -38,7 +38,8 @@
                                            SearchTerm="@searchTerm"
                                            SearchTermChanged="@OnSearchTermChanged"
                                            OnSearch="@OnSearchSubmit" />
-                        </div>                        <div class="col-md-4">
+                        </div>                        
+                        <div class="col-md-4">
                             <SelectComponent TValue="string"
                                            Id="statusFilter" 
                                            Label=""
@@ -74,12 +75,10 @@
                                     ShowText="true" />
                       @if (!isLoading)
                     {
-                        <!-- 客戶列表 -->
-                        <TableComponent TItem="Customer" 
+                        <!-- 客戶列表 -->                        <TableComponent TItem="Customer" 
                                       Items="customers"
                                       Headers="tableHeaders"
-                                      ShowActions="true"
-                                      ActionsHeader="操作"
+                                      ShowActions="false"
                                       EmptyMessage="沒有找到符合條件的客戶資料">
                             <RowTemplate Context="customer">
                                 <td>
@@ -95,35 +94,12 @@
                                 </td>
                                 <td>@customer.CreatedAt.ToString("yyyy/MM/dd")</td>
                             </RowTemplate>
-                            <ActionsTemplate Context="customer">
-                                <div class="btn-group" role="group">                                    
-                                    <ButtonComponent Text="" 
-                                        Variant="ButtonVariant.OutlinePrimary" 
-                                        Size="ButtonSize.Small"
-                                        IconClass="fas fa-eye" 
-                                        Title="檢視"
-                                        OnClick="() => NavigateToView(customer.Id)" />       
-
-                                    <ButtonComponent Text="" 
-                                        Variant="ButtonVariant.OutlineWarning" 
-                                        Size="ButtonSize.Small"
-                                        IconClass="fas fa-edit" 
-                                        Title="編輯"
-                                        OnClick="() => NavigateToEdit(customer.Id)" />       
-
-                                    <ButtonComponent Text="" 
-                                        Variant="ButtonVariant.OutlineDanger" 
-                                        Size="ButtonSize.Small"
-                                        IconClass="fas fa-trash" 
-                                        Title="刪除"
-                                        OnClick="() => ConfirmDelete(customer.Id, customer.CompanyName)" />
-                                </div>
-                            </ActionsTemplate>
                         </TableComponent>
                     }
                 </div>
             </div>
-        </div>    </div>
+        </div>    
+        </div>
 </div>
 
 @code {
@@ -217,15 +193,9 @@
         ApplyFilters();
         StateHasChanged();
     }
-    
-    private void NavigateToCreate()
+      private void NavigateToCreate()
     {
         Navigation.NavigateTo("/customers/create");
-    }
-    
-    private void NavigateToView(int customerId)
-    {
-        Navigation.NavigateTo($"/customers/{customerId}");
     }
     
     private void NavigateToEdit(int customerId)

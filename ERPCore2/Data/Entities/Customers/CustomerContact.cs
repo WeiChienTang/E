@@ -13,7 +13,9 @@ namespace ERPCore2.Data.Entities
         [Required(ErrorMessage = "客戶為必填")]
         [Display(Name = "客戶")]
         [ForeignKey(nameof(Customer))]
-        public int CustomerId { get; set; }        [Display(Name = "聯絡類型")]
+        public int CustomerId { get; set; }
+
+        [Display(Name = "聯絡類型")]
         [ForeignKey(nameof(ContactType))]
         public int? ContactTypeId { get; set; }
         
