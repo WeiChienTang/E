@@ -1,0 +1,301 @@
+@page "/sharedcomponentsdemo/loading"
+@using static ERPCore2.Components.Shared.Buttons.ButtonComponent
+@using static ERPCore2.Components.Shared.Loading.LoadingComponent
+@rendermode InteractiveServer
+
+<PageTitle>Loading 元件展示</PageTitle>
+
+<div class="container-fluid">
+    <h1 class="h3 mb-4">Loading 元件展示</h1>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">LoadingComponent 元件範例</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">
+                        LoadingComponent 元件提供統一的載入指示器，支援不同尺寸、文字顯示和樣式自訂。
+                    </p>
+                    
+                    <h6>範例 1: 基本載入指示器</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">預設載入中:</label>
+                                <LoadingComponent IsLoading="true" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">無載入狀態:</label>
+                                <LoadingComponent IsLoading="false" />
+                                <p class="text-muted small mt-2">當 IsLoading = false 時，不會顯示任何內容</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>範例 2: 不同尺寸的載入指示器</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">小尺寸:</label>
+                                <LoadingComponent IsLoading="true" Size="LoadingSize.Small" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">一般尺寸:</label>
+                                <LoadingComponent IsLoading="true" Size="LoadingSize.Normal" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">大尺寸:</label>
+                                <LoadingComponent IsLoading="true" Size="LoadingSize.Large" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>範例 3: 帶文字的載入指示器</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">預設載入文字:</label>
+                                <LoadingComponent IsLoading="true" ShowText="true" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">自訂載入文字:</label>
+                                <LoadingComponent IsLoading="true" ShowText="true" LoadingText="正在處理資料..." />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>範例 4: 不同對齊方式</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">居中對齊 (預設):</label>
+                                <div class="border p-2 bg-white">
+                                    <LoadingComponent IsLoading="true" ShowText="true" LoadingText="居中載入中..." />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">非居中對齊:</label>
+                                <div class="border p-2 bg-white">
+                                    <LoadingComponent IsLoading="true" ShowText="true" LoadingText="左對齊載入中..." IsCentered="false" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>範例 5: 互動式載入控制</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex gap-2 mb-3">
+                                    <ButtonComponent Text="@(demoLoading ? "停止載入" : "開始載入")" 
+                                                   Variant="@(demoLoading ? ButtonVariant.Danger : ButtonVariant.Primary)"
+                                                   OnClick="ToggleDemoLoading" />
+                                </div>
+                                
+                                <div class="border p-3 bg-white" style="min-height: 100px;">
+                                    @if (demoLoading)
+                                    {
+                                        <LoadingComponent IsLoading="true" ShowText="true" LoadingText="模擬載入中..." />
+                                    }
+                                    else
+                                    {
+                                        <div class="text-center py-4">
+                                            <p class="text-success mb-0">✓ 載入完成！</p>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex gap-2 mb-3">
+                                    <ButtonComponent Text="模擬數據載入" 
+                                                   Variant="ButtonVariant.Success"
+                                                   OnClick="SimulateDataLoading" 
+                                                   IsDisabled="@simulateLoading" />
+                                </div>
+                                
+                                <div class="border p-3 bg-white" style="min-height: 100px;">
+                                    @if (simulateLoading)
+                                    {
+                                        <LoadingComponent IsLoading="true" ShowText="true" LoadingText="正在載入數據..." />
+                                    }
+                                    else
+                                    {
+                                        <div>
+                                            <h6>模擬數據列表:</h6>
+                                            <ul class="list-unstyled">
+                                                @foreach (var item in sampleData)
+                                                {
+                                                    <li class="mb-1">
+                                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                                        @item
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>範例 6: 不同樣式組合</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">小尺寸 + 文字:</label>
+                                <div class="border p-2 bg-white">
+                                    <LoadingComponent 
+                                        IsLoading="true" 
+                                        Size="LoadingSize.Small" 
+                                        ShowText="true" 
+                                        LoadingText="處理中..." />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">大尺寸 + 自訂文字:</label>
+                                <div class="border p-2 bg-white">
+                                    <LoadingComponent 
+                                        IsLoading="true" 
+                                        Size="LoadingSize.Large" 
+                                        ShowText="true" 
+                                        LoadingText="正在上傳檔案..." />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">自訂 CSS 樣式:</label>
+                                <div class="border p-2 bg-white">
+                                    <LoadingComponent 
+                                        IsLoading="true" 
+                                        ShowText="true" 
+                                        LoadingText="特殊樣式載入..."
+                                        CssClass="border-primary rounded p-2" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>範例 7: 卡片內容載入狀態</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="card-title mb-0">用戶資料</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        @if (userDataLoading)
+                                        {
+                                            <LoadingComponent IsLoading="true" ShowText="true" LoadingText="載入用戶資料..." />
+                                        }
+                                        else
+                                        {
+                                            <p><strong>姓名:</strong> 張三</p>
+                                            <p><strong>電子郵件:</strong> zhang.san@example.com</p>
+                                            <p><strong>電話:</strong> 0912-345-678</p>
+                                        }
+                                    </div>
+                                    <div class="card-footer">
+                                        <ButtonComponent Text="@(userDataLoading ? "載入中..." : "重新載入")" 
+                                                       Variant="ButtonVariant.Primary"
+                                                       OnClick="LoadUserData" 
+                                                       IsDisabled="@userDataLoading" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="card-title mb-0">銷售報表</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        @if (reportLoading)
+                                        {
+                                            <LoadingComponent IsLoading="true" ShowText="true" LoadingText="產生報表中..." Size="LoadingSize.Small" />
+                                        }
+                                        else
+                                        {
+                                            <canvas id="chartCanvas" style="height: 100px; background: #f8f9fa;" class="w-100">
+                                                <div class="text-center py-4 text-muted">📊 模擬圖表區域</div>
+                                            </canvas>
+                                        }
+                                    </div>
+                                    <div class="card-footer">
+                                        <ButtonComponent Text="@(reportLoading ? "產生中..." : "產生報表")" 
+                                                       Variant="ButtonVariant.Success"
+                                                       OnClick="GenerateReport" 
+                                                       IsDisabled="@reportLoading" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool demoLoading = false;
+    private bool simulateLoading = false;
+    private bool userDataLoading = false;
+    private bool reportLoading = false;
+    
+    private List<string> sampleData = new();
+    
+    protected override void OnInitialized()
+    {
+        // 初始化範例數據
+        sampleData = new List<string>
+        {
+            "客戶資料 - 100筆",
+            "產品資料 - 250筆", 
+            "訂單資料 - 75筆",
+            "庫存資料 - 180筆"
+        };
+    }
+    
+    private void ToggleDemoLoading()
+    {
+        demoLoading = !demoLoading;
+        StateHasChanged();
+    }
+    
+    private async Task SimulateDataLoading()
+    {
+        simulateLoading = true;
+        StateHasChanged();
+        
+        // 模擬載入時間
+        await Task.Delay(2000);
+        
+        simulateLoading = false;
+        StateHasChanged();
+    }
+    
+    private async Task LoadUserData()
+    {
+        userDataLoading = true;
+        StateHasChanged();
+        
+        // 模擬API呼叫
+        await Task.Delay(1500);
+        
+        userDataLoading = false;
+        StateHasChanged();
+    }
+    
+    private async Task GenerateReport()
+    {
+        reportLoading = true;
+        StateHasChanged();
+        
+        // 模擬報表產生
+        await Task.Delay(3000);
+        
+        reportLoading = false;
+        StateHasChanged();
+    }
+}

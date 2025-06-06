@@ -1,0 +1,392 @@
+@page "/sharedcomponentsdemo/tables"
+@using static ERPCore2.Components.Shared.Buttons.ButtonComponent
+@using ERPCore2.Components.Shared.Tables
+@rendermode InteractiveServer
+
+<PageTitle>Tables 元件展示</PageTitle>
+
+<div class="container-fluid">
+    <h1 class="h3 mb-4">Tables 元件展示</h1>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">TableComponent 元件範例</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">
+                        TableComponent 元件提供統一的表格樣式，支援泛型類型、自定義模板、排序和各種視覺樣式。
+                    </p>
+                    
+                    <h6>範例 1: 基本表格</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <TableComponent TItem="SampleUser"
+                                      Items="@sampleUsers"
+                                      Headers="@basicHeaders">
+                            <RowTemplate Context="user">
+                                <td>@user.Id</td>
+                                <td>@user.Name</td>
+                                <td>@user.Email</td>
+                                <td>@user.Department</td>
+                            </RowTemplate>
+                        </TableComponent>
+                    </div>
+                    
+                    <h6>範例 2: 帶操作按鈕的表格</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <TableComponent TItem="SampleUser"
+                                      Items="@sampleUsers"
+                                      Headers="@basicHeaders"
+                                      ShowActions="true"
+                                      ActionsHeader="操作">
+                            <RowTemplate Context="user">
+                                <td>@user.Id</td>
+                                <td>@user.Name</td>
+                                <td>@user.Email</td>
+                                <td>@user.Department</td>
+                            </RowTemplate>
+                            <ActionsTemplate Context="user">
+                                <ButtonComponent Text="編輯" 
+                                               Variant="ButtonVariant.Primary" 
+                                               Size="ButtonSize.Small"
+                                               IconClass="bi bi-pencil"
+                                               OnClick="@(() => EditUser(user))" />
+                                <ButtonComponent Text="刪除" 
+                                               Variant="ButtonVariant.Danger" 
+                                               Size="ButtonSize.Small"
+                                               IconClass="bi bi-trash"
+                                               CssClass="ms-1"
+                                               OnClick="@(() => DeleteUser(user))" />
+                            </ActionsTemplate>
+                        </TableComponent>
+                    </div>
+                    
+                    <h6>範例 3: 不同尺寸的表格</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">小尺寸表格:</label>
+                                <TableComponent TItem="SampleProduct"
+                                              Items="@sampleProducts"
+                                              Headers="@productHeaders"
+                                              Size="TableComponent<SampleProduct>.TableSize.Small">
+                                    <RowTemplate Context="product">
+                                        <td>@product.Id</td>
+                                        <td>@product.Name</td>
+                                        <td class="text-end">$@product.Price.ToString("N2")</td>
+                                    </RowTemplate>
+                                </TableComponent>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">大尺寸表格:</label>
+                                <TableComponent TItem="SampleProduct"
+                                              Items="@sampleProducts"
+                                              Headers="@productHeaders"
+                                              Size="TableComponent<SampleProduct>.TableSize.Large">
+                                    <RowTemplate Context="product">
+                                        <td>@product.Id</td>
+                                        <td>@product.Name</td>
+                                        <td class="text-end">$@product.Price.ToString("N2")</td>
+                                    </RowTemplate>
+                                </TableComponent>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>範例 4: 不同樣式選項</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">帶邊框的表格:</label>
+                                <TableComponent TItem="SampleProduct"
+                                              Items="@sampleProducts.Take(3)"
+                                              Headers="@productHeaders"
+                                              IsBordered="true"
+                                              IsStriped="false">
+                                    <RowTemplate Context="product">
+                                        <td>@product.Id</td>
+                                        <td>@product.Name</td>
+                                        <td class="text-end">$@product.Price.ToString("N2")</td>
+                                    </RowTemplate>
+                                </TableComponent>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">無條紋但可懸停:</label>
+                                <TableComponent TItem="SampleProduct"
+                                              Items="@sampleProducts.Take(3)"
+                                              Headers="@productHeaders"
+                                              IsStriped="false"
+                                              IsHoverable="true">
+                                    <RowTemplate Context="product">
+                                        <td>@product.Id</td>
+                                        <td>@product.Name</td>
+                                        <td class="text-end">$@product.Price.ToString("N2")</td>
+                                    </RowTemplate>
+                                </TableComponent>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>範例 5: 空白狀態處理</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">預設空白訊息:</label>
+                                <TableComponent TItem="SampleUser"
+                                              Items="@emptyUsers"
+                                              Headers="@basicHeaders">
+                                    <RowTemplate Context="user">
+                                        <td>@user.Id</td>
+                                        <td>@user.Name</td>
+                                        <td>@user.Email</td>
+                                        <td>@user.Department</td>
+                                    </RowTemplate>
+                                </TableComponent>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">自訂空白訊息:</label>
+                                <TableComponent TItem="SampleUser"
+                                              Items="@emptyUsers"
+                                              Headers="@basicHeaders"
+                                              EmptyMessage="目前沒有用戶資料">
+                                    <RowTemplate Context="user">
+                                        <td>@user.Id</td>
+                                        <td>@user.Name</td>
+                                        <td>@user.Email</td>
+                                        <td>@user.Department</td>
+                                    </RowTemplate>
+                                </TableComponent>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>範例 6: 自訂空白模板</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <TableComponent TItem="SampleUser"
+                                      Items="@emptyUsers"
+                                      Headers="@basicHeaders">
+                            <RowTemplate Context="user">
+                                <td>@user.Id</td>
+                                <td>@user.Name</td>
+                                <td>@user.Email</td>
+                                <td>@user.Department</td>
+                            </RowTemplate>
+                            <EmptyTemplate>
+                                <div class="text-center py-5">
+                                    <i class="bi bi-person-plus-fill text-primary" style="font-size: 3rem;"></i>
+                                    <h5 class="mt-3 text-primary">還沒有用戶</h5>
+                                    <p class="text-muted">點擊下方按鈕添加第一個用戶</p>
+                                    <ButtonComponent Text="添加用戶" 
+                                                   Variant="ButtonVariant.Primary"
+                                                   IconClass="bi bi-plus-lg"
+                                                   OnClick="@(() => ShowMessage("點擊了添加用戶"))" />
+                                </div>
+                            </EmptyTemplate>
+                        </TableComponent>
+                    </div>
+                    
+                    <h6>範例 7: 動態載入和狀態管理</h6>
+                    <div class="border p-3 mb-4 bg-light">
+                        <div class="d-flex gap-2 mb-3">
+                            <ButtonComponent Text="@(showDynamicData ? "清空資料" : "載入資料")" 
+                                           Variant="@(showDynamicData ? ButtonVariant.Warning : ButtonVariant.Success)"
+                                           OnClick="ToggleDynamicData" />
+                            <ButtonComponent Text="模擬載入" 
+                                           Variant="ButtonVariant.Info"
+                                           OnClick="SimulateLoading" 
+                                           IsDisabled="@isSimulatingLoad" />
+                        </div>
+                        
+                        @if (isSimulatingLoad)
+                        {
+                            <div class="text-center py-4">
+                                <LoadingComponent IsLoading="true" ShowText="true" LoadingText="正在載入資料..." />
+                            </div>
+                        }
+                        else
+                        {
+                            <TableComponent TItem="SampleOrder"
+                                          Items="@(showDynamicData ? dynamicOrders : emptyOrders)"
+                                          Headers="@orderHeaders"
+                                          ShowActions="true"
+                                          GetRowCssClass="@GetOrderRowClass">
+                                <RowTemplate Context="order">
+                                    <td>#@order.Id</td>
+                                    <td>@order.CustomerName</td>
+                                    <td class="text-end">$@order.Amount.ToString("N2")</td>
+                                    <td>
+                                        <span class="badge @GetStatusBadgeClass(order.Status)">
+                                            @order.Status
+                                        </span>
+                                    </td>
+                                    <td>@order.OrderDate.ToString("yyyy/MM/dd")</td>
+                                </RowTemplate>
+                                <ActionsTemplate Context="order">
+                                    <ButtonComponent Text="查看" 
+                                                   Variant="ButtonVariant.OutlinePrimary" 
+                                                   Size="ButtonSize.Small"
+                                                   IconClass="bi bi-eye"
+                                                   OnClick="@(() => ViewOrder(order))" />
+                                </ActionsTemplate>
+                            </TableComponent>
+                        }
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(message))
+                    {
+                        <div class="alert alert-info alert-dismissible fade show mt-4" role="alert">
+                            <i class="bi bi-info-circle me-2"></i>
+                            @message
+                            <button type="button" class="btn-close" @onclick="ClearMessage"></button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string message = string.Empty;
+    private bool showDynamicData = false;
+    private bool isSimulatingLoad = false;
+    
+    // 範例數據類別
+    public class SampleUser
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Department { get; set; } = string.Empty;
+    }
+    
+    public class SampleProduct
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+    }
+    
+    public class SampleOrder
+    {
+        public int Id { get; set; }
+        public string CustomerName { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public DateTime OrderDate { get; set; }
+    }
+    
+    // 表格標題
+    private List<string> basicHeaders = new() { "ID", "姓名", "電子郵件", "部門" };
+    private List<string> productHeaders = new() { "ID", "產品名稱", "價格" };
+    private List<string> orderHeaders = new() { "訂單號", "客戶名稱", "金額", "狀態", "訂單日期" };
+    
+    // 範例數據
+    private List<SampleUser> sampleUsers = new();
+    private List<SampleUser> emptyUsers = new();
+    private List<SampleProduct> sampleProducts = new();
+    private List<SampleOrder> dynamicOrders = new();
+    private List<SampleOrder> emptyOrders = new();
+    
+    protected override void OnInitialized()
+    {
+        // 初始化用戶數據
+        sampleUsers = new List<SampleUser>
+        {
+            new() { Id = 1, Name = "張三", Email = "zhang.san@example.com", Department = "資訊部" },
+            new() { Id = 2, Name = "李四", Email = "li.si@example.com", Department = "行銷部" },
+            new() { Id = 3, Name = "王五", Email = "wang.wu@example.com", Department = "財務部" },
+            new() { Id = 4, Name = "趙六", Email = "zhao.liu@example.com", Department = "人資部" }
+        };
+        
+        // 初始化產品數據
+        sampleProducts = new List<SampleProduct>
+        {
+            new() { Id = 1, Name = "筆記型電腦", Price = 25000 },
+            new() { Id = 2, Name = "滑鼠", Price = 500 },
+            new() { Id = 3, Name = "鍵盤", Price = 1200 },
+            new() { Id = 4, Name = "螢幕", Price = 8000 },
+            new() { Id = 5, Name = "印表機", Price = 3500 }
+        };
+        
+        // 初始化訂單數據
+        dynamicOrders = new List<SampleOrder>
+        {
+            new() { Id = 1001, CustomerName = "美莊建設", Amount = 150000, Status = "已完成", OrderDate = DateTime.Now.AddDays(-5) },
+            new() { Id = 1002, CustomerName = "台北工程", Amount = 85000, Status = "處理中", OrderDate = DateTime.Now.AddDays(-3) },
+            new() { Id = 1003, CustomerName = "新竹科技", Amount = 200000, Status = "已發貨", OrderDate = DateTime.Now.AddDays(-1) },
+            new() { Id = 1004, CustomerName = "高雄建材", Amount = 45000, Status = "待確認", OrderDate = DateTime.Now }
+        };
+    }
+    
+    private void EditUser(SampleUser user)
+    {
+        ShowMessage($"編輯用戶: {user.Name}");
+    }
+    
+    private void DeleteUser(SampleUser user)
+    {
+        ShowMessage($"刪除用戶: {user.Name}");
+    }
+    
+    private void ViewOrder(SampleOrder order)
+    {
+        ShowMessage($"查看訂單: #{order.Id} - {order.CustomerName}");
+    }
+    
+    private void ToggleDynamicData()
+    {
+        showDynamicData = !showDynamicData;
+        ShowMessage(showDynamicData ? "已載入動態資料" : "已清空資料");
+    }
+    
+    private async Task SimulateLoading()
+    {
+        isSimulatingLoad = true;
+        StateHasChanged();
+        
+        await Task.Delay(2000);
+        
+        isSimulatingLoad = false;
+        showDynamicData = true;
+        StateHasChanged();
+        ShowMessage("資料載入完成");
+    }
+    
+    private string GetOrderRowClass(SampleOrder order)
+    {
+        return order.Status switch
+        {
+            "已完成" => "table-success",
+            "處理中" => "table-info",
+            "已發貨" => "table-primary",
+            "待確認" => "table-warning",
+            _ => ""
+        };
+    }
+    
+    private string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "已完成" => "bg-success",
+            "處理中" => "bg-info",
+            "已發貨" => "bg-primary",
+            "待確認" => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+    
+    private void ShowMessage(string msg)
+    {
+        message = msg;
+        StateHasChanged();
+    }
+    
+    private void ClearMessage()
+    {
+        message = string.Empty;
+        StateHasChanged();
+    }
+}
