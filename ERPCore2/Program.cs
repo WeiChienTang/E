@@ -10,6 +10,19 @@ var builder = WebApplication.CreateBuilder(args);
 // 註冊應用程式服務
 builder.Services.AddApplicationServices(builder.Configuration.GetConnectionString("DefaultConnection")!);
 
+// 加入認證和授權服務
+builder.Services.AddAuthentication("Cookies")
+    .AddCookie("Cookies", options =>
+    {
+        options.LoginPath = "/login";
+        options.LogoutPath = "/logout";
+        options.AccessDeniedPath = "/access-denied";
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.SlidingExpiration = true;
+    });
+
+builder.Services.AddAuthorization();
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -26,6 +39,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// 加入認證和授權中介軟體
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.UseAntiforgery();
 
 app.MapStaticAssets();
@@ -38,8 +55,8 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
-        // 暫時註釋掉種子資料初始化，專注於測試並發問題修復
-        // await ERPCore2.Data.SeedData.InitializeAsync(services);
+        // 初始化種子資料（包含認證系統資料）
+        await ERPCore2.Data.SeedData.InitializeAsync(services);
     }
     catch (Exception ex)
     {

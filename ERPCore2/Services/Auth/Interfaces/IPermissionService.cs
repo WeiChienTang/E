@@ -1,7 +1,7 @@
 using ERPCore2.Data.Entities;
 using ERPCore2.Services.Interfaces;
 
-namespace ERPCore2.Services.Auth.Interfaces
+namespace ERPCore2.Services.Interfaces
 {
     /// <summary>
     /// 權限服務介面

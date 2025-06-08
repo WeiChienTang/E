@@ -1,0 +1,81 @@
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inherits ComponentBase
+@inject IServiceProvider ServiceProvider
+
+@if (isAuthorized)
+{
+    @ChildContent
+}
+else if (!string.IsNullOrEmpty(UnauthorizedContent))
+{
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        @UnauthorizedContent
+    </div>
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string? Permission { get; set; }
+    [Parameter] public string? Role { get; set; }
+    [Parameter] public string UnauthorizedContent { get; set; } = "您沒有權限執行此操作";
+    
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
+    
+    private bool isAuthorized = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (AuthenticationState is null)
+        {
+            isAuthorized = false;
+            return;
+        }
+
+        var authState = await AuthenticationState;
+        var user = authState.User;
+
+        if (!user.Identity?.IsAuthenticated ?? true)
+        {
+            isAuthorized = false;
+            return;
+        }
+
+        // 檢查角色權限
+        if (!string.IsNullOrEmpty(Role))
+        {
+            isAuthorized = user.IsInRole(Role);
+            return;
+        }
+
+        // 檢查特定權限
+        if (!string.IsNullOrEmpty(Permission))
+        {
+            try
+            {
+                using var scope = ServiceProvider.CreateScope();
+                var permissionService = scope.ServiceProvider.GetService<ERPCore2.Services.Interfaces.IPermissionService>();
+                
+                if (permissionService != null)
+                {
+                    var employeeIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    if (int.TryParse(employeeIdClaim, out int employeeId))
+                    {
+                        var result = await permissionService.HasPermissionAsync(employeeId, Permission);
+                        isAuthorized = result.IsSuccess && result.Data;
+                    }
+                }
+            }
+            catch
+            {
+                isAuthorized = false;
+            }
+            return;
+        }
+
+        // 如果沒有特定權限要求，只要已登入就允許
+        isAuthorized = true;
+    }
+}

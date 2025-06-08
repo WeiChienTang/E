@@ -1,0 +1,202 @@
+@page "/auth/login"
+@using System.ComponentModel.DataAnnotations
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.AspNetCore.Antiforgery
+@using ERPCore2.Services
+@using ERPCore2.Services.Interfaces
+@inject ERPCore2.Services.Interfaces.IAuthenticationService AuthService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject IAntiforgery Antiforgery
+
+<PageTitle>登入 - ERPCore2</PageTitle>
+
+<div class="container-fluid vh-100 d-flex align-items-center justify-content-center bg-light">
+    <div class="card shadow-lg" style="width: 400px;">
+        <div class="card-header bg-primary text-white text-center">
+            <h4 class="mb-0">
+                <i class="fas fa-sign-in-alt me-2"></i>
+                ERPCore2 登入
+            </h4>
+        </div>        <div class="card-body p-4">
+            <EditForm Model="@loginModel" OnValidSubmit="@HandleLogin" FormName="LoginForm">
+                <AntiforgeryToken />
+                <DataAnnotationsValidator />
+                
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        @errorMessage
+                    </div>
+                }
+                
+                <div class="mb-3">
+                    <label for="username" class="form-label">
+                        <i class="fas fa-user me-2"></i>使用者名稱
+                    </label>
+                    <InputText @bind-Value="loginModel.Username" 
+                              class="form-control" 
+                              id="username" 
+                              placeholder="請輸入使用者名稱" />
+                    <ValidationMessage For="@(() => loginModel.Username)" class="text-danger" />
+                </div>
+                
+                <div class="mb-3">
+                    <label for="password" class="form-label">
+                        <i class="fas fa-lock me-2"></i>密碼
+                    </label>
+                    <InputText @bind-Value="loginModel.Password" 
+                              type="password" 
+                              class="form-control" 
+                              id="password" 
+                              placeholder="請輸入密碼" />
+                    <ValidationMessage For="@(() => loginModel.Password)" class="text-danger" />
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <InputCheckbox @bind-Value="loginModel.RememberMe" 
+                                  class="form-check-input" 
+                                  id="rememberMe" />
+                    <label class="form-check-label" for="rememberMe">
+                        記住我
+                    </label>
+                </div>
+                
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <span>登入中...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-sign-in-alt me-2"></i>
+                            <span>登入</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+        <div class="card-footer text-center text-muted">
+            <small>ERPCore2 企業資源規劃系統</small>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private LoginModel loginModel { get; set; } = new();
+    private string errorMessage = string.Empty;
+    private bool isLoading = false;
+    private bool loginSuccess = false;
+    private string redirectUrl = "/";
+
+    [SupplyParameterFromQuery]
+    public string? ReturnUrl { get; set; }
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    protected override void OnInitialized()
+    {
+        loginModel ??= new LoginModel();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (loginSuccess)
+        {
+            // 在渲染完成後執行 JavaScript 重定向
+            await JSRuntime.InvokeVoidAsync("window.location.href", redirectUrl);
+        }
+    }private async Task HandleLogin()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+            StateHasChanged();
+
+            // 調試：檢查輸入值
+            Console.WriteLine($"Username: '{loginModel.Username}', Password: '{loginModel.Password}'");
+
+            // 檢查是否有輸入值
+            if (string.IsNullOrWhiteSpace(loginModel.Username) || string.IsNullOrWhiteSpace(loginModel.Password))
+            {
+                errorMessage = "請輸入使用者名稱和密碼";
+                return;
+            }
+
+            var result = await AuthService.LoginAsync(loginModel.Username, loginModel.Password);
+            
+            if (result.IsSuccess && result.Data != null)
+            {
+                var employee = result.Data;
+                
+                // 建立聲明
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, employee.Id.ToString()),
+                    new Claim(ClaimTypes.Name, employee.Username),
+                    new Claim(ClaimTypes.GivenName, employee.FirstName ?? ""),
+                    new Claim(ClaimTypes.Surname, employee.LastName ?? ""),
+                    new Claim(ClaimTypes.Email, employee.Email ?? ""),
+                    new Claim("EmployeeCode", employee.EmployeeCode ?? ""),
+                    new Claim("Department", employee.Department ?? ""),
+                    new Claim("Position", employee.Position ?? "")
+                };
+
+                // 加入角色聲明
+                if (employee.Role != null)
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, employee.Role.RoleName));
+                }                // 建立身份
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = loginModel.RememberMe,
+                    ExpiresUtc = loginModel.RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(8)
+                };                // 登入
+                if (HttpContext != null)
+                {
+                    await HttpContext.SignInAsync(
+                        CookieAuthenticationDefaults.AuthenticationScheme,
+                        new ClaimsPrincipal(claimsIdentity),
+                        authProperties);
+                }
+
+                // 設置成功標記，在 OnAfterRenderAsync 中處理重定向
+                loginSuccess = true;
+                redirectUrl = !string.IsNullOrEmpty(ReturnUrl) ? ReturnUrl : "/";
+            }
+            else
+            {
+                errorMessage = result.ErrorMessage ?? "登入失敗，請檢查您的使用者名稱和密碼";
+            }        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"登入錯誤詳細信息: {ex}");
+            errorMessage = $"登入時發生錯誤：{ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    public class LoginModel
+    {
+        [Required(ErrorMessage = "請輸入使用者名稱")]
+        public string Username { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "請輸入密碼")]
+        public string Password { get; set; } = string.Empty;
+
+        public bool RememberMe { get; set; } = false;
+    }
+}

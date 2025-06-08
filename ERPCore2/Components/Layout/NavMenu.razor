@@ -1,6 +1,30 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authorization
+@using ERPCore2.Components.Shared
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
         <a class="navbar-brand" href="">美莊磚業</a>
+        <AuthorizeView>
+            <Authorized>
+                <div class="d-flex align-items-center">
+                    <span class="text-white me-3">
+                        <i class="bi bi-person-fill me-1"></i>
+                        歡迎，@context.User.Identity?.Name
+                    </span>
+                    <a href="/auth/logout" class="btn btn-sm btn-outline-light">
+                        <i class="bi bi-box-arrow-right me-1"></i>
+                        登出
+                    </a>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <a href="/auth/login" class="btn btn-sm btn-outline-light">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>
+                    登入
+                </a>
+            </NotAuthorized>
+        </AuthorizeView>
     </div>
 </div>
 
@@ -10,18 +34,70 @@
     <nav class="nav flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>        </div>        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="customers">
-                <span class="bi bi-people-fill" aria-hidden="true"></span> 客戶管理
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> 首頁
             </NavLink>
         </div>
         
+        <!-- 只有登入用戶才能看到的菜單 -->
+        <AuthorizeView>
+            <Authorized>
+                <!-- 客戶管理 - 需要 CUSTOMER_VIEW 權限 -->
+                <PermissionCheck Permission="CUSTOMER_VIEW">
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="customers">
+                            <span class="bi bi-people-fill" aria-hidden="true"></span> 客戶管理
+                        </NavLink>
+                    </div>
+                </PermissionCheck>
+                
+                <!-- 系統管理 - 需要 SYSTEM_ADMIN 權限 -->
+                <PermissionCheck Permission="SYSTEM_ADMIN">
+                    <div class="nav-item px-3">
+                        <div class="nav-link dropdown" onclick="toggleDropdown(event)">
+                            <span class="bi bi-gear-fill" aria-hidden="true"></span> 系統管理
+                            <span class="bi bi-chevron-down ms-auto dropdown-arrow"></span>
+                        </div>
+                        <div class="dropdown-menu">
+                            <NavLink class="dropdown-item" href="/admin/users">
+                                <span class="bi bi-person-lines-fill" aria-hidden="true"></span> 使用者管理
+                            </NavLink>
+                            <NavLink class="dropdown-item" href="/admin/roles">
+                                <span class="bi bi-shield-fill" aria-hidden="true"></span> 角色管理
+                            </NavLink>
+                            <NavLink class="dropdown-item" href="/admin/permissions">
+                                <span class="bi bi-key-fill" aria-hidden="true"></span> 權限管理
+                            </NavLink>
+                        </div>
+                    </div>
+                </PermissionCheck>
+                
+                <!-- 報表功能 - 需要 REPORT_VIEW 權限 -->
+                <PermissionCheck Permission="REPORT_VIEW">
+                    <div class="nav-item px-3">
+                        <div class="nav-link dropdown" onclick="toggleDropdown(event)">
+                            <span class="bi bi-bar-chart-fill" aria-hidden="true"></span> 報表管理
+                            <span class="bi bi-chevron-down ms-auto dropdown-arrow"></span>
+                        </div>
+                        <div class="dropdown-menu">
+                            <NavLink class="dropdown-item" href="/reports/customer">
+                                <span class="bi bi-people" aria-hidden="true"></span> 客戶報表
+                            </NavLink>
+                            <NavLink class="dropdown-item" href="/reports/system">
+                                <span class="bi bi-gear" aria-hidden="true"></span> 系統報表
+                            </NavLink>
+                        </div>
+                    </div>
+                </PermissionCheck>
+            </Authorized>
+        </AuthorizeView>
+        
+        <!-- 開發用元件展示 - 只在開發環境顯示 -->
         <div class="nav-item px-3">
             <div class="nav-link dropdown" onclick="toggleDropdown(event)">
                 <span class="bi bi-puzzle-fill" aria-hidden="true"></span> 元件展示
                 <span class="bi bi-chevron-down ms-auto dropdown-arrow"></span>
-            </div>            <div class="dropdown-menu">
+            </div>
+            <div class="dropdown-menu">
                 <NavLink class="dropdown-item" href="sharedcomponentsdemo/actions">
                     <span class="bi bi-lightning-fill" aria-hidden="true"></span> Actions
                 </NavLink>
@@ -36,18 +112,19 @@
                 </NavLink>
                 <NavLink class="dropdown-item" href="sharedcomponentsdemo/details">
                     <span class="bi bi-card-text" aria-hidden="true"></span> Details
-                </NavLink>                <NavLink class="dropdown-item" href="sharedcomponentsdemo/forms">
+                </NavLink>
+                <NavLink class="dropdown-item" href="sharedcomponentsdemo/forms">
                     <span class="bi bi-ui-checks" aria-hidden="true"></span> Forms
                 </NavLink>
                 <NavLink class="dropdown-item" href="sharedcomponentsdemo/headers">
                     <span class="bi bi-header" aria-hidden="true"></span> Headers
-                </NavLink>                <NavLink class="dropdown-item" href="sharedcomponentsdemo/loading">
+                </NavLink>
+                <NavLink class="dropdown-item" href="sharedcomponentsdemo/loading">
                     <span class="bi bi-arrow-repeat" aria-hidden="true"></span> Loading
                 </NavLink>
                 <NavLink class="dropdown-item" href="sharedcomponentsdemo/modals">
                     <span class="bi bi-window" aria-hidden="true"></span> Modals
-                </NavLink>
-                <NavLink class="dropdown-item" href="sharedcomponentsdemo/tables">
+                </NavLink>                <NavLink class="dropdown-item" href="sharedcomponentsdemo/tables">
                     <span class="bi bi-table" aria-hidden="true"></span> Tables
                 </NavLink>
             </div>

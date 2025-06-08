@@ -1,7 +1,7 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
-using ERPCore2.Services.Auth.Interfaces;
+using ERPCore2.Services.Interfaces;
 using ERPCore2.Services.GenericManagementService;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;

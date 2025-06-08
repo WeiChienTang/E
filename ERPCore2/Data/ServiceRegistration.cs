@@ -1,7 +1,6 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Services;
 using ERPCore2.Services.Interfaces;
-using ERPCore2.Services.Auth.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERPCore2.Data
