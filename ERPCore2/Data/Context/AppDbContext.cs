@@ -8,9 +8,7 @@ namespace ERPCore2.Data.Context
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
-        }
-
-        // DbSets for each entity
+        }        // DbSets for each entity
         public DbSet<Customer> Customers { get; set; }
         public DbSet<CustomerType> CustomerTypes { get; set; }
         public DbSet<IndustryType> IndustryTypes { get; set; }
@@ -18,6 +16,12 @@ namespace ERPCore2.Data.Context
         public DbSet<AddressType> AddressTypes { get; set; }
         public DbSet<CustomerContact> CustomerContacts { get; set; }
         public DbSet<CustomerAddress> CustomerAddresses { get; set; }
+        
+        // Authentication & Authorization DbSets
+        public DbSet<Employee> Employees { get; set; }
+        public DbSet<Role> Roles { get; set; }
+        public DbSet<Permission> Permissions { get; set; }
+        public DbSet<RolePermission> RolePermissions { get; set; }
           protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -44,9 +48,7 @@ namespace ERPCore2.Data.Context
                 entity.HasOne(e => e.ContactType)
                       .WithMany(ct => ct.CustomerContacts)
                       .OnDelete(DeleteBehavior.SetNull);
-            });
-
-            // Configure CustomerAddress Entity - Only Delete Behaviors
+            });            // Configure CustomerAddress Entity - Only Delete Behaviors
             modelBuilder.Entity<CustomerAddress>(entity =>
             {
                 entity.HasOne(e => e.Customer)
@@ -56,6 +58,25 @@ namespace ERPCore2.Data.Context
                 entity.HasOne(e => e.AddressType)
                       .WithMany(at => at.CustomerAddresses)
                       .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // Configure Authentication & Authorization Entities
+            modelBuilder.Entity<Employee>(entity =>
+            {
+                entity.HasOne(e => e.Role)
+                      .WithMany(r => r.Employees)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<RolePermission>(entity =>
+            {
+                entity.HasOne(rp => rp.Role)
+                      .WithMany(r => r.RolePermissions)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(rp => rp.Permission)
+                      .WithMany(p => p.RolePermissions)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

@@ -467,31 +467,7 @@
         
         // 載入客戶聯絡資料
         customerContacts = (await CustomerService.GetCustomerContactsAsync(CustomerId.Value)).ToList();
-    }
-      private async Task LoadCustomerContactsAsync()
-    {
-        try
-        {
-            if (CustomerId.HasValue)
-            {
-                // 載入客戶的聯絡資料
-                var contacts = await CustomerService.GetCustomerContactsAsync(CustomerId.Value);
-                customerContacts = contacts?.ToList() ?? new List<CustomerContact>();
-                
-                if (enableDebugLog)
-                {
-                    Console.WriteLine($"載入了 {customerContacts.Count} 個客戶聯絡資料");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"載入客戶聯絡資料時發生錯誤: {ex.Message}");
-            // 如果載入失敗，初始化空的聯絡資料
-            customerContacts = new List<CustomerContact>();
-        }
-    }
-      private void InitializeDefaultAddresses()
+    }    private void InitializeDefaultAddresses()
     {
         CustomerAddressService.InitializeDefaultAddresses(customerAddresses, addressTypes);
         
@@ -856,6 +832,7 @@
     {
         return CustomerContactService.GetContactValue(customer.Id, contactTypeName, contactTypes, customerContacts);
     }
+
       private void UpdateContactValue(string contactTypeName, string value)
     {
         var result = CustomerContactService.UpdateContactValue(customer.Id, contactTypeName, value, contactTypes, customerContacts);

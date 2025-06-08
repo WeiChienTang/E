@@ -1,6 +1,7 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Services;
 using ERPCore2.Services.Interfaces;
+using ERPCore2.Services.Auth.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERPCore2.Data
@@ -21,9 +22,7 @@ namespace ERPCore2.Data
             // Database Configuration - 使用 DbContextFactory 解決並發問題
             services.AddDbContextFactory<AppDbContext>(options =>
                 options.UseSqlServer(connectionString));
-        }
-
-        /// <summary>
+        }        /// <summary>
         /// 註冊業務邏輯服務
         /// </summary>
         /// <param name="services">服務集合</param>
@@ -41,6 +40,16 @@ namespace ERPCore2.Data
 
             // 行業類型服務
             services.AddScoped<IIndustryTypeService, IndustryTypeService>();
+            
+            // 認證和授權服務
+            services.AddScoped<IEmployeeService, EmployeeService>();
+            services.AddScoped<IRoleService, RoleService>();
+            services.AddScoped<IPermissionService, PermissionService>();
+            services.AddScoped<IPermissionManagementService, PermissionManagementService>();
+            services.AddScoped<IAuthenticationService, AuthenticationService>();
+            
+            // 記憶體快取服務（用於權限快取）
+            services.AddMemoryCache();
         }
 
         /// <summary>
