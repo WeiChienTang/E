@@ -3,13 +3,11 @@
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authentication.Cookies
-@using Microsoft.AspNetCore.Antiforgery
 @using ERPCore2.Services
 @using ERPCore2.Services.Interfaces
 @inject ERPCore2.Services.Interfaces.IAuthenticationService AuthService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@inject IAntiforgery Antiforgery
 
 <PageTitle>登入 - ERPCore2</PageTitle>
 
@@ -20,9 +18,7 @@
                 <i class="fas fa-sign-in-alt me-2"></i>
                 ERPCore2 登入
             </h4>
-        </div>        <div class="card-body p-4">
-            <EditForm Model="@loginModel" OnValidSubmit="@HandleLogin" FormName="LoginForm">
-                <AntiforgeryToken />
+        </div>        <div class="card-body p-4">            <EditForm Model="@loginModel" OnValidSubmit="@HandleLogin" FormName="LoginForm">
                 <DataAnnotationsValidator />
                 
                 @if (!string.IsNullOrEmpty(errorMessage))
