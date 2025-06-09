@@ -7,7 +7,6 @@
 @using ERPCore2.Services.Interfaces
 @inject ERPCore2.Services.Interfaces.IAuthenticationService AuthService
 @inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
 
 <PageTitle>登入 - ERPCore2</PageTitle>
 
@@ -18,9 +17,9 @@
                 <i class="fas fa-sign-in-alt me-2"></i>
                 ERPCore2 登入
             </h4>
-        </div>        <div class="card-body p-4">            <EditForm Model="@loginModel" OnValidSubmit="@HandleLogin" FormName="LoginForm">
+        </div>          <div class="card-body p-4">            <EditForm Model="@loginModel" OnValidSubmit="@HandleLogin">
                 <DataAnnotationsValidator />
-                
+
                 @if (!string.IsNullOrEmpty(errorMessage))
                 {
                     <div class="alert alert-danger" role="alert">
@@ -84,50 +83,38 @@
 </div>
 
 @code {
-    [SupplyParameterFromForm]
-    private LoginModel loginModel { get; set; } = new();
+    private LoginModel loginModel = new();
+    
     private string errorMessage = string.Empty;
     private bool isLoading = false;
-    private bool loginSuccess = false;
-    private string redirectUrl = "/";
 
     [SupplyParameterFromQuery]
     public string? ReturnUrl { get; set; }
 
     [CascadingParameter]
-    private HttpContext? HttpContext { get; set; }
-
-    protected override void OnInitialized()
+    private HttpContext? HttpContext { get; set; }    protected override void OnInitialized()
     {
+        // 確保 loginModel 總是有效的實例
         loginModel ??= new LoginModel();
-    }
+    }    private async Task HandleLogin()
+    {
+        // 防止重複提交
+        if (isLoading) return;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (loginSuccess)
-        {
-            // 在渲染完成後執行 JavaScript 重定向
-            await JSRuntime.InvokeVoidAsync("window.location.href", redirectUrl);
-        }
-    }private async Task HandleLogin()
-    {
         try
         {
             isLoading = true;
             errorMessage = string.Empty;
             StateHasChanged();
-
-            // 調試：檢查輸入值
-            Console.WriteLine($"Username: '{loginModel.Username}', Password: '{loginModel.Password}'");
-
-            // 檢查是否有輸入值
+            
+            // 輸入值檢查
             if (string.IsNullOrWhiteSpace(loginModel.Username) || string.IsNullOrWhiteSpace(loginModel.Password))
             {
                 errorMessage = "請輸入使用者名稱和密碼";
                 return;
             }
 
-            var result = await AuthService.LoginAsync(loginModel.Username, loginModel.Password);
+            var result = await AuthService.LoginAsync(loginModel.Username.Trim(), loginModel.Password.Trim());
             
             if (result.IsSuccess && result.Data != null)
             {
@@ -150,13 +137,17 @@
                 if (employee.Role != null)
                 {
                     claims.Add(new Claim(ClaimTypes.Role, employee.Role.RoleName));
-                }                // 建立身份
+                }
+
+                // 建立身份
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var authProperties = new AuthenticationProperties
                 {
                     IsPersistent = loginModel.RememberMe,
                     ExpiresUtc = loginModel.RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(8)
-                };                // 登入
+                };
+
+                // 登入
                 if (HttpContext != null)
                 {
                     await HttpContext.SignInAsync(
@@ -165,14 +156,15 @@
                         authProperties);
                 }
 
-                // 設置成功標記，在 OnAfterRenderAsync 中處理重定向
-                loginSuccess = true;
-                redirectUrl = !string.IsNullOrEmpty(ReturnUrl) ? ReturnUrl : "/";
+                // 使用 NavigationManager 進行重定向
+                var redirectUrl = !string.IsNullOrEmpty(ReturnUrl) ? ReturnUrl : "/";
+                Navigation.NavigateTo(redirectUrl, forceLoad: true);
             }
             else
             {
                 errorMessage = result.ErrorMessage ?? "登入失敗，請檢查您的使用者名稱和密碼";
-            }        }
+            }
+        }
         catch (Exception ex)
         {
             Console.WriteLine($"登入錯誤詳細信息: {ex}");

@@ -23,12 +23,6 @@ builder.Services.AddAuthentication("Cookies")
 
 builder.Services.AddAuthorization();
 
-// 配置防偽令牌為非強制性
-builder.Services.AddAntiforgery(options =>
-{
-    options.SuppressXFrameOptionsHeader = true;
-});
-
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -48,8 +42,6 @@ app.UseHttpsRedirection();
 // 加入認證和授權中介軟體
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
