@@ -42,9 +42,7 @@ namespace ERPCore2.Controllers
                 }
 
                 var employee = result.Data;
-                _logger.LogInformation("✅ 員工驗證成功: Id={Id}, Username={Username}", employee.Id, employee.Username);
-
-                // 建立聲明
+                _logger.LogInformation("✅ 員工驗證成功: Id={Id}, Username={Username}", employee.Id, employee.Username);                // 建立聲明
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, employee.Id.ToString()),
@@ -57,14 +55,22 @@ namespace ERPCore2.Controllers
                     new Claim("Position", employee.Position ?? "")
                 };
 
+                _logger.LogInformation("🔍 建立的基本 Claims:");
+                foreach (var claim in claims)
+                {
+                    _logger.LogInformation("  - {Type}: {Value}", claim.Type, claim.Value);
+                }
+
                 // 加入角色聲明
                 if (employee.Role != null)
                 {
                     claims.Add(new Claim(ClaimTypes.Role, employee.Role.RoleName));
                     _logger.LogInformation("✅ 添加角色聲明: {RoleName}", employee.Role.RoleName);
                 }
-
-                // 建立身份
+                else
+                {
+                    _logger.LogWarning("⚠️ 員工沒有角色資料");
+                }                // 建立身份
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var authProperties = new AuthenticationProperties
                 {
@@ -72,13 +78,15 @@ namespace ERPCore2.Controllers
                     ExpiresUtc = request.RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(8)
                 };
 
+                _logger.LogInformation("🍪 準備設定 Cookie 認證, IsPersistent: {IsPersistent}", request.RememberMe);
+
                 // 執行登入
                 await HttpContext.SignInAsync(
                     CookieAuthenticationDefaults.AuthenticationScheme,
                     new ClaimsPrincipal(claimsIdentity),
                     authProperties);
 
-                _logger.LogInformation("✅ 登入成功");
+                _logger.LogInformation("✅ Cookie 認證設定完成，登入成功");
 
                 // 返回成功響應
                 return Ok(new { 
@@ -90,6 +98,54 @@ namespace ERPCore2.Controllers
             {
                 _logger.LogError(ex, "登入過程中發生錯誤");
                 return StatusCode(500, new { error = "登入時發生錯誤" });
+            }        }
+
+        [HttpGet("signin")]
+        public async Task<IActionResult> SignIn([FromQuery] string claims, [FromQuery] string remember, [FromQuery] string returnUrl)
+        {
+            try
+            {
+                _logger.LogInformation("🔐 執行登入Cookie設定");
+
+                // 解析Claims資料
+                var claimsData = Uri.UnescapeDataString(claims);
+                var claimsList = new List<Claim>();
+                
+                foreach (var claimData in claimsData.Split(';'))
+                {
+                    if (string.IsNullOrEmpty(claimData)) continue;
+                    
+                    var parts = claimData.Split('|', 2);
+                    if (parts.Length == 2)
+                    {
+                        claimsList.Add(new Claim(parts[0], parts[1]));
+                    }
+                }
+
+                // 建立身份
+                var claimsIdentity = new ClaimsIdentity(claimsList, CookieAuthenticationDefaults.AuthenticationScheme);
+                var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = remember == "true",
+                    ExpiresUtc = remember == "true" ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(8)
+                };
+
+                // 執行登入
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity),
+                    authProperties);
+
+                _logger.LogInformation("✅ Cookie 認證設定完成");
+
+                // 重定向到目標頁面
+                var decodedReturnUrl = Uri.UnescapeDataString(returnUrl ?? "/");
+                return Redirect(decodedReturnUrl);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "設定認證Cookie時發生錯誤");
+                return Redirect("/auth/login?error=登入時發生錯誤");
             }
         }
 

@@ -17,11 +17,23 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddAuthentication("Cookies")
     .AddCookie("Cookies", options =>
     {
-        options.LoginPath = "/login";
-        options.LogoutPath = "/logout";
+        options.LoginPath = "/auth/login";
+        options.LogoutPath = "/auth/logout";
         options.AccessDeniedPath = "/access-denied";
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
         options.SlidingExpiration = true;
+        
+        // 確保 Cookie 在不同環境下都能正確共享
+        options.Cookie.Name = "ERPCore2.Auth";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
+        
+        // 在開發環境中允許跨子域共享 Cookie
+        if (builder.Environment.IsDevelopment())
+        {
+            options.Cookie.Domain = null; // 允許在 localhost 的不同端口間共享
+        }
     });
 
 builder.Services.AddAuthorization();
@@ -29,6 +41,9 @@ builder.Services.AddAuthorization();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// 加入 Blazor Server 的認證狀態提供者
+builder.Services.AddCascadingAuthenticationState();
 
 // 加入控制器服務
 builder.Services.AddControllers();
@@ -42,14 +57,32 @@ builder.Services.AddScoped(sp =>
     var httpContext = sp.GetService<IHttpContextAccessor>()?.HttpContext;
     var request = httpContext?.Request;
     
+    var httpClientHandler = new HttpClientHandler()
+    {
+        UseCookies = true
+    };
+    
+    var httpClient = new HttpClient(httpClientHandler);
+    
     if (request != null)
     {
         var baseUri = $"{request.Scheme}://{request.Host}";
-        return new HttpClient { BaseAddress = new Uri(baseUri) };
+        httpClient.BaseAddress = new Uri(baseUri);
+        
+        // 複製當前請求的 Cookie 到 HttpClient
+        if (request.Headers.ContainsKey("Cookie"))
+        {
+            var cookies = request.Headers["Cookie"].ToString();
+            httpClient.DefaultRequestHeaders.Add("Cookie", cookies);
+        }
+    }
+    else
+    {
+        // 開發環境的預設值
+        httpClient.BaseAddress = new Uri("https://localhost:7109");
     }
     
-    // 開發環境的預設值
-    return new HttpClient { BaseAddress = new Uri("https://localhost:7109") };
+    return httpClient;
 });
 
 // 配置反偽令牌為寬鬆模式

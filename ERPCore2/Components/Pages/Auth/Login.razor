@@ -1,10 +1,10 @@
 @page "/auth/login"
 @rendermode InteractiveServer
 @using System.ComponentModel.DataAnnotations
-@using System.Text.Json
-@using System.Text
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authentication.Cookies
 @inject NavigationManager Navigation
-@inject HttpClient HttpClient
+@inject ERPCore2.Services.Interfaces.IAuthenticationService AuthenticationService
 
 <PageTitle>登入 - ERPCore2</PageTitle>
 
@@ -96,11 +96,9 @@
         loginModel ??= new LoginModel();
         Console.WriteLine($"ReturnUrl: '{ReturnUrl}'");
         Console.WriteLine("✅ Login 組件初始化完成");
-    }
-
-    private async Task HandleLoginSubmit()
+    }    private async Task HandleLoginSubmit()
     {
-        Console.WriteLine("=== HandleLoginSubmit 開始 ===");
+        Console.WriteLine("=== HandleLoginSubmit 開始 (直接 Blazor 模式) ===");
         
         // 防止重複提交
         if (isLoading) 
@@ -125,67 +123,73 @@
                 Console.WriteLine("❌ 輸入驗證失敗 - 使用者名稱或密碼為空");
                 errorMessage = "請輸入使用者名稱和密碼";
                 return;
+            }            Console.WriteLine("✅ 輸入驗證通過，準備直接驗證員工");
+
+            // 直接調用認證服務進行驗證
+            var employeeResult = await AuthenticationService.LoginAsync(
+                loginModel!.Username.Trim(), 
+                loginModel.Password.Trim());
+
+            if (!employeeResult.IsSuccess || employeeResult.Data == null)
+            {
+                Console.WriteLine($"❌ 員工驗證失敗: {employeeResult.ErrorMessage}");
+                errorMessage = employeeResult.ErrorMessage ?? "使用者名稱或密碼錯誤";
+                return;
             }
 
-            Console.WriteLine("✅ 輸入驗證通過，準備調用登入 API");
+            var employee = employeeResult.Data;
+            Console.WriteLine($"✅ 員工驗證成功: Id={employee.Id}, Username={employee.Username}");
 
-            // 準備登入請求
-            var loginRequest = new
+            // 建立認證 Claims
+            var claims = new List<Claim>
             {
-                Username = loginModel!.Username.Trim(),
-                Password = loginModel.Password.Trim(),
-                RememberMe = loginModel.RememberMe,
-                ReturnUrl = ReturnUrl
+                new Claim(ClaimTypes.NameIdentifier, employee.Id.ToString()),
+                new Claim(ClaimTypes.Name, employee.Username),
+                new Claim(ClaimTypes.GivenName, employee.FirstName ?? ""),
+                new Claim(ClaimTypes.Surname, employee.LastName ?? ""),
+                new Claim(ClaimTypes.Email, employee.Email ?? ""),
+                new Claim("EmployeeCode", employee.EmployeeCode ?? ""),
+                new Claim("Department", employee.Department ?? ""),
+                new Claim("Position", employee.Position ?? "")
             };
 
-            var json = JsonSerializer.Serialize(loginRequest);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            Console.WriteLine("🌐 發送登入請求到 API");
-            
-            // 調用登入 API
-            var response = await HttpClient.PostAsync("/api/auth/login", content);
-            var responseContent = await response.Content.ReadAsStringAsync();
-
-            Console.WriteLine($"API 回應狀態: {response.StatusCode}");
-            Console.WriteLine($"API 回應內容: {responseContent}");
-
-            if (response.IsSuccessStatusCode)
+            Console.WriteLine("🔍 建立的基本 Claims:");
+            foreach (var claim in claims)
             {
-                Console.WriteLine("✅ 登入成功");
-                
-                // 解析回應
-                var result = JsonSerializer.Deserialize<JsonElement>(responseContent);
-                var redirectUrl = result.TryGetProperty("redirectUrl", out var urlProp) ? urlProp.GetString() : "/";
-                
-                Console.WriteLine($"🔄 準備重定向到: '{redirectUrl}'");
-                
-                // 重定向到目標頁面
-                Navigation.NavigateTo(redirectUrl ?? "/", forceLoad: true);
-                Console.WriteLine("✅ NavigateTo 調用完成");
+                Console.WriteLine($"  - {claim.Type}: {claim.Value}");
+            }
+
+            // 加入角色聲明
+            if (employee.Role != null)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, employee.Role.RoleName));
+                Console.WriteLine($"✅ 添加角色聲明: {employee.Role.RoleName}");
             }
             else
             {
-                Console.WriteLine($"❌ 登入失敗，狀態碼: {response.StatusCode}");
-                
-                // 解析錯誤訊息
-                try
-                {
-                    var errorResult = JsonSerializer.Deserialize<JsonElement>(responseContent);
-                    if (errorResult.TryGetProperty("error", out var errorProp))
-                    {
-                        errorMessage = errorProp.GetString() ?? "登入失敗";
-                    }
-                    else
-                    {
-                        errorMessage = "登入失敗，請檢查您的使用者名稱和密碼";
-                    }
-                }
-                catch
-                {
-                    errorMessage = "登入失敗，請檢查您的使用者名稱和密碼";
-                }
+                Console.WriteLine("⚠️ 員工沒有角色資料");
+            }            // 建立身份並執行登入 - 使用導航到認證端點的方式
+            var claimsList = new List<string>();
+            foreach (var claim in claims)
+            {
+                claimsList.Add($"{claim.Type}|{claim.Value}");
             }
+            
+            // 將Claims資料序列化並通過導航傳遞到認證端點
+            var claimsData = string.Join(";", claimsList);
+            var rememberMe = loginModel.RememberMe ? "true" : "false";
+            var returnUrl = !string.IsNullOrEmpty(ReturnUrl) ? ReturnUrl : "/";
+            
+            Console.WriteLine($"🍪 準備導航到認證端點進行Cookie設定");
+            Console.WriteLine($"🔄 ReturnUrl: {returnUrl}");
+            
+            // 導航到認證端點來設置Cookie
+            var encodedClaimsData = Uri.EscapeDataString(claimsData);
+            var encodedReturnUrl = Uri.EscapeDataString(returnUrl);
+            var authUrl = $"/api/auth/signin?claims={encodedClaimsData}&remember={rememberMe}&returnUrl={encodedReturnUrl}";
+            
+            Console.WriteLine($"🔄 導航到: {authUrl}");
+            Navigation.NavigateTo(authUrl, forceLoad: true);
         }
         catch (Exception ex)
         {

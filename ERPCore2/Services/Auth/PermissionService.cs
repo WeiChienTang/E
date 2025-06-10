@@ -20,25 +20,41 @@ namespace ERPCore2.Services
         {
             _context = context;
             _cache = cache;
-        }
-
-        /// <summary>
+        }        /// <summary>
         /// 檢查員工是否具有特定權限
         /// </summary>
         public async Task<ServiceResult<bool>> HasPermissionAsync(int employeeId, string permissionCode)
         {
             try
             {
+                Console.WriteLine($"🔍 PermissionService.HasPermissionAsync - 員工ID: {employeeId}, 權限代碼: '{permissionCode}'");
+                
                 if (string.IsNullOrWhiteSpace(permissionCode))
-                    return ServiceResult<bool>.Failure("權限代碼不能為空");                var permissionCodes = await GetEmployeePermissionCodesAsync(employeeId);
+                {
+                    Console.WriteLine("❌ 權限代碼為空");
+                    return ServiceResult<bool>.Failure("權限代碼不能為空");
+                }
+
+                var permissionCodes = await GetEmployeePermissionCodesAsync(employeeId);
                 if (!permissionCodes.IsSuccess || permissionCodes.Data == null)
+                {
+                    Console.WriteLine($"❌ 獲取員工權限失敗: {permissionCodes.ErrorMessage}");
                     return ServiceResult<bool>.Failure(permissionCodes.ErrorMessage);
+                }
+
+                Console.WriteLine($"🔍 員工擁有的權限代碼數量: {permissionCodes.Data.Count}");
+                foreach (var code in permissionCodes.Data)
+                {
+                    Console.WriteLine($"  - {code}");
+                }
 
                 var hasPermission = permissionCodes.Data.Contains(permissionCode);
+                Console.WriteLine($"🔍 權限檢查結果: {hasPermission}");
                 return ServiceResult<bool>.Success(hasPermission);
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"💥 PermissionService.HasPermissionAsync 例外: {ex.Message}");
                 return ServiceResult<bool>.Failure($"檢查權限時發生錯誤：{ex.Message}");
             }
         }

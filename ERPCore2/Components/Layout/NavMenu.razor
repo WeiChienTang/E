@@ -2,6 +2,15 @@
 @using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Components.Shared
 
+@code {
+    protected override void OnInitialized()
+    {
+        Console.WriteLine("🚀 NavMenu 組件初始化開始");
+        base.OnInitialized();
+        Console.WriteLine("✅ NavMenu 組件初始化完成");
+    }
+}
+
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid d-flex justify-content-between align-items-center">
         <a class="navbar-brand" href="">美莊磚業</a>
@@ -37,10 +46,22 @@
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> 首頁
             </NavLink>
         </div>
-        
-        <!-- 只有登入用戶才能看到的菜單 -->
+          <!-- 只有登入用戶才能看到的菜單 -->
         <AuthorizeView>
-            <Authorized>                <!-- 客戶管理 - 需要 Customer.View 權限 -->
+            <Authorized>
+                @{
+                    Console.WriteLine("🔍 NavMenu AuthorizeView - 使用者已認證");
+                    Console.WriteLine($"  - IsAuthenticated: {context.User.Identity?.IsAuthenticated}");
+                    Console.WriteLine($"  - Name: {context.User.Identity?.Name}");
+                    Console.WriteLine($"  - Claims 數量: {context.User.Claims?.Count() ?? 0}");
+                    
+                    foreach (var claim in context.User.Claims ?? Enumerable.Empty<System.Security.Claims.Claim>())
+                    {
+                        Console.WriteLine($"    - {claim.Type}: {claim.Value}");
+                    }
+                }
+                
+                <!-- 客戶管理 - 需要 Customer.View 權限 -->
                 <PermissionCheck Permission="Customer.View">
                     <div class="nav-item px-3">
                         <NavLink class="nav-link" href="customers">
