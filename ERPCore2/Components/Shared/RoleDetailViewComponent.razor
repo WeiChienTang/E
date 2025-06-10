@@ -1,0 +1,121 @@
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-info-circle me-2"></i>
+            基本資訊
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">角色名稱</label>
+                    <p class="form-control-plaintext">@Role.RoleName</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">角色類型</label>
+                    <p class="form-control-plaintext">
+                        <span class="badge @(Role.IsSystemRole ? "bg-danger" : "bg-info")">
+                            @(Role.IsSystemRole ? "系統角色" : "自訂角色")
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">角色描述</label>
+                    <p class="form-control-plaintext">@(Role.Description ?? "無描述")</p>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">狀態</label>
+                    <p class="form-control-plaintext">
+                        <span class="badge @(Role.Status == EntityStatus.Active ? "bg-success" : "bg-secondary")">
+                            @(Role.Status == EntityStatus.Active ? "啟用" : "停用")
+                        </span>
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">建立時間</label>
+                    <p class="form-control-plaintext">@Role.CreatedAt.ToString("yyyy年MM月dd日 HH:mm")</p>
+                </div>
+            </div>
+        </div>
+        @if (Role.UpdatedAt != Role.CreatedAt)
+        {
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">更新時間</label>
+                        <p class="form-control-plaintext">@Role.UpdatedAt?.ToString("yyyy年MM月dd日 HH:mm")</p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- 角色權限 -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="bi bi-key me-2"></i>
+            角色權限
+        </h5>
+        <span class="badge bg-primary">共 @Role.RolePermissions.Count 個權限</span>
+    </div>
+    <div class="card-body">
+        @if (!Role.RolePermissions.Any())
+        {
+            <div class="text-center py-4">
+                <i class="bi bi-key text-muted" style="font-size: 3rem;"></i>
+                <p class="mt-2 text-muted">此角色尚未分配任何權限</p>
+                <button type="button" class="btn btn-primary" @onclick="@(() => OnManagePermissions.InvokeAsync(Role.Id))">
+                    <i class="bi bi-plus-circle me-1"></i>
+                    分配權限
+                </button>
+            </div>
+        }
+        else
+        {
+            @foreach (var group in PermissionGroups)
+            {
+                <div class="mb-4">
+                    <h6 class="fw-bold text-primary mb-3">@group.Key</h6>
+                    <div class="row">
+                        @foreach (var permission in group.Value)
+                        {
+                            <div class="col-md-6 col-lg-4 mb-2">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <div>
+                                        <div class="fw-bold">@permission.PermissionName</div>
+                                        <small class="text-muted">@permission.PermissionCode</small>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public Role Role { get; set; } = new();
+    [Parameter] public Dictionary<string, List<Permission>> PermissionGroups { get; set; } = new();
+    [Parameter] public EventCallback<int> OnManagePermissions { get; set; }
+}

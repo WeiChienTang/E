@@ -1,0 +1,307 @@
+@page "/admin/roles/edit/{RoleId:int}"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services.Interfaces
+@using ERPCore2.Data.Enums
+@using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Buttons
+@inject IRoleService RoleService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<div class="container-fluid">
+    @if (isLoading)
+    {
+        <LoadingComponent Message="載入角色資料中..." />
+    }
+    else if (role == null)
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            找不到指定的角色資料
+        </div>
+    }
+    else
+    {
+        <UnifiedHeaderComponent 
+            Title="編輯角色"
+            Subtitle="修改角色基本資訊"
+            BreadcrumbItems="@breadcrumbItems" />
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>@errorMessage
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(successMessage))
+        {
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle me-2"></i>@successMessage
+            </div>
+        }
+
+        <div class="row">
+            <div class="col-lg-8">
+                <AdminRoleFormComponent 
+                    Role="@role" 
+                    ValidationErrors="@validationErrors" 
+                    IsEditMode="true"
+                    OnManagePermissions="@((int roleId) => Navigation.NavigateTo($"/admin/roles/{roleId}/permissions"))" />
+            </div>
+
+            <div class="col-lg-4">
+                <!-- 操作按鈕 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-gear me-2"></i>
+                            操作
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <ButtonComponent 
+                                Text="儲存變更"
+                                Icon="check-lg"
+                                Variant="@ButtonVariant.Primary"
+                                IsLoading="@isSaving"
+                                OnClick="@SaveRole" />
+                            
+                            <ButtonComponent 
+                                Text="取消"
+                                Icon="x-lg"
+                                Variant="@ButtonVariant.OutlineSecondary"
+                                OnClick="@CancelEdit" />
+                            
+                            <hr>
+                            
+                            <ButtonComponent 
+                                Text="檢視詳情"
+                                Icon="eye"
+                                Variant="@ButtonVariant.OutlineInfo"
+                                OnClick="@(() => Navigation.NavigateTo($"/admin/roles/view/{role.Id}"))" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 權限預覽 -->
+        @if (role.RolePermissions.Any())
+        {
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-key me-2"></i>
+                        權限預覽
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        @foreach (var group in permissionGroups)
+                        {
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="border rounded p-3">
+                                    <h6 class="fw-bold text-primary mb-2">@group.Key</h6>
+                                    @foreach (var permission in group.Value.Take(5))
+                                    {
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="bi bi-check-circle-fill text-success me-2" style="font-size: 0.8rem;"></i>
+                                            <small>@permission.PermissionName</small>
+                                        </div>
+                                    }
+                                    @if (group.Value.Count > 5)
+                                    {
+                                        <small class="text-muted">還有 @(group.Value.Count - 5) 個權限...</small>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public int RoleId { get; set; }
+
+    private Role? role;
+    private Role? originalRole;
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+    private Dictionary<string, string> validationErrors = new();
+    private Dictionary<string, List<Permission>> permissionGroups = new();
+
+    private List<(string Href, string Text)> breadcrumbItems = new()
+    {
+        ("/admin", "系統管理"),
+        ("/admin/roles", "角色管理"),
+        ("", "編輯角色")
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRoleDetails();
+    }
+
+    private async Task LoadRoleDetails()
+    {
+        try
+        {
+            isLoading = true;
+            role = await RoleService.GetByIdAsync(RoleId);
+            
+            if (role != null)
+            {
+                // 保存原始資料用於比較
+                originalRole = new Role
+                {
+                    Id = role.Id,
+                    RoleName = role.RoleName,
+                    Description = role.Description,
+                    IsSystemRole = role.IsSystemRole,
+                    Status = role.Status
+                };
+
+                GroupPermissions();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"載入角色詳情時發生錯誤：{ex.Message}");
+            errorMessage = "載入角色資料失敗";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void GroupPermissions()
+    {
+        if (role == null) return;
+
+        permissionGroups = role.RolePermissions
+            .Where(rp => rp.Permission != null)
+            .Select(rp => rp.Permission)
+            .GroupBy(p => GetPermissionGroup(p.PermissionCode))
+            .ToDictionary(g => g.Key, g => g.ToList());
+    }
+
+    private string GetPermissionGroup(string permissionCode)
+    {
+        var parts = permissionCode.Split('.');
+        if (parts.Length >= 2)
+        {
+            return parts[0] switch
+            {
+                "Customer" => "客戶管理",
+                "Employee" => "員工管理", 
+                "Role" => "角色管理",
+                "Permission" => "權限管理",
+                "System" => "系統管理",
+                "Report" => "報表管理",
+                _ => "其他權限"
+            };
+        }
+        return "其他權限";
+    }
+
+    private async Task SaveRole()
+    {
+        try
+        {
+            isSaving = true;
+            errorMessage = string.Empty;
+            successMessage = string.Empty;
+            validationErrors.Clear();
+
+            if (role == null) return;
+
+            // 前端驗證
+            if (string.IsNullOrWhiteSpace(role.RoleName))
+            {
+                validationErrors["RoleName"] = "角色名稱不能為空";
+                return;
+            }
+
+            if (role.RoleName.Length > 50)
+            {
+                validationErrors["RoleName"] = "角色名稱不能超過50個字元";
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(role.Description) && role.Description.Length > 200)
+            {
+                validationErrors["Description"] = "角色描述不能超過200個字元";
+                return;
+            }
+
+            // 檢查是否有變更
+            if (HasChanges())
+            {
+                var result = await RoleService.UpdateAsync(role);
+                if (result.IsSuccess)
+                {
+                    successMessage = "角色資料已成功更新";
+                    originalRole = new Role
+                    {
+                        Id = role.Id,
+                        RoleName = role.RoleName,
+                        Description = role.Description,
+                        IsSystemRole = role.IsSystemRole,
+                        Status = role.Status
+                    };
+                }
+                else
+                {
+                    errorMessage = result.ErrorMessage ?? "更新角色失敗";
+                }
+            }
+            else
+            {
+                successMessage = "沒有需要更新的資料";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"儲存角色時發生錯誤：{ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private bool HasChanges()
+    {
+        if (role == null || originalRole == null) return false;
+
+        return role.RoleName != originalRole.RoleName ||
+               role.Description != originalRole.Description ||
+               role.Status != originalRole.Status;
+    }
+
+    private void CancelEdit()
+    {
+        if (HasChanges())
+        {
+            if (JSRuntime.InvokeAsync<bool>("confirm", "您有未儲存的變更，確定要離開嗎？").Result)
+            {
+                Navigation.NavigateTo("/admin/roles");
+            }
+        }
+        else
+        {
+            Navigation.NavigateTo("/admin/roles");
+        }
+    }
+}

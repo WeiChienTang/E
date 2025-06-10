@@ -1,0 +1,307 @@
+@page "/admin/roles/{RoleId:int}/permissions"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services.Interfaces
+@using ERPCore2.Data.Enums
+@using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Buttons
+@inject IRoleService RoleService
+@inject IPermissionService PermissionService
+@inject IPermissionManagementService PermissionManagementService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<div class="container-fluid">
+    @if (isLoading)
+    {
+        <LoadingComponent Message="載入權限資料中..." />
+    }
+    else if (role == null)
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            找不到指定的角色資料
+        </div>
+    }
+    else
+    {
+        <UnifiedHeaderComponent 
+            Title="@($"{role.RoleName} - 權限管理")"
+            TitleIcon="key"
+            Subtitle="為角色分配或移除權限"
+            BreadcrumbItems="@breadcrumbItems">
+            <ActionButtons>
+                @if (!role.IsSystemRole)
+                {
+                    <ButtonComponent 
+                        Text="儲存變更"
+                        Icon="check-lg"
+                        Variant="@ButtonVariant.Success"
+                        IsLoading="@isSaving"
+                        OnClick="@SavePermissions" />
+                }
+                <ButtonComponent 
+                    Text="返回詳情"
+                    Icon="arrow-left"
+                    Variant="@ButtonVariant.OutlineSecondary"
+                    OnClick="@(() => Navigation.NavigateTo($"/admin/roles/view/{role.Id}"))" />
+            </ActionButtons>
+        </UnifiedHeaderComponent>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>@errorMessage
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(successMessage))
+        {
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle me-2"></i>@successMessage
+            </div>
+        }
+
+        @if (role.IsSystemRole)
+        {
+            <div class="alert alert-warning">
+                <i class="bi bi-shield-exclamation me-2"></i>
+                系統角色的權限無法修改，僅供檢視。
+            </div>
+        }
+
+        <RolePermissionManagementComponent 
+            PermissionGroups="@permissionGroups"
+            FilteredPermissions="@filteredPermissions"
+            SelectedPermissions="@selectedPermissions"
+            AvailableGroups="@availableGroups"
+            SearchTerm="@searchTerm"
+            FilterGroup="@filterGroup"
+            IsSystemRole="@role.IsSystemRole"
+            OnSearchChanged="@OnSearchChanged"
+            OnFilterChanged="@OnFilterChanged"
+            SelectAllVisible="@SelectAllVisible"
+            ClearAllVisible="@ClearAllVisible"
+            SelectGroupPermissions="@SelectGroupPermissions"
+            ClearGroupPermissions="@ClearGroupPermissions"
+            OnPermissionChanged="@OnPermissionChanged" />
+    }
+</div>
+
+@code {
+    [Parameter] public int RoleId { get; set; }
+
+    private Role? role;
+    private List<Permission> allPermissions = new();
+    private List<Permission> filteredPermissions = new();
+    private HashSet<int> selectedPermissions = new();
+    private HashSet<int> originalPermissions = new();
+    private Dictionary<string, List<Permission>> permissionGroups = new();
+    private List<string> availableGroups = new();
+    
+    private string searchTerm = string.Empty;
+    private string filterGroup = string.Empty;
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+
+    private List<(string Href, string Text)> breadcrumbItems = new()
+    {
+        ("/admin", "系統管理"),
+        ("/admin/roles", "角色管理"),
+        ("", "權限管理")
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+            
+            // 載入角色資料
+            role = await RoleService.GetByIdAsync(RoleId);
+            if (role == null) return;
+
+            // 載入所有權限
+            allPermissions = await PermissionManagementService.GetAllAsync();
+            
+            // 設定已選權限
+            originalPermissions = role.RolePermissions.Select(rp => rp.PermissionId).ToHashSet();
+            selectedPermissions = new HashSet<int>(originalPermissions);
+
+            // 分組權限
+            GroupPermissions();
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"載入權限資料時發生錯誤：{ex.Message}");
+            errorMessage = "載入權限資料失敗";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void GroupPermissions()
+    {
+        permissionGroups = allPermissions
+            .GroupBy(p => GetPermissionGroup(p.PermissionCode))
+            .ToDictionary(g => g.Key, g => g.OrderBy(p => p.PermissionName).ToList());
+
+        availableGroups = permissionGroups.Keys.OrderBy(k => k).ToList();
+    }
+
+    private string GetPermissionGroup(string permissionCode)
+    {
+        var parts = permissionCode.Split('.');
+        if (parts.Length >= 2)
+        {
+            return parts[0] switch
+            {
+                "Customer" => "客戶管理",
+                "Employee" => "員工管理", 
+                "Role" => "角色管理",
+                "Permission" => "權限管理",
+                "System" => "系統管理",
+                "Report" => "報表管理",
+                _ => "其他權限"
+            };
+        }
+        return "其他權限";
+    }
+
+    private void ApplyFilters()
+    {
+        filteredPermissions = allPermissions.Where(p =>
+        {
+            // 搜尋條件
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                var lowerSearchTerm = searchTerm.ToLower();                if (!p.PermissionName.ToLower().Contains(lowerSearchTerm) &&
+                    !p.PermissionCode.ToLower().Contains(lowerSearchTerm) &&
+                    !(p.Remarks?.ToLower().Contains(lowerSearchTerm) ?? false))
+                    return false;
+            }
+
+            return true;
+        }).ToList();
+
+        StateHasChanged();
+    }    private Task OnSearchChanged(string newSearchTerm)
+    {
+        searchTerm = newSearchTerm;
+        ApplyFilters();
+        return Task.CompletedTask;
+    }
+
+    private Task OnFilterChanged()
+    {
+        ApplyFilters();
+        return Task.CompletedTask;
+    }
+
+    private Task OnPermissionChanged((Permission permission, bool isSelected) args)
+    {
+        if (args.isSelected)
+        {
+            selectedPermissions.Add(args.permission.Id);
+        }
+        else
+        {
+            selectedPermissions.Remove(args.permission.Id);
+        }
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task SelectAllVisible()
+    {
+        foreach (var permission in filteredPermissions)
+        {
+            selectedPermissions.Add(permission.Id);
+        }
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task ClearAllVisible()
+    {
+        foreach (var permission in filteredPermissions)
+        {
+            selectedPermissions.Remove(permission.Id);
+        }
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task SelectGroupPermissions(List<Permission> groupPermissions)
+    {
+        foreach (var permission in groupPermissions.Where(p => filteredPermissions.Contains(p)))
+        {
+            selectedPermissions.Add(permission.Id);
+        }
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task ClearGroupPermissions(List<Permission> groupPermissions)
+    {
+        foreach (var permission in groupPermissions.Where(p => filteredPermissions.Contains(p)))
+        {
+            selectedPermissions.Remove(permission.Id);
+        }
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task SavePermissions()
+    {
+        try
+        {
+            isSaving = true;
+            errorMessage = string.Empty;
+            successMessage = string.Empty;
+
+            if (role == null) return;
+
+            // 檢查是否有變更
+            if (selectedPermissions.SetEquals(originalPermissions))
+            {
+                successMessage = "沒有需要更新的權限設定";
+                return;
+            }
+
+            var result = await RoleService.AssignPermissionsToRoleAsync(RoleId, selectedPermissions.ToList());
+            if (result.IsSuccess)
+            {
+                successMessage = "權限設定已成功更新";
+                originalPermissions = new HashSet<int>(selectedPermissions);
+                
+                // 重新載入角色資料
+                role = await RoleService.GetByIdAsync(RoleId);
+            }
+            else
+            {
+                errorMessage = result.ErrorMessage ?? "更新權限設定失敗";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"儲存權限時發生錯誤：{ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+}

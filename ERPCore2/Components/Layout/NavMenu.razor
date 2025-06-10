@@ -76,10 +76,13 @@
                         <div class="nav-link dropdown" onclick="toggleDropdown(event)">
                             <span class="bi bi-gear-fill" aria-hidden="true"></span> 系統管理
                             <span class="bi bi-chevron-down ms-auto dropdown-arrow"></span>
-                        </div>
-                        <div class="dropdown-menu">
+                        </div>                        <div class="dropdown-menu">
+                            <NavLink class="dropdown-item" href="/admin">
+                                <span class="bi bi-house-gear" aria-hidden="true"></span> 管理首頁
+                            </NavLink>
+                            <hr class="dropdown-divider">
                             <NavLink class="dropdown-item" href="/admin/users">
-                                <span class="bi bi-person-lines-fill" aria-hidden="true"></span> 使用者管理
+                                <span class="bi bi-person-lines-fill" aria-hidden="true"></span> 員工管理
                             </NavLink>
                             <NavLink class="dropdown-item" href="/admin/roles">
                                 <span class="bi bi-shield-fill" aria-hidden="true"></span> 角色管理

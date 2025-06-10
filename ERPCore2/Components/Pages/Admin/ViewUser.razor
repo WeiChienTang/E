@@ -1,0 +1,145 @@
+@page "/admin/users/{EmployeeId:int}"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Services.Interfaces
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Components.Shared.Loading
+@using ERPCore2.Components.Shared
+@inject IEmployeeService EmployeeService
+@inject IPermissionService PermissionService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>員工詳細資料</PageTitle>
+
+@* 頁面標題區 *@
+<UnifiedHeaderComponent Title="員工詳細資料" 
+                       IconClass="bi bi-person-circle"
+                       IsCardHeader="false">
+    <Actions>
+        <ButtonComponent Text="編輯" 
+                        Variant="ButtonVariant.Warning" 
+                        IconClass="bi bi-pencil"
+                        OnClick="EditEmployee" />
+        <ButtonComponent Text="返回列表" 
+                        Variant="ButtonVariant.OutlineSecondary" 
+                        IconClass="bi bi-arrow-left"
+                        OnClick="GoBack" />
+    </Actions>
+</UnifiedHeaderComponent>
+
+@* 麵包屑導航 *@
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="/admin/users" class="text-decoration-none">員工管理</a>
+        </li>
+        <li class="breadcrumb-item active">員工詳細</li>
+    </ol>
+</nav>
+
+@if (isLoading)
+{
+    <LoadingComponent LoadingText="載入員工資料中..." />
+}
+else if (employee != null)
+{
+    <EmployeeDetailViewComponent Employee="employee" 
+                                Permissions="permissions"
+                                IsLoadingPermissions="isLoadingPermissions" />
+}
+
+@* 錯誤訊息 *@
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle me-2"></i>@errorMessage
+    </div>
+}
+
+@code {
+    [Parameter] public int EmployeeId { get; set; }
+    
+    private Employee? employee;
+    private List<Permission>? permissions;
+      // 狀態管理
+    private bool isLoading = true;
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEmployee();
+        if (employee != null)
+        {
+            await LoadPermissions();
+        }
+    }
+
+    private async Task LoadEmployee()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+
+            employee = await EmployeeService.GetByIdAsync(EmployeeId);
+            if (employee == null)
+            {
+                errorMessage = "找不到指定的員工";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"載入員工資料時發生錯誤：{ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }    private async Task LoadPermissions()
+    {
+        try
+        {
+            var result = await PermissionService.GetEmployeePermissionsAsync(EmployeeId);
+            if (result.IsSuccess)
+            {
+                permissions = result.Data;
+            }
+        }
+        catch (Exception ex)
+        {
+            // 權限載入失敗不影響主要功能，僅記錄錯誤
+            Console.WriteLine($"載入權限時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private void EditEmployee()
+    {
+        Navigation.NavigateTo($"/admin/users/{EmployeeId}/edit");
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/admin/users");
+    }
+
+    private string GetPermissionModule(string permissionCode)
+    {
+        var parts = permissionCode.Split('.');
+        if (parts.Length >= 2)
+        {
+            return parts[0] switch
+            {
+                "Customer" => "客戶管理",
+                "Employee" => "員工管理", 
+                "Role" => "角色管理",
+                "Permission" => "權限管理",
+                "System" => "系統管理",
+                "Report" => "報表管理",
+                _ => "其他"
+            };
+        }
+        return "其他";
+    }
+}

@@ -395,3 +395,98 @@ hr {
 .invalid-feedback {
   color: var(--danger-color) !important;
 }
+
+/* 管理頁面特殊樣式 */
+.feature-icon {
+  width: 80px;
+  height: 80px;
+}
+
+/* 卡片動畫效果 */
+.card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* 邊框設計 */
+.border-end {
+  border-right: 1px solid var(--border-color) !important;
+}
+
+/* 響應式設計 */
+.feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* 移除最後一個邊框 */
+@media (max-width: 767.98px) {
+  .border-end:last-child {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding-bottom: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+}
+
+/* 管理頁面特定元件樣式 */
+.avatar-sm {
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.avatar-lg {
+  width: 80px;
+  height: 80px;
+}
+
+.avatar-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.font-monospace {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+/* 表格樣式增強 */
+.table td {
+  vertical-align: middle !important;
+}
+
+/* 按鈕群組樣式 */
+.btn-group .btn {
+  margin-right: 2px;
+}
+
+.btn-group .btn:last-child {
+  margin-right: 0;
+}
+
+/* 徽章樣式增強 */
+.badge {
+  font-size: 0.75rem !important;
+}
+
+/* 卡片標題圖標樣式 */
+.card-title i {
+  color: var(--primary-blue) !important;
+}
+
+/* 表單標籤樣式增強 */
+.form-label.small {
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 0.25rem !important;
+}

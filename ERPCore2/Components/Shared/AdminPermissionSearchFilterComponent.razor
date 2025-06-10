@@ -1,0 +1,65 @@
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">搜尋關鍵字</label>
+                <input type="text" class="form-control" @bind="SearchTerm" @bind:after="HandleSearchChanged" placeholder="輸入權限名稱或代碼...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">權限群組</label>
+                <select class="form-select" @bind="FilterGroup" @bind:after="HandleFilterChanged">
+                    <option value="">全部群組</option>
+                    @if (AvailableGroups != null)
+                    {
+                        @foreach (var group in AvailableGroups)
+                        {
+                            <option value="@group">@group</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">狀態</label>
+                <select class="form-select" @bind="FilterStatus" @bind:after="HandleFilterChanged">
+                    <option value="">全部狀態</option>
+                    <option value="@EntityStatus.Active">啟用</option>
+                    <option value="@EntityStatus.Inactive">停用</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-secondary" @onclick="ClearFilters">
+                    <i class="bi bi-x-circle me-1"></i>清除篩選
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string SearchTerm { get; set; } = string.Empty;
+    [Parameter] public string FilterGroup { get; set; } = string.Empty;
+    [Parameter] public EntityStatus? FilterStatus { get; set; }
+    [Parameter] public List<string>? AvailableGroups { get; set; }
+    [Parameter] public EventCallback<string> OnSearchChanged { get; set; }
+    [Parameter] public EventCallback OnFilterChanged { get; set; }
+    [Parameter] public EventCallback OnClearFilters { get; set; }    private async Task HandleSearchChanged()
+    {
+        await OnSearchChanged.InvokeAsync(SearchTerm);
+    }
+
+    private async Task HandleFilterChanged()
+    {
+        await OnFilterChanged.InvokeAsync();
+    }
+
+    private async Task ClearFilters()
+    {
+        SearchTerm = string.Empty;
+        FilterGroup = string.Empty;
+        FilterStatus = null;
+        await OnClearFilters.InvokeAsync();
+    }
+}

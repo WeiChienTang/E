@@ -1,0 +1,135 @@
+@page "/admin/roles/view/{RoleId:int}"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services.Interfaces
+@using ERPCore2.Data.Enums
+@using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Buttons
+@inject IRoleService RoleService
+@inject IPermissionService PermissionService
+@inject NavigationManager Navigation
+
+<div class="container-fluid">
+    @if (isLoading)
+    {
+        <LoadingComponent Message="載入角色資料中..." />
+    }
+    else if (role == null)
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            找不到指定的角色資料
+        </div>
+    }
+    else
+    {
+        <UnifiedHeaderComponent 
+            Title="@role.RoleName"
+            TitleIcon="@(role.IsSystemRole ? "shield-fill text-danger" : "shield text-primary")"
+            BreadcrumbItems="@breadcrumbItems">
+            <ActionButtons>
+                @if (!role.IsSystemRole)
+                {
+                    <ButtonComponent 
+                        Text="編輯角色"
+                        Icon="pencil"
+                        Variant="@ButtonVariant.Warning"
+                        OnClick="@(() => Navigation.NavigateTo($"/admin/roles/edit/{role.Id}"))" />
+                }
+                <ButtonComponent 
+                    Text="管理權限"
+                    Icon="key"
+                    Variant="@ButtonVariant.Primary"
+                    OnClick="@(() => Navigation.NavigateTo($"/admin/roles/{role.Id}/permissions"))" />
+            </ActionButtons>
+        </UnifiedHeaderComponent>
+
+        <!-- 角色基本資訊 -->
+        <div class="row">
+            <div class="col-md-8">
+                <RoleDetailViewComponent 
+                    Role="@role" 
+                    PermissionGroups="@permissionGroups"
+                    OnManagePermissions="@((int roleId) => Navigation.NavigateTo($"/admin/roles/{roleId}/permissions"))" />
+            </div>
+
+            <!-- 側邊欄統計 -->
+            <div class="col-md-4">
+                <RoleEmployeeListComponent Role="@role" />
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int RoleId { get; set; }
+
+    private Role? role;
+    private bool isLoading = true;
+    private Dictionary<string, List<Permission>> permissionGroups = new();
+
+    private List<(string Href, string Text)> breadcrumbItems = new()
+    {
+        ("/admin", "系統管理"),
+        ("/admin/roles", "角色管理"),
+        ("", "角色詳情")
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRoleDetails();
+    }
+
+    private async Task LoadRoleDetails()
+    {
+        try
+        {
+            isLoading = true;
+            role = await RoleService.GetByIdAsync(RoleId);
+            
+            if (role != null)
+            {
+                GroupPermissions();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"載入角色詳情時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void GroupPermissions()
+    {
+        if (role == null) return;
+
+        permissionGroups = role.RolePermissions
+            .Where(rp => rp.Permission != null)
+            .Select(rp => rp.Permission)
+            .GroupBy(p => GetPermissionGroup(p.PermissionCode))
+            .ToDictionary(g => g.Key, g => g.ToList());
+    }
+
+    private string GetPermissionGroup(string permissionCode)
+    {
+        var parts = permissionCode.Split('.');
+        if (parts.Length >= 2)
+        {
+            return parts[0] switch
+            {
+                "Customer" => "客戶管理",
+                "Employee" => "員工管理", 
+                "Role" => "角色管理",
+                "Permission" => "權限管理",
+                "System" => "系統管理",
+                "Report" => "報表管理",
+                _ => "其他權限"
+            };
+        }
+        return "其他權限";
+    }
+}

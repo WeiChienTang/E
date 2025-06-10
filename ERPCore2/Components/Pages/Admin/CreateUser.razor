@@ -1,0 +1,180 @@
+@page "/admin/users/create"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Services.Interfaces
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Components.Shared.Loading
+@using ERPCore2.Components.Shared
+@using System.ComponentModel.DataAnnotations
+@inject IEmployeeService EmployeeService
+@inject IRoleService RoleService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>新增員工</PageTitle>
+
+@* 頁面標題區 *@
+<UnifiedHeaderComponent Title="新增員工" 
+                       IconClass="bi bi-person-plus"
+                       IsCardHeader="false">
+    <Actions>
+        <ButtonComponent Text="返回列表" 
+                        Variant="ButtonVariant.OutlineSecondary" 
+                        IconClass="bi bi-arrow-left"
+                        OnClick="Cancel" />
+    </Actions>
+</UnifiedHeaderComponent>
+
+@* 麵包屑導航 *@
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="/admin/users" class="text-decoration-none">員工管理</a>
+        </li>
+        <li class="breadcrumb-item active">新增員工</li>
+    </ol>
+</nav>
+
+@if (isLoading)
+{
+    <LoadingComponent LoadingText="載入角色資料中..." />
+}
+else
+{
+    @* 表單區域 *@
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-person-badge me-2"></i>員工基本資料
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <AdminEmployeeFormComponent Employee="employee"
+                                              Roles="roles"
+                                              IsCreateMode="true"
+                                              IsSubmitting="isSubmitting"
+                                              SubmitButtonText="新增員工"
+                                              Password="password"
+                                              ConfirmPassword="confirmPassword"
+                                              OnSubmit="HandleSubmit"
+                                              OnCancel="Cancel" />
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* 錯誤訊息 *@
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mt-3">
+        <i class="bi bi-exclamation-triangle me-2"></i>@errorMessage
+    </div>
+}
+
+@* 成功訊息 *@
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success mt-3">
+        <i class="bi bi-check-circle me-2"></i>@successMessage
+    </div>
+}
+
+@code {
+    private Employee employee = new()
+    {
+        Status = EntityStatus.Active
+    };
+    
+    private List<Role>? roles;
+    private string password = string.Empty;
+    private string confirmPassword = string.Empty;
+    
+    // 狀態管理
+    private bool isLoading = true;
+    private bool isSubmitting = false;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRoles();
+    }    private async Task LoadRoles()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+            
+            var result = await RoleService.GetAllAsync();
+            roles = result?.Where(r => r.Status == EntityStatus.Active).ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"載入角色資料時發生錯誤：{ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            isSubmitting = true;
+            errorMessage = string.Empty;
+            successMessage = string.Empty;
+
+            // 驗證密碼
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                errorMessage = "請輸入密碼";
+                return;
+            }
+
+            if (password.Length < 8)
+            {
+                errorMessage = "密碼至少需要8個字元";
+                return;
+            }
+
+            if (password != confirmPassword)
+            {
+                errorMessage = "密碼與確認密碼不一致";
+                return;
+            }            // 設定建立資訊
+            employee.CreatedAt = DateTime.Now;
+            employee.CreatedBy = "System"; // TODO: 從身份驗証系統取得
+            
+            var result = await EmployeeService.CreateAsync(employee);
+            if (result.IsSuccess)
+            {
+                successMessage = "員工新增成功";
+                await Task.Delay(1500); // 顯示成功訊息
+                Navigation.NavigateTo("/admin/users");
+            }
+            else
+            {
+                errorMessage = result.ErrorMessage ?? "新增員工失敗";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"新增員工時發生錯誤：{ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/admin/users");
+    }
+}

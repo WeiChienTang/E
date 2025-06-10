@@ -1,0 +1,120 @@
+@* 統一的頁面/卡片標題組件 - 支援多種使用場景 *@
+@if (!IsCardHeader && BreadcrumbItems?.Any() == true)
+{
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            @foreach (var item in BreadcrumbItems)
+            {
+                @if (string.IsNullOrEmpty(item.Href))
+                {
+                    <li class="breadcrumb-item active">@item.Text</li>
+                }
+                else
+                {
+                    <li class="breadcrumb-item">
+                        <a href="@item.Href">@item.Text</a>
+                    </li>
+                }
+            }
+        </ol>
+    </nav>
+}
+
+<div class="@GetContainerClass()">
+    <div class="@GetTitleWrapperClass()">
+        <h2 class="@GetTitleClass()">
+            @if (!string.IsNullOrEmpty(TitleIcon))
+            {
+                <i class="bi bi-@TitleIcon me-2"></i>
+            }
+            else if (!string.IsNullOrEmpty(IconClass))
+            {
+                <i class="@IconClass me-2"></i>
+            }
+            @Title
+        </h2>
+        @if (!string.IsNullOrEmpty(Subtitle))
+        {
+            @if (IsCardHeader)
+            {
+                <small class="text-secondary-custom ms-2">@Subtitle</small>
+            }
+            else
+            {
+                <p class="text-muted mb-0 @SubtitleClass">@Subtitle</p>
+            }
+        }
+    </div>
+    
+    @if (Actions != null || ActionButtons != null)
+    {
+        <div class="d-flex gap-2">
+            @Actions
+            @ActionButtons
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string Subtitle { get; set; } = string.Empty;
+    [Parameter] public string IconClass { get; set; } = string.Empty;
+    [Parameter] public string TitleIcon { get; set; } = string.Empty;
+    [Parameter] public List<(string Href, string Text)>? BreadcrumbItems { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public RenderFragment? ActionButtons { get; set; }
+    [Parameter] public string CssClass { get; set; } = string.Empty;
+    [Parameter] public string TitleClass { get; set; } = string.Empty;
+    [Parameter] public string SubtitleClass { get; set; } = string.Empty;
+    [Parameter] public bool IsCardHeader { get; set; } = false; // 控制是否為卡片標題樣式
+    [Parameter] public bool ShowDivider { get; set; } = false; // 是否顯示底部分隔線
+
+    private string GetContainerClass()
+    {
+        var classes = new List<string>();
+        
+        if (IsCardHeader)
+        {
+            classes.Add("card-header");
+        }
+        else
+        {
+            classes.Add("mb-4");
+        }
+        
+        classes.Add("d-flex justify-content-between align-items-center");
+        
+        if (!string.IsNullOrEmpty(CssClass))
+        {
+            classes.Add(CssClass);
+        }
+        
+        return string.Join(" ", classes);
+    }
+
+    private string GetTitleWrapperClass()
+    {
+        return IsCardHeader ? "" : ""; // 頁面標題不需要額外包裝
+    }
+
+    private string GetTitleClass()
+    {
+        var classes = new List<string>();
+        
+        if (IsCardHeader)
+        {
+            classes.Add("card-title mb-0 text-primary-custom");
+        }
+        else
+        {
+            classes.Add("mb-0");
+        }
+        
+        if (!string.IsNullOrEmpty(TitleClass))
+        {
+            classes.Add(TitleClass);
+        }
+        
+        return string.Join(" ", classes);
+    }
+}

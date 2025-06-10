@@ -1,0 +1,332 @@
+@page "/admin/users"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Services.Interfaces
+@using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Components.Shared.Loading
+@using ERPCore2.Components.Shared.Tables
+@inject IEmployeeService EmployeeService
+@inject IRoleService RoleService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>員工管理</PageTitle>
+
+@* 頁面標題區 *@
+<PageTitleComponent Title="員工管理" IconClass="bi bi-person-lines-fill">
+    <Actions>
+        <ButtonComponent Text="新增員工" 
+                        Variant="ButtonVariant.Primary" 
+                        IconClass="bi bi-plus-circle"
+                        OnClick="ShowCreateModal" />
+    </Actions>
+</PageTitleComponent>
+
+@* 搜尋和篩選區 *@
+<AdminUserSearchFilterComponent SearchTerm="@searchTerm" 
+                               SearchTermChanged="@((value) => searchTerm = value)"
+                               SelectedRoleId="@selectedRoleId"
+                               SelectedRoleIdChanged="@((value) => selectedRoleId = value)"
+                               SelectedStatus="@selectedStatus"
+                               SelectedStatusChanged="@((value) => selectedStatus = value)"
+                               Roles="@roles"
+                               OnReset="@ResetFilters"
+                               OnSearchInput="@OnSearchInput" />
+
+@* 載入指示器 *@
+@if (isLoading)
+{
+    <LoadingComponent LoadingText="載入員工資料中..." />
+}
+
+@* 員工列表 *@
+@if (!isLoading && employees != null)
+{
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <span>員工列表 (@filteredEmployees.Count() 筆資料)</span>
+                <div class="btn-group" role="group">
+                    <button class="btn btn-outline-primary btn-sm" @onclick="ExportData">
+                        <i class="bi bi-download me-1"></i>匯出
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="RefreshData">
+                        <i class="bi bi-arrow-clockwise me-1"></i>重新整理
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            @if (filteredEmployees.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>員工代碼</th>
+                                <th>姓名</th>
+                                <th>帳號</th>
+                                <th>電子郵件</th>
+                                <th>部門</th>
+                                <th>職位</th>
+                                <th>角色</th>
+                                <th>狀態</th>
+                                <th>最後登入</th>
+                                <th width="150">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var employee in filteredEmployees)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="fw-bold">@employee.EmployeeCode</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                @employee.Name.Substring(0, 1)
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold">@employee.Name</div>
+                                                @if (!string.IsNullOrEmpty(employee.FirstName) || !string.IsNullOrEmpty(employee.LastName))
+                                                {
+                                                    <small class="text-muted">@employee.FirstName @employee.LastName</small>
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="font-monospace">@employee.Username</span>
+                                        @if (employee.IsLocked)
+                                        {
+                                            <span class="badge bg-danger ms-1">鎖定</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(employee.Email))
+                                        {
+                                            <a href="mailto:@employee.Email" class="text-decoration-none">@employee.Email</a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>@(employee.Department ?? "-")</td>
+                                    <td>@(employee.Position ?? "-")</td>
+                                    <td>
+                                        <span class="badge bg-info">@employee.Role?.RoleName</span>
+                                    </td>
+                                    <td>
+                                        @if (employee.Status == EntityStatus.Active)
+                                        {
+                                            <span class="badge bg-success">啟用</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">停用</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (employee.LastLoginAt.HasValue)
+                                        {
+                                            <small class="text-muted">@employee.LastLoginAt.Value.ToString("yyyy/MM/dd HH:mm")</small>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted">從未登入</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-outline-primary btn-sm" 
+                                                    @onclick="() => ViewEmployee(employee.Id)" 
+                                                    title="檢視詳細">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-warning btn-sm" 
+                                                    @onclick="() => EditEmployee(employee.Id)" 
+                                                    title="編輯">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm" 
+                                                    @onclick="() => DeleteEmployee(employee.Id)" 
+                                                    title="刪除">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-person-x display-1 text-muted"></i>
+                    <h5 class="mt-3 text-muted">沒有找到符合條件的員工</h5>
+                    <p class="text-muted">請調整搜尋條件或新增員工</p>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@* 錯誤訊息 *@
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mt-3">
+        <i class="bi bi-exclamation-triangle me-2"></i>@errorMessage
+    </div>
+}
+
+@code {
+    // 資料屬性
+    private List<Employee>? employees;
+    private List<Role>? roles;
+    
+    // 搜尋和篩選
+    private string searchTerm = string.Empty;
+    private string selectedRoleId = string.Empty;
+    private EntityStatus? selectedStatus;
+    
+    // 狀態管理
+    private bool isLoading = true;
+    private string errorMessage = string.Empty;
+    
+    // 計算屬性
+    private IEnumerable<Employee> filteredEmployees
+    {
+        get
+        {
+            if (employees == null) return Enumerable.Empty<Employee>();
+            
+            var filtered = employees.AsEnumerable();
+            
+            // 搜尋篩選
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                filtered = filtered.Where(e => 
+                    e.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    e.Username.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    e.EmployeeCode.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    (e.Email?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true));
+            }
+            
+            // 角色篩選
+            if (!string.IsNullOrEmpty(selectedRoleId) && int.TryParse(selectedRoleId, out int roleId))
+            {
+                filtered = filtered.Where(e => e.RoleId == roleId);
+            }
+            
+            // 狀態篩選
+            if (selectedStatus.HasValue)
+            {
+                filtered = filtered.Where(e => e.Status == selectedStatus.Value);
+            }
+            
+            return filtered.OrderBy(e => e.EmployeeCode);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+
+            // 載入員工資料
+            var employeesResult = await EmployeeService.GetAllAsync();
+            employees = employeesResult;
+
+            // 載入角色資料
+            var rolesResult = await RoleService.GetAllAsync();
+            roles = rolesResult;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"載入資料時發生錯誤：{ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }    private void OnSearchInput(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        StateHasChanged();
+    }
+
+    private void ResetFilters()
+    {
+        searchTerm = string.Empty;
+        selectedRoleId = string.Empty;
+        selectedStatus = null;
+        StateHasChanged();
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadData();
+    }
+
+    private void ShowCreateModal()
+    {
+        Navigation.NavigateTo("/admin/users/create");
+    }
+
+    private void ViewEmployee(int employeeId)
+    {
+        Navigation.NavigateTo($"/admin/users/{employeeId}");
+    }
+
+    private void EditEmployee(int employeeId)
+    {
+        Navigation.NavigateTo($"/admin/users/{employeeId}/edit");
+    }
+
+    private async Task DeleteEmployee(int employeeId)
+    {
+        var employee = employees?.FirstOrDefault(e => e.Id == employeeId);
+        if (employee == null) return;
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"確定要刪除員工 '{employee.Name}' 嗎？\n\n此操作無法復原。");
+
+        if (confirmed)
+        {
+            try
+            {
+                var result = await EmployeeService.DeleteAsync(employeeId);
+                if (result.IsSuccess)
+                {
+                    await LoadData(); // 重新載入資料
+                    await JSRuntime.InvokeVoidAsync("alert", "員工已成功刪除");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{result.ErrorMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"刪除時發生錯誤：{ex.Message}");
+            }
+        }
+    }
+
+    private async Task ExportData()
+    {
+        await JSRuntime.InvokeVoidAsync("alert", "匯出功能開發中...");    }
+}

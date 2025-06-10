@@ -1,0 +1,149 @@
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using Microsoft.AspNetCore.Components.Forms
+
+<EditForm Model="Employee" OnValidSubmit="OnSubmit">
+    <DataAnnotationsValidator />
+    
+    @* 基本資訊 *@
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <label class="form-label">員工代碼 <span class="text-danger">*</span></label>
+            <InputText class="form-control" @bind-Value="Employee.EmployeeCode" placeholder="請輸入員工代碼" />
+            <ValidationMessage For="@(() => Employee.EmployeeCode)" class="text-danger" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">帳號 <span class="text-danger">*</span></label>
+            <InputText class="form-control" @bind-Value="Employee.Username" placeholder="請輸入登入帳號" />
+            <ValidationMessage For="@(() => Employee.Username)" class="text-danger" />
+        </div>
+    </div>
+
+    @* 姓名資訊 *@
+    <div class="row g-3 mb-4">
+        <div class="col-md-12">
+            <label class="form-label">姓名 <span class="text-danger">*</span></label>
+            <InputText class="form-control" @bind-Value="Employee.Name" placeholder="請輸入完整姓名" />
+            <ValidationMessage For="@(() => Employee.Name)" class="text-danger" />
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <label class="form-label">名字</label>
+            <InputText class="form-control" @bind-Value="Employee.FirstName" placeholder="請輸入名字" />
+            <ValidationMessage For="@(() => Employee.FirstName)" class="text-danger" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">姓氏</label>
+            <InputText class="form-control" @bind-Value="Employee.LastName" placeholder="請輸入姓氏" />
+            <ValidationMessage For="@(() => Employee.LastName)" class="text-danger" />
+        </div>
+    </div>
+
+    @* 聯絡資訊 *@
+    <div class="row g-3 mb-4">
+        <div class="col-md-12">
+            <label class="form-label">電子郵件</label>
+            <InputText class="form-control" @bind-Value="Employee.Email" type="email" placeholder="請輸入電子郵件" />
+            <ValidationMessage For="@(() => Employee.Email)" class="text-danger" />
+        </div>
+    </div>
+
+    @* 組織資訊 *@
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <label class="form-label">部門</label>
+            <InputText class="form-control" @bind-Value="Employee.Department" placeholder="請輸入部門" />
+            <ValidationMessage For="@(() => Employee.Department)" class="text-danger" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">職位</label>
+            <InputText class="form-control" @bind-Value="Employee.Position" placeholder="請輸入職位" />
+            <ValidationMessage For="@(() => Employee.Position)" class="text-danger" />
+        </div>
+    </div>
+
+    @* 角色選擇 *@
+    <div class="row g-3 mb-4">
+        <div class="col-md-12">
+            <label class="form-label">角色 <span class="text-danger">*</span></label>
+            <InputSelect class="form-select" @bind-Value="Employee.RoleId">
+                <option value="">請選擇角色</option>
+                @if (Roles != null)
+                {
+                    @foreach (var role in Roles)
+                    {
+                        <option value="@role.Id">@role.RoleName</option>
+                    }
+                }
+            </InputSelect>
+            <ValidationMessage For="@(() => Employee.RoleId)" class="text-danger" />
+        </div>
+    </div>
+
+    @* 密碼設定 *@
+    @if (IsCreateMode)
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <label class="form-label">密碼 <span class="text-danger">*</span></label>
+                <InputText class="form-control" @bind-Value="Password" type="password" placeholder="請輸入密碼" />
+                <div class="form-text">密碼至少需要8個字元</div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">確認密碼 <span class="text-danger">*</span></label>
+                <InputText class="form-control" @bind-Value="ConfirmPassword" type="password" placeholder="請再次輸入密碼" />
+            </div>
+        </div>
+    }
+
+    @* 狀態設定 *@
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <label class="form-label">狀態</label>
+            <InputSelect class="form-select" @bind-Value="Employee.Status">
+                <option value="@EntityStatus.Active">啟用</option>
+                <option value="@EntityStatus.Inactive">停用</option>
+            </InputSelect>
+        </div>
+    </div>
+
+    @* 備註 *@
+    <div class="row g-3 mb-4">
+        <div class="col-md-12">
+            <label class="form-label">備註</label>
+            <InputTextArea class="form-control" @bind-Value="Employee.Remarks" rows="3" placeholder="請輸入備註（選填）" />
+        </div>
+    </div>
+
+    @* 表單按鈕 *@
+    <div class="d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-outline-secondary" @onclick="OnCancel">
+            <i class="bi bi-x-circle me-1"></i>取消
+        </button>
+        <button type="submit" class="btn btn-primary" disabled="@IsSubmitting">
+            @if (IsSubmitting)
+            {
+                <span class="spinner-border spinner-border-sm me-1"></span>
+            }
+            else
+            {
+                <i class="bi bi-check-circle me-1"></i>
+            }
+            @SubmitButtonText
+        </button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter] public Employee Employee { get; set; } = new();
+    [Parameter] public List<Role>? Roles { get; set; }
+    [Parameter] public bool IsCreateMode { get; set; } = true;
+    [Parameter] public bool IsSubmitting { get; set; }
+    [Parameter] public string SubmitButtonText { get; set; } = "儲存";
+    [Parameter] public string Password { get; set; } = string.Empty;
+    [Parameter] public string ConfirmPassword { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnSubmit { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+}

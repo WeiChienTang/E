@@ -1,0 +1,158 @@
+@using ERPCore2.Data.Entities
+@using ERPCore2.Components.Shared.Buttons
+
+<!-- 權限管理工具 -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-4">
+                <label class="form-label">搜尋權限</label>
+                <input type="text" class="form-control" @bind="SearchTerm" @oninput="OnSearchInputChanged" placeholder="輸入權限名稱或代碼...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">權限群組</label>                <select class="form-select" @bind="FilterGroup" @bind:after="OnFilterChangedHandler">
+                    <option value="">全部群組</option>
+                    @foreach (var group in AvailableGroups)
+                    {
+                        <option value="@group">@group</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">快速操作</label>
+                <div class="btn-group w-100">                    <button type="button" class="btn btn-outline-success btn-sm" @onclick="OnSelectAllClicked" disabled="@IsSystemRole">
+                        <i class="bi bi-check-all me-1"></i>全選
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" @onclick="OnClearAllClicked" disabled="@IsSystemRole">
+                        <i class="bi bi-x-square me-1"></i>清除
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <div class="text-center w-100">
+                    <div class="fw-bold text-primary">@SelectedPermissions.Count</div>
+                    <small class="text-muted">已選權限</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 權限列表 -->
+<div class="row">
+    @foreach (var group in PermissionGroups.Where(g => string.IsNullOrEmpty(FilterGroup) || g.Key == FilterGroup))
+    {
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-folder me-2"></i>
+                            @group.Key
+                        </h5>
+                        <div>
+                            <span class="badge bg-primary me-2">@group.Value.Count(p => FilteredPermissions.Contains(p)) 個權限</span>
+                            @if (!IsSystemRole)
+                            {                                <button type="button" class="btn btn-sm btn-outline-success" @onclick="() => OnSelectGroupClicked(group.Value)">
+                                    <i class="bi bi-check-all"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => OnClearGroupClicked(group.Value)">
+                                    <i class="bi bi-x-square"></i>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        @foreach (var permission in group.Value.Where(p => FilteredPermissions.Contains(p)))
+                        {
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="form-check">                                    <input class="form-check-input" type="checkbox" 
+                                           checked="@GetPermissionChecked(permission.Id)"
+                                           @onchange="@((ChangeEventArgs e) => OnPermissionChangedHandler(permission, (bool)e.Value!))"
+                                           id="permission_@permission.Id" 
+                                           disabled="@IsSystemRole">
+                                    <label class="form-check-label" for="permission_@permission.Id">
+                                        <div class="fw-bold">@permission.PermissionName</div>
+                                        <small class="text-muted">@permission.PermissionCode</small>                                        @if (!string.IsNullOrEmpty(permission.Remarks))
+                                        {
+                                            <div class="form-text">@permission.Remarks</div>
+                                        }
+                                    </label>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    @if (!group.Value.Any(p => FilteredPermissions.Contains(p)))
+                    {
+                        <div class="text-center py-3">
+                            <i class="bi bi-search text-muted" style="font-size: 2rem;"></i>
+                            <p class="mt-2 text-muted mb-0">此群組中沒有符合條件的權限</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@if (!PermissionGroups.Any(g => string.IsNullOrEmpty(FilterGroup) || g.Key == FilterGroup))
+{
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-search text-muted" style="font-size: 3rem;"></i>
+            <p class="mt-3 text-muted">沒有找到符合條件的權限群組</p>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Dictionary<string, List<Permission>> PermissionGroups { get; set; } = new();
+    [Parameter] public List<Permission> FilteredPermissions { get; set; } = new();
+    [Parameter] public HashSet<int> SelectedPermissions { get; set; } = new();
+    [Parameter] public List<string> AvailableGroups { get; set; } = new();
+    [Parameter] public string SearchTerm { get; set; } = string.Empty;
+    [Parameter] public string FilterGroup { get; set; } = string.Empty;
+    [Parameter] public bool IsSystemRole { get; set; } = false;    [Parameter] public EventCallback<string> OnSearchChanged { get; set; }
+    [Parameter] public EventCallback OnFilterChanged { get; set; }
+    [Parameter] public EventCallback SelectAllVisible { get; set; }
+    [Parameter] public EventCallback ClearAllVisible { get; set; }
+    [Parameter] public EventCallback<List<Permission>> SelectGroupPermissions { get; set; }
+    [Parameter] public EventCallback<List<Permission>> ClearGroupPermissions { get; set; }
+    [Parameter] public EventCallback<(Permission permission, bool isSelected)> OnPermissionChanged { get; set; }
+
+    private bool GetPermissionChecked(int permissionId)
+    {
+        return SelectedPermissions.Contains(permissionId);
+    }    private async Task OnPermissionChangedHandler(Permission permission, bool isSelected)
+    {
+        await OnPermissionChanged.InvokeAsync((permission, isSelected));
+    }
+
+    private async Task OnSearchInputChanged(ChangeEventArgs e)
+    {
+        await OnSearchChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty);
+    }
+
+    private async Task OnSelectAllClicked()
+    {
+        await SelectAllVisible.InvokeAsync();
+    }
+
+    private async Task OnClearAllClicked()
+    {
+        await ClearAllVisible.InvokeAsync();
+    }
+
+    private async Task OnSelectGroupClicked(List<Permission> groupPermissions)
+    {
+        await SelectGroupPermissions.InvokeAsync(groupPermissions);
+    }    private async Task OnClearGroupClicked(List<Permission> groupPermissions)
+    {
+        await ClearGroupPermissions.InvokeAsync(groupPermissions);
+    }    private async Task OnFilterChangedHandler()
+    {
+        await OnFilterChanged.InvokeAsync();
+    }
+}

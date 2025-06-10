@@ -1,4 +1,5 @@
 @* 基礎按鈕組件 - 遵循設計原則使用深藍色主色調 *@
+@using ERPCore2.Components.Shared.Buttons
 
 <button class="btn @GetButtonClass()" 
         type="@(IsSubmit ? "submit" : Type)"
@@ -57,7 +58,7 @@
                 break;            case ButtonVariant.OutlinePrimary:
                 classes.Add("btn-outline-primary");
                 break;
-            case ButtonVariant.OutlineSecondary:
+                        case ButtonVariant.OutlineSecondary:
                 classes.Add("btn-outline-secondary");
                 break;
             case ButtonVariant.OutlineWarning:
@@ -65,6 +66,9 @@
                 break;
             case ButtonVariant.OutlineDanger:
                 classes.Add("btn-outline-danger");
+                break;
+            case ButtonVariant.OutlineInfo:
+                classes.Add("btn-outline-info");
                 break;
         }
         
@@ -78,32 +82,12 @@
                 classes.Add("btn-lg");
                 break;
         }
-        
-        // 自定義樣式
+          // 自定義樣式
         if (!string.IsNullOrEmpty(CssClass))
         {
             classes.Add(CssClass);
         }
         
         return string.Join(" ", classes);
-    }    public enum ButtonVariant
-    {
-        Primary,
-        Secondary,
-        Success,
-        Warning,
-        Danger,
-        Info,
-        OutlinePrimary,
-        OutlineSecondary,
-        OutlineWarning,
-        OutlineDanger
-    }
-
-    public enum ButtonSize
-    {
-        Small,
-        Normal,
-        Large
     }
 }

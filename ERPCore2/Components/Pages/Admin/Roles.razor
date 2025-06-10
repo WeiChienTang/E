@@ -1,0 +1,398 @@
+@page "/admin/roles"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services.Interfaces
+@using ERPCore2.Data.Enums
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Components.Shared.Loading
+@inject IRoleService RoleService
+@inject IPermissionService PermissionService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<div class="container-fluid">
+    <!-- 頁面標題 -->
+    <PageTitleComponent Title="角色管理" 
+                      IconClass="bi bi-shield-fill"
+                      Subtitle="管理系統角色與權限設定">
+        <Actions>
+            <ButtonComponent Text="新增角色" 
+                           Variant="ButtonVariant.Primary" 
+                           IconClass="bi bi-plus-circle"
+                           OnClick="showCreateModal" />
+        </Actions>
+    </PageTitleComponent>    <!-- 搜尋和篩選 -->
+    <AdminRoleSearchFilterComponent SearchTerm="@searchTerm" 
+                                   SearchTermChanged="@((string value) => searchTerm = value)"
+                                   FilterType="@filterType"
+                                   FilterTypeChanged="@((string value) => filterType = value)"
+                                   FilterStatus="@filterStatus"
+                                   FilterStatusChanged="@((EntityStatus? value) => filterStatus = value)"
+                                   OnReset="@(() => ResetFilters())"
+                                   OnSearchInput="@OnSearchChanged" />
+
+    <!-- 角色列表 -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">角色列表</h5>
+            <span class="badge bg-secondary">共 @filteredRoles.Count 個角色</span>
+        </div>
+        <div class="card-body p-0">            @if (isLoading)
+            {
+                <LoadingComponent LoadingText="載入角色資料中..." />
+            }
+            else if (!filteredRoles.Any())
+            {
+                <div class="text-center p-4">
+                    <i class="bi bi-shield text-muted" style="font-size: 3rem;"></i>
+                    <p class="mt-2 text-muted">沒有找到符合條件的角色</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>角色名稱</th>
+                                <th>描述</th>
+                                <th>類型</th>
+                                <th>權限數量</th>
+                                <th>員工數量</th>
+                                <th>狀態</th>
+                                <th>建立時間</th>
+                                <th width="150">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var role in filteredRoles)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi @(role.IsSystemRole ? "bi-shield-fill text-danger" : "bi-shield text-primary") me-2"></i>
+                                            <strong>@role.RoleName</strong>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">@(role.Description ?? "無描述")</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(role.IsSystemRole ? "bg-danger" : "bg-info")">
+                                            @(role.IsSystemRole ? "系統角色" : "自訂角色")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">@role.RolePermissions.Count</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">@role.Employees.Count</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(role.Status == EntityStatus.Active ? "bg-success" : "bg-secondary")">
+                                            @(role.Status == EntityStatus.Active ? "啟用" : "停用")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">@role.CreatedAt.ToString("yyyy/MM/dd")</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-info" @onclick="() => ViewRole(role.Id)" title="檢視">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            @if (!role.IsSystemRole)
+                                            {
+                                                <button type="button" class="btn btn-outline-warning" @onclick="() => EditRole(role.Id)" title="編輯">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-danger" @onclick="() => DeleteRole(role)" title="刪除">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            }
+                                            <button type="button" class="btn btn-outline-secondary" @onclick="() => ManagePermissions(role.Id)" title="管理權限">
+                                                <i class="bi bi-key"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- 新增角色 Modal -->
+<div class="modal fade" id="createRoleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增角色</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>@errorMessage
+                    </div>
+                }
+
+                <form @onsubmit="CreateRole" @onsubmit:preventDefault="true">
+                    <div class="mb-3">
+                        <label class="form-label">角色名稱 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" @bind="newRole.RoleName" maxlength="50" required>
+                        <div class="form-text">最多50個字元</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">角色描述</label>
+                        <textarea class="form-control" @bind="newRole.Description" rows="3" maxlength="200"></textarea>
+                        <div class="form-text">最多200個字元</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" @bind="newRole.IsSystemRole" id="isSystemRole">
+                            <label class="form-check-label" for="isSystemRole">
+                                系統角色（系統角色無法被刪除）
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" @onclick="CreateRole" disabled="@isCreating">
+                    @if (isCreating)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                    }
+                    建立角色
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 確認刪除 Modal -->
+<div class="modal fade" id="deleteRoleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>確認刪除
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                @if (roleToDelete != null)
+                {
+                    <p>您確定要刪除角色 <strong>@roleToDelete.RoleName</strong> 嗎？</p>
+                    @if (roleToDelete.Employees.Any())
+                    {
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            此角色目前被 <strong>@roleToDelete.Employees.Count</strong> 名員工使用，刪除後這些員工將失去相關權限。
+                        </div>
+                    }
+                    <p class="text-muted mb-0">此操作無法復原。</p>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" @onclick="ConfirmDeleteRole" disabled="@isDeleting">
+                    @if (isDeleting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                    }
+                    確認刪除
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Role> roles = new();
+    private List<Role> filteredRoles = new();
+    private string searchTerm = string.Empty;    private string filterType = string.Empty;
+    private EntityStatus? filterStatus = null;
+    private bool isLoading = true;
+    private bool isCreating = false;
+    private bool isDeleting = false;
+    private string errorMessage = string.Empty;
+    
+    private Role newRole = new();
+    private Role? roleToDelete;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRoles();
+    }
+
+    private async Task LoadRoles()
+    {
+        try
+        {
+            isLoading = true;
+            roles = await RoleService.GetAllAsync();
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"載入角色資料時發生錯誤：{ex.Message}");
+            roles = new List<Role>();
+            filteredRoles = new List<Role>();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        filteredRoles = roles.Where(r =>
+        {
+            // 搜尋條件
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                var lowerSearchTerm = searchTerm.ToLower();
+                if (!r.RoleName.ToLower().Contains(lowerSearchTerm) &&
+                    !(r.Description?.ToLower().Contains(lowerSearchTerm) ?? false))
+                    return false;
+            }
+
+            // 類型篩選
+            if (!string.IsNullOrEmpty(filterType))
+            {
+                if (filterType == "system" && !r.IsSystemRole) return false;
+                if (filterType == "custom" && r.IsSystemRole) return false;
+            }            // 狀態篩選
+            if (filterStatus.HasValue)
+            {
+                if (r.Status != filterStatus.Value) return false;
+            }
+
+            return true;
+        }).ToList();
+
+        StateHasChanged();
+    }
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        ApplyFilters();
+    }
+
+    private void OnFilterChanged()
+    {
+        ApplyFilters();
+    }
+
+    private void ResetFilters()
+    {
+        searchTerm = string.Empty;
+        filterType = string.Empty;
+        filterStatus = null;
+        ApplyFilters();
+    }
+
+    private async Task CreateRole()
+    {
+        try
+        {
+            isCreating = true;
+            errorMessage = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(newRole.RoleName))
+            {
+                errorMessage = "請輸入角色名稱";
+                return;
+            }
+
+            newRole.Status = EntityStatus.Active;
+            var result = await RoleService.CreateAsync(newRole);            if (result.IsSuccess)
+            {
+                var modal = await JSRuntime.InvokeAsync<object>("document.getElementById", "createRoleModal");
+                await JSRuntime.InvokeVoidAsync("bootstrap.Modal.getInstance", modal);
+                await JSRuntime.InvokeVoidAsync("eval", "bootstrap.Modal.getInstance(document.getElementById('createRoleModal')).hide()");
+
+                newRole = new Role();
+                await LoadRoles();
+            }
+            else
+            {
+                errorMessage = result.ErrorMessage ?? "建立角色失敗";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"建立角色時發生錯誤：{ex.Message}";
+        }
+        finally
+        {
+            isCreating = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ViewRole(int roleId)
+    {
+        Navigation.NavigateTo($"/admin/roles/view/{roleId}");
+    }
+
+    private void EditRole(int roleId)
+    {
+        Navigation.NavigateTo($"/admin/roles/edit/{roleId}");
+    }
+
+    private void ManagePermissions(int roleId)
+    {
+        Navigation.NavigateTo($"/admin/roles/{roleId}/permissions");
+    }    private async Task DeleteRole(Role role)
+    {
+        roleToDelete = role;
+        await JSRuntime.InvokeVoidAsync("eval", "new bootstrap.Modal(document.getElementById('deleteRoleModal')).show()");
+    }
+
+    private async Task ConfirmDeleteRole()
+    {
+        if (roleToDelete == null) return;
+
+        try
+        {
+            isDeleting = true;
+
+            var result = await RoleService.DeleteAsync(roleToDelete.Id);            if (result.IsSuccess)
+            {
+                await JSRuntime.InvokeVoidAsync("eval", "bootstrap.Modal.getInstance(document.getElementById('deleteRoleModal')).hide()");
+
+                await LoadRoles();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", result.ErrorMessage ?? "刪除角色失敗");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"刪除角色時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isDeleting = false;
+            roleToDelete = null;
+            StateHasChanged();
+        }
+    }    private async Task showCreateModal()
+    {
+        newRole = new Role();
+        errorMessage = string.Empty;
+        await JSRuntime.InvokeVoidAsync("eval", "new bootstrap.Modal(document.getElementById('createRoleModal')).show()");
+    }
+}

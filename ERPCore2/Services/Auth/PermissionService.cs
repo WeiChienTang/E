@@ -202,6 +202,9 @@ namespace ERPCore2.Services
 
         /// <summary>
         /// 檢查權限代碼是否存在
+        /// </summary>        /// <summary>
+        /// 檢查權限代碼是否存在 - 簡化版本，不支援排除特定ID
+        /// 如需更完整功能請使用 PermissionManagementService.IsPermissionCodeExistsAsync
         /// </summary>
         public async Task<ServiceResult<bool>> PermissionExistsAsync(string permissionCode)
         {
@@ -257,10 +260,8 @@ namespace ERPCore2.Services
             {
                 return Task.FromResult(ServiceResult.Failure($"清除權限快取時發生錯誤：{ex.Message}"));
             }
-        }
-
-        /// <summary>
-        /// 取得模組的所有權限
+        }        /// <summary>
+        /// 取得模組的所有權限 - 委派給 PermissionManagementService
         /// </summary>
         public async Task<ServiceResult<List<Permission>>> GetModulePermissionsAsync(string modulePrefix)
         {

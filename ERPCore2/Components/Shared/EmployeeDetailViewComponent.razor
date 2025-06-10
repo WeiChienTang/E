@@ -1,0 +1,156 @@
+@* 員工詳細資料展示組件 *@
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Badges
+
+<div class="row">
+    @* 左側：基本資訊 *@
+    <div class="col-lg-8">
+        @* 個人資訊卡片 *@
+        <DetailSectionComponent Title="個人資訊" IconClass="bi bi-person-badge">
+            <div class="row">
+                <div class="col-md-3 text-center mb-3">
+                    <div class="avatar-lg bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3">
+                        <span class="fs-1 fw-bold">@Employee.Name.Substring(0, 1)</span>
+                    </div>
+                    <h5 class="mb-1">@Employee.Name</h5>
+                    <p class="text-muted mb-0">@Employee.Position</p>
+                </div>
+                <div class="col-md-9">
+                    <div class="row g-3">
+                        <DetailItemComponent Label="員工代碼" Value="@Employee.EmployeeCode" />
+                        <DetailItemComponent Label="帳號" Value="@Employee.Username" ValueClass="font-monospace" />
+                        <DetailItemComponent Label="名字" Value="@Employee.FirstName" />
+                        <DetailItemComponent Label="姓氏" Value="@Employee.LastName" />
+                        <div class="col-md-12">
+                            <DetailItemComponent Label="電子郵件">
+                                <ChildContent>
+                                    @if (!string.IsNullOrEmpty(Employee.Email))
+                                    {
+                                        <a href="mailto:@Employee.Email" class="text-decoration-none">@Employee.Email</a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </ChildContent>
+                            </DetailItemComponent>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </DetailSectionComponent>
+
+        @* 組織資訊卡片 *@
+        <DetailSectionComponent Title="組織資訊" IconClass="bi bi-building">
+            <div class="row g-3">
+                <DetailItemComponent Label="部門" Value="@Employee.Department" />
+                <DetailItemComponent Label="職位" Value="@Employee.Position" />
+                <div class="col-md-12">
+                    <DetailItemComponent Label="角色">
+                        <ChildContent>
+                            <span class="badge bg-info fs-6">@Employee.Role?.RoleName</span>
+                            @if (Employee.Role?.Description != null)
+                            {
+                                <small class="text-muted ms-2">@Employee.Role.Description</small>
+                            }
+                        </ChildContent>
+                    </DetailItemComponent>
+                </div>
+            </div>
+        </DetailSectionComponent>
+
+        @* 系統資訊卡片 *@
+        <DetailSectionComponent Title="系統資訊" IconClass="bi bi-gear">
+            <div class="row g-3">
+                <DetailItemComponent Label="建立時間" Value="@Employee.CreatedAt.ToString("yyyy年MM月dd日 HH:mm:ss")" />
+                <DetailItemComponent Label="建立者" Value="@Employee.CreatedBy" />
+                <DetailItemComponent Label="最後更新">
+                    <ChildContent>
+                        @if (Employee.UpdatedAt.HasValue)
+                        {
+                            @Employee.UpdatedAt.Value.ToString("yyyy年MM月dd日 HH:mm:ss")
+                        }
+                        else
+                        {
+                            <span class="text-muted">-</span>
+                        }
+                    </ChildContent>
+                </DetailItemComponent>
+                <DetailItemComponent Label="更新者" Value="@Employee.UpdatedBy" />
+                @if (!string.IsNullOrEmpty(Employee.Remarks))
+                {
+                    <div class="col-md-12">
+                        <DetailItemComponent Label="備註">
+                            <ChildContent>
+                                <div class="border rounded p-2 bg-light">@Employee.Remarks</div>
+                            </ChildContent>
+                        </DetailItemComponent>
+                    </div>
+                }
+            </div>
+        </DetailSectionComponent>
+    </div>
+
+    @* 右側：狀態和權限 *@
+    <div class="col-lg-4">
+        @* 帳號狀態卡片 *@
+        <DetailSectionComponent Title="帳號狀態" IconClass="bi bi-shield-check">
+            <div class="mb-3">
+                <DetailItemComponent Label="帳號狀態">
+                    <ChildContent>
+                        <StatusBadgeComponent Status="@Employee.Status" />
+                    </ChildContent>
+                </DetailItemComponent>
+            </div>
+
+            <div class="mb-3">
+                <DetailItemComponent Label="鎖定狀態">
+                    <ChildContent>
+                        @if (Employee.IsLocked)
+                        {
+                            <span class="badge bg-danger">已鎖定</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">正常</span>
+                        }
+                    </ChildContent>
+                </DetailItemComponent>
+            </div>
+
+            <div class="mb-3">
+                <DetailItemComponent Label="最後登入">
+                    <ChildContent>
+                        @if (Employee.LastLoginAt.HasValue)
+                        {
+                            @Employee.LastLoginAt.Value.ToString("yyyy年MM月dd日 HH:mm:ss")
+                        }
+                        else
+                        {
+                            <span class="text-muted">從未登入</span>
+                        }
+                    </ChildContent>
+                </DetailItemComponent>
+            </div>
+        </DetailSectionComponent>
+
+        @* 權限資訊卡片 *@
+        <DetailSectionComponent Title="權限資訊" IconClass="bi bi-key">
+            <div class="mb-3">
+                <DetailItemComponent Label="所屬角色" Value="@Employee.Role?.RoleName" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label text-muted small">角色權限</label>
+                <div class="border rounded p-3 bg-light">
+                    <small class="text-muted">權限詳細資訊載入中...</small>
+                </div>
+            </div>
+        </DetailSectionComponent>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Employee Employee { get; set; } = default!;
+}

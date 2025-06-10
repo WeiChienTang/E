@@ -1,0 +1,108 @@
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Components.Shared.Buttons
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-pencil me-2"></i>
+            基本資訊
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">角色名稱 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control @(ValidationErrors.ContainsKey("RoleName") ? "is-invalid" : "")" 
+                           @bind="Role.RoleName" maxlength="50" required>
+                    @if (ValidationErrors.ContainsKey("RoleName"))
+                    {
+                        <div class="invalid-feedback">@ValidationErrors["RoleName"]</div>
+                    }
+                    <div class="form-text">最多50個字元</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">狀態</label>
+                    <select class="form-select" @bind="Role.Status">
+                        <option value="@EntityStatus.Active">啟用</option>
+                        <option value="@EntityStatus.Inactive">停用</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">角色描述</label>
+            <textarea class="form-control @(ValidationErrors.ContainsKey("Description") ? "is-invalid" : "")" 
+                      @bind="Role.Description" rows="4" maxlength="200"></textarea>
+            @if (ValidationErrors.ContainsKey("Description"))
+            {
+                <div class="invalid-feedback">@ValidationErrors["Description"]</div>
+            }
+            <div class="form-text">最多200個字元</div>
+        </div>
+        @if (IsEditMode)
+        {
+            <div class="mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" @bind="Role.IsSystemRole" 
+                           id="isSystemRole" disabled="@Role.IsSystemRole">
+                    <label class="form-check-label" for="isSystemRole">
+                        系統角色
+                    </label>
+                </div>
+                @if (Role.IsSystemRole)
+                {
+                    <div class="form-text text-warning">
+                        <i class="bi bi-info-circle me-1"></i>
+                        系統角色類型無法修改
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@if (IsEditMode && Role.Id > 0)
+{
+    <!-- 角色統計 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-graph-up me-2"></i>
+                角色統計
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-6">
+                    <div class="border-end">
+                        <h4 class="text-primary mb-1">@Role.RolePermissions.Count</h4>
+                        <p class="text-muted mb-0">權限數量</p>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <h4 class="text-success mb-1">@Role.Employees.Count</h4>
+                    <p class="text-muted mb-0">使用員工</p>
+                </div>
+            </div>
+            <hr>
+            <div class="d-grid">
+                <ButtonComponent 
+                    Text="管理權限" 
+                    Icon="key" 
+                    Variant="@ButtonVariant.OutlineInfo"
+                    OnClick="@(() => OnManagePermissions.InvokeAsync(Role.Id))" />
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Role Role { get; set; } = new();
+    [Parameter] public Dictionary<string, string> ValidationErrors { get; set; } = new();
+    [Parameter] public bool IsEditMode { get; set; } = false;
+    [Parameter] public EventCallback<int> OnManagePermissions { get; set; }
+}

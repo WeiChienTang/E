@@ -1,0 +1,82 @@
+@* 員工搜尋篩選組件 *@
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Components.Shared.Buttons
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3">            <div class="col-md-4">
+                <label class="form-label">搜尋</label>
+                <input type="text" class="form-control" placeholder="搜尋姓名、帳號或員工代碼" 
+                       @bind="SearchTerm" @bind:after="(() => HandleSearchTermChanged(SearchTerm))" 
+                       @oninput="HandleSearchInput" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">角色篩選</label>
+                <select class="form-select" @bind="SelectedRoleId" @bind:after="(() => HandleSelectedRoleIdChanged(SelectedRoleId))">
+                    <option value="">全部角色</option>
+                    @if (Roles != null)
+                    {
+                        @foreach (var role in Roles)
+                        {
+                            <option value="@role.Id">@role.RoleName</option>
+                        }
+                    }
+                </select>
+            </div>            <div class="col-md-3">
+                <label class="form-label">狀態篩選</label>
+                <select class="form-select" value="@(SelectedStatus?.ToString() ?? "")" @onchange="@((ChangeEventArgs e) => HandleSelectedStatusChanged(e.Value?.ToString() ?? ""))">
+                    <option value="">全部狀態</option>
+                    <option value="@EntityStatus.Active">啟用</option>
+                    <option value="@EntityStatus.Inactive">停用</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <ButtonComponent Text="重設篩選" 
+                               Variant="ButtonVariant.OutlineSecondary" 
+                               Size="ButtonSize.Normal"
+                               OnClick="HandleReset" />
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string SearchTerm { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> SearchTermChanged { get; set; }
+    [Parameter] public string SelectedRoleId { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> SelectedRoleIdChanged { get; set; }
+    [Parameter] public EntityStatus? SelectedStatus { get; set; }
+    [Parameter] public EventCallback<EntityStatus?> SelectedStatusChanged { get; set; }
+    [Parameter] public List<Role>? Roles { get; set; }
+    [Parameter] public EventCallback OnReset { get; set; }
+    [Parameter] public EventCallback<ChangeEventArgs> OnSearchInput { get; set; }
+
+    private async Task HandleSearchTermChanged(string value)
+    {
+        await SearchTermChanged.InvokeAsync(value);
+    }
+
+    private async Task HandleSelectedRoleIdChanged(string value)
+    {
+        await SelectedRoleIdChanged.InvokeAsync(value);
+    }    private async Task HandleSelectedStatusChanged(string value)
+    {
+        EntityStatus? status = null;
+        if (!string.IsNullOrEmpty(value) && Enum.TryParse<EntityStatus>(value, out var parsedStatus))
+        {
+            status = parsedStatus;
+        }
+        await SelectedStatusChanged.InvokeAsync(status);
+    }
+
+    private async Task HandleReset()
+    {
+        await OnReset.InvokeAsync();
+    }
+
+    private async Task HandleSearchInput(ChangeEventArgs e)
+    {
+        await OnSearchInput.InvokeAsync(e);
+    }
+}
