@@ -10,6 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 // 註冊應用程式服務
 builder.Services.AddApplicationServices(builder.Configuration.GetConnectionString("DefaultConnection")!);
 
+// 加入 HttpContextAccessor（.NET 9 互動式元件必需）
+builder.Services.AddHttpContextAccessor();
+
 // 加入認證和授權服務
 builder.Services.AddAuthentication("Cookies")
     .AddCookie("Cookies", options =>
@@ -27,6 +30,37 @@ builder.Services.AddAuthorization();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// 加入控制器服務
+builder.Services.AddControllers();
+
+// 註冊 HttpClient 用於 API 調用
+builder.Services.AddHttpClient();
+
+// 為 Blazor 組件配置具有 BaseAddress 的 HttpClient
+builder.Services.AddScoped(sp =>
+{
+    var httpContext = sp.GetService<IHttpContextAccessor>()?.HttpContext;
+    var request = httpContext?.Request;
+    
+    if (request != null)
+    {
+        var baseUri = $"{request.Scheme}://{request.Host}";
+        return new HttpClient { BaseAddress = new Uri(baseUri) };
+    }
+    
+    // 開發環境的預設值
+    return new HttpClient { BaseAddress = new Uri("https://localhost:7109") };
+});
+
+// 配置反偽令牌為寬鬆模式
+builder.Services.AddAntiforgery(options =>
+{
+    // 允許沒有令牌的請求通過（適用於互動式表單）
+    options.Cookie.Name = "__RequestVerificationToken";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -43,10 +77,15 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// 添加反偽令牌中介軟體但配置為寬鬆模式
+app.UseAntiforgery();
+
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode()
-    .DisableAntiforgery();
+    .AddInteractiveServerRenderMode();
+
+// 對應控制器
+app.MapControllers();
 
 // Initialize seed data
 using (var scope = app.Services.CreateScope())

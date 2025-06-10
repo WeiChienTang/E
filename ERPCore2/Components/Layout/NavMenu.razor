@@ -40,9 +40,8 @@
         
         <!-- 只有登入用戶才能看到的菜單 -->
         <AuthorizeView>
-            <Authorized>
-                <!-- 客戶管理 - 需要 CUSTOMER_VIEW 權限 -->
-                <PermissionCheck Permission="CUSTOMER_VIEW">
+            <Authorized>                <!-- 客戶管理 - 需要 Customer.View 權限 -->
+                <PermissionCheck Permission="Customer.View">
                     <div class="nav-item px-3">
                         <NavLink class="nav-link" href="customers">
                             <span class="bi bi-people-fill" aria-hidden="true"></span> 客戶管理
@@ -50,8 +49,8 @@
                     </div>
                 </PermissionCheck>
                 
-                <!-- 系統管理 - 需要 SYSTEM_ADMIN 權限 -->
-                <PermissionCheck Permission="SYSTEM_ADMIN">
+                <!-- 系統管理 - 需要 System.Admin 權限 -->
+                <PermissionCheck Permission="System.Admin">
                     <div class="nav-item px-3">
                         <div class="nav-link dropdown" onclick="toggleDropdown(event)">
                             <span class="bi bi-gear-fill" aria-hidden="true"></span> 系統管理
@@ -70,9 +69,8 @@
                         </div>
                     </div>
                 </PermissionCheck>
-                
-                <!-- 報表功能 - 需要 REPORT_VIEW 權限 -->
-                <PermissionCheck Permission="REPORT_VIEW">
+                  <!-- 報表功能 - 需要 Report.View 權限 -->
+                <PermissionCheck Permission="Report.View">
                     <div class="nav-item px-3">
                         <div class="nav-link dropdown" onclick="toggleDropdown(event)">
                             <span class="bi bi-bar-chart-fill" aria-hidden="true"></span> 報表管理

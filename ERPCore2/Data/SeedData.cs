@@ -138,14 +138,12 @@ namespace ERPCore2.Data
         private static async Task SeedPermissionsAsync(AppDbContext context)
         {
             if (await context.Permissions.AnyAsync())
-                return;
-
-            var permissions = new List<Permission>
+                return;            var permissions = new List<Permission>
             {
                 // 系統管理權限
                 new Permission
                 {
-                    PermissionCode = "SYSTEM_ADMIN",
+                    PermissionCode = "System.Admin",
                     PermissionName = "系統管理",
                     Module = "System",
                     Action = "Admin",
@@ -157,7 +155,7 @@ namespace ERPCore2.Data
                 // 使用者管理權限
                 new Permission
                 {
-                    PermissionCode = "USER_VIEW",
+                    PermissionCode = "User.View",
                     PermissionName = "檢視使用者",
                     Module = "User",
                     Action = "View",
@@ -168,7 +166,7 @@ namespace ERPCore2.Data
                 },
                 new Permission
                 {
-                    PermissionCode = "USER_CREATE",
+                    PermissionCode = "User.Create",
                     PermissionName = "新增使用者",
                     Module = "User",
                     Action = "Create",
@@ -179,7 +177,7 @@ namespace ERPCore2.Data
                 },
                 new Permission
                 {
-                    PermissionCode = "USER_EDIT",
+                    PermissionCode = "User.Edit",
                     PermissionName = "編輯使用者",
                     Module = "User",
                     Action = "Edit",
@@ -190,7 +188,7 @@ namespace ERPCore2.Data
                 },
                 new Permission
                 {
-                    PermissionCode = "USER_DELETE",
+                    PermissionCode = "User.Delete",
                     PermissionName = "刪除使用者",
                     Module = "User",
                     Action = "Delete",
@@ -202,7 +200,7 @@ namespace ERPCore2.Data
                 // 角色管理權限
                 new Permission
                 {
-                    PermissionCode = "ROLE_VIEW",
+                    PermissionCode = "Role.View",
                     PermissionName = "檢視角色",
                     Module = "Role",
                     Action = "View",
@@ -213,7 +211,7 @@ namespace ERPCore2.Data
                 },
                 new Permission
                 {
-                    PermissionCode = "ROLE_CREATE",
+                    PermissionCode = "Role.Create",
                     PermissionName = "新增角色",
                     Module = "Role",
                     Action = "Create",
@@ -224,7 +222,7 @@ namespace ERPCore2.Data
                 },
                 new Permission
                 {
-                    PermissionCode = "ROLE_EDIT",
+                    PermissionCode = "Role.Edit",
                     PermissionName = "編輯角色",
                     Module = "Role",
                     Action = "Edit",
@@ -235,7 +233,7 @@ namespace ERPCore2.Data
                 },
                 new Permission
                 {
-                    PermissionCode = "ROLE_DELETE",
+                    PermissionCode = "Role.Delete",
                     PermissionName = "刪除角色",
                     Module = "Role",
                     Action = "Delete",
@@ -247,7 +245,7 @@ namespace ERPCore2.Data
                 // 客戶管理權限
                 new Permission
                 {
-                    PermissionCode = "CUSTOMER_VIEW",
+                    PermissionCode = "Customer.View",
                     PermissionName = "檢視客戶",
                     Module = "Customer",
                     Action = "View",
@@ -258,7 +256,7 @@ namespace ERPCore2.Data
                 },
                 new Permission
                 {
-                    PermissionCode = "CUSTOMER_CREATE",
+                    PermissionCode = "Customer.Create",
                     PermissionName = "新增客戶",
                     Module = "Customer",
                     Action = "Create",
@@ -269,7 +267,7 @@ namespace ERPCore2.Data
                 },
                 new Permission
                 {
-                    PermissionCode = "CUSTOMER_EDIT",
+                    PermissionCode = "Customer.Edit",
                     PermissionName = "編輯客戶",
                     Module = "Customer",
                     Action = "Edit",
@@ -280,7 +278,7 @@ namespace ERPCore2.Data
                 },
                 new Permission
                 {
-                    PermissionCode = "CUSTOMER_DELETE",
+                    PermissionCode = "Customer.Delete",
                     PermissionName = "刪除客戶",
                     Module = "Customer",
                     Action = "Delete",
@@ -292,7 +290,7 @@ namespace ERPCore2.Data
                 // 報表權限
                 new Permission
                 {
-                    PermissionCode = "REPORT_VIEW",
+                    PermissionCode = "Report.View",
                     PermissionName = "檢視報表",
                     Module = "Report",
                     Action = "View",
@@ -398,10 +396,8 @@ namespace ERPCore2.Data
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 });
-            }
-
-            // 管理員 - 除了系統管理外的所有權限
-            var adminPermissions = permissions.Where(p => p.PermissionCode != "SYSTEM_ADMIN");
+            }            // 管理員 - 除了系統管理外的所有權限
+            var adminPermissions = permissions.Where(p => p.PermissionCode != "System.Admin");
             foreach (var permission in adminPermissions)
             {
                 rolePermissions.Add(new RolePermission
@@ -415,7 +411,7 @@ namespace ERPCore2.Data
             }
 
             // 一般使用者 - 基本的檢視和新增編輯權限
-            var userPermissionCodes = new[] { "CUSTOMER_VIEW", "CUSTOMER_CREATE", "CUSTOMER_EDIT", "REPORT_VIEW" };
+            var userPermissionCodes = new[] { "Customer.View", "Customer.Create", "Customer.Edit", "Report.View" };
             var userPermissions = permissions.Where(p => userPermissionCodes.Contains(p.PermissionCode));
             foreach (var permission in userPermissions)
             {
@@ -427,10 +423,8 @@ namespace ERPCore2.Data
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 });
-            }
-
-            // 唯讀使用者 - 只有檢視權限
-            var readOnlyPermissionCodes = new[] { "CUSTOMER_VIEW", "REPORT_VIEW" };
+            }            // 唯讀使用者 - 只有檢視權限
+            var readOnlyPermissionCodes = new[] { "Customer.View", "Report.View" };
             var readOnlyPermissions = permissions.Where(p => readOnlyPermissionCodes.Contains(p.PermissionCode));
             foreach (var permission in readOnlyPermissions)
             {
