@@ -14,12 +14,11 @@
     <!-- 頁面標題 -->
     <PageTitleComponent Title="角色管理" 
                       IconClass="bi bi-shield-fill"
-                      Subtitle="管理系統角色與權限設定">
-        <Actions>
+                      Subtitle="管理系統角色與權限設定">        <Actions>
             <ButtonComponent Text="新增角色" 
                            Variant="ButtonVariant.Primary" 
                            IconClass="bi bi-plus-circle"
-                           OnClick="showCreateModal" />
+                           OnClick="NavigateToCreateRole" />
         </Actions>
     </PageTitleComponent>    <!-- 搜尋和篩選 -->
     <AdminRoleSearchFilterComponent SearchTerm="@searchTerm" 
@@ -394,5 +393,10 @@
         newRole = new Role();
         errorMessage = string.Empty;
         await JSRuntime.InvokeVoidAsync("eval", "new bootstrap.Modal(document.getElementById('createRoleModal')).show()");
+    }
+
+    private void NavigateToCreateRole()
+    {
+        Navigation.NavigateTo("/admin/roles/create");
     }
 }

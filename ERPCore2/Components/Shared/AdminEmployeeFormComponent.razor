@@ -2,7 +2,7 @@
 @using ERPCore2.Data.Enums
 @using Microsoft.AspNetCore.Components.Forms
 
-<EditForm Model="Employee" OnValidSubmit="OnSubmit">
+<EditForm Model="Employee" OnValidSubmit="HandleFormSubmit" FormName="EmployeeForm">
     <DataAnnotationsValidator />
     
     @* 基本資訊 *@
@@ -146,4 +146,50 @@
     [Parameter] public string ConfirmPassword { get; set; } = string.Empty;
     [Parameter] public EventCallback OnSubmit { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+
+    private async Task HandleFormSubmit()
+    {
+        Console.WriteLine("=== AdminEmployeeFormComponent.HandleFormSubmit 開始 ===");
+        Console.WriteLine($"Employee 資料檢查:");
+        Console.WriteLine($"  - Employee 是否為 null: {Employee == null}");
+        
+        if (Employee != null)
+        {
+            Console.WriteLine($"  - EmployeeCode: '{Employee.EmployeeCode ?? "null"}'");
+            Console.WriteLine($"  - Username: '{Employee.Username ?? "null"}'");
+            Console.WriteLine($"  - Name: '{Employee.Name ?? "null"}'");
+            Console.WriteLine($"  - FirstName: '{Employee.FirstName ?? "null"}'");
+            Console.WriteLine($"  - LastName: '{Employee.LastName ?? "null"}'");
+            Console.WriteLine($"  - Email: '{Employee.Email ?? "null"}'");
+            Console.WriteLine($"  - Department: '{Employee.Department ?? "null"}'");
+            Console.WriteLine($"  - Position: '{Employee.Position ?? "null"}'");
+            Console.WriteLine($"  - RoleId: {Employee.RoleId}");
+            Console.WriteLine($"  - Status: {Employee.Status}");
+            Console.WriteLine($"  - Remarks: '{Employee.Remarks ?? "null"}'");
+        }
+        
+        Console.WriteLine($"IsCreateMode: {IsCreateMode}");
+        if (IsCreateMode)
+        {
+            Console.WriteLine($"Password: '{(string.IsNullOrEmpty(Password) ? "空" : "已填入")}'");
+            Console.WriteLine($"ConfirmPassword: '{(string.IsNullOrEmpty(ConfirmPassword) ? "空" : "已填入")}'");
+        }
+        
+        Console.WriteLine("準備呼叫父組件的 OnSubmit");
+        
+        try
+        {
+            await OnSubmit.InvokeAsync();
+            Console.WriteLine("OnSubmit.InvokeAsync() 呼叫完成");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"OnSubmit.InvokeAsync() 發生錯誤:");
+            Console.WriteLine($"  - 錯誤類型: {ex.GetType().Name}");
+            Console.WriteLine($"  - 錯誤訊息: {ex.Message}");
+            Console.WriteLine($"  - 堆疊追蹤: {ex.StackTrace}");
+        }
+        
+        Console.WriteLine("=== AdminEmployeeFormComponent.HandleFormSubmit 完成 ===");
+    }
 }

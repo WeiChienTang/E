@@ -1,4 +1,5 @@
 @page "/admin/roles/edit/{RoleId:int}"
+@page "/admin/roles/create"
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services.Interfaces
 @using ERPCore2.Data.Enums
@@ -22,10 +23,9 @@
         </div>
     }
     else
-    {
-        <UnifiedHeaderComponent 
-            Title="編輯角色"
-            Subtitle="修改角色基本資訊"
+    {        <UnifiedHeaderComponent 
+            Title="@(IsCreateMode ? "新增角色" : "編輯角色")"
+            Subtitle="@(IsCreateMode ? "建立新的角色" : "修改角色基本資訊")"
             BreadcrumbItems="@breadcrumbItems" />
 
         @if (!string.IsNullOrEmpty(errorMessage))
@@ -40,56 +40,20 @@
             <div class="alert alert-success">
                 <i class="bi bi-check-circle me-2"></i>@successMessage
             </div>
-        }
-
-        <div class="row">
-            <div class="col-lg-8">
+        }        <div class="row">
+            <div class="col-lg-12">
                 <AdminRoleFormComponent 
                     Role="@role" 
                     ValidationErrors="@validationErrors" 
                     IsEditMode="true"
+                    IsSubmitting="@isSaving"
+                    SubmitButtonText="@(IsCreateMode ? "建立角色" : "儲存變更")"
+                    OnSubmit="SaveRole"
+                    OnCancel="CancelEdit"
                     OnManagePermissions="@((int roleId) => Navigation.NavigateTo($"/admin/roles/{roleId}/permissions"))" />
             </div>
-
-            <div class="col-lg-4">
-                <!-- 操作按鈕 -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="bi bi-gear me-2"></i>
-                            操作
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-grid gap-2">
-                            <ButtonComponent 
-                                Text="儲存變更"
-                                Icon="check-lg"
-                                Variant="@ButtonVariant.Primary"
-                                IsLoading="@isSaving"
-                                OnClick="@SaveRole" />
-                            
-                            <ButtonComponent 
-                                Text="取消"
-                                Icon="x-lg"
-                                Variant="@ButtonVariant.OutlineSecondary"
-                                OnClick="@CancelEdit" />
-                            
-                            <hr>
-                            
-                            <ButtonComponent 
-                                Text="檢視詳情"
-                                Icon="eye"
-                                Variant="@ButtonVariant.OutlineInfo"
-                                OnClick="@(() => Navigation.NavigateTo($"/admin/roles/view/{role.Id}"))" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 權限預覽 -->
-        @if (role.RolePermissions.Any())
+        </div><!-- 權限預覽 -->
+        @if (!IsCreateMode && role.RolePermissions.Any())
         {
             <div class="card mt-4">
                 <div class="card-header">
@@ -138,16 +102,55 @@
     private Dictionary<string, string> validationErrors = new();
     private Dictionary<string, List<Permission>> permissionGroups = new();
 
+    // 模式判斷
+    private bool IsCreateMode => RoleId == 0;
+
     private List<(string Href, string Text)> breadcrumbItems = new()
     {
         ("/admin", "系統管理"),
         ("/admin/roles", "角色管理"),
-        ("", "編輯角色")
+        ("", "")
     };
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadRoleDetails();
+        // 動態設定麵包屑
+        breadcrumbItems[2] = ("", IsCreateMode ? "新增角色" : "編輯角色");
+        
+        if (IsCreateMode)
+        {
+            InitializeNewRole();
+        }
+        else
+        {
+            await LoadRoleDetails();
+        }
+    }
+
+    private void InitializeNewRole()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+
+            role = new Role
+            {
+                Status = EntityStatus.Active,
+                IsSystemRole = false,
+                CreatedAt = DateTime.Now,
+                CreatedBy = "System", // TODO: 從身份驗證系統取得
+                RolePermissions = new List<RolePermission>()
+            };
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"初始化新角色資料時發生錯誤：{ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task LoadRoleDetails()
@@ -209,8 +212,7 @@
                 "System" => "系統管理",
                 "Report" => "報表管理",
                 _ => "其他權限"
-            };
-        }
+            };        }
         return "其他權限";
     }
 
@@ -244,35 +246,59 @@
                 return;
             }
 
-            // 檢查是否有變更
-            if (HasChanges())
+            if (IsCreateMode)
             {
-                var result = await RoleService.UpdateAsync(role);
+                // 新增模式
+                role.CreatedAt = DateTime.Now;
+                role.CreatedBy = "System"; // TODO: 從身份驗證系統取得
+
+                var result = await RoleService.CreateAsync(role);
                 if (result.IsSuccess)
                 {
-                    successMessage = "角色資料已成功更新";
-                    originalRole = new Role
-                    {
-                        Id = role.Id,
-                        RoleName = role.RoleName,
-                        Description = role.Description,
-                        IsSystemRole = role.IsSystemRole,
-                        Status = role.Status
-                    };
+                    successMessage = "角色已成功建立";
+                    await Task.Delay(1500); // 顯示成功訊息
+                    Navigation.NavigateTo("/admin/roles");
                 }
                 else
                 {
-                    errorMessage = result.ErrorMessage ?? "更新角色失敗";
+                    errorMessage = result.ErrorMessage ?? "建立角色失敗";
                 }
             }
             else
             {
-                successMessage = "沒有需要更新的資料";
+                // 編輯模式 - 檢查是否有變更
+                if (HasChanges())
+                {
+                    role.UpdatedAt = DateTime.Now;
+                    role.UpdatedBy = "System"; // TODO: 從身份驗證系統取得
+
+                    var result = await RoleService.UpdateAsync(role);
+                    if (result.IsSuccess)
+                    {
+                        successMessage = "角色資料已成功更新";
+                        originalRole = new Role
+                        {
+                            Id = role.Id,
+                            RoleName = role.RoleName,
+                            Description = role.Description,
+                            IsSystemRole = role.IsSystemRole,
+                            Status = role.Status
+                        };
+                    }
+                    else
+                    {
+                        errorMessage = result.ErrorMessage ?? "更新角色失敗";
+                    }
+                }
+                else
+                {
+                    successMessage = "沒有需要更新的資料";
+                }
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"儲存角色時發生錯誤：{ex.Message}";
+            errorMessage = $"{(IsCreateMode ? "建立" : "儲存")}角色時發生錯誤：{ex.Message}";
         }
         finally
         {

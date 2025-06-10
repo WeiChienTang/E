@@ -17,13 +17,11 @@
     <UnifiedHeaderComponent Title="權限管理" 
                            IconClass="bi bi-shield-check"
                            IsCardHeader="false"
-                           Subtitle="管理系統功能權限設定">
-        <Actions>
-            <ButtonComponent Text="初始化預設權限" 
+                           Subtitle="管理系統功能權限設定">        <Actions>
+            <ButtonComponent Text="@(isInitializing ? "初始化中..." : "初始化預設權限")" 
                             Variant="ButtonVariant.Success" 
                             IconClass="bi bi-bootstrap-reboot"
                             IsLoading="isInitializing"
-                            LoadingText="初始化中..."
                             OnClick="InitializeDefaultPermissions" />
             <ButtonComponent Text="新增權限" 
                             Variant="ButtonVariant.Primary" 
