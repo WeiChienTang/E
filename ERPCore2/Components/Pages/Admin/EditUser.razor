@@ -14,114 +14,116 @@
 
 <PageTitle>@(IsCreateMode ? "新增員工" : "編輯員工")</PageTitle>
 
-@* 頁面標題區 *@
-<UnifiedHeaderComponent Title="@(IsCreateMode ? "新增員工" : "編輯員工")" 
-                       IconClass="bi bi-person-gear"
-                       IsCardHeader="false">
-    <Actions>
-        @if (!IsCreateMode)
-        {
-            <ButtonComponent Text="檢視詳細" 
-                            Variant="ButtonVariant.OutlineInfo" 
-                            IconClass="bi bi-eye"
-                            OnClick="ViewEmployee" />
-        }
-        <ButtonComponent Text="返回列表" 
-                        Variant="ButtonVariant.OutlineSecondary" 
-                        IconClass="bi bi-arrow-left"
-                        OnClick="Cancel" />
-    </Actions>
-</UnifiedHeaderComponent>
-
-@* 麵包屑導航 *@
-<nav aria-label="breadcrumb" class="mb-4">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item">
-            <a href="/admin/users" class="text-decoration-none">員工管理</a>
-        </li>
-        <li class="breadcrumb-item active">@(IsCreateMode ? "新增員工" : "編輯員工")</li>
-    </ol>
-</nav>
-
-@if (isLoading)
-{
-    <LoadingComponent LoadingText="載入員工資料中..." />
-}
-else if (employee != null)
-{
-    @* 表單區域 *@
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-person-badge me-2"></i>員工基本資料
-                    </h5>
-                </div>                <div class="card-body">
-                    <AdminEmployeeFormComponent Employee="employee"
-                                              Roles="roles"
-                                              IsCreateMode="@IsCreateMode"
-                                              IsSubmitting="isSubmitting"
-                                              SubmitButtonText="@(IsCreateMode ? "建立員工" : "更新員工")"
-                                              OnSubmit="HandleSubmit"
-                                              OnCancel="Cancel" />
-                </div>
-            </div>            @* 密碼重設區域 - 只在編輯模式下顯示 *@
+<PermissionCheck Permission="User.Create">
+    @* 頁面標題區 *@
+    <UnifiedHeaderComponent Title="@(IsCreateMode ? "新增員工" : "編輯員工")" 
+                           IconClass="bi bi-person-gear"
+                           IsCardHeader="false">
+        <Actions>
             @if (!IsCreateMode)
             {
-                <div class="card mt-4">
+                <ButtonComponent Text="檢視詳細" 
+                                Variant="ButtonVariant.OutlineInfo" 
+                                IconClass="bi bi-eye"
+                                OnClick="ViewEmployee" />
+            }
+            <ButtonComponent Text="返回列表" 
+                            Variant="ButtonVariant.OutlineSecondary" 
+                            IconClass="bi bi-arrow-left"
+                            OnClick="Cancel" />
+        </Actions>
+    </UnifiedHeaderComponent>
+
+    @* 麵包屑導航 *@
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="/admin/users" class="text-decoration-none">員工管理</a>
+            </li>
+            <li class="breadcrumb-item active">@(IsCreateMode ? "新增員工" : "編輯員工")</li>
+        </ol>
+    </nav>
+
+    @if (isLoading)
+    {
+        <LoadingComponent LoadingText="載入員工資料中..." />
+    }
+    else if (employee != null)
+    {
+        @* 表單區域 *@
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
                     <div class="card-header">
                         <h5 class="card-title mb-0">
-                            <i class="bi bi-key me-2"></i>密碼重設
+                            <i class="bi bi-person-badge me-2"></i>員工基本資料
                         </h5>
+                    </div>                <div class="card-body">
+                        <AdminEmployeeFormComponent Employee="employee"
+                                                  Roles="roles"
+                                                  IsCreateMode="@IsCreateMode"
+                                                  IsSubmitting="isSubmitting"
+                                                  SubmitButtonText="@(IsCreateMode ? "建立員工" : "更新員工")"
+                                                  OnSubmit="HandleSubmit"
+                                                  OnCancel="Cancel" />
                     </div>
-                    <div class="card-body">
-                        <div class="alert alert-warning">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
-                            重設密碼後，員工需要使用新密碼重新登入
+                </div>            @* 密碼重設區域 - 只在編輯模式下顯示 *@
+                @if (!IsCreateMode)
+                {
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-key me-2"></i>密碼重設
+                            </h5>
                         </div>
-
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">新密碼</label>
-                                <input type="password" class="form-control" @bind="newPassword" placeholder="請輸入新密碼" />
+                        <div class="card-body">
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                重設密碼後，員工需要使用新密碼重新登入
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">確認密碼</label>
-                                <input type="password" class="form-control" @bind="confirmNewPassword" placeholder="請再次輸入新密碼" />
-                            </div>
-                        </div>
 
-                        <div class="mt-3">
-                            <ButtonComponent Text="重設密碼" 
-                                            Variant="ButtonVariant.Warning" 
-                                            IconClass="bi bi-key"
-                                            IsLoading="isResettingPassword"
-                                            LoadingText="重設中..."
-                                            OnClick="ResetPassword" />
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">新密碼</label>
+                                    <input type="password" class="form-control" @bind="newPassword" placeholder="請輸入新密碼" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">確認密碼</label>
+                                    <input type="password" class="form-control" @bind="confirmNewPassword" placeholder="請再次輸入新密碼" />
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <ButtonComponent Text="重設密碼" 
+                                                Variant="ButtonVariant.Warning" 
+                                                IconClass="bi bi-key"
+                                                IsLoading="isResettingPassword"
+                                                LoadingText="重設中..."
+                                                OnClick="ResetPassword" />
+                            </div>
                         </div>
                     </div>
-                </div>
-            }
+                }
+            </div>
         </div>
-    </div>
-}
+    }
 
-@* 錯誤訊息 *@
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger mt-3">
-        <i class="bi bi-exclamation-triangle me-2"></i>@errorMessage
-    </div>
-}
+    @* 錯誤訊息 *@
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger mt-3">
+            <i class="bi bi-exclamation-triangle me-2"></i>@errorMessage
+        </div>
+    }
 
-@* 成功訊息 *@
-@if (!string.IsNullOrEmpty(successMessage))
-{
-    <div class="alert alert-success mt-3">
-        <i class="bi bi-check-circle me-2"></i>@successMessage
-    </div>
-}
+    @* 成功訊息 *@
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success mt-3">
+            <i class="bi bi-check-circle me-2"></i>@successMessage
+        </div>
+    }
+</PermissionCheck>
 
 @code {
     [Parameter] public int EmployeeId { get; set; }
