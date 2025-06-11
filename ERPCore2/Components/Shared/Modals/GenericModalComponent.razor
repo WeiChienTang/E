@@ -1,0 +1,231 @@
+@* 通用模態框組件 *@
+@using Microsoft.AspNetCore.Components.Web
+@using ERPCore2.Components.Shared.Modals
+@implements IDisposable
+
+@namespace ERPCore2.Components.Shared.Modals
+
+<div class="modal fade @(IsVisible ? "show" : "")" 
+     id="@ModalId" 
+     tabindex="-1" 
+     style="display: @(IsVisible ? "block" : "none")"
+     aria-labelledby="@($"{ModalId}Label")" 
+     aria-hidden="@(!IsVisible)">
+    
+    <div class="modal-dialog @GetModalSizeClass() @(IsCentered ? "modal-dialog-centered" : "") @(IsScrollable ? "modal-dialog-scrollable" : "")">
+        <div class="modal-content">
+            
+            @* 模態框標題 *@
+            @if (ShowHeader)
+            {
+                <div class="modal-header">
+                    <h5 class="modal-title" id="@($"{ModalId}Label")">
+                        @if (!string.IsNullOrEmpty(IconClass))
+                        {
+                            <i class="@IconClass me-2"></i>
+                        }
+                        @Title
+                    </h5>
+                    
+                    @if (ShowCloseButton)
+                    {
+                        <button type="button" 
+                                class="btn-close" 
+                                @onclick="HandleCloseAsync"
+                                aria-label="關閉"></button>
+                    }
+                </div>
+            }
+            
+            @* 模態框內容 *@
+            <div class="modal-body @BodyCssClass">
+                @if (BodyContent != null)
+                {
+                    @BodyContent
+                }
+                else
+                {
+                    @ChildContent
+                }
+            </div>
+            
+            @* 模態框底部 *@
+            @if (ShowFooter)
+            {
+                <div class="modal-footer">
+                    @if (FooterContent != null)
+                    {
+                        @FooterContent
+                    }
+                    else
+                    {
+                        @DefaultFooter()
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@* 背景遮罩 *@
+@if (IsVisible)
+{
+    <div class="modal-backdrop fade show" @onclick="HandleBackdropClick"></div>
+}
+
+@code {
+    [Parameter] public string Title { get; set; } = "模態框";
+    [Parameter] public string? IconClass { get; set; }
+    [Parameter] public ModalSize Size { get; set; } = ModalSize.Default;
+    [Parameter] public bool IsCentered { get; set; } = false;
+    [Parameter] public bool IsScrollable { get; set; } = false;
+    [Parameter] public bool ShowHeader { get; set; } = true;
+    [Parameter] public bool ShowFooter { get; set; } = true;
+    [Parameter] public bool ShowCloseButton { get; set; } = true;
+    [Parameter] public bool CloseOnBackdropClick { get; set; } = true;
+    [Parameter] public bool CloseOnEscape { get; set; } = true;
+    
+    [Parameter] public string BodyCssClass { get; set; } = "";
+    [Parameter] public string ModalId { get; set; } = $"modal_{Guid.NewGuid():N}";
+    
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? BodyContent { get; set; }
+    [Parameter] public RenderFragment? FooterContent { get; set; }
+    
+    [Parameter] public EventCallback OnShow { get; set; }
+    [Parameter] public EventCallback OnHide { get; set; }
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    
+    [Parameter] public string ConfirmButtonText { get; set; } = "確認";
+    [Parameter] public string CancelButtonText { get; set; } = "取消";
+    [Parameter] public string ConfirmButtonClass { get; set; } = "btn btn-primary";
+    [Parameter] public string CancelButtonClass { get; set; } = "btn btn-secondary";
+    
+    private bool IsVisible = false;
+    
+    /// <summary>
+    /// 顯示模態框
+    /// </summary>
+    public async Task ShowAsync()
+    {
+        IsVisible = true;
+        StateHasChanged();
+        
+        if (OnShow.HasDelegate)
+        {
+            await OnShow.InvokeAsync();
+        }
+    }
+    
+    /// <summary>
+    /// 隱藏模態框
+    /// </summary>
+    public async Task HideAsync()
+    {
+        IsVisible = false;
+        StateHasChanged();
+        
+        if (OnHide.HasDelegate)
+        {
+            await OnHide.InvokeAsync();
+        }
+    }
+    
+    /// <summary>
+    /// 切換模態框顯示狀態
+    /// </summary>
+    public async Task ToggleAsync()
+    {
+        if (IsVisible)
+        {
+            await HideAsync();
+        }
+        else
+        {
+            await ShowAsync();
+        }
+    }
+    
+    private async Task HandleCloseAsync()
+    {
+        await HideAsync();
+    }
+    
+    private async Task HandleBackdropClick()
+    {
+        if (CloseOnBackdropClick)
+        {
+            await HideAsync();
+        }
+    }
+    
+    private async Task HandleConfirmAsync()
+    {
+        if (OnConfirm.HasDelegate)
+        {
+            await OnConfirm.InvokeAsync();
+        }
+        else
+        {
+            await HideAsync();
+        }
+    }
+    
+    private async Task HandleCancelAsync()
+    {
+        if (OnCancel.HasDelegate)
+        {
+            await OnCancel.InvokeAsync();
+        }
+        else
+        {
+            await HideAsync();
+        }
+    }
+    
+    private string GetModalSizeClass()
+    {
+        return Size switch
+        {
+            ModalSize.Small => "modal-sm",
+            ModalSize.Large => "modal-lg",
+            ModalSize.ExtraLarge => "modal-xl",
+            ModalSize.FullScreen => "modal-fullscreen",
+            _ => ""
+        };
+    }
+    
+    private RenderFragment DefaultFooter() => builder =>
+    {
+        // 取消按鈕
+        builder.OpenElement(0, "button");
+        builder.AddAttribute(1, "type", "button");
+        builder.AddAttribute(2, "class", CancelButtonClass);
+        builder.AddAttribute(3, "onclick", EventCallback.Factory.Create(this, HandleCancelAsync));
+        builder.AddContent(4, CancelButtonText);
+        builder.CloseElement();
+        
+        // 間距
+        builder.AddMarkupContent(5, " ");
+        
+        // 確認按鈕
+        builder.OpenElement(6, "button");
+        builder.AddAttribute(7, "type", "button");
+        builder.AddAttribute(8, "class", ConfirmButtonClass);
+        builder.AddAttribute(9, "onclick", EventCallback.Factory.Create(this, HandleConfirmAsync));
+        builder.AddContent(10, ConfirmButtonText);
+        builder.CloseElement();
+    };
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && CloseOnEscape)
+        {
+            // 註冊 ESC 鍵事件（如果需要的話）
+        }
+    }    public void Dispose()
+    {
+        // 清理資源
+    }
+}

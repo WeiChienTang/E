@@ -1,0 +1,433 @@
+@* 通用表單組件 - 基於配置驅動 *@
+@using Microsoft.AspNetCore.Components.Forms
+@using ERPCore2.Components.Shared.Forms
+@using System.Reflection
+@typeparam TModel where TModel : class
+
+<EditForm Model="Model" OnValidSubmit="HandleFormSubmit" FormName="@FormName">
+    <DataAnnotationsValidator />
+    
+    @if (ShowFormHeader)
+    {
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                @if (!string.IsNullOrEmpty(FormIconClass))
+                {
+                    <i class="@FormIconClass me-2"></i>
+                }
+                @FormTitle
+            </h5>
+        </div>
+    }
+    
+    <div class="@GetFormBodyClass()">
+        @if (!string.IsNullOrEmpty(FormDescription))
+        {
+            <p class="text-muted mb-4">@FormDescription</p>
+        }
+        
+        @* 動態生成表單字段 *@
+        @foreach (var section in GetGroupedFields())
+        {            @if (!string.IsNullOrEmpty(section.Key))
+            {
+                <h6 class="mt-4 mb-3 text-primary">@(section.Key)</h6>
+            }
+            
+            <div class="row g-3 mb-4">
+                @foreach (var field in section.Value.OrderBy(f => f.Order))
+                {
+                    @if (!field.IsHidden)
+                    {
+                        <div class="@GetFieldColumnClass(field)">
+                            @if (field.CustomTemplate != null)
+                            {
+                                @field.CustomTemplate(Model)
+                            }
+                            else
+                            {
+                                @RenderField(field)
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        }
+        
+        @* 自定義內容區域 *@
+        @if (ChildContent != null)
+        {
+            <div class="mt-4">
+                @ChildContent
+            </div>
+        }
+        
+        @* 按鈕區域 *@
+        @if (ShowFormButtons)
+        {
+            <div class="@GetButtonAreaClass()">
+                @if (ButtonsTemplate != null)
+                {
+                    @ButtonsTemplate
+                }
+                else
+                {
+                    @DefaultButtons()
+                }
+            </div>
+        }
+    </div>
+</EditForm>
+
+@code {
+    [Parameter] public TModel Model { get; set; } = default!;
+    [Parameter] public List<FormFieldDefinition> FieldDefinitions { get; set; } = new();
+    [Parameter] public EventCallback<TModel> OnFormSubmit { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    
+    [Parameter] public string FormName { get; set; } = "GenericForm";
+    [Parameter] public string FormTitle { get; set; } = "表單";
+    [Parameter] public string? FormDescription { get; set; }
+    [Parameter] public string? FormIconClass { get; set; }
+    
+    [Parameter] public bool ShowFormHeader { get; set; } = true;
+    [Parameter] public bool ShowFormButtons { get; set; } = true;
+    [Parameter] public bool IsSubmitting { get; set; } = false;
+    
+    [Parameter] public string SubmitButtonText { get; set; } = "儲存";
+    [Parameter] public string CancelButtonText { get; set; } = "取消";
+    [Parameter] public string SubmitButtonClass { get; set; } = "btn btn-primary";
+    [Parameter] public string CancelButtonClass { get; set; } = "btn btn-secondary";
+    
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? ButtonsTemplate { get; set; }
+    
+    [Parameter] public Dictionary<string, string> FieldSections { get; set; } = new();
+    
+    private async Task HandleFormSubmit()
+    {
+        if (OnFormSubmit.HasDelegate)
+        {
+            await OnFormSubmit.InvokeAsync(Model);
+        }
+    }
+    
+    private async Task HandleCancel()
+    {
+        if (OnCancel.HasDelegate)
+        {
+            await OnCancel.InvokeAsync();
+        }
+    }
+    
+    private string GetFormBodyClass()
+    {
+        return ShowFormHeader ? "card-body" : "";
+    }
+    
+    private string GetFieldColumnClass(FormFieldDefinition field)
+    {
+        var baseClass = $"col-md-{field.ColumnWidth}";
+        return string.IsNullOrEmpty(field.CssClass) ? baseClass : $"{baseClass} {field.CssClass}";
+    }
+    
+    private string GetButtonAreaClass()
+    {
+        return ShowFormHeader ? "card-footer text-end" : "mt-4 text-end";
+    }
+    
+    private Dictionary<string, List<FormFieldDefinition>> GetGroupedFields()
+    {
+        var grouped = new Dictionary<string, List<FormFieldDefinition>>();
+        
+        foreach (var field in FieldDefinitions)
+        {
+            var section = FieldSections.GetValueOrDefault(field.PropertyName, "");
+            if (!grouped.ContainsKey(section))
+            {
+                grouped[section] = new List<FormFieldDefinition>();
+            }
+            grouped[section].Add(field);
+        }
+        
+        return grouped;
+    }
+    
+    private RenderFragment RenderField(FormFieldDefinition field) => builder =>
+    {
+        var propertyInfo = typeof(TModel).GetProperty(field.PropertyName);
+        if (propertyInfo == null) return;
+        
+        // 標籤
+        if (!string.IsNullOrEmpty(field.Label))
+        {
+            builder.OpenElement(0, "label");
+            builder.AddAttribute(1, "class", "form-label");
+            builder.AddContent(2, field.Label);
+            if (field.IsRequired)
+            {
+                builder.OpenElement(3, "span");
+                builder.AddAttribute(4, "class", "text-danger");
+                builder.AddContent(5, " *");
+                builder.CloseElement();
+            }
+            builder.CloseElement();
+        }
+        
+        // 輸入字段
+        switch (field.FieldType)
+        {
+            case FormFieldType.Text:
+            case FormFieldType.Email:
+                RenderTextInput(builder, field, propertyInfo);
+                break;
+            case FormFieldType.Password:
+                RenderPasswordInput(builder, field, propertyInfo);
+                break;
+            case FormFieldType.Number:
+                RenderNumberInput(builder, field, propertyInfo);
+                break;
+            case FormFieldType.Date:
+                RenderDateInput(builder, field, propertyInfo);
+                break;
+            case FormFieldType.DateTime:
+                RenderDateTimeInput(builder, field, propertyInfo);
+                break;
+            case FormFieldType.TextArea:
+                RenderTextArea(builder, field, propertyInfo);
+                break;
+            case FormFieldType.Select:
+                RenderSelect(builder, field, propertyInfo);
+                break;
+            case FormFieldType.Checkbox:
+                RenderCheckbox(builder, field, propertyInfo);
+                break;
+            case FormFieldType.Hidden:
+                RenderHiddenInput(builder, field, propertyInfo);
+                break;
+        }
+        
+        // 說明文字
+        if (!string.IsNullOrEmpty(field.HelpText))
+        {
+            builder.OpenElement(100, "small");
+            builder.AddAttribute(101, "class", "form-text text-muted");
+            builder.AddContent(102, field.HelpText);
+            builder.CloseElement();
+        }
+        
+        // 驗證訊息
+        builder.OpenComponent(200, typeof(ValidationMessage<>).MakeGenericType(propertyInfo.PropertyType));
+        builder.AddAttribute(201, "For", Microsoft.AspNetCore.Components.CompilerServices.RuntimeHelpers.TypeCheck(
+            System.Linq.Expressions.Expression.Lambda(
+                System.Linq.Expressions.Expression.Property(
+                    System.Linq.Expressions.Expression.Constant(Model, typeof(TModel)),
+                    propertyInfo
+                ),
+                System.Linq.Expressions.Expression.Parameter(typeof(TModel), "model")
+            )
+        ));
+        builder.AddAttribute(202, "class", "text-danger");
+        builder.CloseComponent();
+    };
+    
+    private void RenderTextInput(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, FormFieldDefinition field, PropertyInfo propertyInfo)
+    {
+        builder.OpenComponent(0, typeof(InputText));
+        builder.AddAttribute(1, "class", "form-control");
+        builder.AddAttribute(2, "placeholder", field.Placeholder ?? "");
+        if (field.IsReadOnly) builder.AddAttribute(3, "readonly", true);
+        if (field.MaxLength.HasValue) builder.AddAttribute(4, "maxlength", field.MaxLength.Value);
+        
+        // 綁定值
+        var value = propertyInfo.GetValue(Model)?.ToString() ?? "";
+        builder.AddAttribute(5, "Value", value);
+        builder.AddAttribute(6, "ValueChanged", EventCallback.Factory.Create<string>(this, (string val) => 
+        {
+            propertyInfo.SetValue(Model, val);
+        }));
+        builder.AddAttribute(7, "ValueExpression", 
+            System.Linq.Expressions.Expression.Lambda<Func<string>>(
+                System.Linq.Expressions.Expression.Property(
+                    System.Linq.Expressions.Expression.Constant(Model, typeof(TModel)),
+                    propertyInfo
+                ),
+                System.Linq.Expressions.Expression.Parameter(typeof(TModel), "model")
+            )
+        );
+        
+        builder.CloseComponent();
+    }
+    
+    private void RenderPasswordInput(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, FormFieldDefinition field, PropertyInfo propertyInfo)
+    {
+        builder.OpenElement(0, "input");
+        builder.AddAttribute(1, "type", "password");
+        builder.AddAttribute(2, "class", "form-control");
+        builder.AddAttribute(3, "placeholder", field.Placeholder ?? "");
+        if (field.IsReadOnly) builder.AddAttribute(4, "readonly", true);
+        
+        var value = propertyInfo.GetValue(Model)?.ToString() ?? "";
+        builder.AddAttribute(5, "value", value);
+        builder.AddAttribute(6, "onchange", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.ChangeEventArgs>(this, (args) => 
+        {
+            propertyInfo.SetValue(Model, args.Value?.ToString());
+        }));
+        
+        builder.CloseElement();
+    }
+    
+    private void RenderNumberInput(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, FormFieldDefinition field, PropertyInfo propertyInfo)
+    {
+        if (propertyInfo.PropertyType == typeof(int) || propertyInfo.PropertyType == typeof(int?))
+        {
+            builder.OpenComponent(0, typeof(InputNumber<int?>));
+        }
+        else if (propertyInfo.PropertyType == typeof(decimal) || propertyInfo.PropertyType == typeof(decimal?))
+        {
+            builder.OpenComponent(0, typeof(InputNumber<decimal?>));
+        }
+        else
+        {
+            builder.OpenComponent(0, typeof(InputNumber<double?>));
+        }
+        
+        builder.AddAttribute(1, "class", "form-control");
+        builder.AddAttribute(2, "placeholder", field.Placeholder ?? "");
+        if (field.IsReadOnly) builder.AddAttribute(3, "readonly", true);
+        
+        builder.CloseComponent();
+    }
+    
+    private void RenderDateInput(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, FormFieldDefinition field, PropertyInfo propertyInfo)
+    {
+        builder.OpenComponent(0, typeof(InputDate<DateTime?>));
+        builder.AddAttribute(1, "class", "form-control");
+        if (field.IsReadOnly) builder.AddAttribute(2, "readonly", true);
+        builder.CloseComponent();
+    }
+    
+    private void RenderDateTimeInput(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, FormFieldDefinition field, PropertyInfo propertyInfo)
+    {
+        builder.OpenElement(0, "input");
+        builder.AddAttribute(1, "type", "datetime-local");
+        builder.AddAttribute(2, "class", "form-control");
+        if (field.IsReadOnly) builder.AddAttribute(3, "readonly", true);
+        
+        var value = propertyInfo.GetValue(Model);
+        if (value is DateTime dateTime)
+        {
+            builder.AddAttribute(4, "value", dateTime.ToString("yyyy-MM-ddTHH:mm"));
+        }
+        
+        builder.AddAttribute(5, "onchange", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.ChangeEventArgs>(this, (args) => 
+        {
+            if (DateTime.TryParse(args.Value?.ToString(), out var result))
+            {
+                propertyInfo.SetValue(Model, result);
+            }
+        }));
+        
+        builder.CloseElement();
+    }
+    
+    private void RenderTextArea(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, FormFieldDefinition field, PropertyInfo propertyInfo)
+    {
+        builder.OpenComponent(0, typeof(InputTextArea));
+        builder.AddAttribute(1, "class", "form-control");
+        builder.AddAttribute(2, "placeholder", field.Placeholder ?? "");
+        builder.AddAttribute(3, "rows", field.TextAreaRows);
+        if (field.IsReadOnly) builder.AddAttribute(4, "readonly", true);
+        if (field.MaxLength.HasValue) builder.AddAttribute(5, "maxlength", field.MaxLength.Value);
+        builder.CloseComponent();
+    }
+    
+    private void RenderSelect(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, FormFieldDefinition field, PropertyInfo propertyInfo)
+    {
+        builder.OpenComponent(0, typeof(InputSelect<string>));
+        builder.AddAttribute(1, "class", "form-select");
+        if (field.IsReadOnly) builder.AddAttribute(2, "disabled", true);
+        
+        builder.AddAttribute(3, "ChildContent", (RenderFragment)((childBuilder) =>
+        {
+            childBuilder.OpenElement(0, "option");
+            childBuilder.AddAttribute(1, "value", "");
+            childBuilder.AddContent(2, $"請選擇{field.Label}");
+            childBuilder.CloseElement();
+            
+            if (field.SelectOptions != null)
+            {
+                foreach (var option in field.SelectOptions)
+                {
+                    childBuilder.OpenElement(3, "option");
+                    childBuilder.AddAttribute(4, "value", option.Value);
+                    if (option.IsDisabled) childBuilder.AddAttribute(5, "disabled", true);
+                    childBuilder.AddContent(6, option.Text);
+                    childBuilder.CloseElement();
+                }
+            }
+        }));
+        
+        builder.CloseComponent();
+    }
+    
+    private void RenderCheckbox(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, FormFieldDefinition field, PropertyInfo propertyInfo)
+    {
+        builder.OpenElement(0, "div");
+        builder.AddAttribute(1, "class", "form-check");
+        
+        builder.OpenComponent(2, typeof(InputCheckbox));
+        builder.AddAttribute(3, "class", "form-check-input");
+        if (field.IsReadOnly) builder.AddAttribute(4, "disabled", true);
+        builder.CloseComponent();
+        
+        builder.OpenElement(5, "label");
+        builder.AddAttribute(6, "class", "form-check-label");
+        builder.AddContent(7, field.Label);
+        builder.CloseElement();
+        
+        builder.CloseElement();
+    }
+    
+    private void RenderHiddenInput(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, FormFieldDefinition field, PropertyInfo propertyInfo)
+    {
+        builder.OpenElement(0, "input");
+        builder.AddAttribute(1, "type", "hidden");
+        var value = propertyInfo.GetValue(Model)?.ToString() ?? "";
+        builder.AddAttribute(2, "value", value);
+        builder.CloseElement();
+    }
+    
+    private RenderFragment DefaultButtons() => builder =>
+    {
+        // 取消按鈕
+        builder.OpenElement(0, "button");
+        builder.AddAttribute(1, "type", "button");
+        builder.AddAttribute(2, "class", CancelButtonClass);
+        builder.AddAttribute(3, "onclick", EventCallback.Factory.Create(this, HandleCancel));
+        builder.AddContent(4, CancelButtonText);
+        builder.CloseElement();
+        
+        // 間距
+        builder.AddMarkupContent(5, " ");
+        
+        // 提交按鈕
+        builder.OpenElement(6, "button");
+        builder.AddAttribute(7, "type", "submit");
+        builder.AddAttribute(8, "class", SubmitButtonClass);
+        builder.AddAttribute(9, "disabled", IsSubmitting);
+        
+        if (IsSubmitting)
+        {
+            builder.OpenElement(10, "span");
+            builder.AddAttribute(11, "class", "spinner-border spinner-border-sm me-2");
+            builder.CloseElement();
+            builder.AddContent(12, "處理中...");
+        }
+        else
+        {
+            builder.AddContent(13, SubmitButtonText);
+        }
+        
+        builder.CloseElement();
+    };
+}

@@ -1,0 +1,358 @@
+@page "/admin/employees-enhanced"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.Tables
+@using ERPCore2.Components.Shared.Configurations
+@using ERPCore2.Components.Shared.Modals
+@inject IJSRuntime JSRuntime
+
+<PageTitle>員工管理 (增強版)</PageTitle>
+
+<div class="container-fluid">
+    @* 頁面標題 *@
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-users me-2"></i>
+            員工管理 (增強版)
+        </h2>
+        <button type="button" class="btn btn-primary" @onclick="ShowAddEmployeeModal">
+            <i class="fas fa-plus me-1"></i>
+            新增員工
+        </button>
+    </div>
+    
+    @* 搜尋篩選區域 *@
+    <GenericSearchFilterComponent TModel="Employee"
+                                   FilterDefinitions="searchFilterDefinitions"
+                                   FilterModel="searchFilterModel"
+                                   AutoSearch="true"
+                                   OnSearch="HandleSearch"
+                                   OnFilterChanged="HandleFilterChanged" />
+    
+    @* 資料表格區域 *@
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list me-2"></i>
+                員工清單
+                @if (totalCount > 0)
+                {
+                    <span class="badge bg-primary ms-2">@totalCount</span>
+                }
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            @if (isLoading)
+            {
+                <div class="text-center p-4">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">載入中...</span>
+                    </div>
+                    <div class="mt-2">載入資料中...</div>
+                </div>
+            }
+            else if (employees?.Any() == true)
+            {
+                <EnhancedTableComponent TItem="Employee"
+                                        Items="employees"
+                                        ColumnDefinitions="tableColumnDefinitions"
+                                        ShowActions="true"
+                                        EnableSorting="true"
+                                        OnRowClick="HandleRowClick"
+                                        TableCssClass="table-hover"
+                                        HeaderCssClass="table-dark" />
+            }
+            else
+            {
+                <div class="text-center p-4 text-muted">
+                    <i class="fas fa-search fa-2x mb-3"></i>
+                    <div>查無員工資料</div>
+                </div>
+            }
+        </div>
+        
+        @* 分頁區域 (如果需要) *@
+        @if (totalCount > pageSize)
+        {
+            <div class="card-footer">
+                <nav aria-label="分頁導航">
+                    <ul class="pagination justify-content-center mb-0">
+                        <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                            <a class="page-link" href="#" @onclick="() => ChangePage(currentPage - 1)" @onclick:preventDefault="true">上一頁</a>
+                        </li>
+                        
+                        @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                        {
+                            <li class="page-item @(i == currentPage ? "active" : "")">
+                                <a class="page-link" href="#" @onclick="() => ChangePage(i)" @onclick:preventDefault="true">@i</a>
+                            </li>
+                        }
+                        
+                        <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                            <a class="page-link" href="#" @onclick="() => ChangePage(currentPage + 1)" @onclick:preventDefault="true">下一頁</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>
+
+@* 員工表單模態框 *@
+<GenericModalComponent @ref="employeeFormModal"
+                       Title="@modalTitle"
+                       Size="ModalSize.Large"
+                       ShowFooter="false">
+    <GenericFormComponent TModel="Employee"
+                          Model="currentEmployee"
+                          FieldDefinitions="formFieldDefinitions"
+                          FieldSections="formFieldSections"
+                          FormTitle=""
+                          ShowFormHeader="false"
+                          OnFormSubmit="HandleFormSubmit"
+                          OnCancel="HideEmployeeModal"
+                          IsSubmitting="isSubmitting" />
+</GenericModalComponent>
+
+@code {
+    // 資料相關
+    private List<Employee> employees = new();
+    private List<Role> roles = new();
+    private Employee currentEmployee = new();
+    
+    // 搜尋篩選
+    private List<SearchFilterDefinition> searchFilterDefinitions = new();
+    private SearchFilterModel searchFilterModel = new();
+    
+    // 表單
+    private List<FormFieldDefinition> formFieldDefinitions = new();
+    private Dictionary<string, string> formFieldSections = new();
+    
+    // 表格
+    private List<TableColumnDefinition> tableColumnDefinitions = new();
+    
+    // 狀態
+    private bool isLoading = false;
+    private bool isSubmitting = false;
+    private string modalTitle = "新增員工";
+    
+    // 分頁
+    private int currentPage = 1;
+    private int pageSize = 20;
+    private int totalCount = 0;
+    private int totalPages => (int)Math.Ceiling((double)totalCount / pageSize);
+    
+    // 組件參考
+    private GenericModalComponent employeeFormModal = default!;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInitialData();
+        SetupComponentConfigurations();
+        await LoadEmployees();
+    }
+    
+    private async Task LoadInitialData()
+    {
+        // 載入角色資料用於篩選
+        // roles = await RoleService.GetAllAsync();
+          // 模擬資料
+        roles = new List<Role>
+        {
+            new Role { Id = 1, RoleName = "系統管理員", Status = EntityStatus.Active },
+            new Role { Id = 2, RoleName = "一般使用者", Status = EntityStatus.Active }
+        };
+    }
+    
+    private void SetupComponentConfigurations()
+    {
+        // 設定搜尋篩選配置
+        searchFilterDefinitions = EmployeeComponentConfiguration.GetSearchFilterConfiguration(roles);
+        
+        // 設定表單配置
+        var formConfig = EmployeeComponentConfiguration.GetFormConfiguration();
+        formFieldDefinitions = formConfig.Fields;
+        formFieldSections = formConfig.Sections;
+        
+        // 設定表格配置
+        tableColumnDefinitions = EmployeeComponentConfiguration.GetTableConfiguration();
+    }
+    
+    private async Task LoadEmployees()
+    {
+        isLoading = true;
+        StateHasChanged();
+        
+        try
+        {
+            // 這裡應該調用實際的服務
+            // var result = await EmployeeService.GetPagedAsync(searchFilterModel, currentPage, pageSize);
+            // employees = result.Data;
+            // totalCount = result.TotalCount;
+            
+            // 模擬資料
+            await Task.Delay(500); // 模擬載入時間
+            employees = GenerateMockEmployees();
+            totalCount = employees.Count;
+        }
+        catch (Exception ex)
+        {
+            // 錯誤處理
+            await JSRuntime.InvokeVoidAsync("alert", $"載入員工資料失敗: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+      private List<Employee> GenerateMockEmployees()
+    {
+        return new List<Employee>
+        {            new Employee
+            {
+                Id = 1,
+                EmployeeCode = "EMP001",
+                Username = "john.doe",
+                Name = "張小明",
+                Email = "john.doe@company.com",
+                Department = "資訊部",
+                Position = "軟體工程師",
+                RoleId = 1,
+                Status = EntityStatus.Active,
+                CreatedAt = DateTime.Now.AddDays(-30)
+            },            new Employee
+            {
+                Id = 2,
+                EmployeeCode = "EMP002",
+                Username = "jane.smith",
+                Name = "李小華",
+                Email = "jane.smith@company.com",
+                Department = "人事部",
+                Position = "人事專員",
+                RoleId = 2,
+                Status = EntityStatus.Active,
+                CreatedAt = DateTime.Now.AddDays(-25)
+            },            new Employee
+            {
+                Id = 3,
+                EmployeeCode = "EMP003",
+                Username = "bob.wilson",
+                Name = "王大力",
+                Email = "bob.wilson@company.com",
+                Department = "業務部",
+                Position = "業務經理",
+                RoleId = 1,
+                Status = EntityStatus.Inactive,
+                CreatedAt = DateTime.Now.AddDays(-20)
+            }
+        };
+    }
+    
+    private async Task HandleSearch(SearchFilterModel filterModel)
+    {
+        currentPage = 1; // 重置到第一頁
+        await LoadEmployees();
+    }
+    
+    private async Task HandleFilterChanged(SearchFilterModel filterModel)
+    {
+        // 當篩選條件改變時的處理（如果需要即時搜尋）
+    }
+    
+    private async Task HandleRowClick(Employee employee)
+    {
+        currentEmployee = employee;
+        modalTitle = "檢視員工";
+        
+        // 設定表單為唯讀模式
+        foreach (var field in formFieldDefinitions)
+        {
+            field.IsReadOnly = true;
+        }
+        
+        await employeeFormModal.ShowAsync();
+    }
+    
+    private async Task ShowAddEmployeeModal()
+    {
+        currentEmployee = new Employee();
+        modalTitle = "新增員工";
+        
+        // 設定表單為可編輯模式
+        foreach (var field in formFieldDefinitions)
+        {
+            field.IsReadOnly = false;
+        }
+        
+        await employeeFormModal.ShowAsync();
+    }
+    
+    private async Task HandleFormSubmit(Employee employee)
+    {
+        isSubmitting = true;
+        StateHasChanged();
+        
+        try
+        {
+            // 這裡應該調用實際的服務
+            // if (employee.Id == Guid.Empty)
+            // {
+            //     await EmployeeService.CreateAsync(employee);
+            // }
+            // else
+            // {
+            //     await EmployeeService.UpdateAsync(employee);
+            // }
+            
+            // 模擬提交
+            await Task.Delay(1000);
+            
+            await HideEmployeeModal();
+            await LoadEmployees();
+            
+            await JSRuntime.InvokeVoidAsync("alert", "員工資料儲存成功！");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"儲存失敗: {ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task HideEmployeeModal()
+    {
+        await employeeFormModal.HideAsync();
+    }
+    
+    private async Task ChangePage(int page)
+    {
+        if (page >= 1 && page <= totalPages && page != currentPage)
+        {
+            currentPage = page;
+            await LoadEmployees();
+        }
+    }
+}
+
+<script>
+    window.viewEmployee = function(employeeId) {
+        // 檢視員工詳細的邏輯
+        console.log('View employee:', employeeId);
+    };
+
+    window.editEmployee = function(employeeId) {
+        // 編輯員工的邏輯
+        console.log('Edit employee:', employeeId);
+    };
+
+    window.toggleEmployeeStatus = function(employeeId) {
+        // 切換員工狀態的邏輯
+        console.log('Toggle employee status:', employeeId);
+    };
+</script>

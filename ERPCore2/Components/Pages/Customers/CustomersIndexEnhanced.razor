@@ -1,6 +1,7 @@
 @page "/customers-enhanced"
 @using static ERPCore2.Components.Shared.Buttons.ButtonComponent
 @using static ERPCore2.Components.Shared.Alerts.AlertComponent
+@using ERPCore2.Services.Interfaces
 @inject ICustomerService CustomerService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -9,19 +10,17 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <PageHeaderComponent Title="客戶管理 (增強版)" IconClass="fas fa-users">
+            <div class="card">                <PageHeaderComponent Title="客戶管理 (增強版)" IconClass="fas fa-users">
                     <Actions>
                         <ButtonComponent Text="新增客戶" 
                                        Variant="ButtonVariant.Primary" 
                                        IconClass="fas fa-plus" 
-                                       OnClick="NavigateToCreate" />
-                        <ButtonComponent Text="返回原版本" 
+                                       OnClick="NavigateToCreate" />                        <ButtonComponent Text="返回原版本" 
                                        Variant="ButtonVariant.Secondary" 
                                        IconClass="fas fa-arrow-left" 
-                                       OnClick="() => Navigation.NavigateTo(\"/customers\")" />
+                                       OnClick="@(() => Navigation.NavigateTo("/customers"))" />
                     </Actions>
-                </PageHeaderComponent>                
+                </PageHeaderComponent>
                 <div class="card-body">
                     <!-- 搜索區域 -->
                     <div class="row mb-3">
