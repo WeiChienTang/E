@@ -5,7 +5,7 @@
         type="@(IsSubmit ? "submit" : Type)"
         title="@Title"
         disabled="@IsDisabled"
-        @onclick="OnClick">
+        @onclick="HandleClick">
     @if (!string.IsNullOrEmpty(IconClass))
     {
         <i class="@IconClass @(string.IsNullOrEmpty(Text) ? "" : "me-2")"></i>
@@ -31,6 +31,43 @@
     [Parameter] public string IconClass { get; set; } = string.Empty;
     [Parameter] public EventCallback OnClick { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        Console.WriteLine($"=== ButtonComponent.OnParametersSet ===");
+        Console.WriteLine($"按鈕文字: '{Text}'");
+        Console.WriteLine($"OnClick 是否有值: {OnClick.HasDelegate}");
+        Console.WriteLine($"IsDisabled: {IsDisabled}");
+        base.OnParametersSet();
+    }
+
+    private async Task HandleClick()
+    {
+        Console.WriteLine($"=== ButtonComponent.HandleClick 被觸發 ===");
+        Console.WriteLine($"按鈕文字: '{Text}'");
+        Console.WriteLine($"OnClick 是否有值: {OnClick.HasDelegate}");
+        
+        try
+        {
+            if (OnClick.HasDelegate)
+            {
+                Console.WriteLine("準備呼叫 OnClick 事件");
+                await OnClick.InvokeAsync();
+                Console.WriteLine("OnClick 事件呼叫完成");
+            }
+            else
+            {
+                Console.WriteLine("警告：OnClick 事件未設定");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"ButtonComponent.HandleClick 發生錯誤: {ex.Message}");
+            Console.WriteLine($"錯誤堆疊: {ex.StackTrace}");
+        }
+        
+        Console.WriteLine("=== ButtonComponent.HandleClick 完成 ===");
+    }
 
     private string GetButtonClass()
     {

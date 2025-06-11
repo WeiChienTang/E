@@ -141,7 +141,16 @@
     private string successMessage = string.Empty;
     
     // 模式判斷
-    private bool IsCreateMode => EmployeeId == 0;    protected override async Task OnInitializedAsync()
+    private bool IsCreateMode => EmployeeId == 0;
+    
+    protected override void OnParametersSet()
+    {
+        Console.WriteLine("=== EditUser.OnParametersSet 被觸發 ===");
+        Console.WriteLine($"EmployeeId 參數值: {EmployeeId}");
+        Console.WriteLine($"IsCreateMode: {IsCreateMode}");
+        Console.WriteLine($"當前路由: {Navigation?.Uri}");
+        base.OnParametersSet();
+    }protected override async Task OnInitializedAsync()
     {
         Console.WriteLine("=== EditUser.OnInitializedAsync 開始 ===");
         Console.WriteLine($"EmployeeId: {EmployeeId}");

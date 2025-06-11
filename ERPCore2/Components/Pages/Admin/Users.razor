@@ -279,11 +279,26 @@
     private async Task RefreshData()
     {
         await LoadData();
-    }
-
+    }    
+    
     private void ShowCreateModal()
     {
-        Navigation.NavigateTo("/admin/users/create");
+        Console.WriteLine("=== ShowCreateModal 被觸發 ===");
+        Console.WriteLine($"準備導航到: /admin/users/create");
+        Console.WriteLine($"Navigation 物件是否為 null: {Navigation == null}");
+        
+        try
+        {
+            Navigation?.NavigateTo("/admin/users/create");
+            Console.WriteLine("Navigation.NavigateTo 呼叫成功");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Navigation.NavigateTo 發生錯誤: {ex.Message}");
+            Console.WriteLine($"錯誤堆疊: {ex.StackTrace}");
+        }
+        
+        Console.WriteLine("=== ShowCreateModal 完成 ===");
     }
 
     private void ViewEmployee(int employeeId)

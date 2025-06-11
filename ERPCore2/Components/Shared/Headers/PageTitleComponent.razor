@@ -30,4 +30,12 @@
     [Parameter] public string CssClass { get; set; } = string.Empty;
     [Parameter] public string TitleClass { get; set; } = string.Empty;
     [Parameter] public string SubtitleClass { get; set; } = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        Console.WriteLine($"=== PageTitleComponent.OnParametersSet ===");
+        Console.WriteLine($"Title: '{Title}'");
+        Console.WriteLine($"Actions 是否為 null: {Actions == null}");
+        base.OnParametersSet();
+    }
 }
