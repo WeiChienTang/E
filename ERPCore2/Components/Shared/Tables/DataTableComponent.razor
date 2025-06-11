@@ -1,0 +1,459 @@
+@* 進階資料表格組件 - 支援自動欄位類型處理和格式化 *@
+@using System.Reflection
+@using System.Web
+@typeparam TItem
+
+<div class="table-responsive">
+    <table class="table @GetTableClass()">
+        @if (ShowHeader && Columns != null && Columns.Any())
+        {
+            <thead class="@GetHeaderClass()">
+                <tr>
+                    @foreach (var column in Columns)
+                    {
+                        <th scope="col" class="@column.HeaderCssClass" style="@column.HeaderStyle">
+                            @if (!string.IsNullOrEmpty(column.IconClass))
+                            {
+                                <i class="@column.IconClass me-1"></i>
+                            }
+                            @column.Title
+                            @if (column.IsSortable && EnableSorting)
+                            {
+                                <i class="fas fa-sort ms-1 text-muted" style="cursor: pointer;" 
+                                   @onclick="() => HandleSort(column.PropertyName)"></i>
+                            }
+                        </th>
+                    }
+                    @if (ShowActions)
+                    {
+                        <th scope="col" class="text-center">@ActionsHeader</th>
+                    }
+                </tr>
+            </thead>
+        }
+        <tbody>
+            @if (Items != null && Items.Any())
+            {
+                @foreach (var item in Items)
+                {
+                    <tr class="@GetRowClass(item)" 
+                        @onclick="() => HandleRowClick(item)"
+                        style="@(EnableRowClick ? $"cursor: {RowClickCursor};" : "")">
+                        
+                        @foreach (var column in Columns ?? new List<DataTableColumn<TItem>>())
+                        {
+                            <td class="@column.CellCssClass" style="@column.CellStyle">
+                                @if (column.CellTemplate != null)
+                                {
+                                    @column.CellTemplate(item)
+                                }
+                                else
+                                {
+                                    @RenderCellValue(item, column)
+                                }
+                            </td>
+                        }
+                        
+                        @if (ShowActions && ActionsTemplate != null)
+                        {
+                            <td class="text-center">
+                                @ActionsTemplate(item)
+                            </td>
+                        }
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="@GetColspan()" class="text-center py-4 text-light-custom">
+                        @if (EmptyTemplate != null)
+                        {
+                            @EmptyTemplate
+                        }
+                        else
+                        {
+                            <i class="fas fa-inbox fa-2x mb-2 text-light-custom"></i>
+                            <br />
+                            @EmptyMessage
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter] public IEnumerable<TItem>? Items { get; set; }
+    [Parameter] public List<DataTableColumn<TItem>> Columns { get; set; } = new();
+    [Parameter] public RenderFragment<TItem>? ActionsTemplate { get; set; }
+    [Parameter] public RenderFragment? EmptyTemplate { get; set; }
+    [Parameter] public bool ShowHeader { get; set; } = true;
+    [Parameter] public bool ShowActions { get; set; } = false;
+    [Parameter] public bool IsStriped { get; set; } = true;
+    [Parameter] public bool IsHoverable { get; set; } = true;
+    [Parameter] public bool IsBordered { get; set; } = false;
+    [Parameter] public TableSize Size { get; set; } = TableSize.Normal;
+    [Parameter] public string CssClass { get; set; } = string.Empty;
+    [Parameter] public string EmptyMessage { get; set; } = "沒有找到資料";
+    [Parameter] public string ActionsHeader { get; set; } = "操作";
+    [Parameter] public Func<TItem, string>? GetRowCssClass { get; set; }
+    [Parameter] public EventCallback<TItem> OnRowClick { get; set; }
+    [Parameter] public bool EnableRowClick { get; set; } = false;
+    [Parameter] public string RowClickCursor { get; set; } = "pointer";
+    [Parameter] public bool EnableSorting { get; set; } = false;
+    [Parameter] public EventCallback<string> OnSort { get; set; }
+
+    private string GetTableClass()
+    {
+        var classes = new List<string>();
+        
+        if (IsStriped) classes.Add("table-striped");
+        if (IsHoverable) classes.Add("table-hover");
+        if (IsBordered) classes.Add("table-bordered");
+        
+        classes.Add(Size switch
+        {
+            TableSize.Small => "table-sm",
+            TableSize.Large => "table-lg",
+            _ => ""
+        });
+        
+        if (!string.IsNullOrEmpty(CssClass))
+            classes.Add(CssClass);
+            
+        return string.Join(" ", classes.Where(c => !string.IsNullOrEmpty(c)));
+    }
+
+    private string GetHeaderClass()
+    {
+        return "table-header-primary";
+    }
+
+    private string GetRowClass(TItem item)
+    {
+        if (GetRowCssClass != null)
+            return GetRowCssClass(item) ?? "";
+        return "";
+    }
+
+    private int GetColspan()
+    {
+        var columnCount = Columns?.Count ?? 0;
+        return ShowActions ? columnCount + 1 : columnCount;
+    }
+
+    private async Task HandleRowClick(TItem item)
+    {
+        if (EnableRowClick && OnRowClick.HasDelegate)
+        {
+            await OnRowClick.InvokeAsync(item);
+        }
+    }
+
+    private async Task HandleSort(string propertyName)
+    {
+        if (EnableSorting && OnSort.HasDelegate)
+        {
+            await OnSort.InvokeAsync(propertyName);
+        }
+    }
+
+    private RenderFragment RenderCellValue(TItem item, DataTableColumn<TItem> column)
+    {
+        return builder =>
+        {
+            var value = GetPropertyValue(item, column.PropertyName);
+            var formattedValue = FormatValue(value, column);
+            builder.AddContent(0, formattedValue);
+        };
+    }
+
+    private object? GetPropertyValue(TItem item, string propertyName)
+    {
+        if (item == null || string.IsNullOrEmpty(propertyName))
+            return null;
+
+        var type = typeof(TItem);
+        var property = type.GetProperty(propertyName);
+        
+        if (property == null)
+        {
+            // 支援巢狀屬性 例如: "CustomerType.TypeName"
+            var parts = propertyName.Split('.');
+            object? currentValue = item;
+            
+            foreach (var part in parts)
+            {
+                if (currentValue == null) return null;
+                
+                var currentType = currentValue.GetType();
+                var currentProperty = currentType.GetProperty(part);
+                
+                if (currentProperty == null) return null;
+                
+                currentValue = currentProperty.GetValue(currentValue);
+            }
+            
+            return currentValue;
+        }
+        
+        return property.GetValue(item);
+    }
+
+    private MarkupString FormatValue(object? value, DataTableColumn<TItem> column)
+    {
+        if (value == null)
+            return new MarkupString(column.NullDisplayText ?? "-");
+
+        var formattedValue = column.DataType switch
+        {
+            DataColumnType.Text => value.ToString(),
+            DataColumnType.Number => FormatNumber(value, column.NumberFormat),
+            DataColumnType.Currency => FormatCurrency(value, column.CurrencySymbol),
+            DataColumnType.Date => FormatDate(value, column.DateFormat),
+            DataColumnType.DateTime => FormatDateTime(value, column.DateTimeFormat),
+            DataColumnType.Boolean => FormatBoolean(value, column.TrueText, column.FalseText),
+            DataColumnType.Enum => FormatEnum(value, column.EnumDisplayMap),
+            DataColumnType.Status => FormatStatus(value, column.StatusBadgeMap),
+            DataColumnType.Html => value.ToString(),
+            _ => value.ToString()
+        };
+
+        if (column.DataType == DataColumnType.Html)
+        {
+            return new MarkupString(formattedValue ?? "");
+        }
+
+        return new MarkupString(HttpUtility.HtmlEncode(formattedValue ?? ""));
+    }
+
+    private string FormatNumber(object value, string? format)
+    {
+        if (value is decimal decimalValue)
+            return decimalValue.ToString(format ?? "N2");
+        if (value is double doubleValue)
+            return doubleValue.ToString(format ?? "N2");
+        if (value is float floatValue)
+            return floatValue.ToString(format ?? "N2");
+        if (value is int intValue)
+            return intValue.ToString(format ?? "N0");
+        if (value is long longValue)
+            return longValue.ToString(format ?? "N0");
+            
+        return value.ToString() ?? "";
+    }
+
+    private string FormatCurrency(object value, string? symbol)
+    {
+        var currencySymbol = symbol ?? "NT$";
+        if (value is decimal decimalValue)
+            return $"{currencySymbol} {decimalValue:N2}";
+        if (value is double doubleValue)
+            return $"{currencySymbol} {doubleValue:N2}";
+        if (value is float floatValue)
+            return $"{currencySymbol} {floatValue:N2}";
+        if (value is int intValue)
+            return $"{currencySymbol} {intValue:N2}";
+        if (value is long longValue)
+            return $"{currencySymbol} {longValue:N2}";
+            
+        return $"{currencySymbol} {value}";
+    }
+
+    private string FormatDate(object value, string? format)
+    {
+        if (value is DateTime dateValue)
+            return dateValue.ToString(format ?? "yyyy/MM/dd");
+        if (value is DateOnly dateOnlyValue)
+            return dateOnlyValue.ToString(format ?? "yyyy/MM/dd");
+        if (value is DateTimeOffset dateTimeOffsetValue)
+            return dateTimeOffsetValue.ToString(format ?? "yyyy/MM/dd");
+            
+        return value.ToString() ?? "";
+    }
+
+    private string FormatDateTime(object value, string? format)
+    {
+        if (value is DateTime dateValue)
+            return dateValue.ToString(format ?? "yyyy/MM/dd HH:mm");
+        if (value is DateTimeOffset dateTimeOffsetValue)
+            return dateTimeOffsetValue.ToString(format ?? "yyyy/MM/dd HH:mm");
+            
+        return value.ToString() ?? "";
+    }
+
+    private string FormatBoolean(object value, string? trueText, string? falseText)
+    {
+        if (value is bool boolValue)
+            return boolValue ? (trueText ?? "是") : (falseText ?? "否");
+            
+        return value.ToString() ?? "";
+    }
+
+    private string FormatEnum(object value, Dictionary<object, string>? displayMap)
+    {
+        if (displayMap != null && displayMap.ContainsKey(value))
+            return displayMap[value];
+            
+        return value.ToString() ?? "";
+    }
+
+    private string FormatStatus(object value, Dictionary<object, string>? badgeMap)
+    {
+        if (badgeMap != null && badgeMap.ContainsKey(value))
+        {
+            return $"<span class=\"badge {badgeMap[value]}\">{value}</span>";
+        }
+        
+        return $"<span class=\"badge bg-secondary\">{value}</span>";
+    }
+
+    public enum TableSize
+    {
+        Small,
+        Normal,
+        Large
+    }
+
+    public enum DataColumnType
+    {
+        Text,
+        Number,
+        Currency,
+        Date,
+        DateTime,
+        Boolean,
+        Enum,
+        Status,
+        Html
+    }
+
+    public class DataTableColumn<T>
+    {
+        public string Title { get; set; } = string.Empty;
+        public string PropertyName { get; set; } = string.Empty;
+        public DataColumnType DataType { get; set; } = DataColumnType.Text;
+        public RenderFragment<T>? CellTemplate { get; set; }
+        public bool IsSortable { get; set; } = false;
+        public string? HeaderCssClass { get; set; }
+        public string? HeaderStyle { get; set; }
+        public string? CellCssClass { get; set; }
+        public string? CellStyle { get; set; }
+        public string? IconClass { get; set; }
+        public string? NullDisplayText { get; set; } = "-";
+        
+        // 數值格式化選項
+        public string? NumberFormat { get; set; }
+        public string? CurrencySymbol { get; set; } = "NT$";
+        
+        // 日期格式化選項
+        public string? DateFormat { get; set; } = "yyyy/MM/dd";
+        public string? DateTimeFormat { get; set; } = "yyyy/MM/dd HH:mm";
+        
+        // 布林值顯示選項
+        public string? TrueText { get; set; } = "是";
+        public string? FalseText { get; set; } = "否";
+        
+        // 列舉和狀態顯示選項
+        public Dictionary<object, string>? EnumDisplayMap { get; set; }
+        public Dictionary<object, string>? StatusBadgeMap { get; set; }
+        
+        // 靜態工廠方法
+        public static DataTableColumn<T> Text(string title, string propertyName, string? cssClass = null)
+        {
+            return new DataTableColumn<T>
+            {
+                Title = title,
+                PropertyName = propertyName,
+                DataType = DataColumnType.Text,
+                CellCssClass = cssClass
+            };
+        }
+        
+        public static DataTableColumn<T> Number(string title, string propertyName, string? format = "N2", string? cssClass = null)
+        {
+            return new DataTableColumn<T>
+            {
+                Title = title,
+                PropertyName = propertyName,
+                DataType = DataColumnType.Number,
+                NumberFormat = format,
+                CellCssClass = cssClass
+            };
+        }
+        
+        public static DataTableColumn<T> Currency(string title, string propertyName, string? symbol = "NT$", string? cssClass = null)
+        {
+            return new DataTableColumn<T>
+            {
+                Title = title,
+                PropertyName = propertyName,
+                DataType = DataColumnType.Currency,
+                CurrencySymbol = symbol,
+                CellCssClass = cssClass
+            };
+        }
+        
+        public static DataTableColumn<T> Date(string title, string propertyName, string? format = "yyyy/MM/dd", string? cssClass = null)
+        {
+            return new DataTableColumn<T>
+            {
+                Title = title,
+                PropertyName = propertyName,
+                DataType = DataColumnType.Date,
+                DateFormat = format,
+                CellCssClass = cssClass
+            };
+        }
+        
+        public static DataTableColumn<T> DateTime(string title, string propertyName, string? format = "yyyy/MM/dd HH:mm", string? cssClass = null)
+        {
+            return new DataTableColumn<T>
+            {
+                Title = title,
+                PropertyName = propertyName,
+                DataType = DataColumnType.DateTime,
+                DateTimeFormat = format,
+                CellCssClass = cssClass
+            };
+        }
+        
+        public static DataTableColumn<T> Boolean(string title, string propertyName, string? trueText = "是", string? falseText = "否", string? cssClass = null)
+        {
+            return new DataTableColumn<T>
+            {
+                Title = title,
+                PropertyName = propertyName,
+                DataType = DataColumnType.Boolean,
+                TrueText = trueText,
+                FalseText = falseText,
+                CellCssClass = cssClass
+            };
+        }
+        
+        public static DataTableColumn<T> Status(string title, string propertyName, Dictionary<object, string>? badgeMap = null, string? cssClass = null)
+        {
+            return new DataTableColumn<T>
+            {
+                Title = title,
+                PropertyName = propertyName,
+                DataType = DataColumnType.Status,
+                StatusBadgeMap = badgeMap,
+                CellCssClass = cssClass
+            };
+        }
+        
+        public static DataTableColumn<T> Template(string title, RenderFragment<T> template, string? cssClass = null)
+        {
+            return new DataTableColumn<T>
+            {
+                Title = title,
+                PropertyName = "",
+                CellTemplate = template,
+                CellCssClass = cssClass
+            };
+        }
+    }
+}
