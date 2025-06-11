@@ -74,7 +74,7 @@
                         <!-- 客戶列表 - 使用增強版表格 -->
                         <div class="alert alert-info mb-3">
                             <i class="fas fa-info-circle me-2"></i>
-                            這裡使用了新的 <strong>EnhancedTableComponent</strong>，具有以下優勢：
+                            這裡使用了新的 <strong>GenericTableComponent</strong>，具有以下優勢：
                             <ul class="mb-0 mt-2">
                                 <li>配置式欄位定義，減少重複代碼</li>
                                 <li>自動格式化（日期、貨幣、狀態等）</li>
@@ -83,7 +83,7 @@
                             </ul>
                         </div>
                         
-                        <EnhancedTableComponent TItem="Customer" 
+                        <GenericTableComponent TItem="Customer" 
                                               Items="customers"
                                               ColumnDefinitions="columnDefinitions"
                                               ShowActions="true"

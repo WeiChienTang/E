@@ -1,140 +1,66 @@
-@* 通用搜尋篩選組件 - 基於配置驅動 *@
-@using ERPCore2.Components.Shared.Forms
-@using ERPCore2.Components.Shared.Buttons
-@typeparam TModel where TModel : class
+@* 通用搜尋篩選組件 - 基於配置驅動的動態篩選 *@
+@using System.Reflection
+@typeparam TModel
 
-<div class="card mb-4">
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="card-title mb-0">
+            <i class="fas fa-filter me-2"></i>
+            搜尋篩選
+        </h6>
+        <div class="d-flex gap-2">
+            @if (ShowAdvancedToggle && HasAdvancedFilters())
+            {
+                <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ToggleAdvancedFilters">
+                    <i class="fas fa-@(showAdvanced ? "chevron-up" : "chevron-down") me-1"></i>
+                    @(showAdvanced ? "隱藏" : "顯示")進階篩選
+                </button>
+            }
+            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="ClearAllFilters">
+                <i class="fas fa-times me-1"></i>
+                清除篩選
+            </button>
+        </div>
+    </div>
+    
     <div class="card-body">
         <div class="row g-3">
-            @foreach (var filter in FilterDefinitions.Where(f => f.IsDefaultVisible).OrderBy(f => f.Order))
+            @if (FilterDefinitions != null)
             {
-                <div class="@GetFilterColumnClass(filter)">
-                    @if (filter.CustomTemplate != null)
-                    {
-                        @filter.CustomTemplate(FilterModel)
-                    }
-                    else
-                    {
-                        @RenderFilter(filter)
-                    }
-                </div>
+                @foreach (var filter in FilterDefinitions.Where(f => !f.IsAdvanced || showAdvanced))
+                {
+                    @RenderFilter(filter)
+                }
             }
-            
-            @* 動作按鈕區域 *@
-            <div class="col-md-12 d-flex justify-content-between align-items-center">
-                <div>
-                    @if (FilterDefinitions.Any(f => !f.IsDefaultVisible))
-                    {
-                        <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ToggleAdvancedFilters">
-                            <i class="fas fa-@(ShowAdvancedFilters ? "minus" : "plus") me-1"></i>
-                            @(ShowAdvancedFilters ? "隱藏" : "顯示")進階篩選
-                        </button>
-                    }
-                </div>
-                
-                <div>
-                    @if (ShowClearAllButton)
-                    {
-                        <button type="button" class="btn btn-outline-warning btn-sm me-2" @onclick="ClearAllFilters">
-                            <i class="fas fa-times me-1"></i>
-                            清除篩選
-                        </button>
-                    }
-                    
-                    @if (ShowSearchButton)
-                    {
-                        <button type="button" class="btn btn-primary btn-sm" @onclick="HandleSearch">
-                            <i class="fas fa-search me-1"></i>
-                            搜尋
-                        </button>
-                    }
-                </div>
-            </div>
         </div>
         
-        @* 進階篩選區域 *@
-        @if (ShowAdvancedFilters)
+        @if (ShowSearchButton)
         {
-            <hr class="my-3" />
-            <div class="row g-3">
-                @foreach (var filter in FilterDefinitions.Where(f => !f.IsDefaultVisible).OrderBy(f => f.Order))
-                {
-                    <div class="@GetFilterColumnClass(filter)">
-                        @if (filter.CustomTemplate != null)
-                        {
-                            @filter.CustomTemplate(FilterModel)
-                        }
-                        else
-                        {
-                            @RenderFilter(filter)
-                        }
-                    </div>
-                }
+            <div class="row mt-3">
+                <div class="col-12">
+                    <button type="button" class="btn btn-primary" @onclick="HandleSearch">
+                        <i class="fas fa-search me-1"></i>
+                        搜尋
+                    </button>
+                </div>
             </div>
-        }
-        
-        @* 自定義內容區域 *@
-        @if (ChildContent != null)
-        {
-            <hr class="my-3" />
-            @ChildContent
         }
     </div>
 </div>
 
 @code {
-    [Parameter] public List<SearchFilterDefinition> FilterDefinitions { get; set; } = new();
+    [Parameter] public List<SearchFilterDefinition>? FilterDefinitions { get; set; }
     [Parameter] public SearchFilterModel FilterModel { get; set; } = new();
     [Parameter] public EventCallback<SearchFilterModel> OnSearch { get; set; }
     [Parameter] public EventCallback<SearchFilterModel> OnFilterChanged { get; set; }
-    
-    [Parameter] public bool ShowSearchButton { get; set; } = true;
-    [Parameter] public bool ShowClearAllButton { get; set; } = true;
     [Parameter] public bool AutoSearch { get; set; } = false;
-    [Parameter] public int AutoSearchDelay { get; set; } = 500;
-    
-    [Parameter] public RenderFragment? ChildContent { get; set; }
-    
-    private bool ShowAdvancedFilters = false;
-    private Timer? _searchTimer;
-    
-    protected override void OnInitialized()
-    {
-        // 設定預設值
-        foreach (var filter in FilterDefinitions.Where(f => f.DefaultValue != null))
-        {
-            FilterModel.SetFilter(filter.PropertyName, filter.DefaultValue);
-        }
-    }
-    
-    private void ToggleAdvancedFilters()
-    {
-        ShowAdvancedFilters = !ShowAdvancedFilters;
-    }
-    
-    private async Task ClearAllFilters()
-    {
-        FilterModel.Clear();
-        
-        // 重新設定預設值
-        foreach (var filter in FilterDefinitions.Where(f => f.DefaultValue != null))
-        {
-            FilterModel.SetFilter(filter.PropertyName, filter.DefaultValue);
-        }
-        
-        StateHasChanged();
-        
-        if (AutoSearch)
-        {
-            await HandleSearch();
-        }
-        
-        if (OnFilterChanged.HasDelegate)
-        {
-            await OnFilterChanged.InvokeAsync(FilterModel);
-        }
-    }
-    
+    [Parameter] public bool ShowSearchButton { get; set; } = true;
+    [Parameter] public bool ShowAdvancedToggle { get; set; } = true;
+    [Parameter] public int SearchDelayMs { get; set; } = 300;
+
+    private bool showAdvanced = false;
+    private Timer? searchTimer;
+
     private async Task HandleSearch()
     {
         if (OnSearch.HasDelegate)
@@ -142,301 +68,346 @@
             await OnSearch.InvokeAsync(FilterModel);
         }
     }
-    
-    private async Task HandleFilterValueChanged(string propertyName, object? value)
+
+    private async Task HandleFilterChanged()
     {
-        FilterModel.SetFilter(propertyName, value);
-        
         if (OnFilterChanged.HasDelegate)
         {
             await OnFilterChanged.InvokeAsync(FilterModel);
         }
-        
+
         if (AutoSearch)
         {
-            _searchTimer?.Dispose();
-            _searchTimer = new Timer(async _ =>
+            // 延遲搜尋，避免頻繁觸發
+            searchTimer?.Dispose();
+            searchTimer = new Timer(async _ =>
             {
-                await InvokeAsync(HandleSearch);
-            }, null, AutoSearchDelay, Timeout.Infinite);
+                await InvokeAsync(async () =>
+                {
+                    await HandleSearch();
+                    StateHasChanged();
+                });
+            }, null, SearchDelayMs, Timeout.Infinite);
         }
     }
-    
-    private string GetFilterColumnClass(SearchFilterDefinition filter)
+
+    private void ToggleAdvancedFilters()
     {
-        var baseClass = $"col-md-{filter.ColumnWidth}";
-        return string.IsNullOrEmpty(filter.CssClass) ? baseClass : $"{baseClass} {filter.CssClass}";
+        showAdvanced = !showAdvanced;
     }
-    
+
+    private async Task ClearAllFilters()
+    {
+        FilterModel = new SearchFilterModel();
+        await HandleFilterChanged();
+    }
+
+    private bool HasAdvancedFilters()
+    {
+        return FilterDefinitions?.Any(f => f.IsAdvanced) ?? false;
+    }
+
     private RenderFragment RenderFilter(SearchFilterDefinition filter) => builder =>
     {
-        // 標籤
+        var containerCssClass = filter.ContainerCssClass ?? "col-md-4";
+        
+        builder.OpenElement(0, "div");
+        builder.AddAttribute(1, "class", containerCssClass);
+        
+        // 欄位標籤
         if (!string.IsNullOrEmpty(filter.Label))
         {
-            builder.OpenElement(0, "label");
-            builder.AddAttribute(1, "class", "form-label");
-            builder.AddContent(2, filter.Label);
+            builder.OpenElement(2, "label");
+            builder.AddAttribute(3, "class", "form-label");
+            builder.AddAttribute(4, "for", filter.PropertyName);
+            builder.AddContent(5, filter.Label);
             builder.CloseElement();
         }
         
-        // 篩選字段
+        // 根據篩選類型渲染不同的控制項
         switch (filter.FilterType)
         {
-            case FilterType.Text:
-                RenderTextFilter(builder, filter);
+            case SearchFilterType.Text:
+                RenderTextFilter(builder, filter, 6);
                 break;
-            case FilterType.Select:
-                RenderSelectFilter(builder, filter);
+            case SearchFilterType.Select:
+                RenderSelectFilter(builder, filter, 6);
                 break;
-            case FilterType.MultiSelect:
-                RenderMultiSelectFilter(builder, filter);
+            case SearchFilterType.MultiSelect:
+                RenderMultiSelectFilter(builder, filter, 6);
                 break;
-            case FilterType.DateRange:
-                RenderDateRangeFilter(builder, filter);
+            case SearchFilterType.DateRange:
+                RenderDateRangeFilter(builder, filter, 6);
                 break;
-            case FilterType.NumberRange:
-                RenderNumberRangeFilter(builder, filter);
+            case SearchFilterType.NumberRange:
+                RenderNumberRangeFilter(builder, filter, 6);
                 break;
-            case FilterType.Checkbox:
-                RenderCheckboxFilter(builder, filter);
+            case SearchFilterType.Checkbox:
+                RenderCheckboxFilter(builder, filter, 6);
+                break;
+            default:
+                RenderTextFilter(builder, filter, 6);
                 break;
         }
         
-        // 說明文字
-        if (!string.IsNullOrEmpty(filter.HelpText))
-        {
-            builder.OpenElement(100, "small");
-            builder.AddAttribute(101, "class", "form-text text-muted");
-            builder.AddContent(102, filter.HelpText);
-            builder.CloseElement();
-        }
+        builder.CloseElement(); // container div
     };
-    
-    private void RenderTextFilter(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, SearchFilterDefinition filter)
+
+    private void RenderTextFilter(SearchFilterDefinition filter, RenderTreeBuilder builder, int sequence)
     {
-        var currentValue = FilterModel.GetFilter<string>(filter.PropertyName) ?? "";
+        builder.OpenElement(sequence, "input");
+        builder.AddAttribute(sequence + 1, "type", "text");
+        builder.AddAttribute(sequence + 2, "class", "form-control");
+        builder.AddAttribute(sequence + 3, "id", filter.PropertyName);
+        builder.AddAttribute(sequence + 4, "placeholder", filter.Placeholder);
         
-        builder.OpenElement(0, "div");
-        builder.AddAttribute(1, "class", "input-group");
-        
-        builder.OpenElement(2, "input");
-        builder.AddAttribute(3, "type", "text");
-        builder.AddAttribute(4, "class", "form-control");
-        builder.AddAttribute(5, "placeholder", filter.Placeholder ?? "");
-        builder.AddAttribute(6, "value", currentValue);
-        builder.AddAttribute(7, "oninput", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.ChangeEventArgs>(this, async (args) =>
-        {
-            await HandleFilterValueChanged(filter.PropertyName, args.Value?.ToString());
-        }));
-        builder.CloseElement();
-        
-        if (filter.ShowClearButton && !string.IsNullOrEmpty(currentValue))
-        {
-            builder.OpenElement(8, "button");
-            builder.AddAttribute(9, "type", "button");
-            builder.AddAttribute(10, "class", "btn btn-outline-secondary");
-            builder.AddAttribute(11, "onclick", EventCallback.Factory.Create(this, async () =>
-            {
-                await HandleFilterValueChanged(filter.PropertyName, "");
-            }));
-            builder.OpenElement(12, "i");
-            builder.AddAttribute(13, "class", "fas fa-times");
-            builder.CloseElement();
-            builder.CloseElement();
-        }
-        
+        var currentValue = FilterModel.GetFilterValue(filter.PropertyName)?.ToString() ?? "";
+        builder.AddAttribute(sequence + 5, "value", currentValue);
+        builder.AddAttribute(sequence + 6, "oninput", EventCallback.Factory.CreateBinder(this,
+            value => { FilterModel.SetFilterValue(filter.PropertyName, value); _ = HandleFilterChanged(); },
+            currentValue));
         builder.CloseElement();
     }
-    
-    private void RenderSelectFilter(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, SearchFilterDefinition filter)
+
+    private void RenderSelectFilter(SearchFilterDefinition filter, RenderTreeBuilder builder, int sequence)
     {
-        var currentValue = FilterModel.GetFilter<string>(filter.PropertyName) ?? "";
+        builder.OpenElement(sequence, "select");
+        builder.AddAttribute(sequence + 1, "class", "form-select");
+        builder.AddAttribute(sequence + 2, "id", filter.PropertyName);
         
-        builder.OpenElement(0, "select");
-        builder.AddAttribute(1, "class", "form-select");
-        builder.AddAttribute(2, "value", currentValue);
-        builder.AddAttribute(3, "onchange", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.ChangeEventArgs>(this, async (args) =>
-        {
-            await HandleFilterValueChanged(filter.PropertyName, args.Value?.ToString());
-        }));
-        
-        // 預設選項
-        builder.OpenElement(4, "option");
-        builder.AddAttribute(5, "value", "");
-        builder.AddContent(6, $"全部{filter.Label}");
+        // 空選項
+        builder.OpenElement(sequence + 3, "option");
+        builder.AddAttribute(sequence + 4, "value", "");
+        builder.AddContent(sequence + 5, filter.EmptyOptionText ?? "全部");
         builder.CloseElement();
         
-        // 選項清單
-        if (filter.SelectOptions != null)
+        // 選項
+        if (filter.Options != null)
         {
-            foreach (var option in filter.SelectOptions)
+            var currentValue = FilterModel.GetFilterValue(filter.PropertyName)?.ToString();
+            var optionSequence = sequence + 10;
+            
+            foreach (var option in filter.Options)
             {
-                builder.OpenElement(7, "option");
-                builder.AddAttribute(8, "value", option.Value);
-                if (option.IsDisabled) builder.AddAttribute(9, "disabled", true);
-                builder.AddContent(10, option.Text);
+                builder.OpenElement(optionSequence, "option");
+                builder.AddAttribute(optionSequence + 1, "value", option.Value);
+                builder.AddAttribute(optionSequence + 2, "selected", option.Value == currentValue);
+                builder.AddContent(optionSequence + 3, option.Text);
                 builder.CloseElement();
+                optionSequence += 4;
             }
         }
         
+        builder.AddAttribute(sequence + 7, "onchange", EventCallback.Factory.CreateBinder(this,
+            value => { FilterModel.SetFilterValue(filter.PropertyName, value); _ = HandleFilterChanged(); },
+            FilterModel.GetFilterValue(filter.PropertyName)?.ToString() ?? ""));
         builder.CloseElement();
     }
-    
-    private void RenderMultiSelectFilter(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, SearchFilterDefinition filter)
+
+    private void RenderMultiSelectFilter(SearchFilterDefinition filter, RenderTreeBuilder builder, int sequence)
     {
-        // TODO: 實作多選下拉，可使用第三方元件如 Select2 或自製
-        builder.AddContent(0, "多選篩選待實作");
+        // 簡化版多選，使用多個 checkbox
+        if (filter.Options != null)
+        {
+            var currentValues = FilterModel.GetFilterValue(filter.PropertyName) as List<string> ?? new List<string>();
+            var checkboxSequence = sequence;
+            
+            foreach (var option in filter.Options)
+            {
+                builder.OpenElement(checkboxSequence, "div");
+                builder.AddAttribute(checkboxSequence + 1, "class", "form-check");
+                
+                builder.OpenElement(checkboxSequence + 2, "input");
+                builder.AddAttribute(checkboxSequence + 3, "type", "checkbox");
+                builder.AddAttribute(checkboxSequence + 4, "class", "form-check-input");
+                builder.AddAttribute(checkboxSequence + 5, "id", $"{filter.PropertyName}_{option.Value}");
+                builder.AddAttribute(checkboxSequence + 6, "value", option.Value);
+                builder.AddAttribute(checkboxSequence + 7, "checked", currentValues.Contains(option.Value));
+                
+                builder.AddAttribute(checkboxSequence + 8, "onchange", EventCallback.Factory.Create(this, () =>
+                {
+                    if (currentValues.Contains(option.Value))
+                        currentValues.Remove(option.Value);
+                    else
+                        currentValues.Add(option.Value);
+                    
+                    FilterModel.SetFilterValue(filter.PropertyName, currentValues);
+                    _ = HandleFilterChanged();
+                }));
+                builder.CloseElement();
+                
+                builder.OpenElement(checkboxSequence + 9, "label");
+                builder.AddAttribute(checkboxSequence + 10, "class", "form-check-label");
+                builder.AddAttribute(checkboxSequence + 11, "for", $"{filter.PropertyName}_{option.Value}");
+                builder.AddContent(checkboxSequence + 12, option.Text);
+                builder.CloseElement();
+                
+                builder.CloseElement();
+                checkboxSequence += 13;
+            }
+        }
     }
-    
-    private void RenderDateRangeFilter(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, SearchFilterDefinition filter)
+
+    private void RenderDateRangeFilter(SearchFilterDefinition filter, RenderTreeBuilder builder, int sequence)
     {
-        var startValue = FilterModel.GetFilter<DateTime?>($"{filter.PropertyName}_Start");
-        var endValue = FilterModel.GetFilter<DateTime?>($"{filter.PropertyName}_End");
-        
-        builder.OpenElement(0, "div");
-        builder.AddAttribute(1, "class", "row g-2");
+        var dateRange = FilterModel.GetFilterValue(filter.PropertyName) as DateRange ?? new DateRange();
         
         // 開始日期
-        builder.OpenElement(2, "div");
-        builder.AddAttribute(3, "class", "col-6");
-        builder.OpenElement(4, "input");
-        builder.AddAttribute(5, "type", "date");
-        builder.AddAttribute(6, "class", "form-control");
-        builder.AddAttribute(7, "placeholder", "開始日期");
-        if (startValue.HasValue)
+        builder.OpenElement(sequence, "div");
+        builder.AddAttribute(sequence + 1, "class", "row g-2");
+        
+        builder.OpenElement(sequence + 2, "div");
+        builder.AddAttribute(sequence + 3, "class", "col-6");
+        
+        builder.OpenElement(sequence + 4, "input");
+        builder.AddAttribute(sequence + 5, "type", "date");
+        builder.AddAttribute(sequence + 6, "class", "form-control");
+        builder.AddAttribute(sequence + 7, "placeholder", "開始日期");
+        
+        if (dateRange.StartDate.HasValue)
         {
-            builder.AddAttribute(8, "value", startValue.Value.ToString("yyyy-MM-dd"));
+            builder.AddAttribute(sequence + 8, "value", dateRange.StartDate.Value.ToString("yyyy-MM-dd"));
         }
-        builder.AddAttribute(9, "onchange", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.ChangeEventArgs>(this, async (args) =>
-        {
-            if (DateTime.TryParse(args.Value?.ToString(), out var date))
+        
+        builder.AddAttribute(sequence + 9, "onchange", EventCallback.Factory.CreateBinder(this,
+            value => 
             {
-                await HandleFilterValueChanged($"{filter.PropertyName}_Start", date);
-            }
-            else
-            {
-                await HandleFilterValueChanged($"{filter.PropertyName}_Start", null);
-            }
-        }));
+                if (DateTime.TryParse(value?.ToString(), out var date))
+                    dateRange.StartDate = date;
+                FilterModel.SetFilterValue(filter.PropertyName, dateRange);
+                _ = HandleFilterChanged();
+            },
+            dateRange.StartDate?.ToString("yyyy-MM-dd") ?? ""));
         builder.CloseElement();
         builder.CloseElement();
         
         // 結束日期
-        builder.OpenElement(10, "div");
-        builder.AddAttribute(11, "class", "col-6");
-        builder.OpenElement(12, "input");
-        builder.AddAttribute(13, "type", "date");
-        builder.AddAttribute(14, "class", "form-control");
-        builder.AddAttribute(15, "placeholder", "結束日期");
-        if (endValue.HasValue)
+        builder.OpenElement(sequence + 10, "div");
+        builder.AddAttribute(sequence + 11, "class", "col-6");
+        
+        builder.OpenElement(sequence + 12, "input");
+        builder.AddAttribute(sequence + 13, "type", "date");
+        builder.AddAttribute(sequence + 14, "class", "form-control");
+        builder.AddAttribute(sequence + 15, "placeholder", "結束日期");
+        
+        if (dateRange.EndDate.HasValue)
         {
-            builder.AddAttribute(16, "value", endValue.Value.ToString("yyyy-MM-dd"));
+            builder.AddAttribute(sequence + 16, "value", dateRange.EndDate.Value.ToString("yyyy-MM-dd"));
         }
-        builder.AddAttribute(17, "onchange", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.ChangeEventArgs>(this, async (args) =>
-        {
-            if (DateTime.TryParse(args.Value?.ToString(), out var date))
+        
+        builder.AddAttribute(sequence + 17, "onchange", EventCallback.Factory.CreateBinder(this,
+            value => 
             {
-                await HandleFilterValueChanged($"{filter.PropertyName}_End", date);
-            }
-            else
-            {
-                await HandleFilterValueChanged($"{filter.PropertyName}_End", null);
-            }
-        }));
+                if (DateTime.TryParse(value?.ToString(), out var date))
+                    dateRange.EndDate = date;
+                FilterModel.SetFilterValue(filter.PropertyName, dateRange);
+                _ = HandleFilterChanged();
+            },
+            dateRange.EndDate?.ToString("yyyy-MM-dd") ?? ""));
         builder.CloseElement();
         builder.CloseElement();
         
         builder.CloseElement();
     }
-    
-    private void RenderNumberRangeFilter(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, SearchFilterDefinition filter)
+
+    private void RenderNumberRangeFilter(SearchFilterDefinition filter, RenderTreeBuilder builder, int sequence)
     {
-        var minValue = FilterModel.GetFilter<decimal?>($"{filter.PropertyName}_Min");
-        var maxValue = FilterModel.GetFilter<decimal?>($"{filter.PropertyName}_Max");
-        
-        builder.OpenElement(0, "div");
-        builder.AddAttribute(1, "class", "row g-2");
+        var numberRange = FilterModel.GetFilterValue(filter.PropertyName) as NumberRange ?? new NumberRange();
         
         // 最小值
-        builder.OpenElement(2, "div");
-        builder.AddAttribute(3, "class", "col-6");
-        builder.OpenElement(4, "input");
-        builder.AddAttribute(5, "type", "number");
-        builder.AddAttribute(6, "class", "form-control");
-        builder.AddAttribute(7, "placeholder", "最小值");
-        if (minValue.HasValue)
+        builder.OpenElement(sequence, "div");
+        builder.AddAttribute(sequence + 1, "class", "row g-2");
+        
+        builder.OpenElement(sequence + 2, "div");
+        builder.AddAttribute(sequence + 3, "class", "col-6");
+        
+        builder.OpenElement(sequence + 4, "input");
+        builder.AddAttribute(sequence + 5, "type", "number");
+        builder.AddAttribute(sequence + 6, "class", "form-control");
+        builder.AddAttribute(sequence + 7, "placeholder", "最小值");
+        
+        if (numberRange.Min.HasValue)
         {
-            builder.AddAttribute(8, "value", minValue.Value);
+            builder.AddAttribute(sequence + 8, "value", numberRange.Min.Value);
         }
-        builder.AddAttribute(9, "onchange", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.ChangeEventArgs>(this, async (args) =>
-        {
-            if (decimal.TryParse(args.Value?.ToString(), out var value))
+        
+        builder.AddAttribute(sequence + 9, "onchange", EventCallback.Factory.CreateBinder(this,
+            value => 
             {
-                await HandleFilterValueChanged($"{filter.PropertyName}_Min", value);
-            }
-            else
-            {
-                await HandleFilterValueChanged($"{filter.PropertyName}_Min", null);
-            }
-        }));
+                if (decimal.TryParse(value?.ToString(), out var num))
+                    numberRange.Min = num;
+                FilterModel.SetFilterValue(filter.PropertyName, numberRange);
+                _ = HandleFilterChanged();
+            },
+            numberRange.Min?.ToString() ?? ""));
         builder.CloseElement();
         builder.CloseElement();
         
         // 最大值
-        builder.OpenElement(10, "div");
-        builder.AddAttribute(11, "class", "col-6");
-        builder.OpenElement(12, "input");
-        builder.AddAttribute(13, "type", "number");
-        builder.AddAttribute(14, "class", "form-control");
-        builder.AddAttribute(15, "placeholder", "最大值");
-        if (maxValue.HasValue)
+        builder.OpenElement(sequence + 10, "div");
+        builder.AddAttribute(sequence + 11, "class", "col-6");
+        
+        builder.OpenElement(sequence + 12, "input");
+        builder.AddAttribute(sequence + 13, "type", "number");
+        builder.AddAttribute(sequence + 14, "class", "form-control");
+        builder.AddAttribute(sequence + 15, "placeholder", "最大值");
+        
+        if (numberRange.Max.HasValue)
         {
-            builder.AddAttribute(16, "value", maxValue.Value);
+            builder.AddAttribute(sequence + 16, "value", numberRange.Max.Value);
         }
-        builder.AddAttribute(17, "onchange", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.ChangeEventArgs>(this, async (args) =>
-        {
-            if (decimal.TryParse(args.Value?.ToString(), out var value))
+        
+        builder.AddAttribute(sequence + 17, "onchange", EventCallback.Factory.CreateBinder(this,
+            value => 
             {
-                await HandleFilterValueChanged($"{filter.PropertyName}_Max", value);
-            }
-            else
-            {
-                await HandleFilterValueChanged($"{filter.PropertyName}_Max", null);
-            }
-        }));
+                if (decimal.TryParse(value?.ToString(), out var num))
+                    numberRange.Max = num;
+                FilterModel.SetFilterValue(filter.PropertyName, numberRange);
+                _ = HandleFilterChanged();
+            },
+            numberRange.Max?.ToString() ?? ""));
         builder.CloseElement();
         builder.CloseElement();
         
         builder.CloseElement();
     }
-    
-    private void RenderCheckboxFilter(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, SearchFilterDefinition filter)
+
+    private void RenderCheckboxFilter(SearchFilterDefinition filter, RenderTreeBuilder builder, int sequence)
     {
-        var currentValue = FilterModel.GetFilter<bool>(filter.PropertyName);
+        builder.OpenElement(sequence, "div");
+        builder.AddAttribute(sequence + 1, "class", "form-check");
         
-        builder.OpenElement(0, "div");
-        builder.AddAttribute(1, "class", "form-check");
+        builder.OpenElement(sequence + 2, "input");
+        builder.AddAttribute(sequence + 3, "type", "checkbox");
+        builder.AddAttribute(sequence + 4, "class", "form-check-input");
+        builder.AddAttribute(sequence + 5, "id", filter.PropertyName);
         
-        builder.OpenElement(2, "input");
-        builder.AddAttribute(3, "type", "checkbox");
-        builder.AddAttribute(4, "class", "form-check-input");
-        builder.AddAttribute(5, "checked", currentValue);
-        builder.AddAttribute(6, "onchange", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.ChangeEventArgs>(this, async (args) =>
+        var currentValue = FilterModel.GetFilterValue(filter.PropertyName);
+        if (currentValue is bool boolValue)
         {
-            await HandleFilterValueChanged(filter.PropertyName, bool.Parse(args.Value?.ToString() ?? "false"));
-        }));
+            builder.AddAttribute(sequence + 6, "checked", boolValue);
+        }
+        
+        builder.AddAttribute(sequence + 7, "onchange", EventCallback.Factory.CreateBinder(this,
+            value => 
+            {
+                FilterModel.SetFilterValue(filter.PropertyName, value);
+                _ = HandleFilterChanged();
+            },
+            currentValue));
         builder.CloseElement();
         
-        builder.OpenElement(7, "label");
-        builder.AddAttribute(8, "class", "form-check-label");
-        builder.AddContent(9, filter.Label);
+        builder.OpenElement(sequence + 8, "label");
+        builder.AddAttribute(sequence + 9, "class", "form-check-label");
+        builder.AddAttribute(sequence + 10, "for", filter.PropertyName);
+        builder.AddContent(sequence + 11, filter.Label);
         builder.CloseElement();
         
         builder.CloseElement();
     }
-    
+
     public void Dispose()
     {
-        _searchTimer?.Dispose();
+        searchTimer?.Dispose();
     }
 }

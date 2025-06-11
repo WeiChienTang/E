@@ -1,176 +1,386 @@
-using Microsoft.AspNetCore.Components;
+using System.ComponentModel.DataAnnotations;
 
 namespace ERPCore2.Components.Shared.Forms;
 
 /// <summary>
-/// 搜尋篩選字段配置
+/// 搜尋篩選類型枚舉
+/// </summary>
+public enum SearchFilterType
+{
+    Text,           // 文字篩選
+    Number,         // 數字篩選
+    NumberRange,    // 數字範圍篩選
+    Date,           // 日期篩選
+    DateRange,      // 日期範圍篩選
+    DateTime,       // 日期時間篩選
+    DateTimeRange,  // 日期時間範圍篩選
+    Select,         // 單選下拉篩選
+    MultiSelect,    // 多選篩選
+    Boolean,        // 布林篩選
+    Custom          // 自定義篩選
+}
+
+/// <summary>
+/// 搜尋篩選定義
 /// </summary>
 public class SearchFilterDefinition
 {
     /// <summary>
-    /// 字段名稱（對應屬性名稱）
+    /// 篩選器名稱（對應屬性名稱）
     /// </summary>
-    public string PropertyName { get; set; } = string.Empty;
-    
+    public string Name { get; set; } = string.Empty;
+
     /// <summary>
     /// 顯示標籤
     /// </summary>
     public string Label { get; set; } = string.Empty;
-    
+
     /// <summary>
-    /// 輸入提示文字
+    /// 篩選類型
+    /// </summary>
+    public SearchFilterType Type { get; set; } = SearchFilterType.Text;
+
+    /// <summary>
+    /// 佔位符文字
     /// </summary>
     public string? Placeholder { get; set; }
-    
+
     /// <summary>
-    /// 篩選器類型
+    /// 是否為進階篩選（預設隱藏）
     /// </summary>
-    public FilterType FilterType { get; set; } = FilterType.Text;
-    
+    public bool IsAdvanced { get; set; } = false;
+
     /// <summary>
-    /// 欄位寬度（Bootstrap 格線系統）
+    /// 選項清單（用於 Select 和 MultiSelect）
     /// </summary>
-    public int ColumnWidth { get; set; } = 4;
-    
-    /// <summary>
-    /// 排序順序
-    /// </summary>
-    public int Order { get; set; } = 0;
-    
-    /// <summary>
-    /// 下拉選項資料源
-    /// </summary>
-    public IEnumerable<SelectOption>? SelectOptions { get; set; }
-    
-    /// <summary>
-    /// 自定義範本
-    /// </summary>
-    public RenderFragment<object>? CustomTemplate { get; set; }
-    
-    /// <summary>
-    /// CSS 類別
-    /// </summary>
-    public string? CssClass { get; set; }
-    
-    /// <summary>
-    /// 是否預設顯示
-    /// </summary>
-    public bool IsDefaultVisible { get; set; } = true;
-    
+    public List<SelectOption> Options { get; set; } = new();
+
     /// <summary>
     /// 預設值
     /// </summary>
     public object? DefaultValue { get; set; }
-    
+
     /// <summary>
-    /// 最小值（數字和日期類型使用）
+    /// CSS 類別
     /// </summary>
-    public object? MinValue { get; set; }
-    
+    public string CssClass { get; set; } = "col-md-6";
+
     /// <summary>
-    /// 最大值（數字和日期類型使用）
+    /// 驗證規則
     /// </summary>
-    public object? MaxValue { get; set; }
-    
+    public List<ValidationRule> ValidationRules { get; set; } = new();
+
     /// <summary>
-    /// 是否啟用清除按鈕
+    /// 自定義屬性
     /// </summary>
-    public bool ShowClearButton { get; set; } = true;
-    
-    /// <summary>
-    /// 說明文字
-    /// </summary>
-    public string? HelpText { get; set; }
+    public Dictionary<string, object> Attributes { get; set; } = new();
 }
 
 /// <summary>
-/// 篩選器類型
-/// </summary>
-public enum FilterType
-{
-    /// <summary>
-    /// 文字搜尋
-    /// </summary>
-    Text,
-    
-    /// <summary>
-    /// 下拉選單
-    /// </summary>
-    Select,
-    
-    /// <summary>
-    /// 多選下拉
-    /// </summary>
-    MultiSelect,
-    
-    /// <summary>
-    /// 日期範圍
-    /// </summary>
-    DateRange,
-    
-    /// <summary>
-    /// 數字範圍
-    /// </summary>
-    NumberRange,
-    
-    /// <summary>
-    /// 核取方塊
-    /// </summary>
-    Checkbox,
-    
-    /// <summary>
-    /// 自定義範本
-    /// </summary>
-    Custom
-}
-
-/// <summary>
-/// 搜尋結果模型
+/// 搜尋篩選模型基類
 /// </summary>
 public class SearchFilterModel
 {
-    public Dictionary<string, object?> Filters { get; set; } = new();
-    
     /// <summary>
-    /// 設定篩選值
+    /// 文字篩選值
     /// </summary>
-    public void SetFilter(string propertyName, object? value)
-    {
-        Filters[propertyName] = value;
-    }
-    
+    public Dictionary<string, string?> TextFilters { get; set; } = new();
+
     /// <summary>
-    /// 取得篩選值
+    /// 數字篩選值
     /// </summary>
-    public T? GetFilter<T>(string propertyName, T? defaultValue = default)
-    {
-        if (Filters.TryGetValue(propertyName, out var value) && value != null)
-        {
-            try
-            {
-                return (T)Convert.ChangeType(value, typeof(T));
-            }
-            catch
-            {
-                return defaultValue;
-            }
-        }
-        return defaultValue;
-    }
-    
+    public Dictionary<string, decimal?> NumberFilters { get; set; } = new();
+
+    /// <summary>
+    /// 數字範圍篩選值
+    /// </summary>
+    public Dictionary<string, NumberRange?> NumberRangeFilters { get; set; } = new();
+
+    /// <summary>
+    /// 日期篩選值
+    /// </summary>
+    public Dictionary<string, DateTime?> DateFilters { get; set; } = new();
+
+    /// <summary>
+    /// 日期範圍篩選值
+    /// </summary>
+    public Dictionary<string, DateRange?> DateRangeFilters { get; set; } = new();
+
+    /// <summary>
+    /// 日期時間篩選值
+    /// </summary>
+    public Dictionary<string, DateTime?> DateTimeFilters { get; set; } = new();
+
+    /// <summary>
+    /// 日期時間範圍篩選值
+    /// </summary>
+    public Dictionary<string, DateTimeRange?> DateTimeRangeFilters { get; set; } = new();
+
+    /// <summary>
+    /// 選擇篩選值
+    /// </summary>
+    public Dictionary<string, string?> SelectFilters { get; set; } = new();
+
+    /// <summary>
+    /// 多選篩選值
+    /// </summary>
+    public Dictionary<string, List<string>> MultiSelectFilters { get; set; } = new();
+
+    /// <summary>
+    /// 布林篩選值
+    /// </summary>
+    public Dictionary<string, bool?> BooleanFilters { get; set; } = new();
+
+    /// <summary>
+    /// 自定義篩選值
+    /// </summary>
+    public Dictionary<string, object?> CustomFilters { get; set; } = new();
+
     /// <summary>
     /// 清除所有篩選
     /// </summary>
     public void Clear()
     {
-        Filters.Clear();
+        TextFilters.Clear();
+        NumberFilters.Clear();
+        NumberRangeFilters.Clear();
+        DateFilters.Clear();
+        DateRangeFilters.Clear();
+        DateTimeFilters.Clear();
+        DateTimeRangeFilters.Clear();
+        SelectFilters.Clear();
+        MultiSelectFilters.Clear();
+        BooleanFilters.Clear();
+        CustomFilters.Clear();
     }
-    
+
     /// <summary>
-    /// 清除特定篩選
+    /// 檢查是否有任何篩選條件
     /// </summary>
-    public void ClearFilter(string propertyName)
+    public bool HasAnyFilter()
     {
-        Filters.Remove(propertyName);
+        return TextFilters.Values.Any(v => !string.IsNullOrWhiteSpace(v)) ||
+               NumberFilters.Values.Any(v => v.HasValue) ||
+               NumberRangeFilters.Values.Any(v => v != null && (v.Min.HasValue || v.Max.HasValue)) ||
+               DateFilters.Values.Any(v => v.HasValue) ||
+               DateRangeFilters.Values.Any(v => v != null && (v.StartDate.HasValue || v.EndDate.HasValue)) ||
+               DateTimeFilters.Values.Any(v => v.HasValue) ||
+               DateTimeRangeFilters.Values.Any(v => v != null && (v.StartDateTime.HasValue || v.EndDateTime.HasValue)) ||
+               SelectFilters.Values.Any(v => !string.IsNullOrWhiteSpace(v)) ||
+               MultiSelectFilters.Values.Any(v => v != null && v.Count > 0) ||
+               BooleanFilters.Values.Any(v => v.HasValue) ||
+               CustomFilters.Values.Any(v => v != null);
+    }
+}
+
+/// <summary>
+/// 數字範圍
+/// </summary>
+public class NumberRange
+{
+    public decimal? Min { get; set; }
+    public decimal? Max { get; set; }
+
+    public bool IsValid()
+    {
+        return Min.HasValue || Max.HasValue;
+    }
+
+    public bool Contains(decimal value)
+    {
+        if (!IsValid()) return true;
+        
+        var minCheck = !Min.HasValue || value >= Min.Value;
+        var maxCheck = !Max.HasValue || value <= Max.Value;
+        
+        return minCheck && maxCheck;
+    }
+}
+
+/// <summary>
+/// 日期範圍
+/// </summary>
+public class DateRange
+{
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
+
+    public bool IsValid()
+    {
+        return StartDate.HasValue || EndDate.HasValue;
+    }
+
+    public bool Contains(DateTime date)
+    {
+        if (!IsValid()) return true;
+        
+        var startCheck = !StartDate.HasValue || date.Date >= StartDate.Value.Date;
+        var endCheck = !EndDate.HasValue || date.Date <= EndDate.Value.Date;
+        
+        return startCheck && endCheck;
+    }
+}
+
+/// <summary>
+/// 日期時間範圍
+/// </summary>
+public class DateTimeRange
+{
+    public DateTime? StartDateTime { get; set; }
+    public DateTime? EndDateTime { get; set; }
+
+    public bool IsValid()
+    {
+        return StartDateTime.HasValue || EndDateTime.HasValue;
+    }
+
+    public bool Contains(DateTime dateTime)
+    {
+        if (!IsValid()) return true;
+        
+        var startCheck = !StartDateTime.HasValue || dateTime >= StartDateTime.Value;
+        var endCheck = !EndDateTime.HasValue || dateTime <= EndDateTime.Value;
+        
+        return startCheck && endCheck;
+    }
+}
+
+/// <summary>
+/// 搜尋篩選配置建構器
+/// </summary>
+public class SearchFilterBuilder<TModel>
+{
+    private readonly List<SearchFilterDefinition> _filters = new();
+
+    /// <summary>
+    /// 添加文字篩選
+    /// </summary>
+    public SearchFilterBuilder<TModel> AddText(string name, string label, string? placeholder = null, bool isAdvanced = false)
+    {
+        _filters.Add(new SearchFilterDefinition
+        {
+            Name = name,
+            Label = label,
+            Type = SearchFilterType.Text,
+            Placeholder = placeholder,
+            IsAdvanced = isAdvanced
+        });
+        return this;
+    }
+
+    /// <summary>
+    /// 添加數字篩選
+    /// </summary>
+    public SearchFilterBuilder<TModel> AddNumber(string name, string label, string? placeholder = null, bool isAdvanced = false)
+    {
+        _filters.Add(new SearchFilterDefinition
+        {
+            Name = name,
+            Label = label,
+            Type = SearchFilterType.Number,
+            Placeholder = placeholder,
+            IsAdvanced = isAdvanced
+        });
+        return this;
+    }
+
+    /// <summary>
+    /// 添加數字範圍篩選
+    /// </summary>
+    public SearchFilterBuilder<TModel> AddNumberRange(string name, string label, bool isAdvanced = false)
+    {
+        _filters.Add(new SearchFilterDefinition
+        {
+            Name = name,
+            Label = label,
+            Type = SearchFilterType.NumberRange,
+            IsAdvanced = isAdvanced
+        });
+        return this;
+    }
+
+    /// <summary>
+    /// 添加日期篩選
+    /// </summary>
+    public SearchFilterBuilder<TModel> AddDate(string name, string label, bool isAdvanced = false)
+    {
+        _filters.Add(new SearchFilterDefinition
+        {
+            Name = name,
+            Label = label,
+            Type = SearchFilterType.Date,
+            IsAdvanced = isAdvanced
+        });
+        return this;
+    }
+
+    /// <summary>
+    /// 添加日期範圍篩選
+    /// </summary>
+    public SearchFilterBuilder<TModel> AddDateRange(string name, string label, bool isAdvanced = false)
+    {
+        _filters.Add(new SearchFilterDefinition
+        {
+            Name = name,
+            Label = label,
+            Type = SearchFilterType.DateRange,
+            IsAdvanced = isAdvanced
+        });
+        return this;
+    }
+
+    /// <summary>
+    /// 添加選擇篩選
+    /// </summary>
+    public SearchFilterBuilder<TModel> AddSelect(string name, string label, List<SelectOption> options, bool isAdvanced = false)
+    {
+        _filters.Add(new SearchFilterDefinition
+        {
+            Name = name,
+            Label = label,
+            Type = SearchFilterType.Select,
+            Options = options,
+            IsAdvanced = isAdvanced
+        });
+        return this;
+    }
+
+    /// <summary>
+    /// 添加多選篩選
+    /// </summary>
+    public SearchFilterBuilder<TModel> AddMultiSelect(string name, string label, List<SelectOption> options, bool isAdvanced = false)
+    {
+        _filters.Add(new SearchFilterDefinition
+        {
+            Name = name,
+            Label = label,
+            Type = SearchFilterType.MultiSelect,
+            Options = options,
+            IsAdvanced = isAdvanced
+        });
+        return this;
+    }
+
+    /// <summary>
+    /// 添加布林篩選
+    /// </summary>
+    public SearchFilterBuilder<TModel> AddBoolean(string name, string label, bool isAdvanced = false)
+    {
+        _filters.Add(new SearchFilterDefinition
+        {
+            Name = name,
+            Label = label,
+            Type = SearchFilterType.Boolean,
+            IsAdvanced = isAdvanced
+        });
+        return this;
+    }
+
+    /// <summary>
+    /// 建構篩選定義清單
+    /// </summary>
+    public List<SearchFilterDefinition> Build()
+    {
+        return _filters;
     }
 }

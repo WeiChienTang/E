@@ -1,32 +1,36 @@
-using Microsoft.AspNetCore.Components;
 using System.ComponentModel.DataAnnotations;
 
 namespace ERPCore2.Components.Shared.Forms;
 
 /// <summary>
-/// 表單字段配置定義
+/// 表單欄位定義
 /// </summary>
 public class FormFieldDefinition
 {
     /// <summary>
-    /// 字段名稱（對應屬性名稱）
+    /// 屬性名稱
     /// </summary>
     public string PropertyName { get; set; } = string.Empty;
     
     /// <summary>
-    /// 顯示標籤
+    /// 欄位標籤
     /// </summary>
     public string Label { get; set; } = string.Empty;
     
     /// <summary>
-    /// 輸入提示文字
+    /// 欄位類型
+    /// </summary>
+    public FormFieldType FieldType { get; set; } = FormFieldType.Text;
+    
+    /// <summary>
+    /// 佔位符文字
     /// </summary>
     public string? Placeholder { get; set; }
     
     /// <summary>
-    /// 字段類型
+    /// 說明文字
     /// </summary>
-    public FormFieldType FieldType { get; set; } = FormFieldType.Text;
+    public string? HelpText { get; set; }
     
     /// <summary>
     /// 是否必填
@@ -39,19 +43,64 @@ public class FormFieldDefinition
     public bool IsReadOnly { get; set; } = false;
     
     /// <summary>
-    /// 是否隱藏
+    /// 是否停用
     /// </summary>
-    public bool IsHidden { get; set; } = false;
+    public bool IsDisabled { get; set; } = false;
     
     /// <summary>
-    /// CSS 類別
+    /// 自定義 CSS 類別
     /// </summary>
     public string? CssClass { get; set; }
     
     /// <summary>
-    /// 欄位寬度（Bootstrap 格線系統）
+    /// 容器 CSS 類別
     /// </summary>
-    public int ColumnWidth { get; set; } = 12;
+    public string? ContainerCssClass { get; set; }
+    
+    /// <summary>
+    /// 最小值 (數字欄位)
+    /// </summary>
+    public decimal? Min { get; set; }
+    
+    /// <summary>
+    /// 最大值 (數字欄位)
+    /// </summary>
+    public decimal? Max { get; set; }
+    
+    /// <summary>
+    /// 步長 (數字欄位)
+    /// </summary>
+    public decimal? Step { get; set; }
+    
+    /// <summary>
+    /// 最小長度 (文字欄位)
+    /// </summary>
+    public int? MinLength { get; set; }
+    
+    /// <summary>
+    /// 最大長度 (文字欄位)
+    /// </summary>
+    public int? MaxLength { get; set; }
+    
+    /// <summary>
+    /// 文字區域列數
+    /// </summary>
+    public int? Rows { get; set; }
+    
+    /// <summary>
+    /// 選項清單 (選擇欄位)
+    /// </summary>
+    public List<SelectOption>? Options { get; set; }
+    
+    /// <summary>
+    /// 預設值
+    /// </summary>
+    public object? DefaultValue { get; set; }
+    
+    /// <summary>
+    /// 驗證規則
+    /// </summary>
+    public List<ValidationRule>? ValidationRules { get; set; }
     
     /// <summary>
     /// 排序順序
@@ -59,63 +108,23 @@ public class FormFieldDefinition
     public int Order { get; set; } = 0;
     
     /// <summary>
-    /// 下拉選項資料源（用於 Select 類型）
+    /// 分組名稱
     /// </summary>
-    public IEnumerable<SelectOption>? SelectOptions { get; set; }
-    
-    /// <summary>
-    /// 自定義範本
-    /// </summary>
-    public RenderFragment<object>? CustomTemplate { get; set; }
-    
-    /// <summary>
-    /// 驗證規則
-    /// </summary>
-    public List<ValidationAttribute>? ValidationRules { get; set; }
-    
-    /// <summary>
-    /// 最小值（數字類型使用）
-    /// </summary>
-    public double? MinValue { get; set; }
-    
-    /// <summary>
-    /// 最大值（數字類型使用）
-    /// </summary>
-    public double? MaxValue { get; set; }
-    
-    /// <summary>
-    /// 最大長度（文字類型使用）
-    /// </summary>
-    public int? MaxLength { get; set; }
-    
-    /// <summary>
-    /// 文字區域的行數
-    /// </summary>
-    public int TextAreaRows { get; set; } = 3;
-    
-    /// <summary>
-    /// 說明文字
-    /// </summary>
-    public string? HelpText { get; set; }
-    
-    /// <summary>
-    /// 是否顯示在同一行
-    /// </summary>
-    public bool InlinePrevious { get; set; } = false;
+    public string? GroupName { get; set; }
 }
 
 /// <summary>
-/// 表單字段類型
+/// 表單欄位類型
 /// </summary>
 public enum FormFieldType
 {
     /// <summary>
-    /// 文字輸入
+    /// 文字
     /// </summary>
     Text,
     
     /// <summary>
-    /// 密碼輸入
+    /// 密碼
     /// </summary>
     Password,
     
@@ -150,7 +159,7 @@ public enum FormFieldType
     TextArea,
     
     /// <summary>
-    /// 下拉選單
+    /// 下拉選擇
     /// </summary>
     Select,
     
@@ -165,7 +174,7 @@ public enum FormFieldType
     Checkbox,
     
     /// <summary>
-    /// 單選按鈕群組
+    /// 單選按鈕
     /// </summary>
     Radio,
     
@@ -175,24 +184,105 @@ public enum FormFieldType
     File,
     
     /// <summary>
-    /// 隱藏字段
+    /// 隱藏欄位
     /// </summary>
     Hidden,
     
     /// <summary>
-    /// 自定義範本
+    /// 自定義
     /// </summary>
     Custom
 }
 
 /// <summary>
-/// 選項資料
+/// 選項類別
 /// </summary>
 public class SelectOption
 {
+    /// <summary>
+    /// 選項值
+    /// </summary>
     public string Value { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 顯示文字
+    /// </summary>
     public string Text { get; set; } = string.Empty;
-    public bool IsSelected { get; set; } = false;
+    
+    /// <summary>
+    /// 是否停用
+    /// </summary>
     public bool IsDisabled { get; set; } = false;
-    public object? Data { get; set; }
+    
+    /// <summary>
+    /// 分組名稱
+    /// </summary>
+    public string? GroupName { get; set; }
+}
+
+/// <summary>
+/// 驗證規則類別
+/// </summary>
+public class ValidationRule
+{
+    /// <summary>
+    /// 規則類型
+    /// </summary>
+    public ValidationType Type { get; set; }
+    
+    /// <summary>
+    /// 規則值
+    /// </summary>
+    public object? Value { get; set; }
+    
+    /// <summary>
+    /// 錯誤訊息
+    /// </summary>
+    public string ErrorMessage { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// 驗證類型
+/// </summary>
+public enum ValidationType
+{
+    /// <summary>
+    /// 必填
+    /// </summary>
+    Required,
+    
+    /// <summary>
+    /// 最小長度
+    /// </summary>
+    MinLength,
+    
+    /// <summary>
+    /// 最大長度
+    /// </summary>
+    MaxLength,
+    
+    /// <summary>
+    /// 最小值
+    /// </summary>
+    Min,
+    
+    /// <summary>
+    /// 最大值
+    /// </summary>
+    Max,
+    
+    /// <summary>
+    /// 正規表達式
+    /// </summary>
+    Pattern,
+    
+    /// <summary>
+    /// 電子郵件格式
+    /// </summary>
+    Email,
+    
+    /// <summary>
+    /// 自定義驗證
+    /// </summary>
+    Custom
 }
