@@ -1,0 +1,106 @@
+@page "/search-filter-test"
+@using ERPCore2.Components.Shared.Forms
+
+<h3>搜尋篩選組件測試</h3>
+
+<GenericSearchFilterComponent TModel="TestSearchModel"
+                            FilterDefinitions="@filterDefinitions"
+                            FilterModel="@searchModel"
+                            OnSearch="HandleSearch"
+                            OnFilterChanged="HandleFilterChanged" />
+
+<hr />
+
+<h4>搜尋結果</h4>
+@if (searchResults != null)
+{
+    <div class="alert alert-info">
+        <strong>搜尋條件:</strong>
+        <ul>
+            @if (!string.IsNullOrEmpty(searchModel.TextFilters.GetValueOrDefault("Name")))
+            {
+                <li>名稱: @searchModel.TextFilters["Name"]</li>
+            }
+            @if (searchModel.SelectFilters.TryGetValue("Status", out var status) && !string.IsNullOrEmpty(status))
+            {
+                <li>狀態: @status</li>
+            }
+            @if (searchModel.DateRangeFilters.TryGetValue("DateRange", out var dateRange) && dateRange?.IsValid() == true)
+            {
+                <li>日期範圍: @dateRange.StartDate?.ToString("yyyy-MM-dd") - @dateRange.EndDate?.ToString("yyyy-MM-dd")</li>
+            }
+        </ul>
+        <strong>結果數量:</strong> @searchResults.Count 筆
+    </div>
+}
+
+@code {
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private SearchFilterModel searchModel = new();
+    private List<string>? searchResults;
+
+    protected override void OnInitialized()
+    {
+        // 建立篩選定義
+        var builder = new SearchFilterBuilder<TestSearchModel>();
+        
+        filterDefinitions = builder
+            .AddText("Name", "名稱", "輸入名稱搜尋")
+            .AddSelect("Status", "狀態", new List<SelectOption>
+            {
+                new SelectOption { Value = "Active", Text = "啟用" },
+                new SelectOption { Value = "Inactive", Text = "停用" },
+                new SelectOption { Value = "Pending", Text = "待處理" }
+            })
+            .AddDateRange("DateRange", "日期範圍", isAdvanced: true)
+            .AddNumber("Amount", "金額", isAdvanced: true)
+            .AddBoolean("IsVIP", "VIP客戶", isAdvanced: true)
+            .Build();
+    }
+
+    private async Task HandleSearch(SearchFilterModel model)
+    {
+        // 模擬搜尋邏輯
+        searchResults = new List<string>();
+        
+        for (int i = 1; i <= 10; i++)
+        {
+            var shouldInclude = true;
+            
+            // 檢查名稱篩選
+            if (model.TextFilters.TryGetValue("Name", out var nameFilter) && !string.IsNullOrEmpty(nameFilter))
+            {
+                shouldInclude = $"項目 {i}".Contains(nameFilter, StringComparison.OrdinalIgnoreCase);
+            }
+            
+            // 檢查狀態篩選
+            if (shouldInclude && model.SelectFilters.TryGetValue("Status", out var statusFilter) && !string.IsNullOrEmpty(statusFilter))
+            {
+                var itemStatus = i % 3 == 0 ? "Active" : i % 3 == 1 ? "Inactive" : "Pending";
+                shouldInclude = itemStatus == statusFilter;
+            }
+            
+            if (shouldInclude)
+            {
+                searchResults.Add($"項目 {i}");
+            }
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task HandleFilterChanged(SearchFilterModel model)
+    {
+        // 可以在此處加入即時篩選邏輯
+        await Task.CompletedTask;
+    }
+
+    public class TestSearchModel
+    {
+        public string? Name { get; set; }
+        public string? Status { get; set; }
+        public DateRange? DateRange { get; set; }
+        public decimal? Amount { get; set; }
+        public bool? IsVIP { get; set; }
+    }
+}

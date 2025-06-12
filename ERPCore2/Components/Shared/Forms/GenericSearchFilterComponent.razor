@@ -1,5 +1,6 @@
 @* 通用搜尋篩選組件 - 基於配置驅動的動態篩選 *@
 @using System.Reflection
+@using Microsoft.AspNetCore.Components.Rendering
 @typeparam TModel
 
 <div class="card mb-3">
@@ -138,11 +139,10 @@
                 break;
             case SearchFilterType.DateRange:
                 RenderDateRangeFilter(builder, filter, 6);
-                break;
-            case SearchFilterType.NumberRange:
+                break;            case SearchFilterType.NumberRange:
                 RenderNumberRangeFilter(builder, filter, 6);
                 break;
-            case SearchFilterType.Checkbox:
+            case SearchFilterType.Boolean:
                 RenderCheckboxFilter(builder, filter, 6);
                 break;
             default:
@@ -151,9 +151,7 @@
         }
         
         builder.CloseElement(); // container div
-    };
-
-    private void RenderTextFilter(SearchFilterDefinition filter, RenderTreeBuilder builder, int sequence)
+    };    private void RenderTextFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
     {
         builder.OpenElement(sequence, "input");
         builder.AddAttribute(sequence + 1, "type", "text");
@@ -167,9 +165,7 @@
             value => { FilterModel.SetFilterValue(filter.PropertyName, value); _ = HandleFilterChanged(); },
             currentValue));
         builder.CloseElement();
-    }
-
-    private void RenderSelectFilter(SearchFilterDefinition filter, RenderTreeBuilder builder, int sequence)
+    }    private void RenderSelectFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
     {
         builder.OpenElement(sequence, "select");
         builder.AddAttribute(sequence + 1, "class", "form-select");
@@ -202,9 +198,7 @@
             value => { FilterModel.SetFilterValue(filter.PropertyName, value); _ = HandleFilterChanged(); },
             FilterModel.GetFilterValue(filter.PropertyName)?.ToString() ?? ""));
         builder.CloseElement();
-    }
-
-    private void RenderMultiSelectFilter(SearchFilterDefinition filter, RenderTreeBuilder builder, int sequence)
+    }    private void RenderMultiSelectFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
     {
         // 簡化版多選，使用多個 checkbox
         if (filter.Options != null)
@@ -246,9 +240,7 @@
                 checkboxSequence += 13;
             }
         }
-    }
-
-    private void RenderDateRangeFilter(SearchFilterDefinition filter, RenderTreeBuilder builder, int sequence)
+    }    private void RenderDateRangeFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
     {
         var dateRange = FilterModel.GetFilterValue(filter.PropertyName) as DateRange ?? new DateRange();
         
@@ -308,9 +300,7 @@
         builder.CloseElement();
         
         builder.CloseElement();
-    }
-
-    private void RenderNumberRangeFilter(SearchFilterDefinition filter, RenderTreeBuilder builder, int sequence)
+    }    private void RenderNumberRangeFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
     {
         var numberRange = FilterModel.GetFilterValue(filter.PropertyName) as NumberRange ?? new NumberRange();
         
@@ -370,9 +360,7 @@
         builder.CloseElement();
         
         builder.CloseElement();
-    }
-
-    private void RenderCheckboxFilter(SearchFilterDefinition filter, RenderTreeBuilder builder, int sequence)
+    }    private void RenderCheckboxFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
     {
         builder.OpenElement(sequence, "div");
         builder.AddAttribute(sequence + 1, "class", "form-check");

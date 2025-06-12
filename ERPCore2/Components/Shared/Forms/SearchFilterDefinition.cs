@@ -31,6 +31,15 @@ public class SearchFilterDefinition
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// 屬性名稱（Name 的別名，用於向後兼容）
+    /// </summary>
+    public string PropertyName
+    {
+        get => Name;
+        set => Name = value;
+    }
+
+    /// <summary>
     /// 顯示標籤
     /// </summary>
     public string Label { get; set; } = string.Empty;
@@ -39,6 +48,15 @@ public class SearchFilterDefinition
     /// 篩選類型
     /// </summary>
     public SearchFilterType Type { get; set; } = SearchFilterType.Text;
+
+    /// <summary>
+    /// 篩選類型（Type 的別名，用於向後兼容）
+    /// </summary>
+    public SearchFilterType FilterType
+    {
+        get => Type;
+        set => Type = value;
+    }
 
     /// <summary>
     /// 佔位符文字
@@ -54,6 +72,16 @@ public class SearchFilterDefinition
     /// 選項清單（用於 Select 和 MultiSelect）
     /// </summary>
     public List<SelectOption> Options { get; set; } = new();
+
+    /// <summary>
+    /// 空選項文字
+    /// </summary>
+    public string? EmptyOptionText { get; set; }
+
+    /// <summary>
+    /// 容器 CSS 類別
+    /// </summary>
+    public string? ContainerCssClass { get; set; }
 
     /// <summary>
     /// 預設值
@@ -135,6 +163,111 @@ public class SearchFilterModel
     /// 自定義篩選值
     /// </summary>
     public Dictionary<string, object?> CustomFilters { get; set; } = new();
+
+    /// <summary>
+    /// 獲取篩選值
+    /// </summary>
+    public object? GetFilterValue(string name)
+    {
+        if (TextFilters.TryGetValue(name, out var textValue))
+            return textValue;
+        
+        if (NumberFilters.TryGetValue(name, out var numberValue))
+            return numberValue;
+        
+        if (NumberRangeFilters.TryGetValue(name, out var numberRangeValue))
+            return numberRangeValue;
+        
+        if (DateFilters.TryGetValue(name, out var dateValue))
+            return dateValue;
+        
+        if (DateRangeFilters.TryGetValue(name, out var dateRangeValue))
+            return dateRangeValue;
+        
+        if (DateTimeFilters.TryGetValue(name, out var dateTimeValue))
+            return dateTimeValue;
+        
+        if (DateTimeRangeFilters.TryGetValue(name, out var dateTimeRangeValue))
+            return dateTimeRangeValue;
+        
+        if (SelectFilters.TryGetValue(name, out var selectValue))
+            return selectValue;
+        
+        if (MultiSelectFilters.TryGetValue(name, out var multiSelectValue))
+            return multiSelectValue;
+        
+        if (BooleanFilters.TryGetValue(name, out var booleanValue))
+            return booleanValue;
+        
+        if (CustomFilters.TryGetValue(name, out var customValue))
+            return customValue;
+        
+        return null;
+    }
+
+    /// <summary>
+    /// 設定篩選值
+    /// </summary>
+    public void SetFilterValue(string name, object? value)
+    {
+        if (value == null)
+        {
+            // 清除所有可能的值
+            TextFilters.Remove(name);
+            NumberFilters.Remove(name);
+            NumberRangeFilters.Remove(name);
+            DateFilters.Remove(name);
+            DateRangeFilters.Remove(name);
+            DateTimeFilters.Remove(name);
+            DateTimeRangeFilters.Remove(name);
+            SelectFilters.Remove(name);
+            MultiSelectFilters.Remove(name);
+            BooleanFilters.Remove(name);
+            CustomFilters.Remove(name);
+            return;
+        }
+
+        switch (value)
+        {
+            case string strValue:
+                TextFilters[name] = strValue;
+                SelectFilters[name] = strValue;
+                break;
+            
+            case decimal decValue:
+                NumberFilters[name] = decValue;
+                break;
+            
+            case NumberRange numberRange:
+                NumberRangeFilters[name] = numberRange;
+                break;
+            
+            case DateTime dateTime:
+                DateFilters[name] = dateTime;
+                DateTimeFilters[name] = dateTime;
+                break;
+            
+            case DateRange dateRange:
+                DateRangeFilters[name] = dateRange;
+                break;
+            
+            case DateTimeRange dateTimeRange:
+                DateTimeRangeFilters[name] = dateTimeRange;
+                break;
+            
+            case List<string> stringList:
+                MultiSelectFilters[name] = stringList;
+                break;
+            
+            case bool boolValue:
+                BooleanFilters[name] = boolValue;
+                break;
+            
+            default:
+                CustomFilters[name] = value;
+                break;
+        }
+    }
 
     /// <summary>
     /// 清除所有篩選
