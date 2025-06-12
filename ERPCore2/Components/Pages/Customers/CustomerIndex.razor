@@ -26,33 +26,50 @@
     </ActionButtons>
 </GenericHeaderComponent>
 
-@* 搜尋篩選區域 *@
-<GenericSearchFilterComponent TModel="CustomerSearchModel"
-                             FilterDefinitions="@filterDefinitions"
-                             FilterModel="@searchModel"
-                             OnSearch="HandleSearch"
-                             OnFilterChanged="HandleFilterChanged"
-                             AutoSearch="true"
-                             ShowSearchButton="true"
-                             ShowAdvancedToggle="true"
-                             SearchDelayMs="500" />
+@* 客戶管理主要內容區域 *@
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-search me-2"></i>
+                    客戶搜尋與管理
+                </h5>
+            </div>
+            <div class="card-body">
+                @* 搜尋篩選區域 *@
+                <GenericSearchFilterComponent TModel="CustomerSearchModel"
+                                             FilterDefinitions="@filterDefinitions"
+                                             FilterModel="@searchModel"
+                                             OnSearch="HandleSearch"
+                                             OnFilterChanged="HandleFilterChanged"
+                                             AutoSearch="true"
+                                             ShowSearchButton="true"
+                                             ShowAdvancedToggle="true"
+                                             SearchDelayMs="500" />
 
-@* 客戶列表表格 *@
-<GenericTableComponent TItem="Customer"
-                      Items="@customers"
-                      ColumnDefinitions="@columnDefinitions"
-                      ShowActions="true"
-                      ActionsTemplate="@ActionsTemplate"
-                      EnableRowClick="true"
-                      OnRowClick="HandleRowClick"
-                      EnableSorting="false"
-                      IsStriped="true"
-                      IsHoverable="true"
-                      IsBordered="false"
-                      Size="TableSize.Normal"
-                      EmptyMessage="沒有找到符合條件的客戶資料"
-                      ActionsHeader="操作">
-</GenericTableComponent>
+                @* 客戶列表表格 *@
+                <div class="mt-4">
+                    <GenericTableComponent TItem="Customer"
+                                          Items="@customers"
+                                          ColumnDefinitions="@columnDefinitions"
+                                          ShowActions="true"
+                                          ActionsTemplate="@ActionsTemplate"
+                                          EnableRowClick="true"
+                                          OnRowClick="HandleRowClick"
+                                          EnableSorting="false"
+                                          IsStriped="true"
+                                          IsHoverable="true"
+                                          IsBordered="false"
+                                          Size="TableSize.Normal"
+                                          EmptyMessage="沒有找到符合條件的客戶資料"
+                                          ActionsHeader="操作">
+                    </GenericTableComponent>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @code {
     // 資料來源
