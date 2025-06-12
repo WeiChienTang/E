@@ -6,78 +6,82 @@ namespace ERPCore2.Data.Context
 {
     public class AppDbContext : DbContext
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
-        {
-        }        // DbSets for each entity
-        public DbSet<Customer> Customers { get; set; }
-        public DbSet<CustomerType> CustomerTypes { get; set; }
-        public DbSet<IndustryType> IndustryTypes { get; set; }
-        public DbSet<ContactType> ContactTypes { get; set; }
-        public DbSet<AddressType> AddressTypes { get; set; }
-        public DbSet<CustomerContact> CustomerContacts { get; set; }
-        public DbSet<CustomerAddress> CustomerAddresses { get; set; }
-        
-        // Authentication & Authorization DbSets
-        public DbSet<Employee> Employees { get; set; }
-        public DbSet<Role> Roles { get; set; }
-        public DbSet<Permission> Permissions { get; set; }
-        public DbSet<RolePermission> RolePermissions { get; set; }
-          protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
+      public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+      {
+      }
+      public DbSet<Customer> Customers { get; set; }
+      public DbSet<CustomerType> CustomerTypes { get; set; }
+      public DbSet<IndustryType> IndustryTypes { get; set; }
+      public DbSet<ContactType> ContactTypes { get; set; }
+      public DbSet<AddressType> AddressTypes { get; set; }
+      public DbSet<CustomerContact> CustomerContacts { get; set; }
+      public DbSet<CustomerAddress> CustomerAddresses { get; set; }      
+      public DbSet<Employee> Employees { get; set; }
+      public DbSet<Role> Roles { get; set; }
+      public DbSet<Permission> Permissions { get; set; }
+      public DbSet<RolePermission> RolePermissions { get; set; }
+      public DbSet<Product> Products { get; set; }
+      public DbSet<ProductCategory> ProductCategories { get; set; }
+      public DbSet<ProductSupplier> ProductSuppliers { get; set; }
+      public DbSet<Supplier> Suppliers { get; set; }
+      public DbSet<SupplierType> SupplierTypes { get; set; }
+      public DbSet<SupplierAddress> SupplierAddresses { get; set; }
+      public DbSet<SupplierContact> SupplierContacts { get; set; }
+
+      protected override void OnModelCreating(ModelBuilder modelBuilder)
+      {
             base.OnModelCreating(modelBuilder);
-            
-            // Configure Customer Entity - Only Delete Behaviors (Index moved to Entity)
+
             modelBuilder.Entity<Customer>(entity =>
             {
-                entity.HasOne(e => e.CustomerType)
-                      .WithMany(ct => ct.Customers)
-                      .OnDelete(DeleteBehavior.SetNull);
-                
-                entity.HasOne(e => e.IndustryType)
-                      .WithMany(i => i.Customers)
-                      .OnDelete(DeleteBehavior.SetNull);
+                  entity.HasOne(e => e.CustomerType)
+                  .WithMany(ct => ct.Customers)
+                  .OnDelete(DeleteBehavior.SetNull);
+
+                  entity.HasOne(e => e.IndustryType)
+                  .WithMany(i => i.Customers)
+                  .OnDelete(DeleteBehavior.SetNull);
             });
 
-            // Configure CustomerContact Entity - Only Delete Behaviors
             modelBuilder.Entity<CustomerContact>(entity =>
             {
-                entity.HasOne(e => e.Customer)
-                      .WithMany(c => c.CustomerContacts)
-                      .OnDelete(DeleteBehavior.Cascade);
+                  entity.HasOne(e => e.Customer)
+                  .WithMany(c => c.CustomerContacts)
+                  .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasOne(e => e.ContactType)
-                      .WithMany(ct => ct.CustomerContacts)
-                      .OnDelete(DeleteBehavior.SetNull);
-            });            // Configure CustomerAddress Entity - Only Delete Behaviors
-            modelBuilder.Entity<CustomerAddress>(entity =>
-            {
-                entity.HasOne(e => e.Customer)
-                      .WithMany(c => c.CustomerAddresses)
-                      .OnDelete(DeleteBehavior.Cascade);
-                      
-                entity.HasOne(e => e.AddressType)
-                      .WithMany(at => at.CustomerAddresses)
-                      .OnDelete(DeleteBehavior.SetNull);
+                  entity.HasOne(e => e.ContactType)
+                  .WithMany(ct => ct.CustomerContacts)
+                  .OnDelete(DeleteBehavior.SetNull);
             });
 
-            // Configure Authentication & Authorization Entities
+            modelBuilder.Entity<CustomerAddress>(entity =>
+            {
+                  entity.HasOne(e => e.Customer)
+                  .WithMany(c => c.CustomerAddresses)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+                  entity.HasOne(e => e.AddressType)
+                  .WithMany(at => at.CustomerAddresses)
+                  .OnDelete(DeleteBehavior.SetNull);
+            });
+
             modelBuilder.Entity<Employee>(entity =>
             {
-                entity.HasOne(e => e.Role)
-                      .WithMany(r => r.Employees)
-                      .OnDelete(DeleteBehavior.Restrict);
+                  entity.HasOne(e => e.Role)
+                  .WithMany(r => r.Employees)
+                  .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<RolePermission>(entity =>
             {
-                entity.HasOne(rp => rp.Role)
-                      .WithMany(r => r.RolePermissions)
-                      .OnDelete(DeleteBehavior.Cascade);
+                  entity.HasOne(rp => rp.Role)
+                  .WithMany(r => r.RolePermissions)
+                  .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasOne(rp => rp.Permission)
-                      .WithMany(p => p.RolePermissions)
-                      .OnDelete(DeleteBehavior.Cascade);
+                  entity.HasOne(rp => rp.Permission)
+                  .WithMany(p => p.RolePermissions)
+                  .OnDelete(DeleteBehavior.Cascade);
             });
-        }
+      }
     }
 }
