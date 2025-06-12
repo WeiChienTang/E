@@ -291,13 +291,10 @@
         searchModel = filterModel;
         // 自動搜尋功能已啟用，這裡不需要立即執行搜尋
         await Task.CompletedTask;
-    }
-
-    private async Task HandleRowClick(Customer customer)
+    }    private async Task HandleRowClick(Customer customer)
     {
-        // 這裡可以導航到客戶詳細頁面
-        await JSRuntime.InvokeVoidAsync("console.log", "點擊客戶：", customer.CompanyName);
-        // TODO: 實作導航到客戶詳細頁面
+        Navigation.NavigateTo($"/customers/detail/{customer.Id}");
+        await Task.CompletedTask;
     }
 
     private async Task RefreshData()
@@ -342,12 +339,10 @@
                 await JSRuntime.InvokeVoidAsync("alert", $"刪除時發生錯誤：{ex.Message}");
             }
         }
-    }
-
-    private async Task ViewCustomer(Customer customer)
+    }    private async Task ViewCustomer(Customer customer)
     {
-        // TODO: 實作檢視客戶詳細資料功能
-        await JSRuntime.InvokeVoidAsync("console.log", "檢視客戶：", customer.CompanyName);
+        Navigation.NavigateTo($"/customers/detail/{customer.Id}");
+        await Task.CompletedTask;
     }
 
     // 表格操作範本
