@@ -1,0 +1,364 @@
+@page "/customers"
+@inject ICustomerService CustomerService
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>客戶管理</PageTitle>
+
+@* 頁面標題 *@
+<GenericHeaderComponent Title="客戶管理"
+                       Subtitle="管理所有客戶資料與聯絡資訊"
+                       TitleIcon="people-fill"
+                       HeadingLevel="h1"
+                       BreadcrumbItems="@breadcrumbItems"
+                       IsLoading="@isLoading"
+                       LoadingText="載入中..."
+                       ShowDivider="true">
+    <ActionButtons>
+        <button class="btn btn-primary" @onclick="ShowCreateCustomer">
+            <i class="bi bi-plus-circle me-1"></i>
+            新增客戶
+        </button>
+        <button class="btn btn-outline-secondary" @onclick="RefreshData">
+            <i class="bi bi-arrow-clockwise me-1"></i>
+            重新整理
+        </button>
+    </ActionButtons>
+</GenericHeaderComponent>
+
+@* 搜尋篩選區域 *@
+<GenericSearchFilterComponent TModel="CustomerSearchModel"
+                             FilterDefinitions="@filterDefinitions"
+                             FilterModel="@searchModel"
+                             OnSearch="HandleSearch"
+                             OnFilterChanged="HandleFilterChanged"
+                             AutoSearch="true"
+                             ShowSearchButton="true"
+                             ShowAdvancedToggle="true"
+                             SearchDelayMs="500" />
+
+@* 客戶列表表格 *@
+<GenericTableComponent TItem="Customer"
+                      Items="@customers"
+                      ColumnDefinitions="@columnDefinitions"
+                      ShowActions="true"
+                      ActionsTemplate="@ActionsTemplate"
+                      EnableRowClick="true"
+                      OnRowClick="HandleRowClick"
+                      EnableSorting="false"
+                      IsStriped="true"
+                      IsHoverable="true"
+                      IsBordered="false"
+                      Size="TableSize.Normal"
+                      EmptyMessage="沒有找到符合條件的客戶資料"
+                      ActionsHeader="操作">
+</GenericTableComponent>
+
+@code {
+    // 資料來源
+    private List<Customer> customers = new();
+    private List<Customer> allCustomers = new();
+    
+    // 篩選相關
+    private SearchFilterModel searchModel = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    
+    // 表格相關
+    private List<TableColumnDefinition> columnDefinitions = new();
+    
+    // 選項清單
+    private List<CustomerType> customerTypes = new();
+    private List<IndustryType> industryTypes = new();
+    
+    // 狀態管理
+    private bool isLoading = true;
+    
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitializePageAsync();
+    }
+
+    private async Task InitializePageAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // 初始化麵包屑
+            InitializeBreadcrumbs();
+            
+            // 載入基礎資料
+            await LoadBasicDataAsync();
+            
+            // 初始化篩選器
+            InitializeFilters();
+            
+            // 初始化表格欄位
+            InitializeTableColumns();
+            
+            // 載入客戶資料
+            await LoadCustomersAsync();
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤（這裡可以加入日誌記錄）
+            await JSRuntime.InvokeVoidAsync("console.error", "載入客戶資料時發生錯誤：", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("客戶管理")
+        };
+    }
+
+    private async Task LoadBasicDataAsync()
+    {
+        // 載入客戶類型和行業類型選項
+        customerTypes = await CustomerService.GetCustomerTypesAsync();
+        industryTypes = await CustomerService.GetIndustryTypesAsync();
+    }
+
+    private void InitializeFilters()
+    {
+        // 準備客戶類型選項
+        var customerTypeOptions = customerTypes.Select(ct => new SelectOption
+        {
+            Text = ct.TypeName,
+            Value = ct.Id.ToString()
+        }).ToList();
+
+        // 準備行業類型選項
+        var industryTypeOptions = industryTypes.Select(it => new SelectOption
+        {
+            Text = it.IndustryTypeName,
+            Value = it.Id.ToString()
+        }).ToList();
+
+        // 準備狀態選項
+        var statusOptions = new List<SelectOption>
+        {
+            new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
+            new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
+        };
+
+        // 建立篩選定義
+        filterDefinitions = new SearchFilterBuilder<CustomerSearchModel>()
+            .AddText("CustomerCode", "客戶代碼", "輸入客戶代碼搜尋")
+            .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
+            .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
+            .AddSelect("CustomerTypeId", "客戶類型", customerTypeOptions, isAdvanced: true)
+            .AddSelect("IndustryTypeId", "行業類型", industryTypeOptions, isAdvanced: true)
+            .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
+            .AddText("TaxNumber", "統一編號", "輸入統一編號搜尋", isAdvanced: true)
+            .Build();
+    }
+
+    private void InitializeTableColumns()
+    {
+        columnDefinitions = new List<TableColumnDefinition>
+        {
+            TableColumnDefinition.Text("客戶代碼", nameof(Customer.CustomerCode)),
+            TableColumnDefinition.Text("公司名稱", nameof(Customer.CompanyName)),
+            TableColumnDefinition.Text("聯絡人", nameof(Customer.ContactPerson)),
+            TableColumnDefinition.Text("客戶類型", "CustomerType.TypeName"),
+            TableColumnDefinition.Text("行業類型", "IndustryType.IndustryTypeName"),
+            TableColumnDefinition.Status("狀態", nameof(Customer.Status), new Dictionary<object, string>
+            {
+                { EntityStatus.Active, "bg-success" },
+                { EntityStatus.Inactive, "bg-secondary" }
+            }),
+            TableColumnDefinition.Date("建立日期", nameof(Customer.CreatedAt), "yyyy/MM/dd")
+        };
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        try
+        {
+            allCustomers = await CustomerService.GetAllAsync();
+            await ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入客戶資料失敗：", ex.Message);
+            customers = new List<Customer>();
+        }
+    }
+
+    private async Task ApplyFilters()
+    {
+        var filteredCustomers = allCustomers.AsQueryable();
+
+        // 客戶代碼篩選
+        var customerCodeFilter = searchModel.GetFilterValue("CustomerCode")?.ToString();
+        if (!string.IsNullOrWhiteSpace(customerCodeFilter))
+        {
+            filteredCustomers = filteredCustomers.Where(c => 
+                c.CustomerCode.Contains(customerCodeFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 公司名稱篩選
+        var companyNameFilter = searchModel.GetFilterValue("CompanyName")?.ToString();
+        if (!string.IsNullOrWhiteSpace(companyNameFilter))
+        {
+            filteredCustomers = filteredCustomers.Where(c => 
+                c.CompanyName.Contains(companyNameFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 聯絡人篩選
+        var contactPersonFilter = searchModel.GetFilterValue("ContactPerson")?.ToString();
+        if (!string.IsNullOrWhiteSpace(contactPersonFilter))
+        {
+            filteredCustomers = filteredCustomers.Where(c => 
+                !string.IsNullOrEmpty(c.ContactPerson) && 
+                c.ContactPerson.Contains(contactPersonFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 客戶類型篩選
+        var customerTypeIdFilter = searchModel.GetFilterValue("CustomerTypeId")?.ToString();
+        if (!string.IsNullOrWhiteSpace(customerTypeIdFilter) && int.TryParse(customerTypeIdFilter, out var customerTypeId))
+        {
+            filteredCustomers = filteredCustomers.Where(c => c.CustomerTypeId == customerTypeId);
+        }
+
+        // 行業類型篩選
+        var industryTypeIdFilter = searchModel.GetFilterValue("IndustryTypeId")?.ToString();
+        if (!string.IsNullOrWhiteSpace(industryTypeIdFilter) && int.TryParse(industryTypeIdFilter, out var industryTypeId))
+        {
+            filteredCustomers = filteredCustomers.Where(c => c.IndustryTypeId == industryTypeId);
+        }
+
+        // 狀態篩選
+        var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
+        if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
+        {
+            filteredCustomers = filteredCustomers.Where(c => c.Status == status);
+        }
+
+        // 統一編號篩選
+        var taxNumberFilter = searchModel.GetFilterValue("TaxNumber")?.ToString();
+        if (!string.IsNullOrWhiteSpace(taxNumberFilter))
+        {
+            filteredCustomers = filteredCustomers.Where(c => 
+                !string.IsNullOrEmpty(c.TaxNumber) && 
+                c.TaxNumber.Contains(taxNumberFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        customers = filteredCustomers.OrderBy(c => c.CustomerCode).ToList();
+        await Task.CompletedTask; // 讓這個方法變成異步的
+    }
+
+    private async Task HandleSearch(SearchFilterModel filterModel)
+    {
+        searchModel = filterModel;
+        await ApplyFilters();
+        StateHasChanged();
+    }
+
+    private async Task HandleFilterChanged(SearchFilterModel filterModel)
+    {
+        searchModel = filterModel;
+        // 自動搜尋功能已啟用，這裡不需要立即執行搜尋
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleRowClick(Customer customer)
+    {
+        // 這裡可以導航到客戶詳細頁面
+        await JSRuntime.InvokeVoidAsync("console.log", "點擊客戶：", customer.CompanyName);
+        // TODO: 實作導航到客戶詳細頁面
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadCustomersAsync();
+        StateHasChanged();
+    }
+
+    private async Task ShowCreateCustomer()
+    {
+        // TODO: 實作新增客戶功能
+        await JSRuntime.InvokeVoidAsync("alert", "新增客戶功能尚未實作");
+    }
+
+    private async Task EditCustomer(Customer customer)
+    {
+        // TODO: 實作編輯客戶功能
+        await JSRuntime.InvokeVoidAsync("console.log", "編輯客戶：", customer.CompanyName);
+    }
+
+    private async Task DeleteCustomer(Customer customer)
+    {
+        // TODO: 實作刪除客戶功能
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"確定要刪除客戶「{customer.CompanyName}」嗎？");
+        
+        if (confirmed)
+        {
+            try
+            {
+                var result = await CustomerService.DeleteAsync(customer.Id);
+                if (result.IsSuccess)
+                {
+                    await RefreshData();
+                    await JSRuntime.InvokeVoidAsync("alert", "客戶刪除成功");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{result.ErrorMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"刪除時發生錯誤：{ex.Message}");
+            }
+        }
+    }
+
+    private async Task ViewCustomer(Customer customer)
+    {
+        // TODO: 實作檢視客戶詳細資料功能
+        await JSRuntime.InvokeVoidAsync("console.log", "檢視客戶：", customer.CompanyName);
+    }
+
+    // 表格操作範本
+    private RenderFragment<Customer> ActionsTemplate => customer => 
+        @<div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-primary" @onclick="() => ViewCustomer(customer)" title="檢視">
+                <i class="bi bi-eye"></i>
+            </button>
+            <button class="btn btn-outline-warning" @onclick="() => EditCustomer(customer)" title="編輯">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-outline-danger" @onclick="() => DeleteCustomer(customer)" title="刪除">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>;
+}
+
+@* 客戶搜尋模型 *@
+@code {
+    public class CustomerSearchModel
+    {
+        public string? CustomerCode { get; set; }
+        public string? CompanyName { get; set; }
+        public string? ContactPerson { get; set; }
+        public int? CustomerTypeId { get; set; }
+        public int? IndustryTypeId { get; set; }
+        public EntityStatus? Status { get; set; }
+        public string? TaxNumber { get; set; }
+    }
+}

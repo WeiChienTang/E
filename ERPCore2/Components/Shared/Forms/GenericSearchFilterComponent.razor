@@ -158,11 +158,10 @@
         builder.AddAttribute(sequence + 2, "class", "form-control");
         builder.AddAttribute(sequence + 3, "id", filter.PropertyName);
         builder.AddAttribute(sequence + 4, "placeholder", filter.Placeholder);
-        
-        var currentValue = FilterModel.GetFilterValue(filter.PropertyName)?.ToString() ?? "";
-        builder.AddAttribute(sequence + 5, "value", currentValue);        builder.AddAttribute(sequence + 6, "oninput", EventCallback.Factory.Create<string>(this, value =>
+          var currentValue = FilterModel.GetFilterValue(filter.PropertyName)?.ToString() ?? "";
+        builder.AddAttribute(sequence + 5, "value", currentValue);        builder.AddAttribute(sequence + 6, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
         {
-            FilterModel.SetFilterValue(filter.PropertyName, value);
+            FilterModel.SetFilterValue(filter.PropertyName, args.Value?.ToString());
             _ = HandleFilterChanged();
         }));
         builder.CloseElement();
@@ -170,9 +169,9 @@
     {
         builder.OpenElement(sequence, "select");
         builder.AddAttribute(sequence + 1, "class", "form-select");
-        builder.AddAttribute(sequence + 2, "id", filter.PropertyName);        builder.AddAttribute(sequence + 3, "onchange", EventCallback.Factory.Create<string>(this, value =>
+        builder.AddAttribute(sequence + 2, "id", filter.PropertyName);        builder.AddAttribute(sequence + 3, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
         {
-            FilterModel.SetFilterValue(filter.PropertyName, value);
+            FilterModel.SetFilterValue(filter.PropertyName, args.Value?.ToString());
             _ = HandleFilterChanged();
         }));
         
@@ -219,13 +218,14 @@
                 builder.AddAttribute(checkboxSequence + 5, "id", $"{filter.PropertyName}_{option.Value}");
                 builder.AddAttribute(checkboxSequence + 6, "value", option.Value);
                 builder.AddAttribute(checkboxSequence + 7, "checked", currentValues.Contains(option.Value));
-                
-                builder.AddAttribute(checkboxSequence + 8, "onchange", EventCallback.Factory.Create(this, () =>
+                  builder.AddAttribute(checkboxSequence + 8, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
                 {
-                    if (currentValues.Contains(option.Value))
-                        currentValues.Remove(option.Value);
-                    else
+                    var isChecked = args.Value is bool boolValue ? boolValue : bool.Parse(args.Value?.ToString() ?? "false");
+                    
+                    if (isChecked && !currentValues.Contains(option.Value))
                         currentValues.Add(option.Value);
+                    else if (!isChecked && currentValues.Contains(option.Value))
+                        currentValues.Remove(option.Value);
                     
                     FilterModel.SetFilterValue(filter.PropertyName, currentValues);
                     _ = HandleFilterChanged();
@@ -261,10 +261,9 @@
         if (dateRange.StartDate.HasValue)
         {
             builder.AddAttribute(sequence + 8, "value", dateRange.StartDate.Value.ToString("yyyy-MM-dd"));
-        }
-          builder.AddAttribute(sequence + 9, "onchange", EventCallback.Factory.Create<string>(this, value =>
+        }          builder.AddAttribute(sequence + 9, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
         {
-            if (DateTime.TryParse(value, out var date))
+            if (DateTime.TryParse(args.Value?.ToString(), out var date))
                 dateRange.StartDate = date;
             else
                 dateRange.StartDate = null;
@@ -286,10 +285,9 @@
         if (dateRange.EndDate.HasValue)
         {
             builder.AddAttribute(sequence + 16, "value", dateRange.EndDate.Value.ToString("yyyy-MM-dd"));
-        }
-          builder.AddAttribute(sequence + 17, "onchange", EventCallback.Factory.Create<string>(this, value =>
+        }          builder.AddAttribute(sequence + 17, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
         {
-            if (DateTime.TryParse(value, out var date))
+            if (DateTime.TryParse(args.Value?.ToString(), out var date))
                 dateRange.EndDate = date;
             else
                 dateRange.EndDate = null;
@@ -319,10 +317,9 @@
         if (numberRange.Min.HasValue)
         {
             builder.AddAttribute(sequence + 8, "value", numberRange.Min.Value);
-        }
-          builder.AddAttribute(sequence + 9, "onchange", EventCallback.Factory.Create<string>(this, value =>
+        }          builder.AddAttribute(sequence + 9, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
         {
-            if (decimal.TryParse(value, out var num))
+            if (decimal.TryParse(args.Value?.ToString(), out var num))
                 numberRange.Min = num;
             else
                 numberRange.Min = null;
@@ -344,10 +341,9 @@
         if (numberRange.Max.HasValue)
         {
             builder.AddAttribute(sequence + 16, "value", numberRange.Max.Value);
-        }
-          builder.AddAttribute(sequence + 17, "onchange", EventCallback.Factory.Create<string>(this, value =>
+        }          builder.AddAttribute(sequence + 17, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
         {
-            if (decimal.TryParse(value, out var num))
+            if (decimal.TryParse(args.Value?.ToString(), out var num))
                 numberRange.Max = num;
             else
                 numberRange.Max = null;
@@ -375,10 +371,10 @@
         {
             builder.AddAttribute(sequence + 6, "checked", true);
         }
-        
-        builder.AddAttribute(sequence + 7, "onchange", EventCallback.Factory.Create<bool>(this, value =>
+          builder.AddAttribute(sequence + 7, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
         {
-            FilterModel.SetFilterValue(filter.PropertyName, value);
+            var isChecked = args.Value is bool boolValue ? boolValue : bool.Parse(args.Value?.ToString() ?? "false");
+            FilterModel.SetFilterValue(filter.PropertyName, isChecked);
             _ = HandleFilterChanged();
         }));
         builder.CloseElement();
