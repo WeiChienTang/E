@@ -204,13 +204,14 @@
             builder.AddAttribute(21, "class", "form-text");
             builder.AddContent(22, field.HelpText);
             builder.CloseElement();
+        }        // 驗證訊息 - 使用簡單的驗證錯誤顯示，不依賴 ValidationMessage 組件
+        if (field.IsRequired && ShowValidationSummary)
+        {
+            builder.OpenElement(23, "div");
+            builder.AddAttribute(24, "class", "invalid-feedback");
+            builder.AddContent(25, $"{field.Label} 為必填欄位");
+            builder.CloseElement();
         }
-        
-        // 驗證訊息
-        builder.OpenComponent<ValidationMessage<object>>(23);
-        builder.AddAttribute(24, "For", () => GetPropertyValue(Model, field.PropertyName));
-        builder.AddAttribute(25, "class", "text-danger");
-        builder.CloseComponent();
         
         builder.CloseElement(); // container div
     };

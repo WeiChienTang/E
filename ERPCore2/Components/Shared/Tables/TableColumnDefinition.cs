@@ -257,3 +257,24 @@ public enum ColumnDataType
     /// </summary>
     Html
 }
+
+/// <summary>
+/// 表格大小枚舉
+/// </summary>
+public enum TableSize
+{
+    /// <summary>
+    /// 小尺寸
+    /// </summary>
+    Small,
+    
+    /// <summary>
+    /// 正常尺寸
+    /// </summary>
+    Normal,
+    
+    /// <summary>
+    /// 大尺寸
+    /// </summary>
+    Large
+}

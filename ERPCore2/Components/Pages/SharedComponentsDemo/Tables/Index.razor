@@ -1,0 +1,147 @@
+@page "/demo/tables"
+@using Microsoft.AspNetCore.Components.Web
+
+<PageTitle>表格組件示範</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-table me-2"></i>
+                    表格組件示範
+                </h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="/">首頁</a></li>
+                        <li class="breadcrumb-item"><a href="/demo">組件示範</a></li>
+                        <li class="breadcrumb-item active">表格組件</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
+                             style="width: 50px; height: 50px;">
+                            <i class="fas fa-table fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0">GenericTableComponent</h5>
+                            <small class="text-muted">通用表格組件</small>
+                        </div>
+                    </div>
+                    <p class="card-text">
+                        功能強大的通用表格組件，支援多種資料類型格式化、排序、自定義範本等功能。
+                    </p>
+                    <ul class="list-unstyled small text-muted mb-3">
+                        <li><i class="fas fa-check text-success me-1"></i> 多種資料類型支援</li>
+                        <li><i class="fas fa-check text-success me-1"></i> 自動格式化</li>
+                        <li><i class="fas fa-check text-success me-1"></i> 可排序欄位</li>
+                        <li><i class="fas fa-check text-success me-1"></i> 自定義範本</li>
+                        <li><i class="fas fa-check text-success me-1"></i> 操作按鈕支援</li>
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <a href="/demo/tables/generic" class="btn btn-primary btn-sm">
+                        <i class="fas fa-eye me-1"></i>查看示範
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 預留其他表格組件的卡片位置 -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 border-dashed">
+                <div class="card-body d-flex align-items-center justify-content-center text-center">
+                    <div>
+                        <i class="fas fa-plus fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">更多表格組件</h6>
+                        <p class="text-muted small mb-0">敬請期待...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 功能特色說明 -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-star me-2"></i>
+                        GenericTableComponent 功能特色
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">
+                                <i class="fas fa-cogs text-primary me-2"></i>
+                                資料處理功能
+                            </h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>多種資料類型：</strong>文字、數值、貨幣、日期、布林值、狀態等
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>自動格式化：</strong>根據資料類型自動套用適當的格式
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>巢狀屬性：</strong>支援物件的巢狀屬性存取
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>空值處理：</strong>可自定義空值的顯示文字
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">
+                                <i class="fas fa-paint-brush text-info me-2"></i>
+                                介面功能
+                            </h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>自定義範本：</strong>支援每個欄位的自定義顯示範本
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>操作按鈕：</strong>可在每一列加入自定義操作按鈕
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>Bootstrap 樣式：</strong>完整支援 Bootstrap 表格樣式
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>響應式設計：</strong>在各種螢幕尺寸下都能良好顯示
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .border-dashed {
+        border: 2px dashed #dee2e6 !important;
+    }
+    
+    .border-dashed .card-body {
+        min-height: 200px;
+    }
+</style>

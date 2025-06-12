@@ -449,12 +449,9 @@ namespace ERPCore2.Data
             if (await context.Employees.AnyAsync())
                 return;
 
-            var systemAdminRole = await context.Roles.FirstAsync(r => r.RoleName == "系統管理員");
-
-            var admin = new Employee
+            var systemAdminRole = await context.Roles.FirstAsync(r => r.RoleName == "系統管理員");            var admin = new Employee
             {
                 EmployeeCode = "ADMIN001",
-                Name = "系統管理員",
                 FirstName = "System",
                 LastName = "Administrator",
                 Username = "admin",

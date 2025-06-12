@@ -1,0 +1,916 @@
+@page "/demo/forms/search-filter"
+@using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.Tables
+@using ERPCore2.Data.Enums
+@using Microsoft.AspNetCore.Components
+@using System.ComponentModel.DataAnnotations
+
+<PageTitle>GenericSearchFilterComponent 示範</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-filter me-2"></i>
+                    GenericSearchFilterComponent 示範
+                </h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="/">首頁</a></li>
+                        <li class="breadcrumb-item"><a href="/demo">組件示範</a></li>
+                        <li class="breadcrumb-item active">搜尋篩選組件</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- 基本搜尋篩選示範 -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-search me-2"></i>
+                        基本搜尋篩選
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">展示基本的搜尋篩選功能，包含文字、選擇和日期篩選</p>
+                    
+                    <GenericSearchFilterComponent TModel="CustomerSearchModel"
+                                                FilterDefinitions="@basicFilterDefinitions"
+                                                FilterModel="@basicFilterModel"
+                                                OnSearch="HandleBasicSearch"
+                                                OnFilterChanged="HandleBasicFilterChanged"
+                                                AutoSearch="false"
+                                                ShowSearchButton="true">
+                    </GenericSearchFilterComponent>
+                      @if (basicSearchResults.Any())
+                    {
+                        <div class="mt-4">
+                            <h6>搜尋結果 (@basicSearchResults.Count 筆)：</h6>
+                            
+                            <GenericTableComponent TItem="CustomerResult"
+                                                 Items="@basicSearchResults"
+                                                 ColumnDefinitions="@customerTableColumns"
+                                                 IsStriped="true"
+                                                 IsHoverable="true"
+                                                 ShowActions="true"
+                                                 ActionsTemplate="@customerActionsTemplate" />
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 進階搜尋篩選示範 -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-filter me-2"></i>
+                        進階搜尋篩選
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">展示包含進階篩選條件的搜尋功能，包含數字範圍、日期範圍和多選</p>
+                    
+                    <GenericSearchFilterComponent TModel="ProductSearchModel"
+                                                FilterDefinitions="@advancedFilterDefinitions"
+                                                FilterModel="@advancedFilterModel"
+                                                OnSearch="HandleAdvancedSearch"
+                                                OnFilterChanged="HandleAdvancedFilterChanged"
+                                                AutoSearch="false"
+                                                ShowSearchButton="true"
+                                                ShowAdvancedToggle="true">
+                    </GenericSearchFilterComponent>
+                      @if (advancedSearchResults.Any())
+                    {
+                        <div class="mt-4">
+                            <h6>搜尋結果 (@advancedSearchResults.Count 筆)：</h6>
+                            
+                            <GenericTableComponent TItem="ProductResult"
+                                                 Items="@advancedSearchResults"
+                                                 ColumnDefinitions="@productTableColumns"
+                                                 IsStriped="true"
+                                                 IsHoverable="true"
+                                                 EnableRowClick="true"
+                                                 OnRowClick="HandleProductRowClick"
+                                                 GetRowCssClass="GetProductRowClass" />
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 自動搜尋示範 -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-magic me-2"></i>
+                        自動搜尋示範
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">展示自動搜尋功能，當篩選條件改變時自動觸發搜尋</p>
+                    
+                    <GenericSearchFilterComponent TModel="EmployeeSearchModel"
+                                                FilterDefinitions="@autoSearchFilterDefinitions"
+                                                FilterModel="@autoSearchFilterModel"
+                                                OnSearch="HandleAutoSearch"
+                                                AutoSearch="true"
+                                                ShowSearchButton="false"
+                                                SearchDelayMs="500">
+                    </GenericSearchFilterComponent>
+                    
+                    <div class="mt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6>即時搜尋結果：</h6>
+                            <small class="text-muted">搜尋次數：@autoSearchCount</small>
+                        </div>
+                        
+                        @if (isAutoSearching)
+                        {
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">搜尋中...</span>
+                                </div>
+                                <div class="mt-2">搜尋中...</div>
+                            </div>
+                        }                        @if (autoSearchResults.Any())
+                        {
+                            <GenericTableComponent TItem="EmployeeResult"
+                                                 Items="@autoSearchResults"
+                                                 ColumnDefinitions="@employeeTableColumns"
+                                                 IsStriped="true"
+                                                 IsHoverable="true"
+                                                 Size="TableSize.Small"
+                                                 EmptyMessage="沒有符合條件的員工" />
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="fas fa-search fa-3x mb-3"></i>
+                                <div>沒有符合條件的結果</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 篩選建構器示範 -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-tools me-2"></i>
+                        篩選建構器示範
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">展示使用 SearchFilterBuilder 來建構篩選定義</p>
+                    
+                    <GenericSearchFilterComponent TModel="OrderSearchModel"
+                                                FilterDefinitions="@builderFilterDefinitions"
+                                                FilterModel="@builderFilterModel"
+                                                OnSearch="HandleBuilderSearch"
+                                                AutoSearch="false"
+                                                ShowSearchButton="true">
+                    </GenericSearchFilterComponent>
+                      @if (builderSearchResults.Any())
+                    {
+                        <div class="mt-4">
+                            <h6>訂單搜尋結果：</h6>
+                            
+                            <GenericTableComponent TItem="OrderResult"
+                                                 Items="@builderSearchResults"
+                                                 ColumnDefinitions="@orderTableColumns"
+                                                 IsStriped="true"
+                                                 IsHoverable="true"
+                                                 IsBordered="true"
+                                                 EnableSorting="true"
+                                                 OnSort="HandleOrderSort"
+                                                 ShowActions="true"
+                                                 ActionsTemplate="@orderActionsTemplate" />
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 搜尋歷史記錄 -->
+    @if (searchHistory.Any())
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-history me-2"></i>
+                            搜尋歷史記錄
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            @foreach (var history in searchHistory.TakeLast(10).Reverse())
+                            {
+                                <div class="timeline-item mb-3">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0">
+                                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                <i class="fas fa-search text-white"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <div class="d-flex justify-content-between">
+                                                <h6 class="mb-0">@history.FilterType 搜尋</h6>
+                                                <small class="text-muted">@history.Time.ToString("HH:mm:ss")</small>
+                                            </div>
+                                            <p class="mb-1 text-muted">@history.Description</p>
+                                            <small class="text-success">找到 @history.ResultCount 筆結果</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="ClearSearchHistory">
+                            清除搜尋歷史
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    // 搜尋模型定義
+    public class CustomerSearchModel
+    {
+        public string? Name { get; set; }
+        public string? Status { get; set; }
+        public DateTime? CreatedDate { get; set; }
+    }
+
+    public class ProductSearchModel
+    {
+        public string? Name { get; set; }
+        public string? Category { get; set; }
+        public List<string>? Brands { get; set; }
+        public NumberRange? PriceRange { get; set; }
+        public DateRange? LaunchDateRange { get; set; }
+        public bool? IsAvailable { get; set; }
+    }
+
+    public class EmployeeSearchModel
+    {
+        public string? Name { get; set; }
+        public string? Department { get; set; }
+        public bool? IsActive { get; set; }
+    }
+
+    public class OrderSearchModel
+    {
+        public string? OrderNumber { get; set; }
+        public string? Customer { get; set; }
+        public string? Status { get; set; }
+        public NumberRange? AmountRange { get; set; }
+        public DateRange? OrderDateRange { get; set; }
+    }
+
+    // 結果模型定義
+    public class CustomerResult
+    {
+        public string Name { get; set; } = "";
+        public string Status { get; set; } = "";
+        public DateTime CreatedDate { get; set; }
+        public string Phone { get; set; } = "";
+    }
+
+    public class ProductResult
+    {
+        public string Name { get; set; } = "";
+        public string Category { get; set; } = "";
+        public string Brand { get; set; } = "";
+        public decimal Price { get; set; }
+        public int Stock { get; set; }
+        public bool IsAvailable { get; set; }
+        public DateTime LaunchDate { get; set; }
+    }
+
+    public class EmployeeResult
+    {
+        public string Name { get; set; } = "";
+        public string Department { get; set; } = "";
+        public string Position { get; set; } = "";
+        public string Email { get; set; } = "";
+        public bool IsActive { get; set; }
+        public DateTime JoinDate { get; set; }
+    }
+
+    public class OrderResult
+    {
+        public string OrderNumber { get; set; } = "";
+        public string Customer { get; set; } = "";
+        public decimal Amount { get; set; }
+        public string Status { get; set; } = "";
+        public DateTime OrderDate { get; set; }
+    }
+
+    public class SearchHistoryItem
+    {
+        public DateTime Time { get; set; }
+        public string FilterType { get; set; } = "";
+        public string Description { get; set; } = "";
+        public int ResultCount { get; set; }
+    }
+
+    // 篩選模型實例
+    private SearchFilterModel basicFilterModel = new();
+    private SearchFilterModel advancedFilterModel = new();
+    private SearchFilterModel autoSearchFilterModel = new();
+    private SearchFilterModel builderFilterModel = new();
+
+    // 篩選定義
+    private List<SearchFilterDefinition> basicFilterDefinitions = new();
+    private List<SearchFilterDefinition> advancedFilterDefinitions = new();
+    private List<SearchFilterDefinition> autoSearchFilterDefinitions = new();
+    private List<SearchFilterDefinition> builderFilterDefinitions = new();
+
+    // 搜尋結果
+    private List<CustomerResult> basicSearchResults = new();
+    private List<ProductResult> advancedSearchResults = new();
+    private List<EmployeeResult> autoSearchResults = new();
+    private List<OrderResult> builderSearchResults = new();
+
+    // 狀態變數
+    private bool isAutoSearching = false;
+    private int autoSearchCount = 0;
+    private List<SearchHistoryItem> searchHistory = new();    // 模擬資料
+    private List<CustomerResult> allCustomers = new();
+    private List<ProductResult> allProducts = new();
+    private List<EmployeeResult> allEmployees = new();
+    private List<OrderResult> allOrders = new();
+
+    // 表格欄位定義
+    private List<TableColumnDefinition> customerTableColumns = new();
+    private List<TableColumnDefinition> productTableColumns = new();
+    private List<TableColumnDefinition> employeeTableColumns = new();
+    private List<TableColumnDefinition> orderTableColumns = new();
+
+    // 表格操作範本
+    private RenderFragment<CustomerResult> customerActionsTemplate = default!;
+    private RenderFragment<OrderResult> orderActionsTemplate = default!;    protected override void OnInitialized()
+    {
+        InitializeFilterDefinitions();
+        InitializeTableDefinitions();
+        InitializeMockData();
+        LoadInitialData();
+    }
+
+    private void InitializeFilterDefinitions()
+    {
+        // 基本篩選定義
+        basicFilterDefinitions = new List<SearchFilterDefinition>
+        {
+            new()
+            {
+                Name = "Name",
+                Label = "客戶名稱",
+                Type = SearchFilterType.Text,
+                Placeholder = "輸入客戶名稱搜尋"
+            },
+            new()
+            {
+                Name = "Status",
+                Label = "狀態",
+                Type = SearchFilterType.Select,                Options = new List<SelectOption>
+                {
+                    new() { Text = "啟用", Value = "Active" },
+                    new() { Text = "停用", Value = "Inactive" }
+                }
+            },
+            new()
+            {
+                Name = "CreatedDate",
+                Label = "建立日期",
+                Type = SearchFilterType.Date
+            }
+        };
+
+        // 進階篩選定義
+        advancedFilterDefinitions = new List<SearchFilterDefinition>
+        {
+            new()
+            {
+                Name = "Name",
+                Label = "產品名稱",
+                Type = SearchFilterType.Text,
+                Placeholder = "輸入產品名稱"
+            },
+            new()
+            {
+                Name = "Category",
+                Label = "類別",
+                Type = SearchFilterType.Select,                Options = new List<SelectOption>
+                {
+                    new() { Text = "電子產品", Value = "Electronics" },
+                    new() { Text = "服飾", Value = "Clothing" },
+                    new() { Text = "書籍", Value = "Books" },
+                    new() { Text = "家具", Value = "Furniture" }
+                }
+            },
+            new()
+            {
+                Name = "Brands",
+                Label = "品牌",
+                Type = SearchFilterType.MultiSelect,                Options = new List<SelectOption>
+                {
+                    new() { Text = "Apple", Value = "Apple" },
+                    new() { Text = "Samsung", Value = "Samsung" },
+                    new() { Text = "Sony", Value = "Sony" },
+                    new() { Text = "Nike", Value = "Nike" },
+                    new() { Text = "Adidas", Value = "Adidas" }
+                },
+                IsAdvanced = true
+            },
+            new()
+            {
+                Name = "PriceRange",
+                Label = "價格範圍",
+                Type = SearchFilterType.NumberRange,
+                IsAdvanced = true
+            },
+            new()
+            {
+                Name = "LaunchDateRange",
+                Label = "上市日期範圍",
+                Type = SearchFilterType.DateRange,
+                IsAdvanced = true
+            },
+            new()
+            {
+                Name = "IsAvailable",
+                Label = "是否可販售",
+                Type = SearchFilterType.Boolean
+            }
+        };
+
+        // 自動搜尋篩選定義
+        autoSearchFilterDefinitions = new List<SearchFilterDefinition>
+        {
+            new()
+            {
+                Name = "Name",
+                Label = "員工姓名",
+                Type = SearchFilterType.Text,
+                Placeholder = "輸入員工姓名"
+            },
+            new()
+            {
+                Name = "Department",
+                Label = "部門",
+                Type = SearchFilterType.Select,                Options = new List<SelectOption>
+                {
+                    new() { Text = "資訊部", Value = "IT" },
+                    new() { Text = "人事部", Value = "HR" },
+                    new() { Text = "財務部", Value = "Finance" },
+                    new() { Text = "業務部", Value = "Sales" }
+                }
+            },
+            new()
+            {
+                Name = "IsActive",
+                Label = "僅顯示在職員工",
+                Type = SearchFilterType.Boolean
+            }        };
+
+        // 使用建構器建立篩選定義
+        builderFilterDefinitions = new SearchFilterBuilder<OrderSearchModel>()
+            .AddText("OrderNumber", "訂單號", "輸入訂單號搜尋")
+            .AddText("Customer", "客戶名稱", "輸入客戶名稱")
+            .AddSelect("Status", "訂單狀態", new List<SelectOption>
+            {
+                new() { Text = "待處理", Value = "Pending" },
+                new() { Text = "處理中", Value = "Processing" },
+                new() { Text = "已完成", Value = "Completed" },
+                new() { Text = "已取消", Value = "Cancelled" }
+            })
+            .AddNumberRange("AmountRange", "金額範圍", isAdvanced: true)
+            .AddDateRange("OrderDateRange", "訂單日期範圍", isAdvanced: true)
+            .Build();
+    }
+
+    private void InitializeMockData()
+    {
+        // 模擬客戶資料
+        allCustomers = new List<CustomerResult>
+        {
+            new() { Name = "台灣科技公司", Status = "Active", CreatedDate = DateTime.Today.AddDays(-30), Phone = "02-1234-5678" },
+            new() { Name = "環球貿易", Status = "Active", CreatedDate = DateTime.Today.AddDays(-15), Phone = "02-2345-6789" },
+            new() { Name = "創新軟體", Status = "Inactive", CreatedDate = DateTime.Today.AddDays(-60), Phone = "02-3456-7890" },
+            new() { Name = "數位行銷", Status = "Active", CreatedDate = DateTime.Today.AddDays(-5), Phone = "02-4567-8901" },
+            new() { Name = "智慧科技", Status = "Active", CreatedDate = DateTime.Today.AddDays(-45), Phone = "02-5678-9012" },
+            new() { Name = "綠能環保", Status = "Active", CreatedDate = DateTime.Today.AddDays(-20), Phone = "02-6789-0123" },
+            new() { Name = "精密機械", Status = "Inactive", CreatedDate = DateTime.Today.AddDays(-90), Phone = "02-7890-1234" },
+            new() { Name = "醫療設備", Status = "Active", CreatedDate = DateTime.Today.AddDays(-10), Phone = "02-8901-2345" },
+            new() { Name = "食品加工", Status = "Active", CreatedDate = DateTime.Today.AddDays(-75), Phone = "02-9012-3456" },
+            new() { Name = "物流運輸", Status = "Active", CreatedDate = DateTime.Today.AddDays(-35), Phone = "02-0123-4567" }
+        };
+
+        // 模擬產品資料
+        allProducts = new List<ProductResult>
+        {
+            new() { Name = "iPhone 15", Category = "Electronics", Brand = "Apple", Price = 32900, Stock = 50, IsAvailable = true, LaunchDate = DateTime.Today.AddDays(-90) },
+            new() { Name = "Galaxy S24", Category = "Electronics", Brand = "Samsung", Price = 28900, Stock = 30, IsAvailable = true, LaunchDate = DateTime.Today.AddDays(-60) },
+            new() { Name = "運動鞋", Category = "Clothing", Brand = "Nike", Price = 3500, Stock = 0, IsAvailable = false, LaunchDate = DateTime.Today.AddDays(-120) },
+            new() { Name = "程式設計書", Category = "Books", Brand = "Tech Publisher", Price = 650, Stock = 100, IsAvailable = true, LaunchDate = DateTime.Today.AddDays(-30) },
+            new() { Name = "辦公椅", Category = "Furniture", Brand = "Office Plus", Price = 8900, Stock = 15, IsAvailable = true, LaunchDate = DateTime.Today.AddDays(-180) },
+            new() { Name = "無線耳機", Category = "Electronics", Brand = "Sony", Price = 5500, Stock = 25, IsAvailable = true, LaunchDate = DateTime.Today.AddDays(-45) },
+            new() { Name = "MacBook Pro", Category = "Electronics", Brand = "Apple", Price = 65900, Stock = 20, IsAvailable = true, LaunchDate = DateTime.Today.AddDays(-120) },
+            new() { Name = "休閒褲", Category = "Clothing", Brand = "Adidas", Price = 2800, Stock = 80, IsAvailable = true, LaunchDate = DateTime.Today.AddDays(-50) },
+            new() { Name = "商業管理", Category = "Books", Brand = "Business Press", Price = 850, Stock = 60, IsAvailable = true, LaunchDate = DateTime.Today.AddDays(-70) },
+            new() { Name = "會議桌", Category = "Furniture", Brand = "Office Plus", Price = 15600, Stock = 5, IsAvailable = true, LaunchDate = DateTime.Today.AddDays(-200) },
+            new() { Name = "平板電腦", Category = "Electronics", Brand = "Samsung", Price = 18900, Stock = 0, IsAvailable = false, LaunchDate = DateTime.Today.AddDays(-80) },
+            new() { Name = "籃球鞋", Category = "Clothing", Brand = "Nike", Price = 4200, Stock = 40, IsAvailable = true, LaunchDate = DateTime.Today.AddDays(-40) }
+        };
+
+        // 模擬員工資料
+        allEmployees = new List<EmployeeResult>
+        {
+            new() { Name = "張小明", Department = "IT", Position = "軟體工程師", Email = "ming@company.com", IsActive = true, JoinDate = DateTime.Today.AddYears(-2) },
+            new() { Name = "李美麗", Department = "HR", Position = "人事專員", Email = "meili@company.com", IsActive = true, JoinDate = DateTime.Today.AddYears(-1) },
+            new() { Name = "王大華", Department = "Finance", Position = "會計師", Email = "dahua@company.com", IsActive = false, JoinDate = DateTime.Today.AddYears(-3) },
+            new() { Name = "陳小芳", Department = "Sales", Position = "業務代表", Email = "xiaofang@company.com", IsActive = true, JoinDate = DateTime.Today.AddMonths(-8) },
+            new() { Name = "林志明", Department = "IT", Position = "系統管理員", Email = "zhiming@company.com", IsActive = true, JoinDate = DateTime.Today.AddYears(-4) },
+            new() { Name = "黃雅婷", Department = "HR", Position = "招募專員", Email = "yating@company.com", IsActive = true, JoinDate = DateTime.Today.AddMonths(-6) },
+            new() { Name = "劉建國", Department = "Finance", Position = "財務經理", Email = "jianguo@company.com", IsActive = true, JoinDate = DateTime.Today.AddYears(-5) },
+            new() { Name = "許文雄", Department = "Sales", Position = "業務經理", Email = "wenxiong@company.com", IsActive = true, JoinDate = DateTime.Today.AddYears(-3) },
+            new() { Name = "吳佩君", Department = "IT", Position = "前端工程師", Email = "peijun@company.com", IsActive = false, JoinDate = DateTime.Today.AddYears(-1) },
+            new() { Name = "蔡志偉", Department = "Sales", Position = "銷售顧問", Email = "zhiwei@company.com", IsActive = true, JoinDate = DateTime.Today.AddMonths(-10) }
+        };
+
+        // 模擬訂單資料
+        allOrders = new List<OrderResult>
+        {
+            new() { OrderNumber = "ORD001", Customer = "台灣科技公司", Amount = 50000, Status = "Completed", OrderDate = DateTime.Today.AddDays(-10) },
+            new() { OrderNumber = "ORD002", Customer = "環球貿易", Amount = 75000, Status = "Processing", OrderDate = DateTime.Today.AddDays(-5) },
+            new() { OrderNumber = "ORD003", Customer = "數位行銷", Amount = 25000, Status = "Pending", OrderDate = DateTime.Today.AddDays(-2) },
+            new() { OrderNumber = "ORD004", Customer = "智慧科技", Amount = 120000, Status = "Completed", OrderDate = DateTime.Today.AddDays(-15) },
+            new() { OrderNumber = "ORD005", Customer = "創新軟體", Amount = 30000, Status = "Cancelled", OrderDate = DateTime.Today.AddDays(-20) },
+            new() { OrderNumber = "ORD006", Customer = "綠能環保", Amount = 85000, Status = "Processing", OrderDate = DateTime.Today.AddDays(-3) },
+            new() { OrderNumber = "ORD007", Customer = "醫療設備", Amount = 95000, Status = "Completed", OrderDate = DateTime.Today.AddDays(-7) },
+            new() { OrderNumber = "ORD008", Customer = "食品加工", Amount = 40000, Status = "Pending", OrderDate = DateTime.Today.AddDays(-1) },
+            new() { OrderNumber = "ORD009", Customer = "物流運輸", Amount = 65000, Status = "Processing", OrderDate = DateTime.Today.AddDays(-4) },
+            new() { OrderNumber = "ORD010", Customer = "精密機械", Amount = 150000, Status = "Cancelled", OrderDate = DateTime.Today.AddDays(-25) }
+        };
+    }
+
+    private void InitializeTableDefinitions()
+    {
+        // 客戶表格欄位定義
+        customerTableColumns = new List<TableColumnDefinition>
+        {
+            TableColumnDefinition.Text("客戶名稱", nameof(CustomerResult.Name)),
+            TableColumnDefinition.Status("狀態", nameof(CustomerResult.Status), new Dictionary<object, string>
+            {
+                { "Active", "bg-success" },
+                { "Inactive", "bg-secondary" }
+            }),
+            TableColumnDefinition.Date("建立日期", nameof(CustomerResult.CreatedDate), "yyyy-MM-dd"),
+            TableColumnDefinition.Text("聯絡電話", nameof(CustomerResult.Phone))
+        };
+
+        // 產品表格欄位定義
+        productTableColumns = new List<TableColumnDefinition>
+        {
+            TableColumnDefinition.Text("產品名稱", nameof(ProductResult.Name)),
+            TableColumnDefinition.Text("類別", nameof(ProductResult.Category)),
+            TableColumnDefinition.Text("品牌", nameof(ProductResult.Brand)),
+            TableColumnDefinition.Currency("價格", nameof(ProductResult.Price), "NT$", "N0"),
+            TableColumnDefinition.Number("庫存", nameof(ProductResult.Stock), "N0"),
+            TableColumnDefinition.Boolean("可販售", nameof(ProductResult.IsAvailable), "是", "否"),
+            TableColumnDefinition.Date("上市日期", nameof(ProductResult.LaunchDate), "yyyy-MM-dd")
+        };
+
+        // 員工表格欄位定義
+        employeeTableColumns = new List<TableColumnDefinition>
+        {
+            TableColumnDefinition.Text("姓名", nameof(EmployeeResult.Name)),
+            TableColumnDefinition.Text("部門", nameof(EmployeeResult.Department)),
+            TableColumnDefinition.Text("職位", nameof(EmployeeResult.Position)),
+            TableColumnDefinition.Text("信箱", nameof(EmployeeResult.Email)),
+            TableColumnDefinition.Boolean("在職", nameof(EmployeeResult.IsActive), "是", "否"),
+            TableColumnDefinition.Date("到職日", nameof(EmployeeResult.JoinDate), "yyyy-MM-dd")
+        };
+
+        // 訂單表格欄位定義
+        orderTableColumns = new List<TableColumnDefinition>
+        {
+            new() { Title = "訂單號", PropertyName = nameof(OrderResult.OrderNumber), DataType = ColumnDataType.Text, IsSortable = true },
+            TableColumnDefinition.Text("客戶", nameof(OrderResult.Customer)),
+            new() { Title = "金額", PropertyName = nameof(OrderResult.Amount), DataType = ColumnDataType.Currency, CurrencySymbol = "NT$", Format = "N0", IsSortable = true },
+            TableColumnDefinition.Status("狀態", nameof(OrderResult.Status), new Dictionary<object, string>
+            {
+                { "Pending", "bg-warning" },
+                { "Processing", "bg-info" },
+                { "Completed", "bg-success" },
+                { "Cancelled", "bg-danger" }
+            }),
+            new() { Title = "訂單日期", PropertyName = nameof(OrderResult.OrderDate), DataType = ColumnDataType.Date, Format = "yyyy-MM-dd", IsSortable = true }
+        };
+
+        // 初始化操作範本
+        customerActionsTemplate = customer => 
+            @<div class="btn-group">
+                <button class="btn btn-sm btn-outline-primary" @onclick="() => ViewCustomer(customer)">
+                    <i class="fas fa-eye"></i> 檢視
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="() => EditCustomer(customer)">
+                    <i class="fas fa-edit"></i> 編輯
+                </button>
+            </div>;
+
+        orderActionsTemplate = order => 
+            @<div class="btn-group">
+                <button class="btn btn-sm btn-outline-primary" @onclick="() => ViewOrder(order)">
+                    <i class="fas fa-eye"></i> 檢視
+                </button>
+                <button class="btn btn-sm btn-outline-warning" @onclick="() => ProcessOrder(order)">
+                    <i class="fas fa-cog"></i> 處理
+                </button>
+            </div>;
+    }
+
+    // 事件處理方法
+    private async Task HandleBasicSearch(SearchFilterModel filterModel)
+    {
+        await Task.Delay(500); // 模擬搜尋延遲
+
+        var results = allCustomers.AsQueryable();
+
+        var nameFilter = filterModel.GetFilterValue("Name")?.ToString();
+        if (!string.IsNullOrWhiteSpace(nameFilter))
+        {
+            results = results.Where(c => c.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var statusFilter = filterModel.GetFilterValue("Status")?.ToString();
+        if (!string.IsNullOrWhiteSpace(statusFilter))
+        {
+            results = results.Where(c => c.Status == statusFilter);
+        }
+
+        var dateFilter = filterModel.GetFilterValue("CreatedDate");
+        if (dateFilter is DateTime date)
+        {
+            results = results.Where(c => c.CreatedDate.Date == date.Date);
+        }
+
+        basicSearchResults = results.ToList();
+
+        AddSearchHistory("基本客戶搜尋", $"名稱: {nameFilter}, 狀態: {statusFilter}", basicSearchResults.Count);
+        StateHasChanged();
+    }
+
+    private async Task HandleBasicFilterChanged(SearchFilterModel filterModel)
+    {
+        // 篩選變更時的處理
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleAdvancedSearch(SearchFilterModel filterModel)
+    {
+        await Task.Delay(800); // 模擬搜尋延遲
+
+        var results = allProducts.AsQueryable();
+
+        var nameFilter = filterModel.GetFilterValue("Name")?.ToString();
+        if (!string.IsNullOrWhiteSpace(nameFilter))
+        {
+            results = results.Where(p => p.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var categoryFilter = filterModel.GetFilterValue("Category")?.ToString();
+        if (!string.IsNullOrWhiteSpace(categoryFilter))
+        {
+            results = results.Where(p => p.Category == categoryFilter);
+        }
+
+        var brandsFilter = filterModel.GetFilterValue("Brands") as List<string>;
+        if (brandsFilter != null && brandsFilter.Any())
+        {
+            results = results.Where(p => brandsFilter.Contains(p.Brand));
+        }
+
+        var priceRangeFilter = filterModel.GetFilterValue("PriceRange") as NumberRange;
+        if (priceRangeFilter != null)
+        {
+            if (priceRangeFilter.Min.HasValue)
+                results = results.Where(p => p.Price >= priceRangeFilter.Min.Value);
+            if (priceRangeFilter.Max.HasValue)
+                results = results.Where(p => p.Price <= priceRangeFilter.Max.Value);
+        }
+
+        var isAvailableFilter = filterModel.GetFilterValue("IsAvailable");
+        if (isAvailableFilter is bool available)
+        {
+            results = results.Where(p => p.IsAvailable == available);
+        }
+
+        advancedSearchResults = results.ToList();
+
+        AddSearchHistory("進階產品搜尋", $"名稱: {nameFilter}, 類別: {categoryFilter}, 品牌數: {brandsFilter?.Count ?? 0}", advancedSearchResults.Count);
+        StateHasChanged();
+    }
+
+    private async Task HandleAdvancedFilterChanged(SearchFilterModel filterModel)
+    {
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleAutoSearch(SearchFilterModel filterModel)
+    {
+        isAutoSearching = true;
+        autoSearchCount++;
+        StateHasChanged();
+
+        await Task.Delay(300); // 模擬搜尋延遲
+
+        var results = allEmployees.AsQueryable();
+
+        var nameFilter = filterModel.GetFilterValue("Name")?.ToString();
+        if (!string.IsNullOrWhiteSpace(nameFilter))
+        {
+            results = results.Where(e => e.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var departmentFilter = filterModel.GetFilterValue("Department")?.ToString();
+        if (!string.IsNullOrWhiteSpace(departmentFilter))
+        {
+            results = results.Where(e => e.Department == departmentFilter);
+        }
+
+        var isActiveFilter = filterModel.GetFilterValue("IsActive");
+        if (isActiveFilter is bool active)
+        {
+            results = results.Where(e => e.IsActive == active);
+        }
+
+        autoSearchResults = results.ToList();
+        isAutoSearching = false;
+
+        AddSearchHistory("自動員工搜尋", $"名稱: {nameFilter}, 部門: {departmentFilter}", autoSearchResults.Count);
+        StateHasChanged();
+    }
+
+    private async Task HandleBuilderSearch(SearchFilterModel filterModel)
+    {
+        await Task.Delay(600); // 模擬搜尋延遲
+
+        var results = allOrders.AsQueryable();
+
+        var orderNumberFilter = filterModel.GetFilterValue("OrderNumber")?.ToString();
+        if (!string.IsNullOrWhiteSpace(orderNumberFilter))
+        {
+            results = results.Where(o => o.OrderNumber.Contains(orderNumberFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var customerFilter = filterModel.GetFilterValue("Customer")?.ToString();
+        if (!string.IsNullOrWhiteSpace(customerFilter))
+        {
+            results = results.Where(o => o.Customer.Contains(customerFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var statusFilter = filterModel.GetFilterValue("Status")?.ToString();
+        if (!string.IsNullOrWhiteSpace(statusFilter))
+        {
+            results = results.Where(o => o.Status == statusFilter);
+        }
+
+        var amountRangeFilter = filterModel.GetFilterValue("AmountRange") as NumberRange;
+        if (amountRangeFilter != null)
+        {
+            if (amountRangeFilter.Min.HasValue)
+                results = results.Where(o => o.Amount >= amountRangeFilter.Min.Value);
+            if (amountRangeFilter.Max.HasValue)
+                results = results.Where(o => o.Amount <= amountRangeFilter.Max.Value);
+        }
+
+        builderSearchResults = results.ToList();
+
+        AddSearchHistory("建構器訂單搜尋", $"訂單號: {orderNumberFilter}, 客戶: {customerFilter}, 狀態: {statusFilter}", builderSearchResults.Count);
+        StateHasChanged();
+    }
+
+    private void AddSearchHistory(string filterType, string description, int resultCount)
+    {
+        searchHistory.Add(new SearchHistoryItem
+        {
+            Time = DateTime.Now,
+            FilterType = filterType,
+            Description = description,
+            ResultCount = resultCount
+        });
+
+        // 保持歷史記錄不超過 50 筆
+        if (searchHistory.Count > 50)
+        {
+            searchHistory.RemoveAt(0);
+        }
+    }
+
+    private void ClearSearchHistory()
+    {
+        searchHistory.Clear();
+        StateHasChanged();
+    }    private string GetOrderStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Pending" => "warning",
+            "Processing" => "info",
+            "Completed" => "success",
+            "Cancelled" => "danger",
+            _ => "secondary"
+        };
+    }
+
+    // 表格相關事件處理方法
+    private async Task HandleProductRowClick(ProductResult product)
+    {
+        // 模擬產品詳情跳轉
+        await Task.Delay(100);
+        // NavigationManager.NavigateTo($"/products/{product.Name}");
+    }
+
+    private string GetProductRowClass(ProductResult product)
+    {
+        return product.IsAvailable ? "" : "table-warning";
+    }
+
+    private async Task HandleOrderSort(string propertyName)
+    {
+        await Task.Delay(200); // 模擬排序處理
+        
+        // 實際應用中這裡會重新查詢資料
+        builderSearchResults = propertyName switch
+        {
+            nameof(OrderResult.OrderNumber) => builderSearchResults.OrderBy(o => o.OrderNumber).ToList(),
+            nameof(OrderResult.Amount) => builderSearchResults.OrderByDescending(o => o.Amount).ToList(),
+            nameof(OrderResult.OrderDate) => builderSearchResults.OrderByDescending(o => o.OrderDate).ToList(),
+            _ => builderSearchResults
+        };
+        
+        StateHasChanged();
+    }
+
+    // 操作方法
+    private void ViewCustomer(CustomerResult customer)
+    {
+        // 實作客戶檢視邏輯
+    }
+
+    private void EditCustomer(CustomerResult customer)
+    {
+        // 實作客戶編輯邏輯
+    }
+
+    private void ViewOrder(OrderResult order)
+    {
+        // 實作訂單檢視邏輯
+    }    private void ProcessOrder(OrderResult order)
+    {
+        // 實作訂單處理邏輯
+    }
+
+    private void LoadInitialData()
+    {
+        // 預設載入一些基本客戶資料
+        basicSearchResults = allCustomers.Take(3).ToList();
+        
+        // 預設載入一些產品資料
+        advancedSearchResults = allProducts.Take(4).ToList();
+        
+        // 預設載入一些員工資料
+        autoSearchResults = allEmployees.Where(e => e.IsActive).ToList();
+        
+        // 預設載入一些訂單資料
+        builderSearchResults = allOrders.Take(3).ToList();
+        
+        // 添加初始化歷史記錄
+        AddSearchHistory("初始載入", "預設顯示部分資料", basicSearchResults.Count + advancedSearchResults.Count + autoSearchResults.Count + builderSearchResults.Count);
+    }
+}

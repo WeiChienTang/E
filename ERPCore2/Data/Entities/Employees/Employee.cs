@@ -18,14 +18,8 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "員工代碼")]
         [Required(ErrorMessage = "請輸入員工代碼")]
         [MaxLength(20, ErrorMessage = "員工代碼不可超過20個字元")]
-        public string EmployeeCode { get; set; } = string.Empty;        /// <summary>
-        /// 姓名
-        /// </summary>
-        [Display(Name = "姓名")]
-        [Required(ErrorMessage = "請輸入姓名")]
-        [MaxLength(50, ErrorMessage = "姓名不可超過50個字元")]
-        public string Name { get; set; } = string.Empty;
-
+        public string EmployeeCode { get; set; } = string.Empty;
+        
         /// <summary>
         /// 名字
         /// </summary>

@@ -41,9 +41,8 @@
                         style="@(EnableRowClick ? $"cursor: {RowClickCursor};" : "")">
                         
                         @foreach (var column in ColumnDefinitions ?? new List<TableColumnDefinition>())
-                        {
-                            <td class="@column.CellCssClass" style="@column.CellStyle">
-                                @if (column.CustomTemplate != null)
+                        {                            <td class="@column.CellCssClass" style="@column.CellStyle">
+                                @if (column.CustomTemplate != null && item != null)
                                 {
                                     @column.CustomTemplate(item)
                                 }
@@ -284,14 +283,6 @@
         {
             return $"<span class=\"badge {badgeMap[value]}\">{HttpUtility.HtmlEncode(value.ToString() ?? "")}</span>";
         }
-        
-        return $"<span class=\"badge bg-secondary\">{HttpUtility.HtmlEncode(value.ToString() ?? "")}</span>";
-    }
-
-    public enum TableSize
-    {
-        Small,
-        Normal,
-        Large
+          return $"<span class=\"badge bg-secondary\">{HttpUtility.HtmlEncode(value.ToString() ?? "")}</span>";
     }
 }

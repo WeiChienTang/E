@@ -1,0 +1,399 @@
+@page "/demo/tables/generic"
+@using ERPCore2.Components.Shared.Tables
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+
+<PageTitle>GenericTableComponent 示範</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-table me-2"></i>
+                    GenericTableComponent 示範
+                </h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="/">首頁</a></li>
+                        <li class="breadcrumb-item"><a href="/demo">組件示範</a></li>
+                        <li class="breadcrumb-item active">表格組件</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- 基本表格示範 -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-table me-2"></i>
+                        基本表格功能
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">展示基本的資料顯示、格式化和操作功能</p>
+                    
+                    <ERPCore2.Components.Shared.Tables.GenericTableComponent TItem="EmployeeDemo"
+                        Items="@employees"
+                        ColumnDefinitions="@employeeColumns"
+                        ShowActions="true"
+                        EnableRowClick="true"
+                        EnableSorting="true"
+                        OnRowClick="@HandleEmployeeClick"
+                        OnSort="@HandleSort"
+                        IsStriped="true"
+                        IsHoverable="true">
+                        <ActionsTemplate Context="employee">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-primary" 
+                                        @onclick="() => EditEmployee(employee)">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-info"
+                                        @onclick="() => ViewEmployee(employee)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-danger"
+                                        @onclick="() => DeleteEmployee(employee)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </ActionsTemplate>
+                    </ERPCore2.Components.Shared.Tables.GenericTableComponent>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 產品表格示範 -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-box me-2"></i>
+                        產品管理表格
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">展示貨幣格式化、狀態徽章和自定義範本</p>                    <ERPCore2.Components.Shared.Tables.GenericTableComponent TItem="ProductDemo"
+                        Items="@products"
+                        ColumnDefinitions="@productColumns"
+                        ShowActions="true"
+                        Size="TableSize.Small"
+                        IsBordered="true">
+                        <ActionsTemplate Context="product">
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                        type="button" data-bs-toggle="dropdown">
+                                    操作
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" @onclick="() => EditProduct(product)">
+                                        <i class="fas fa-edit me-1"></i>編輯
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="#" @onclick="() => CopyProduct(product)">
+                                        <i class="fas fa-copy me-1"></i>複製
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="#" @onclick="() => DeleteProduct(product)">
+                                        <i class="fas fa-trash me-1"></i>刪除
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </ActionsTemplate>
+                    </ERPCore2.Components.Shared.Tables.GenericTableComponent>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 空資料表格示範 -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-inbox me-2"></i>
+                        空資料狀態
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">展示沒有資料時的顯示效果</p>
+                    
+                    <ERPCore2.Components.Shared.Tables.GenericTableComponent TItem="EmployeeDemo"
+                        Items="@emptyList"
+                        ColumnDefinitions="@employeeColumns"
+                        EmptyMessage="目前沒有員工資料">
+                        <EmptyTemplate>
+                            <div class="text-center py-5">
+                                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">沒有找到員工資料</h5>
+                                <p class="text-muted">請先新增員工資料或檢查篩選條件</p>
+                                <button class="btn btn-primary">
+                                    <i class="fas fa-plus me-1"></i>新增員工
+                                </button>
+                            </div>
+                        </EmptyTemplate>
+                    </ERPCore2.Components.Shared.Tables.GenericTableComponent>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作日誌 -->
+    @if (actionLogs.Any())
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-history me-2"></i>
+                            操作日誌
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <ul class="mb-0">
+                                @foreach (var log in actionLogs.TakeLast(5))
+                                {
+                                    <li>@log</li>
+                                }
+                            </ul>
+                        </div>
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="ClearLogs">
+                            清除日誌
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    // 示範資料模型
+    public class EmployeeDemo
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Department { get; set; } = string.Empty;
+        public decimal Salary { get; set; }
+        public DateTime HireDate { get; set; }
+        public bool IsActive { get; set; }
+        public string Status { get; set; } = string.Empty;
+    }
+
+    public class ProductDemo
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public int Stock { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public bool IsDiscounted { get; set; }
+    }
+
+    // 資料集合
+    private List<EmployeeDemo> employees = new();
+    private List<ProductDemo> products = new();
+    private List<EmployeeDemo> emptyList = new();
+    private List<string> actionLogs = new();
+
+    // 欄位定義
+    private List<TableColumnDefinition> employeeColumns = new();
+    private List<TableColumnDefinition> productColumns = new();
+
+    protected override void OnInitialized()
+    {
+        InitializeData();
+        SetupColumns();
+    }
+
+    private void InitializeData()
+    {
+        // 初始化員工資料
+        employees = new List<EmployeeDemo>
+        {
+            new() { Id = 1, Name = "張小明", Email = "ming@company.com", Department = "資訊部", 
+                   Salary = 65000, HireDate = new DateTime(2022, 3, 15), IsActive = true, Status = "在職" },
+            new() { Id = 2, Name = "李美華", Email = "meihua@company.com", Department = "行銷部", 
+                   Salary = 58000, HireDate = new DateTime(2021, 8, 20), IsActive = true, Status = "在職" },
+            new() { Id = 3, Name = "王大偉", Email = "david@company.com", Department = "業務部", 
+                   Salary = 72000, HireDate = new DateTime(2020, 11, 5), IsActive = false, Status = "留職停薪" },
+            new() { Id = 4, Name = "陳淑芬", Email = "sufen@company.com", Department = "人事部", 
+                   Salary = 60000, HireDate = new DateTime(2023, 1, 10), IsActive = true, Status = "在職" },
+            new() { Id = 5, Name = "林志豪", Email = "zhihao@company.com", Department = "財務部", 
+                   Salary = 68000, HireDate = new DateTime(2022, 7, 25), IsActive = true, Status = "在職" }
+        };
+
+        // 初始化產品資料
+        products = new List<ProductDemo>
+        {
+            new() { Id = 1, Name = "筆記型電腦", Category = "電腦設備", Price = 35000, Stock = 15, 
+                   CreatedDate = new DateTime(2024, 1, 1), Status = "上架", IsDiscounted = false },
+            new() { Id = 2, Name = "無線滑鼠", Category = "週邊設備", Price = 890, Stock = 50, 
+                   CreatedDate = new DateTime(2024, 2, 15), Status = "上架", IsDiscounted = true },
+            new() { Id = 3, Name = "機械鍵盤", Category = "週邊設備", Price = 2500, Stock = 0, 
+                   CreatedDate = new DateTime(2024, 3, 1), Status = "缺貨", IsDiscounted = false },
+            new() { Id = 4, Name = "顯示器", Category = "電腦設備", Price = 8900, Stock = 8, 
+                   CreatedDate = new DateTime(2024, 2, 20), Status = "上架", IsDiscounted = true },
+            new() { Id = 5, Name = "印表機", Category = "辦公設備", Price = 4500, Stock = 3, 
+                   CreatedDate = new DateTime(2024, 1, 10), Status = "下架", IsDiscounted = false }
+        };
+    }
+
+    private void SetupColumns()
+    {
+        // 員工表格欄位定義
+        employeeColumns = new List<TableColumnDefinition>
+        {
+            TableColumnDefinition.Text("編號", "Id", "text-center"),
+            new TableColumnDefinition 
+            { 
+                Title = "姓名", 
+                PropertyName = "Name", 
+                IconClass = "fas fa-user",
+                IsSortable = true
+            },
+            TableColumnDefinition.Text("電子郵件", "Email"),
+            new TableColumnDefinition 
+            { 
+                Title = "部門", 
+                PropertyName = "Department",
+                IconClass = "fas fa-building",
+                IsSortable = true
+            },
+            TableColumnDefinition.Currency("薪資", "Salary", "NT$", "N0", "text-end"),
+            TableColumnDefinition.Date("到職日期", "HireDate", "yyyy/MM/dd"),
+            TableColumnDefinition.Boolean("狀態", "IsActive", "啟用", "停用"),
+            TableColumnDefinition.Status("工作狀態", "Status", new Dictionary<object, string>
+            {
+                { "在職", "bg-success" },
+                { "留職停薪", "bg-warning" },
+                { "離職", "bg-danger" }
+            })
+        };
+
+        // 產品表格欄位定義
+        productColumns = new List<TableColumnDefinition>
+        {
+            TableColumnDefinition.Text("產品編號", "Id", "text-center"),
+            new TableColumnDefinition 
+            { 
+                Title = "產品名稱", 
+                PropertyName = "Name",
+                IconClass = "fas fa-box"
+            },
+            TableColumnDefinition.Text("分類", "Category"),
+            TableColumnDefinition.Currency("價格", "Price", "NT$", "N0", "text-end"),            new TableColumnDefinition
+            {
+                Title = "庫存",
+                PropertyName = "Stock",
+                CellCssClass = "text-center",
+                CustomTemplate = item => 
+                {
+                    if (item is ProductDemo product)
+                    {
+                        var badgeClass = product.Stock > 10 ? "bg-success" : 
+                                       product.Stock > 0 ? "bg-warning" : "bg-danger";
+                        return @<span class="badge @badgeClass">@product.Stock</span>;
+                    }
+                    return @<span>-</span>;
+                }
+            },
+            TableColumnDefinition.Date("建立日期", "CreatedDate"),
+            TableColumnDefinition.Status("狀態", "Status", new Dictionary<object, string>
+            {
+                { "上架", "bg-success" },
+                { "下架", "bg-secondary" },
+                { "缺貨", "bg-danger" }
+            }),            new TableColumnDefinition
+            {
+                Title = "折扣",
+                PropertyName = "IsDiscounted",
+                CellCssClass = "text-center",
+                CustomTemplate = item => 
+                {
+                    if (item is ProductDemo product)
+                    {
+                        return @<span>
+                            @if (product.IsDiscounted)
+                            {
+                                <i class="fas fa-tag text-danger" title="有折扣"></i>
+                            }
+                            else
+                            {
+                                <i class="fas fa-minus text-muted" title="無折扣"></i>
+                            }
+                        </span>;
+                    }
+                    return @<span>-</span>;
+                }
+            }
+        };
+    }
+
+    // 事件處理
+    private void HandleEmployeeClick(EmployeeDemo employee)
+    {
+        actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 點擊員工: {employee.Name}");
+        StateHasChanged();
+    }
+
+    private void HandleSort(string propertyName)
+    {
+        actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 排序欄位: {propertyName}");
+        StateHasChanged();
+    }
+
+    private void EditEmployee(EmployeeDemo employee)
+    {
+        actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 編輯員工: {employee.Name}");
+        StateHasChanged();
+    }
+
+    private void ViewEmployee(EmployeeDemo employee)
+    {
+        actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 查看員工: {employee.Name}");
+        StateHasChanged();
+    }
+
+    private void DeleteEmployee(EmployeeDemo employee)
+    {
+        actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 刪除員工: {employee.Name}");
+        StateHasChanged();
+    }
+
+    private void EditProduct(ProductDemo product)
+    {
+        actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 編輯產品: {product.Name}");
+        StateHasChanged();
+    }
+
+    private void CopyProduct(ProductDemo product)
+    {
+        actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 複製產品: {product.Name}");
+        StateHasChanged();
+    }
+
+    private void DeleteProduct(ProductDemo product)
+    {
+        actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 刪除產品: {product.Name}");
+        StateHasChanged();
+    }
+
+    private void ClearLogs()
+    {
+        actionLogs.Clear();
+        StateHasChanged();
+    }
+}

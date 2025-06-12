@@ -1,0 +1,435 @@
+@page "/demo/headers/generic"
+@using ERPCore2.Components.Shared.Headers
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+
+<PageTitle>GenericHeaderComponent 示範</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-heading me-2"></i>
+                    GenericHeaderComponent 示範
+                </h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="/">首頁</a></li>
+                        <li class="breadcrumb-item"><a href="/demo">組件示範</a></li>
+                        <li class="breadcrumb-item active">標題組件</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- 基本頁面標題示範 -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-heading me-2"></i>
+                        基本頁面標題
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">展示基本的頁面標題功能，包含圖標、副標題和麵包屑導航</p>
+                    
+                    <ERPCore2.Components.Shared.Headers.GenericHeaderComponent
+                        Title="產品管理系統"
+                        Subtitle="管理和維護產品資訊"
+                        TitleIcon="box"
+                        BreadcrumbItems="@basicBreadcrumbs"
+                        ShowDivider="true">
+                    </ERPCore2.Components.Shared.Headers.GenericHeaderComponent>
+                    
+                    <div class="mt-4">
+                        <p class="text-muted">此範例展示了帶有圖標、副標題、麵包屑和分隔線的基本頁面標題。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 帶動作按鈕的標題 -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-tools me-2"></i>
+                        帶動作按鈕的標題
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">展示帶有操作按鈕的標題，適用於管理頁面</p>
+                      <ERPCore2.Components.Shared.Headers.GenericHeaderComponent
+                        Title="員工清單"
+                        Subtitle="@($"目前共有 {totalEmployees} 位員工")"
+                        TitleIcon="people"
+                        HeadingLevel="h3"
+                        BreadcrumbItems="@employeeBreadcrumbs">
+                        <ActionButtons>
+                            <button class="btn btn-primary" @onclick="AddEmployee">
+                                <i class="fas fa-plus me-1"></i>新增員工
+                            </button>
+                            <button class="btn btn-outline-secondary" @onclick="ExportData">
+                                <i class="fas fa-download me-1"></i>匯出
+                            </button>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-cog me-1"></i>設定
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" @onclick="OpenSettings">
+                                        <i class="fas fa-cog me-1"></i>偏好設定
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="#" @onclick="ManageColumns">
+                                        <i class="fas fa-columns me-1"></i>欄位管理
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </ActionButtons>
+                    </ERPCore2.Components.Shared.Headers.GenericHeaderComponent>
+                    
+                    <div class="mt-4">
+                        <p class="text-muted">此範例展示了如何在標題右側添加操作按鈕和下拉選單。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 卡片標題示範 -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <ERPCore2.Components.Shared.Headers.GenericHeaderComponent
+                    Title="用戶資訊"
+                    Subtitle="檢視和編輯用戶詳細資料"
+                    TitleIcon="person-circle"
+                    IsCardHeader="true">
+                    <ActionButtons>
+                        <button class="btn btn-sm btn-primary" @onclick="EditUser">
+                            <i class="fas fa-edit me-1"></i>編輯
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="DeleteUser">
+                            <i class="fas fa-trash me-1"></i>刪除
+                        </button>
+                    </ActionButtons>
+                </ERPCore2.Components.Shared.Headers.GenericHeaderComponent>
+                <div class="card-body">
+                    <p class="text-muted">這是一個使用 GenericHeaderComponent 作為卡片標題的範例。</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>姓名：</strong> 張小明<br>
+                            <strong>電子郵件：</strong> ming@example.com<br>
+                            <strong>部門：</strong> 資訊部
+                        </div>
+                        <div class="col-md-6">
+                            <strong>職位：</strong> 系統工程師<br>
+                            <strong>到職日期：</strong> 2022/03/15<br>
+                            <strong>狀態：</strong> <span class="badge bg-success">在職</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 載入狀態示範 -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-spinner me-2"></i>
+                        載入狀態
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">展示載入狀態的標題顯示</p>
+                    
+                    <ERPCore2.Components.Shared.Headers.GenericHeaderComponent
+                        Title="資料分析報告"
+                        Subtitle="正在生成報告內容..."
+                        TitleIcon="chart-bar"
+                        IsLoading="@isLoadingReport"
+                        LoadingText="正在處理資料...">
+                    </ERPCore2.Components.Shared.Headers.GenericHeaderComponent>
+                    
+                    <div class="mt-4">
+                        <button class="btn btn-primary" @onclick="ToggleLoading">
+                            @(isLoadingReport ? "停止載入" : "開始載入")
+                        </button>
+                        <p class="text-muted mt-2">點擊按鈕切換載入狀態。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 不同標題層級示範 -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list-ol me-2"></i>
+                        不同標題層級
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">展示不同的 HTML 標題層級</p>
+                    
+                    <div class="mb-4">
+                        <ERPCore2.Components.Shared.Headers.GenericHeaderComponent
+                            Title="主要標題 (H1)"
+                            HeadingLevel="h1"
+                            TitleIcon="star"
+                            ShowDivider="true">
+                        </ERPCore2.Components.Shared.Headers.GenericHeaderComponent>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <ERPCore2.Components.Shared.Headers.GenericHeaderComponent
+                            Title="次要標題 (H2)"
+                            HeadingLevel="h2"
+                            TitleIcon="star-half"
+                            ShowDivider="true">
+                        </ERPCore2.Components.Shared.Headers.GenericHeaderComponent>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <ERPCore2.Components.Shared.Headers.GenericHeaderComponent
+                            Title="第三級標題 (H3)"
+                            HeadingLevel="h3"
+                            TitleIcon="circle"
+                            ShowDivider="true">
+                        </ERPCore2.Components.Shared.Headers.GenericHeaderComponent>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <ERPCore2.Components.Shared.Headers.GenericHeaderComponent
+                            Title="第四級標題 (H4)"
+                            HeadingLevel="h4"
+                            TitleIcon="dot-circle">
+                        </ERPCore2.Components.Shared.Headers.GenericHeaderComponent>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 自定義樣式示範 -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-palette me-2"></i>
+                        自定義樣式
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">展示自定義 CSS 類別的使用</p>
+                    
+                    <ERPCore2.Components.Shared.Headers.GenericHeaderComponent
+                        Title="警告訊息"
+                        Subtitle="這是一個重要的系統通知"
+                        TitleIcon="exclamation-triangle"
+                        TitleClass="text-warning"
+                        SubtitleClass="text-danger"
+                        CssClass="border border-warning rounded p-3 bg-light">
+                    </ERPCore2.Components.Shared.Headers.GenericHeaderComponent>
+                    
+                    <div class="mt-4">
+                        <p class="text-muted">此範例展示了如何使用自定義 CSS 類別來改變標題的外觀。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 響應式佈局示範 -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-mobile-alt me-2"></i>
+                        響應式佈局
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">展示在不同螢幕尺寸下的佈局行為</p>
+                    
+                    <div class="mb-4">
+                        <h6>堆疊式佈局 (預設)</h6>
+                        <ERPCore2.Components.Shared.Headers.GenericHeaderComponent
+                            Title="訂單管理"
+                            Subtitle="管理所有客戶訂單"
+                            TitleIcon="shopping-cart"
+                            StackOnMobile="true">
+                            <ActionButtons>
+                                <button class="btn btn-primary">新增訂單</button>
+                                <button class="btn btn-outline-secondary">篩選</button>
+                                <button class="btn btn-outline-info">搜尋</button>
+                            </ActionButtons>
+                        </ERPCore2.Components.Shared.Headers.GenericHeaderComponent>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>始終水平排列</h6>
+                        <ERPCore2.Components.Shared.Headers.GenericHeaderComponent
+                            Title="庫存管理"
+                            Subtitle="即時庫存狀態"
+                            TitleIcon="boxes"
+                            StackOnMobile="false">
+                            <ActionButtons>
+                                <button class="btn btn-success btn-sm">補貨</button>
+                                <button class="btn btn-warning btn-sm">盤點</button>
+                            </ActionButtons>
+                        </ERPCore2.Components.Shared.Headers.GenericHeaderComponent>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <strong>提示：</strong>調整瀏覽器視窗大小來查看響應式效果。第一個範例在小螢幕上會垂直堆疊，第二個則始終保持水平排列。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作日誌 -->
+    @if (actionLogs.Any())
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-history me-2"></i>
+                            操作日誌
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <ul class="mb-0">
+                                @foreach (var log in actionLogs.TakeLast(8))
+                                {
+                                    <li>@log</li>
+                                }
+                            </ul>
+                        </div>
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="ClearLogs">
+                            清除日誌
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    // 狀態變數
+    private bool isLoadingReport = false;
+    private int totalEmployees = 125;
+    private List<string> actionLogs = new();
+
+    // 麵包屑資料
+    private List<GenericHeaderComponent.BreadcrumbItem> basicBreadcrumbs = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> employeeBreadcrumbs = new();
+
+    protected override void OnInitialized()
+    {
+        InitializeBreadcrumbs();
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        // 基本麵包屑
+        basicBreadcrumbs = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("產品管理", "/products"),
+            new("產品清單")
+        };
+
+        // 員工管理麵包屑
+        employeeBreadcrumbs = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("人事管理", "/hr"),
+            new("員工管理", "/employees"),
+            new("員工清單")
+        };
+    }
+
+    // 事件處理方法
+    private void AddEmployee()
+    {
+        actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 點擊「新增員工」按鈕");
+        StateHasChanged();
+    }
+
+    private void ExportData()
+    {
+        actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 點擊「匯出」按鈕");
+        StateHasChanged();
+    }
+
+    private void OpenSettings()
+    {
+        actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 開啟偏好設定");
+        StateHasChanged();
+    }
+
+    private void ManageColumns()
+    {
+        actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 開啟欄位管理");
+        StateHasChanged();
+    }
+
+    private void EditUser()
+    {
+        actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 編輯用戶資訊");
+        StateHasChanged();
+    }
+
+    private void DeleteUser()
+    {
+        actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 刪除用戶 (確認對話框應在此顯示)");
+        StateHasChanged();
+    }
+
+    private async Task ToggleLoading()
+    {
+        if (isLoadingReport)
+        {
+            isLoadingReport = false;
+            actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 停止載入狀態");
+        }
+        else
+        {
+            isLoadingReport = true;
+            actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 開始載入狀態");
+            StateHasChanged();
+            
+            // 模擬 3 秒後自動完成載入
+            await Task.Delay(3000);
+            isLoadingReport = false;
+            actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 載入完成 (自動)");
+        }
+        StateHasChanged();
+    }
+
+    private void ClearLogs()
+    {
+        actionLogs.Clear();
+        StateHasChanged();
+    }
+}
