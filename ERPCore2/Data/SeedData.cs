@@ -396,7 +396,9 @@ namespace ERPCore2.Data
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 });
-            }            // 管理員 - 除了系統管理外的所有權限
+            }
+            
+            // 管理員 - 除了系統管理外的所有權限
             var adminPermissions = permissions.Where(p => p.PermissionCode != "System.Admin");
             foreach (var permission in adminPermissions)
             {

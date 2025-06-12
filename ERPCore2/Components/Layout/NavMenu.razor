@@ -69,47 +69,6 @@
                         </NavLink>
                     </div>
                 </PermissionCheck>
-                
-                <!-- 系統管理 - 需要 System.Admin 權限 -->
-                <PermissionCheck Permission="System.Admin">
-                    <div class="nav-item px-3">
-                        <div class="nav-link dropdown" onclick="toggleDropdown(event)">
-                            <span class="bi bi-gear-fill" aria-hidden="true"></span> 系統管理
-                            <span class="bi bi-chevron-down ms-auto dropdown-arrow"></span>
-                        </div>                        <div class="dropdown-menu">
-                            <NavLink class="dropdown-item" href="/admin">
-                                <span class="bi bi-house-gear" aria-hidden="true"></span> 管理首頁
-                            </NavLink>
-                            <hr class="dropdown-divider">
-                            <NavLink class="dropdown-item" href="/admin/users">
-                                <span class="bi bi-person-lines-fill" aria-hidden="true"></span> 員工管理
-                            </NavLink>
-                            <NavLink class="dropdown-item" href="/admin/roles">
-                                <span class="bi bi-shield-fill" aria-hidden="true"></span> 角色管理
-                            </NavLink>
-                            <NavLink class="dropdown-item" href="/admin/permissions">
-                                <span class="bi bi-key-fill" aria-hidden="true"></span> 權限管理
-                            </NavLink>
-                        </div>
-                    </div>
-                </PermissionCheck>
-                  <!-- 報表功能 - 需要 Report.View 權限 -->
-                <PermissionCheck Permission="Report.View">
-                    <div class="nav-item px-3">
-                        <div class="nav-link dropdown" onclick="toggleDropdown(event)">
-                            <span class="bi bi-bar-chart-fill" aria-hidden="true"></span> 報表管理
-                            <span class="bi bi-chevron-down ms-auto dropdown-arrow"></span>
-                        </div>
-                        <div class="dropdown-menu">
-                            <NavLink class="dropdown-item" href="/reports/customer">
-                                <span class="bi bi-people" aria-hidden="true"></span> 客戶報表
-                            </NavLink>
-                            <NavLink class="dropdown-item" href="/reports/system">
-                                <span class="bi bi-gear" aria-hidden="true"></span> 系統報表
-                            </NavLink>
-                        </div>
-                    </div>
-                </PermissionCheck>
             </Authorized>
         </AuthorizeView>
         
@@ -135,35 +94,26 @@
                 <NavLink class="dropdown-item" href="sharedcomponentsdemo/details">
                     <span class="bi bi-card-text" aria-hidden="true"></span> Details
                 </NavLink>
-                <NavLink class="dropdown-item" href="sharedcomponentsdemo/forms">
-                    <span class="bi bi-ui-checks" aria-hidden="true"></span> Forms
-                </NavLink>                <NavLink class="dropdown-item" href="/header-test">
+                <NavLink class="dropdown-item" href="demo/forms">
+                    <span class="bi bi-ui-checks" aria-hidden="true"></span> FormsDemo
+                </NavLink>
+                <NavLink class="dropdown-item" href="demo/forms/generic">
+                    <span class="bi bi-ui-checks" aria-hidden="true"></span> GenericFormDemo
+                </NavLink>
+                <NavLink class="dropdown-item" href="demo/forms/search-filter">
+                    <span class="bi bi-ui-checks" aria-hidden="true"></span> GenericSearchFilterDemo
+                </NavLink>
+                <NavLink class="dropdown-item" href="demo/headers/generic">
                     <span class="bi bi-header" aria-hidden="true"></span> Headers
                 </NavLink>
                 <NavLink class="dropdown-item" href="sharedcomponentsdemo/loading">
                     <span class="bi bi-arrow-repeat" aria-hidden="true"></span> Loading
+                </NavLink>        
+                <NavLink class="dropdown-item" href="demo/tables/generic">
+                    <span class="bi bi-table" aria-hidden="true"></span> GenericTableDemoTables
                 </NavLink>
-                <NavLink class="dropdown-item" href="sharedcomponentsdemo/modals">
-                    <span class="bi bi-window" aria-hidden="true"></span> Modals
-                </NavLink>                <NavLink class="dropdown-item" href="sharedcomponentsdemo/tables">
-                    <span class="bi bi-table" aria-hidden="true"></span> Tables
-                </NavLink>
-                <NavLink class="dropdown-item" href="/search-filter-test">
-                    <span class="bi bi-funnel-fill" aria-hidden="true"></span> 搜尋篩選
-                </NavLink>                <NavLink class="dropdown-item" href="/form-test">
-                    <span class="bi bi-ui-checks-grid" aria-hidden="true"></span> 動態表單
-                </NavLink>                <NavLink class="dropdown-item" href="/filter-form-test">
-                    <span class="bi bi-funnel" aria-hidden="true"></span> 篩選器表單測試
-                </NavLink>
-                <NavLink class="dropdown-item" href="/simple-test">
-                    <span class="bi bi-check-circle" aria-hidden="true"></span> 簡單測試
-                </NavLink>
-                <hr class="dropdown-divider">
-                <NavLink class="dropdown-item" href="generic-components-demo">
-                    <span class="bi bi-gear-wide-connected" aria-hidden="true"></span> 通用組件示範
-                </NavLink>
-                <NavLink class="dropdown-item" href="generic-test">
-                    <span class="bi bi-lightning-fill" aria-hidden="true"></span> 組件快速測試
+                <NavLink class="dropdown-item" href="demo/tables">
+                    <span class="bi bi-table" aria-hidden="true"></span> IndexTables
                 </NavLink>
             </div>
         </div>
