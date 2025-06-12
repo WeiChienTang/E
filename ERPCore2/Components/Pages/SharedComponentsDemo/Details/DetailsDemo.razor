@@ -1,0 +1,433 @@
+@page "/sharedcomponentsdemo/details/new"
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Buttons
+@using static ERPCore2.Components.Shared.Buttons.ButtonComponent
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components
+@rendermode InteractiveServer
+
+<div class="container-fluid">
+    <h1 class="h3 mb-4">GenericDetails 元件展示</h1>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        GenericDetailsComponent 元件範例
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">
+                        GenericDetailsComponent 元件提供通用的詳細資料展示功能，支援分頁模式、摺疊模式、
+                        多種資料格式化、延遲載入和自訂互動行為。
+                    </p>
+                    
+                    <div class="mb-4">
+                        <h6>模式切換：</h6>
+                        <div class="btn-group" role="group">
+                            <button class="btn @(useTabMode ? "btn-primary" : "btn-outline-primary")" 
+                                    @onclick="() => ToggleMode(true)">
+                                分頁模式
+                            </button>
+                            <button class="btn @(!useTabMode ? "btn-primary" : "btn-outline-primary")" 
+                                    @onclick="() => ToggleMode(false)">
+                                摺疊模式
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分頁模式範例 -->
+    @if (useTabMode)
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">客戶詳細資料 - 分頁模式</h6>
+                    </div>
+                    <div class="card-body">
+                        <GenericDetailsComponent Configuration="@customerTabConfig" 
+                                      OnSectionLoad="HandleSectionLoad"
+                                      OnItemClick="HandleItemClick"
+                                      ActionButtons="@ActionButtonsForCustomer">
+                        </GenericDetailsComponent>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- 摺疊模式範例 -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">訂單詳細資料 - 摺疊模式</h6>
+                    </div>
+                    <div class="card-body">
+                        <GenericDetailsComponent Configuration="@orderAccordionConfig" 
+                                      OnSectionLoad="HandleSectionLoad"
+                                      OnItemClick="HandleItemClick"
+                                      ActionButtons="@ActionButtonsForOrder">
+                        </GenericDetailsComponent>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- 使用說明 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        使用說明
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>主要特色：</h6>
+                            <ul>
+                                <li><strong>配置驅動：</strong>透過配置物件描述展示結構</li>
+                                <li><strong>多種模式：</strong>支援分頁模式和摺疊模式</li>
+                                <li><strong>延遲載入：</strong>區塊資料可按需載入</li>
+                                <li><strong>格式化：</strong>支援多種資料類型格式化</li>
+                                <li><strong>互動性：</strong>支援項目點擊事件</li>
+                                <li><strong>客製化：</strong>支援自訂範本和樣式</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>支援的資料類型：</h6>
+                            <ul>
+                                <li>純文字、數字、金額</li>
+                                <li>日期、日期時間</li>
+                                <li>狀態標籤、布林值</li>
+                                <li>連結、電子郵件、電話</li>
+                                <li>清單、百分比</li>
+                                <li>自訂範本</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(actionMessage))
+                    {
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>@actionMessage
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool useTabMode = true;
+    private string actionMessage = string.Empty;
+    private DetailViewConfiguration customerTabConfig = new();
+    private DetailViewConfiguration orderAccordionConfig = new();
+
+    // RenderFragment for action buttons
+    private RenderFragment ActionButtonsForCustomer => __builder =>
+    {
+        <button class="btn btn-primary btn-sm me-2">
+            <i class="fas fa-edit me-1"></i>編輯
+        </button>
+        <button class="btn btn-outline-danger btn-sm">
+            <i class="fas fa-trash me-1"></i>刪除
+        </button>
+    };
+
+    private RenderFragment ActionButtonsForOrder => __builder =>
+    {
+        <button class="btn btn-success btn-sm me-2">
+            <i class="fas fa-check me-1"></i>確認訂單
+        </button>
+        <button class="btn btn-warning btn-sm me-2">
+            <i class="fas fa-pause me-1"></i>暫停處理
+        </button>
+        <button class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-print me-1"></i>列印
+        </button>
+    };
+
+    protected override void OnInitialized()
+    {
+        InitializeCustomerTabConfig();
+        InitializeOrderAccordionConfig();
+    }
+
+    private void ToggleMode(bool tabMode)
+    {
+        useTabMode = tabMode;
+        actionMessage = $"切換到{(tabMode ? "分頁" : "摺疊")}模式";
+        StateHasChanged();
+        
+        // 清除訊息
+        _ = Task.Delay(3000).ContinueWith(_ => 
+        {
+            actionMessage = string.Empty;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private void InitializeCustomerTabConfig()
+    {
+        customerTabConfig = new DetailViewConfiguration
+        {
+            Title = "台北科技股份有限公司",
+            Subtitle = "客戶編號：C001 | VIP 客戶",
+            TitleIcon = "bi bi-building",
+            UseTabs = true,
+            Sections = new List<DetailSection>
+            {
+                new DetailSection
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Icon = "bi bi-info-circle",
+                    Items = new List<DetailItem>
+                    {
+                        new() { Label = "公司名稱", Value = "台北科技股份有限公司", DisplayType = DetailDisplayType.Text },
+                        new() { Label = "統一編號", Value = "12345678", DisplayType = DetailDisplayType.Text },
+                        new() { Label = "客戶類型", Value = "企業客戶", DisplayType = DetailDisplayType.Text },
+                        new() { 
+                            Label = "客戶狀態", 
+                            Value = "Active", 
+                            DisplayType = DetailDisplayType.Status,
+                            Format = new DetailItemFormat 
+                            { 
+                                StatusColors = new Dictionary<string, string>
+                                {
+                                    { "Active", "bg-success" },
+                                    { "Inactive", "bg-danger" },
+                                    { "Pending", "bg-warning" }
+                                }
+                            }
+                        },
+                        new() { Label = "建立日期", Value = DateTime.Now.AddDays(-365), DisplayType = DetailDisplayType.Date },
+                        new() { Label = "最後更新", Value = DateTime.Now.AddDays(-5), DisplayType = DetailDisplayType.DateTime },
+                        new() { Label = "是否VIP", Value = true, DisplayType = DetailDisplayType.Boolean },
+                        new() { 
+                            Label = "信用額度", 
+                            Value = 1000000, 
+                            DisplayType = DetailDisplayType.Currency,
+                            Format = new DetailItemFormat { CurrencySymbol = "NT$", DecimalPlaces = 0 }
+                        }
+                    }
+                },
+                new DetailSection
+                {
+                    Id = "contact",
+                    Title = "聯絡資訊",
+                    Icon = "bi bi-telephone",
+                    Items = new List<DetailItem>
+                    {
+                        new() { Label = "聯絡人", Value = "王大明", DisplayType = DetailDisplayType.Text },
+                        new() { Label = "職稱", Value = "採購經理", DisplayType = DetailDisplayType.Text },
+                        new() { Label = "電話", Value = "02-1234-5678", DisplayType = DetailDisplayType.Phone },
+                        new() { Label = "手機", Value = "0912-345-678", DisplayType = DetailDisplayType.Phone },
+                        new() { Label = "電子郵件", Value = "wang@techcorp.com.tw", DisplayType = DetailDisplayType.Email },
+                        new() { Label = "傳真", Value = "02-1234-5679", DisplayType = DetailDisplayType.Text },
+                        new() { Label = "地址", Value = "台北市信義區信義路五段7號", DisplayType = DetailDisplayType.Text, ContainerCssClass = "col-12" },
+                        new() { 
+                            Label = "官方網站", 
+                            Value = "www.techcorp.com.tw", 
+                            DisplayType = DetailDisplayType.Link,
+                            LinkUrl = "https://www.techcorp.com.tw",
+                            LinkTarget = "_blank"
+                        }
+                    }
+                },
+                new DetailSection
+                {
+                    Id = "transactions",
+                    Title = "交易記錄",
+                    Icon = "bi bi-graph-up",
+                    LazyLoad = true,
+                    Items = new List<DetailItem>() // 將在延遲載入時填充
+                }
+            }
+        };
+    }
+
+    private void InitializeOrderAccordionConfig()
+    {
+        orderAccordionConfig = new DetailViewConfiguration
+        {
+            Title = "訂單 #ORD-2024-001",
+            Subtitle = "建立日期：2024/12/12",
+            TitleIcon = "bi bi-cart",
+            UseTabs = false,
+            Sections = new List<DetailSection>
+            {
+                new DetailSection
+                {
+                    Id = "order-basic",
+                    Title = "訂單基本資訊",
+                    Icon = "bi bi-info-circle",
+                    IsExpanded = true,
+                    Items = new List<DetailItem>
+                    {
+                        new() { Label = "訂單編號", Value = "ORD-2024-001", DisplayType = DetailDisplayType.Text },
+                        new() { Label = "客戶名稱", Value = "台北科技股份有限公司", DisplayType = DetailDisplayType.Text, IsClickable = true, ClickHandler = "viewCustomer" },
+                        new() { 
+                            Label = "訂單狀態", 
+                            Value = "Processing", 
+                            DisplayType = DetailDisplayType.Status,
+                            Format = new DetailItemFormat 
+                            { 
+                                StatusColors = new Dictionary<string, string>
+                                {
+                                    { "Pending", "bg-warning" },
+                                    { "Processing", "bg-info" },
+                                    { "Completed", "bg-success" },
+                                    { "Cancelled", "bg-danger" }
+                                }
+                            }
+                        },
+                        new() { Label = "建立日期", Value = DateTime.Now.AddDays(-3), DisplayType = DetailDisplayType.DateTime },
+                        new() { Label = "預計交貨", Value = DateTime.Now.AddDays(7), DisplayType = DetailDisplayType.Date },
+                        new() { 
+                            Label = "訂單總額", 
+                            Value = 85000, 
+                            DisplayType = DetailDisplayType.Currency,
+                            Format = new DetailItemFormat { CurrencySymbol = "NT$", DecimalPlaces = 0 },
+                            IsHighlight = true
+                        },
+                        new() { 
+                            Label = "付款進度", 
+                            Value = 30, 
+                            DisplayType = DetailDisplayType.Percentage,
+                            Format = new DetailItemFormat { DecimalPlaces = 1 }
+                        },
+                        new() { Label = "備註", Value = "客戶要求加急處理", DisplayType = DetailDisplayType.Text, ContainerCssClass = "col-12" }
+                    }
+                },
+                new DetailSection
+                {
+                    Id = "order-items",
+                    Title = "訂單項目",
+                    Icon = "bi bi-list-ul",
+                    IsExpanded = false,
+                    LazyLoad = true,
+                    Items = new List<DetailItem>() // 將在延遲載入時填充
+                },
+                new DetailSection
+                {
+                    Id = "order-history",
+                    Title = "處理歷程",
+                    Icon = "bi bi-clock-history",
+                    IsExpanded = false,
+                    Items = new List<DetailItem>
+                    {
+                        new() { 
+                            Label = "狀態變更", 
+                            Value = new List<string> { "已建立", "已確認", "處理中" }, 
+                            DisplayType = DetailDisplayType.List,
+                            Format = new DetailItemFormat { ListSeparator = " → " },
+                            ContainerCssClass = "col-12"
+                        },
+                        new() { Label = "建立時間", Value = DateTime.Now.AddDays(-3), DisplayType = DetailDisplayType.DateTime },
+                        new() { Label = "確認時間", Value = DateTime.Now.AddDays(-2), DisplayType = DetailDisplayType.DateTime },
+                        new() { Label = "開始處理", Value = DateTime.Now.AddDays(-1), DisplayType = DetailDisplayType.DateTime },
+                        new() { Label = "處理人員", Value = "張小華", DisplayType = DetailDisplayType.Text },
+                        new() { Label = "最後修改", Value = DateTime.Now.AddHours(-2), DisplayType = DetailDisplayType.DateTime }
+                    }
+                }
+            }
+        };
+    }
+
+    private async Task HandleSectionLoad(string sectionId)
+    {
+        await Task.Delay(1500); // 模擬網路延遲
+        
+        if (sectionId == "transactions")
+        {
+            // 載入客戶交易記錄
+            var section = customerTabConfig.Sections.First(s => s.Id == sectionId);
+            section.Items = new List<DetailItem>
+            {
+                new() { Label = "總交易次數", Value = 45, DisplayType = DetailDisplayType.Number },
+                new() { 
+                    Label = "總交易金額", 
+                    Value = 2580000, 
+                    DisplayType = DetailDisplayType.Currency,
+                    Format = new DetailItemFormat { CurrencySymbol = "NT$", DecimalPlaces = 0 }
+                },
+                new() { Label = "平均訂單金額", Value = 57333, DisplayType = DetailDisplayType.Currency },
+                new() { Label = "最後交易日", Value = DateTime.Now.AddDays(-15), DisplayType = DetailDisplayType.Date },
+                new() { Label = "客戶滿意度", Value = 95.5, DisplayType = DetailDisplayType.Percentage },
+                new() { Label = "逾期付款次數", Value = 2, DisplayType = DetailDisplayType.Number },
+                new() { 
+                    Label = "近期訂單", 
+                    Value = new List<string> { "ORD-2024-089", "ORD-2024-067", "ORD-2024-045" }, 
+                    DisplayType = DetailDisplayType.List,
+                    ContainerCssClass = "col-12"
+                },
+                new() { Label = "信用評等", Value = "AAA", DisplayType = DetailDisplayType.Text, IsHighlight = true }
+            };
+        }
+        else if (sectionId == "order-items")
+        {
+            // 載入訂單項目
+            var section = orderAccordionConfig.Sections.First(s => s.Id == sectionId);
+            section.Items = new List<DetailItem>
+            {
+                new() { 
+                    Label = "產品項目", 
+                    Value = new List<string> { "工業控制器 x 5", "感測器模組 x 10", "配套軟體授權 x 1" }, 
+                    DisplayType = DetailDisplayType.List,
+                    Format = new DetailItemFormat { ListSeparator = "、" },
+                    ContainerCssClass = "col-12"
+                },
+                new() { Label = "項目數量", Value = 16, DisplayType = DetailDisplayType.Number },
+                new() { Label = "單位總價", Value = 78000, DisplayType = DetailDisplayType.Currency },
+                new() { Label = "折扣金額", Value = 3000, DisplayType = DetailDisplayType.Currency },
+                new() { Label = "稅額", Value = 7500, DisplayType = DetailDisplayType.Currency },
+                new() { Label = "運費", Value = 2500, DisplayType = DetailDisplayType.Currency },
+                new() { Label = "重量", Value = "25.5 公斤", DisplayType = DetailDisplayType.Text },
+                new() { Label = "體積", Value = "0.8 立方公尺", DisplayType = DetailDisplayType.Text }
+            };
+        }
+        
+        actionMessage = $"已載入 {sectionId} 區塊資料";
+        
+        // 清除訊息
+        _ = Task.Delay(3000).ContinueWith(_ => 
+        {
+            actionMessage = string.Empty;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private async Task HandleItemClick(GenericDetailsComponent.DetailItemClickEventArgs args)
+    {
+        if (args.Handler == "viewCustomer")
+        {
+            actionMessage = $"點擊了客戶名稱：{args.Item.Value}";
+        }
+        else
+        {
+            actionMessage = $"點擊了項目：{args.Item.Label} - {args.Item.Value}";
+        }
+        
+        StateHasChanged();
+        
+        // 清除訊息
+        await Task.Delay(3000);
+        actionMessage = string.Empty;
+        StateHasChanged();
+    }
+}

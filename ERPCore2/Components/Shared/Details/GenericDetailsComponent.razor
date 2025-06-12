@@ -1,0 +1,495 @@
+@* 通用詳細檢視組件 - 基於配置驅動的詳細資料展示 *@
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Loading
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Badges
+@using static ERPCore2.Components.Shared.Loading.LoadingComponent
+@using Microsoft.AspNetCore.Components.Rendering
+@using Microsoft.AspNetCore.Components.Web
+
+<div class="generic-details @Configuration.CssClass">
+    @* 標題區域 *@
+    @if (!string.IsNullOrEmpty(Configuration.Title))
+    {        <GenericHeaderComponent 
+            Title="@Configuration.Title"
+            Subtitle="@Configuration.Subtitle"
+            TitleIcon="@Configuration.TitleIcon"
+            IsLoading="@Configuration.IsLoading"
+            LoadingText="@Configuration.LoadingText"
+            ShowDivider="true"
+            ActionButtons="@ActionButtons">
+        </GenericHeaderComponent>
+    }
+
+    @* 主要內容區域 *@
+    @if (Configuration.IsLoading)
+    {
+        <div class="text-center py-5">
+            <LoadingComponent IsLoading="true" 
+                            ShowText="true" 
+                            LoadingText="@Configuration.LoadingText"
+                            Size="LoadingSize.Normal" />
+        </div>
+    }
+    else
+    {
+        @if (Configuration.UseTabs && Configuration.Sections.Count > 1)
+        {
+            @* 分頁模式 *@
+            <div class="card">
+                <div class="card-header p-0">
+                    <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                        @for (int i = 0; i < Configuration.Sections.Count; i++)
+                        {
+                            var currentSection = Configuration.Sections[i];
+                            var tabId = $"tab-{currentSection.Id}-{i}";
+                            var paneId = $"pane-{currentSection.Id}-{i}";
+                            var isActive = i == activeTabIndex;
+                            var currentIndex = i;
+                            
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link @(isActive ? "active" : "")" 
+                                        id="@tabId" 
+                                        data-bs-toggle="tab" 
+                                        data-bs-target="#@paneId" 
+                                        type="button" 
+                                        role="tab" 
+                                        aria-controls="@paneId" 
+                                        aria-selected="@(isActive.ToString().ToLower())"
+                                        @onclick="@(() => HandleTabClick(currentIndex))">
+                                    @if (!string.IsNullOrEmpty(currentSection.Icon))
+                                    {
+                                        <i class="@currentSection.Icon me-2"></i>
+                                    }
+                                    @currentSection.Title
+                                    @if (currentSection.IsLoading)
+                                    {
+                                        <div class="spinner-border spinner-border-sm ms-2" role="status">
+                                            <span class="visually-hidden">載入中...</span>
+                                        </div>
+                                    }
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content">
+                        @for (int i = 0; i < Configuration.Sections.Count; i++)
+                        {
+                            var currentSection = Configuration.Sections[i];
+                            var paneId = $"pane-{currentSection.Id}-{i}";
+                            var isActive = i == activeTabIndex;
+                            
+                            <div class="tab-pane fade @(isActive ? "show active" : "")" 
+                                 id="@paneId" 
+                                 role="tabpanel">
+                                @RenderSection(currentSection)
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @* 摺疊模式或單一區塊 *@
+            @if (Configuration.Sections.Count == 1)
+            {
+                @* 單一區塊模式 *@
+                var singleSection = Configuration.Sections[0];
+                <div class="card">
+                    @if (!string.IsNullOrEmpty(singleSection.Title))
+                    {
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                @if (!string.IsNullOrEmpty(singleSection.Icon))
+                                {
+                                    <i class="@singleSection.Icon me-2"></i>
+                                }
+                                @singleSection.Title
+                            </h6>
+                        </div>
+                    }
+                    <div class="card-body">
+                        @RenderSection(singleSection)
+                    </div>
+                </div>
+            }
+            else
+            {
+                @* 摺疊模式 (Accordion) *@
+                <div class="accordion" id="details-accordion">
+                    @for (int i = 0; i < Configuration.Sections.Count; i++)
+                    {
+                        var currentSection = Configuration.Sections[i];
+                        var collapseId = $"collapse-{currentSection.Id}-{i}";
+                        var headingId = $"heading-{currentSection.Id}-{i}";
+                        var currentIndex = i;
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="@headingId">
+                                <button class="accordion-button @(currentSection.IsExpanded ? "" : "collapsed")"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#@collapseId"
+                                        aria-expanded="@(currentSection.IsExpanded.ToString().ToLower())"
+                                        aria-controls="@collapseId"
+                                        @onclick="@(() => HandleAccordionClick(currentIndex))">
+                                    @if (!string.IsNullOrEmpty(currentSection.Icon))
+                                    {
+                                        <i class="@currentSection.Icon me-2"></i>
+                                    }
+                                    @currentSection.Title
+                                    @if (currentSection.IsLoading)
+                                    {
+                                        <div class="spinner-border spinner-border-sm ms-2" role="status">
+                                            <span class="visually-hidden">載入中...</span>
+                                        </div>
+                                    }
+                                </button>
+                            </h2>
+                            <div id="@collapseId" 
+                                 class="accordion-collapse collapse @(currentSection.IsExpanded ? "show" : "")" 
+                                 aria-labelledby="@headingId" 
+                                 data-bs-parent="#details-accordion">
+                                <div class="accordion-body">
+                                    @RenderSection(currentSection)
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public DetailViewConfiguration Configuration { get; set; } = new();
+    [Parameter] public EventCallback<string> OnSectionLoad { get; set; }
+    [Parameter] public EventCallback<DetailItemClickEventArgs> OnItemClick { get; set; }
+    [Parameter] public RenderFragment? ActionButtons { get; set; }
+    [Parameter] public RenderFragment<DetailSection>? CustomSectionTemplate { get; set; }
+    [Parameter] public RenderFragment<DetailItem>? CustomItemTemplate { get; set; }
+
+    private int activeTabIndex = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Configuration.Sections.Any() && Configuration.Sections[0].LazyLoad && !Configuration.Sections[0].IsLoading)
+        {
+            await LoadSectionData(Configuration.Sections[0]);
+        }
+    }
+
+    private async Task HandleTabClick(int tabIndex)
+    {
+        if (tabIndex >= 0 && tabIndex < Configuration.Sections.Count)
+        {
+            activeTabIndex = tabIndex;
+            var currentSection = Configuration.Sections[tabIndex];
+            
+            if (currentSection.LazyLoad && !currentSection.Items.Any() && !currentSection.IsLoading)
+            {
+                await LoadSectionData(currentSection);
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleAccordionClick(int sectionIndex)
+    {
+        if (sectionIndex >= 0 && sectionIndex < Configuration.Sections.Count)
+        {
+            var currentSection = Configuration.Sections[sectionIndex];
+            currentSection.IsExpanded = !currentSection.IsExpanded;
+            
+            if (currentSection.IsExpanded && currentSection.LazyLoad && !currentSection.Items.Any() && !currentSection.IsLoading)
+            {
+                await LoadSectionData(currentSection);
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadSectionData(DetailSection section)
+    {
+        if (OnSectionLoad.HasDelegate)
+        {
+            section.IsLoading = true;
+            StateHasChanged();
+            
+            await OnSectionLoad.InvokeAsync(section.Id);
+            
+            section.IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleItemClick(DetailItem item)
+    {
+        if (OnItemClick.HasDelegate && item.IsClickable)
+        {
+            var eventArgs = new DetailItemClickEventArgs
+            {
+                Item = item,
+                Handler = item.ClickHandler
+            };
+            
+            await OnItemClick.InvokeAsync(eventArgs);
+        }
+    }
+
+    private RenderFragment RenderSection(DetailSection section) => builder =>
+    {
+        if (CustomSectionTemplate != null)
+        {
+            builder.AddContent(0, CustomSectionTemplate(section));
+            return;
+        }
+
+        if (section.IsLoading)
+        {
+            builder.OpenElement(1, "div");
+            builder.AddAttribute(2, "class", "text-center py-4");
+            builder.OpenComponent<LoadingComponent>(3);
+            builder.AddAttribute(4, "IsLoading", true);
+            builder.AddAttribute(5, "ShowText", true);
+            builder.AddAttribute(6, "LoadingText", "載入中...");
+            builder.AddAttribute(7, "Size", LoadingSize.Small);
+            builder.CloseComponent();
+            builder.CloseElement();
+            return;
+        }
+
+        if (!section.Items.Any())
+        {
+            builder.OpenElement(8, "div");
+            builder.AddAttribute(9, "class", "text-center py-4 text-muted");
+            builder.AddContent(10, "暫無資料");
+            builder.CloseElement();
+            return;
+        }
+
+        builder.OpenElement(11, "div");
+        builder.AddAttribute(12, "class", $"row g-3 {section.CssClass}");
+        
+        foreach (var item in section.Items)
+        {
+            builder.AddContent(13, RenderItem(item));
+        }
+        
+        builder.CloseElement();
+    };
+
+    private RenderFragment RenderItem(DetailItem item) => builder =>
+    {
+        if (CustomItemTemplate != null)
+        {
+            builder.AddContent(0, CustomItemTemplate(item));
+            return;
+        }
+
+        builder.OpenElement(1, "div");
+        builder.AddAttribute(2, "class", $"{item.ContainerCssClass} mb-3");
+        
+        var itemCssClass = "detail-item";
+        if (item.IsClickable)
+        {
+            itemCssClass += " detail-item-clickable";
+        }
+        if (item.IsHighlight)
+        {
+            itemCssClass += " detail-item-highlight";
+        }
+        
+        builder.OpenElement(3, "div");
+        builder.AddAttribute(4, "class", itemCssClass);
+        
+        if (item.IsClickable)
+        {
+            builder.AddAttribute(5, "style", "cursor: pointer;");
+            builder.AddAttribute(6, "onclick", EventCallback.Factory.Create(this, () => HandleItemClick(item)));
+        }
+        
+        builder.OpenElement(7, "div");
+        builder.AddAttribute(8, "class", $"detail-label fw-semibold text-muted mb-1 {item.LabelCssClass}");
+        builder.AddContent(9, item.Label);
+        builder.CloseElement();
+        
+        builder.OpenElement(10, "div");
+        builder.AddAttribute(11, "class", $"detail-value {item.ValueCssClass}");
+        builder.AddContent(12, FormatValue(item));
+        builder.CloseElement();
+        
+        builder.CloseElement();
+        builder.CloseElement();
+    };
+
+    private MarkupString FormatValue(DetailItem item)
+    {
+        if (item.Value == null)
+        {
+            return new MarkupString("<span class=\"text-muted\">-</span>");
+        }
+
+        var format = item.Format ?? new DetailItemFormat();
+        
+        return item.DisplayType switch
+        {
+            DetailDisplayType.Text => new MarkupString(System.Net.WebUtility.HtmlEncode(item.Value.ToString() ?? "")),
+            DetailDisplayType.Number => FormatNumber(item.Value, format),
+            DetailDisplayType.Currency => FormatCurrency(item.Value, format),
+            DetailDisplayType.Date => FormatDate(item.Value, format.DateFormat),
+            DetailDisplayType.DateTime => FormatDate(item.Value, format.DateTimeFormat),
+            DetailDisplayType.Status => FormatStatus(item.Value.ToString() ?? "", format),
+            DetailDisplayType.Link => FormatLink(item.Value.ToString() ?? "", item.LinkUrl, item.LinkTarget),
+            DetailDisplayType.List => FormatList(item.Value, format),
+            DetailDisplayType.Boolean => FormatBoolean(item.Value),
+            DetailDisplayType.Percentage => FormatPercentage(item.Value, format),
+            DetailDisplayType.Email => FormatEmail(item.Value.ToString() ?? ""),
+            DetailDisplayType.Phone => FormatPhone(item.Value.ToString() ?? ""),
+            _ => new MarkupString(System.Net.WebUtility.HtmlEncode(item.Value.ToString() ?? ""))
+        };
+    }
+
+    private MarkupString FormatNumber(object? value, DetailItemFormat format)
+    {
+        if (value == null) return new MarkupString("-");
+        
+        if (decimal.TryParse(value.ToString(), out decimal number))
+        {
+            var formatted = format.ShowThousandsSeparator 
+                ? number.ToString($"N{format.DecimalPlaces}")
+                : number.ToString($"F{format.DecimalPlaces}");
+            return new MarkupString(formatted);
+        }
+        
+        return new MarkupString(System.Net.WebUtility.HtmlEncode(value.ToString() ?? ""));
+    }
+
+    private MarkupString FormatCurrency(object? value, DetailItemFormat format)
+    {
+        if (value == null) return new MarkupString("-");
+        
+        if (decimal.TryParse(value.ToString(), out decimal amount))
+        {
+            var formatted = format.ShowThousandsSeparator 
+                ? amount.ToString($"N{format.DecimalPlaces}")
+                : amount.ToString($"F{format.DecimalPlaces}");
+            return new MarkupString($"<span class=\"text-success fw-semibold\">{format.CurrencySymbol} {formatted}</span>");
+        }
+        
+        return new MarkupString(System.Net.WebUtility.HtmlEncode(value.ToString() ?? ""));
+    }
+
+    private MarkupString FormatDate(object? value, string dateFormat)
+    {
+        if (value == null) return new MarkupString("-");
+        
+        if (value is DateTime dateTime)
+        {
+            return new MarkupString(dateTime.ToString(dateFormat));
+        }
+        
+        if (DateTime.TryParse(value.ToString(), out DateTime parsedDate))
+        {
+            return new MarkupString(parsedDate.ToString(dateFormat));
+        }
+        
+        return new MarkupString(System.Net.WebUtility.HtmlEncode(value.ToString() ?? ""));
+    }
+
+    private MarkupString FormatStatus(string status, DetailItemFormat format)
+    {
+        if (string.IsNullOrEmpty(status)) return new MarkupString("-");
+        
+        var cssClass = "badge";
+        if (format.StatusColors.TryGetValue(status, out var statusClass))
+        {
+            cssClass += $" {statusClass}";
+        }
+        else
+        {
+            cssClass += " bg-secondary";
+        }
+        
+        return new MarkupString($"<span class=\"{cssClass}\">{System.Net.WebUtility.HtmlEncode(status)}</span>");
+    }
+
+    private MarkupString FormatLink(string text, string? url, string target)
+    {
+        if (string.IsNullOrEmpty(text)) return new MarkupString("-");
+        
+        var href = url ?? text;
+        var encodedText = System.Net.WebUtility.HtmlEncode(text);
+        var encodedHref = System.Net.WebUtility.HtmlEncode(href);
+        
+        return new MarkupString($"<a href=\"{encodedHref}\" target=\"{target}\" class=\"text-decoration-none\">{encodedText}</a>");
+    }
+
+    private MarkupString FormatList(object? value, DetailItemFormat format)
+    {
+        if (value == null) return new MarkupString("-");
+        
+        if (value is IEnumerable<object> enumerable)
+        {
+            var items = enumerable.Select(item => System.Net.WebUtility.HtmlEncode(item?.ToString() ?? ""));
+            return new MarkupString(string.Join(format.ListSeparator, items));
+        }
+        
+        return new MarkupString(System.Net.WebUtility.HtmlEncode(value.ToString() ?? ""));
+    }
+
+    private MarkupString FormatBoolean(object? value)
+    {
+        if (value == null) return new MarkupString("-");
+        
+        if (value is bool boolValue)
+        {
+            var text = boolValue ? "是" : "否";
+            var cssClass = boolValue ? "text-success" : "text-muted";
+            return new MarkupString($"<span class=\"{cssClass}\">{text}</span>");
+        }
+        
+        return new MarkupString(System.Net.WebUtility.HtmlEncode(value.ToString() ?? ""));
+    }
+
+    private MarkupString FormatPercentage(object? value, DetailItemFormat format)
+    {
+        if (value == null) return new MarkupString("-");
+        
+        if (decimal.TryParse(value.ToString(), out decimal percentage))
+        {
+            var formatted = percentage.ToString($"F{format.DecimalPlaces}");
+            return new MarkupString($"{formatted}%");
+        }
+        
+        return new MarkupString(System.Net.WebUtility.HtmlEncode(value.ToString() ?? ""));
+    }
+
+    private MarkupString FormatEmail(string email)
+    {
+        if (string.IsNullOrEmpty(email)) return new MarkupString("-");
+        
+        var encodedEmail = System.Net.WebUtility.HtmlEncode(email);
+        return new MarkupString($"<a href=\"mailto:{encodedEmail}\" class=\"text-decoration-none\">{encodedEmail}</a>");
+    }
+
+    private MarkupString FormatPhone(string phone)
+    {
+        if (string.IsNullOrEmpty(phone)) return new MarkupString("-");
+        
+        var encodedPhone = System.Net.WebUtility.HtmlEncode(phone);
+        return new MarkupString($"<a href=\"tel:{encodedPhone}\" class=\"text-decoration-none\">{encodedPhone}</a>");
+    }
+
+    public class DetailItemClickEventArgs
+    {
+        public DetailItem Item { get; set; } = new();
+        public string? Handler { get; set; }
+    }
+}
