@@ -306,29 +306,29 @@
             value => SetPropertyValue(Model, field.PropertyName, value), 
             GetPropertyValue(Model, field.PropertyName)?.ToString() ?? ""));
         builder.CloseElement();
-    }
-
-    private void RenderSelect(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
+    }    private void RenderSelect(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
     {
         builder.OpenElement(sequence, "select");
         builder.AddAttribute(sequence + 1, "class", GetInputCssClass(field));
         builder.AddAttribute(sequence + 2, "id", field.PropertyName);
         builder.AddAttribute(sequence + 3, "disabled", field.IsReadOnly);
+        builder.AddAttribute(sequence + 4, "onchange", EventCallback.Factory.CreateBinder(this, 
+            value => SetPropertyValue(Model, field.PropertyName, value), 
+            GetPropertyValue(Model, field.PropertyName)?.ToString() ?? ""));
         
         // 空選項
         if (!field.IsRequired)
         {
-            builder.OpenElement(sequence + 4, "option");
-            builder.AddAttribute(sequence + 5, "value", "");
-            builder.AddContent(sequence + 6, "請選擇...");
+            builder.OpenElement(sequence + 10, "option");
+            builder.AddAttribute(sequence + 11, "value", "");
+            builder.AddContent(sequence + 12, "請選擇...");
             builder.CloseElement();
-        }
-        
+        }        
         // 選項
         if (field.Options != null)
         {
             var currentValue = GetPropertyValue(Model, field.PropertyName)?.ToString();
-            var optionSequence = sequence + 10;
+            var optionSequence = sequence + 20;
             
             foreach (var option in field.Options)
             {
@@ -338,12 +338,8 @@
                 builder.AddContent(optionSequence + 3, option.Text);
                 builder.CloseElement();
                 optionSequence += 4;
-            }
-        }
+            }        }
         
-        builder.AddAttribute(sequence + 8, "onchange", EventCallback.Factory.CreateBinder(this, 
-            value => SetPropertyValue(Model, field.PropertyName, value), 
-            GetPropertyValue(Model, field.PropertyName)?.ToString() ?? ""));
         builder.CloseElement();
     }
 
@@ -357,16 +353,17 @@
         builder.AddAttribute(sequence + 4, "class", "form-check-input");
         builder.AddAttribute(sequence + 5, "id", field.PropertyName);
         builder.AddAttribute(sequence + 6, "disabled", field.IsReadOnly);
-        
-        var currentValue = GetPropertyValue(Model, field.PropertyName);
-        if (currentValue is bool boolValue)
+          var currentValue = GetPropertyValue(Model, field.PropertyName);
+        bool boolValue = false;
+        if (currentValue is bool b)
         {
+            boolValue = b;
             builder.AddAttribute(sequence + 7, "checked", boolValue);
         }
         
         builder.AddAttribute(sequence + 8, "onchange", EventCallback.Factory.CreateBinder(this, 
             value => SetPropertyValue(Model, field.PropertyName, value), 
-            currentValue));
+            boolValue));
         builder.CloseElement();
         
         builder.OpenElement(sequence + 9, "label");

@@ -1,13 +1,15 @@
 @* 統一的頁面/卡片標題組件 - 支援多種使用場景 *@
+
+@* 麵包屑導航 *@
 @if (!IsCardHeader && BreadcrumbItems?.Any() == true)
 {
     <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb">
             @foreach (var item in BreadcrumbItems)
             {
-                @if (string.IsNullOrEmpty(item.Href))
+                @if (item.IsActive)
                 {
-                    <li class="breadcrumb-item active">@item.Text</li>
+                    <li class="breadcrumb-item active" aria-current="page">@item.Text</li>
                 }
                 else
                 {
@@ -20,19 +22,48 @@
     </nav>
 }
 
-<div class="@GetContainerClass()">
+@* 主要標題容器 *@
+<div class="@GetContainerClass()" @attributes="AdditionalAttributes">
     <div class="@GetTitleWrapperClass()">
-        <h2 class="@GetTitleClass()">
-            @if (!string.IsNullOrEmpty(TitleIcon))
-            {
-                <i class="bi bi-@TitleIcon me-2"></i>
-            }
-            else if (!string.IsNullOrEmpty(IconClass))
-            {
-                <i class="@IconClass me-2"></i>
-            }
-            @Title
-        </h2>
+        @* 動態標題層級 *@
+        @if (HeadingLevel.ToLower() == "h1")
+        {
+            <h1 class="@GetTitleClass()" aria-label="@AriaLabel">
+                @RenderTitleContent()
+            </h1>
+        }
+        else if (HeadingLevel.ToLower() == "h3")
+        {
+            <h3 class="@GetTitleClass()" aria-label="@AriaLabel">
+                @RenderTitleContent()
+            </h3>
+        }
+        else if (HeadingLevel.ToLower() == "h4")
+        {
+            <h4 class="@GetTitleClass()" aria-label="@AriaLabel">
+                @RenderTitleContent()
+            </h4>
+        }
+        else if (HeadingLevel.ToLower() == "h5")
+        {
+            <h5 class="@GetTitleClass()" aria-label="@AriaLabel">
+                @RenderTitleContent()
+            </h5>
+        }
+        else if (HeadingLevel.ToLower() == "h6")
+        {
+            <h6 class="@GetTitleClass()" aria-label="@AriaLabel">
+                @RenderTitleContent()
+            </h6>
+        }
+        else
+        {
+            <h2 class="@GetTitleClass()" aria-label="@AriaLabel">
+                @RenderTitleContent()
+            </h2>
+        }
+
+        @* 副標題 *@
         @if (!string.IsNullOrEmpty(Subtitle))
         {
             @if (IsCardHeader)
@@ -41,34 +72,75 @@
             }
             else
             {
-                <p class="text-muted mb-0 @SubtitleClass">@Subtitle</p>
+                <p class="@GetSubtitleClass()">@Subtitle</p>
             }
         }
     </div>
     
-    @if (Actions != null || ActionButtons != null)
+    @* 載入狀態或動作按鈕 *@
+    @if (IsLoading)
     {
-        <div class="d-flex gap-2">
+        <div class="d-flex align-items-center text-muted">
+            <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+            <span>@LoadingText</span>
+        </div>
+    }
+    else if (Actions != null || ActionButtons != null)
+    {
+        <div class="d-flex gap-2 @GetActionContainerClass()">
             @Actions
             @ActionButtons
         </div>
     }
 </div>
 
+@* 分隔線 *@
+@if (ShowDivider && !IsCardHeader)
+{
+    <hr class="mt-3 mb-4" />
+}
+
 @code {
+    // 基本屬性
     [Parameter] public string Title { get; set; } = string.Empty;
     [Parameter] public string Subtitle { get; set; } = string.Empty;
     [Parameter] public string IconClass { get; set; } = string.Empty;
     [Parameter] public string TitleIcon { get; set; } = string.Empty;
-    [Parameter] public List<(string Href, string Text)>? BreadcrumbItems { get; set; }
+    
+    // 麵包屑
+    [Parameter] public List<BreadcrumbItem>? BreadcrumbItems { get; set; }
+    
+    // 動作區域
     [Parameter] public RenderFragment? Actions { get; set; }
     [Parameter] public RenderFragment? ActionButtons { get; set; }
+    
+    // 樣式控制
     [Parameter] public string CssClass { get; set; } = string.Empty;
     [Parameter] public string TitleClass { get; set; } = string.Empty;
     [Parameter] public string SubtitleClass { get; set; } = string.Empty;
-    [Parameter] public bool IsCardHeader { get; set; } = false; // 控制是否為卡片標題樣式
-    [Parameter] public bool ShowDivider { get; set; } = false; // 是否顯示底部分隔線
+    [Parameter] public string DefaultTitleClass { get; set; } = "fw-bold";
+    [Parameter] public string DefaultSubtitleClass { get; set; } = "text-muted mb-0";
+    
+    // 佈局控制
+    [Parameter] public bool IsCardHeader { get; set; } = false;
+    [Parameter] public bool ShowDivider { get; set; } = false;
+    [Parameter] public bool StackOnMobile { get; set; } = true;
+    
+    // 無障礙支援
+    [Parameter] public string HeadingLevel { get; set; } = "h2";
+    [Parameter] public string AriaLabel { get; set; } = string.Empty;
+    
+    // 載入狀態
+    [Parameter] public bool IsLoading { get; set; } = false;
+    [Parameter] public string LoadingText { get; set; } = "載入中...";
+    
+    // 其他屬性
+    [Parameter(CaptureUnmatchedValues = true)] 
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
+    /// <summary>
+    /// 取得容器的 CSS 類別
+    /// </summary>
     private string GetContainerClass()
     {
         var classes = new List<string>();
@@ -82,7 +154,15 @@
             classes.Add("mb-4");
         }
         
-        classes.Add("d-flex justify-content-between align-items-center");
+        // 響應式佈局
+        if (StackOnMobile)
+        {
+            classes.Add("d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center");
+        }
+        else
+        {
+            classes.Add("d-flex justify-content-between align-items-center");
+        }
         
         if (!string.IsNullOrEmpty(CssClass))
         {
@@ -92,22 +172,29 @@
         return string.Join(" ", classes);
     }
 
+    /// <summary>
+    /// 取得標題包裝器的 CSS 類別
+    /// </summary>
     private string GetTitleWrapperClass()
     {
-        return IsCardHeader ? "" : ""; // 頁面標題不需要額外包裝
+        return StackOnMobile ? "mb-2 mb-md-0" : "";
     }
 
+    /// <summary>
+    /// 取得標題的 CSS 類別
+    /// </summary>
     private string GetTitleClass()
     {
-        var classes = new List<string>();
+        var classes = new List<string> { "mb-0" };
+        
+        if (!string.IsNullOrEmpty(DefaultTitleClass))
+        {
+            classes.Add(DefaultTitleClass);
+        }
         
         if (IsCardHeader)
         {
-            classes.Add("card-title mb-0 text-primary-custom");
-        }
-        else
-        {
-            classes.Add("mb-0");
+            classes.Add("card-title text-primary-custom");
         }
         
         if (!string.IsNullOrEmpty(TitleClass))
@@ -116,5 +203,77 @@
         }
         
         return string.Join(" ", classes);
+    }
+
+    /// <summary>
+    /// 取得副標題的 CSS 類別
+    /// </summary>
+    private string GetSubtitleClass()
+    {
+        var classes = new List<string>();
+        
+        if (!string.IsNullOrEmpty(DefaultSubtitleClass))
+        {
+            classes.Add(DefaultSubtitleClass);
+        }
+        
+        if (!string.IsNullOrEmpty(SubtitleClass))
+        {
+            classes.Add(SubtitleClass);
+        }
+        
+        return string.Join(" ", classes);
+    }
+
+    /// <summary>
+    /// 取得動作容器的 CSS 類別
+    /// </summary>
+    private string GetActionContainerClass()
+    {
+        return StackOnMobile ? "flex-wrap" : "";
+    }    /// <summary>
+    /// 渲染標題內容（包含圖標）
+    /// </summary>
+    private RenderFragment RenderTitleContent() => __builder =>
+    {
+        int seq = 0;
+        
+        if (!string.IsNullOrEmpty(TitleIcon))
+        {
+            __builder.OpenElement(seq++, "i");
+            __builder.AddAttribute(seq++, "class", $"bi bi-{TitleIcon} me-2");
+            __builder.AddAttribute(seq++, "aria-hidden", "true");
+            __builder.CloseElement();
+        }
+        else if (!string.IsNullOrEmpty(IconClass))
+        {
+            __builder.OpenElement(seq++, "i");
+            __builder.AddAttribute(seq++, "class", $"{IconClass} me-2");
+            __builder.AddAttribute(seq++, "aria-hidden", "true");
+            __builder.CloseElement();
+        }
+        
+        if (!string.IsNullOrEmpty(Title))
+        {
+            __builder.AddContent(seq++, Title);
+        }
+    };
+}
+
+@* 麵包屑項目類別定義 *@
+@code {
+    public class BreadcrumbItem
+    {
+        public string Text { get; set; } = string.Empty;
+        public string? Href { get; set; }
+        public bool IsActive => string.IsNullOrEmpty(Href);
+        
+        public BreadcrumbItem() { }
+        
+        public BreadcrumbItem(string text, string? href = null)
+        {
+            Text = text;
+            Href = href;
+        }
     }
 }

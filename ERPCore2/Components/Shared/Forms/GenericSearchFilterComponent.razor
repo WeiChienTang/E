@@ -170,18 +170,21 @@
         builder.OpenElement(sequence, "select");
         builder.AddAttribute(sequence + 1, "class", "form-select");
         builder.AddAttribute(sequence + 2, "id", filter.PropertyName);
+        builder.AddAttribute(sequence + 3, "onchange", EventCallback.Factory.CreateBinder(this,
+            value => { FilterModel.SetFilterValue(filter.PropertyName, value); _ = HandleFilterChanged(); },
+            FilterModel.GetFilterValue(filter.PropertyName)?.ToString() ?? ""));
         
         // 空選項
-        builder.OpenElement(sequence + 3, "option");
-        builder.AddAttribute(sequence + 4, "value", "");
-        builder.AddContent(sequence + 5, filter.EmptyOptionText ?? "全部");
+        builder.OpenElement(sequence + 10, "option");
+        builder.AddAttribute(sequence + 11, "value", "");
+        builder.AddContent(sequence + 12, filter.EmptyOptionText ?? "全部");
         builder.CloseElement();
         
         // 選項
         if (filter.Options != null)
         {
             var currentValue = FilterModel.GetFilterValue(filter.PropertyName)?.ToString();
-            var optionSequence = sequence + 10;
+            var optionSequence = sequence + 20;
             
             foreach (var option in filter.Options)
             {
@@ -194,11 +197,8 @@
             }
         }
         
-        builder.AddAttribute(sequence + 7, "onchange", EventCallback.Factory.CreateBinder(this,
-            value => { FilterModel.SetFilterValue(filter.PropertyName, value); _ = HandleFilterChanged(); },
-            FilterModel.GetFilterValue(filter.PropertyName)?.ToString() ?? ""));
         builder.CloseElement();
-    }    private void RenderMultiSelectFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
+    }private void RenderMultiSelectFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
     {
         // 簡化版多選，使用多個 checkbox
         if (filter.Options != null)
