@@ -1,0 +1,720 @@
+@page "/customers/edit"
+@page "/customers/edit/{id:int?}"
+@inject ICustomerService CustomerService
+@inject ICustomerAddressService CustomerAddressService
+@inject ICustomerContactService CustomerContactService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>@GetPageTitle()</PageTitle>
+
+@* 頁面標題 *@
+<GenericHeaderComponent Title="@GetPageTitle()"
+                       Subtitle="@GetSubtitle()"
+                       TitleIcon="@GetTitleIcon()"
+                       HeadingLevel="h1"
+                       BreadcrumbItems="@breadcrumbItems"
+                       IsLoading="@isLoading"
+                       LoadingText="載入中..."
+                       ShowDivider="true">
+    <ActionButtons>
+        <button class="btn btn-success" @onclick="SaveCustomer" disabled="@(isSubmitting || isLoading)">
+            @if (isSubmitting)
+            {
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            }
+            else
+            {
+                <i class="bi bi-check-circle me-1"></i>
+            }
+            儲存
+        </button>
+        <button class="btn btn-outline-secondary" @onclick="Cancel" disabled="@isSubmitting">
+            <i class="bi bi-x-circle me-1"></i>
+            取消
+        </button>
+    </ActionButtons>
+</GenericHeaderComponent>
+
+@* 主要內容區域 *@
+<div class="row">
+    <div class="col-12">
+        @* 基本資料表單 *@
+        <div class="card mb-4">
+            <GenericHeaderComponent Title="基本資料"
+                                   Subtitle="客戶的基本公司資訊"
+                                   TitleIcon="building"
+                                   IsCardHeader="true">
+            </GenericHeaderComponent>
+            <div class="card-body">
+                <GenericFormComponent TModel="Customer"
+                                    Model="@customer"
+                                    FieldDefinitions="@basicFormFields"
+                                    FieldSections="@basicFormSections"
+                                    OnFormSubmit="HandleBasicFormSubmit"
+                                    ShowFormHeader="false"
+                                    ShowFormButtons="false"
+                                    ShowValidationSummary="true"
+                                    FormCssClass=""
+                                    FormBodyCssClass="">
+                </GenericFormComponent>
+            </div>
+        </div>
+
+        @* 聯絡方式管理 *@
+        <div class="card mb-4">
+            <GenericHeaderComponent Title="聯絡方式"
+                                   Subtitle="@($"管理客戶的聯絡資訊 ({customerContacts.Count} 筆)")"
+                                   TitleIcon="telephone"
+                                   IsCardHeader="true">
+                <ActionButtons>
+                    <button class="btn btn-sm btn-primary" @onclick="AddContact">
+                        <i class="bi bi-plus me-1"></i>
+                        新增聯絡方式
+                    </button>
+                </ActionButtons>
+            </GenericHeaderComponent>
+            <div class="card-body">
+                @if (customerContacts.Any())
+                {
+                    <div class="row g-3">
+                        @for (int i = 0; i < customerContacts.Count; i++)
+                        {
+                            var index = i; // 為了閉包
+                            var contact = customerContacts[index];
+                            <div class="col-md-6">
+                                <div class="card border-secondary">
+                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                        <small class="fw-bold text-muted">聯絡方式 #@(index + 1)</small>
+                                        <div class="btn-group btn-group-sm">
+                                            @if (contact.IsPrimary)
+                                            {
+                                                <span class="badge bg-primary">主要</span>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-outline-primary btn-sm" @onclick="() => SetPrimaryContact(index)" title="設為主要">
+                                                    <i class="bi bi-star"></i>
+                                                </button>
+                                            }
+                                            <button class="btn btn-outline-danger btn-sm" @onclick="() => RemoveContact(index)" title="移除">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-3">
+                                        <div class="mb-2">
+                                            <label class="form-label small">聯絡類型</label>
+                                            <select class="form-select form-select-sm" 
+                                                    @onchange="@(e => UpdateContactType(index, e.Value?.ToString()))"
+                                                    value="@contact.ContactTypeId">
+                                                <option value="">請選擇聯絡類型</option>
+                                                @foreach (var type in contactTypes)
+                                                {
+                                                    <option value="@type.Id">@type.TypeName</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="form-label small">聯絡內容</label>
+                                            <input type="text" class="form-control form-control-sm" 
+                                                   placeholder="請輸入聯絡內容"
+                                                   @bind="contact.ContactValue"
+                                                   @bind:event="oninput" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-telephone-x fs-1 mb-3 d-block"></i>
+                        <p>尚未建立聯絡方式</p>
+                        <button class="btn btn-outline-primary" @onclick="AddContact">
+                            <i class="bi bi-plus me-1"></i>
+                            新增第一個聯絡方式
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* 地址管理 *@
+        <div class="card mb-4">
+            <GenericHeaderComponent Title="地址資訊"
+                                   Subtitle="@($"管理客戶的地址資料 ({customerAddresses.Count} 筆)")"
+                                   TitleIcon="geo-alt"
+                                   IsCardHeader="true">
+                <ActionButtons>
+                    <button class="btn btn-sm btn-primary" @onclick="AddAddress">
+                        <i class="bi bi-plus me-1"></i>
+                        新增地址
+                    </button>
+                </ActionButtons>
+            </GenericHeaderComponent>
+            <div class="card-body">
+                @if (customerAddresses.Any())
+                {
+                    <div class="row g-3">
+                        @for (int i = 0; i < customerAddresses.Count; i++)
+                        {
+                            var index = i; // 為了閉包
+                            var address = customerAddresses[index];
+                            <div class="col-lg-6">
+                                <div class="card border-secondary">
+                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                        <small class="fw-bold text-muted">地址 #@(index + 1)</small>
+                                        <div class="btn-group btn-group-sm">
+                                            @if (address.IsPrimary)
+                                            {
+                                                <span class="badge bg-primary">主要</span>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-outline-primary btn-sm" @onclick="() => SetPrimaryAddress(index)" title="設為主要">
+                                                    <i class="bi bi-star"></i>
+                                                </button>
+                                            }
+                                            <button class="btn btn-outline-danger btn-sm" @onclick="() => RemoveAddress(index)" title="移除">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-3">
+                                        <div class="row g-2">
+                                            <div class="col-12">
+                                                <label class="form-label small">地址類型</label>
+                                                <select class="form-select form-select-sm" 
+                                                        @onchange="@(e => UpdateAddressType(index, e.Value?.ToString()))"
+                                                        value="@address.AddressTypeId">
+                                                    <option value="">請選擇地址類型</option>
+                                                    @foreach (var type in addressTypes)
+                                                    {
+                                                        <option value="@type.Id">@type.TypeName</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small">郵遞區號</label>
+                                                <input type="text" class="form-control form-control-sm" 
+                                                       placeholder="郵遞區號"
+                                                       @bind="address.PostalCode"
+                                                       @bind:event="oninput" />
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small">城市</label>
+                                                <input type="text" class="form-control form-control-sm" 
+                                                       placeholder="城市"
+                                                       @bind="address.City"
+                                                       @bind:event="oninput" />
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label small">行政區</label>
+                                                <input type="text" class="form-control form-control-sm" 
+                                                       placeholder="行政區"
+                                                       @bind="address.District"
+                                                       @bind:event="oninput" />
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label small">詳細地址</label>
+                                                <textarea class="form-control form-control-sm" 
+                                                          rows="2" 
+                                                          placeholder="詳細地址"
+                                                          @bind="address.Address"
+                                                          @bind:event="oninput"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-geo-alt-slash fs-1 mb-3 d-block"></i>
+                        <p>尚未建立地址資料</p>
+                        <button class="btn btn-outline-primary" @onclick="AddAddress">
+                            <i class="bi bi-plus me-1"></i>
+                            新增第一個地址
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    
+    // 資料模型
+    private Customer customer = new();
+    private List<CustomerContact> customerContacts = new();
+    private List<CustomerAddress> customerAddresses = new();
+    
+    // 選項清單
+    private List<CustomerType> customerTypes = new();
+    private List<IndustryType> industryTypes = new();
+    private List<ContactType> contactTypes = new();
+    private List<AddressType> addressTypes = new();
+    
+    // 表單欄位定義
+    private List<FormFieldDefinition> basicFormFields = new();
+    private Dictionary<string, string> basicFormSections = new();
+    
+    // 狀態管理
+    private bool isLoading = true;
+    private bool isSubmitting = false;
+    private bool isEditMode => Id.HasValue && Id.Value > 0;
+    
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitializePageAsync();
+    }
+
+    private async Task InitializePageAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // 初始化麵包屑
+            InitializeBreadcrumbs();
+            
+            // 載入基礎資料
+            await LoadBasicDataAsync();
+            
+            // 初始化表單欄位
+            InitializeFormFields();
+            
+            if (isEditMode)
+            {
+                // 編輯模式：載入現有客戶資料
+                await LoadCustomerDataAsync(Id!.Value);
+            }
+            else
+            {
+                // 新增模式：初始化新客戶
+                InitializeNewCustomer();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入客戶資料時發生錯誤：", ex.Message);
+            await JSRuntime.InvokeVoidAsync("alert", $"載入資料失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("客戶管理", "/customers"),
+            new(isEditMode ? "編輯客戶" : "新增客戶")
+        };
+    }
+
+    private async Task LoadBasicDataAsync()
+    {
+        customerTypes = await CustomerService.GetCustomerTypesAsync();
+        industryTypes = await CustomerService.GetIndustryTypesAsync();
+        contactTypes = await CustomerService.GetContactTypesAsync();
+        addressTypes = await CustomerService.GetAddressTypesAsync();
+    }
+
+    private void InitializeFormFields()
+    {
+        // 客戶類型選項
+        var customerTypeOptions = customerTypes.Select(ct => new SelectOption
+        {
+            Text = ct.TypeName,
+            Value = ct.Id.ToString()
+        }).ToList();
+
+        // 行業類型選項
+        var industryTypeOptions = industryTypes.Select(it => new SelectOption
+        {
+            Text = it.IndustryTypeName,
+            Value = it.Id.ToString()
+        }).ToList();
+
+        basicFormFields = new List<FormFieldDefinition>
+        {
+            new()
+            {
+                PropertyName = nameof(Customer.CustomerCode),
+                Label = "客戶代碼",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入客戶代碼",
+                IsRequired = true,
+                ContainerCssClass = "col-md-4"
+            },
+            new()
+            {
+                PropertyName = nameof(Customer.CompanyName),
+                Label = "公司名稱",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入公司名稱",
+                IsRequired = true,
+                ContainerCssClass = "col-md-8"
+            },
+            new()
+            {
+                PropertyName = nameof(Customer.ContactPerson),
+                Label = "聯絡人",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入聯絡人姓名",
+                ContainerCssClass = "col-md-6"
+            },
+            new()
+            {
+                PropertyName = nameof(Customer.TaxNumber),
+                Label = "統一編號",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入統一編號",
+                ContainerCssClass = "col-md-6"
+            },
+            new()
+            {
+                PropertyName = nameof(Customer.CustomerTypeId),
+                Label = "客戶類型",
+                FieldType = FormFieldType.Select,
+                Options = customerTypeOptions,
+                ContainerCssClass = "col-md-6"
+            },
+            new()
+            {
+                PropertyName = nameof(Customer.IndustryTypeId),
+                Label = "行業類型",
+                FieldType = FormFieldType.Select,
+                Options = industryTypeOptions,
+                ContainerCssClass = "col-md-6"
+            }
+        };
+
+        basicFormSections = new Dictionary<string, string>
+        {
+            { nameof(Customer.CustomerCode), "基本資訊" },
+            { nameof(Customer.CompanyName), "基本資訊" },
+            { nameof(Customer.ContactPerson), "聯絡資訊" },
+            { nameof(Customer.TaxNumber), "財務資訊" },
+            { nameof(Customer.CustomerTypeId), "分類資訊" },
+            { nameof(Customer.IndustryTypeId), "分類資訊" }
+        };
+    }
+
+    private async Task LoadCustomerDataAsync(int customerId)
+    {
+        try
+        {
+            // 載入客戶基本資料
+            customer = await CustomerService.GetByIdAsync(customerId) ?? new Customer();
+            
+            // 載入聯絡方式
+            customerContacts = await CustomerService.GetCustomerContactsAsync(customerId);
+            
+            // 載入地址資料
+            customerAddresses = await CustomerAddressService.GetByCustomerIdAsync(customerId);
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入客戶詳細資料失敗：", ex.Message);
+            throw;
+        }
+    }
+
+    private void InitializeNewCustomer()
+    {
+        customer = new Customer
+        {
+            CustomerCode = GenerateCustomerCode(),
+            CompanyName = "",
+            ContactPerson = "",
+            TaxNumber = "",
+            Status = EntityStatus.Active
+        };
+        
+        customerContacts = new List<CustomerContact>();
+        customerAddresses = new List<CustomerAddress>();
+    }
+
+    private string GenerateCustomerCode()
+    {
+        // 生成客戶代碼邏輯
+        return $"C{DateTime.Now:yyyyMMddHHmmss}";
+    }
+
+    #region 頁面標題相關
+
+    private string GetPageTitle()
+    {
+        return isEditMode ? "編輯客戶" : "新增客戶";
+    }
+
+    private string GetSubtitle()
+    {
+        if (isEditMode && !string.IsNullOrEmpty(customer.CompanyName))
+        {
+            return $"修改「{customer.CompanyName}」的資料";
+        }
+        return "建立新的客戶資料";
+    }
+
+    private string GetTitleIcon()
+    {
+        return isEditMode ? "pencil-square" : "plus-circle";
+    }
+
+    #endregion
+
+    #region 聯絡方式管理
+
+    private void AddContact()
+    {
+        var newContact = new CustomerContact
+        {
+            CustomerId = customer.Id,
+            ContactTypeId = null,
+            ContactValue = "",
+            IsPrimary = customerContacts.Count == 0, // 第一個自動設為主要
+            Status = EntityStatus.Active
+        };
+        
+        customerContacts.Add(newContact);
+        StateHasChanged();
+    }
+
+    private void RemoveContact(int index)
+    {
+        if (index >= 0 && index < customerContacts.Count)
+        {
+            var removedContact = customerContacts[index];
+            customerContacts.RemoveAt(index);
+            
+            // 如果移除的是主要聯絡方式且還有其他聯絡方式，設定第一個為主要
+            if (removedContact.IsPrimary && customerContacts.Any())
+            {
+                customerContacts[0].IsPrimary = true;
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    private void SetPrimaryContact(int index)
+    {
+        if (index >= 0 && index < customerContacts.Count)
+        {
+            // 清除所有主要標記
+            foreach (var contact in customerContacts)
+            {
+                contact.IsPrimary = false;
+            }
+            
+            // 設定指定的為主要
+            customerContacts[index].IsPrimary = true;
+            StateHasChanged();
+        }
+    }
+
+    private void UpdateContactType(int index, string? contactTypeIdStr)
+    {
+        if (index >= 0 && index < customerContacts.Count)
+        {
+            if (int.TryParse(contactTypeIdStr, out var contactTypeId))
+            {
+                customerContacts[index].ContactTypeId = contactTypeId;
+            }
+            else
+            {
+                customerContacts[index].ContactTypeId = null;
+            }
+            StateHasChanged();
+        }
+    }
+
+    #endregion
+
+    #region 地址管理
+
+    private void AddAddress()
+    {
+        var newAddress = new CustomerAddress
+        {
+            CustomerId = customer.Id,
+            AddressTypeId = null,
+            PostalCode = "",
+            City = "",
+            District = "",
+            Address = "",
+            IsPrimary = customerAddresses.Count == 0, // 第一個自動設為主要
+            Status = EntityStatus.Active
+        };
+        
+        customerAddresses.Add(newAddress);
+        StateHasChanged();
+    }
+
+    private void RemoveAddress(int index)
+    {
+        if (index >= 0 && index < customerAddresses.Count)
+        {
+            var removedAddress = customerAddresses[index];
+            customerAddresses.RemoveAt(index);
+            
+            // 如果移除的是主要地址且還有其他地址，設定第一個為主要
+            if (removedAddress.IsPrimary && customerAddresses.Any())
+            {
+                customerAddresses[0].IsPrimary = true;
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    private void SetPrimaryAddress(int index)
+    {
+        if (index >= 0 && index < customerAddresses.Count)
+        {
+            // 清除所有主要標記
+            foreach (var address in customerAddresses)
+            {
+                address.IsPrimary = false;
+            }
+            
+            // 設定指定的為主要
+            customerAddresses[index].IsPrimary = true;
+            StateHasChanged();
+        }
+    }
+
+    private void UpdateAddressType(int index, string? addressTypeIdStr)
+    {
+        if (index >= 0 && index < customerAddresses.Count)
+        {
+            if (int.TryParse(addressTypeIdStr, out var addressTypeId))
+            {
+                customerAddresses[index].AddressTypeId = addressTypeId;
+            }
+            else
+            {
+                customerAddresses[index].AddressTypeId = null;
+            }
+            StateHasChanged();
+        }
+    }
+
+    #endregion
+
+    #region 表單處理
+
+    private async Task HandleBasicFormSubmit(Customer model)
+    {
+        // 這個方法由 GenericFormComponent 呼叫，但我們統一在 SaveCustomer 處理
+        await Task.CompletedTask;
+    }
+
+    private async Task SaveCustomer()
+    {
+        try
+        {
+            isSubmitting = true;
+            StateHasChanged();
+
+            // 驗證基本資料
+            if (string.IsNullOrWhiteSpace(customer.CustomerCode))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "客戶代碼為必填");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(customer.CompanyName))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "公司名稱為必填");
+                return;
+            }
+
+            ServiceResult result;
+            
+            if (isEditMode)
+            {
+                // 更新現有客戶
+                result = await CustomerService.UpdateAsync(customer);
+                if (result.IsSuccess)
+                {
+                    // 更新聯絡方式
+                    await CustomerService.UpdateCustomerContactsAsync(customer.Id, customerContacts);
+                    
+                    // 更新地址資料
+                    await CustomerAddressService.UpdateCustomerAddressesAsync(customer.Id, customerAddresses);
+                }
+            }
+            else
+            {
+                // 新增客戶
+                result = await CustomerService.CreateAsync(customer);
+                if (result.IsSuccess)
+                {
+                    // 更新聯絡方式的客戶ID
+                    foreach (var contact in customerContacts)
+                    {
+                        contact.CustomerId = customer.Id;
+                    }
+                    
+                    // 更新地址的客戶ID
+                    foreach (var address in customerAddresses)
+                    {
+                        address.CustomerId = customer.Id;
+                    }
+                    
+                    // 儲存聯絡方式和地址
+                    await CustomerService.UpdateCustomerContactsAsync(customer.Id, customerContacts);
+                    await CustomerAddressService.UpdateCustomerAddressesAsync(customer.Id, customerAddresses);
+                }
+            }
+
+            if (result.IsSuccess)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "客戶資料儲存成功！");
+                Navigation.NavigateTo("/customers");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"儲存失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "儲存客戶資料時發生錯誤：", ex.Message);
+            await JSRuntime.InvokeVoidAsync("alert", $"儲存時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/customers");
+    }
+
+    #endregion
+}
