@@ -1,5 +1,6 @@
 @page "/customers"
 @inject ICustomerService CustomerService
+@inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
@@ -303,18 +304,16 @@
     {
         await LoadCustomersAsync();
         StateHasChanged();
-    }
-
-    private async Task ShowCreateCustomer()
+    }    private async Task ShowCreateCustomer()
     {
-        // TODO: 實作新增客戶功能
-        await JSRuntime.InvokeVoidAsync("alert", "新增客戶功能尚未實作");
+        Navigation.NavigateTo("/customers/edit");
+        await Task.CompletedTask;
     }
 
     private async Task EditCustomer(Customer customer)
     {
-        // TODO: 實作編輯客戶功能
-        await JSRuntime.InvokeVoidAsync("console.log", "編輯客戶：", customer.CompanyName);
+        Navigation.NavigateTo($"/customers/edit/{customer.Id}");
+        await Task.CompletedTask;
     }
 
     private async Task DeleteCustomer(Customer customer)
