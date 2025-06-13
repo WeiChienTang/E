@@ -171,7 +171,9 @@ namespace ERPCore2.Services
             try
             {
                 var defaultPermissions = new List<Permission>
-                {                    // 客戶管理權限                    new Permission { PermissionCode = "Customer.View", PermissionName = "檢視客戶", Remarks = "可以檢視客戶資料" },
+                {
+                    // 客戶管理權限                    
+                    new Permission { PermissionCode = "Customer.View", PermissionName = "檢視客戶", Remarks = "可以檢視客戶資料" },
                     new Permission { PermissionCode = "Customer.Create", PermissionName = "建立客戶", Remarks = "可以建立新客戶" },
                     new Permission { PermissionCode = "Customer.Edit", PermissionName = "編輯客戶", Remarks = "可以編輯客戶資料" },
                     new Permission { PermissionCode = "Customer.Delete", PermissionName = "刪除客戶", Remarks = "可以刪除客戶" },
@@ -182,24 +184,34 @@ namespace ERPCore2.Services
                     new Permission { PermissionCode = "Supplier.Create", PermissionName = "建立廠商", Remarks = "可以建立新廠商" },
                     new Permission { PermissionCode = "Supplier.Edit", PermissionName = "編輯廠商", Remarks = "可以編輯廠商資料" },
                     new Permission { PermissionCode = "Supplier.Delete", PermissionName = "刪除廠商", Remarks = "可以刪除廠商" },
-                    new Permission { PermissionCode = "Supplier.Export", PermissionName = "匯出廠商", Remarks = "可以匯出廠商資料" },// 員工管理權限
+                    new Permission { PermissionCode = "Supplier.Export", PermissionName = "匯出廠商", Remarks = "可以匯出廠商資料" },
+
+                    // 員工管理權限
                     new Permission { PermissionCode = "Employee.View", PermissionName = "檢視員工", Remarks = "可以檢視員工資料" },
                     new Permission { PermissionCode = "Employee.Create", PermissionName = "建立員工", Remarks = "可以建立新員工" },
                     new Permission { PermissionCode = "Employee.Edit", PermissionName = "編輯員工", Remarks = "可以編輯員工資料" },
-                    new Permission { PermissionCode = "Employee.Delete", PermissionName = "刪除員工", Remarks = "可以刪除員工" },                    // 角色管理權限
+                    new Permission { PermissionCode = "Employee.Delete", PermissionName = "刪除員工", Remarks = "可以刪除員工" },
+
+                    // 角色管理權限
                     new Permission { PermissionCode = "Role.View", PermissionName = "檢視角色", Remarks = "可以檢視角色資料" },
                     new Permission { PermissionCode = "Role.Create", PermissionName = "建立角色", Remarks = "可以建立新角色" },
                     new Permission { PermissionCode = "Role.Edit", PermissionName = "編輯角色", Remarks = "可以編輯角色資料" },
                     new Permission { PermissionCode = "Role.Delete", PermissionName = "刪除角色", Remarks = "可以刪除角色" },
-                    new Permission { PermissionCode = "Role.ManagePermissions", PermissionName = "管理權限", Remarks = "可以管理角色權限" },                    // 權限管理權限
+                    new Permission { PermissionCode = "Role.ManagePermissions", PermissionName = "管理權限", Remarks = "可以管理角色權限" },
+
+                    // 權限管理權限
                     new Permission { PermissionCode = "Permission.View", PermissionName = "檢視權限", Remarks = "可以檢視權限資料" },
                     new Permission { PermissionCode = "Permission.Create", PermissionName = "建立權限", Remarks = "可以建立新權限" },
                     new Permission { PermissionCode = "Permission.Edit", PermissionName = "編輯權限", Remarks = "可以編輯權限資料" },
-                    new Permission { PermissionCode = "Permission.Delete", PermissionName = "刪除權限", Remarks = "可以刪除權限" },                    // 系統管理權限
+                    new Permission { PermissionCode = "Permission.Delete", PermissionName = "刪除權限", Remarks = "可以刪除權限" },
+
+                    // 系統管理權限
                     new Permission { PermissionCode = "System.Admin", PermissionName = "系統管理", Remarks = "完整的系統管理權限" },
                     new Permission { PermissionCode = "System.ViewLogs", PermissionName = "檢視日誌", Remarks = "可以檢視系統日誌" },
                     new Permission { PermissionCode = "System.Backup", PermissionName = "系統備份", Remarks = "可以執行系統備份" },
-                    new Permission { PermissionCode = "System.Configuration", PermissionName = "系統設定", Remarks = "可以修改系統設定" },                    // 報表權限
+                    new Permission { PermissionCode = "System.Configuration", PermissionName = "系統設定", Remarks = "可以修改系統設定" },
+
+                    // 報表權限
                     new Permission { PermissionCode = "Report.View", PermissionName = "檢視報表", Remarks = "可以檢視報表" },
                     new Permission { PermissionCode = "Report.Export", PermissionName = "匯出報表", Remarks = "可以匯出報表" },
                     new Permission { PermissionCode = "Report.Create", PermissionName = "建立報表", Remarks = "可以建立自訂報表" }

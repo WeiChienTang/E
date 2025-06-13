@@ -405,6 +405,50 @@ namespace ERPCore2.Data
                     PermissionGroup = "客戶管理",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.UtcNow,
+                    CreatedBy = "System"                },
+                // 供應商管理權限
+                new Permission
+                {
+                    PermissionCode = "Supplier.View",
+                    PermissionName = "檢視供應商",
+                    Module = "Supplier",
+                    Action = "View",
+                    PermissionGroup = "供應商管理",
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = "System"
+                },
+                new Permission
+                {
+                    PermissionCode = "Supplier.Create",
+                    PermissionName = "新增供應商",
+                    Module = "Supplier",
+                    Action = "Create",
+                    PermissionGroup = "供應商管理",
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = "System"
+                },
+                new Permission
+                {
+                    PermissionCode = "Supplier.Edit",
+                    PermissionName = "編輯供應商",
+                    Module = "Supplier",
+                    Action = "Edit",
+                    PermissionGroup = "供應商管理",
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = "System"
+                },
+                new Permission
+                {
+                    PermissionCode = "Supplier.Delete",
+                    PermissionName = "刪除供應商",
+                    Module = "Supplier",
+                    Action = "Delete",
+                    PermissionGroup = "供應商管理",
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 },
                 // 報表權限
