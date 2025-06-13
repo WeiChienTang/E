@@ -428,15 +428,18 @@
                 Placeholder = "請輸入備註",
                 ContainerCssClass = "col-12"
             }
-        };
-
-        basicFormSections = new Dictionary<string, string>
+        };        basicFormSections = new Dictionary<string, string>
         {
-            ["基本資訊"] = $"{nameof(Supplier.SupplierCode)},{nameof(Supplier.CompanyName)},{nameof(Supplier.ContactPerson)},{nameof(Supplier.TaxNumber)}",
-            ["分類資訊"] = $"{nameof(Supplier.SupplierTypeId)},{nameof(Supplier.IndustryTypeId)}",
-            ["財務資訊"] = $"{nameof(Supplier.PaymentTerms)},{nameof(Supplier.CreditLimit)}",
-            ["其他資訊"] = $"{nameof(Supplier.Remarks)}"
-        };    }    private async Task LoadSupplierDataAsync(int supplierId)
+            { nameof(Supplier.SupplierCode), "基本資訊" },
+            { nameof(Supplier.CompanyName), "基本資訊" },
+            { nameof(Supplier.ContactPerson), "基本資訊" },
+            { nameof(Supplier.TaxNumber), "基本資訊" },
+            { nameof(Supplier.SupplierTypeId), "分類資訊" },
+            { nameof(Supplier.IndustryTypeId), "分類資訊" },
+            { nameof(Supplier.PaymentTerms), "財務資訊" },
+            { nameof(Supplier.CreditLimit), "財務資訊" },
+            { nameof(Supplier.Remarks), "其他資訊" }
+        };}    private async Task LoadSupplierDataAsync(int supplierId)
     {
         var result = await SupplierService.GetByIdAsync(supplierId);
         if (result != null)
@@ -454,9 +457,7 @@
             await JSRuntime.InvokeVoidAsync("alert", "找不到指定的廠商資料");
             Navigation.NavigateTo("/suppliers");
         }
-    }
-
-    private void InitializeNewSupplier()
+    }    private void InitializeNewSupplier()
     {
         supplier = new Supplier
         {
@@ -464,13 +465,11 @@
             CreatedAt = DateTime.Now
         };
         
-        // 初始化聯絡方式
+        // 初始化空的聯絡方式清單
         supplierContacts = new List<SupplierContact>();
-        SupplierContactService.InitializeDefaultContacts(supplierContacts, contactTypes);
         
-        // 初始化地址資料
+        // 初始化空的地址資料清單
         supplierAddresses = new List<SupplierAddress>();
-        SupplierAddressService.InitializeDefaultAddresses(supplierAddresses, addressTypes);
     }
 
     private async Task HandleBasicFormSubmit(object model)
