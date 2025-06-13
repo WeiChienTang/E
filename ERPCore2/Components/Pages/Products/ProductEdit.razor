@@ -1,0 +1,565 @@
+@page "/products/edit"
+@page "/products/edit/{id:int?}"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@using ERPCore2.Services.Interfaces
+@using ERPCore2.Data.Enums
+@inject IProductService ProductService
+@inject IProductCategoryService ProductCategoryService
+@inject ISupplierService SupplierService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>@GetPageTitle()</PageTitle>
+
+@* 頁面標題 *@
+<GenericHeaderComponent Title="@GetPageTitle()"
+                       Subtitle="@GetSubtitle()"
+                       TitleIcon="@GetTitleIcon()"
+                       HeadingLevel="h1"
+                       BreadcrumbItems="@breadcrumbItems"
+                       IsLoading="@isLoading"
+                       LoadingText="載入中..."
+                       ShowDivider="true">
+    <ActionButtons>
+        <button class="btn btn-success" @onclick="SaveProduct" disabled="@(isSubmitting || isLoading)">
+            @if (isSubmitting)
+            {
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            }
+            else
+            {
+                <i class="bi bi-check-circle me-1"></i>
+            }
+            儲存
+        </button>
+        <button class="btn btn-outline-secondary" @onclick="Cancel" disabled="@isSubmitting">
+            <i class="bi bi-x-circle me-1"></i>
+            取消
+        </button>
+    </ActionButtons>
+</GenericHeaderComponent>
+
+@* 主要內容區域 *@
+<div class="row">
+    <div class="col-12">
+        @* 基本資料表單 *@
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    基本資料
+                </h5>
+            </div>
+            <div class="card-body">
+                <EditForm Model="@product" OnValidSubmit="SaveProduct">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="text-danger" />
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">產品代碼 <span class="text-danger">*</span></label>
+                                <InputText @bind-Value="product.ProductCode" class="form-control" placeholder="輸入產品代碼" />
+                                <ValidationMessage For="@(() => product.ProductCode)" />
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">產品名稱 <span class="text-danger">*</span></label>
+                                <InputText @bind-Value="product.ProductName" class="form-control" placeholder="輸入產品名稱" />
+                                <ValidationMessage For="@(() => product.ProductName)" />
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">產品分類</label>
+                                <InputSelect @bind-Value="product.ProductCategoryId" class="form-select">
+                                    <option value="">請選擇分類</option>
+                                    @foreach (var category in productCategories)
+                                    {
+                                        <option value="@category.Id">@category.CategoryName</option>
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => product.ProductCategoryId)" />
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">單位</label>
+                                <InputText @bind-Value="product.Unit" class="form-control" placeholder="例如：個、公斤、組" />
+                                <ValidationMessage For="@(() => product.Unit)" />
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">                            <div class="mb-3">
+                                <label class="form-label">狀態</label>
+                                <InputSelect @bind-Value="product.IsActive" class="form-select">
+                                    <option value="true">啟用</option>
+                                    <option value="false">停用</option>
+                                </InputSelect>
+                                <ValidationMessage For="@(() => product.IsActive)" />
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">產品描述</label>
+                                <InputTextArea @bind-Value="product.Description" class="form-control" rows="3" placeholder="輸入產品描述" />
+                                <ValidationMessage For="@(() => product.Description)" />
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">規格說明</label>
+                                <InputTextArea @bind-Value="product.Specification" class="form-control" rows="3" placeholder="輸入規格說明" />
+                                <ValidationMessage For="@(() => product.Specification)" />
+                            </div>
+                        </div>
+                    </div>
+                      <div class="mb-3">
+                        <label class="form-label">備註</label>
+                        <InputTextArea @bind-Value="product.Remarks" class="form-control" rows="2" placeholder="輸入備註" />
+                        <ValidationMessage For="@(() => product.Remarks)" />
+                    </div>
+                    
+                    @* 價格與庫存管理 *@
+                    <div class="mb-4">
+                        <h5 class="mb-3">
+                            <i class="bi bi-currency-dollar me-2"></i>
+                            價格與庫存管理
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="mb-3">價格設定</h6>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">售價</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">NT$</span>
+                                        <InputNumber @bind-Value="product.UnitPrice" class="form-control" placeholder="0" />
+                                    </div>
+                                    <ValidationMessage For="@(() => product.UnitPrice)" />
+                                </div>
+                            
+                                <div class="mb-3">
+                                    <label class="form-label">成本價</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">NT$</span>
+                                        <InputNumber @bind-Value="product.CostPrice" class="form-control" placeholder="0" />
+                                    </div>
+                                    <ValidationMessage For="@(() => product.CostPrice)" />
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h6 class="mb-3">庫存設定</h6>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">目前庫存</label>
+                                    <div class="input-group">
+                                        <InputNumber @bind-Value="product.CurrentStock" class="form-control" placeholder="0" />
+                                        <span class="input-group-text">@product.Unit</span>
+                                    </div>
+                                    <ValidationMessage For="@(() => product.CurrentStock)" />
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">最低庫存</label>
+                                    <div class="input-group">
+                                        <InputNumber @bind-Value="product.MinStockLevel" class="form-control" placeholder="0" />
+                                        <span class="input-group-text">@product.Unit</span>
+                                    </div>
+                                    <ValidationMessage For="@(() => product.MinStockLevel)" />
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">最高庫存</label>
+                                    <div class="input-group">
+                                        <InputNumber @bind-Value="product.MaxStockLevel" class="form-control" placeholder="0" />
+                                        <span class="input-group-text">@product.Unit</span>
+                                    </div>
+                                    <ValidationMessage For="@(() => product.MaxStockLevel)" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>        </div>
+
+        @* 供應商管理 (僅編輯模式顯示) *@
+        @if (Id.HasValue)
+        {
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-truck me-2"></i>
+                        供應商管理 (@productSuppliers.Count 筆)
+                    </h5>
+                    <button class="btn btn-sm btn-primary" @onclick="ShowAddSupplierModal">
+                        <i class="bi bi-plus me-1"></i>
+                        新增供應商
+                    </button>
+                </div>
+                <div class="card-body">
+                    @if (productSuppliers.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>供應商</th>
+                                        <th>聯絡人</th>
+                                        <th>電話</th>
+                                        <th>主要供應商</th>
+                                        <th>狀態</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var ps in productSuppliers)
+                                    {
+                                        <tr>                                            <td>
+                                                <strong>@ps.Supplier?.CompanyName</strong>
+                                                @if (!string.IsNullOrEmpty(ps.Supplier?.SupplierCode))
+                                                {
+                                                    <br />
+                                                    <small class="text-muted">@ps.Supplier.SupplierCode</small>
+                                                }
+                                            </td>
+                                            <td>@ps.Supplier?.ContactPerson</td>
+                                            <td>-</td>
+                                            <td>
+                                                @if (ps.IsPrimarySupplier)
+                                                {
+                                                    <span class="badge bg-primary">主要</span>
+                                                }
+                                                else
+                                                {
+                                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => SetPrimarySupplier(ps)">
+                                                        設為主要
+                                                    </button>
+                                                }
+                                            </td>                            <td>
+                                @if (ps.Status == EntityStatus.Active)
+                                {
+                                    <span class="badge bg-success">啟用</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">停用</span>
+                                }
+                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-danger" @onclick="() => RemoveSupplier(ps)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-truck fs-1 mb-3 d-block"></i>
+                            <p>尚未設定供應商</p>
+                            <button class="btn btn-outline-primary" @onclick="ShowAddSupplierModal">
+                                <i class="bi bi-plus me-1"></i>
+                                新增第一個供應商
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@* 新增供應商 Modal *@
+@if (showAddSupplierModal)
+{
+    <div class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">新增供應商</h5>
+                    <button type="button" class="btn-close" @onclick="CloseAddSupplierModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">選擇供應商</label>
+                        <select class="form-select" @bind="selectedSupplierId">
+                            <option value="">請選擇供應商</option>
+                            @foreach (var supplier in availableSuppliers)
+                            {                                                <option value="@supplier.Id">@supplier.CompanyName (@supplier.SupplierCode)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" @bind="newSupplierIsPrimary" id="isPrimaryCheck">
+                        <label class="form-check-label" for="isPrimaryCheck">
+                            設為主要供應商
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseAddSupplierModal">取消</button>
+                    <button type="button" class="btn btn-primary" @onclick="AddSupplier" disabled="@string.IsNullOrEmpty(selectedSupplierId)">
+                        新增
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private Product product = new();
+    private List<ProductCategory> productCategories = new();
+    private List<ProductSupplier> productSuppliers = new();
+    private List<Supplier> suppliers = new();
+    private List<Supplier> availableSuppliers = new();
+    
+    // Modal 相關
+    private bool showAddSupplierModal = false;
+    private string selectedSupplierId = string.Empty;
+    private bool newSupplierIsPrimary = false;
+    
+    // UI 狀態
+    private bool isLoading = false;
+    private bool isSubmitting = false;
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {            // 載入產品分類
+            var categoryResult = await ProductCategoryService.GetAllAsync();
+            productCategories = categoryResult.Where(c => c.Status == EntityStatus.Active).ToList();
+
+            // 載入供應商
+            var supplierResult = await SupplierService.GetAllAsync();
+            suppliers = supplierResult.Where(s => s.Status == EntityStatus.Active).ToList();
+
+            // 如果是編輯模式，載入產品資料
+            if (Id.HasValue)
+            {                var productResult = await ProductService.GetByIdAsync(Id.Value);
+                if (productResult != null)
+                {
+                    product = productResult;
+                    
+                    // 載入產品供應商關聯
+                    await LoadProductSuppliers();
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "找不到指定的產品資料");
+                    Navigation.NavigateTo("/products");
+                    return;
+                }
+            }
+            else
+            {                // 新增模式，設定預設值
+                product = new Product
+                {
+                    IsActive = true,
+                    CurrentStock = 0,
+                    MinStockLevel = 0,
+                    MaxStockLevel = 0
+                };
+            }
+
+            await InitializeBreadcrumb();
+            UpdateAvailableSuppliers();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"載入資料時發生錯誤: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadProductSuppliers()
+    {        if (Id.HasValue)
+        {
+            var result = await ProductService.GetProductSuppliersAsync(Id.Value);
+            productSuppliers = result;
+        }
+    }
+
+    private void UpdateAvailableSuppliers()
+    {
+        var usedSupplierIds = productSuppliers.Select(ps => ps.SupplierId).ToHashSet();
+        availableSuppliers = suppliers.Where(s => !usedSupplierIds.Contains(s.Id)).ToList();
+    }    private Task InitializeBreadcrumb()
+    {        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new() { Text = "首頁", Href = "/" },
+            new() { Text = "產品管理", Href = "/products" },
+            new() { Text = GetPageTitle(), Href = null } // Href = null 會讓 IsActive = true
+        };
+        return Task.CompletedTask;
+    }
+
+    private string GetPageTitle()
+    {
+        return Id.HasValue ? $"編輯產品 - {product.ProductName}" : "新增產品";
+    }
+
+    private string GetSubtitle()
+    {
+        return Id.HasValue ? product.ProductCode : "建立新的產品資料";
+    }
+
+    private string GetTitleIcon()
+    {
+        return Id.HasValue ? "pencil-square" : "plus-circle";
+    }
+
+    private string GetCurrentUrl()
+    {
+        return Id.HasValue ? $"/products/edit/{Id}" : "/products/edit";
+    }
+
+    private async Task SaveProduct()
+    {
+        isSubmitting = true;
+        StateHasChanged();
+
+        try
+        {
+            ServiceResult<Product> result;
+            
+            if (Id.HasValue)
+            {
+                // 更新產品
+                result = await ProductService.UpdateAsync(product);
+            }
+            else
+            {
+                // 新增產品
+                result = await ProductService.CreateAsync(product);
+            }
+
+            if (result.IsSuccess)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", Id.HasValue ? "產品已成功更新" : "產品已成功新增");
+                
+                if (!Id.HasValue && result.Data != null)
+                {
+                    // 新增成功後導向編輯頁面
+                    Navigation.NavigateTo($"/products/edit/{result.Data.Id}");
+                }
+                else
+                {
+                    // 更新成功後導向詳細頁面
+                    Navigation.NavigateTo($"/products/detail/{Id}");
+                }
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"儲存失敗: {result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"儲存時發生錯誤: {ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Cancel()
+    {
+        if (Id.HasValue)
+        {
+            Navigation.NavigateTo($"/products/detail/{Id}");
+        }
+        else
+        {
+            Navigation.NavigateTo("/products");
+        }
+    }
+
+    private void ShowAddSupplierModal()
+    {
+        selectedSupplierId = string.Empty;
+        newSupplierIsPrimary = false;
+        showAddSupplierModal = true;
+        StateHasChanged();
+    }
+
+    private void CloseAddSupplierModal()
+    {
+        showAddSupplierModal = false;
+        StateHasChanged();
+    }
+
+    private async Task AddSupplier()
+    {
+        if (string.IsNullOrEmpty(selectedSupplierId) || !Id.HasValue)
+            return;
+
+        try
+        {
+            var supplierId = int.Parse(selectedSupplierId);
+            
+            // 這裡我們先使用簡化的實作
+            await JSRuntime.InvokeVoidAsync("alert", "功能開發中：新增供應商");
+            CloseAddSupplierModal();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"新增供應商時發生錯誤: {ex.Message}");
+        }
+    }
+
+    private async Task SetPrimarySupplier(ProductSupplier productSupplier)
+    {
+        try
+        {
+            // 這裡我們先使用簡化的實作
+            await JSRuntime.InvokeVoidAsync("alert", "功能開發中：設定主要供應商");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"設定主要供應商時發生錯誤: {ex.Message}");
+        }
+    }
+
+    private async Task RemoveSupplier(ProductSupplier productSupplier)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"確定要移除供應商「{productSupplier.Supplier?.CompanyName}」嗎？");
+        if (confirmed)
+        {
+            try
+            {
+                // 這裡我們先使用簡化的實作
+                await JSRuntime.InvokeVoidAsync("alert", "功能開發中：移除供應商");
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"移除供應商時發生錯誤: {ex.Message}");
+            }
+        }
+    }
+}

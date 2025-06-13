@@ -1,0 +1,471 @@
+@page "/employees/detail/{employeeId:int}"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Services.Interfaces
+@using ERPCore2.Components.Shared.Headers
+@using Microsoft.AspNetCore.Components
+@using Microsoft.JSInterop
+@inject IEmployeeService EmployeeService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>員工詳細資料</PageTitle>
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">載入中...</span>
+            </div>
+            <div class="mt-2">載入員工資料中...</div>
+        </div>
+    </div>
+}
+else if (employee == null)
+{
+    <div class="alert alert-warning">
+        <h4>找不到員工資料</h4>
+        <p>指定的員工不存在或已被刪除。</p>
+        <button class="btn btn-primary" @onclick="BackToEmployeeList">
+            返回員工列表
+        </button>
+    </div>
+}
+else
+{
+    @* 頁面標題 *@
+    <GenericHeaderComponent Title="@GetPageTitle()"
+                           Subtitle="@GetSubtitle()"
+                           TitleIcon="person-circle"
+                           HeadingLevel="h1"
+                           BreadcrumbItems="@breadcrumbItems"
+                           ShowDivider="true">
+        <ActionButtons>
+            <div class="btn-group">
+                <button class="btn btn-primary" @onclick="EditEmployee">
+                    <i class="bi bi-pencil me-1"></i>
+                    編輯
+                </button>
+                
+                @if (employee.IsLocked)
+                {
+                    <button class="btn btn-success" @onclick="UnlockEmployee">
+                        <i class="bi bi-unlock me-1"></i>
+                        解鎖帳號
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-warning" @onclick="LockEmployee">
+                        <i class="bi bi-lock me-1"></i>
+                        鎖定帳號
+                    </button>
+                }
+
+                <button class="btn btn-info" @onclick="ResetPassword">
+                    <i class="bi bi-key me-1"></i>
+                    重設密碼
+                </button>
+
+                <button class="btn btn-outline-secondary" @onclick="BackToEmployeeList">
+                    <i class="bi bi-arrow-left me-1"></i>
+                    返回列表
+                </button>
+            </div>
+        </ActionButtons>
+    </GenericHeaderComponent>
+
+    @* 基本資料 *@
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-person me-2"></i>
+                        基本資料
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">員工代碼</label>
+                                <div class="fw-bold text-primary">@employee.EmployeeCode</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">帳號</label>
+                                <div class="fw-bold">@employee.Username</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">姓名</label>
+                                <div>@GetFullName()</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">電子郵件</label>
+                                <div>
+                                    @if (!string.IsNullOrEmpty(employee.Email))
+                                    {
+                                        <a href="mailto:@employee.Email" class="text-decoration-underline">@employee.Email</a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">部門</label>
+                                <div>@(employee.Department ?? "-")</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">職位</label>
+                                <div>@(employee.Position ?? "-")</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* 帳號資訊 *@
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-shield-lock me-2"></i>
+                        帳號資訊
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">帳號狀態</label>
+                                <div>
+                                    @if (employee.Status == EntityStatus.Active)
+                                    {
+                                        <span class="badge bg-success">啟用</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">停用</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">鎖定狀態</label>
+                                <div>
+                                    @if (employee.IsLocked)
+                                    {
+                                        <span class="badge bg-danger">已鎖定</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">正常</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        @if (employee.FailedLoginAttempts > 0)
+                        {
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">失敗登入次數</label>
+                                    <div class="@(employee.FailedLoginAttempts >= 3 ? "text-danger fw-bold" : "text-warning")">
+                                        @employee.FailedLoginAttempts
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        @if (employee.LockedAt.HasValue)
+                        {
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">鎖定時間</label>
+                                    <div class="text-muted">@employee.LockedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</div>
+                                </div>
+                            </div>
+                        }
+                        @if (employee.LastLoginAt.HasValue)
+                        {
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">最後登入時間</label>
+                                    <div class="text-info">@employee.LastLoginAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">登入記錄</label>
+                                    <div class="text-warning">從未登入</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* 角色權限 *@
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-key me-2"></i>
+                        角色權限
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        @if (employee.Role != null)
+                        {
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">角色名稱</label>
+                                    <div class="fw-bold text-primary">@employee.Role.RoleName</div>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(employee.Role.Description))
+                            {
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">角色描述</label>
+                                        <div>@employee.Role.Description</div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="col-12">
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    未設定角色
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* 活動記錄 *@
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-clock-history me-2"></i>
+                        活動記錄
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">建立時間</label>
+                                <div class="text-muted">@employee.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")</div>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(employee.CreatedBy))
+                        {
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">建立者</label>
+                                    <div class="text-muted">@employee.CreatedBy</div>
+                                </div>
+                            </div>
+                        }
+                        @if (employee.UpdatedAt.HasValue)
+                        {
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">最後更新時間</label>
+                                    <div class="text-muted">@employee.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</div>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(employee.UpdatedBy))
+                            {
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">更新者</label>
+                                        <div class="text-muted">@employee.UpdatedBy</div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int EmployeeId { get; set; }
+
+    private Employee? employee;
+    private bool isLoading = true;
+    
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEmployeeData();
+        InitializeBreadcrumbs();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (EmployeeId > 0)
+        {
+            await LoadEmployeeData();
+            InitializeBreadcrumbs();
+        }
+    }
+
+    private async Task LoadEmployeeData()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // 載入員工基本資料
+            employee = await EmployeeService.GetByIdAsync(EmployeeId);
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入員工資料失敗：", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        var fullName = GetFullName();
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("員工管理", "/employees"),
+            new($"{fullName}")
+        };
+    }
+
+    private string GetPageTitle()
+    {
+        if (employee == null) return "員工詳細資料";
+        return $"員工資料 - {GetFullName()}";
+    }
+
+    private string GetSubtitle()
+    {
+        if (employee == null) return "";
+        return $"員工代碼：{employee.EmployeeCode}";
+    }
+
+    private string GetFullName()
+    {
+        if (employee == null) return "";
+        var fullName = $"{employee.LastName}{employee.FirstName}".Trim();
+        return string.IsNullOrEmpty(fullName) ? employee.Username : fullName;
+    }
+
+    private void EditEmployee()
+    {
+        Navigation.NavigateTo($"/employees/edit/{EmployeeId}");
+    }
+
+    private async Task LockEmployee()
+    {
+        try
+        {
+            var result = await EmployeeService.SetEmployeeActiveStatusAsync(EmployeeId, false);
+            if (result.IsSuccess)
+            {
+                await LoadEmployeeData();
+                await JSRuntime.InvokeVoidAsync("showToast", "success", "員工帳號已鎖定");
+            }            else
+            {
+                await JSRuntime.InvokeVoidAsync("showToast", "error", result.ErrorMessage ?? "鎖定失敗");
+            }        }
+        catch (Exception)
+        {
+            await JSRuntime.InvokeVoidAsync("showToast", "error", "鎖定員工帳號時發生錯誤");
+        }
+    }
+
+    private async Task UnlockEmployee()
+    {
+        try
+        {
+            var result = await EmployeeService.SetEmployeeActiveStatusAsync(EmployeeId, true);
+            if (result.IsSuccess)
+            {
+                await LoadEmployeeData();
+                await JSRuntime.InvokeVoidAsync("showToast", "success", "員工帳號已解鎖");
+            }            else
+            {
+                await JSRuntime.InvokeVoidAsync("showToast", "error", result.ErrorMessage ?? "解鎖失敗");
+            }        }
+        catch (Exception)
+        {
+            await JSRuntime.InvokeVoidAsync("showToast", "error", "解鎖員工帳號時發生錯誤");
+        }
+    }
+
+    private async Task ResetPassword()
+    {
+        try
+        {
+            // 產生暫時密碼（實際應用中可能需要更安全的方式）
+            var tempPassword = $"Temp{DateTime.Now:yyyyMMdd}!";
+            
+            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+                $"確定要重設 {employee!.Username} 的密碼嗎？\n新密碼將設為：{tempPassword}");
+            
+            if (confirmed)
+            {
+                // 這裡應該調用 IAuthenticationService 的 ResetPasswordAsync 方法
+                // 由於目前的介面設計，我們暫時顯示提示
+                await JSRuntime.InvokeVoidAsync("showToast", "info", 
+                    $"密碼重設功能需要實作 IAuthenticationService.ResetPasswordAsync 方法");
+            }        }
+        catch (Exception)
+        {
+            await JSRuntime.InvokeVoidAsync("showToast", "error", "重設密碼時發生錯誤");
+        }
+    }
+
+    private void BackToEmployeeList()
+    {
+        Navigation.NavigateTo("/employees");
+    }
+}

@@ -85,6 +85,15 @@
                         </NavLink>
                     </div>
                 </PermissionCheck>
+
+                <!-- 產品管理 - 需要 Product.Read 權限 -->
+                <PermissionCheck Permission="Product.Read">
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="products">
+                            <span class="bi bi-box-seam-fill" aria-hidden="true"></span> 產品管理
+                        </NavLink>
+                    </div>
+                </PermissionCheck>
             </Authorized>
         </AuthorizeView>
         
