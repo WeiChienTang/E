@@ -1,6 +1,7 @@
-@* 增強版資料表格組件 - 支援欄位配置和自動格式化 *@
+@* 增強版資料表格組件 - 支援欄位配置、自動格式化和分頁功能 *@
 @using System.Reflection
 @using System.Web
+@using ERPCore2.Components.Shared.Buttons
 @typeparam TItem
 
 <div class="table-responsive">
@@ -83,6 +84,92 @@
     </table>
 </div>
 
+@* 分頁控制區塊 *@
+@if (EnablePagination && TotalItems > 0)
+{
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <!-- 資料統計資訊 -->
+        <div class="text-muted">
+            <small>
+                顯示第 @StartItem - @EndItem 筆，共 @TotalItems 筆資料 (第 @CurrentPage 頁，共 @TotalPages 頁)
+            </small>
+        </div>
+        
+        <!-- 分頁按鈕群 -->
+        <nav aria-label="資料表分頁">
+            <div class="btn-group" role="group" aria-label="分頁控制">
+                <!-- 第一頁按鈕 -->
+                <GenericButtonComponent Text="第一頁"
+                                      IconClass="fas fa-angle-double-left"
+                                      Variant="ButtonVariant.OutlinePrimary"
+                                      Size="ButtonSize.Small"
+                                      IsDisabled="@(!HasPreviousPage)"
+                                      OnClick="@(() => HandlePageChanged(1))"
+                                      Title="前往第一頁" />
+                
+                <!-- 上一頁按鈕 -->
+                <GenericButtonComponent Text="上一頁"
+                                      IconClass="fas fa-angle-left"
+                                      Variant="ButtonVariant.OutlinePrimary"
+                                      Size="ButtonSize.Small"
+                                      IsDisabled="@(!HasPreviousPage)"
+                                      OnClick="@(() => HandlePageChanged(CurrentPage - 1))"
+                                      Title="上一頁" />
+                
+                <!-- 頁碼按鈕群 -->
+                @foreach (var pageNumber in GetPageNumbers())
+                {
+                    var currentPageNumber = pageNumber;
+                    var isCurrentPage = currentPageNumber == CurrentPage;
+                    
+                    <GenericButtonComponent Text="@currentPageNumber.ToString()"
+                                          Variant="@(isCurrentPage ? ButtonVariant.Primary : ButtonVariant.OutlinePrimary)"
+                                          Size="ButtonSize.Small"
+                                          OnClick="@(() => HandlePageChanged(currentPageNumber))"
+                                          Title="@($"前往第 {currentPageNumber} 頁")" />
+                }
+                
+                <!-- 下一頁按鈕 -->
+                <GenericButtonComponent Text="下一頁"
+                                      IconClass="fas fa-angle-right"
+                                      Variant="ButtonVariant.OutlinePrimary"
+                                      Size="ButtonSize.Small"
+                                      IsDisabled="@(!HasNextPage)"
+                                      OnClick="@(() => HandlePageChanged(CurrentPage + 1))"
+                                      Title="下一頁" />
+                
+                <!-- 最後一頁按鈕 -->
+                <GenericButtonComponent Text="最後一頁"
+                                      IconClass="fas fa-angle-double-right"
+                                      Variant="ButtonVariant.OutlinePrimary"
+                                      Size="ButtonSize.Small"
+                                      IsDisabled="@(!HasNextPage)"
+                                      OnClick="@(() => HandlePageChanged(TotalPages))"
+                                      Title="前往最後一頁" />
+            </div>
+        </nav>
+        
+        <!-- 每頁筆數選擇器 -->
+        @if (ShowPageSizeSelector)
+        {
+            <div class="d-flex align-items-center">
+                <label class="form-label me-2 mb-0 text-muted">
+                    <small>每頁顯示:</small>
+                </label>
+                <select class="form-select form-select-sm" style="width: auto;" 
+                        value="@PageSize" 
+                        @onchange="HandlePageSizeChanged">
+                    @foreach (var size in PageSizeOptions)
+                    {
+                        <option value="@size">@size</option>
+                    }
+                </select>
+                <small class="text-muted ms-1">筆</small>
+            </div>
+        }
+    </div>
+}
+
 @code {
     [Parameter] public IEnumerable<TItem>? Items { get; set; }
     [Parameter] public List<TableColumnDefinition>? ColumnDefinitions { get; set; }
@@ -103,6 +190,24 @@
     [Parameter] public string RowClickCursor { get; set; } = "pointer";
     [Parameter] public bool EnableSorting { get; set; } = false;
     [Parameter] public EventCallback<string> OnSort { get; set; }
+
+    // 分頁相關參數
+    [Parameter] public bool EnablePagination { get; set; } = false;
+    [Parameter] public int CurrentPage { get; set; } = 1;
+    [Parameter] public int PageSize { get; set; } = 20;
+    [Parameter] public int TotalItems { get; set; } = 0;
+    [Parameter] public EventCallback<int> OnPageChanged { get; set; }
+    [Parameter] public EventCallback<int> OnPageSizeChanged { get; set; }
+    [Parameter] public bool ShowPageSizeSelector { get; set; } = true;
+    [Parameter] public List<int> PageSizeOptions { get; set; } = new() { 10, 20, 50, 100 };
+    [Parameter] public int MaxDisplayedPages { get; set; } = 5;
+
+    // 分頁計算屬性
+    private int TotalPages => TotalItems > 0 ? (int)Math.Ceiling((double)TotalItems / PageSize) : 0;
+    private bool HasPreviousPage => CurrentPage > 1;
+    private bool HasNextPage => CurrentPage < TotalPages;
+    private int StartItem => TotalItems > 0 ? ((CurrentPage - 1) * PageSize) + 1 : 0;
+    private int EndItem => TotalItems > 0 ? Math.Min(CurrentPage * PageSize, TotalItems) : 0;
 
     private string GetTableClass()
     {
@@ -282,7 +387,41 @@
         if (badgeMap != null && badgeMap.ContainsKey(value))
         {
             return $"<span class=\"badge {badgeMap[value]}\">{HttpUtility.HtmlEncode(value.ToString() ?? "")}</span>";
+        }          return $"<span class=\"badge bg-secondary\">{HttpUtility.HtmlEncode(value.ToString() ?? "")}</span>";
+    }
+
+    // 分頁相關方法
+    private async Task HandlePageChanged(int newPage)
+    {
+        if (newPage >= 1 && newPage <= TotalPages && newPage != CurrentPage)
+        {
+            if (OnPageChanged.HasDelegate)
+            {
+                await OnPageChanged.InvokeAsync(newPage);
+            }
         }
-          return $"<span class=\"badge bg-secondary\">{HttpUtility.HtmlEncode(value.ToString() ?? "")}</span>";
+    }
+
+    private async Task HandlePageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var newPageSize) && newPageSize > 0)
+        {
+            if (OnPageSizeChanged.HasDelegate)
+            {
+                await OnPageSizeChanged.InvokeAsync(newPageSize);
+            }
+        }
+    }
+
+    private IEnumerable<int> GetPageNumbers()
+    {
+        var startPage = Math.Max(1, CurrentPage - MaxDisplayedPages / 2);
+        var endPage = Math.Min(TotalPages, startPage + MaxDisplayedPages - 1);
+        
+        // 調整起始頁面，確保顯示正確數量的頁碼
+        if (endPage - startPage + 1 < MaxDisplayedPages)
+        {
+            startPage = Math.Max(1, endPage - MaxDisplayedPages + 1);
+        }        return Enumerable.Range(startPage, endPage - startPage + 1);
     }
 }

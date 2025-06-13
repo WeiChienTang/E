@@ -7,7 +7,6 @@
 @using ERPCore2.Components.Shared.Alerts
 @using ERPCore2.Components.Shared.Buttons
 @using static ERPCore2.Components.Shared.Alerts.AlertComponent
-@using static ERPCore2.Components.Shared.Buttons.ButtonComponent
 @rendermode InteractiveServer
 
 <PageTitle>Alerts 元件展示</PageTitle>
@@ -62,7 +61,7 @@
                                       IconClass="bi bi-exclamation-triangle-fill" />
                         
                         @if (!showDismissible1 || !showDismissible2)
-                        {                            <ButtonComponent Text="重新顯示警告" 
+                        {                            <GenericButtonComponent Text="重新顯示警告" 
                                            Variant="ButtonVariant.OutlinePrimary" 
                                            OnClick="@RestoreAlerts" 
                                            Size="ButtonSize.Small" />
@@ -109,22 +108,22 @@
                     <h6>範例 5: 動態警告控制</h6>
                     <div class="border p-3 mb-4">
                         <div class="mb-3">
-                            <ButtonComponent Text="顯示成功訊息" 
+                            <GenericButtonComponent Text="顯示成功訊息" 
                                            Variant="ButtonVariant.Success" 
                                            OnClick="@(() => ShowDynamicAlert(AlertType.Success, "操作成功完成！", "bi bi-check-circle-fill"))" 
                                            Size="ButtonSize.Small" />
                             
-                            <ButtonComponent Text="顯示警告訊息" 
+                            <GenericButtonComponent Text="顯示警告訊息" 
                                            Variant="ButtonVariant.Warning" 
                                            OnClick="@(() => ShowDynamicAlert(AlertType.Warning, "請注意此操作的風險", "bi bi-exclamation-triangle-fill"))" 
                                            Size="ButtonSize.Small" />
                             
-                            <ButtonComponent Text="顯示錯誤訊息" 
+                            <GenericButtonComponent Text="顯示錯誤訊息" 
                                            Variant="ButtonVariant.Danger" 
                                            OnClick="@(() => ShowDynamicAlert(AlertType.Danger, "操作失敗，請重試", "bi bi-x-circle-fill"))" 
                                            Size="ButtonSize.Small" />
                             
-                            <ButtonComponent Text="顯示資訊訊息" 
+                            <GenericButtonComponent Text="顯示資訊訊息" 
                                            Variant="ButtonVariant.Info" 
                                            OnClick="@(() => ShowDynamicAlert(AlertType.Info, "這是一個提示訊息", "bi bi-info-circle-fill"))" 
                                            Size="ButtonSize.Small" />

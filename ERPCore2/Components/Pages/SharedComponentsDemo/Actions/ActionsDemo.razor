@@ -6,7 +6,6 @@
 @using Microsoft.AspNetCore.Components.Web
 @using ERPCore2.Components.Shared.Actions
 @using ERPCore2.Components.Shared.Buttons
-@using static ERPCore2.Components.Shared.Buttons.ButtonComponent
 @rendermode InteractiveServer
 
 <PageTitle>Actions 元件展示</PageTitle>
@@ -29,20 +28,21 @@
                     <div class="border p-3 mb-4 bg-light">
                         <PageActionBar>
                             <PrimaryActions>
-                                <ButtonComponent Text="新增客戶" 
+                                <GenericButtonComponent Text="新增客戶" 
                                                Variant="ButtonVariant.Primary" 
                                                IconClass="bi bi-plus-circle"
                                                OnClick="@HandleAddCustomer" />
-                                <ButtonComponent Text="匯出資料" 
+                                <GenericButtonComponent Text="匯出資料" 
                                                Variant="ButtonVariant.Success" 
                                                IconClass="bi bi-download"
                                                OnClick="@HandleExport" />
                             </PrimaryActions>
-                            <SecondaryActions>                                <ButtonComponent Text="重新整理" 
+                            <SecondaryActions>                                
+                                <GenericButtonComponent Text="重新整理" 
                                                Variant="ButtonVariant.OutlinePrimary" 
                                                IconClass="bi bi-arrow-clockwise"
                                                OnClick="@HandleRefresh" />
-                                <ButtonComponent Text="設定" 
+                                <GenericButtonComponent Text="設定" 
                                                Variant="ButtonVariant.Secondary" 
                                                IconClass="bi bi-gear"
                                                OnClick="@HandleSettings" />
@@ -54,10 +54,11 @@
                     <div class="border p-3 mb-4 bg-light">
                         <PageActionBar>
                             <PrimaryActions>
-                                <ButtonComponent Text="儲存" 
+                                <GenericButtonComponent Text="儲存" 
                                                Variant="ButtonVariant.Primary" 
                                                IconClass="bi bi-save"
-                                               OnClick="@HandleSave" />                                <ButtonComponent Text="取消" 
+                                               OnClick="@HandleSave" />                                
+                                <GenericButtonComponent Text="取消" 
                                                Variant="ButtonVariant.OutlineSecondary" 
                                                OnClick="@HandleCancel" />
                             </PrimaryActions>
@@ -68,19 +69,19 @@
                     <div class="border p-3 mb-4 bg-light">
                         <PageActionBar>
                             <PrimaryActions>
-                                <ButtonComponent Text="@(isProcessing ? "處理中..." : "提交資料")" 
+                                <GenericButtonComponent Text="@(isProcessing ? "處理中..." : "提交資料")" 
                                                Variant="ButtonVariant.Primary" 
                                                IconClass="bi bi-check-circle"
                                                IsLoading="@isProcessing"
                                                IsDisabled="@isProcessing"
                                                OnClick="@HandleSubmit" />
-                                <ButtonComponent Text="重設" 
+                                <GenericButtonComponent Text="重設" 
                                                Variant="ButtonVariant.Warning" 
                                                IconClass="bi bi-arrow-counterclockwise"
                                                OnClick="@HandleReset" />
                             </PrimaryActions>
                             <SecondaryActions>
-                                <ButtonComponent Text="預覽" 
+                                <GenericButtonComponent Text="預覽" 
                                                Variant="ButtonVariant.Info" 
                                                IconClass="bi bi-eye"
                                                OnClick="@HandlePreview" />
@@ -92,17 +93,17 @@
                     <div class="border p-3 mb-4 bg-light">
                         <PageActionBar>
                             <PrimaryActions>
-                                <ButtonComponent Text="編輯" 
+                                <GenericButtonComponent Text="編輯" 
                                                Variant="ButtonVariant.Primary" 
                                                IconClass="bi bi-pencil"
                                                OnClick="@HandleEdit" />
                             </PrimaryActions>
                             <SecondaryActions>
-                                <ButtonComponent Text="刪除" 
+                                <GenericButtonComponent Text="刪除" 
                                                Variant="ButtonVariant.Danger" 
                                                IconClass="bi bi-trash"
                                                OnClick="@HandleDelete" />
-                                <ButtonComponent Text="封存" 
+                                <GenericButtonComponent Text="封存" 
                                                Variant="ButtonVariant.Warning" 
                                                IconClass="bi bi-archive"
                                                OnClick="@HandleArchive" />

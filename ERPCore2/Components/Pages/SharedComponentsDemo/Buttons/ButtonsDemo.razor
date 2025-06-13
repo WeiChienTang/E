@@ -1,6 +1,5 @@
 @page "/sharedcomponentsdemo/buttons"
 @using ERPCore2.Components.Shared.Buttons
-@using static ERPCore2.Components.Shared.Buttons.ButtonComponent
 @rendermode InteractiveServer
 
 <PageTitle>Buttons 元件展示</PageTitle>
@@ -25,34 +24,34 @@
                             <div class="col-md-3">
                                 <label class="form-label">主要按鈕:</label>
                                 <br>
-                                <ButtonComponent Text="主要按鈕" Variant="ButtonVariant.Primary" OnClick="@(() => ShowMessage("點擊了主要按鈕"))" />
+                                <GenericButtonComponent Text="主要按鈕" Variant="ButtonVariant.Primary" OnClick="@(() => ShowMessage("點擊了主要按鈕"))" />
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">次要按鈕:</label>
                                 <br>
-                                <ButtonComponent Text="次要按鈕" Variant="ButtonVariant.Secondary" OnClick="@(() => ShowMessage("點擊了次要按鈕"))" />
+                                <GenericButtonComponent Text="次要按鈕" Variant="ButtonVariant.Secondary" OnClick="@(() => ShowMessage("點擊了次要按鈕"))" />
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">成功按鈕:</label>
                                 <br>
-                                <ButtonComponent Text="成功按鈕" Variant="ButtonVariant.Success" OnClick="@(() => ShowMessage("點擊了成功按鈕"))" />
+                                <GenericButtonComponent Text="成功按鈕" Variant="ButtonVariant.Success" OnClick="@(() => ShowMessage("點擊了成功按鈕"))" />
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">警告按鈕:</label>
                                 <br>
-                                <ButtonComponent Text="警告按鈕" Variant="ButtonVariant.Warning" OnClick="@(() => ShowMessage("點擊了警告按鈕"))" />
+                                <GenericButtonComponent Text="警告按鈕" Variant="ButtonVariant.Warning" OnClick="@(() => ShowMessage("點擊了警告按鈕"))" />
                             </div>
                         </div>
                         <div class="row g-3 mt-2">
                             <div class="col-md-3">
                                 <label class="form-label">危險按鈕:</label>
                                 <br>
-                                <ButtonComponent Text="危險按鈕" Variant="ButtonVariant.Danger" OnClick="@(() => ShowMessage("點擊了危險按鈕"))" />
+                                <GenericButtonComponent Text="危險按鈕" Variant="ButtonVariant.Danger" OnClick="@(() => ShowMessage("點擊了危險按鈕"))" />
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">資訊按鈕:</label>
                                 <br>
-                                <ButtonComponent Text="資訊按鈕" Variant="ButtonVariant.Info" OnClick="@(() => ShowMessage("點擊了資訊按鈕"))" />
+                                <GenericButtonComponent Text="資訊按鈕" Variant="ButtonVariant.Info" OnClick="@(() => ShowMessage("點擊了資訊按鈕"))" />
                             </div>
                         </div>
                     </div>
@@ -63,22 +62,22 @@
                             <div class="col-md-3">
                                 <label class="form-label">外框主要:</label>
                                 <br>
-                                <ButtonComponent Text="外框主要" Variant="ButtonVariant.OutlinePrimary" OnClick="@(() => ShowMessage("點擊了外框主要按鈕"))" />
+                                <GenericButtonComponent Text="外框主要" Variant="ButtonVariant.OutlinePrimary" OnClick="@(() => ShowMessage("點擊了外框主要按鈕"))" />
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">外框次要:</label>
                                 <br>
-                                <ButtonComponent Text="外框次要" Variant="ButtonVariant.OutlineSecondary" OnClick="@(() => ShowMessage("點擊了外框次要按鈕"))" />
+                                <GenericButtonComponent Text="外框次要" Variant="ButtonVariant.OutlineSecondary" OnClick="@(() => ShowMessage("點擊了外框次要按鈕"))" />
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">外框警告:</label>
                                 <br>
-                                <ButtonComponent Text="外框警告" Variant="ButtonVariant.OutlineWarning" OnClick="@(() => ShowMessage("點擊了外框警告按鈕"))" />
+                                <GenericButtonComponent Text="外框警告" Variant="ButtonVariant.OutlineWarning" OnClick="@(() => ShowMessage("點擊了外框警告按鈕"))" />
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">外框危險:</label>
                                 <br>
-                                <ButtonComponent Text="外框危險" Variant="ButtonVariant.OutlineDanger" OnClick="@(() => ShowMessage("點擊了外框危險按鈕"))" />
+                                <GenericButtonComponent Text="外框危險" Variant="ButtonVariant.OutlineDanger" OnClick="@(() => ShowMessage("點擊了外框危險按鈕"))" />
                             </div>
                         </div>
                     </div>
@@ -89,7 +88,7 @@
                             <div class="col-md-3">
                                 <label class="form-label">新增:</label>
                                 <br>
-                                <ButtonComponent Text="新增" 
+                                <GenericButtonComponent Text="新增" 
                                                Variant="ButtonVariant.Primary" 
                                                IconClass="bi bi-plus-circle" 
                                                OnClick="@(() => ShowMessage("新增操作"))" />
@@ -97,7 +96,7 @@
                             <div class="col-md-3">
                                 <label class="form-label">編輯:</label>
                                 <br>
-                                <ButtonComponent Text="編輯" 
+                                <GenericButtonComponent Text="編輯" 
                                                Variant="ButtonVariant.Warning" 
                                                IconClass="bi bi-pencil-square" 
                                                OnClick="@(() => ShowMessage("編輯操作"))" />
@@ -105,7 +104,7 @@
                             <div class="col-md-3">
                                 <label class="form-label">刪除:</label>
                                 <br>
-                                <ButtonComponent Text="刪除" 
+                                <GenericButtonComponent Text="刪除" 
                                                Variant="ButtonVariant.Danger" 
                                                IconClass="bi bi-trash" 
                                                OnClick="@(() => ShowMessage("刪除操作"))" />
@@ -113,7 +112,7 @@
                             <div class="col-md-3">
                                 <label class="form-label">下載:</label>
                                 <br>
-                                <ButtonComponent Text="下載" 
+                                <GenericButtonComponent Text="下載" 
                                                Variant="ButtonVariant.Success" 
                                                IconClass="bi bi-download" 
                                                OnClick="@(() => ShowMessage("下載操作"))" />
@@ -127,16 +126,16 @@
                             <div class="col-md-3">
                                 <label class="form-label">圖示按鈕:</label>
                                 <br>
-                                <ButtonComponent Variant="ButtonVariant.Primary" 
+                                <GenericButtonComponent Variant="ButtonVariant.Primary" 
                                                IconClass="bi bi-heart" 
                                                Title="喜歡" 
                                                OnClick="@(() => ShowMessage("點擊了喜歡"))" />
-                                <ButtonComponent Variant="ButtonVariant.Info" 
+                                <GenericButtonComponent Variant="ButtonVariant.Info" 
                                                IconClass="bi bi-share" 
                                                Title="分享" 
                                                CssClass="ms-2"
                                                OnClick="@(() => ShowMessage("點擊了分享"))" />
-                                <ButtonComponent Variant="ButtonVariant.Success" 
+                                <GenericButtonComponent Variant="ButtonVariant.Success" 
                                                IconClass="bi bi-bookmark" 
                                                Title="收藏" 
                                                CssClass="ms-2"
@@ -151,7 +150,7 @@
                             <div class="col-md-4">
                                 <label class="form-label">小型按鈕:</label>
                                 <br>
-                                <ButtonComponent Text="小型" 
+                                <GenericButtonComponent Text="小型" 
                                                Variant="ButtonVariant.Primary" 
                                                Size="ButtonSize.Small" 
                                                IconClass="bi bi-star"
@@ -160,7 +159,7 @@
                             <div class="col-md-4">
                                 <label class="form-label">標準按鈕:</label>
                                 <br>
-                                <ButtonComponent Text="標準" 
+                                <GenericButtonComponent Text="標準" 
                                                Variant="ButtonVariant.Primary" 
                                                Size="ButtonSize.Normal" 
                                                IconClass="bi bi-star"
@@ -169,7 +168,7 @@
                             <div class="col-md-4">
                                 <label class="form-label">大型按鈕:</label>
                                 <br>
-                                <ButtonComponent Text="大型" 
+                                <GenericButtonComponent Text="大型" 
                                                Variant="ButtonVariant.Primary" 
                                                Size="ButtonSize.Large" 
                                                IconClass="bi bi-star"
@@ -184,7 +183,7 @@
                             <div class="col-md-3">
                                 <label class="form-label">載入中:</label>
                                 <br>
-                                <ButtonComponent Text="@(isLoading ? "處理中..." : "提交")" 
+                                <GenericButtonComponent Text="@(isLoading ? "處理中..." : "提交")" 
                                                Variant="ButtonVariant.Primary" 
                                                IsLoading="@isLoading"
                                                IsDisabled="@isLoading"
@@ -193,7 +192,7 @@
                             <div class="col-md-3">
                                 <label class="form-label">禁用狀態:</label>
                                 <br>
-                                <ButtonComponent Text="禁用按鈕" 
+                                <GenericButtonComponent Text="禁用按鈕" 
                                                Variant="ButtonVariant.Secondary" 
                                                IsDisabled="true"
                                                IconClass="bi bi-ban" />
@@ -201,7 +200,7 @@
                             <div class="col-md-3">
                                 <label class="form-label">提交按鈕:</label>
                                 <br>
-                                <ButtonComponent Text="提交表單" 
+                                <GenericButtonComponent Text="提交表單" 
                                                Variant="ButtonVariant.Success" 
                                                IsSubmit="true"
                                                IconClass="bi bi-check2" />
@@ -209,7 +208,7 @@
                             <div class="col-md-3">
                                 <label class="form-label">切換狀態:</label>
                                 <br>
-                                <ButtonComponent Text="@(isToggled ? "已啟用" : "已停用")" 
+                                <GenericButtonComponent Text="@(isToggled ? "已啟用" : "已停用")" 
                                                Variant="@(isToggled ? ButtonVariant.Success : ButtonVariant.OutlineSecondary)" 
                                                IconClass="@(isToggled ? "bi bi-toggle-on" : "bi bi-toggle-off")"
                                                OnClick="@(() => { isToggled = !isToggled; ShowMessage($"狀態切換為：{(isToggled ? "啟用" : "停用")}"); })" />
@@ -222,16 +221,16 @@
                         <div class="row g-4">
                             <div class="col-md-6">
                                 <h6 class="text-muted">表單操作:</h6>
-                                <ButtonComponent Text="儲存" 
+                                <GenericButtonComponent Text="儲存" 
                                                Variant="ButtonVariant.Primary" 
                                                IconClass="bi bi-floppy" 
                                                OnClick="@(() => ShowMessage("表單已儲存"))" />
-                                <ButtonComponent Text="重設" 
+                                <GenericButtonComponent Text="重設" 
                                                Variant="ButtonVariant.OutlineSecondary" 
                                                IconClass="bi bi-arrow-clockwise" 
                                                CssClass="ms-2"
                                                OnClick="@(() => ShowMessage("表單已重設"))" />
-                                <ButtonComponent Text="取消" 
+                                <GenericButtonComponent Text="取消" 
                                                Variant="ButtonVariant.OutlineDanger" 
                                                IconClass="bi bi-x-circle" 
                                                CssClass="ms-2"
@@ -239,16 +238,16 @@
                             </div>
                             <div class="col-md-6">
                                 <h6 class="text-muted">資料操作:</h6>
-                                <ButtonComponent Text="匯出 Excel" 
+                                <GenericButtonComponent Text="匯出 Excel" 
                                                Variant="ButtonVariant.Success" 
                                                IconClass="bi bi-file-earmark-excel" 
                                                OnClick="@(() => ShowMessage("開始匯出 Excel"))" />
-                                <ButtonComponent Text="列印" 
+                                <GenericButtonComponent Text="列印" 
                                                Variant="ButtonVariant.Info" 
                                                IconClass="bi bi-printer" 
                                                CssClass="ms-2"
                                                OnClick="@(() => ShowMessage("開始列印"))" />
-                                <ButtonComponent Text="重新載入" 
+                                <GenericButtonComponent Text="重新載入" 
                                                Variant="ButtonVariant.OutlinePrimary" 
                                                IconClass="bi bi-arrow-repeat" 
                                                CssClass="ms-2"
@@ -263,12 +262,12 @@
                             <div class="col-md-6">
                                 <label class="form-label">自訂 CSS 類別:</label>
                                 <br>
-                                <ButtonComponent Text="圓角按鈕" 
+                                <GenericButtonComponent Text="圓角按鈕" 
                                                Variant="ButtonVariant.Primary" 
                                                CssClass="rounded-pill" 
                                                IconClass="bi bi-circle"
                                                OnClick="@(() => ShowMessage("圓角按鈕樣式"))" />
-                                <ButtonComponent Text="陰影按鈕" 
+                                <GenericButtonComponent Text="陰影按鈕" 
                                                Variant="ButtonVariant.Success" 
                                                CssClass="shadow-lg ms-2" 
                                                IconClass="bi bi-magic"
@@ -277,7 +276,7 @@
                             <div class="col-md-6">
                                 <label class="form-label">自訂標題:</label>
                                 <br>
-                                <ButtonComponent Text="hover 我" 
+                                <GenericButtonComponent Text="hover 我" 
                                                Variant="ButtonVariant.Info" 
                                                Title="這是自訂的提示文字" 
                                                IconClass="bi bi-info-circle"

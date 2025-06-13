@@ -38,11 +38,17 @@
                     <p class="text-muted mb-3">展示基本的資料顯示、格式化和操作功能</p>
                     
                     <ERPCore2.Components.Shared.Tables.GenericTableComponent TItem="EmployeeDemo"
-                        Items="@employees"
+                        Items="@currentEmployeePageItems"
                         ColumnDefinitions="@employeeColumns"
                         ShowActions="true"
                         EnableRowClick="true"
                         EnableSorting="true"
+                        EnablePagination="true"
+                        CurrentPage="@currentEmployeePage"
+                        PageSize="@employeePageSize"
+                        TotalItems="@employees.Count"
+                        OnPageChanged="@HandleEmployeePageChanged"
+                        OnPageSizeChanged="@HandleEmployeePageSizeChanged"
                         OnRowClick="@HandleEmployeeClick"
                         OnSort="@HandleSort"
                         IsStriped="true"
@@ -81,9 +87,15 @@
                 </div>
                 <div class="card-body">
                     <p class="text-muted mb-3">展示貨幣格式化、狀態徽章和自定義範本</p>                    <ERPCore2.Components.Shared.Tables.GenericTableComponent TItem="ProductDemo"
-                        Items="@products"
+                        Items="@currentProductPageItems"
                         ColumnDefinitions="@productColumns"
                         ShowActions="true"
+                        EnablePagination="true"
+                        CurrentPage="@currentProductPage"
+                        PageSize="@productPageSize"
+                        TotalItems="@products.Count"
+                        OnPageChanged="@HandleProductPageChanged"
+                        OnPageSizeChanged="@HandleProductPageSizeChanged"
                         Size="TableSize.Small"
                         IsBordered="true">
                         <ActionsTemplate Context="product">
@@ -174,6 +186,90 @@
             </div>
         </div>
     }
+
+    <!-- 分頁功能示範 -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        分頁功能示範
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">展示內建分頁功能，支援頁面導航和每頁筆數調整</p>
+                    
+                    <!-- 分頁控制說明 -->
+                    <div class="alert alert-info mb-3">
+                        <h6><i class="fas fa-info-circle me-1"></i> 分頁功能說明：</h6>
+                        <ul class="mb-0">
+                            <li><strong>自動分頁：</strong>當資料超過每頁設定筆數時自動顯示分頁控制</li>
+                            <li><strong>頁面導航：</strong>支援第一頁、上一頁、頁碼選擇、下一頁、最後一頁</li>
+                            <li><strong>筆數調整：</strong>可動態調整每頁顯示筆數</li>
+                            <li><strong>資料統計：</strong>顯示目前頁面資料範圍和總筆數</li>
+                        </ul>
+                    </div>
+
+                    <!-- 分頁設定 -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6>員工表格分頁設定</h6>
+                                    <p class="mb-2">目前第 <strong>@currentEmployeePage</strong> 頁，每頁 <strong>@employeePageSize</strong> 筆</p>
+                                    <p class="mb-0 text-muted">總共 @employees.Count 筆資料，共 @((int)Math.Ceiling((double)employees.Count / employeePageSize)) 頁</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6>產品表格分頁設定</h6>
+                                    <p class="mb-2">目前第 <strong>@currentProductPage</strong> 頁，每頁 <strong>@productPageSize</strong> 筆</p>
+                                    <p class="mb-0 text-muted">總共 @products.Count 筆資料，共 @((int)Math.Ceiling((double)products.Count / productPageSize)) 頁</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 員工分頁表格 -->
+                    <h6 class="mt-4">員工資料表 (分頁示範)</h6>
+                    <ERPCore2.Components.Shared.Tables.GenericTableComponent TItem="EmployeeDemo"
+                        Items="@currentEmployeePageItems"
+                        ColumnDefinitions="@employeeColumns"
+                        ShowActions="true"
+                        EnablePagination="true"
+                        CurrentPage="@currentEmployeePage"
+                        PageSize="@employeePageSize"
+                        TotalItems="@employees.Count"
+                        ShowPageSizeSelector="true"
+                        PageSizeOptions="@(new List<int> { 2, 3, 5, 10 })"
+                        MaxDisplayedPages="3"
+                        OnPageChanged="@HandleEmployeePageChanged"
+                        OnPageSizeChanged="@HandleEmployeePageSizeChanged"
+                        OnRowClick="@HandleEmployeeClick"
+                        IsStriped="true"
+                        IsHoverable="true">
+                        <ActionsTemplate Context="employee">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-primary btn-sm" 
+                                        @onclick="() => EditEmployee(employee)"
+                                        title="編輯">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-info btn-sm"
+                                        @onclick="() => ViewEmployee(employee)"
+                                        title="檢視">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </ActionsTemplate>
+                    </ERPCore2.Components.Shared.Tables.GenericTableComponent>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @code {
@@ -208,7 +304,22 @@
     private List<EmployeeDemo> emptyList = new();
     private List<string> actionLogs = new();
 
-    // 欄位定義
+    // 分頁相關變數
+    private int currentEmployeePage = 1;
+    private int employeePageSize = 3; // 設定較小的頁面大小以便展示分頁效果
+    private int currentProductPage = 1;
+    private int productPageSize = 2; // 設定較小的頁面大小以便展示分頁效果
+
+    // 當前頁面的資料
+    private List<EmployeeDemo> currentEmployeePageItems => employees
+        .Skip((currentEmployeePage - 1) * employeePageSize)
+        .Take(employeePageSize)
+        .ToList();
+
+    private List<ProductDemo> currentProductPageItems => products
+        .Skip((currentProductPage - 1) * productPageSize)
+        .Take(productPageSize)
+        .ToList();    // 欄位定義
     private List<TableColumnDefinition> employeeColumns = new();
     private List<TableColumnDefinition> productColumns = new();
 
@@ -220,7 +331,7 @@
 
     private void InitializeData()
     {
-        // 初始化員工資料
+        // 初始化員工資料 - 擴展更多資料以展示分頁效果
         employees = new List<EmployeeDemo>
         {
             new() { Id = 1, Name = "張小明", Email = "ming@company.com", Department = "資訊部", 
@@ -232,10 +343,20 @@
             new() { Id = 4, Name = "陳淑芬", Email = "sufen@company.com", Department = "人事部", 
                    Salary = 60000, HireDate = new DateTime(2023, 1, 10), IsActive = true, Status = "在職" },
             new() { Id = 5, Name = "林志豪", Email = "zhihao@company.com", Department = "財務部", 
-                   Salary = 68000, HireDate = new DateTime(2022, 7, 25), IsActive = true, Status = "在職" }
+                   Salary = 68000, HireDate = new DateTime(2022, 7, 25), IsActive = true, Status = "在職" },
+            new() { Id = 6, Name = "黃雅婷", Email = "yating@company.com", Department = "資訊部", 
+                   Salary = 62000, HireDate = new DateTime(2023, 4, 1), IsActive = true, Status = "在職" },
+            new() { Id = 7, Name = "劉建國", Email = "jianguo@company.com", Department = "業務部", 
+                   Salary = 70000, HireDate = new DateTime(2021, 12, 15), IsActive = true, Status = "在職" },
+            new() { Id = 8, Name = "吳佩珊", Email = "peishan@company.com", Department = "行銷部", 
+                   Salary = 55000, HireDate = new DateTime(2023, 6, 10), IsActive = true, Status = "在職" },
+            new() { Id = 9, Name = "蔡明宏", Email = "minghong@company.com", Department = "財務部", 
+                   Salary = 66000, HireDate = new DateTime(2022, 9, 20), IsActive = false, Status = "留職停薪" },
+            new() { Id = 10, Name = "鄭雅雯", Email = "yawen@company.com", Department = "人事部", 
+                   Salary = 59000, HireDate = new DateTime(2023, 2, 28), IsActive = true, Status = "在職" }
         };
 
-        // 初始化產品資料
+        // 初始化產品資料 - 擴展更多資料
         products = new List<ProductDemo>
         {
             new() { Id = 1, Name = "筆記型電腦", Category = "電腦設備", Price = 35000, Stock = 15, 
@@ -247,7 +368,13 @@
             new() { Id = 4, Name = "顯示器", Category = "電腦設備", Price = 8900, Stock = 8, 
                    CreatedDate = new DateTime(2024, 2, 20), Status = "上架", IsDiscounted = true },
             new() { Id = 5, Name = "印表機", Category = "辦公設備", Price = 4500, Stock = 3, 
-                   CreatedDate = new DateTime(2024, 1, 10), Status = "下架", IsDiscounted = false }
+                   CreatedDate = new DateTime(2024, 1, 10), Status = "下架", IsDiscounted = false },
+            new() { Id = 6, Name = "平板電腦", Category = "電腦設備", Price = 18000, Stock = 12, 
+                   CreatedDate = new DateTime(2024, 3, 15), Status = "上架", IsDiscounted = false },
+            new() { Id = 7, Name = "藍牙耳機", Category = "週邊設備", Price = 1200, Stock = 25, 
+                   CreatedDate = new DateTime(2024, 4, 1), Status = "上架", IsDiscounted = true },
+            new() { Id = 8, Name = "網路攝影機", Category = "週邊設備", Price = 800, Stock = 18, 
+                   CreatedDate = new DateTime(2024, 3, 20), Status = "上架", IsDiscounted = false }
         };
     }
 
@@ -395,5 +522,40 @@
     {
         actionLogs.Clear();
         StateHasChanged();
+    }
+
+    // 分頁事件處理
+    private async Task HandleEmployeePageChanged(int newPage)
+    {
+        currentEmployeePage = newPage;
+        actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 員工表格切換到第 {newPage} 頁");
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleEmployeePageSizeChanged(int newPageSize)
+    {
+        employeePageSize = newPageSize;
+        currentEmployeePage = 1; // 重置到第一頁
+        actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 員工表格每頁顯示筆數改為 {newPageSize} 筆");
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleProductPageChanged(int newPage)
+    {
+        currentProductPage = newPage;
+        actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 產品表格切換到第 {newPage} 頁");
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleProductPageSizeChanged(int newPageSize)
+    {
+        productPageSize = newPageSize;
+        currentProductPage = 1; // 重置到第一頁
+        actionLogs.Add($"[{DateTime.Now:HH:mm:ss}] 產品表格每頁顯示筆數改為 {newPageSize} 筆");
+        StateHasChanged();
+        await Task.CompletedTask;
     }
 }

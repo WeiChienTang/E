@@ -1,5 +1,4 @@
 @page "/sharedcomponentsdemo/loading"
-@using static ERPCore2.Components.Shared.Buttons.ButtonComponent
 @using static ERPCore2.Components.Shared.Loading.LoadingComponent
 @rendermode InteractiveServer
 
@@ -89,7 +88,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="d-flex gap-2 mb-3">
-                                    <ButtonComponent Text="@(demoLoading ? "停止載入" : "開始載入")" 
+                                    <GenericButtonComponent Text="@(demoLoading ? "停止載入" : "開始載入")" 
                                                    Variant="@(demoLoading ? ButtonVariant.Danger : ButtonVariant.Primary)"
                                                    OnClick="ToggleDemoLoading" />
                                 </div>
@@ -109,7 +108,7 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="d-flex gap-2 mb-3">
-                                    <ButtonComponent Text="模擬數據載入" 
+                                    <GenericButtonComponent Text="模擬數據載入" 
                                                    Variant="ButtonVariant.Success"
                                                    OnClick="SimulateDataLoading" 
                                                    IsDisabled="@simulateLoading" />
@@ -197,7 +196,7 @@
                                         }
                                     </div>
                                     <div class="card-footer">
-                                        <ButtonComponent Text="@(userDataLoading ? "載入中..." : "重新載入")" 
+                                        <GenericButtonComponent Text="@(userDataLoading ? "載入中..." : "重新載入")" 
                                                        Variant="ButtonVariant.Primary"
                                                        OnClick="LoadUserData" 
                                                        IsDisabled="@userDataLoading" />
@@ -222,7 +221,7 @@
                                         }
                                     </div>
                                     <div class="card-footer">
-                                        <ButtonComponent Text="@(reportLoading ? "產生中..." : "產生報表")" 
+                                        <GenericButtonComponent Text="@(reportLoading ? "產生中..." : "產生報表")" 
                                                        Variant="ButtonVariant.Success"
                                                        OnClick="GenerateReport" 
                                                        IsDisabled="@reportLoading" />
