@@ -171,12 +171,18 @@ namespace ERPCore2.Services
             try
             {
                 var defaultPermissions = new List<Permission>
-                {
-                    // 客戶管理權限                    new Permission { PermissionCode = "Customer.View", PermissionName = "檢視客戶", Remarks = "可以檢視客戶資料" },
+                {                    // 客戶管理權限                    new Permission { PermissionCode = "Customer.View", PermissionName = "檢視客戶", Remarks = "可以檢視客戶資料" },
                     new Permission { PermissionCode = "Customer.Create", PermissionName = "建立客戶", Remarks = "可以建立新客戶" },
                     new Permission { PermissionCode = "Customer.Edit", PermissionName = "編輯客戶", Remarks = "可以編輯客戶資料" },
                     new Permission { PermissionCode = "Customer.Delete", PermissionName = "刪除客戶", Remarks = "可以刪除客戶" },
-                    new Permission { PermissionCode = "Customer.Export", PermissionName = "匯出客戶", Remarks = "可以匯出客戶資料" },                    // 員工管理權限
+                    new Permission { PermissionCode = "Customer.Export", PermissionName = "匯出客戶", Remarks = "可以匯出客戶資料" },
+
+                    // 廠商管理權限
+                    new Permission { PermissionCode = "Supplier.View", PermissionName = "檢視廠商", Remarks = "可以檢視廠商資料" },
+                    new Permission { PermissionCode = "Supplier.Create", PermissionName = "建立廠商", Remarks = "可以建立新廠商" },
+                    new Permission { PermissionCode = "Supplier.Edit", PermissionName = "編輯廠商", Remarks = "可以編輯廠商資料" },
+                    new Permission { PermissionCode = "Supplier.Delete", PermissionName = "刪除廠商", Remarks = "可以刪除廠商" },
+                    new Permission { PermissionCode = "Supplier.Export", PermissionName = "匯出廠商", Remarks = "可以匯出廠商資料" },// 員工管理權限
                     new Permission { PermissionCode = "Employee.View", PermissionName = "檢視員工", Remarks = "可以檢視員工資料" },
                     new Permission { PermissionCode = "Employee.Create", PermissionName = "建立員工", Remarks = "可以建立新員工" },
                     new Permission { PermissionCode = "Employee.Edit", PermissionName = "編輯員工", Remarks = "可以編輯員工資料" },

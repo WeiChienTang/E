@@ -530,10 +530,8 @@ namespace ERPCore2.Data
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 });
-            }
-
-            // 一般使用者 - 基本的檢視和新增編輯權限
-            var userPermissionCodes = new[] { "Customer.View", "Customer.Create", "Customer.Edit", "Report.View" };
+            }            // 一般使用者 - 基本的檢視和新增編輯權限
+            var userPermissionCodes = new[] { "Customer.View", "Customer.Create", "Customer.Edit", "Supplier.View", "Supplier.Create", "Supplier.Edit", "Report.View" };
             var userPermissions = permissions.Where(p => userPermissionCodes.Contains(p.PermissionCode));
             foreach (var permission in userPermissions)
             {
@@ -546,7 +544,7 @@ namespace ERPCore2.Data
                     CreatedBy = "System"
                 });
             }            // 唯讀使用者 - 只有檢視權限
-            var readOnlyPermissionCodes = new[] { "Customer.View", "Report.View" };
+            var readOnlyPermissionCodes = new[] { "Customer.View", "Supplier.View", "Report.View" };
             var readOnlyPermissions = permissions.Where(p => readOnlyPermissionCodes.Contains(p.PermissionCode));
             foreach (var permission in readOnlyPermissions)
             {
