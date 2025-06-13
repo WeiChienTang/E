@@ -52,7 +52,7 @@
                 @* 客戶列表表格 *@
                 <div class="mt-4">
                     <GenericTableComponent TItem="Customer"
-                                          Items="@customers"
+                                          Items="@pagedCustomers"
                                           ColumnDefinitions="@columnDefinitions"
                                           ShowActions="true"
                                           ActionsTemplate="@ActionsTemplate"
@@ -64,7 +64,14 @@
                                           IsBordered="false"
                                           Size="TableSize.Normal"
                                           EmptyMessage="沒有找到符合條件的客戶資料"
-                                          ActionsHeader="操作">
+                                          ActionsHeader="操作"
+                                          EnablePagination="true"
+                                          CurrentPage="@currentPage"
+                                          PageSize="@pageSize"
+                                          TotalItems="@totalItems"
+                                          OnPageChanged="HandlePageChanged"
+                                          OnPageSizeChanged="HandlePageSizeChanged"
+                                          ShowPageSizeSelector="true">
                     </GenericTableComponent>
                 </div>
             </div>
@@ -83,6 +90,12 @@
     
     // 表格相關
     private List<TableColumnDefinition> columnDefinitions = new();
+    
+    // 分頁相關
+    private int currentPage = 1;
+    private int pageSize = 20;
+    private int totalItems = 0;
+    private List<Customer> pagedCustomers = new();
     
     // 選項清單
     private List<CustomerType> customerTypes = new();
@@ -213,6 +226,7 @@
         {
             await JSRuntime.InvokeVoidAsync("console.error", "載入客戶資料失敗：", ex.Message);
             customers = new List<Customer>();
+            pagedCustomers = new List<Customer>();
         }
     }
 
@@ -276,7 +290,48 @@
         }
 
         customers = filteredCustomers.OrderBy(c => c.CustomerCode).ToList();
-        await Task.CompletedTask; // 讓這個方法變成異步的
+        totalItems = customers.Count;
+        
+        // 重置分頁到第一頁（如果是搜尋操作）
+        currentPage = 1;
+        
+        // 應用分頁
+        ApplyPagination();
+        
+        await Task.CompletedTask;
+    }
+
+    private void ApplyPagination()
+    {
+        // 確保當前頁面有效
+        var maxPage = totalItems > 0 ? (int)Math.Ceiling((double)totalItems / pageSize) : 1;
+        if (currentPage > maxPage)
+        {
+            currentPage = Math.Max(1, maxPage);
+        }
+        
+        // 計算分頁資料
+        pagedCustomers = customers
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+    }
+
+    private async Task HandlePageChanged(int newPage)
+    {
+        currentPage = newPage;
+        ApplyPagination();
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task HandlePageSizeChanged(int newPageSize)
+    {
+        pageSize = newPageSize;
+        currentPage = 1; // 重置到第一頁
+        ApplyPagination();
+        StateHasChanged();
+        await Task.CompletedTask;
     }
 
     private async Task HandleSearch(SearchFilterModel filterModel)
@@ -291,7 +346,9 @@
         searchModel = filterModel;
         // 自動搜尋功能已啟用，這裡不需要立即執行搜尋
         await Task.CompletedTask;
-    }    private async Task HandleRowClick(Customer customer)
+    }
+
+    private async Task HandleRowClick(Customer customer)
     {
         Navigation.NavigateTo($"/customers/detail/{customer.Id}");
         await Task.CompletedTask;
@@ -301,7 +358,9 @@
     {
         await LoadCustomersAsync();
         StateHasChanged();
-    }    private async Task ShowCreateCustomer()
+    }
+
+    private async Task ShowCreateCustomer()
     {
         Navigation.NavigateTo("/customers/edit");
         await Task.CompletedTask;
@@ -339,7 +398,9 @@
                 await JSRuntime.InvokeVoidAsync("alert", $"刪除時發生錯誤：{ex.Message}");
             }
         }
-    }    private async Task ViewCustomer(Customer customer)
+    }
+
+    private async Task ViewCustomer(Customer customer)
     {
         Navigation.NavigateTo($"/customers/detail/{customer.Id}");
         await Task.CompletedTask;

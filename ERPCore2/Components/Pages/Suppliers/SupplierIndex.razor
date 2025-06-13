@@ -52,7 +52,7 @@
                 @* 廠商列表表格 *@
                 <div class="mt-4">
                     <GenericTableComponent TItem="Supplier"
-                                          Items="@suppliers"
+                                          Items="@pagedSuppliers"
                                           ColumnDefinitions="@columnDefinitions"
                                           ShowActions="true"
                                           ActionsTemplate="@ActionsTemplate"
@@ -64,7 +64,14 @@
                                           IsBordered="false"
                                           Size="TableSize.Normal"
                                           EmptyMessage="沒有找到符合條件的廠商資料"
-                                          ActionsHeader="操作">
+                                          ActionsHeader="操作"
+                                          EnablePagination="true"
+                                          CurrentPage="@currentPage"
+                                          PageSize="@pageSize"
+                                          TotalItems="@totalItems"
+                                          OnPageChanged="HandlePageChanged"
+                                          OnPageSizeChanged="HandlePageSizeChanged"
+                                          ShowPageSizeSelector="true">
                     </GenericTableComponent>
                 </div>
             </div>
@@ -83,6 +90,12 @@
     
     // 表格相關
     private List<TableColumnDefinition> columnDefinitions = new();
+    
+    // 分頁相關
+    private int currentPage = 1;
+    private int pageSize = 20;
+    private int totalItems = 0;
+    private List<Supplier> pagedSuppliers = new();
     
     // 選項清單
     private List<SupplierType> supplierTypes = new();
@@ -213,6 +226,7 @@
         {
             await JSRuntime.InvokeVoidAsync("console.error", "載入廠商資料失敗：", ex.Message);
             suppliers = new List<Supplier>();
+            pagedSuppliers = new List<Supplier>();
         }
     }
 
@@ -276,7 +290,48 @@
         }
 
         suppliers = filteredSuppliers.OrderBy(s => s.SupplierCode).ToList();
-        await Task.CompletedTask; // 讓這個方法變成異步的
+        totalItems = suppliers.Count;
+        
+        // 重置分頁到第一頁（如果是搜尋操作）
+        currentPage = 1;
+        
+        // 應用分頁
+        ApplyPagination();
+        
+        await Task.CompletedTask;
+    }
+
+    private void ApplyPagination()
+    {
+        // 確保當前頁面有效
+        var maxPage = totalItems > 0 ? (int)Math.Ceiling((double)totalItems / pageSize) : 1;
+        if (currentPage > maxPage)
+        {
+            currentPage = Math.Max(1, maxPage);
+        }
+        
+        // 計算分頁資料
+        pagedSuppliers = suppliers
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+    }
+
+    private async Task HandlePageChanged(int newPage)
+    {
+        currentPage = newPage;
+        ApplyPagination();
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task HandlePageSizeChanged(int newPageSize)
+    {
+        pageSize = newPageSize;
+        currentPage = 1; // 重置到第一頁
+        ApplyPagination();
+        StateHasChanged();
+        await Task.CompletedTask;
     }
 
     private async Task HandleSearch(SearchFilterModel filterModel)
