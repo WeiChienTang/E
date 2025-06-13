@@ -18,8 +18,8 @@ namespace ERPCore2.Data.Entities
         [MaxLength(10, ErrorMessage = "行業類型代碼不可超過10個字元")]
         [Display(Name = "行業類型代碼")]
         public string? IndustryTypeCode { get; set; }
-        
-        // Navigation Properties
+          // Navigation Properties
         public ICollection<Customer> Customers { get; set; } = new List<Customer>();
+        public ICollection<Supplier> Suppliers { get; set; } = new List<Supplier>();
     }
 }

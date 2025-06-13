@@ -18,8 +18,8 @@ namespace ERPCore2.Data.Entities
         [MaxLength(100, ErrorMessage = "描述不可超過100個字元")]
         [Display(Name = "描述")]
         public string? Description { get; set; } = string.Empty;
-        
-        // Navigation Properties
+          // Navigation Properties
         public ICollection<CustomerContact> CustomerContacts { get; set; } = new List<CustomerContact>();
+        public ICollection<SupplierContact> SupplierContacts { get; set; } = new List<SupplierContact>();
     }
 }

@@ -70,9 +70,7 @@ namespace ERPCore2.Data.Context
                   entity.HasOne(e => e.Role)
                   .WithMany(r => r.Employees)
                   .OnDelete(DeleteBehavior.Restrict);
-            });
-
-            modelBuilder.Entity<RolePermission>(entity =>
+            });            modelBuilder.Entity<RolePermission>(entity =>
             {
                   entity.HasOne(rp => rp.Role)
                   .WithMany(r => r.RolePermissions)
@@ -81,6 +79,61 @@ namespace ERPCore2.Data.Context
                   entity.HasOne(rp => rp.Permission)
                   .WithMany(p => p.RolePermissions)
                   .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Product>(entity =>
+            {
+                  entity.HasOne(e => e.ProductCategory)
+                  .WithMany(pc => pc.Products)
+                  .OnDelete(DeleteBehavior.SetNull);
+
+                  entity.HasOne(e => e.PrimarySupplier)
+                  .WithMany(s => s.PrimaryProducts)
+                  .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<ProductSupplier>(entity =>
+            {
+                  entity.HasOne(ps => ps.Product)
+                  .WithMany(p => p.ProductSuppliers)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+                  entity.HasOne(ps => ps.Supplier)
+                  .WithMany(s => s.ProductSuppliers)
+                  .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Supplier>(entity =>
+            {
+                  entity.HasOne(e => e.SupplierType)
+                  .WithMany(st => st.Suppliers)
+                  .OnDelete(DeleteBehavior.SetNull);
+
+                  entity.HasOne(e => e.IndustryType)
+                  .WithMany(i => i.Suppliers)
+                  .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<SupplierContact>(entity =>
+            {
+                  entity.HasOne(e => e.Supplier)
+                  .WithMany(s => s.SupplierContacts)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+                  entity.HasOne(e => e.ContactType)
+                  .WithMany(ct => ct.SupplierContacts)
+                  .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<SupplierAddress>(entity =>
+            {
+                  entity.HasOne(e => e.Supplier)
+                  .WithMany(s => s.SupplierAddresses)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+                  entity.HasOne(e => e.AddressType)
+                  .WithMany(at => at.SupplierAddresses)
+                  .OnDelete(DeleteBehavior.SetNull);
             });
       }
     }

@@ -35,10 +35,19 @@ namespace ERPCore2.Data
 
             // 共用資料服務
             services.AddScoped<IContactTypeService, ContactTypeService>();
-            services.AddScoped<IAddressTypeService, AddressTypeService>();
-
-            // 行業類型服務
+            services.AddScoped<IAddressTypeService, AddressTypeService>();            // 行業類型服務
             services.AddScoped<IIndustryTypeService, IndustryTypeService>();
+            
+            // 廠商相關服務
+            services.AddScoped<ISupplierService, SupplierService>();
+            services.AddScoped<ISupplierContactService, SupplierContactService>();
+            services.AddScoped<ISupplierAddressService, SupplierAddressService>();
+            services.AddScoped<ISupplierTypeService, SupplierTypeService>();
+
+            // 商品相關服務
+            services.AddScoped<IProductService, ProductService>();
+            services.AddScoped<IProductCategoryService, ProductCategoryService>();
+            services.AddScoped<IProductSupplierService, ProductSupplierService>();
             
             // 認證和授權服務
             services.AddScoped<IEmployeeService, EmployeeService>();
