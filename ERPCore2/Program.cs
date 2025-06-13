@@ -123,11 +123,9 @@ app.MapControllers();
 // Initialize seed data
 using (var scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
-    try
-    {
-        // 初始化種子資料（包含認證系統資料）
-        await ERPCore2.Data.SeedData.InitializeAsync(services);
+    var services = scope.ServiceProvider;    try
+    {        // 初始化種子資料（包含認證系統資料）
+        await SeedData.InitializeAsync(services);
     }
     catch (Exception ex)
     {
