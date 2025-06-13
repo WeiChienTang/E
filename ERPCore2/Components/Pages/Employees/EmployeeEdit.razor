@@ -1,0 +1,531 @@
+@page "/employees/edit"
+@page "/employees/edit/{id:int?}"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Services.Interfaces
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Forms
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@inject IEmployeeService EmployeeService
+@inject IRoleService RoleService
+@inject IAuthenticationService AuthenticationService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>@GetPageTitle()</PageTitle>
+
+@* 頁面標題 *@
+<GenericHeaderComponent Title="@GetPageTitle()"
+                       Subtitle="@GetSubtitle()"
+                       TitleIcon="@GetTitleIcon()"
+                       HeadingLevel="h1"
+                       BreadcrumbItems="@breadcrumbItems"
+                       IsLoading="@isLoading"
+                       LoadingText="載入中..."
+                       ShowDivider="true">
+    <ActionButtons>
+        <button class="btn btn-success" @onclick="SaveEmployee" disabled="@(isSubmitting || isLoading)">
+            @if (isSubmitting)
+            {
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            }
+            else
+            {
+                <i class="bi bi-check-circle me-1"></i>
+            }
+            儲存
+        </button>
+        <button class="btn btn-outline-secondary" @onclick="Cancel" disabled="@isSubmitting">
+            <i class="bi bi-x-circle me-1"></i>
+            取消
+        </button>
+    </ActionButtons>
+</GenericHeaderComponent>
+
+@* 主要內容區域 *@
+<div class="row">
+    <div class="col-12">
+        @* 基本資料表單 *@
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-person me-2"></i>
+                    基本資料
+                </h5>
+            </div>
+            <div class="card-body">
+                <EditForm Model="@employee" OnValidSubmit="SaveEmployee">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="alert alert-danger" />
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="employeeCode" class="form-label">員工代碼 <span class="text-danger">*</span></label>
+                                <InputText @bind-Value="employee.EmployeeCode" class="form-control" id="employeeCode" />
+                                <ValidationMessage For="@(() => employee.EmployeeCode)" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">帳號 <span class="text-danger">*</span></label>
+                                <InputText @bind-Value="employee.Username" class="form-control" id="username" />
+                                <ValidationMessage For="@(() => employee.Username)" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="lastName" class="form-label">姓氏</label>
+                                <InputText @bind-Value="employee.LastName" class="form-control" id="lastName" />
+                                <ValidationMessage For="@(() => employee.LastName)" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="firstName" class="form-label">名字</label>
+                                <InputText @bind-Value="employee.FirstName" class="form-control" id="firstName" />
+                                <ValidationMessage For="@(() => employee.FirstName)" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">電子郵件</label>
+                                <InputText @bind-Value="employee.Email" type="email" class="form-control" id="email" />
+                                <ValidationMessage For="@(() => employee.Email)" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="roleId" class="form-label">角色 <span class="text-danger">*</span></label>
+                                <InputSelect @bind-Value="employee.RoleId" class="form-control" id="roleId">
+                                    <option value="">請選擇角色</option>
+                                    @foreach (var role in roles)
+                                    {
+                                        <option value="@role.Id">@role.RoleName</option>
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => employee.RoleId)" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="department" class="form-label">部門</label>
+                                <InputText @bind-Value="employee.Department" class="form-control" id="department" />
+                                <ValidationMessage For="@(() => employee.Department)" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="position" class="form-label">職位</label>
+                                <InputText @bind-Value="employee.Position" class="form-control" id="position" />
+                                <ValidationMessage For="@(() => employee.Position)" />
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (IsCreateMode)
+                    {
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">密碼 <span class="text-danger">*</span></label>
+                                    <InputText @bind-Value="password" type="password" class="form-control" id="password" />
+                                    <div class="form-text">密碼長度至少 8 個字元，需包含大小寫字母和數字</div>
+                                    @if (!string.IsNullOrEmpty(passwordValidationMessage))
+                                    {
+                                        <div class="text-danger small">@passwordValidationMessage</div>
+                                    }
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="confirmPassword" class="form-label">確認密碼 <span class="text-danger">*</span></label>
+                                    <InputText @bind-Value="confirmPassword" type="password" class="form-control" id="confirmPassword" />
+                                    @if (!string.IsNullOrEmpty(confirmPasswordValidationMessage))
+                                    {
+                                        <div class="text-danger small">@confirmPasswordValidationMessage</div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </EditForm>
+            </div>
+        </div>
+
+        @* 帳號設定 - 僅編輯模式顯示 *@
+        @if (!IsCreateMode)
+        {
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-gear me-2"></i>
+                        帳號設定
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">帳號狀態</label>
+                                <div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="status" id="statusActive" 
+                                               checked="@(employee.Status == EntityStatus.Active)" 
+                                               @onchange="@(() => employee.Status = EntityStatus.Active)">
+                                        <label class="form-check-label" for="statusActive">
+                                            啟用
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="status" id="statusInactive" 
+                                               checked="@(employee.Status == EntityStatus.Inactive)" 
+                                               @onchange="@(() => employee.Status = EntityStatus.Inactive)">
+                                        <label class="form-check-label" for="statusInactive">
+                                            停用
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="isLocked" 
+                                           checked="@employee.IsLocked" 
+                                           @onchange="@((ChangeEventArgs e) => employee.IsLocked = (bool)e.Value!)">
+                                    <label class="form-check-label" for="isLocked">
+                                        鎖定帳號
+                                    </label>
+                                </div>
+                                <div class="form-text">勾選此項將阻止使用者登入</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    @if (employee.FailedLoginAttempts > 0)
+                    {
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">失敗登入次數</label>
+                                    <div class="fw-bold @(employee.FailedLoginAttempts >= 3 ? "text-danger" : "text-warning")">
+                                        @employee.FailedLoginAttempts
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary mt-1" @onclick="ResetFailedAttempts">
+                                        重設登入失敗次數
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="row">
+                        <div class="col-12">
+                            <button type="button" class="btn btn-warning" @onclick="ShowPasswordResetDialog">
+                                <i class="bi bi-key me-1"></i>
+                                重設密碼
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private Employee employee = new();
+    private List<Role> roles = new();
+    
+    private bool isLoading = true;
+    private bool isSubmitting = false;
+    
+    // 新增員工時的密碼欄位
+    private string password = string.Empty;
+    private string confirmPassword = string.Empty;
+    private string passwordValidationMessage = string.Empty;
+    private string confirmPasswordValidationMessage = string.Empty;
+    
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    private bool IsCreateMode => !Id.HasValue || Id.Value == 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitializePageAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await InitializePageAsync();
+    }
+
+    private async Task InitializePageAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // 初始化麵包屑
+            InitializeBreadcrumbs();
+            
+            // 載入角色清單
+            await LoadRolesAsync();
+            
+            // 載入員工資料（編輯模式）
+            if (!IsCreateMode)
+            {
+                await LoadEmployeeAsync();
+            }
+            else
+            {
+                // 新增模式，初始化新員工
+                employee = new Employee
+                {
+                    Status = EntityStatus.Active
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入頁面資料時發生錯誤：", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("員工管理", "/employees"),
+            new(IsCreateMode ? "新增員工" : "編輯員工")
+        };
+    }
+
+    private async Task LoadRolesAsync()
+    {
+        try
+        {
+            var result = await RoleService.GetAllAsync();
+            if (result != null)
+            {
+                roles = result;
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入角色清單失敗：", ex.Message);
+        }
+    }
+
+    private async Task LoadEmployeeAsync()
+    {
+        if (!Id.HasValue) return;
+
+        try
+        {
+            var result = await EmployeeService.GetByIdAsync(Id.Value);
+            if (result != null)
+            {
+                employee = result;
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("showToast", "error", "找不到指定的員工資料");
+                Navigation.NavigateTo("/employees");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入員工資料失敗：", ex.Message);
+            await JSRuntime.InvokeVoidAsync("showToast", "error", "載入員工資料失敗");
+        }
+    }
+
+    private async Task SaveEmployee()
+    {
+        if (isSubmitting) return;
+
+        try
+        {
+            isSubmitting = true;
+            StateHasChanged();
+
+            // 驗證表單
+            if (!ValidateForm())
+            {
+                return;
+            }            if (IsCreateMode)
+            {
+                // 新增員工
+                var createResult = await EmployeeService.CreateAsync(employee);
+                if (createResult.IsSuccess && createResult.Data != null)
+                {
+                    // 如果有設定密碼，進行密碼重設
+                    if (!string.IsNullOrWhiteSpace(password))
+                    {
+                        await AuthenticationService.ResetPasswordAsync(createResult.Data.Id, password);
+                    }
+                    
+                    await JSRuntime.InvokeVoidAsync("showToast", "success", "員工建立成功");
+                    Navigation.NavigateTo($"/employees/detail/{createResult.Data.Id}");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("showToast", "error", $"建立員工失敗：{createResult.ErrorMessage}");
+                }
+            }
+            else
+            {
+                // 更新員工
+                var updateResult = await EmployeeService.UpdateAsync(employee);
+                if (updateResult != null)
+                {
+                    await JSRuntime.InvokeVoidAsync("showToast", "success", "員工資料更新成功");
+                    Navigation.NavigateTo($"/employees/detail/{employee.Id}");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("showToast", "error", "更新員工資料失敗");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "儲存員工資料時發生錯誤：", ex.Message);
+            await JSRuntime.InvokeVoidAsync("showToast", "error", "儲存失敗");
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private bool ValidateForm()
+    {
+        passwordValidationMessage = string.Empty;
+        confirmPasswordValidationMessage = string.Empty;
+
+        if (IsCreateMode)
+        {
+            // 新增模式需要驗證密碼
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                passwordValidationMessage = "請輸入密碼";
+                return false;
+            }
+
+            if (password.Length < 8)
+            {
+                passwordValidationMessage = "密碼長度至少需要 8 個字元";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(confirmPassword))
+            {
+                confirmPasswordValidationMessage = "請確認密碼";
+                return false;
+            }
+
+            if (password != confirmPassword)
+            {
+                confirmPasswordValidationMessage = "密碼確認不一致";
+                return false;
+            }            // 密碼會在儲存時透過 AuthenticationService 處理
+            // 這裡不需要直接設定 PasswordHash
+        }
+
+        return true;
+    }
+
+    private async Task ResetFailedAttempts()
+    {
+        try
+        {
+            employee.FailedLoginAttempts = 0;
+            await JSRuntime.InvokeVoidAsync("showToast", "success", "登入失敗次數已重設");
+        }        catch (Exception)
+        {
+            await JSRuntime.InvokeVoidAsync("showToast", "error", "重設失敗");
+        }
+    }
+
+    private async Task ShowPasswordResetDialog()
+    {
+        try
+        {
+            var newPassword = $"Temp{DateTime.Now:yyyyMMdd}!";
+            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+                $"確定要重設 {employee.Username} 的密碼嗎？\n新密碼將設為：{newPassword}");
+              if (confirmed)
+            {
+                // 使用 AuthenticationService 重設密碼
+                var resetResult = await AuthenticationService.ResetPasswordAsync(employee.Id, newPassword);
+                if (resetResult.IsSuccess)
+                {
+                    employee.FailedLoginAttempts = 0;
+                    employee.IsLocked = false;
+                    await JSRuntime.InvokeVoidAsync("showToast", "success", $"密碼已重設為：{newPassword}");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("showToast", "error", $"重設密碼失敗：{resetResult.ErrorMessage}");
+                }
+            }
+        }        catch (Exception)
+        {
+            await JSRuntime.InvokeVoidAsync("showToast", "error", "重設密碼失敗");
+        }
+    }
+
+    private void Cancel()
+    {
+        if (IsCreateMode)
+        {
+            Navigation.NavigateTo("/employees");
+        }
+        else
+        {
+            Navigation.NavigateTo($"/employees/detail/{employee.Id}");
+        }
+    }
+
+    private string GetPageTitle()
+    {
+        return IsCreateMode ? "新增員工" : $"編輯員工 - {employee.Username}";
+    }
+
+    private string GetSubtitle()
+    {
+        return IsCreateMode ? "建立新的員工帳號" : $"修改員工資料（員工代碼：{employee.EmployeeCode}）";
+    }
+
+    private string GetTitleIcon()
+    {
+        return IsCreateMode ? "person-plus" : "person-gear";
+    }
+}

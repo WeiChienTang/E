@@ -45,12 +45,17 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { PermissionCode = "Customer.Read", PermissionName = "檢視客戶", Module = "Customer", Action = "Read", PermissionGroup = "客戶管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Customer.Update", PermissionName = "修改客戶", Module = "Customer", Action = "Update", PermissionGroup = "客戶管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Customer.Delete", PermissionName = "刪除客戶", Module = "Customer", Action = "Delete", PermissionGroup = "客戶管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
-                
-                // 供應商管理權限
+                  // 供應商管理權限
                 new Permission { PermissionCode = "Supplier.Create", PermissionName = "建立供應商", Module = "Supplier", Action = "Create", PermissionGroup = "供應商管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Supplier.Read", PermissionName = "檢視供應商", Module = "Supplier", Action = "Read", PermissionGroup = "供應商管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Supplier.Update", PermissionName = "修改供應商", Module = "Supplier", Action = "Update", PermissionGroup = "供應商管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Supplier.Delete", PermissionName = "刪除供應商", Module = "Supplier", Action = "Delete", PermissionGroup = "供應商管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                
+                // 員工管理權限
+                new Permission { PermissionCode = "Employee.Create", PermissionName = "建立員工", Module = "Employee", Action = "Create", PermissionGroup = "員工管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "Employee.Read", PermissionName = "檢視員工", Module = "Employee", Action = "Read", PermissionGroup = "員工管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "Employee.Update", PermissionName = "修改員工", Module = "Employee", Action = "Update", PermissionGroup = "員工管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "Employee.Delete", PermissionName = "刪除員工", Module = "Employee", Action = "Delete", PermissionGroup = "員工管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 
                 // 產品管理權限
                 new Permission { PermissionCode = "Product.Create", PermissionName = "建立產品", Module = "Product", Action = "Create", PermissionGroup = "產品管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },

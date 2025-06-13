@@ -1,0 +1,525 @@
+@page "/employees"
+@inject IEmployeeService EmployeeService
+@inject IRoleService RoleService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>員工管理</PageTitle>
+
+@* 頁面標題 *@
+<GenericHeaderComponent Title="員工管理"
+                       Subtitle="管理所有員工資料與權限設定"
+                       TitleIcon="people-fill"
+                       HeadingLevel="h1"
+                       BreadcrumbItems="@breadcrumbItems"
+                       IsLoading="@isLoading"
+                       LoadingText="載入中..."
+                       ShowDivider="true">
+    <ActionButtons>
+        <button class="btn btn-primary" @onclick="ShowCreateEmployee">
+            <i class="bi bi-plus-circle me-1"></i>
+            新增員工
+        </button>
+        <button class="btn btn-outline-secondary" @onclick="RefreshData">
+            <i class="bi bi-arrow-clockwise me-1"></i>
+            重新整理
+        </button>
+    </ActionButtons>
+</GenericHeaderComponent>
+
+@* 員工管理主要內容區域 *@
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-search me-2"></i>
+                    員工搜尋與管理
+                </h5>
+            </div>
+            <div class="card-body">
+                @* 搜尋篩選區域 *@
+                <GenericSearchFilterComponent TModel="EmployeeSearchModel"
+                                             FilterDefinitions="@filterDefinitions"
+                                             FilterModel="@searchModel"
+                                             OnSearch="HandleSearch"
+                                             OnFilterChanged="HandleFilterChanged"
+                                             AutoSearch="true"
+                                             ShowSearchButton="true"
+                                             ShowAdvancedToggle="true"
+                                             SearchDelayMs="500" />
+
+                @* 員工列表表格 *@
+                <div class="mt-4">
+                    <GenericTableComponent TItem="Employee"
+                                          Items="@pagedEmployees"
+                                          ColumnDefinitions="@columnDefinitions"
+                                          ShowActions="true"
+                                          ActionsTemplate="@ActionsTemplate"
+                                          EnableRowClick="true"
+                                          OnRowClick="HandleRowClick"
+                                          EnableSorting="false"
+                                          IsStriped="true"
+                                          IsHoverable="true"
+                                          IsBordered="false"
+                                          Size="TableSize.Normal"
+                                          EmptyMessage="沒有找到符合條件的員工資料"
+                                          ActionsHeader="操作"
+                                          EnablePagination="true"
+                                          CurrentPage="@currentPage"
+                                          PageSize="@pageSize"
+                                          TotalItems="@totalItems"
+                                          OnPageChanged="HandlePageChanged"
+                                          OnPageSizeChanged="HandlePageSizeChanged"
+                                          ShowPageSizeSelector="true">
+                    </GenericTableComponent>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* 員工搜尋模型 *@
+@code {
+    public class EmployeeSearchModel
+    {
+        public string? EmployeeCode { get; set; }
+        public string? Username { get; set; }
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public string? Email { get; set; }
+        public string? Department { get; set; }
+        public string? Position { get; set; }
+        public int? RoleId { get; set; }
+        public EntityStatus? Status { get; set; }
+        public bool? IsLocked { get; set; }
+    }
+
+    // 資料來源
+    private List<Employee> employees = new();
+    private List<Employee> allEmployees = new();
+    
+    // 篩選相關
+    private SearchFilterModel searchModel = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    
+    // 表格相關
+    private List<TableColumnDefinition> columnDefinitions = new();
+    
+    // 分頁相關
+    private int currentPage = 1;
+    private int pageSize = 20;
+    private int totalItems = 0;
+    private List<Employee> pagedEmployees = new();
+    
+    // 選項清單
+    private List<Role> roles = new();
+    
+    // 狀態管理
+    private bool isLoading = true;
+    
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitializePageAsync();
+    }
+
+    private async Task InitializePageAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // 初始化麵包屑
+            InitializeBreadcrumbs();
+            
+            // 載入基礎資料
+            await LoadBasicDataAsync();
+            
+            // 初始化篩選器
+            InitializeFilters();
+            
+            // 初始化表格欄位
+            InitializeTableColumns();
+            
+            // 載入員工資料
+            await LoadEmployeesAsync();
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤
+            await JSRuntime.InvokeVoidAsync("console.error", "載入員工資料時發生錯誤：", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("員工管理")
+        };
+    }
+
+    private async Task LoadBasicDataAsync()
+    {
+        // 載入角色選項
+        roles = await RoleService.GetAllAsync();
+    }
+
+    private void InitializeFilters()
+    {
+        // 準備角色選項
+        var roleOptions = roles.Select(r => new SelectOption
+        {
+            Text = r.RoleName,
+            Value = r.Id.ToString()
+        }).ToList();
+
+        // 準備狀態選項
+        var statusOptions = new List<SelectOption>
+        {
+            new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
+            new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
+        };
+
+        // 準備帳號鎖定狀態選項
+        var lockOptions = new List<SelectOption>
+        {
+            new() { Text = "正常", Value = "false" },
+            new() { Text = "鎖定", Value = "true" }
+        };
+
+        // 建立篩選定義
+        filterDefinitions = new SearchFilterBuilder<EmployeeSearchModel>()
+            .AddText("EmployeeCode", "員工代碼", "輸入員工代碼搜尋")
+            .AddText("Username", "帳號", "輸入帳號搜尋")
+            .AddText("FirstName", "名字", "輸入名字搜尋")
+            .AddText("LastName", "姓氏", "輸入姓氏搜尋")
+            .AddText("Email", "電子郵件", "輸入電子郵件搜尋", isAdvanced: true)
+            .AddText("Department", "部門", "輸入部門搜尋", isAdvanced: true)
+            .AddText("Position", "職位", "輸入職位搜尋", isAdvanced: true)
+            .AddSelect("RoleId", "角色", roleOptions, isAdvanced: true)
+            .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
+            .AddSelect("IsLocked", "帳號狀態", lockOptions, isAdvanced: true)
+            .Build();
+    }
+
+    private void InitializeTableColumns()
+    {        columnDefinitions = new List<TableColumnDefinition>
+        {
+            TableColumnDefinition.Text("員工代碼", nameof(Employee.EmployeeCode)),
+            TableColumnDefinition.Text("帳號", nameof(Employee.Username)),
+            TableColumnDefinition.Template("姓名", item => 
+            {
+                var employee = (Employee)item;
+                var firstName = employee.FirstName ?? "";
+                var lastName = employee.LastName ?? "";
+                return @<span>@($"{lastName}{firstName}".Trim())</span>;
+            }),
+            TableColumnDefinition.Text("電子郵件", nameof(Employee.Email)),
+            TableColumnDefinition.Text("部門", nameof(Employee.Department)),
+            TableColumnDefinition.Text("職位", nameof(Employee.Position)),
+            TableColumnDefinition.Text("角色", "Role.RoleName"),
+            TableColumnDefinition.Date("最後登入", nameof(Employee.LastLoginAt), "yyyy/MM/dd HH:mm"),
+            TableColumnDefinition.Status("狀態", nameof(Employee.Status), new Dictionary<object, string>
+            {
+                { EntityStatus.Active, "bg-success" },
+                { EntityStatus.Inactive, "bg-secondary" }
+            }),
+            TableColumnDefinition.Date("建立日期", nameof(Employee.CreatedAt), "yyyy/MM/dd")
+        };
+    }
+
+    private async Task LoadEmployeesAsync()
+    {
+        try
+        {
+            allEmployees = await EmployeeService.GetAllAsync();
+            await ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入員工資料失敗：", ex.Message);
+            employees = new List<Employee>();
+            pagedEmployees = new List<Employee>();
+        }
+    }
+
+    private async Task ApplyFilters()
+    {
+        var filteredEmployees = allEmployees.AsQueryable();
+
+        // 員工代碼篩選
+        var employeeCodeFilter = searchModel.GetFilterValue("EmployeeCode")?.ToString();
+        if (!string.IsNullOrWhiteSpace(employeeCodeFilter))
+        {
+            filteredEmployees = filteredEmployees.Where(e => 
+                e.EmployeeCode.Contains(employeeCodeFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 帳號篩選
+        var usernameFilter = searchModel.GetFilterValue("Username")?.ToString();
+        if (!string.IsNullOrWhiteSpace(usernameFilter))
+        {
+            filteredEmployees = filteredEmployees.Where(e => 
+                e.Username.Contains(usernameFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 名字篩選
+        var firstNameFilter = searchModel.GetFilterValue("FirstName")?.ToString();
+        if (!string.IsNullOrWhiteSpace(firstNameFilter))
+        {
+            filteredEmployees = filteredEmployees.Where(e => 
+                !string.IsNullOrEmpty(e.FirstName) && 
+                e.FirstName.Contains(firstNameFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 姓氏篩選
+        var lastNameFilter = searchModel.GetFilterValue("LastName")?.ToString();
+        if (!string.IsNullOrWhiteSpace(lastNameFilter))
+        {
+            filteredEmployees = filteredEmployees.Where(e => 
+                !string.IsNullOrEmpty(e.LastName) && 
+                e.LastName.Contains(lastNameFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 電子郵件篩選
+        var emailFilter = searchModel.GetFilterValue("Email")?.ToString();
+        if (!string.IsNullOrWhiteSpace(emailFilter))
+        {
+            filteredEmployees = filteredEmployees.Where(e => 
+                !string.IsNullOrEmpty(e.Email) && 
+                e.Email.Contains(emailFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 部門篩選
+        var departmentFilter = searchModel.GetFilterValue("Department")?.ToString();
+        if (!string.IsNullOrWhiteSpace(departmentFilter))
+        {
+            filteredEmployees = filteredEmployees.Where(e => 
+                !string.IsNullOrEmpty(e.Department) && 
+                e.Department.Contains(departmentFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 職位篩選
+        var positionFilter = searchModel.GetFilterValue("Position")?.ToString();
+        if (!string.IsNullOrWhiteSpace(positionFilter))
+        {
+            filteredEmployees = filteredEmployees.Where(e => 
+                !string.IsNullOrEmpty(e.Position) && 
+                e.Position.Contains(positionFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 角色篩選
+        var roleIdFilter = searchModel.GetFilterValue("RoleId")?.ToString();
+        if (!string.IsNullOrWhiteSpace(roleIdFilter) && int.TryParse(roleIdFilter, out var roleId))
+        {
+            filteredEmployees = filteredEmployees.Where(e => e.RoleId == roleId);
+        }
+
+        // 狀態篩選
+        var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
+        if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
+        {
+            filteredEmployees = filteredEmployees.Where(e => e.Status == status);
+        }
+
+        // 帳號鎖定狀態篩選
+        var isLockedFilter = searchModel.GetFilterValue("IsLocked")?.ToString();
+        if (!string.IsNullOrWhiteSpace(isLockedFilter) && bool.TryParse(isLockedFilter, out var isLocked))
+        {
+            filteredEmployees = filteredEmployees.Where(e => e.IsLocked == isLocked);
+        }
+
+        employees = filteredEmployees.OrderBy(e => e.EmployeeCode).ToList();
+        totalItems = employees.Count;
+        
+        // 重置分頁到第一頁（如果是搜尋操作）
+        currentPage = 1;
+        
+        // 應用分頁
+        ApplyPagination();
+        
+        await Task.CompletedTask;
+    }
+
+    private void ApplyPagination()
+    {
+        // 確保當前頁面有效
+        var maxPage = totalItems > 0 ? (int)Math.Ceiling((double)totalItems / pageSize) : 1;
+        if (currentPage > maxPage)
+        {
+            currentPage = Math.Max(1, maxPage);
+        }
+        
+        // 計算分頁資料
+        pagedEmployees = employees
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+    }
+
+    private async Task HandlePageChanged(int newPage)
+    {
+        currentPage = newPage;
+        ApplyPagination();
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task HandlePageSizeChanged(int newPageSize)
+    {
+        pageSize = newPageSize;
+        currentPage = 1; // 重置到第一頁
+        ApplyPagination();
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleSearch(SearchFilterModel filterModel)
+    {
+        searchModel = filterModel;
+        await ApplyFilters();
+        StateHasChanged();
+    }
+
+    private async Task HandleFilterChanged(SearchFilterModel filterModel)
+    {
+        searchModel = filterModel;
+        // 自動搜尋功能已啟用，這裡不需要立即執行搜尋
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleRowClick(Employee employee)
+    {
+        Navigation.NavigateTo($"/employees/detail/{employee.Id}");
+        await Task.CompletedTask;
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadEmployeesAsync();
+        StateHasChanged();
+    }
+
+    private async Task ShowCreateEmployee()
+    {
+        Navigation.NavigateTo("/employees/edit");
+        await Task.CompletedTask;
+    }
+
+    private async Task EditEmployee(Employee employee)
+    {
+        Navigation.NavigateTo($"/employees/edit/{employee.Id}");
+        await Task.CompletedTask;
+    }
+
+    private async Task DeleteEmployee(Employee employee)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"確定要刪除員工「{employee.FirstName} {employee.LastName}」嗎？");
+        
+        if (confirmed)
+        {
+            try
+            {
+                var result = await EmployeeService.DeleteAsync(employee.Id);
+                if (result.IsSuccess)
+                {
+                    await RefreshData();
+                    await JSRuntime.InvokeVoidAsync("alert", "員工刪除成功");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{result.ErrorMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"刪除時發生錯誤：{ex.Message}");
+            }
+        }
+    }
+
+    private async Task ViewEmployee(Employee employee)
+    {
+        Navigation.NavigateTo($"/employees/detail/{employee.Id}");
+        await Task.CompletedTask;
+    }
+
+    private async Task LockEmployee(Employee employee)
+    {
+        try
+        {
+            var result = await EmployeeService.SetEmployeeActiveStatusAsync(employee.Id, false);
+            if (result.IsSuccess)
+            {
+                await RefreshData();
+                await JSRuntime.InvokeVoidAsync("alert", "員工帳號已鎖定");
+            }            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", result.ErrorMessage ?? "鎖定失敗");
+            }
+        }
+        catch (Exception)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "鎖定員工帳號時發生錯誤");
+        }
+    }
+
+    private async Task UnlockEmployee(Employee employee)
+    {
+        try
+        {
+            var result = await EmployeeService.SetEmployeeActiveStatusAsync(employee.Id, true);
+            if (result.IsSuccess)
+            {
+                await RefreshData();
+                await JSRuntime.InvokeVoidAsync("alert", "員工帳號已解鎖");
+            }            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", result.ErrorMessage ?? "解鎖失敗");
+            }
+        }
+        catch (Exception)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "解鎖員工帳號時發生錯誤");
+        }
+    }
+
+    // 表格操作範本
+    private RenderFragment<Employee> ActionsTemplate => employee => 
+        @<div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-primary" @onclick="() => ViewEmployee(employee)" title="檢視">
+                <i class="bi bi-eye"></i>
+            </button>
+            <button class="btn btn-outline-warning" @onclick="() => EditEmployee(employee)" title="編輯">
+                <i class="bi bi-pencil"></i>
+            </button>
+            @if (employee.IsLocked)
+            {
+                <button class="btn btn-outline-success" @onclick="() => UnlockEmployee(employee)" title="解鎖帳號">
+                    <i class="bi bi-unlock"></i>
+                </button>
+            }
+            else
+            {
+                <button class="btn btn-outline-warning" @onclick="() => LockEmployee(employee)" title="鎖定帳號">
+                    <i class="bi bi-lock"></i>
+                </button>
+            }
+            <button class="btn btn-outline-danger" @onclick="() => DeleteEmployee(employee)" title="刪除">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>;
+}
