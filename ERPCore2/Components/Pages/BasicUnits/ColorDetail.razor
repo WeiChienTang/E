@@ -1,0 +1,344 @@
+@page "/basicunits/color/detail/{colorId:int}"
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@using Microsoft.AspNetCore.Components.Web
+@inject IColorService ColorService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">載入中...</span>
+            </div>
+            <div class="mt-2">載入顏色資料中...</div>
+        </div>
+    </div>
+}
+else if (color == null)
+{
+    <div class="alert alert-warning">
+        <h4>找不到顏色資料</h4>
+        <p>指定的顏色不存在或已被刪除。</p>
+        <button class="btn btn-primary" @onclick="BackToColorList">
+            返回顏色列表
+        </button>
+    </div>
+}
+else
+{
+    <GenericDetailsComponent Configuration="@detailConfiguration" 
+                           OnSectionLoad="HandleSectionLoad"
+                           OnItemClick="HandleItemClick"
+                           ActionButtons="@ActionButtons" />
+}
+
+@code {
+    [Parameter] public int ColorId { get; set; }
+
+    private Color? color;
+    private bool isLoading = true;
+    private DetailViewConfiguration detailConfiguration = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadColorData();
+        InitializeDetailConfiguration();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ColorId > 0)
+        {
+            await LoadColorData();
+            InitializeDetailConfiguration();
+        }
+    }
+
+    private async Task LoadColorData()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // 載入顏色基本資料
+            color = await ColorService.GetByIdAsync(ColorId);
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入顏色資料失敗：", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void InitializeDetailConfiguration()
+    {
+        if (color == null) return;
+
+        detailConfiguration = new DetailViewConfiguration
+        {
+            Title = color.Name,
+            Subtitle = $"顏色代碼：{color.Code}",
+            TitleIcon = "bi bi-palette",
+            UseTabs = true, // 使用分頁模式展示基本資料和顏色資訊
+            Sections = new List<DetailSection>
+            {
+                CreateBasicInfoSection(),
+                CreateColorInfoSection()
+            }
+        };
+    }
+
+    private DetailSection CreateBasicInfoSection()
+    {
+        var items = new List<DetailItem>
+        {
+            new() { 
+                Label = "顏色名稱", 
+                Value = color!.Name, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6",
+                IsHighlight = true
+            },
+            new() { 
+                Label = "顏色代碼", 
+                Value = color.Code, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6"
+            },
+            new() { 
+                Label = "狀態", 
+                Value = GetStatusText(color.Status), 
+                DisplayType = DetailDisplayType.Status,
+                Format = new DetailItemFormat 
+                { 
+                    StatusColors = new Dictionary<string, string>
+                    {
+                        { "啟用", "bg-success" },
+                        { "停用", "bg-danger" },
+                        { "已刪除", "bg-secondary" }
+                    }
+                },
+                ContainerCssClass = "col-md-6"
+            },
+            new() { 
+                Label = "建立日期", 
+                Value = color.CreatedAt, 
+                DisplayType = DetailDisplayType.DateTime,
+                ContainerCssClass = "col-md-6"
+            },
+            new() { 
+                Label = "建立者", 
+                Value = color.CreatedBy ?? "系統", 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6"
+            }
+        };
+
+        // 加入最後更新時間（如果有的話）
+        if (color.UpdatedAt.HasValue)
+        {
+            items.Add(new DetailItem { 
+                Label = "最後更新", 
+                Value = color.UpdatedAt, 
+                DisplayType = DetailDisplayType.DateTime,
+                ContainerCssClass = "col-md-6"
+            });
+        }
+
+        // 加入更新者（如果有的話）
+        if (!string.IsNullOrWhiteSpace(color.UpdatedBy))
+        {
+            items.Add(new DetailItem { 
+                Label = "更新者", 
+                Value = color.UpdatedBy, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6"
+            });
+        }
+
+        // 加入描述（如果有的話）
+        if (!string.IsNullOrWhiteSpace(color.Description))
+        {
+            items.Add(new DetailItem { 
+                Label = "描述", 
+                Value = color.Description, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-12"
+            });
+        }
+
+        // 加入備註（如果有的話）
+        if (!string.IsNullOrWhiteSpace(color.Remarks))
+        {
+            items.Add(new DetailItem { 
+                Label = "備註", 
+                Value = color.Remarks, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-12"
+            });
+        }
+
+        return new DetailSection
+        {
+            Id = "basic",
+            Title = "基本資料",
+            Icon = "bi bi-info-circle",
+            Items = items
+        };
+    }
+
+    private DetailSection CreateColorInfoSection()
+    {
+        var items = new List<DetailItem>();
+
+        // 十六進位色碼
+        if (!string.IsNullOrWhiteSpace(color!.HexCode))
+        {
+            items.Add(new DetailItem { 
+                Label = "十六進位色碼", 
+                Value = $"{color.HexCode} {GetColorPreview(color.HexCode)}", 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6",
+                IsHighlight = true
+            });
+        }
+
+        // RGB 值
+        if (color.RedValue.HasValue || color.GreenValue.HasValue || color.BlueValue.HasValue)
+        {
+            var rgbText = $"RGB({color.RedValue ?? 0}, {color.GreenValue ?? 0}, {color.BlueValue ?? 0})";
+            items.Add(new DetailItem { 
+                Label = "RGB 值", 
+                Value = rgbText, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6"
+            });
+        }
+
+        // 個別 RGB 值
+        if (color.RedValue.HasValue)
+        {
+            items.Add(new DetailItem { 
+                Label = "紅色值 (R)", 
+                Value = color.RedValue.Value, 
+                DisplayType = DetailDisplayType.Number,
+                ContainerCssClass = "col-md-4"
+            });
+        }
+
+        if (color.GreenValue.HasValue)
+        {
+            items.Add(new DetailItem { 
+                Label = "綠色值 (G)", 
+                Value = color.GreenValue.Value, 
+                DisplayType = DetailDisplayType.Number,
+                ContainerCssClass = "col-md-4"
+            });
+        }
+
+        if (color.BlueValue.HasValue)
+        {
+            items.Add(new DetailItem { 
+                Label = "藍色值 (B)", 
+                Value = color.BlueValue.Value, 
+                DisplayType = DetailDisplayType.Number,
+                ContainerCssClass = "col-md-4"
+            });
+        }
+
+        // 如果沒有任何顏色資訊
+        if (!items.Any())
+        {
+            items.Add(new DetailItem { 
+                Label = "顏色資訊", 
+                Value = "暫無詳細顏色資訊", 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-12"
+            });
+        }
+
+        return new DetailSection
+        {
+            Id = "colorinfo",
+            Title = "顏色資訊",
+            Icon = "bi bi-palette-fill",
+            Items = items
+        };
+    }
+
+    private string GetStatusText(Data.Enums.EntityStatus status)
+    {
+        return status switch
+        {
+            Data.Enums.EntityStatus.Active => "啟用",
+            Data.Enums.EntityStatus.Inactive => "停用",
+            Data.Enums.EntityStatus.Deleted => "已刪除",
+            _ => "未知"
+        };
+    }
+
+    private string GetColorPreview(string hexCode)
+    {
+        // 創建一個小的顏色預覽方塊
+        return $"<span class=\"d-inline-block ms-2\" style=\"width: 20px; height: 20px; background-color: {hexCode}; border: 1px solid #dee2e6; border-radius: 3px; vertical-align: middle;\"></span>";
+    }
+
+    // Action Buttons
+    private RenderFragment ActionButtons => __builder =>
+    {
+        <button class="btn btn-primary btn-sm me-2" @onclick="EditColor">
+            <i class="fas fa-edit me-1"></i>編輯
+        </button>
+        <button class="btn btn-outline-secondary btn-sm me-2" @onclick="PrintColor">
+            <i class="fas fa-print me-1"></i>列印
+        </button>
+        <button class="btn btn-outline-primary btn-sm" @onclick="BackToList">
+            <i class="fas fa-arrow-left me-1"></i>返回列表
+        </button>
+    };
+
+    private async Task HandleSectionLoad(string sectionId)
+    {
+        // 目前所有資料都在初始載入時取得，所以這裡不需要額外處理
+        // 未來如果需要延遲載入特定區塊的資料，可以在這裡實作
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleItemClick(GenericDetailsComponent.DetailItemClickEventArgs args)
+    {
+        // 處理項目點擊事件
+        // 例如：點擊顏色預覽複製色碼等
+        await Task.CompletedTask;
+    }
+
+    private void EditColor()
+    {
+        Navigation.NavigateTo($"/basicunits/color/edit/{ColorId}");
+    }
+
+    private async Task PrintColor()
+    {
+        await JSRuntime.InvokeVoidAsync("window.print");
+    }
+
+    private void BackToList()
+    {
+        Navigation.NavigateTo("/basicunits/color");
+    }
+
+    private void BackToColorList()
+    {
+        Navigation.NavigateTo("/basicunits/color");
+    }
+}

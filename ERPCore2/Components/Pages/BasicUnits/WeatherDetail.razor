@@ -1,0 +1,270 @@
+@page "/basicunits/weather/detail/{weatherId:int}"
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@using Microsoft.AspNetCore.Components.Web
+@inject IWeatherService WeatherService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">載入中...</span>
+            </div>
+            <div class="mt-2">載入天氣資料中...</div>
+        </div>
+    </div>
+}
+else if (weather == null)
+{
+    <div class="alert alert-warning">
+        <h4>找不到天氣資料</h4>
+        <p>指定的天氣不存在或已被刪除。</p>
+        <button class="btn btn-primary" @onclick="BackToWeatherList">
+            返回天氣列表
+        </button>
+    </div>
+}
+else
+{
+    <GenericDetailsComponent Configuration="@detailConfiguration" 
+                           OnSectionLoad="HandleSectionLoad"
+                           OnItemClick="HandleItemClick"
+                           ActionButtons="@ActionButtons" />
+}
+
+@code {
+    [Parameter] public int WeatherId { get; set; }
+
+    private Weather? weather;
+    private bool isLoading = true;
+    private DetailViewConfiguration detailConfiguration = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadWeatherData();
+        InitializeDetailConfiguration();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (WeatherId > 0)
+        {
+            await LoadWeatherData();
+            InitializeDetailConfiguration();
+        }
+    }
+
+    private async Task LoadWeatherData()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // 載入天氣基本資料
+            weather = await WeatherService.GetByIdAsync(WeatherId);
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入天氣資料失敗：", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void InitializeDetailConfiguration()
+    {
+        if (weather == null) return;
+
+        detailConfiguration = new DetailViewConfiguration
+        {
+            Title = weather.Name,
+            Subtitle = $"天氣代碼：{weather.Code}",
+            TitleIcon = "bi bi-cloud-sun",
+            UseTabs = false, // 使用單一區塊模式，因為天氣資料相對簡單
+            Sections = new List<DetailSection>
+            {
+                CreateBasicInfoSection()
+            }
+        };
+    }
+
+    private DetailSection CreateBasicInfoSection()
+    {
+        var items = new List<DetailItem>
+        {
+            new() { 
+                Label = "天氣名稱", 
+                Value = weather!.Name, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6",
+                IsHighlight = true
+            },
+            new() { 
+                Label = "天氣代碼", 
+                Value = weather.Code, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6"
+            },
+            new() { 
+                Label = "圖示", 
+                Value = weather.Icon ?? "-", 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6"
+            },
+            new() { 
+                Label = "參考溫度", 
+                Value = weather.ReferenceTemperature?.ToString("0.0") + "°C" ?? "-", 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6"
+            },
+            new() { 
+                Label = "狀態", 
+                Value = GetStatusText(weather.Status), 
+                DisplayType = DetailDisplayType.Status,
+                Format = new DetailItemFormat 
+                { 
+                    StatusColors = new Dictionary<string, string>
+                    {
+                        { "啟用", "bg-success" },
+                        { "停用", "bg-danger" },
+                        { "已刪除", "bg-secondary" }
+                    }
+                },
+                ContainerCssClass = "col-md-6"
+            },
+            new() { 
+                Label = "建立日期", 
+                Value = weather.CreatedAt, 
+                DisplayType = DetailDisplayType.DateTime,
+                ContainerCssClass = "col-md-6"
+            },
+            new() { 
+                Label = "建立者", 
+                Value = weather.CreatedBy ?? "系統", 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6"
+            }
+        };
+
+        // 加入最後更新時間（如果有的話）
+        if (weather.UpdatedAt.HasValue)
+        {
+            items.Add(new DetailItem { 
+                Label = "最後更新", 
+                Value = weather.UpdatedAt, 
+                DisplayType = DetailDisplayType.DateTime,
+                ContainerCssClass = "col-md-6"
+            });
+        }
+
+        // 加入更新者（如果有的話）
+        if (!string.IsNullOrWhiteSpace(weather.UpdatedBy))
+        {
+            items.Add(new DetailItem { 
+                Label = "更新者", 
+                Value = weather.UpdatedBy, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6"
+            });
+        }
+
+        // 加入描述（如果有的話）
+        if (!string.IsNullOrWhiteSpace(weather.Description))
+        {
+            items.Add(new DetailItem { 
+                Label = "描述", 
+                Value = weather.Description, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-12"
+            });
+        }
+
+        // 加入備註（如果有的話）
+        if (!string.IsNullOrWhiteSpace(weather.Remarks))
+        {
+            items.Add(new DetailItem { 
+                Label = "備註", 
+                Value = weather.Remarks, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-12"
+            });
+        }
+
+        return new DetailSection
+        {
+            Id = "basic",
+            Title = "基本資料",
+            Icon = "bi bi-info-circle",
+            Items = items
+        };
+    }
+
+    private string GetStatusText(Data.Enums.EntityStatus status)
+    {
+        return status switch
+        {
+            Data.Enums.EntityStatus.Active => "啟用",
+            Data.Enums.EntityStatus.Inactive => "停用",
+            Data.Enums.EntityStatus.Deleted => "已刪除",
+            _ => "未知"
+        };
+    }
+
+    // Action Buttons
+    private RenderFragment ActionButtons => __builder =>
+    {
+        <button class="btn btn-primary btn-sm me-2" @onclick="EditWeather">
+            <i class="fas fa-edit me-1"></i>編輯
+        </button>
+        <button class="btn btn-outline-secondary btn-sm me-2" @onclick="PrintWeather">
+            <i class="fas fa-print me-1"></i>列印
+        </button>
+        <button class="btn btn-outline-primary btn-sm" @onclick="BackToList">
+            <i class="fas fa-arrow-left me-1"></i>返回列表
+        </button>
+    };
+
+    private async Task HandleSectionLoad(string sectionId)
+    {
+        // 目前所有資料都在初始載入時取得，所以這裡不需要額外處理
+        // 未來如果需要延遲載入特定區塊的資料，可以在這裡實作
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleItemClick(GenericDetailsComponent.DetailItemClickEventArgs args)
+    {
+        // 處理項目點擊事件
+        // 例如：點擊圖示預覽等
+        await Task.CompletedTask;
+    }
+
+    private void EditWeather()
+    {
+        Navigation.NavigateTo($"/basicunits/weather/edit/{WeatherId}");
+    }
+
+    private async Task PrintWeather()
+    {
+        await JSRuntime.InvokeVoidAsync("window.print");
+    }
+
+    private void BackToList()
+    {
+        Navigation.NavigateTo("/basicunits/weather");
+    }
+
+    private void BackToWeatherList()
+    {
+        Navigation.NavigateTo("/basicunits/weather");
+    }
+}

@@ -46,9 +46,12 @@
                 <GenericTableComponent TItem="Color"
                                      Items="@pagedColors"
                                      ColumnDefinitions="@columnDefinitions"
+                                     EnableRowClick="true"
                                      OnRowClick="HandleRowClick"
                                      ActionsTemplate="@ActionsTemplate"
                                      Size="TableSize.Normal"
+                                     IsStriped="true"
+                                     IsHoverable="true"
                                      EmptyMessage="沒有找到符合條件的顏色資料"
                                      ActionsHeader="操作"
                                      EnablePagination="true"
@@ -340,14 +343,4 @@
                 <i class="bi bi-trash"></i>
             </button>
         </div>;
-}
-
-@* 顏色搜尋模型 *@
-@code {
-    public class ColorSearchModel
-    {
-        public string? Name { get; set; }
-        public string? Description { get; set; }
-        public EntityStatus? Status { get; set; }
-    }
 }
