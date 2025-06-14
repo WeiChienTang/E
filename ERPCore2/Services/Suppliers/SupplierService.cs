@@ -1,7 +1,6 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
-using ERPCore2.Services.Interfaces;
 using ERPCore2.Services.GenericManagementService;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

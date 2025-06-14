@@ -1,9 +1,6 @@
 using ERPCore2.Components;
 using ERPCore2.Data;
-using ERPCore2.Data.Context;
 using Microsoft.EntityFrameworkCore;
-using ERPCore2.Services;
-using ERPCore2.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 

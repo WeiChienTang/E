@@ -33,7 +33,7 @@ namespace ERPCore2.Services.Auth
                 return false;            try
             {
                 using var scope = _scopeFactory.CreateScope();
-                var employeeService = scope.ServiceProvider.GetRequiredService<ERPCore2.Services.Interfaces.IEmployeeService>();
+                var employeeService = scope.ServiceProvider.GetRequiredService<ERPCore2.Services.IEmployeeService>();
                 
                 // 驗證員工是否仍然存在且未被刪除或鎖定
                 var employee = await employeeService.GetByIdAsync(userId);

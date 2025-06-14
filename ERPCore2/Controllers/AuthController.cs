@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
-using AuthService = ERPCore2.Services.Interfaces.IAuthenticationService;
+using AuthService = ERPCore2.Services.IAuthenticationService;
 
 namespace ERPCore2.Controllers
 {

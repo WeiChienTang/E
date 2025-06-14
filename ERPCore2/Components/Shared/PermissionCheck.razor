@@ -45,7 +45,7 @@ else if (!string.IsNullOrEmpty(UnauthorizedContent))
             try
             {
                 using var scope = ServiceProvider.CreateScope();
-                var permissionService = scope.ServiceProvider.GetService<ERPCore2.Services.Interfaces.IPermissionService>();
+                var permissionService = scope.ServiceProvider.GetService<ERPCore2.Services.IPermissionService>();
                 
                 if (permissionService != null)
                 {
@@ -108,7 +108,7 @@ else if (!string.IsNullOrEmpty(UnauthorizedContent))
             try
             {
                 using var scope = ServiceProvider.CreateScope();
-                var permissionService = scope.ServiceProvider.GetService<ERPCore2.Services.Interfaces.IPermissionService>();
+                var permissionService = scope.ServiceProvider.GetService<ERPCore2.Services.IPermissionService>();
                 
                 if (permissionService != null)
                 {

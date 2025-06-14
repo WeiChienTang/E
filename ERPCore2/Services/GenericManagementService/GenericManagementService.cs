@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ERPCore2.Data;
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Enums;
-using ERPCore2.Services.Interfaces;
+using ERPCore2.Services;
 
 namespace ERPCore2.Services.GenericManagementService
 {
