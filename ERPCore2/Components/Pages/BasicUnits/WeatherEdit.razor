@@ -9,7 +9,7 @@
 
 @* 頁面標題 *@
 <GenericHeaderComponent Title="@(Id.HasValue ? "編輯天氣" : "新增天氣")"
-                       Subtitle="@(Id.HasValue ? $"編輯天氣: {weather?.Name}" : "新增天氣類型資料")"
+                       Subtitle="@(Id.HasValue ? $"編輯天氣: {weather.Name}" : "新增天氣類型資料")"
                        TitleIcon="cloud-sun"
                        HeadingLevel="h1"
                        BreadcrumbItems="@breadcrumbItems"
@@ -52,9 +52,8 @@
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="name" class="form-label">名稱 <span class="text-danger">*</span></label>
-                            <InputText id="name" class="form-control" @bind-Value="weather.Name" placeholder="請輸入天氣名稱" />
-                            <ValidationMessage For="@(() => weather.Name)" />
+                            <label for="name" class="form-label">名稱 <span class="text-danger">*</span></label>                            <InputText id="name" class="form-control" @bind-Value="weather.Name" placeholder="請輸入天氣名稱" />
+                            <ValidationMessage For="@(() => weather.Name!)" />
                         </div>
 
                         <div class="col-md-6 mb-3">
@@ -129,15 +128,17 @@
     }    private async Task LoadWeather()
     {
         isLoading = true;
-        StateHasChanged();
-
-        try
+        StateHasChanged();        try
         {
-            weather = await WeatherService.GetByIdAsync(Id.Value);
-            if (weather == null)
+            if (!Id.HasValue) return;
+            
+            var weatherResult = await WeatherService.GetByIdAsync(Id.Value);
+            if (weatherResult == null)
             {
                 Navigation.NavigateTo("/basicunits/weather");
+                return;
             }
+            weather = weatherResult;
         }
         catch (Exception ex)
         {

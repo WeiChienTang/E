@@ -1,10 +1,9 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
-using ERPCore2.Services;
 using ERPCore2.Services.GenericManagementService;
 using Microsoft.EntityFrameworkCore;
 
-namespace ERPCore2.Services.Inventory
+namespace ERPCore2.Services
 {
     public class UnitConversionService : GenericManagementService<UnitConversion>, IUnitConversionService
     {

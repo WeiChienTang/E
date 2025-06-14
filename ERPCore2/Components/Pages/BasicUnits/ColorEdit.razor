@@ -53,11 +53,13 @@
     {
         if (Id.HasValue)
         {
-            color = await ColorService.GetByIdAsync(Id.Value);
-            if (color == null)
+            var colorResult = await ColorService.GetByIdAsync(Id.Value);
+            if (colorResult == null)
             {
                 Navigation.NavigateTo("/basicunits/color");
+                return;
             }
+            color = colorResult;
         }
         else
         {
