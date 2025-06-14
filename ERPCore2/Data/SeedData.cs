@@ -55,8 +55,9 @@ namespace ERPCore2.Data
             {
                 Console.WriteLine($"種子資料初始化過程中發生錯誤：{ex.Message}");
                 throw;
-            }
-        }        /// <summary>
+            }        }
+        
+        /// <summary>
         /// 取得所有種子器實例
         /// </summary>
         /// <returns>種子器列表</returns>
@@ -69,7 +70,9 @@ namespace ERPCore2.Data
                 new CustomerSeeder(),
                 new SupplierSeeder(),
                 new ProductSeeder(),
-                new InventorySeeder()
+                new InventorySeeder(),
+                new WeatherSeeder(),
+                new ColorSeeder()
             };
         }
     }

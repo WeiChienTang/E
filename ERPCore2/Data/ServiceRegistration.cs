@@ -54,6 +54,10 @@ namespace ERPCore2.Data
             services.AddScoped<IUnitConversionService, UnitConversionService>();
             services.AddScoped<IInventoryTransactionTypeService, InventoryTransactionTypeService>();
             
+            // 基礎單位服務
+            services.AddScoped<IWeatherService, WeatherService>();
+            services.AddScoped<IColorService, ColorService>();
+            
             // 認證和授權服務
             services.AddScoped<IEmployeeService, EmployeeService>();
             services.AddScoped<IRoleService, RoleService>();

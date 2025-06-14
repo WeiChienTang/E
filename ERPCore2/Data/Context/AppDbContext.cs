@@ -34,6 +34,10 @@ namespace ERPCore2.Data.Context
       public DbSet<Unit> Units { get; set; }
       public DbSet<UnitConversion> UnitConversions { get; set; }
       public DbSet<InventoryTransactionType> InventoryTransactionTypes { get; set; }
+      
+      // Basic Units
+      public DbSet<Weather> Weathers { get; set; }
+      public DbSet<Color> Colors { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
       {

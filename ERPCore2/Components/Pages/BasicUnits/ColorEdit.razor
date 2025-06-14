@@ -1,0 +1,100 @@
+@page "/basicunits/color/edit"
+@page "/basicunits/color/edit/{id:int?}"
+@inject IColorService ColorService
+@inject NavigationManager Navigation
+
+<h3>@(Id.HasValue ? "編輯顏色" : "新增顏色")</h3>
+
+<div class="row">
+    <div class="col-md-6">
+        <EditForm Model="@color" OnValidSubmit="SaveColor">
+            <DataAnnotationsValidator />
+            
+            <div class="mb-3">
+                <label class="form-label">名稱</label>
+                <InputText class="form-control" @bind-Value="color.Name" />
+                <ValidationMessage For="@(() => color.Name)" />
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">描述</label>
+                <InputTextArea class="form-control" @bind-Value="color.Description" />
+                <ValidationMessage For="@(() => color.Description)" />
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">狀態</label>
+                <InputSelect class="form-select" @bind-Value="color.Status">
+                    <option value="@EntityStatus.Active">啟用</option>
+                    <option value="@EntityStatus.Inactive">停用</option>
+                </InputSelect>
+                <ValidationMessage For="@(() => color.Status)" />
+            </div>
+            
+            <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                @if (isSubmitting)
+                {
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                }
+                儲存
+            </button>
+            <button type="button" class="btn btn-secondary ms-2" @onclick="Cancel">取消</button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    
+    private Color color = new();
+    private bool isSubmitting = false;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            color = await ColorService.GetByIdAsync(Id.Value);
+            if (color == null)
+            {
+                Navigation.NavigateTo("/basicunits/color");
+            }
+        }
+        else
+        {
+            color = new Color { Status = EntityStatus.Active };
+        }
+    }
+    
+    private async Task SaveColor()
+    {
+        isSubmitting = true;
+        
+        try
+        {
+            ServiceResult<Color> result;
+            
+            if (Id.HasValue)
+            {
+                result = await ColorService.UpdateAsync(color);
+            }
+            else
+            {
+                result = await ColorService.CreateAsync(color);
+            }
+            
+            if (result.IsSuccess)
+            {
+                Navigation.NavigateTo("/basicunits/color");
+            }
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+    
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/basicunits/color");
+    }
+}
