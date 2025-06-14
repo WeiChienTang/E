@@ -46,7 +46,6 @@
                                      ColumnDefinitions="@columnDefinitions"
                                      OnRowClick="HandleRowClick"
                                      ActionsTemplate="@ActionsTemplate"
-                                     IsLoading="@isLoading"
                                      Size="TableSize.Normal"
                                      EmptyMessage="沒有找到符合條件的顏色資料"
                                      ActionsHeader="操作"
@@ -158,6 +157,7 @@
             TableColumnDefinition.Text("描述", nameof(Color.Description)),
             TableColumnDefinition.Status("狀態", nameof(Color.Status), new Dictionary<object, string>
             {
+                { EntityStatus.Active, "bg-success" },
                 { EntityStatus.Inactive, "bg-secondary" }
             }),
             TableColumnDefinition.Date("建立日期", nameof(Color.CreatedAt), "yyyy/MM/dd")

@@ -31,22 +31,21 @@
 @* 天氣管理主要內容區域 *@
 <div class="row">
     <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <GenericSearchComponent Filters="@filterDefinitions"
+        <div class="card">            <div class="card-header">
+                <GenericSearchFilterComponent TModel="WeatherSearchModel"
+                                      FilterDefinitions="@filterDefinitions"
+                                      FilterModel="@searchModel"
                                       OnSearch="HandleSearch"
                                       OnFilterChanged="HandleFilterChanged"
-                                      EnableAutoSearch="true"
-                                      SearchDebounceMs="500"
-                                      PlaceholderText="搜尋天氣..." />
+                                      AutoSearch="true"
+                                      ShowSearchButton="false"
+                                      SearchDelayMs="500" />
             </div>
-            <div class="card-body">
-                <GenericTableComponent TItem="Weather"
+            <div class="card-body">                <GenericTableComponent TItem="Weather"
                                      Items="@pagedWeathers"
                                      ColumnDefinitions="@columnDefinitions"
                                      OnRowClick="HandleRowClick"
                                      ActionsTemplate="@ActionsTemplate"
-                                     IsLoading="@isLoading"
                                      Size="TableSize.Normal"
                                      EmptyMessage="沒有找到符合條件的天氣資料"
                                      ActionsHeader="操作"
@@ -56,7 +55,8 @@
                                      TotalItems="@totalItems"
                                      OnPageChanged="HandlePageChanged"
                                      OnPageSizeChanged="HandlePageSizeChanged"
-                                     ShowPageSizeSelector="true">
+                                     ShowPageSizeSelector="true"
+                                     EnableRowClick="true">
                 </GenericTableComponent>
             </div>
         </div>

@@ -28,9 +28,8 @@ else if (!string.IsNullOrEmpty(UnauthorizedContent))
     private bool isAuthorized = false;    protected override async Task OnParametersSetAsync()
     {
         Console.WriteLine($"🔐 PermissionCheck 開始檢查，權限: '{Permission}', 角色: '{Role}', 員工ID: {EmployeeId}");
-        
-        // 開發模式：如果是基本的 CRUD 權限，暫時允許（用於測試）
-        var developmentPermissions = new[] { "Customer.Read", "Supplier.Read", "Employee.Read", "Product.Read" };
+          // 開發模式：如果是基本的 CRUD 權限，暫時允許（用於測試）
+        var developmentPermissions = new[] { "Customer.Read", "Supplier.Read", "Employee.Read", "Product.Read", "Weather.Read", "Color.Read" };
         if (!string.IsNullOrEmpty(Permission) && developmentPermissions.Contains(Permission))
         {
             Console.WriteLine($"🧪 開發模式：直接允許權限 '{Permission}'");

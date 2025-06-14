@@ -120,10 +120,32 @@
                         <NavLink class="dropdown-item" href="inventory/transaction-types">
                             <span class="bi bi-list-ul" aria-hidden="true"></span> 異動類型管理
                         </NavLink>
-                        <!-- 庫存報表 -->
-                        <NavLink class="dropdown-item" href="inventory/reports">
+                        <!-- 庫存報表 -->                        <NavLink class="dropdown-item" href="inventory/reports">
                             <span class="bi bi-graph-up" aria-hidden="true"></span> 庫存報表
                         </NavLink>
+                    </div>
+                </div>
+
+                <!-- 基礎單位管理選單 -->
+                <div class="nav-item px-3">
+                    <div class="nav-link dropdown" onclick="toggleDropdown(event)">
+                        <span class="bi bi-gear-fill" aria-hidden="true"></span> 基礎單位管理
+                        <span class="bi bi-chevron-down ms-auto dropdown-arrow"></span>
+                    </div>
+                    <div class="dropdown-menu">
+                        <!-- 天氣管理 - 需要 Weather.Read 權限 -->
+                        <PermissionCheck Permission="Weather.Read">
+                            <NavLink class="dropdown-item" href="basicunits/weather">
+                                <span class="bi bi-cloud-fill" aria-hidden="true"></span> 天氣管理
+                            </NavLink>
+                        </PermissionCheck>
+                        
+                        <!-- 顏色管理 - 需要 Color.Read 權限 -->
+                        <PermissionCheck Permission="Color.Read">
+                            <NavLink class="dropdown-item" href="basicunits/color">
+                                <span class="bi bi-palette-fill" aria-hidden="true"></span> 顏色管理
+                            </NavLink>
+                        </PermissionCheck>
                     </div>
                 </div>
             </Authorized>
