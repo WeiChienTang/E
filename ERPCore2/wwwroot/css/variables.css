@@ -20,11 +20,15 @@
   --warning-color: #EA580C;
   --danger-color: #DC2626;
   --info-color: #1E3A8A;
-  
-  /* 背景色彩 */
+    /* 背景色彩 */
   --bg-primary: #FFFFFF;
   --bg-secondary: #F9FAFB;
   --bg-tertiary: #F3F4F6;
+  
+  /* 表格 hover 色彩 */
+  --table-hover-bg: #fef3c7;
+  --table-hover-bg-striped: #fde68a;
+  --table-hover-text: #92400e;
   
   /* 陰影 */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -165,6 +169,19 @@
   color: var(--primary-white) !important;
 }
 
+/* 資訊狀態按鈕 */
+.btn-info {
+  background-color: var(--info-color) !important;
+  border-color: var(--info-color) !important;
+  color: var(--primary-white) !important;
+}
+
+.btn-info:hover {
+  background-color: #1e40af !important;
+  border-color: #1e40af !important;
+  color: var(--primary-white) !important;
+}
+
 /* 次要按鈕 */
 .btn-secondary {
   background-color: var(--text-secondary) !important;
@@ -203,15 +220,15 @@
   color: var(--primary-white) !important;
 }
 
-.btn-outline-secondary {
-  color: var(--text-secondary) !important;
-  border-color: var(--text-secondary) !important;
+.btn-outline-info {
+  color: var(--info-color) !important;
+  border-color: var(--info-color) !important;
   background-color: transparent !important;
 }
 
-.btn-outline-secondary:hover {
-  background-color: var(--text-secondary) !important;
-  border-color: var(--text-secondary) !important;
+.btn-outline-info:hover {
+  background-color: var(--info-color) !important;
+  border-color: var(--info-color) !important;
   color: var(--primary-white) !important;
 }
 
@@ -223,6 +240,21 @@
 
 .table-striped > tbody > tr:nth-of-type(odd) > td {
   background-color: var(--bg-secondary);
+}
+
+/* 自定義表格 hover 效果 - 黃橙色 */
+.table-hover > tbody > tr:hover > td,
+.table-hover > tbody > tr:hover > th {
+  background-color: var(--table-hover-bg) !important;
+  color: var(--table-hover-text) !important;
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+/* 確保條紋表格的 hover 效果優先級 */
+.table-striped.table-hover > tbody > tr:hover > td,
+.table-striped.table-hover > tbody > tr:hover > th {
+  background-color: var(--table-hover-bg-striped) !important;
+  color: var(--table-hover-text) !important;
 }
 
 /* 自定義表格標題樣式 - 使用主要藍色 */
