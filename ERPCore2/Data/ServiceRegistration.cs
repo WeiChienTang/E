@@ -1,6 +1,7 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Services;
 using ERPCore2.Services.Interfaces;
+using ERPCore2.Services.Inventory;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERPCore2.Data
@@ -42,12 +43,17 @@ namespace ERPCore2.Data
             services.AddScoped<ISupplierService, SupplierService>();
             services.AddScoped<ISupplierContactService, SupplierContactService>();
             services.AddScoped<ISupplierAddressService, SupplierAddressService>();
-            services.AddScoped<ISupplierTypeService, SupplierTypeService>();
-
-            // 商品相關服務
+            services.AddScoped<ISupplierTypeService, SupplierTypeService>();            // 商品相關服務
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<IProductCategoryService, ProductCategoryService>();
             services.AddScoped<IProductSupplierService, ProductSupplierService>();
+            
+            // 庫存相關服務
+            services.AddScoped<IWarehouseService, WarehouseService>();
+            services.AddScoped<IWarehouseLocationService, WarehouseLocationService>();
+            services.AddScoped<IUnitService, UnitService>();
+            services.AddScoped<IUnitConversionService, UnitConversionService>();
+            services.AddScoped<IInventoryTransactionTypeService, InventoryTransactionTypeService>();
             
             // 認證和授權服務
             services.AddScoped<IEmployeeService, EmployeeService>();

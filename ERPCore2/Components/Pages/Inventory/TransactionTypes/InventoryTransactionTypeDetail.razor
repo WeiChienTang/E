@@ -1,0 +1,203 @@
+@page "/inventory/transaction-types/{id:int}"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services.Inventory
+@using ERPCore2.Data.Enums
+@inject IInventoryTransactionTypeService TransactionTypeService
+@inject NavigationManager Navigation
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="bi bi-list-ul me-2"></i>異動類型詳細資料
+                        </h4>                        <div class="btn-group">
+                            <button class="btn btn-secondary" @onclick="@(() => Navigation.NavigateTo($"/inventory/transaction-types/{Id}/edit"))">
+                                <i class="bi bi-pencil me-1"></i>編輯
+                            </button>
+                            <button class="btn btn-outline-secondary" @onclick="@(() => Navigation.NavigateTo("/inventory/transaction-types"))">
+                                <i class="bi bi-arrow-left me-1"></i>返回列表
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (transactionType == null)
+                    {
+                        <div class="d-flex justify-content-center align-items-center" style="height: 300px;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">載入中...</span>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="text-primary mb-3">基本資訊</h5>
+                                <table class="table table-borderless">
+                                    <tbody>
+                                        <tr>
+                                            <td class="fw-bold text-muted" style="width: 140px;">類型代碼：</td>
+                                            <td>@transactionType.TypeCode</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold text-muted">類型名稱：</td>
+                                            <td>@transactionType.TypeName</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold text-muted">異動類型：</td>
+                                            <td>
+                                                @switch (transactionType.TransactionType)
+                                                {
+                                                    case InventoryTransactionTypeEnum.In:
+                                                        <span class="badge bg-success">入庫</span>
+                                                        break;
+                                                    case InventoryTransactionTypeEnum.Out:
+                                                        <span class="badge bg-danger">出庫</span>
+                                                        break;
+                                                    case InventoryTransactionTypeEnum.Adjustment:
+                                                        <span class="badge bg-warning">調整</span>
+                                                        break;
+                                                    case InventoryTransactionTypeEnum.Stocktaking:
+                                                        <span class="badge bg-info">盤點</span>
+                                                        break;
+                                                    case InventoryTransactionTypeEnum.Transfer:
+                                                        <span class="badge bg-secondary">轉倉</span>
+                                                        break;
+                                                }
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h5 class="text-primary mb-3">控制選項</h5>
+                                <table class="table table-borderless">
+                                    <tbody>
+                                        <tr>
+                                            <td class="fw-bold text-muted" style="width: 140px;">影響成本：</td>
+                                            <td>
+                                                @if (transactionType.AffectsCost)
+                                                {
+                                                    <span class="badge bg-warning">是</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">否</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold text-muted">需要審核：</td>
+                                            <td>
+                                                @if (transactionType.RequiresApproval)
+                                                {
+                                                    <span class="badge bg-warning">是</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">否</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold text-muted">自動產生單號：</td>
+                                            <td>
+                                                @if (transactionType.AutoGenerateNumber)
+                                                {
+                                                    <span class="badge bg-success">是</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">否</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold text-muted">單號前綴：</td>
+                                            <td>@(transactionType.NumberPrefix ?? "無")</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="text-primary mb-3">狀態資訊</h5>
+                                <table class="table table-borderless">
+                                    <tbody>
+                                        <tr>
+                                            <td class="fw-bold text-muted" style="width: 120px;">狀態：</td>
+                                            <td>
+                                                @if (transactionType.IsActive)
+                                                {
+                                                    <span class="badge bg-success">啟用</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">停用</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold text-muted">建立時間：</td>
+                                            <td>@transactionType.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold text-muted">建立者：</td>
+                                            <td>@(transactionType.CreatedBy ?? "系統")</td>
+                                        </tr>
+                                        @if (transactionType.UpdatedAt.HasValue)
+                                        {
+                                            <tr>
+                                                <td class="fw-bold text-muted">更新時間：</td>
+                                                <td>@transactionType.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="fw-bold text-muted">更新者：</td>
+                                                <td>@(transactionType.UpdatedBy ?? "系統")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                @if (!string.IsNullOrEmpty(transactionType.Remarks))
+                                {
+                                    <h5 class="text-primary mb-3">備註</h5>
+                                    <div class="alert alert-info">
+                                        @transactionType.Remarks
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private InventoryTransactionType? transactionType;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTransactionTypeAsync();
+    }    private async Task LoadTransactionTypeAsync()
+    {
+        transactionType = await TransactionTypeService.GetByIdAsync(Id);
+        if (transactionType == null)
+        {
+            Navigation.NavigateTo("/inventory/transaction-types");
+        }
+    }
+}

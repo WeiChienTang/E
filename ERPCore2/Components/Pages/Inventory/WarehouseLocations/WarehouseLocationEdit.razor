@@ -1,0 +1,221 @@
+@page "/inventory/warehouse-locations/{id:int}/edit"
+@page "/inventory/warehouse-locations/create"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services.Inventory
+@using ERPCore2.Data.Enums
+@inject IWarehouseLocationService WarehouseLocationService
+@inject IWarehouseService WarehouseService
+@inject NavigationManager Navigation
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="bi bi-diagram-3 me-2"></i>@(IsEditMode ? "編輯庫位" : "新增庫位")
+                        </h4>                        <button class="btn btn-outline-secondary" @onclick="@(() => Navigation.NavigateTo("/inventory/warehouse-locations"))">
+                            <i class="bi bi-arrow-left me-1"></i>返回列表
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (warehouseLocation == null)
+                    {
+                        <div class="d-flex justify-content-center align-items-center" style="height: 300px;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">載入中...</span>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <EditForm Model="warehouseLocation" OnValidSubmit="HandleSubmitAsync">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary class="alert alert-danger" />
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5 class="text-primary mb-3">基本資訊</h5>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">庫位代碼 <span class="text-danger">*</span></label>
+                                        <InputText @bind-Value="warehouseLocation.LocationCode" class="form-control" />
+                                        <ValidationMessage For="() => warehouseLocation.LocationCode" class="text-danger" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">庫位名稱 <span class="text-danger">*</span></label>
+                                        <InputText @bind-Value="warehouseLocation.LocationName" class="form-control" />
+                                        <ValidationMessage For="() => warehouseLocation.LocationName" class="text-danger" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">所屬倉庫 <span class="text-danger">*</span></label>
+                                        <InputSelect @bind-Value="warehouseLocation.WarehouseId" class="form-select">
+                                            <option value="">請選擇倉庫</option>
+                                            @foreach (var warehouse in warehouses)
+                                            {
+                                                <option value="@warehouse.Id">@warehouse.WarehouseName</option>
+                                            }
+                                        </InputSelect>
+                                        <ValidationMessage For="() => warehouseLocation.WarehouseId" class="text-danger" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">描述</label>
+                                        <InputTextArea @bind-Value="warehouseLocation.Description" class="form-control" rows="3" />
+                                        <ValidationMessage For="() => warehouseLocation.Description" class="text-danger" />
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <h5 class="text-primary mb-3">位置資訊</h5>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">區域</label>
+                                        <InputText @bind-Value="warehouseLocation.Zone" class="form-control" />
+                                        <ValidationMessage For="() => warehouseLocation.Zone" class="text-danger" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">通道</label>
+                                        <InputText @bind-Value="warehouseLocation.Aisle" class="form-control" />
+                                        <ValidationMessage For="() => warehouseLocation.Aisle" class="text-danger" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">層級</label>
+                                        <InputText @bind-Value="warehouseLocation.Level" class="form-control" />
+                                        <ValidationMessage For="() => warehouseLocation.Level" class="text-danger" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">位置</label>
+                                        <InputText @bind-Value="warehouseLocation.Position" class="form-control" />
+                                        <ValidationMessage For="() => warehouseLocation.Position" class="text-danger" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">最大容量</label>
+                                        <InputNumber @bind-Value="warehouseLocation.MaxCapacity" class="form-control" />
+                                        <ValidationMessage For="() => warehouseLocation.MaxCapacity" class="text-danger" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <InputCheckbox @bind-Value="warehouseLocation.IsActive" class="form-check-input" id="isActive" />
+                                            <label class="form-check-label" for="isActive">
+                                                啟用
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="mb-3">
+                                        <label class="form-label">備註</label>
+                                        <InputTextArea @bind-Value="warehouseLocation.Remarks" class="form-control" rows="3" />
+                                        <ValidationMessage For="() => warehouseLocation.Remarks" class="text-danger" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-2">                                <button type="button" class="btn btn-secondary" @onclick="@(() => Navigation.NavigateTo("/inventory/warehouse-locations"))">
+                                    <i class="bi bi-x-lg me-1"></i>取消
+                                </button>
+                                <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                                    @if (isSubmitting)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-check-lg me-1"></i>
+                                    }
+                                    @(IsEditMode ? "更新" : "新增")
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private WarehouseLocation warehouseLocation = new();
+    private List<Warehouse> warehouses = new();
+    private bool isSubmitting = false;
+
+    private bool IsEditMode => Id.HasValue && Id.Value > 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadWarehousesAsync();
+        
+        if (IsEditMode)
+        {
+            await LoadWarehouseLocationAsync();
+        }
+        else
+        {
+            warehouseLocation = new WarehouseLocation
+            {
+                IsActive = true,
+                Status = EntityStatus.Active
+            };
+        }
+    }    private async Task LoadWarehousesAsync()
+    {
+        var result = await WarehouseService.GetAllAsync();
+        warehouses = result.Where(w => w.IsActive).ToList();
+    }    private async Task LoadWarehouseLocationAsync()
+    {
+        if (!Id.HasValue) return;
+
+        var result = await WarehouseLocationService.GetByIdAsync(Id.Value);
+        if (result == null)
+        {
+            Navigation.NavigateTo("/inventory/warehouse-locations");
+        }
+        else
+        {
+            warehouseLocation = result;
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        isSubmitting = true;
+        try
+        {
+            if (IsEditMode)
+            {
+                var result = await WarehouseLocationService.UpdateAsync(warehouseLocation);
+                if (result.IsSuccess)
+                {
+                    Navigation.NavigateTo("/inventory/warehouse-locations");
+                }
+            }
+            else
+            {
+                var result = await WarehouseLocationService.CreateAsync(warehouseLocation);
+                if (result.IsSuccess)
+                {
+                    Navigation.NavigateTo("/inventory/warehouse-locations");
+                }
+            }
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

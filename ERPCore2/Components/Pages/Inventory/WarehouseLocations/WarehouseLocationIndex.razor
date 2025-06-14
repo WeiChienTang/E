@@ -1,0 +1,134 @@
+@page "/inventory/warehouse-locations"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services.Inventory
+@using Microsoft.JSInterop
+@inject IWarehouseLocationService WarehouseLocationService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>庫位管理</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="bi bi-diagram-3 me-2"></i>庫位管理
+                        </h4>
+                        <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/inventory/warehouse-locations/new"))">
+                            <i class="bi bi-plus-lg me-1"></i>新增庫位
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (locations == null)
+                    {
+                        <div class="d-flex justify-content-center align-items-center" style="height: 300px;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">載入中...</span>
+                            </div>
+                        </div>
+                    }
+                    else if (!locations.Any())
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-diagram-3 text-muted" style="font-size: 3rem;"></i>
+                            <h5 class="text-muted mt-3">目前沒有庫位資料</h5>
+                            <p class="text-muted">您可以點擊上方的「新增庫位」按鈕來建立第一個庫位。</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>庫位代碼</th>
+                                        <th>庫位名稱</th>
+                                        <th>所屬倉庫</th>
+                                        <th>描述</th>
+                                        <th>狀態</th>
+                                        <th>建立時間</th>
+                                        <th width="120">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var location in locations)
+                                    {
+                                        <tr>
+                                            <td>@location.LocationCode</td>
+                                            <td>@location.LocationName</td>
+                                            <td>@(location.Warehouse?.WarehouseName ?? "未設定")</td>
+                                            <td>@(location.Description ?? "無")</td>
+                                            <td>
+                                                @if (location.IsActive)
+                                                {
+                                                    <span class="badge bg-success">啟用</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">停用</span>
+                                                }
+                                            </td>
+                                            <td>@location.CreatedAt.ToString("yyyy/MM/dd")</td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-primary" 
+                                                            @onclick="@(() => Navigation.NavigateTo($"/inventory/warehouse-locations/{location.Id}"))">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-secondary" 
+                                                            @onclick="@(() => Navigation.NavigateTo($"/inventory/warehouse-locations/{location.Id}/edit"))">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-danger" 
+                                                            @onclick="@(() => DeleteLocationAsync(location))">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<WarehouseLocation>? locations;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLocationsAsync();
+    }
+
+    private async Task LoadLocationsAsync()
+    {
+        locations = await WarehouseLocationService.GetAllAsync();
+    }
+
+    private async Task DeleteLocationAsync(WarehouseLocation location)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"確定要刪除庫位「{location.LocationName}」嗎？");
+        if (confirmed)
+        {
+            var result = await WarehouseLocationService.DeleteAsync(location.Id);
+            if (result.IsSuccess)
+            {
+                await LoadLocationsAsync();
+                await JSRuntime.InvokeVoidAsync("alert", "庫位已成功刪除！");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{result.ErrorMessage}");
+            }
+        }
+    }
+}

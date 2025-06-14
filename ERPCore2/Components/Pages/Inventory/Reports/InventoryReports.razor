@@ -1,0 +1,239 @@
+@page "/inventory/reports"
+@using ERPCore2.Data.Entities
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="bi bi-graph-up me-2"></i>庫存報表
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- 庫存現況報表 -->
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card h-100 border-primary">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="bi bi-boxes display-4 text-primary"></i>
+                                    </div>
+                                    <h5 class="card-title">庫存現況報表</h5>
+                                    <p class="card-text text-muted">
+                                        查看各商品在各倉庫的即時庫存數量、庫存金額等資訊
+                                    </p>                                    <button class="btn btn-primary" @onclick="@(() => ShowReport("stock-status"))">
+                                        <i class="bi bi-eye me-1"></i>查看報表
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 庫存異動報表 -->
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card h-100 border-success">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="bi bi-arrow-left-right display-4 text-success"></i>
+                                    </div>
+                                    <h5 class="card-title">庫存異動報表</h5>
+                                    <p class="card-text text-muted">
+                                        檢視指定期間內的庫存進出異動明細記錄
+                                    </p>                                    <button class="btn btn-success" @onclick="@(() => ShowReport("transaction-history"))">
+                                        <i class="bi bi-eye me-1"></i>查看報表
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 庫存盤點報表 -->
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card h-100 border-warning">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="bi bi-clipboard-check display-4 text-warning"></i>
+                                    </div>
+                                    <h5 class="card-title">庫存盤點報表</h5>
+                                    <p class="card-text text-muted">
+                                        庫存盤點作業相關報表，包含盤點差異分析
+                                    </p>                                    <button class="btn btn-warning" @onclick="@(() => ShowReport("stocktaking"))">
+                                        <i class="bi bi-eye me-1"></i>查看報表
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 安全庫存報表 -->
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card h-100 border-danger">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="bi bi-exclamation-triangle display-4 text-danger"></i>
+                                    </div>
+                                    <h5 class="card-title">安全庫存報表</h5>
+                                    <p class="card-text text-muted">
+                                        檢視低於安全庫存量的商品，協助進行補貨決策
+                                    </p>                                    <button class="btn btn-danger" @onclick="@(() => ShowReport("safety-stock"))">
+                                        <i class="bi bi-eye me-1"></i>查看報表
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 庫存周轉報表 -->
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card h-100 border-info">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="bi bi-arrow-repeat display-4 text-info"></i>
+                                    </div>
+                                    <h5 class="card-title">庫存周轉報表</h5>
+                                    <p class="card-text text-muted">
+                                        分析商品庫存周轉率，評估庫存管理效率
+                                    </p>                                    <button class="btn btn-info" @onclick="@(() => ShowReport("turnover"))">
+                                        <i class="bi bi-eye me-1"></i>查看報表
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 倉庫使用率報表 -->
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card h-100 border-secondary">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="bi bi-building display-4 text-secondary"></i>
+                                    </div>
+                                    <h5 class="card-title">倉庫使用率報表</h5>
+                                    <p class="card-text text-muted">
+                                        檢視各倉庫和庫位的使用情況及容量分析
+                                    </p>                                    <button class="btn btn-secondary" @onclick="@(() => ShowReport("warehouse-utilization"))">
+                                        <i class="bi bi-eye me-1"></i>查看報表
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 報表內容區域 -->
+    @if (!string.IsNullOrEmpty(selectedReport))
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">@GetReportTitle(selectedReport)</h5>
+                            <button class="btn btn-outline-secondary btn-sm" @onclick="() => selectedReport = string.Empty">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">                        @switch (selectedReport)
+                        {
+                            case "stock-status":
+                                <div class="alert alert-info">
+                                    <h6>庫存現況報表</h6>
+                                    <p>此報表將顯示：</p>
+                                    <ul>
+                                        <li>各商品在各倉庫的現有庫存數量</li>
+                                        <li>庫存總金額統計</li>
+                                        <li>庫存預警提醒</li>
+                                    </ul>
+                                    <p class="mb-0"><em>功能開發中...</em></p>
+                                </div>
+                                break;
+                            case "transaction-history":
+                                <div class="alert alert-success">
+                                    <h6>庫存異動報表</h6>
+                                    <p>此報表將顯示：</p>
+                                    <ul>
+                                        <li>指定期間的所有庫存異動記錄</li>
+                                        <li>依異動類型分類統計</li>
+                                        <li>異動趨勢分析</li>
+                                    </ul>
+                                    <p class="mb-0"><em>功能開發中...</em></p>
+                                </div>
+                                break;
+                            case "stocktaking":
+                                <div class="alert alert-warning">
+                                    <h6>庫存盤點報表</h6>
+                                    <p>此報表將顯示：</p>
+                                    <ul>
+                                        <li>盤點作業執行狀況</li>
+                                        <li>盤點差異分析</li>
+                                        <li>盤盈盤虧統計</li>
+                                    </ul>
+                                    <p class="mb-0"><em>功能開發中...</em></p>
+                                </div>
+                                break;
+                            case "safety-stock":
+                                <div class="alert alert-danger">
+                                    <h6>安全庫存報表</h6>
+                                    <p>此報表將顯示：</p>
+                                    <ul>
+                                        <li>低於安全庫存的商品清單</li>
+                                        <li>建議補貨數量</li>
+                                        <li>缺貨風險評估</li>
+                                    </ul>
+                                    <p class="mb-0"><em>功能開發中...</em></p>
+                                </div>
+                                break;
+                            case "turnover":
+                                <div class="alert alert-info">
+                                    <h6>庫存周轉報表</h6>
+                                    <p>此報表將顯示：</p>
+                                    <ul>
+                                        <li>各商品庫存周轉率</li>
+                                        <li>庫存周轉天數分析</li>
+                                        <li>滯銷商品識別</li>
+                                    </ul>
+                                    <p class="mb-0"><em>功能開發中...</em></p>
+                                </div>
+                                break;
+                            case "warehouse-utilization":
+                                <div class="alert alert-secondary">
+                                    <h6>倉庫使用率報表</h6>
+                                    <p>此報表將顯示：</p>
+                                    <ul>
+                                        <li>各倉庫空間使用率</li>
+                                        <li>庫位佔用情況</li>
+                                        <li>倉儲空間最佳化建議</li>
+                                    </ul>
+                                    <p class="mb-0"><em>功能開發中...</em></p>
+                                </div>
+                                break;
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string selectedReport = string.Empty;
+
+    private void ShowReport(string reportType)
+    {
+        selectedReport = reportType;
+    }
+
+    private string GetReportTitle(string reportType)
+    {
+        return reportType switch
+        {
+            "stock-status" => "庫存現況報表",
+            "transaction-history" => "庫存異動報表",
+            "stocktaking" => "庫存盤點報表",
+            "safety-stock" => "安全庫存報表",
+            "turnover" => "庫存周轉報表",
+            "warehouse-utilization" => "倉庫使用率報表",
+            _ => "報表"
+        };
+    }
+}

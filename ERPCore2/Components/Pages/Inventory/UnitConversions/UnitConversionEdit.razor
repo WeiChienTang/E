@@ -1,0 +1,186 @@
+@page "/inventory/unit-conversions/add"
+@page "/inventory/unit-conversions/{Id:int}/edit"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services.Inventory
+@inject IUnitConversionService UnitConversionService
+@inject IUnitService UnitService
+@inject NavigationManager Navigation
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="bi bi-arrow-left-right me-2"></i>@(IsEditMode ? "編輯單位轉換" : "新增單位轉換")
+                        </h4>
+                        <button class="btn btn-outline-secondary" @onclick="@(() => Navigation.NavigateTo("/inventory/unit-conversions"))">
+                            <i class="bi bi-arrow-left me-1"></i>返回列表
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (isLoading)
+                    {
+                        <div class="d-flex justify-content-center align-items-center" style="height: 300px;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">載入中...</span>
+                            </div>
+                        </div>
+                    }
+                    else if (unitConversion != null)
+                    {
+                        <EditForm Model="unitConversion" OnValidSubmit="HandleSubmitAsync">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary class="alert alert-danger" />
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">                                        <label class="form-label">來源單位 <span class="text-danger">*</span></label>
+                                        <select class="form-select" @bind="unitConversion.FromUnitId">
+                                            <option value="">請選擇來源單位</option>
+                                            @foreach (var unit in units)
+                                            {
+                                                <option value="@unit.Id">@unit.UnitName (@unit.UnitCode)</option>
+                                            }
+                                        </select>
+                                        <ValidationMessage For="@(() => unitConversion.FromUnitId)" />
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">目標單位 <span class="text-danger">*</span></label>
+                                        <select class="form-select" @bind="unitConversion.ToUnitId">
+                                            <option value="">請選擇目標單位</option>
+                                            @foreach (var unit in units)
+                                            {
+                                                <option value="@unit.Id">@unit.UnitName (@unit.UnitCode)</option>
+                                            }
+                                        </select>
+                                        <ValidationMessage For="@(() => unitConversion.ToUnitId)" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">轉換率 <span class="text-danger">*</span></label>
+                                        <input type="number" step="0.0001" class="form-control" @bind="unitConversion.ConversionRate" />
+                                        <ValidationMessage For="@(() => unitConversion.ConversionRate)" />
+                                        <div class="form-text">
+                                            例如：1 公斤 = 1000 公克，轉換率為 1000
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">狀態</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" @bind="unitConversion.IsActive" id="isActive">
+                                            <label class="form-check-label" for="isActive">
+                                                啟用
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">備註</label>
+                                <textarea class="form-control" rows="3" @bind="unitConversion.Remarks" placeholder="輸入備註..."></textarea>
+                                <ValidationMessage For="@(() => unitConversion.Remarks)" />
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-2">
+                                <button type="button" class="btn btn-secondary" @onclick="@(() => Navigation.NavigateTo("/inventory/unit-conversions"))">
+                                    <i class="bi bi-x-lg me-1"></i>取消
+                                </button>
+                                <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                                    @if (isSubmitting)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-check-lg me-1"></i>
+                                    }
+                                    @(IsEditMode ? "更新" : "新增")
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private UnitConversion unitConversion = new();
+    private List<Unit> units = new();
+    private bool isLoading = true;
+    private bool isSubmitting = false;
+
+    private bool IsEditMode => Id.HasValue;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUnitsAsync();
+        await LoadUnitConversionAsync();
+        isLoading = false;
+    }
+
+    private async Task LoadUnitsAsync()
+    {
+        units = await UnitService.GetAllAsync();
+    }
+
+    private async Task LoadUnitConversionAsync()
+    {
+        if (!Id.HasValue) return;
+
+        var result = await UnitConversionService.GetByIdAsync(Id.Value);
+        if (result == null)
+        {
+            Navigation.NavigateTo("/inventory/unit-conversions");
+        }
+        else
+        {
+            unitConversion = result;
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        isSubmitting = true;
+
+        try
+        {
+            if (IsEditMode)
+            {
+                await UnitConversionService.UpdateAsync(unitConversion);
+            }
+            else
+            {
+                await UnitConversionService.CreateAsync(unitConversion);
+            }
+
+            Navigation.NavigateTo("/inventory/unit-conversions");
+        }
+        catch (Exception ex)
+        {
+            // TODO: 顯示錯誤訊息
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

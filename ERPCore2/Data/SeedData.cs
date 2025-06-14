@@ -68,7 +68,8 @@ namespace ERPCore2.Data
                 new BasicDataSeeder(),
                 new CustomerSeeder(),
                 new SupplierSeeder(),
-                new ProductSeeder()
+                new ProductSeeder(),
+                new InventorySeeder()
             };
         }
     }
