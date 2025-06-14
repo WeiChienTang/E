@@ -10,11 +10,35 @@ Services 資料夾包含了 ERPCore2 系統的業務邏輯層實作，負責處�
 ### 命名空間
 所有 Services 資料夾下的檔案統一使用：`ERPCore2.Services`
 
-### 檔案命名
+### 檔案組織結構
+- **檔案建置位置**：Service/[類型名稱]/ 底下放 I[功能]Service 和 [功能]Service
 - **服務實作**：`[業務領域]Service.cs`（如：CustomerService.cs）
 - **服務介面**：`I[業務領域]Service.cs`（如：ICustomerService.cs）
 - **通用服務基底**：`GenericManagementService<T>.cs`
 - **結果類別**：`ServiceResult.cs`
+
+### 資料夾結構範例
+```
+Services/
+├── Customers/
+│   ├── ICustomerService.cs
+│   ├── CustomerService.cs
+│   ├── ICustomerTypeService.cs
+│   ├── CustomerTypeService.cs
+│   ├── ICustomerAddressService.cs
+│   ├── CustomerAddressService.cs
+│   └── Readme_CustomerService.md
+├── Products/
+│   ├── IProductService.cs
+│   ├── ProductService.cs
+│   ├── IProductCategoryService.cs
+│   ├── ProductCategoryService.cs
+│   └── README_ProductServices.md
+└── Industries/
+    ├── IIndustryTypeService.cs
+    ├── IndustryTypeService.cs
+    └── Readme_IndustryType.md
+```
 
 ---
 
@@ -50,8 +74,11 @@ Services 資料夾包含了 ERPCore2 系統的業務邏輯層實作，負責處�
 
 ## Service 開發模式
 
-### 1. 建立專用服務介面
+### 1. 建立專用服務介面（在適當的類型資料夾下）
 ```csharp
+// 檔案位置：Services/Customers/ICustomerService.cs
+namespace ERPCore2.Services;
+
 public interface ICustomerService : IGenericManagementService<Customer>
 {
     // 業務特定方法
@@ -61,8 +88,11 @@ public interface ICustomerService : IGenericManagementService<Customer>
 }
 ```
 
-### 2. 實作服務類別
+### 2. 實作服務類別（在同一資料夾下）
 ```csharp
+// 檔案位置：Services/Customers/CustomerService.cs
+namespace ERPCore2.Services;
+
 public class CustomerService : GenericManagementService<Customer>, ICustomerService
 {
     public CustomerService(AppDbContext context) : base(context)
@@ -197,9 +227,10 @@ builder.Services.AddScoped<IContactTypeService, ContactTypeService>();
 ## 開發檢查清單
 
 ### 建立新服務時
-- [ ] 建立專用服務介面，繼承 `IGenericManagementService<T>`
-- [ ] 建立服務實作類別，繼承 `GenericManagementService<T>`
+- [ ] 在適當的類型資料夾下建立專用服務介面，繼承 `IGenericManagementService<T>`
+- [ ] 在同一資料夾下建立服務實作類別，繼承 `GenericManagementService<T>`
 - [ ] 使用正確的命名空間 `ERPCore2.Services`
+- [ ] 確保介面和實作檔案放在 Service/[類型名稱]/ 資料夾內
 - [ ] 實作業務特定方法（如果需要）
 - [ ] 覆寫基底方法（如果需要特殊邏輯）
 - [ ] 在 Program.cs 中註冊服務
@@ -219,8 +250,10 @@ builder.Services.AddScoped<IContactTypeService, ContactTypeService>();
 
 ## 常見模式摘要
 
+- **檔案組織**：Interface 和 Service 檔案統一放在 Service/[類型名稱]/ 資料夾內
 - **繼承模式**：所有服務繼承 `GenericManagementService<T>`
 - **介面設計**：專用介面繼承 `IGenericManagementService<T>`
+- **命名空間**：所有服務統一使用 `ERPCore2.Services` 命名空間
 - **錯誤處理**：統一使用 ServiceResult 模式
 - **軟刪除**：使用 IsDeleted 標記
 - **稽核欄位**：自動設定 CreatedAt、UpdatedAt、CreatedBy、UpdatedBy
