@@ -26,6 +26,7 @@ namespace ERPCore2.Services
             return await _dbSet
                 .Include(p => p.ProductCategory)
                 .Include(p => p.PrimarySupplier)
+                .Include(p => p.Unit)
                 .Where(p => !p.IsDeleted)
                 .OrderBy(p => p.ProductName)
                 .ToListAsync();
@@ -36,6 +37,7 @@ namespace ERPCore2.Services
             return await _dbSet
                 .Include(p => p.ProductCategory)
                 .Include(p => p.PrimarySupplier)
+                .Include(p => p.Unit)
                 .Include(p => p.ProductSuppliers)
                     .ThenInclude(ps => ps.Supplier)
                 .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
@@ -49,6 +51,7 @@ namespace ERPCore2.Services
             return await _dbSet
                 .Include(p => p.ProductCategory)
                 .Include(p => p.PrimarySupplier)
+                .Include(p => p.Unit)
                 .Where(p => !p.IsDeleted &&
                            (p.ProductName.Contains(searchTerm) ||
                             p.ProductCode.Contains(searchTerm) ||
@@ -133,6 +136,7 @@ namespace ERPCore2.Services
                 return await _dbSet
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
+                    .Include(p => p.Unit)
                     .FirstOrDefaultAsync(p => p.ProductCode == productCode && !p.IsDeleted);
             }
             catch (Exception ex)
@@ -167,6 +171,7 @@ namespace ERPCore2.Services
                 return await _dbSet
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
+                    .Include(p => p.Unit)
                     .Where(p => p.ProductCategoryId == productCategoryId && !p.IsDeleted)
                     .OrderBy(p => p.ProductName)
                     .ToListAsync();
@@ -185,6 +190,7 @@ namespace ERPCore2.Services
                 return await _dbSet
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
+                    .Include(p => p.Unit)
                     .Where(p => p.PrimarySupplierId == supplierId && !p.IsDeleted)
                     .OrderBy(p => p.ProductName)
                     .ToListAsync();
@@ -203,6 +209,7 @@ namespace ERPCore2.Services
                 return await _dbSet
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
+                    .Include(p => p.Unit)
                     .Where(p => p.IsActive && !p.IsDeleted)
                     .OrderBy(p => p.ProductName)
                     .ToListAsync();
@@ -221,6 +228,7 @@ namespace ERPCore2.Services
                 return await _dbSet
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
+                    .Include(p => p.Unit)
                     .Where(p => !p.IsDeleted && 
                                p.MinStockLevel.HasValue && 
                                p.CurrentStock <= p.MinStockLevel.Value)
@@ -241,6 +249,7 @@ namespace ERPCore2.Services
                 return await _dbSet
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
+                    .Include(p => p.Unit)
                     .Where(p => !p.IsDeleted && 
                                p.MaxStockLevel.HasValue && 
                                p.CurrentStock >= p.MaxStockLevel.Value)
@@ -286,6 +295,22 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting suppliers");
+                throw;
+            }
+        }
+
+        public async Task<List<Unit>> GetUnitsAsync()
+        {
+            try
+            {
+                return await _context.Units
+                    .Where(u => u.IsActive && !u.IsDeleted)
+                    .OrderBy(u => u.UnitName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting units");
                 throw;
             }
         }
@@ -651,7 +676,7 @@ namespace ERPCore2.Services
             product.ProductName = string.Empty;
             product.Description = string.Empty;
             product.Specification = string.Empty;
-            product.Unit = string.Empty;
+            product.UnitId = null;
             product.UnitPrice = null;
             product.CostPrice = null;
             product.MinStockLevel = null;

@@ -35,6 +35,7 @@ Data 資料夾包含了 ERPCore2 系統的資料存取層相關檔案，主要�
 - `UpdatedAt` (DateTime?) - 最後更新時間
 - `CreatedBy` (string?) - 建立者 ID
 - `UpdatedBy` (string?) - 最後更新者 ID
+- `Remarks` (string?) - 備註，最大長度 500 字元
 
 #### 新實體範例
 ```csharp
@@ -42,13 +43,12 @@ using System.ComponentModel.DataAnnotations;
 using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Data.Entities
-{
-    /// <summary>
+{    /// <summary>
     /// 您的實體類別 - 繼承 BaseEntity 後自動包含基礎屬性
     /// </summary>
     public class YourEntity : BaseEntity
     {
-        // ⚠️ 注意：不要重複定義 Id、Status、IsDeleted、CreatedAt、UpdatedAt、CreatedBy、UpdatedBy
+        // ⚠️ 注意：不要重複定義 Id、Status、IsDeleted、CreatedAt、UpdatedAt、CreatedBy、UpdatedBy、Remarks
         
         // 必要屬性
         [Required(ErrorMessage = "名稱為必填")]
@@ -56,7 +56,7 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "名稱")]
         public string Name { get; set; } = string.Empty;
         
-        // 選擇性屬性
+        // 選擇性屬性（若需要額外的描述欄位，請使用不同名稱避免與 Remarks 重複）
         [MaxLength(200, ErrorMessage = "描述不可超過200個字元")]
         [Display(Name = "描述")]
         public string? Description { get; set; }
@@ -78,7 +78,8 @@ namespace ERPCore2.Data.Entities
 |----------|----------|------|
 | 代碼類 | 10-20 | 客戶代碼、產品代碼等 |
 | 名稱類 | 50-100 | 實體名稱、公司名稱等 |
-| 描述類 | 100-500 | 描述、備註等 |
+| 描述類 | 100-200 | 短描述、標題等 |
+| 備註類 | 已內建 500 | BaseEntity.Remarks 已提供，無需重複定義 |
 | 地址類 | 200 | 完整地址 |
 | 聯絡類 | 100 | 電話、Email等 |
 | 人員類 | 50 | 聯絡人、建立者等 |
@@ -109,7 +110,7 @@ public OptionalEntity? OptionalEntity { get; set; }
 ### 基本結構
 - [ ] 使用正確的命名空間 `ERPCore2.Data.Entities`
 - [ ] 繼承 `BaseEntity` 類別
-- [ ] **不可重複定義** BaseEntity 已包含的屬性（Id、Status、IsDeleted、CreatedAt、UpdatedAt、CreatedBy、UpdatedBy）
+- [ ] **不可重複定義** BaseEntity 已包含的屬性（Id、Status、IsDeleted、CreatedAt、UpdatedAt、CreatedBy、UpdatedBy、Remarks）
 - [ ] 包含 `using System.ComponentModel.DataAnnotations;`
 - [ ] 包含 `using ERPCore2.Data.Enums;`
 

@@ -97,6 +97,10 @@ namespace ERPCore2.Data.Context
                   entity.HasOne(e => e.PrimarySupplier)
                   .WithMany(s => s.PrimaryProducts)
                   .OnDelete(DeleteBehavior.SetNull);
+
+                  entity.HasOne(e => e.Unit)
+                  .WithMany(u => u.Products)
+                  .OnDelete(DeleteBehavior.SetNull);
             });
 
             modelBuilder.Entity<ProductSupplier>(entity =>

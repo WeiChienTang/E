@@ -38,8 +38,7 @@ namespace ERPCore2.Services
         /// 取得庫存不足的商品列表
         /// </summary>
         Task<List<Product>> GetLowStockProductsAsync();
-        
-        /// <summary>
+          /// <summary>
         /// 取得庫存超量的商品列表
         /// </summary>
         Task<List<Product>> GetOverStockProductsAsync();
@@ -57,6 +56,11 @@ namespace ERPCore2.Services
         /// 取得所有供應商
         /// </summary>
         Task<List<Supplier>> GetSuppliersAsync();
+        
+        /// <summary>
+        /// 取得所有單位
+        /// </summary>
+        Task<List<Unit>> GetUnitsAsync();
         
         #endregion
 

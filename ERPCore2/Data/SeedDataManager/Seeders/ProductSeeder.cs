@@ -18,6 +18,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
         public async Task SeedAsync(AppDbContext context)
         {
             await SeedProductCategoriesAsync(context);
+            await SeedUnitsAsync(context);
             await SeedProductsAsync(context);
         }
 
@@ -76,7 +77,124 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CreatedAt = DateTime.Now.AddDays(-30),
                     CreatedBy = "System"
                 }
-            };            await context.ProductCategories.AddRangeAsync(categories);
+            };
+
+            await context.ProductCategories.AddRangeAsync(categories);
+            await context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// 初始化單位資料
+        /// </summary>
+        private static async Task SeedUnitsAsync(AppDbContext context)
+        {
+            if (await context.Units.AnyAsync())
+                return; // 單位資料已存在
+
+            var units = new[]
+            {
+                new Unit
+                {
+                    UnitCode = "PC",
+                    UnitName = "台",
+                    Symbol = "台",
+                    IsBaseUnit = true,
+                    IsActive = true,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-31),
+                    CreatedBy = "System"
+                },
+                new Unit
+                {
+                    UnitCode = "PCS",
+                    UnitName = "個",
+                    Symbol = "個",
+                    IsBaseUnit = true,
+                    IsActive = true,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-31),
+                    CreatedBy = "System"
+                },
+                new Unit
+                {
+                    UnitCode = "PKG",
+                    UnitName = "包",
+                    Symbol = "包",
+                    IsBaseUnit = true,
+                    IsActive = true,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-31),
+                    CreatedBy = "System"
+                },
+                new Unit
+                {
+                    UnitCode = "PEN",
+                    UnitName = "支",
+                    Symbol = "支",
+                    IsBaseUnit = true,
+                    IsActive = true,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-31),
+                    CreatedBy = "System"
+                },
+                new Unit
+                {
+                    UnitCode = "TOP",
+                    UnitName = "頂",
+                    Symbol = "頂",
+                    IsBaseUnit = true,
+                    IsActive = true,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-31),
+                    CreatedBy = "System"
+                },
+                new Unit
+                {
+                    UnitCode = "LIC",
+                    UnitName = "授權",
+                    Symbol = "授權",
+                    IsBaseUnit = true,
+                    IsActive = true,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-31),
+                    CreatedBy = "System"
+                },
+                new Unit
+                {
+                    UnitCode = "SHT",
+                    UnitName = "片",
+                    Symbol = "片",
+                    IsBaseUnit = true,
+                    IsActive = true,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-31),
+                    CreatedBy = "System"
+                },
+                new Unit
+                {
+                    UnitCode = "BAG",
+                    UnitName = "袋",
+                    Symbol = "袋",
+                    IsBaseUnit = true,
+                    IsActive = true,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-31),
+                    CreatedBy = "System"
+                },
+                new Unit
+                {
+                    UnitCode = "ROL",
+                    UnitName = "捲",
+                    Symbol = "捲",
+                    IsBaseUnit = true,
+                    IsActive = true,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-31),
+                    CreatedBy = "System"
+                }
+            };
+
+            await context.Units.AddRangeAsync(units);
             await context.SaveChangesAsync();
         }
 
@@ -101,6 +219,17 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             var supplier3 = await context.Suppliers.FirstOrDefaultAsync(s => s.SupplierCode == "S003");
             var supplier4 = await context.Suppliers.FirstOrDefaultAsync(s => s.SupplierCode == "S004");
 
+            // 取得單位
+            var unitPc = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "PC");     // 台
+            var unitPcs = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "PCS");   // 個
+            var unitPkg = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "PKG");   // 包
+            var unitPen = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "PEN");   // 支
+            var unitTop = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "TOP");   // 頂
+            var unitLic = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "LIC");   // 授權
+            var unitSht = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "SHT");   // 片
+            var unitBag = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "BAG");   // 袋
+            var unitRol = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "ROL");   // 捲
+
             var products = new[]
             {
                 // 電子產品
@@ -110,7 +239,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ProductName = "筆記型電腦 - ThinkPad X1",
                     Description = "高效能商務筆記型電腦，Intel i7處理器，16GB記憶體，512GB SSD",
                     Specification = "14吋 FHD IPS螢幕，重量1.13kg，電池續航力19.5小時",
-                    Unit = "台",
+                    UnitId = unitPc?.Id,
                     UnitPrice = 45000,
                     CostPrice = 38000,
                     MinStockLevel = 5,
@@ -129,7 +258,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ProductName = "無線滑鼠",
                     Description = "人體工學設計無線滑鼠，2.4GHz無線連接",
                     Specification = "1600 DPI，6個按鍵，節能設計",
-                    Unit = "個",
+                    UnitId = unitPcs?.Id,
                     UnitPrice = 850,
                     CostPrice = 600,
                     MinStockLevel = 20,
@@ -148,7 +277,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ProductName = "24吋顯示器",
                     Description = "24吋 Full HD LED背光液晶顯示器",
                     Specification = "1920x1080解析度，IPS面板，HDMI/VGA介面",
-                    Unit = "台",
+                    UnitId = unitPc?.Id,
                     UnitPrice = 8500,
                     CostPrice = 7200,
                     MinStockLevel = 10,
@@ -169,7 +298,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ProductName = "A4影印紙",
                     Description = "高品質A4白色影印紙，適合各種印表機",
                     Specification = "80gsm，500張/包，FSC認證環保紙張",
-                    Unit = "包",
+                    UnitId = unitPkg?.Id,
                     UnitPrice = 120,
                     CostPrice = 85,
                     MinStockLevel = 100,
@@ -188,7 +317,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ProductName = "原子筆",
                     Description = "藍色原子筆，書寫流暢不斷水",
                     Specification = "0.7mm筆芯，人體工學握把設計",
-                    Unit = "支",
+                    UnitId = unitPen?.Id,
                     UnitPrice = 25,
                     CostPrice = 15,
                     MinStockLevel = 200,
@@ -209,7 +338,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ProductName = "工業級電鑽",
                     Description = "重型工業電鑽，適合各種材質鑽孔作業",
                     Specification = "功率1200W，無級變速，附鑽頭組",
-                    Unit = "台",
+                    UnitId = unitPc?.Id,
                     UnitPrice = 15000,
                     CostPrice = 12000,
                     MinStockLevel = 3,
@@ -228,7 +357,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ProductName = "安全帽",
                     Description = "工業用安全帽，符合CNS標準",
                     Specification = "ABS材質，可調節帽圍，重量350g",
-                    Unit = "頂",
+                    UnitId = unitTop?.Id,
                     UnitPrice = 450,
                     CostPrice = 320,
                     MinStockLevel = 50,
@@ -249,7 +378,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ProductName = "Microsoft Office 365商務版",
                     Description = "Microsoft Office 365商務版年度授權",
                     Specification = "包含Word、Excel、PowerPoint、Outlook等應用程式",
-                    Unit = "授權",
+                    UnitId = unitLic?.Id,
                     UnitPrice = 6800,
                     CostPrice = 5500,
                     MinStockLevel = 10,
@@ -268,7 +397,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ProductName = "防毒軟體企業版",
                     Description = "企業級防毒軟體年度授權",
                     Specification = "支援Windows/Mac，即時防護，雲端管理",
-                    Unit = "授權",
+                    UnitId = unitLic?.Id,
                     UnitPrice = 1200,
                     CostPrice = 950,
                     MinStockLevel = 20,
@@ -289,7 +418,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ProductName = "不鏽鋼板材",
                     Description = "304不鏽鋼板材，工業用途",
                     Specification = "厚度2mm，尺寸1000x2000mm，表面2B處理",
-                    Unit = "片",
+                    UnitId = unitSht?.Id,
                     UnitPrice = 3500,
                     CostPrice = 2800,
                     MinStockLevel = 20,
@@ -308,7 +437,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ProductName = "塑膠粒料",
                     Description = "ABS塑膠粒料，射出成型用",
                     Specification = "高光澤，耐衝擊，包裝25kg/袋",
-                    Unit = "袋",
+                    UnitId = unitBag?.Id,
                     UnitPrice = 2200,
                     CostPrice = 1800,
                     MinStockLevel = 50,
@@ -327,7 +456,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ProductName = "工業膠帶",
                     Description = "強力工業用膠帶，多用途黏貼",
                     Specification = "寬度50mm，長度25m，耐溫-40°C到+80°C",
-                    Unit = "捲",
+                    UnitId = unitRol?.Id,
                     UnitPrice = 180,
                     CostPrice = 130,
                     MinStockLevel = 100,
@@ -340,7 +469,9 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CreatedAt = DateTime.Now.AddDays(-14),
                     CreatedBy = "System"
                 }
-            };            await context.Products.AddRangeAsync(products);
+            };
+
+            await context.Products.AddRangeAsync(products);
             await context.SaveChangesAsync();
         }
     }

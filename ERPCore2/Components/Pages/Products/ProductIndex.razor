@@ -208,7 +208,7 @@
             TableColumnDefinition.Text("產品代碼", nameof(Product.ProductCode)),
             TableColumnDefinition.Text("產品名稱", nameof(Product.ProductName)),
             TableColumnDefinition.Text("產品分類", "ProductCategory.CategoryName"),
-            TableColumnDefinition.Text("單位", nameof(Product.Unit)),
+            TableColumnDefinition.Text("單位", "Unit.UnitName"),
             TableColumnDefinition.Number("單價", nameof(Product.UnitPrice), "N2"),
             TableColumnDefinition.Number("庫存", nameof(Product.CurrentStock), "N0"),
             TableColumnDefinition.Status("啟用", nameof(Product.IsActive), new Dictionary<object, string>
@@ -286,15 +286,13 @@
         if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
         {
             filteredProducts = filteredProducts.Where(p => p.Status == status);
-        }
-
-        // 單位篩選
+        }        // 單位篩選
         var unitFilter = searchModel.GetFilterValue("Unit")?.ToString();
         if (!string.IsNullOrWhiteSpace(unitFilter))
         {
             filteredProducts = filteredProducts.Where(p => 
-                !string.IsNullOrEmpty(p.Unit) && 
-                p.Unit.Contains(unitFilter, StringComparison.OrdinalIgnoreCase));
+                p.Unit != null && p.Unit.UnitName != null && 
+                p.Unit.UnitName.Contains(unitFilter, StringComparison.OrdinalIgnoreCase));
         }
 
         products = filteredProducts.OrderBy(p => p.ProductCode).ToList();

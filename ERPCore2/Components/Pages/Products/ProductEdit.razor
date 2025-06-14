@@ -81,11 +81,16 @@
                                 </InputSelect>
                                 <ValidationMessage For="@(() => product.ProductCategoryId)" />
                             </div>
-                            
-                            <div class="mb-3">
+                              <div class="mb-3">
                                 <label class="form-label">單位</label>
-                                <InputText @bind-Value="product.Unit" class="form-control" placeholder="例如：個、公斤、組" />
-                                <ValidationMessage For="@(() => product.Unit)" />
+                                <InputSelect @bind-Value="product.UnitId" class="form-select">
+                                    <option value="">請選擇單位</option>
+                                    @foreach (var unit in units)
+                                    {
+                                        <option value="@unit.Id">@unit.UnitName (@unit.Symbol)</option>
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => product.UnitId)" />
                             </div>
                         </div>
                         
@@ -151,28 +156,25 @@
                                 <h6 class="mb-3">庫存設定</h6>
                                 
                                 <div class="mb-3">
-                                    <label class="form-label">目前庫存</label>
-                                    <div class="input-group">
+                                    <label class="form-label">目前庫存</label>                                    <div class="input-group">
                                         <InputNumber @bind-Value="product.CurrentStock" class="form-control" placeholder="0" />
-                                        <span class="input-group-text">@product.Unit</span>
+                                        <span class="input-group-text">@(GetSelectedUnitSymbol())</span>
                                     </div>
                                     <ValidationMessage For="@(() => product.CurrentStock)" />
                                 </div>
                                 
                                 <div class="mb-3">
-                                    <label class="form-label">最低庫存</label>
-                                    <div class="input-group">
+                                    <label class="form-label">最低庫存</label>                                    <div class="input-group">
                                         <InputNumber @bind-Value="product.MinStockLevel" class="form-control" placeholder="0" />
-                                        <span class="input-group-text">@product.Unit</span>
+                                        <span class="input-group-text">@(GetSelectedUnitSymbol())</span>
                                     </div>
                                     <ValidationMessage For="@(() => product.MinStockLevel)" />
                                 </div>
                                 
                                 <div class="mb-3">
-                                    <label class="form-label">最高庫存</label>
-                                    <div class="input-group">
+                                    <label class="form-label">最高庫存</label>                                    <div class="input-group">
                                         <InputNumber @bind-Value="product.MaxStockLevel" class="form-control" placeholder="0" />
-                                        <span class="input-group-text">@product.Unit</span>
+                                        <span class="input-group-text">@(GetSelectedUnitSymbol())</span>
                                     </div>
                                     <ValidationMessage For="@(() => product.MaxStockLevel)" />
                                 </div>
@@ -315,13 +317,12 @@
 }
 
 @code {
-    [Parameter] public int? Id { get; set; }
-
-    private Product product = new();
+    [Parameter] public int? Id { get; set; }    private Product product = new();
     private List<ProductCategory> productCategories = new();
     private List<ProductSupplier> productSuppliers = new();
     private List<Supplier> suppliers = new();
     private List<Supplier> availableSuppliers = new();
+    private List<Unit> units = new();
     
     // Modal 相關
     private bool showAddSupplierModal = false;
@@ -346,11 +347,10 @@
         try
         {            // 載入產品分類
             var categoryResult = await ProductCategoryService.GetAllAsync();
-            productCategories = categoryResult.Where(c => c.Status == EntityStatus.Active).ToList();
-
-            // 載入供應商
+            productCategories = categoryResult.Where(c => c.Status == EntityStatus.Active).ToList();            // 載入供應商
             var supplierResult = await SupplierService.GetAllAsync();
-            suppliers = supplierResult.Where(s => s.Status == EntityStatus.Active).ToList();
+            suppliers = supplierResult.Where(s => s.Status == EntityStatus.Active).ToList();            // 載入單位
+            units = await ProductService.GetUnitsAsync();
 
             // 如果是編輯模式，載入產品資料
             if (Id.HasValue)
@@ -561,5 +561,14 @@
             }
         }
     }
-}
+
+    private string GetSelectedUnitSymbol()
+    {
+        if (product.UnitId.HasValue)
+        {
+            var selectedUnit = units.FirstOrDefault(u => u.Id == product.UnitId.Value);
+            return selectedUnit?.Symbol ?? selectedUnit?.UnitName ?? "";
+        }
+        return "";
+    }
 }

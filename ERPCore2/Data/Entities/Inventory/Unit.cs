@@ -32,6 +32,7 @@ namespace ERPCore2.Data.Entities
         public bool IsActive { get; set; } = true;
         
         // Navigation Properties
+        public ICollection<Product> Products { get; set; } = new List<Product>();
         public ICollection<UnitConversion> FromUnitConversions { get; set; } = new List<UnitConversion>();
         public ICollection<UnitConversion> ToUnitConversions { get; set; } = new List<UnitConversion>();
     }

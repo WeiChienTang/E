@@ -129,10 +129,9 @@ else
                 Value = product.ProductCategory?.CategoryName ?? "-", 
                 DisplayType = DetailDisplayType.Text,
                 ContainerCssClass = "col-md-6"
-            },
-            new() { 
+            },            new() { 
                 Label = "單位", 
-                Value = product.Unit ?? "-", 
+                Value = product.Unit?.UnitName ?? "-", 
                 DisplayType = DetailDisplayType.Text,
                 ContainerCssClass = "col-md-6"
             },
