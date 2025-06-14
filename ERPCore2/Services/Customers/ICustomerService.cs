@@ -1,6 +1,6 @@
 using ERPCore2.Data.Entities;
 
-namespace ERPCore2.Services.Interfaces
+namespace ERPCore2.Services
 {
     /// <summary>
     /// 客戶服務介面 - 繼承通用管理服務

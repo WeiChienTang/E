@@ -1,6 +1,6 @@
 using ERPCore2.Data.Enums;
 
-namespace ERPCore2.Services.Interfaces
+namespace ERPCore2.Services
 {
     /// <summary>
     /// 通用管理服務介面 - 提供基本的 CRUD 操作和常用查詢

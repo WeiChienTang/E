@@ -1,6 +1,6 @@
 using ERPCore2.Data.Entities;
 
-namespace ERPCore2.Services.Interfaces
+namespace ERPCore2.Services
 {
     /// <summary>
     /// 客戶聯絡資料服務介面

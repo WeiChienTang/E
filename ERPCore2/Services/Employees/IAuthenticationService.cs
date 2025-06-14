@@ -1,7 +1,7 @@
 using ERPCore2.Data.Entities;
 using ERPCore2.Services.Interfaces;
 
-namespace ERPCore2.Services.Interfaces
+namespace ERPCore2.Services
 {
     /// <summary>
     /// 身份驗證服務介面

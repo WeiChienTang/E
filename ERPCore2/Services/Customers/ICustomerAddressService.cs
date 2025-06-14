@@ -1,6 +1,6 @@
 using ERPCore2.Data.Entities;
 
-namespace ERPCore2.Services.Interfaces
+namespace ERPCore2.Services
 {
     /// <summary>
     /// 客戶地址管理服務介面 - 統一處理所有客戶地址相關操作

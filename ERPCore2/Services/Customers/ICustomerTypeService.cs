@@ -1,7 +1,7 @@
 using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 
-namespace ERPCore2.Services.Interfaces
+namespace ERPCore2.Services
 {
     /// <summary>
     /// 客戶類型服務介面 - 管理客戶類型的 CRUD 操作
