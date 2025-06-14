@@ -1,0 +1,412 @@
+@page "/transaction-types"
+@page "/inventory/transaction-types"
+@inject IInventoryTransactionTypeService InventoryTransactionTypeService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>庫存異動類型管理</PageTitle>
+
+@* 頁面標題 *@
+<GenericHeaderComponent Title="庫存異動類型管理"
+                       Subtitle="管理所有庫存異動類型與設定"
+                       TitleIcon="list-task"
+                       HeadingLevel="h1"
+                       BreadcrumbItems="@breadcrumbItems"
+                       IsLoading="@isLoading"
+                       LoadingText="載入中..."
+                       ShowDivider="true">
+    <ActionButtons>
+        <button class="btn btn-primary" @onclick="ShowCreateTransactionType">
+            <i class="bi bi-plus-circle me-1"></i>
+            新增異動類型
+        </button>
+        <button class="btn btn-outline-secondary" @onclick="RefreshData">
+            <i class="bi bi-arrow-clockwise me-1"></i>
+            重新整理
+        </button>
+    </ActionButtons>
+</GenericHeaderComponent>
+
+@* 異動類型管理主要內容區域 *@
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-search me-2"></i>
+                    異動類型搜尋與管理
+                </h5>
+            </div>
+            <div class="card-body">
+                @* 搜尋篩選區域 *@
+                <GenericSearchFilterComponent TModel="TransactionTypeSearchModel"
+                                             FilterDefinitions="@filterDefinitions"
+                                             FilterModel="@searchModel"
+                                             OnSearch="HandleSearch"
+                                             OnFilterChanged="HandleFilterChanged"
+                                             AutoSearch="true"
+                                             ShowSearchButton="true"
+                                             ShowAdvancedToggle="true"
+                                             SearchDelayMs="500" />
+
+                @* 異動類型列表表格 *@
+                <div class="mt-4">
+                    <GenericTableComponent TItem="InventoryTransactionType"
+                                          Items="@pagedTransactionTypes"
+                                          ColumnDefinitions="@columnDefinitions"
+                                          ShowActions="true"
+                                          ActionsTemplate="@ActionsTemplate"
+                                          EnableRowClick="true"
+                                          OnRowClick="HandleRowClick"
+                                          EnableSorting="false"
+                                          IsStriped="true"
+                                          IsHoverable="true"
+                                          IsBordered="false"
+                                          Size="TableSize.Normal"
+                                          EmptyMessage="沒有找到符合條件的異動類型資料"
+                                          ActionsHeader="操作"
+                                          EnablePagination="true"
+                                          CurrentPage="@currentPage"
+                                          PageSize="@pageSize"
+                                          TotalItems="@totalItems"
+                                          OnPageChanged="HandlePageChanged"
+                                          OnPageSizeChanged="HandlePageSizeChanged"
+                                          ShowPageSizeSelector="true">
+                    </GenericTableComponent>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // 資料來源
+    private List<InventoryTransactionType> transactionTypes = new();
+    private List<InventoryTransactionType> allTransactionTypes = new();
+    
+    // 篩選相關
+    private SearchFilterModel searchModel = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    
+    // 表格相關
+    private List<TableColumnDefinition> columnDefinitions = new();
+    
+    // 分頁相關
+    private int currentPage = 1;
+    private int pageSize = 20;
+    private int totalItems = 0;
+    private List<InventoryTransactionType> pagedTransactionTypes = new();
+    
+    // 狀態管理
+    private bool isLoading = true;
+    
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitializePageAsync();
+    }
+
+    private async Task InitializePageAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // 初始化麵包屑
+            InitializeBreadcrumbs();
+            
+            // 初始化篩選器
+            InitializeFilters();
+            
+            // 初始化表格欄位
+            InitializeTableColumns();
+            
+            // 載入異動類型資料
+            await LoadTransactionTypesAsync();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入異動類型資料時發生錯誤：", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("庫存管理", "/inventory"),
+            new("異動類型管理")
+        };
+    }
+
+    private void InitializeFilters()
+    {
+        // 準備異動類型選項
+        var transactionTypeOptions = new List<SelectOption>
+        {
+            new() { Text = "入庫", Value = InventoryTransactionTypeEnum.In.ToString() },
+            new() { Text = "出庫", Value = InventoryTransactionTypeEnum.Out.ToString() },
+            new() { Text = "調整", Value = InventoryTransactionTypeEnum.Adjustment.ToString() },
+            new() { Text = "盤點", Value = InventoryTransactionTypeEnum.Stocktaking.ToString() },
+            new() { Text = "轉倉", Value = InventoryTransactionTypeEnum.Transfer.ToString() }
+        };
+
+        // 準備狀態選項
+        var statusOptions = new List<SelectOption>
+        {
+            new() { Text = "啟用", Value = "true" },
+            new() { Text = "停用", Value = "false" }
+        };
+
+        // 準備是否選項
+        var booleanOptions = new List<SelectOption>
+        {
+            new() { Text = "是", Value = "true" },
+            new() { Text = "否", Value = "false" }
+        };
+
+        // 建立篩選定義
+        filterDefinitions = new SearchFilterBuilder<TransactionTypeSearchModel>()
+            .AddText("TypeCode", "類型代碼", "輸入類型代碼搜尋")
+            .AddText("TypeName", "類型名稱", "輸入類型名稱搜尋")
+            .AddSelect("TransactionType", "異動類型", transactionTypeOptions, isAdvanced: true)
+            .AddSelect("AffectsCost", "影響成本", booleanOptions, isAdvanced: true)
+            .AddSelect("RequiresApproval", "需要審核", booleanOptions, isAdvanced: true)
+            .AddSelect("IsActive", "狀態", statusOptions, isAdvanced: true)
+            .Build();
+    }
+
+    private void InitializeTableColumns()
+    {
+        columnDefinitions = new List<TableColumnDefinition>
+        {
+            TableColumnDefinition.Text("類型代碼", nameof(InventoryTransactionType.TypeCode)),
+            TableColumnDefinition.Text("類型名稱", nameof(InventoryTransactionType.TypeName)),
+            TableColumnDefinition.Text("異動類型", nameof(InventoryTransactionType.TransactionType)),
+            TableColumnDefinition.Boolean("影響成本", nameof(InventoryTransactionType.AffectsCost)),
+            TableColumnDefinition.Boolean("需要審核", nameof(InventoryTransactionType.RequiresApproval)),
+            TableColumnDefinition.Text("單號前綴", nameof(InventoryTransactionType.NumberPrefix)),
+            TableColumnDefinition.Status("狀態", nameof(InventoryTransactionType.Status), new Dictionary<object, string>
+            {
+                { EntityStatus.Active, "bg-success" },
+                { EntityStatus.Inactive, "bg-secondary" }
+            }),
+            TableColumnDefinition.Date("建立日期", nameof(InventoryTransactionType.CreatedAt), "yyyy/MM/dd")
+        };
+    }
+
+    private async Task LoadTransactionTypesAsync()
+    {
+        try
+        {
+            allTransactionTypes = await InventoryTransactionTypeService.GetAllAsync();
+            await ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入異動類型資料失敗：", ex.Message);
+            transactionTypes = new List<InventoryTransactionType>();
+            pagedTransactionTypes = new List<InventoryTransactionType>();
+        }
+    }
+
+    private async Task ApplyFilters()
+    {
+        var filteredTypes = allTransactionTypes.AsQueryable();
+
+        // 類型代碼篩選
+        var typeCodeFilter = searchModel.GetFilterValue("TypeCode")?.ToString();
+        if (!string.IsNullOrWhiteSpace(typeCodeFilter))
+        {
+            filteredTypes = filteredTypes.Where(t => 
+                t.TypeCode.Contains(typeCodeFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 類型名稱篩選
+        var typeNameFilter = searchModel.GetFilterValue("TypeName")?.ToString();
+        if (!string.IsNullOrWhiteSpace(typeNameFilter))
+        {
+            filteredTypes = filteredTypes.Where(t => 
+                t.TypeName.Contains(typeNameFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 異動類型篩選
+        var transactionTypeFilter = searchModel.GetFilterValue("TransactionType")?.ToString();
+        if (!string.IsNullOrWhiteSpace(transactionTypeFilter) && Enum.TryParse<InventoryTransactionTypeEnum>(transactionTypeFilter, out var transactionType))
+        {
+            filteredTypes = filteredTypes.Where(t => t.TransactionType == transactionType);
+        }
+
+        // 影響成本篩選
+        var affectsCostFilter = searchModel.GetFilterValue("AffectsCost")?.ToString();
+        if (!string.IsNullOrWhiteSpace(affectsCostFilter) && bool.TryParse(affectsCostFilter, out var affectsCost))
+        {
+            filteredTypes = filteredTypes.Where(t => t.AffectsCost == affectsCost);
+        }
+
+        // 需要審核篩選
+        var requiresApprovalFilter = searchModel.GetFilterValue("RequiresApproval")?.ToString();
+        if (!string.IsNullOrWhiteSpace(requiresApprovalFilter) && bool.TryParse(requiresApprovalFilter, out var requiresApproval))
+        {
+            filteredTypes = filteredTypes.Where(t => t.RequiresApproval == requiresApproval);
+        }
+
+        // 狀態篩選
+        var isActiveFilter = searchModel.GetFilterValue("IsActive")?.ToString();
+        if (!string.IsNullOrWhiteSpace(isActiveFilter) && bool.TryParse(isActiveFilter, out var isActive))
+        {
+            filteredTypes = filteredTypes.Where(t => t.IsActive == isActive);
+        }
+
+        transactionTypes = filteredTypes.OrderBy(t => t.TypeCode).ToList();
+        totalItems = transactionTypes.Count;
+        
+        // 重置分頁到第一頁（如果是搜尋操作）
+        currentPage = 1;
+        
+        // 應用分頁
+        ApplyPagination();
+        
+        await Task.CompletedTask;
+    }
+
+    private void ApplyPagination()
+    {
+        // 確保當前頁面有效
+        var maxPage = totalItems > 0 ? (int)Math.Ceiling((double)totalItems / pageSize) : 1;
+        if (currentPage > maxPage)
+        {
+            currentPage = Math.Max(1, maxPage);
+        }
+        
+        // 計算分頁資料
+        pagedTransactionTypes = transactionTypes
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+    }
+
+    private async Task HandlePageChanged(int newPage)
+    {
+        currentPage = newPage;
+        ApplyPagination();
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task HandlePageSizeChanged(int newPageSize)
+    {
+        pageSize = newPageSize;
+        currentPage = 1; // 重置到第一頁
+        ApplyPagination();
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleSearch(SearchFilterModel filterModel)
+    {
+        searchModel = filterModel;
+        await ApplyFilters();
+        StateHasChanged();
+    }
+
+    private async Task HandleFilterChanged(SearchFilterModel filterModel)
+    {
+        searchModel = filterModel;
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleRowClick(InventoryTransactionType transactionType)
+    {
+        Navigation.NavigateTo($"/inventory/transaction-types/detail/{transactionType.Id}");
+        await Task.CompletedTask;
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadTransactionTypesAsync();
+        StateHasChanged();
+    }
+
+    private async Task ShowCreateTransactionType()
+    {
+        Navigation.NavigateTo("/inventory/transaction-types/edit");
+        await Task.CompletedTask;
+    }
+
+    private async Task EditTransactionType(InventoryTransactionType transactionType)
+    {
+        Navigation.NavigateTo($"/inventory/transaction-types/edit/{transactionType.Id}");
+        await Task.CompletedTask;
+    }
+
+    private async Task DeleteTransactionType(InventoryTransactionType transactionType)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"確定要刪除異動類型「{transactionType.TypeName}」嗎？");
+        
+        if (confirmed)
+        {
+            try
+            {
+                var result = await InventoryTransactionTypeService.DeleteAsync(transactionType.Id);
+                if (result.IsSuccess)
+                {
+                    await RefreshData();
+                    await JSRuntime.InvokeVoidAsync("alert", "異動類型刪除成功");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{result.ErrorMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"刪除時發生錯誤：{ex.Message}");
+            }
+        }
+    }
+
+    private async Task ViewTransactionType(InventoryTransactionType transactionType)
+    {
+        Navigation.NavigateTo($"/inventory/transaction-types/detail/{transactionType.Id}");
+        await Task.CompletedTask;
+    }
+
+    // 表格操作範本
+    private RenderFragment<InventoryTransactionType> ActionsTemplate => transactionType => 
+        @<div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-primary" @onclick="() => ViewTransactionType(transactionType)" title="檢視">
+                <i class="bi bi-eye"></i>
+            </button>
+            <button class="btn btn-outline-warning" @onclick="() => EditTransactionType(transactionType)" title="編輯">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-outline-danger" @onclick="() => DeleteTransactionType(transactionType)" title="刪除">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>;
+}
+
+@* 異動類型搜尋模型 *@
+@code {
+    public class TransactionTypeSearchModel
+    {
+        public string? TypeCode { get; set; }
+        public string? TypeName { get; set; }
+        public InventoryTransactionTypeEnum? TransactionType { get; set; }
+        public bool? AffectsCost { get; set; }
+        public bool? RequiresApproval { get; set; }
+        public bool? IsActive { get; set; }
+    }
+}

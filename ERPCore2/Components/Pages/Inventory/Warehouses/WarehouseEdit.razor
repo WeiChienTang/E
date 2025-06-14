@@ -1,0 +1,362 @@
+@page "/warehouses/edit"
+@page "/warehouses/edit/{id:int?}"
+@page "/inventory/warehouses/edit"
+@page "/inventory/warehouses/edit/{id:int?}"
+@inject IWarehouseService WarehouseService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>@GetPageTitle()</PageTitle>
+
+@* 頁面標題 *@
+<GenericHeaderComponent Title="@GetPageTitle()"
+                       Subtitle="@GetSubtitle()"
+                       TitleIcon="@GetTitleIcon()"
+                       HeadingLevel="h1"
+                       BreadcrumbItems="@breadcrumbItems"
+                       IsLoading="@isLoading"
+                       LoadingText="載入中..."
+                       ShowDivider="true">
+    <ActionButtons>
+        <button class="btn btn-success" @onclick="SaveWarehouse" disabled="@(isSubmitting || isLoading)">
+            @if (isSubmitting)
+            {
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            }
+            else
+            {
+                <i class="bi bi-check-circle me-1"></i>
+            }
+            儲存
+        </button>
+        <button class="btn btn-outline-secondary" @onclick="Cancel" disabled="@isSubmitting">
+            <i class="bi bi-x-circle me-1"></i>
+            取消
+        </button>
+    </ActionButtons>
+</GenericHeaderComponent>
+
+@* 主要內容區域 *@
+<div class="row">
+    <div class="col-12">
+        @* 基本資料表單 *@
+        <div class="card mb-4">
+            <GenericHeaderComponent Title="基本資料"
+                                   Subtitle="倉庫的基本資訊設定"
+                                   TitleIcon="house-door"
+                                   IsCardHeader="true">
+            </GenericHeaderComponent>
+            <div class="card-body">
+                <GenericFormComponent TModel="Warehouse"
+                                    Model="@warehouse"
+                                    FieldDefinitions="@formFields"
+                                    FieldSections="@formSections"
+                                    OnFormSubmit="HandleFormSubmit"
+                                    ShowFormHeader="false"
+                                    ShowFormButtons="false"
+                                    ShowValidationSummary="true"
+                                    FormCssClass=""
+                                    FormBodyCssClass="">
+                </GenericFormComponent>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    
+    // 資料模型
+    private Warehouse warehouse = new();
+    
+    // 表單欄位定義
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    
+    // 狀態管理
+    private bool isLoading = true;
+    private bool isSubmitting = false;
+    private bool isEditMode => Id.HasValue && Id.Value > 0;
+    
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitializePageAsync();
+    }
+
+    private async Task InitializePageAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // 初始化麵包屑
+            InitializeBreadcrumbs();
+            
+            // 初始化表單欄位
+            InitializeFormFields();
+            
+            if (isEditMode)
+            {
+                // 編輯模式：載入現有倉庫資料
+                await LoadWarehouseDataAsync(Id!.Value);
+            }
+            else
+            {
+                // 新增模式：初始化新倉庫
+                InitializeNewWarehouse();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入倉庫資料時發生錯誤：", ex.Message);
+            await JSRuntime.InvokeVoidAsync("alert", $"載入資料失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("庫存管理", "/inventory"),
+            new("倉庫管理", "/inventory/warehouses"),
+            new(isEditMode ? "編輯倉庫" : "新增倉庫")
+        };
+    }
+
+    private void InitializeFormFields()
+    {
+        // 倉庫類型選項
+        var warehouseTypeOptions = new List<SelectOption>
+        {
+            new() { Text = "主倉庫", Value = WarehouseTypeEnum.Main.ToString() },
+            new() { Text = "分倉庫", Value = WarehouseTypeEnum.Branch.ToString() },
+            new() { Text = "虛擬倉庫", Value = WarehouseTypeEnum.Virtual.ToString() },
+            new() { Text = "退貨倉庫", Value = WarehouseTypeEnum.Return.ToString() }
+        };
+
+        formFields = new List<FormFieldDefinition>
+        {
+            new()
+            {
+                PropertyName = nameof(Warehouse.WarehouseCode),
+                Label = "倉庫代碼",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入倉庫代碼",
+                IsRequired = true,
+                ContainerCssClass = "col-md-4"
+            },
+            new()
+            {
+                PropertyName = nameof(Warehouse.WarehouseName),
+                Label = "倉庫名稱",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入倉庫名稱",
+                IsRequired = true,
+                ContainerCssClass = "col-md-8"
+            },
+            new()
+            {
+                PropertyName = nameof(Warehouse.WarehouseType),
+                Label = "倉庫類型",
+                FieldType = FormFieldType.Select,
+                Options = warehouseTypeOptions,
+                IsRequired = true,
+                ContainerCssClass = "col-md-6"
+            },
+            new()
+            {
+                PropertyName = nameof(Warehouse.ContactPerson),
+                Label = "聯絡人",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入聯絡人姓名",
+                ContainerCssClass = "col-md-6"
+            },
+            new()
+            {
+                PropertyName = nameof(Warehouse.Phone),
+                Label = "聯絡電話",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入聯絡電話",
+                ContainerCssClass = "col-md-6"
+            },
+            new()
+            {
+                PropertyName = nameof(Warehouse.Address),
+                Label = "地址",
+                FieldType = FormFieldType.TextArea,
+                Placeholder = "請輸入倉庫地址",
+                ContainerCssClass = "col-12"
+            },
+            new()
+            {
+                PropertyName = nameof(Warehouse.IsDefault),
+                Label = "設為預設倉庫",
+                FieldType = FormFieldType.Checkbox,
+                ContainerCssClass = "col-md-6"
+            },
+            new()
+            {
+                PropertyName = nameof(Warehouse.IsActive),
+                Label = "啟用狀態",
+                FieldType = FormFieldType.Checkbox,
+                ContainerCssClass = "col-md-6"
+            }
+        };
+
+        formSections = new Dictionary<string, string>
+        {
+            { nameof(Warehouse.WarehouseCode), "基本資訊" },
+            { nameof(Warehouse.WarehouseName), "基本資訊" },
+            { nameof(Warehouse.WarehouseType), "分類資訊" },
+            { nameof(Warehouse.ContactPerson), "聯絡資訊" },
+            { nameof(Warehouse.Phone), "聯絡資訊" },
+            { nameof(Warehouse.Address), "地址資訊" },
+            { nameof(Warehouse.IsDefault), "設定選項" },
+            { nameof(Warehouse.IsActive), "設定選項" }
+        };
+    }
+
+    private async Task LoadWarehouseDataAsync(int warehouseId)
+    {
+        try
+        {
+            warehouse = await WarehouseService.GetByIdAsync(warehouseId) ?? new Warehouse();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入倉庫詳細資料失敗：", ex.Message);
+            throw;
+        }
+    }
+
+    private void InitializeNewWarehouse()
+    {
+        warehouse = new Warehouse
+        {
+            WarehouseCode = GenerateWarehouseCode(),
+            WarehouseName = "",
+            WarehouseType = WarehouseTypeEnum.Main,
+            ContactPerson = "",
+            Phone = "",
+            Address = "",
+            IsDefault = false,
+            IsActive = true
+        };
+    }
+
+    private string GenerateWarehouseCode()
+    {
+        // 生成倉庫代碼邏輯
+        return $"WH{DateTime.Now:yyyyMMddHHmmss}";
+    }
+
+    #region 頁面標題相關
+
+    private string GetPageTitle()
+    {
+        return isEditMode ? "編輯倉庫" : "新增倉庫";
+    }
+
+    private string GetSubtitle()
+    {
+        if (isEditMode && !string.IsNullOrEmpty(warehouse.WarehouseName))
+        {
+            return $"修改「{warehouse.WarehouseName}」的資料";
+        }
+        return "建立新的倉庫資料";
+    }
+
+    private string GetTitleIcon()
+    {
+        return isEditMode ? "pencil-square" : "plus-circle";
+    }
+
+    #endregion
+
+    #region 表單處理
+
+    private async Task HandleFormSubmit(Warehouse model)
+    {
+        // 這個方法由 GenericFormComponent 呼叫，但我們統一在 SaveWarehouse 處理
+        await Task.CompletedTask;
+    }
+
+    private async Task SaveWarehouse()
+    {
+        try
+        {
+            isSubmitting = true;
+            StateHasChanged();
+
+            // 驗證基本資料
+            if (string.IsNullOrWhiteSpace(warehouse.WarehouseCode))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "倉庫代碼為必填");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(warehouse.WarehouseName))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "倉庫名稱為必填");
+                return;
+            }
+
+            ServiceResult result;
+            
+            if (isEditMode)
+            {
+                // 更新現有倉庫
+                var updateResult = await WarehouseService.UpdateAsync(warehouse);
+                result = new ServiceResult { IsSuccess = updateResult.IsSuccess, ErrorMessage = updateResult.ErrorMessage };
+            }
+            else
+            {
+                // 新增倉庫
+                var createResult = await WarehouseService.CreateAsync(warehouse);
+                result = new ServiceResult { IsSuccess = createResult.IsSuccess, ErrorMessage = createResult.ErrorMessage };
+                if (createResult.IsSuccess && createResult.Data != null)
+                {
+                    warehouse = createResult.Data;
+                }
+            }
+
+            if (result.IsSuccess)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "倉庫資料儲存成功！");
+                Navigation.NavigateTo("/inventory/warehouses");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"儲存失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "儲存倉庫資料時發生錯誤：", ex.Message);
+            await JSRuntime.InvokeVoidAsync("alert", $"儲存時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/inventory/warehouses");
+    }
+
+    #endregion
+}

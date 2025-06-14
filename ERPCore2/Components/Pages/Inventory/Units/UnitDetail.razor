@@ -1,0 +1,276 @@
+@page "/units/detail/{id:int}"
+@page "/inventory/units/detail/{id:int}"
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@using Microsoft.AspNetCore.Components.Web
+@inject IUnitService UnitService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">載入中...</span>
+            </div>
+            <div class="mt-2">載入單位資料中...</div>
+        </div>
+    </div>
+}
+else if (unit == null)
+{
+    <div class="alert alert-warning">
+        <h4>找不到單位資料</h4>
+        <p>指定的單位不存在或已被刪除。</p>
+        <button class="btn btn-primary" @onclick="BackToUnitList">
+            返回單位列表
+        </button>
+    </div>
+}
+else
+{
+    <GenericDetailsComponent Configuration="@detailConfiguration" 
+                           OnSectionLoad="HandleSectionLoad"
+                           OnItemClick="HandleItemClick"
+                           ActionButtons="@ActionButtons" />
+}
+
+@code {
+    [Parameter] public int UnitId { get; set; }
+
+    private Unit? unit;
+    private List<Unit> convertibleUnits = new();
+    private bool isLoading = true;
+    private DetailViewConfiguration detailConfiguration = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUnitData();
+        InitializeDetailConfiguration();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (UnitId > 0)
+        {
+            await LoadUnitData();
+            InitializeDetailConfiguration();
+        }
+    }
+
+    private async Task LoadUnitData()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // 載入單位基本資料
+            unit = await UnitService.GetByIdAsync(UnitId);
+            
+            if (unit != null)
+            {
+                // 載入可轉換的單位
+                convertibleUnits = await UnitService.GetConvertibleUnitsAsync(UnitId);
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入單位資料失敗：", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void InitializeDetailConfiguration()
+    {
+        if (unit == null) return;
+
+        detailConfiguration = new DetailViewConfiguration
+        {
+            Title = unit.UnitName,
+            Subtitle = $"單位代碼：{unit.UnitCode}",
+            TitleIcon = "bi bi-rulers",
+            UseTabs = true,
+            Sections = new List<DetailSection>
+            {
+                CreateBasicInfoSection(),
+                CreateConversionSection()
+            }
+        };
+    }
+
+    private DetailSection CreateBasicInfoSection()
+    {
+        var items = new List<DetailItem>
+        {
+            new() { 
+                Label = "單位代碼", 
+                Value = unit!.UnitCode, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6"
+            },
+            new() { 
+                Label = "單位名稱", 
+                Value = unit.UnitName, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6",
+                IsHighlight = true
+            },
+            new() { 
+                Label = "單位符號", 
+                Value = unit.Symbol ?? "-", 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6"
+            },
+            new() { 
+                Label = "基本單位", 
+                Value = unit.IsBaseUnit ? "是" : "否", 
+                DisplayType = DetailDisplayType.Status,
+                Format = new DetailItemFormat 
+                { 
+                    StatusColors = new Dictionary<string, string>
+                    {
+                        { "是", "bg-primary" },
+                        { "否", "bg-secondary" }
+                    }
+                },
+                ContainerCssClass = "col-md-6"
+            },
+            new() { 
+                Label = "狀態", 
+                Value = unit.IsActive ? "啟用" : "停用", 
+                DisplayType = DetailDisplayType.Status,
+                Format = new DetailItemFormat 
+                { 
+                    StatusColors = new Dictionary<string, string>
+                    {
+                        { "啟用", "bg-success" },
+                        { "停用", "bg-danger" }
+                    }
+                },
+                ContainerCssClass = "col-md-6"
+            },
+            new() { 
+                Label = "建立日期", 
+                Value = unit.CreatedAt, 
+                DisplayType = DetailDisplayType.DateTime,
+                ContainerCssClass = "col-md-6"
+            },
+            new() { 
+                Label = "最後更新", 
+                Value = unit.UpdatedAt, 
+                DisplayType = DetailDisplayType.DateTime,
+                ContainerCssClass = "col-md-6"
+            }
+        };
+
+        return new DetailSection
+        {
+            Id = "basic",
+            Title = "基本資料",
+            Icon = "bi bi-info-circle",
+            Items = items
+        };
+    }
+
+    private DetailSection CreateConversionSection()
+    {
+        var items = new List<DetailItem>();
+        
+        if (convertibleUnits.Any())
+        {
+            foreach (var convertibleUnit in convertibleUnits.OrderBy(u => u.UnitCode))
+            {
+                items.Add(new DetailItem 
+                { 
+                    Label = $"{convertibleUnit.UnitCode} - {convertibleUnit.UnitName}", 
+                    Value = $"符號：{convertibleUnit.Symbol ?? "無"} | 狀態：{(convertibleUnit.IsActive ? "啟用" : "停用")}", 
+                    DisplayType = DetailDisplayType.Text,
+                    ContainerCssClass = "col-md-6",
+                    IsHighlight = convertibleUnit.IsActive
+                });
+            }
+        }
+        else
+        {
+            items.Add(new DetailItem 
+            { 
+                Label = "轉換關係", 
+                Value = "暫無轉換關係設定", 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-12"
+            });
+        }
+
+        return new DetailSection
+        {
+            Id = "conversions",
+            Title = $"轉換關係 ({convertibleUnits.Count} 個可轉換單位)",
+            Icon = "bi bi-arrow-left-right",
+            Items = items
+        };
+    }
+
+    // Action Buttons
+    private RenderFragment ActionButtons => __builder =>
+    {
+        <button class="btn btn-primary btn-sm me-2" @onclick="EditUnit">
+            <i class="fas fa-edit me-1"></i>編輯
+        </button>
+        <button class="btn btn-outline-info btn-sm me-2" @onclick="ManageConversions">
+            <i class="fas fa-exchange-alt me-1"></i>管理轉換
+        </button>
+        <button class="btn btn-outline-secondary btn-sm me-2" @onclick="PrintUnit">
+            <i class="fas fa-print me-1"></i>列印
+        </button>
+        <button class="btn btn-outline-primary btn-sm" @onclick="BackToList">
+            <i class="fas fa-arrow-left me-1"></i>返回列表
+        </button>
+    };
+
+    private async Task HandleSectionLoad(string sectionId)
+    {
+        // 目前所有資料都在初始載入時取得，所以這裡不需要額外處理
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleItemClick(GenericDetailsComponent.DetailItemClickEventArgs args)
+    {
+        // 處理項目點擊事件
+        await Task.CompletedTask;
+    }
+
+    private void EditUnit()
+    {
+        Navigation.NavigateTo($"/inventory/units/edit/{UnitId}");
+    }
+
+    private async Task ManageConversions()
+    {
+        // TODO: 實作單位轉換管理功能
+        await JSRuntime.InvokeVoidAsync("alert", "單位轉換管理功能開發中...");
+    }
+
+    private async Task PrintUnit()
+    {
+        await JSRuntime.InvokeVoidAsync("window.print");
+    }
+
+    private void BackToList()
+    {
+        Navigation.NavigateTo("/inventory/units");
+    }
+
+    private void BackToUnitList()
+    {
+        Navigation.NavigateTo("/inventory/units");
+    }
+}

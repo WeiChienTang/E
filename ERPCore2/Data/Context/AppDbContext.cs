@@ -27,6 +27,13 @@ namespace ERPCore2.Data.Context
       public DbSet<SupplierType> SupplierTypes { get; set; }
       public DbSet<SupplierAddress> SupplierAddresses { get; set; }
       public DbSet<SupplierContact> SupplierContacts { get; set; }
+      
+      // Inventory Management
+      public DbSet<Warehouse> Warehouses { get; set; }
+      public DbSet<WarehouseLocation> WarehouseLocations { get; set; }
+      public DbSet<Unit> Units { get; set; }
+      public DbSet<UnitConversion> UnitConversions { get; set; }
+      public DbSet<InventoryTransactionType> InventoryTransactionTypes { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
       {
@@ -134,6 +141,27 @@ namespace ERPCore2.Data.Context
                   entity.HasOne(e => e.AddressType)
                   .WithMany(at => at.SupplierAddresses)
                   .OnDelete(DeleteBehavior.SetNull);
+            });
+            
+            // Inventory Management Relationships
+            modelBuilder.Entity<WarehouseLocation>(entity =>
+            {
+                  entity.HasOne(wl => wl.Warehouse)
+                  .WithMany(w => w.WarehouseLocations)
+                  .OnDelete(DeleteBehavior.Cascade);
+            });
+            
+            modelBuilder.Entity<UnitConversion>(entity =>
+            {
+                  entity.HasOne(uc => uc.FromUnit)
+                  .WithMany(u => u.FromUnitConversions)
+                  .HasForeignKey(uc => uc.FromUnitId)
+                  .OnDelete(DeleteBehavior.Restrict);
+                  
+                  entity.HasOne(uc => uc.ToUnit)
+                  .WithMany(u => u.ToUnitConversions)
+                  .HasForeignKey(uc => uc.ToUnitId)
+                  .OnDelete(DeleteBehavior.Restrict);
             });
       }
     }

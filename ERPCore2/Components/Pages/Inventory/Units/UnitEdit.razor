@@ -1,0 +1,323 @@
+@page "/units/edit"
+@page "/units/edit/{id:int?}"
+@page "/inventory/units/edit"
+@page "/inventory/units/edit/{id:int?}"
+@inject IUnitService UnitService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>@GetPageTitle()</PageTitle>
+
+@* 頁面標題 *@
+<GenericHeaderComponent Title="@GetPageTitle()"
+                       Subtitle="@GetSubtitle()"
+                       TitleIcon="@GetTitleIcon()"
+                       HeadingLevel="h1"
+                       BreadcrumbItems="@breadcrumbItems"
+                       IsLoading="@isLoading"
+                       LoadingText="載入中..."
+                       ShowDivider="true">
+    <ActionButtons>
+        <button class="btn btn-success" @onclick="SaveUnit" disabled="@(isSubmitting || isLoading)">
+            @if (isSubmitting)
+            {
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            }
+            else
+            {
+                <i class="bi bi-check-circle me-1"></i>
+            }
+            儲存
+        </button>
+        <button class="btn btn-outline-secondary" @onclick="Cancel" disabled="@isSubmitting">
+            <i class="bi bi-x-circle me-1"></i>
+            取消
+        </button>
+    </ActionButtons>
+</GenericHeaderComponent>
+
+@* 主要內容區域 *@
+<div class="row">
+    <div class="col-12">
+        @* 基本資料表單 *@
+        <div class="card mb-4">
+            <GenericHeaderComponent Title="基本資料"
+                                   Subtitle="計量單位的基本資訊設定"
+                                   TitleIcon="rulers"
+                                   IsCardHeader="true">
+            </GenericHeaderComponent>
+            <div class="card-body">
+                <GenericFormComponent TModel="Unit"
+                                    Model="@unit"
+                                    FieldDefinitions="@formFields"
+                                    FieldSections="@formSections"
+                                    OnFormSubmit="HandleFormSubmit"
+                                    ShowFormHeader="false"
+                                    ShowFormButtons="false"
+                                    ShowValidationSummary="true"
+                                    FormCssClass=""
+                                    FormBodyCssClass="">
+                </GenericFormComponent>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    
+    // 資料模型
+    private Unit unit = new();
+    
+    // 表單欄位定義
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    
+    // 狀態管理
+    private bool isLoading = true;
+    private bool isSubmitting = false;
+    private bool isEditMode => Id.HasValue && Id.Value > 0;
+    
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitializePageAsync();
+    }
+
+    private async Task InitializePageAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // 初始化麵包屑
+            InitializeBreadcrumbs();
+            
+            // 初始化表單欄位
+            InitializeFormFields();
+            
+            if (isEditMode)
+            {
+                // 編輯模式：載入現有單位資料
+                await LoadUnitDataAsync(Id!.Value);
+            }
+            else
+            {
+                // 新增模式：初始化新單位
+                InitializeNewUnit();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入單位資料時發生錯誤：", ex.Message);
+            await JSRuntime.InvokeVoidAsync("alert", $"載入資料失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("庫存管理", "/inventory"),
+            new("單位管理", "/inventory/units"),
+            new(isEditMode ? "編輯單位" : "新增單位")
+        };
+    }
+
+    private void InitializeFormFields()
+    {
+        formFields = new List<FormFieldDefinition>
+        {
+            new()
+            {
+                PropertyName = nameof(Unit.UnitCode),
+                Label = "單位代碼",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入單位代碼",
+                IsRequired = true,
+                ContainerCssClass = "col-md-4"
+            },
+            new()
+            {
+                PropertyName = nameof(Unit.UnitName),
+                Label = "單位名稱",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入單位名稱",
+                IsRequired = true,
+                ContainerCssClass = "col-md-8"
+            },
+            new()
+            {
+                PropertyName = nameof(Unit.Symbol),
+                Label = "單位符號",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入單位符號（如：kg, m, l）",
+                ContainerCssClass = "col-md-6"
+            },
+            new()
+            {
+                PropertyName = nameof(Unit.IsBaseUnit),
+                Label = "設為基本單位",
+                FieldType = FormFieldType.Checkbox,
+                HelpText = "基本單位作為轉換的基準單位",
+                ContainerCssClass = "col-md-6"
+            },
+            new()
+            {
+                PropertyName = nameof(Unit.IsActive),
+                Label = "啟用狀態",
+                FieldType = FormFieldType.Checkbox,
+                ContainerCssClass = "col-md-6"
+            }
+        };
+
+        formSections = new Dictionary<string, string>
+        {
+            { nameof(Unit.UnitCode), "基本資訊" },
+            { nameof(Unit.UnitName), "基本資訊" },
+            { nameof(Unit.Symbol), "顯示設定" },
+            { nameof(Unit.IsBaseUnit), "設定選項" },
+            { nameof(Unit.IsActive), "設定選項" }
+        };
+    }
+
+    private async Task LoadUnitDataAsync(int unitId)
+    {
+        try
+        {
+            unit = await UnitService.GetByIdAsync(unitId) ?? new Unit();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入單位詳細資料失敗：", ex.Message);
+            throw;
+        }
+    }
+
+    private void InitializeNewUnit()
+    {
+        unit = new Unit
+        {
+            UnitCode = GenerateUnitCode(),
+            UnitName = "",
+            Symbol = "",
+            IsBaseUnit = false,
+            IsActive = true
+        };
+    }
+
+    private string GenerateUnitCode()
+    {
+        // 生成單位代碼邏輯
+        return $"U{DateTime.Now:yyyyMMddHHmmss}";
+    }
+
+    #region 頁面標題相關
+
+    private string GetPageTitle()
+    {
+        return isEditMode ? "編輯單位" : "新增單位";
+    }
+
+    private string GetSubtitle()
+    {
+        if (isEditMode && !string.IsNullOrEmpty(unit.UnitName))
+        {
+            return $"修改「{unit.UnitName}」的資料";
+        }
+        return "建立新的計量單位";
+    }
+
+    private string GetTitleIcon()
+    {
+        return isEditMode ? "pencil-square" : "plus-circle";
+    }
+
+    #endregion
+
+    #region 表單處理
+
+    private async Task HandleFormSubmit(Unit model)
+    {
+        // 這個方法由 GenericFormComponent 呼叫，但我們統一在 SaveUnit 處理
+        await Task.CompletedTask;
+    }
+
+    private async Task SaveUnit()
+    {
+        try
+        {
+            isSubmitting = true;
+            StateHasChanged();
+
+            // 驗證基本資料
+            if (string.IsNullOrWhiteSpace(unit.UnitCode))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "單位代碼為必填");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(unit.UnitName))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "單位名稱為必填");
+                return;
+            }
+
+            ServiceResult result;
+            
+            if (isEditMode)
+            {
+                // 更新現有單位
+                var updateResult = await UnitService.UpdateAsync(unit);
+                result = new ServiceResult { IsSuccess = updateResult.IsSuccess, ErrorMessage = updateResult.ErrorMessage };
+            }
+            else
+            {
+                // 新增單位
+                var createResult = await UnitService.CreateAsync(unit);
+                result = new ServiceResult { IsSuccess = createResult.IsSuccess, ErrorMessage = createResult.ErrorMessage };
+                if (createResult.IsSuccess && createResult.Data != null)
+                {
+                    unit = createResult.Data;
+                }
+            }
+
+            if (result.IsSuccess)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "單位資料儲存成功！");
+                Navigation.NavigateTo("/inventory/units");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"儲存失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "儲存單位資料時發生錯誤：", ex.Message);
+            await JSRuntime.InvokeVoidAsync("alert", $"儲存時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/inventory/units");
+    }
+
+    #endregion
+}
