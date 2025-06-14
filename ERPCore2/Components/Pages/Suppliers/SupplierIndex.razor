@@ -39,7 +39,7 @@
             </div>
             <div class="card-body">
                 @* 搜尋篩選區域 *@
-                <GenericSearchFilterComponent TModel="SupplierSearchModel"
+                <GenericSearchFilterComponent TModel="SearchFilterModel"
                                              FilterDefinitions="@filterDefinitions"
                                              FilterModel="@searchModel"
                                              OnSearch="HandleSearch"
@@ -186,7 +186,7 @@
         };
 
         // 建立篩選定義
-        filterDefinitions = new SearchFilterBuilder<SupplierSearchModel>()
+        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
             .AddText("SupplierCode", "廠商代碼", "輸入廠商代碼搜尋")
             .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
             .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
@@ -416,21 +416,6 @@
                 <i class="bi bi-pencil"></i>
             </button>
             <button class="btn btn-outline-danger" @onclick="() => DeleteSupplier(supplier)" title="刪除">
-                <i class="bi bi-trash"></i>
-            </button>
+                <i class="bi bi-trash"></i>            </button>
         </div>;
-}
-
-@* 廠商搜尋模型 *@
-@code {
-    public class SupplierSearchModel
-    {
-        public string? SupplierCode { get; set; }
-        public string? CompanyName { get; set; }
-        public string? ContactPerson { get; set; }
-        public int? SupplierTypeId { get; set; }
-        public int? IndustryTypeId { get; set; }
-        public EntityStatus? Status { get; set; }
-        public string? TaxNumber { get; set; }
-    }
 }

@@ -40,7 +40,7 @@
             </div>
             <div class="card-body">
                 @* 搜尋篩選區域 *@
-                <GenericSearchFilterComponent TModel="TransactionTypeSearchModel"
+                <GenericSearchFilterComponent TModel="SearchFilterModel"
                                              FilterDefinitions="@filterDefinitions"
                                              FilterModel="@searchModel"
                                              OnSearch="HandleSearch"
@@ -176,7 +176,7 @@
         };
 
         // 建立篩選定義
-        filterDefinitions = new SearchFilterBuilder<TransactionTypeSearchModel>()
+        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
             .AddText("TypeCode", "類型代碼", "輸入類型代碼搜尋")
             .AddText("TypeName", "類型名稱", "輸入類型名稱搜尋")
             .AddSelect("TransactionType", "異動類型", transactionTypeOptions, isAdvanced: true)
@@ -396,17 +396,4 @@
                 <i class="bi bi-trash"></i>
             </button>
         </div>;
-}
-
-@* 異動類型搜尋模型 *@
-@code {
-    public class TransactionTypeSearchModel
-    {
-        public string? TypeCode { get; set; }
-        public string? TypeName { get; set; }
-        public InventoryTransactionTypeEnum? TransactionType { get; set; }
-        public bool? AffectsCost { get; set; }
-        public bool? RequiresApproval { get; set; }
-        public bool? IsActive { get; set; }
-    }
 }

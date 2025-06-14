@@ -37,9 +37,8 @@
                     客戶搜尋與管理
                 </h5>
             </div>
-            <div class="card-body">
-                @* 搜尋篩選區域 *@
-                <GenericSearchFilterComponent TModel="CustomerSearchModel"
+            <div class="card-body">                @* 搜尋篩選區域 *@
+                <GenericSearchFilterComponent TModel="SearchFilterModel"
                                              FilterDefinitions="@filterDefinitions"
                                              FilterModel="@searchModel"
                                              OnSearch="HandleSearch"
@@ -183,10 +182,8 @@
         {
             new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
             new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-        };
-
-        // 建立篩選定義
-        filterDefinitions = new SearchFilterBuilder<CustomerSearchModel>()
+        };        // 建立篩選定義
+        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
             .AddText("CustomerCode", "客戶代碼", "輸入客戶代碼搜尋")
             .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
             .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
@@ -421,16 +418,4 @@
         </div>;
 }
 
-@* 客戶搜尋模型 *@
-@code {
-    public class CustomerSearchModel
-    {
-        public string? CustomerCode { get; set; }
-        public string? CompanyName { get; set; }
-        public string? ContactPerson { get; set; }
-        public int? CustomerTypeId { get; set; }
-        public int? IndustryTypeId { get; set; }
-        public EntityStatus? Status { get; set; }
-        public string? TaxNumber { get; set; }
-    }
-}
+

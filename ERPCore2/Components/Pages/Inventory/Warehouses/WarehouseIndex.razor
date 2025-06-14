@@ -40,7 +40,7 @@
             </div>
             <div class="card-body">
                 @* 搜尋篩選區域 *@
-                <GenericSearchFilterComponent TModel="WarehouseSearchModel"
+                <GenericSearchFilterComponent TModel="SearchFilterModel"
                                              FilterDefinitions="@filterDefinitions"
                                              FilterModel="@searchModel"
                                              OnSearch="HandleSearch"
@@ -168,7 +168,7 @@
         };
 
         // 建立篩選定義
-        filterDefinitions = new SearchFilterBuilder<WarehouseSearchModel>()
+        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
             .AddText("WarehouseCode", "倉庫代碼", "輸入倉庫代碼搜尋")
             .AddText("WarehouseName", "倉庫名稱", "輸入倉庫名稱搜尋")
             .AddSelect("WarehouseType", "倉庫類型", warehouseTypeOptions, isAdvanced: true)
@@ -409,16 +409,4 @@
                 <i class="bi bi-trash"></i>
             </button>
         </div>;
-}
-
-@* 倉庫搜尋模型 *@
-@code {
-    public class WarehouseSearchModel
-    {
-        public string? WarehouseCode { get; set; }
-        public string? WarehouseName { get; set; }
-        public WarehouseTypeEnum? WarehouseType { get; set; }
-        public bool? IsActive { get; set; }
-        public string? ContactPerson { get; set; }
-    }
 }

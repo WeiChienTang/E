@@ -40,7 +40,7 @@
             </div>
             <div class="card-body">
                 @* 搜尋篩選區域 *@
-                <GenericSearchFilterComponent TModel="EmployeeSearchModel"
+                <GenericSearchFilterComponent TModel="SearchFilterModel"
                                              FilterDefinitions="@filterDefinitions"
                                              FilterModel="@searchModel"
                                              OnSearch="HandleSearch"
@@ -75,27 +75,11 @@
                                           ShowPageSizeSelector="true">
                     </GenericTableComponent>
                 </div>
-            </div>
-        </div>
+            </div>        </div>
     </div>
 </div>
 
-@* 員工搜尋模型 *@
 @code {
-    public class EmployeeSearchModel
-    {
-        public string? EmployeeCode { get; set; }
-        public string? Username { get; set; }
-        public string? FirstName { get; set; }
-        public string? LastName { get; set; }
-        public string? Email { get; set; }
-        public string? Department { get; set; }
-        public string? Position { get; set; }
-        public int? RoleId { get; set; }
-        public EntityStatus? Status { get; set; }
-        public bool? IsLocked { get; set; }
-    }
-
     // 資料來源
     private List<Employee> employees = new();
     private List<Employee> allEmployees = new();
@@ -200,7 +184,7 @@
         };
 
         // 建立篩選定義
-        filterDefinitions = new SearchFilterBuilder<EmployeeSearchModel>()
+        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
             .AddText("EmployeeCode", "員工代碼", "輸入員工代碼搜尋")
             .AddText("Username", "帳號", "輸入帳號搜尋")
             .AddText("FirstName", "名字", "輸入名字搜尋")

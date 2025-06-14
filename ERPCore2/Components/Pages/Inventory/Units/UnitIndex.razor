@@ -40,7 +40,7 @@
             </div>
             <div class="card-body">
                 @* 搜尋篩選區域 *@
-                <GenericSearchFilterComponent TModel="UnitSearchModel"
+                <GenericSearchFilterComponent TModel="SearchFilterModel"
                                              FilterDefinitions="@filterDefinitions"
                                              FilterModel="@searchModel"
                                              OnSearch="HandleSearch"
@@ -166,7 +166,7 @@
         };
 
         // 建立篩選定義
-        filterDefinitions = new SearchFilterBuilder<UnitSearchModel>()
+        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
             .AddText("UnitCode", "單位代碼", "輸入單位代碼搜尋")
             .AddText("UnitName", "單位名稱", "輸入單位名稱搜尋")
             .AddText("Symbol", "符號", "輸入單位符號搜尋", isAdvanced: true)
@@ -378,16 +378,4 @@
                 <i class="bi bi-trash"></i>
             </button>
         </div>;
-}
-
-@* 單位搜尋模型 *@
-@code {
-    public class UnitSearchModel
-    {
-        public string? UnitCode { get; set; }
-        public string? UnitName { get; set; }
-        public string? Symbol { get; set; }
-        public bool? IsBaseUnit { get; set; }
-        public bool? IsActive { get; set; }
-    }
 }
