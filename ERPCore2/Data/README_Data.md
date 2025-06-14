@@ -135,6 +135,172 @@ public OptionalEntity? OptionalEntity { get; set; }
 
 ---
 
+## 資料建設流程
+
+### 1. Seeder 資料種子設定
+
+在完成實體定義後，必須在 `SeedDataManager` 資料夾中建立對應的 Seeder 類別，用於提供測試資料：
+
+#### Seeder 建立步驟
+1. 在 `Data/SeedDataManager/Seeders/` 資料夾下建立新的 Seeder 類別
+2. 實作 `IDataSeeder` 介面
+3. 設定適當的執行順序 (`Order` 屬性)
+4. 實作非同步的資料初始化邏輯
+5. 在 `SeedData.cs` 中註冊新的 Seeder
+
+#### Seeder 標準結構
+```csharp
+using ERPCore2.Data.Context;
+using ERPCore2.Data.Entities;
+using ERPCore2.Data.Enums;
+using ERPCore2.Data.SeedDataManager.Helpers;
+using ERPCore2.Data.SeedDataManager.Interfaces;
+using Microsoft.EntityFrameworkCore;
+
+namespace ERPCore2.Data.SeedDataManager.Seeders
+{
+    /// <summary>
+    /// 您的實體種子器
+    /// </summary>
+    public class YourEntitySeeder : IDataSeeder
+    {
+        public int Order => 6; // 設定執行順序（參考現有 Seeder 的順序）
+        public string Name => "您的實體資料";
+
+        public async Task SeedAsync(AppDbContext context)
+        {
+            await SeedYourEntitiesAsync(context);
+        }
+
+        /// <summary>
+        /// 初始化您的實體資料
+        /// </summary>
+        private static async Task SeedYourEntitiesAsync(AppDbContext context)
+        {
+            // 檢查資料是否已存在
+            if (await context.YourEntities.AnyAsync())
+                return;
+
+            // 取得建立時間和建立者資訊
+            var (createdAt1, createdBy) = SeedDataHelper.GetSystemCreateInfo(30);
+            var (createdAt2, _) = SeedDataHelper.GetSystemCreateInfo(25);
+            var (createdAt3, _) = SeedDataHelper.GetSystemCreateInfo(20);
+
+            var entities = new[]
+            {
+                new YourEntity
+                {
+                    Name = "測試資料 1",
+                    Description = "這是第一筆測試資料",
+                    Status = EntityStatus.Active,
+                    CreatedAt = createdAt1,
+                    CreatedBy = createdBy
+                },
+                new YourEntity
+                {
+                    Name = "測試資料 2",
+                    Description = "這是第二筆測試資料",
+                    Status = EntityStatus.Active,
+                    CreatedAt = createdAt2,
+                    CreatedBy = createdBy
+                },
+                new YourEntity
+                {
+                    Name = "測試資料 3",
+                    Description = "這是第三筆測試資料",
+                    Status = EntityStatus.Active,
+                    CreatedAt = createdAt3,
+                    CreatedBy = createdBy
+                }
+                // 建議至少建立 3-5 筆測試資料
+            };
+
+            await context.YourEntities.AddRangeAsync(entities);
+            await context.SaveChangesAsync();
+        }
+    }
+}
+```
+
+新增的 Seeder 應根據相依性選擇適當的順序。
+
+#### 註冊 Seeder
+在 `SeedData.cs` 的 `GetAllSeeders()` 方法中加入新的 Seeder
+```csharp
+private static IEnumerable<IDataSeeder> GetAllSeeders()
+{
+    return new List<IDataSeeder>
+    {
+        new AuthSeeder(),
+        new BasicDataSeeder(),
+        new CustomerSeeder(),
+        new SupplierSeeder(),
+        new ProductSeeder(),
+        new InventorySeeder(),
+        new YourEntitySeeder() // 新增您的 Seeder
+    };
+}
+```
+
+#### Seeder 重要特性
+
+1. **非同步執行**：所有 Seeder 都使用 `async/await` 模式以提升效能
+2. **重複執行保護**：使用 `AnyAsync()` 檢查避免重複建立資料
+3. **交易支援**：整個初始化過程在單一交易中執行，確保資料一致性
+4. **順序控制**：透過 `Order` 屬性確保相依性正確的執行順序
+5. **工具類別支援**：使用 `SeedDataHelper` 產生一致的時間和使用者資訊
+
+### 2. Migrations 資料庫遷移
+
+完成實體定義和 Seeder 設定後，需要進行資料庫遷移：
+
+#### Migration 執行步驟
+
+1. **開啟 Package Manager Console** 或使用命令列工具
+2. **建立 Migration** ：
+   ```powershell
+   Add-Migration [MigrationName] -Context AppDbContext
+   ```
+   範例：
+   ```powershell
+   Add-Migration AddYourEntityTable -Context AppDbContext
+   ```
+
+3. **檢查 Migration 檔案** ：
+   - 檢查生成的 Migration 檔案是否正確
+   - 確認 Up() 和 Down() 方法的內容
+   - 驗證外鍵關係和索引設定
+
+4. **執行 Migration** ：
+   ```powershell
+   Update-Database -Context AppDbContext
+   ```
+
+5. **驗證結果** ：
+   - 檢查資料庫是否正確建立新表格
+   - 確認 Seed 資料是否正確插入
+   - 測試基本的 CRUD 操作
+
+#### Migration 命名規範
+
+- 使用英文命名，採用 Pascal Case
+- 命名應清楚描述變更內容
+- 範例：
+  - `AddCustomerTable`
+  - `UpdateProductEntity`
+  - `AddIndexToCustomerName`
+  - `ModifyOrderStatusEnum`
+
+#### Migration 注意事項
+
+1. **資料備份**：執行 Migration 前請先備份資料庫
+2. **分段執行**：大型變更建議分多個 Migration 執行
+3. **回滾準備**：確保 Down() 方法能正確回滾變更
+4. **測試優先**：在開發環境完整測試後再部署到正式環境
+5. **文檔記錄**：重要的 Migration 應在專案文檔中記錄說明
+
+---
+
 ## 注意事項
 
 1. **命名空間一致性**：所有新增的實體類別都必須遵循廣域命名規範
@@ -142,3 +308,11 @@ public OptionalEntity? OptionalEntity { get; set; }
 3. **屬性驗證**：每個實體類別都應包含完整的資料驗證屬性
 4. **中文錯誤訊息**：所有錯誤訊息都使用繁體中文
 5. **文檔維護**：新增實體分類時請同步更新此 README 文檔
+6. **Seeder 實作要求**：
+   - 每個新實體都必須實作對應的 Seeder 類別
+   - 必須實作 `IDataSeeder` 介面
+   - 使用 `SeedDataHelper` 產生一致的測試資料
+   - 提供至少 5-10 筆有意義的測試資料
+   - 正確設定執行順序以處理相依性
+7. **Migration 版本控制**：所有 Migration 檔案都應納入版本控制系統
+8. **非同步操作**：所有資料存取操作都應使用非同步方法以提升效能
