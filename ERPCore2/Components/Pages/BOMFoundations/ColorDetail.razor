@@ -1,4 +1,4 @@
-@page "/basicunits/color/detail/{colorId:int}"
+@page "/BOMFoundation/color/detail/{colorId:int}"
 @using ERPCore2.Components.Shared.Details
 @using ERPCore2.Components.Shared.Buttons
 @using ERPCore2.Data.Entities
@@ -324,7 +324,7 @@ else
 
     private void EditColor()
     {
-        Navigation.NavigateTo($"/basicunits/color/edit/{ColorId}");
+        Navigation.NavigateTo($"/BOMFoundation/color/edit/{ColorId}");
     }
 
     private async Task PrintColor()
@@ -334,11 +334,11 @@ else
 
     private void BackToList()
     {
-        Navigation.NavigateTo("/basicunits/color");
+        Navigation.NavigateTo("/BOMFoundation/color");
     }
 
     private void BackToColorList()
     {
-        Navigation.NavigateTo("/basicunits/color");
+        Navigation.NavigateTo("/BOMFoundation/color");
     }
 }

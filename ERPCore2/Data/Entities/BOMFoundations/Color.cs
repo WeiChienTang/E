@@ -1,10 +1,9 @@
 using System.ComponentModel.DataAnnotations;
-using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 顏色類型 - 基礎單位資料
+    /// 顏色類型 - 產品基礎元素
     /// </summary>
     public class Color : BaseEntity
     {

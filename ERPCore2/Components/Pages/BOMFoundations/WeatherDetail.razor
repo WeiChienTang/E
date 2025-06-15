@@ -1,4 +1,4 @@
-@page "/basicunits/weather/detail/{weatherId:int}"
+@page "/BOMFoundation/weather/detail/{weatherId:int}"
 @using ERPCore2.Components.Shared.Details
 @using ERPCore2.Components.Shared.Buttons
 @using ERPCore2.Data.Entities
@@ -90,10 +90,11 @@ else
             Title = weather.Name,
             Subtitle = $"天氣代碼：{weather.Code}",
             TitleIcon = "bi bi-cloud-sun",
-            UseTabs = false, // 使用單一區塊模式，因為天氣資料相對簡單
+            UseTabs = false, // 使用分頁模式展示基本資料和天氣資訊
             Sections = new List<DetailSection>
             {
-                CreateBasicInfoSection()
+                CreateBasicInfoSection(),
+                CreateWeatherInfoSection()
             }
         };
     }
@@ -112,18 +113,6 @@ else
             new() { 
                 Label = "天氣代碼", 
                 Value = weather.Code, 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "圖示", 
-                Value = weather.Icon ?? "-", 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "參考溫度", 
-                Value = weather.ReferenceTemperature?.ToString("0.0") + "°C" ?? "-", 
                 DisplayType = DetailDisplayType.Text,
                 ContainerCssClass = "col-md-6"
             },
@@ -209,6 +198,53 @@ else
         };
     }
 
+    private DetailSection CreateWeatherInfoSection()
+    {
+        var items = new List<DetailItem>();
+
+        // 圖示
+        if (!string.IsNullOrWhiteSpace(weather.Icon))
+        {
+            items.Add(new DetailItem { 
+                Label = "圖示", 
+                Value = weather.Icon, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6",
+                IsHighlight = true
+            });
+        }
+
+        // 參考溫度
+        if (weather.ReferenceTemperature.HasValue)
+        {
+            items.Add(new DetailItem { 
+                Label = "參考溫度", 
+                Value = weather.ReferenceTemperature.Value.ToString("0.0") + "°C", 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6"
+            });
+        }
+
+        // 如果沒有任何天氣資訊
+        if (!items.Any())
+        {
+            items.Add(new DetailItem { 
+                Label = "天氣資訊", 
+                Value = "暫無詳細天氣資訊", 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-12"
+            });
+        }
+
+        return new DetailSection
+        {
+            Id = "weatherinfo",
+            Title = "天氣資訊",
+            Icon = "bi bi-cloud-drizzle",
+            Items = items
+        };
+    }
+
     private string GetStatusText(Data.Enums.EntityStatus status)
     {
         return status switch
@@ -250,7 +286,7 @@ else
 
     private void EditWeather()
     {
-        Navigation.NavigateTo($"/basicunits/weather/edit/{WeatherId}");
+        Navigation.NavigateTo($"/BOMFoundation/weather/edit/{WeatherId}");
     }
 
     private async Task PrintWeather()
@@ -260,11 +296,11 @@ else
 
     private void BackToList()
     {
-        Navigation.NavigateTo("/basicunits/weather");
+        Navigation.NavigateTo("/BOMFoundation/weather");
     }
 
     private void BackToWeatherList()
     {
-        Navigation.NavigateTo("/basicunits/weather");
+        Navigation.NavigateTo("/BOMFoundation/weather");
     }
 }

@@ -129,20 +129,20 @@
                 <!-- 基礎單位管理選單 -->
                 <div class="nav-item px-3">
                     <div class="nav-link dropdown" onclick="toggleDropdown(event)">
-                        <span class="bi bi-gear-fill" aria-hidden="true"></span> 基礎單位管理
+                        <span class="bi bi-gear-fill" aria-hidden="true"></span> BOM表基礎單位管理
                         <span class="bi bi-chevron-down ms-auto dropdown-arrow"></span>
                     </div>
                     <div class="dropdown-menu">
                         <!-- 天氣管理 - 需要 Weather.Read 權限 -->
                         <PermissionCheck Permission="Weather.Read">
-                            <NavLink class="dropdown-item" href="basicunits/weather">
+                            <NavLink class="dropdown-item" href="BOMFoundation/weather">
                                 <span class="bi bi-cloud-fill" aria-hidden="true"></span> 天氣管理
                             </NavLink>
                         </PermissionCheck>
                         
                         <!-- 顏色管理 - 需要 Color.Read 權限 -->
                         <PermissionCheck Permission="Color.Read">
-                            <NavLink class="dropdown-item" href="basicunits/color">
+                            <NavLink class="dropdown-item" href="BOMFoundation/color">
                                 <span class="bi bi-palette-fill" aria-hidden="true"></span> 顏色管理
                             </NavLink>
                         </PermissionCheck>

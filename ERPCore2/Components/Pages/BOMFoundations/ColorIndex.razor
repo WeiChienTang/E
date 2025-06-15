@@ -1,5 +1,7 @@
 @page "/color"
-@page "/basicunits/color"
+@page "/BOMFoundation/color"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
 @inject IColorService ColorService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -132,7 +134,7 @@
         breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
         {
             new("首頁", "/"),
-            new("基礎單位", "/basicunits"),
+            new("產品基礎元素", "/BOMFoundation"),
             new("顏色管理")
         };
     }
@@ -273,7 +275,7 @@
 
     private async Task HandleRowClick(Color color)
     {
-        Navigation.NavigateTo($"/basicunits/color/detail/{color.Id}");
+        Navigation.NavigateTo($"/BOMFoundation/color/detail/{color.Id}");
         await Task.CompletedTask;
     }
 
@@ -285,13 +287,13 @@
 
     private async Task ShowCreateColor()
     {
-        Navigation.NavigateTo("/basicunits/color/edit");
+        Navigation.NavigateTo("/BOMFoundation/color/edit");
         await Task.CompletedTask;
     }
 
     private async Task EditColor(Color color)
     {
-        Navigation.NavigateTo($"/basicunits/color/edit/{color.Id}");
+        Navigation.NavigateTo($"/BOMFoundation/color/edit/{color.Id}");
         await Task.CompletedTask;
     }
 
@@ -326,7 +328,7 @@
 
     private async Task ViewColor(Color color)
     {
-        Navigation.NavigateTo($"/basicunits/color/detail/{color.Id}");
+        Navigation.NavigateTo($"/BOMFoundation/color/detail/{color.Id}");
         await Task.CompletedTask;
     }
 

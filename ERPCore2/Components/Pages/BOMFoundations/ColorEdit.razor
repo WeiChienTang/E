@@ -1,5 +1,5 @@
-@page "/basicunits/color/edit"
-@page "/basicunits/color/edit/{id:int?}"
+@page "/BOMFoundation/color/edit"
+@page "/BOMFoundation/color/edit/{id:int?}"
 @inject IColorService ColorService
 @inject NavigationManager Navigation
 
@@ -56,7 +56,7 @@
             var colorResult = await ColorService.GetByIdAsync(Id.Value);
             if (colorResult == null)
             {
-                Navigation.NavigateTo("/basicunits/color");
+                Navigation.NavigateTo("/BOMFoundation/color");
                 return;
             }
             color = colorResult;
@@ -86,7 +86,7 @@
             
             if (result.IsSuccess)
             {
-                Navigation.NavigateTo("/basicunits/color");
+                Navigation.NavigateTo("/BOMFoundation/color");
             }
         }
         finally
@@ -97,6 +97,6 @@
     
     private void Cancel()
     {
-        Navigation.NavigateTo("/basicunits/color");
+        Navigation.NavigateTo("/BOMFoundation/color");
     }
 }
