@@ -75,6 +75,9 @@ namespace ERPCore2.Data
 
             // 記憶體快取服務（用於權限快取）
             services.AddMemoryCache();
+
+            // 導航搜尋服務
+            services.AddScoped<INavigationSearchService, NavigationSearchService>();
         }
 
         /// <summary>

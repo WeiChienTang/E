@@ -1,3 +1,275 @@
 ﻿@page "/"
+@inject INavigationSearchService NavigationSearchService
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
 
-<PageTitle>Home</PageTitle>
+<PageTitle>美莊磚業 - 系統首頁</PageTitle>
+
+<div class="container-fluid">
+    @* 歡迎標題 *@
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center py-5">
+                    <h1 class="card-title display-4 mb-3">
+                        <i class="bi bi-house-heart-fill me-3"></i>
+                        歡迎使用 美莊磚業 ERP 系統
+                    </h1>
+                    <p class="card-text lead">您的全方位企業資源管理平台</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* 功能搜尋區域 *@
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-search me-2"></i>
+                        功能搜尋
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @* 搜尋篩選區域 *@
+                    <GenericSearchFilterComponent TModel="SearchFilterModel"
+                                                 FilterDefinitions="@filterDefinitions"
+                                                 FilterModel="@searchModel"
+                                                 OnSearch="HandleSearch"
+                                                 OnFilterChanged="HandleFilterChanged"
+                                                 AutoSearch="true"
+                                                 ShowSearchButton="false"
+                                                 ShowAdvancedToggle="false"
+                                                 SearchDelayMs="300" />
+
+                    @* 搜尋結果 *@
+                    @if (searchResults.Any())
+                    {
+                        <div class="mt-4">
+                            <h6 class="mb-3">
+                                <i class="bi bi-grid-fill me-2"></i>
+                                搜尋結果 (共 @searchResults.Count 個功能)
+                            </h6>
+                            <div class="row">
+                                @foreach (var item in searchResults)
+                                {
+                                    <div class="col-lg-4 col-md-6 mb-3">
+                                        <NavigationCard Item="@item" 
+                                                      ShowRoute="true" 
+                                                      ShowActionButton="false" />
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else if (hasSearched)
+                    {
+                        <div class="mt-4 text-center text-muted">
+                            <i class="bi bi-search-heart fs-1 d-block mb-3"></i>
+                            <p>沒有找到符合條件的功能，請嘗試使用其他關鍵字</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* 常用功能快速入口 *@
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightning-fill me-2"></i>
+                        常用功能
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        @foreach (var item in popularFeatures)
+                        {
+                            <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+                                <NavigationCard Item="@item" 
+                                              ShowRoute="false" 
+                                              ShowActionButton="true" />
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* 功能分類展示 *@
+    <div class="row">
+        @foreach (var category in categories)
+        {
+            var categoryItems = allNavigationItems.Where(item => 
+                item.Category == category && 
+                !item.IsParent && 
+                !string.IsNullOrEmpty(item.Route) && 
+                item.Route != "#").Take(3).ToList();
+            
+            if (categoryItems.Any())
+            {
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-folder-fill me-2"></i>
+                                @category
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                @foreach (var item in categoryItems)
+                                {
+                                    <div class="col-12 mb-2">
+                                        <div class="d-flex align-items-center p-2 border rounded hover-highlight" 
+                                             style="cursor: pointer;" 
+                                             @onclick="() => NavigateToFeature(item.Route)">
+                                            <i class="@item.IconClass me-3 text-primary"></i>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-semibold">@item.Name</div>
+                                                <small class="text-muted">@item.Description</small>
+                                            </div>
+                                            <i class="bi bi-arrow-right text-muted"></i>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<style>
+    .hover-highlight:hover {
+        background-color: #f8f9fa;
+        border-color: #0d6efd !important;
+    }
+    
+    .navigation-card {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .navigation-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+</style>
+
+@code {
+    // 所有導航項目
+    private List<NavigationItem> allNavigationItems = new();
+    
+    // 搜尋結果
+    private List<NavigationItem> searchResults = new();
+    
+    // 常用功能
+    private List<NavigationItem> popularFeatures = new();
+    
+    // 分類清單
+    private List<string> categories = new();
+    
+    // 搜尋相關
+    private SearchFilterModel searchModel = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private bool hasSearched = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitializePageAsync();
+    }
+
+    private async Task InitializePageAsync()
+    {
+        try
+        {
+            // 載入所有導航項目
+            allNavigationItems = NavigationSearchService.GetAllNavigationItems();
+            
+            // 初始化篩選器
+            InitializeFilters();
+            
+            // 設定常用功能（可根據使用者權限動態調整）
+            InitializePopularFeatures();
+            
+            // 獲取所有分類
+            categories = allNavigationItems
+                .Where(item => !string.IsNullOrEmpty(item.Category))
+                .Select(item => item.Category)
+                .Distinct()
+                .OrderBy(c => c)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "初始化首頁時發生錯誤：", ex.Message);
+        }
+    }
+
+    private void InitializeFilters()
+    {
+        // 建立篩選定義
+        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+            .AddText("SearchTerm", "", "輸入功能名稱或關鍵字搜尋...")
+            .Build();
+    }
+
+    private void InitializePopularFeatures()
+    {
+        // 可根據實際使用頁目調整
+        var popularRoutes = new[] { "/customers", "/suppliers", "/products", "/employees" };
+        
+        popularFeatures = allNavigationItems
+            .Where(item => popularRoutes.Contains(item.Route))
+            .ToList();
+    }
+
+    private async Task HandleSearch(SearchFilterModel filterModel)
+    {
+        searchModel = filterModel;
+        await PerformSearch();
+    }
+
+    private async Task HandleFilterChanged(SearchFilterModel filterModel)
+    {
+        searchModel = filterModel;
+        // 使用自動搜尋功能
+        await PerformSearch();
+    }
+
+    private async Task PerformSearch()
+    {
+        var searchTerm = searchModel.GetFilterValue("SearchTerm")?.ToString();
+        
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            searchResults.Clear();
+            hasSearched = false;
+        }
+        else
+        {
+            searchResults = NavigationSearchService.SearchNavigationItems(searchTerm)
+                .Where(item => !item.IsParent && !string.IsNullOrEmpty(item.Route) && item.Route != "#")
+                .ToList();
+            hasSearched = true;
+        }
+        
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task NavigateToFeature(string route)
+    {
+        if (!string.IsNullOrEmpty(route) && route != "#")
+        {
+            await JSRuntime.InvokeVoidAsync("window.location.assign", route);
+        }
+    }
+}
