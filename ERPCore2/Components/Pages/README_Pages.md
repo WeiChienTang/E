@@ -304,6 +304,169 @@ else
 }
 ```
 
+#### Detail 頁面按鈕格式規範
+
+Detail 頁面的操作按鈕必須遵循統一的格式規範，以確保所有頁面的一致性：
+
+##### 基本格式要求
+
+1. **使用 `btn-group` 包裹**：所有按鈕都必須包在 `<div class="btn-group">` 中
+2. **標準按鈕大小**：不使用 `btn-sm` 或其他大小修飾符
+3. **移除手動間距**：不使用 `me-2` 等間距類別，由 `btn-group` 自動處理
+4. **統一圖示庫**：全部使用 Bootstrap Icons (`bi`) 而非 Font Awesome (`fas`)
+
+##### 標準按鈕實作範例
+
+```razor
+// Action Buttons - 正確格式
+private RenderFragment ActionButtons => __builder =>
+{
+    <div class="btn-group">
+        <button class="btn btn-primary" @onclick="Edit[實體名稱]">
+            <i class="bi bi-pencil me-1"></i>
+            編輯
+        </button>
+        <button class="btn btn-outline-secondary" @onclick="Print[實體名稱]">
+            <i class="bi bi-printer me-1"></i>
+            列印
+        </button>
+        <button class="btn btn-outline-secondary" @onclick="BackToList">
+            <i class="bi bi-arrow-left me-1"></i>
+            返回列表
+        </button>
+    </div>
+};
+```
+
+##### 按鈕樣式規範
+
+| 按鈕類型 | CSS 類別 | 圖示 | 說明 |
+|---------|---------|------|------|
+| 編輯 | `btn btn-primary` | `bi-pencil` | 主要操作，藍色背景 |
+| 列印 | `btn btn-outline-secondary` | `bi-printer` | 次要操作，灰色邊框 |
+| 返回列表 | `btn btn-outline-secondary` | `bi-arrow-left` | 導航操作，灰色邊框 |
+| 解鎖/啟用 | `btn btn-success` | `bi-unlock` | 成功操作，綠色背景 |
+| 鎖定/停用 | `btn btn-warning` | `bi-lock` | 警告操作，黃色背景 |
+| 刪除 | `btn btn-danger` | `bi-trash` | 危險操作，紅色背景 |
+| 設為預設 | `btn btn-outline-success` | `bi-star` | 特殊操作，綠色邊框 |
+| 管理轉換 | `btn btn-outline-info` | `bi-arrow-left-right` | 資訊操作，藍色邊框 |
+
+##### 條件性按鈕
+
+對於需要根據狀態顯示不同按鈕的情況：
+
+```razor
+<div class="btn-group">
+    <button class="btn btn-primary" @onclick="Edit[實體名稱]">
+        <i class="bi bi-pencil me-1"></i>
+        編輯
+    </button>
+    
+    @if ([實體變數名].IsLocked)
+    {
+        <button class="btn btn-success" @onclick="Unlock[實體名稱]">
+            <i class="bi bi-unlock me-1"></i>
+            解鎖帳號
+        </button>
+    }
+    else
+    {
+        <button class="btn btn-warning" @onclick="Lock[實體名稱]">
+            <i class="bi bi-lock me-1"></i>
+            鎖定帳號
+        </button>
+    }
+    
+    <button class="btn btn-outline-secondary" @onclick="BackToList">
+        <i class="bi bi-arrow-left me-1"></i>
+        返回列表
+    </button>
+</div>
+```
+
+##### 下拉選單按鈕組合
+
+對於需要更多操作選項的情況，可以使用下拉選單：
+
+```razor
+<div class="btn-group">
+    <button class="btn btn-primary" @onclick="Edit[實體名稱]">
+        <i class="bi bi-pencil me-1"></i>
+        編輯
+    </button>
+    <button class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" 
+            data-bs-toggle="dropdown" aria-expanded="false">
+        <span class="visually-hidden">更多操作</span>
+    </button>
+    <ul class="dropdown-menu">
+        <li>
+            <button class="dropdown-item" @onclick="Toggle[實體名稱]Status">
+                <i class="bi bi-power me-2"></i>
+                @([實體變數名]?.Status == EntityStatus.Active ? "停用" : "啟用")[實體中文名]
+            </button>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <button class="dropdown-item text-danger" @onclick="Delete[實體名稱]">
+                <i class="bi bi-trash me-2"></i>
+                刪除[實體中文名]
+            </button>
+        </li>
+    </ul>
+</div>
+
+<button class="btn btn-outline-secondary ms-2" @onclick="BackTo[實體名稱]List">
+    <i class="bi bi-arrow-left me-1"></i>
+    返回列表
+</button>
+```
+
+##### 常見錯誤格式
+
+以下是應該避免的不正確格式：
+
+```razor
+// ❌ 錯誤：使用舊的格式
+private RenderFragment ActionButtons => __builder =>
+{
+    <button class="btn btn-primary btn-sm me-2" @onclick="EditCustomer">
+        <i class="fas fa-edit me-1"></i>編輯
+    </button>
+    <button class="btn btn-outline-secondary btn-sm me-2" @onclick="PrintCustomer">
+        <i class="fas fa-print me-1"></i>列印
+    </button>
+    <button class="btn btn-outline-primary btn-sm" @onclick="BackToList">
+        <i class="fas fa-arrow-left me-1"></i>返回列表
+    </button>
+};
+```
+
+問題點：
+- ❌ 缺少 `btn-group` 包裹
+- ❌ 使用了 `btn-sm`（小按鈕）
+- ❌ 使用了 `me-2`（手動間距）
+- ❌ 使用了 Font Awesome 圖示 (`fas`)
+- ❌ 返回按鈕使用了 `btn-outline-primary`
+
+##### 圖示對應表
+
+| 功能 | Bootstrap Icons | Font Awesome (避免使用) |
+|------|----------------|------------------------|
+| 編輯 | `bi-pencil` | `fas fa-edit` |
+| 列印 | `bi-printer` | `fas fa-print` |
+| 返回 | `bi-arrow-left` | `fas fa-arrow-left` |
+| 轉換 | `bi-arrow-left-right` | `fas fa-exchange-alt` |
+| 星號 | `bi-star` | `fas fa-star` |
+| 解鎖 | `bi-unlock` | `fas fa-unlock` |
+| 鎖定 | `bi-lock` | `fas fa-lock` |
+| 刪除 | `bi-trash` | `fas fa-trash` |
+
+遵循這些按鈕格式規範可以確保：
+- 視覺一致性
+- 使用者體驗統一
+- 程式碼維護性
+- 無障礙網頁標準
+
 ## 共用元件使用
 
 所有頁面都應使用以下共用元件來確保一致性：

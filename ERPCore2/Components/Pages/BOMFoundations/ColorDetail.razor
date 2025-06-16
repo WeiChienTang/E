@@ -292,20 +292,23 @@ else
     {
         // 創建一個小的顏色預覽方塊
         return $"<span class=\"d-inline-block ms-2\" style=\"width: 20px; height: 20px; background-color: {hexCode}; border: 1px solid #dee2e6; border-radius: 3px; vertical-align: middle;\"></span>";
-    }
-
-    // Action Buttons
+    }    // Action Buttons
     private RenderFragment ActionButtons => __builder =>
     {
-        <button class="btn btn-primary btn-sm me-2" @onclick="EditColor">
-            <i class="fas fa-edit me-1"></i>編輯
-        </button>
-        <button class="btn btn-outline-secondary btn-sm me-2" @onclick="PrintColor">
-            <i class="fas fa-print me-1"></i>列印
-        </button>
-        <button class="btn btn-outline-primary btn-sm" @onclick="BackToList">
-            <i class="fas fa-arrow-left me-1"></i>返回列表
-        </button>
+        <div class="btn-group">
+            <button class="btn btn-primary" @onclick="EditColor">
+                <i class="bi bi-pencil me-1"></i>
+                編輯
+            </button>
+            <button class="btn btn-outline-secondary" @onclick="PrintColor">
+                <i class="bi bi-printer me-1"></i>
+                列印
+            </button>
+            <button class="btn btn-outline-secondary" @onclick="BackToList">
+                <i class="bi bi-arrow-left me-1"></i>
+                返回列表
+            </button>
+        </div>
     };
 
     private async Task HandleSectionLoad(string sectionId)
