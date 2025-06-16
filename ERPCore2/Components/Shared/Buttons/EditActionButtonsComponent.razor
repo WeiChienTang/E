@@ -1,0 +1,56 @@
+@* Edit 頁面動作按鈕組件 - 提供統一的儲存和取消按鈕 *@
+
+<button class="btn btn-success" @onclick="HandleSaveClick" disabled="@(IsSubmitting || IsLoading || !IsFormValid)">
+    @if (IsSubmitting)
+    {
+        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+    }
+    else
+    {
+        <i class="@SaveButtonIcon me-1"></i>
+    }
+    @SaveButtonText
+</button>
+
+@if (ShowCancelButton)
+{
+    <button class="btn btn-danger" @onclick="HandleCancelClick" disabled="@IsSubmitting">
+        <i class="@CancelButtonIcon me-1"></i>
+        @CancelButtonText
+    </button>
+}
+
+@if (CustomButtons != null)
+{
+    @CustomButtons
+}
+
+@code {
+    [Parameter] public string SaveButtonText { get; set; } = "儲存";
+    [Parameter] public string SaveButtonIcon { get; set; } = "bi-check-circle";
+    [Parameter] public string CancelButtonText { get; set; } = "取消";
+    [Parameter] public string CancelButtonIcon { get; set; } = "bi-x-circle";
+    [Parameter] public bool IsSubmitting { get; set; } = false;
+    [Parameter] public bool IsLoading { get; set; } = false;
+    [Parameter] public bool IsFormValid { get; set; } = true;
+    [Parameter] public bool ShowCancelButton { get; set; } = true;
+    [Parameter] public EventCallback OnSaveClick { get; set; }
+    [Parameter] public EventCallback OnCancelClick { get; set; }
+    [Parameter] public RenderFragment? CustomButtons { get; set; }
+
+    private async Task HandleSaveClick()
+    {
+        if (OnSaveClick.HasDelegate)
+        {
+            await OnSaveClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandleCancelClick()
+    {
+        if (OnCancelClick.HasDelegate)
+        {
+            await OnCancelClick.InvokeAsync();
+        }
+    }
+}

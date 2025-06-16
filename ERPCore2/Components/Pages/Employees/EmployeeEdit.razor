@@ -26,23 +26,14 @@
                        BreadcrumbItems="@breadcrumbItems"
                        IsLoading="@isLoading"
                        LoadingText="載入中..."
-                       ShowDivider="true">
-    <ActionButtons>
-        <button class="btn btn-success" @onclick="SaveEmployee" disabled="@(isSubmitting || isLoading)">
-            @if (isSubmitting)
-            {
-                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-            }
-            else
-            {
-                <i class="bi bi-check-circle me-1"></i>
-            }
-            儲存
-        </button>
-        <button class="btn btn-outline-secondary" @onclick="Cancel" disabled="@isSubmitting">
-            <i class="bi bi-x-circle me-1"></i>
-            取消
-        </button>
+                       ShowDivider="true">    <ActionButtons>
+        <EditActionButtonsComponent 
+            SaveButtonText="儲存"
+            CancelButtonText="取消"
+            OnSaveClick="SaveEmployee"
+            OnCancelClick="Cancel"
+            IsSubmitting="@isSubmitting"
+            IsLoading="@isLoading" />
     </ActionButtons>
 </GenericHeaderComponent>
 
@@ -96,12 +87,11 @@
                         </div>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-6">
+                    <div class="row">                        <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="email" class="form-label">電子郵件</label>
-                                <InputText @bind-Value="employee.Email" type="email" class="form-control" id="email" />
-                                <ValidationMessage For="@(() => employee.Email)" />
+                                <InputText @bind-Value="emailValue" type="email" class="form-control" id="email" />
+                                <div class="form-text">此欄位現在透過聯絡資料管理</div>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -253,6 +243,9 @@
     private Employee employee = new();
     private List<Role> roles = new();
     
+    // 用於處理Email輸入的臨時屬性（Email現在透過EmployeeContact管理）
+    private string emailValue = string.Empty;
+    
     private bool isLoading = true;
     private bool isSubmitting = false;
     
@@ -339,9 +332,7 @@
         {
             await JSRuntime.InvokeVoidAsync("console.error", "載入角色清單失敗：", ex.Message);
         }
-    }
-
-    private async Task LoadEmployeeAsync()
+    }    private async Task LoadEmployeeAsync()
     {
         if (!Id.HasValue) return;
 
@@ -351,6 +342,11 @@
             if (result != null)
             {
                 employee = result;
+                
+                // 設置Email值（從EmployeeContact中取得）
+                var emailContact = employee.EmployeeContacts?
+                    .FirstOrDefault(ec => ec.ContactType?.TypeName == "Email");
+                emailValue = emailContact?.ContactValue ?? "";
             }
             else
             {

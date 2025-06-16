@@ -17,23 +17,14 @@
                        BreadcrumbItems="@breadcrumbItems"
                        IsLoading="@isLoading"
                        LoadingText="載入中..."
-                       ShowDivider="true">
-    <ActionButtons>
-        <button class="btn btn-success" @onclick="SaveCustomer" disabled="@(isSubmitting || isLoading)">
-            @if (isSubmitting)
-            {
-                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-            }
-            else
-            {
-                <i class="bi bi-check-circle me-1"></i>
-            }
-            儲存
-        </button>
-        <button class="btn btn-outline-secondary" @onclick="Cancel" disabled="@isSubmitting">
-            <i class="bi bi-x-circle me-1"></i>
-            取消
-        </button>
+                       ShowDivider="true">    <ActionButtons>
+        <EditActionButtonsComponent 
+            SaveButtonText="儲存"
+            CancelButtonText="取消"
+            OnSaveClick="SaveCustomer"
+            OnCancelClick="Cancel"
+            IsSubmitting="@isSubmitting"
+            IsLoading="@isLoading" />
     </ActionButtons>
 </GenericHeaderComponent>
 
@@ -67,10 +58,9 @@
             <GenericHeaderComponent Title="聯絡方式"
                                    Subtitle="@($"管理客戶的聯絡資訊 ({customerContacts.Count} 筆)")"
                                    TitleIcon="telephone"
-                                   IsCardHeader="true">
-                <ActionButtons>
-                    <button class="btn btn-sm btn-primary" @onclick="AddContact">
-                        <i class="bi bi-plus me-1"></i>
+                                   IsCardHeader="true">                <ActionButtons>
+                    <button class="btn btn-primary" @onclick="AddContact">
+                        <i class="bi-plus me-1"></i>
                         新增聯絡方式
                     </button>
                 </ActionButtons>
@@ -148,10 +138,9 @@
             <GenericHeaderComponent Title="地址資訊"
                                    Subtitle="@($"管理客戶的地址資料 ({customerAddresses.Count} 筆)")"
                                    TitleIcon="geo-alt"
-                                   IsCardHeader="true">
-                <ActionButtons>
-                    <button class="btn btn-sm btn-primary" @onclick="AddAddress">
-                        <i class="bi bi-plus me-1"></i>
+                                   IsCardHeader="true">                <ActionButtons>
+                    <button class="btn btn-primary" @onclick="AddAddress">
+                        <i class="bi-plus me-1"></i>
                         新增地址
                     </button>
                 </ActionButtons>

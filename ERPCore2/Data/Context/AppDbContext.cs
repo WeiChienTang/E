@@ -17,6 +17,8 @@ namespace ERPCore2.Data.Context
       public DbSet<CustomerContact> CustomerContacts { get; set; }
       public DbSet<CustomerAddress> CustomerAddresses { get; set; }      
       public DbSet<Employee> Employees { get; set; }
+      public DbSet<EmployeeContact> EmployeeContacts { get; set; }
+      public DbSet<EmployeeAddress> EmployeeAddresses { get; set; }
       public DbSet<Role> Roles { get; set; }
       public DbSet<Permission> Permissions { get; set; }
       public DbSet<RolePermission> RolePermissions { get; set; }

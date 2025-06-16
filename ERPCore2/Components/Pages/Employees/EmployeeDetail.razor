@@ -106,13 +106,17 @@ else
                                 <div>@GetFullName()</div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
+                        <div class="col-md-6">                            <div class="mb-3">
                                 <label class="form-label text-muted">電子郵件</label>
                                 <div>
-                                    @if (!string.IsNullOrEmpty(employee.Email))
+                                    @{
+                                        var emailContact = employee.EmployeeContacts?
+                                            .FirstOrDefault(ec => ec.ContactType?.TypeName == "Email");
+                                        var emailValue = emailContact?.ContactValue;
+                                    }
+                                    @if (!string.IsNullOrEmpty(emailValue))
                                     {
-                                        <a href="mailto:@employee.Email" class="text-decoration-underline">@employee.Email</a>
+                                        <a href="mailto:@emailValue" class="text-decoration-underline">@emailValue</a>
                                     }
                                     else
                                     {

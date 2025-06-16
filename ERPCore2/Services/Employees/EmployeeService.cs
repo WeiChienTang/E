@@ -15,23 +15,27 @@ namespace ERPCore2.Services
     {
         public EmployeeService(AppDbContext context) : base(context)
         {
-        }
-
-        // 覆寫 GetAllAsync 以載入相關資料
+        }        // 覆寫 GetAllAsync 以載入相關資料
         public override async Task<List<Employee>> GetAllAsync()
         {
             return await _dbSet
                 .Include(e => e.Role)
+                .Include(e => e.EmployeeContacts)
+                    .ThenInclude(ec => ec.ContactType)
+                .Include(e => e.EmployeeAddresses)
+                    .ThenInclude(ea => ea.AddressType)
                 .Where(e => !e.IsDeleted)
                 .OrderBy(e => e.EmployeeCode)
                 .ToListAsync();
-        }
-
-        // 覆寫 GetByIdAsync 以載入相關資料
+        }        // 覆寫 GetByIdAsync 以載入相關資料
         public override async Task<Employee?> GetByIdAsync(int id)
         {
             return await _dbSet
                 .Include(e => e.Role)
+                .Include(e => e.EmployeeContacts)
+                    .ThenInclude(ec => ec.ContactType)
+                .Include(e => e.EmployeeAddresses)
+                    .ThenInclude(ea => ea.AddressType)
                 .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
         }
 
@@ -294,19 +298,9 @@ namespace ERPCore2.Services
 
             // 驗證員工編號格式
             if (!Regex.IsMatch(employee.EmployeeCode, @"^[A-Z0-9]+$"))
-                return ServiceResult<bool>.Failure("員工編號只能包含大寫字母和數字");
-
-            // 驗證使用者名稱格式
+                return ServiceResult<bool>.Failure("員工編號只能包含大寫字母和數字");            // 驗證使用者名稱格式
             if (!Regex.IsMatch(employee.Username, @"^[a-zA-Z0-9_]+$"))
                 return ServiceResult<bool>.Failure("使用者名稱只能包含英文字母、數字和底線");
-
-            // 驗證 Email 格式（如果提供）
-            if (!string.IsNullOrWhiteSpace(employee.Email))
-            {
-                var emailRegex = new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
-                if (!emailRegex.IsMatch(employee.Email))
-                    return ServiceResult<bool>.Failure("Email 格式不正確");
-            }
 
             // 驗證角色ID
             if (employee.RoleId <= 0)
@@ -364,34 +358,14 @@ namespace ERPCore2.Services
 
             // 檢查長度限制
             if (entity.Username?.Length > 50)
-                errors.Add("使用者名稱不可超過50個字元");
-
-            if (entity.FirstName?.Length > 50)
+                errors.Add("使用者名稱不可超過50個字元");            if (entity.FirstName?.Length > 50)
                 errors.Add("名字不可超過50個字元");
 
             if (entity.LastName?.Length > 50)
                 errors.Add("姓氏不可超過50個字元");
 
-            if (!string.IsNullOrEmpty(entity.Email) && entity.Email.Length > 100)
-                errors.Add("電子郵件不可超過100個字元");
-
             if (!string.IsNullOrEmpty(entity.EmployeeCode) && entity.EmployeeCode.Length > 20)
                 errors.Add("員工代碼不可超過20個字元");
-
-            // 驗證電子郵件格式
-            if (!string.IsNullOrEmpty(entity.Email))
-            {
-                try
-                {
-                    var addr = new System.Net.Mail.MailAddress(entity.Email);
-                    if (addr.Address != entity.Email)
-                        errors.Add("電子郵件格式不正確");
-                }
-                catch
-                {
-                    errors.Add("電子郵件格式不正確");
-                }
-            }
 
             // 檢查使用者名稱是否重複
             if (!string.IsNullOrWhiteSpace(entity.Username))
@@ -415,18 +389,6 @@ namespace ERPCore2.Services
 
                 if (isCodeDuplicate)
                     errors.Add("員工代碼已存在");
-            }
-
-            // 檢查電子郵件是否重複
-            if (!string.IsNullOrWhiteSpace(entity.Email))
-            {
-                var isEmailDuplicate = await _dbSet
-                    .Where(e => e.Email == entity.Email && !e.IsDeleted)
-                    .Where(e => e.Id != entity.Id) // 排除自己
-                    .AnyAsync();
-
-                if (isEmailDuplicate)
-                    errors.Add("電子郵件已存在");
             }            // 檢查角色是否存在
             if (entity.RoleId > 0)
             {

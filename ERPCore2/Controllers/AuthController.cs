@@ -41,15 +41,21 @@ namespace ERPCore2.Controllers
                     return BadRequest(new { error = result.ErrorMessage ?? "登入失敗，請檢查您的使用者名稱和密碼" });
                 }
 
-                var employee = result.Data;
-                _logger.LogInformation("✅ 員工驗證成功: Id={Id}, Username={Username}", employee.Id, employee.Username);                // 建立聲明
+                var employee = result.Data;                _logger.LogInformation("✅ 員工驗證成功: Id={Id}, Username={Username}", employee.Id, employee.Username);
+
+                // 取得員工的Email聯絡資料
+                var emailContact = employee.EmployeeContacts?
+                    .FirstOrDefault(ec => ec.ContactType?.TypeName == "電子郵件" || ec.ContactType?.TypeName == "Email");
+                var emailValue = emailContact?.ContactValue ?? "";
+
+                // 建立聲明
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, employee.Id.ToString()),
                     new Claim(ClaimTypes.Name, employee.Username),
                     new Claim(ClaimTypes.GivenName, employee.FirstName ?? ""),
                     new Claim(ClaimTypes.Surname, employee.LastName ?? ""),
-                    new Claim(ClaimTypes.Email, employee.Email ?? ""),
+                    new Claim(ClaimTypes.Email, emailValue),
                     new Claim("EmployeeCode", employee.EmployeeCode ?? ""),
                     new Claim("Department", employee.Department ?? ""),
                     new Claim("Position", employee.Position ?? "")

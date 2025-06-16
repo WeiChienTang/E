@@ -171,26 +171,42 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             if (await context.Employees.AnyAsync())
                 return;
 
-            var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Administrator");
-
-            var admin = new Employee
+            var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Administrator");            var admin = new Employee
             {
                 EmployeeCode = "ADMIN001",
                 FirstName = "系統",
                 LastName = "管理員",
                 Username = "admin",
                 PasswordHash = SeedDataHelper.HashPassword("admin123"),
-                Email = "admin@erpcore2.com",
                 Department = "IT",
                 Position = "系統管理員",
                 RoleId = adminRole?.Id ?? 1,
                 Status = EntityStatus.Active,
                 CreatedAt = DateTime.Now,
                 CreatedBy = "System"
-            };
-
-            await context.Employees.AddAsync(admin);
+            };            await context.Employees.AddAsync(admin);
             await context.SaveChangesAsync();
+
+            // 為管理員添加Email聯絡資料
+            var emailContactType = await context.ContactTypes
+                .FirstOrDefaultAsync(ct => ct.TypeName == "Email");
+
+            if (emailContactType != null)
+            {
+                var adminEmailContact = new EmployeeContact
+                {
+                    EmployeeId = admin.Id,
+                    ContactTypeId = emailContactType.Id,
+                    ContactValue = "admin@erpcore2.com",
+                    IsPrimary = true,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "System"
+                };
+
+                await context.EmployeeContacts.AddAsync(adminEmailContact);
+                await context.SaveChangesAsync();
+            }
         }
     }
 }

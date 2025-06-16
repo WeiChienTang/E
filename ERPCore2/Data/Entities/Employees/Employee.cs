@@ -40,23 +40,13 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "帳號")]
         [Required(ErrorMessage = "請輸入帳號")]
         [MaxLength(50, ErrorMessage = "帳號不可超過50個字元")]
-        public string Username { get; set; } = string.Empty;
-
-        /// <summary>
+        public string Username { get; set; } = string.Empty;        /// <summary>
         /// 密碼雜湊
         /// </summary>
         [Display(Name = "密碼雜湊")]
         [Required(ErrorMessage = "請設定密碼")]
         [MaxLength(255, ErrorMessage = "密碼雜湊不可超過255個字元")]
         public string PasswordHash { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 電子郵件
-        /// </summary>
-        [Display(Name = "電子郵件")]
-        [EmailAddress(ErrorMessage = "請輸入有效的電子郵件")]
-        [MaxLength(100, ErrorMessage = "電子郵件不可超過100個字元")]
-        public string? Email { get; set; }
 
         /// <summary>
         /// 部門
@@ -100,9 +90,9 @@ namespace ERPCore2.Data.Entities
         /// 帳號鎖定時間
         /// </summary>
         [Display(Name = "鎖定時間")]
-        public DateTime? LockedAt { get; set; }
-
-        // 導航屬性
+        public DateTime? LockedAt { get; set; }        // 導航屬性
         public Role Role { get; set; } = null!;
+        public ICollection<EmployeeContact> EmployeeContacts { get; set; } = new List<EmployeeContact>();
+        public ICollection<EmployeeAddress> EmployeeAddresses { get; set; } = new List<EmployeeAddress>();
     }
 }
