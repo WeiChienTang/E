@@ -413,5 +413,69 @@ namespace ERPCore2.Services
             var result = await SearchEmployeesAsync(searchTerm);
             return result.IsSuccess ? result.Data ?? new List<Employee>() : new List<Employee>();
         }
+
+        #region 聯絡資料與地址管理        /// <summary>
+        /// 更新員工聯絡資料
+        /// </summary>
+        public async Task<ServiceResult> UpdateEmployeeContactsAsync(int employeeId, List<EmployeeContact> contacts)
+        {
+            try
+            {
+                // 移除現有的聯絡資料
+                var existingContacts = await _context.EmployeeContacts
+                    .Where(ec => ec.EmployeeId == employeeId)
+                    .ToListAsync();
+                _context.EmployeeContacts.RemoveRange(existingContacts);
+                
+                // 新增新的聯絡資料
+                foreach (var contact in contacts)
+                {
+                    contact.EmployeeId = employeeId;
+                    contact.CreatedAt = DateTime.Now;
+                    contact.UpdatedAt = DateTime.Now;
+                    _context.EmployeeContacts.Add(contact);
+                }
+                
+                await _context.SaveChangesAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                return ServiceResult.Failure($"更新員工聯絡資料失敗：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 更新員工地址資料
+        /// </summary>
+        public async Task<ServiceResult> UpdateEmployeeAddressesAsync(int employeeId, List<EmployeeAddress> addresses)
+        {
+            try
+            {
+                // 移除現有的地址資料
+                var existingAddresses = await _context.EmployeeAddresses
+                    .Where(ea => ea.EmployeeId == employeeId)
+                    .ToListAsync();
+                _context.EmployeeAddresses.RemoveRange(existingAddresses);
+                
+                // 新增新的地址資料
+                foreach (var address in addresses)
+                {
+                    address.EmployeeId = employeeId;
+                    address.CreatedAt = DateTime.Now;
+                    address.UpdatedAt = DateTime.Now;
+                    _context.EmployeeAddresses.Add(address);
+                }
+                
+                await _context.SaveChangesAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                return ServiceResult.Failure($"更新員工地址資料失敗：{ex.Message}");
+            }
+        }
+
+        #endregion
     }
 }

@@ -10,11 +10,15 @@
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
 @inject IEmployeeService EmployeeService
+@inject IEmployeeContactService EmployeeContactService
+@inject IEmployeeAddressService EmployeeAddressService
 @inject IRoleService RoleService
+@inject IContactTypeService ContactTypeService
+@inject IAddressTypeService AddressTypeService
 @inject IAuthenticationService AuthenticationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode())
 
 <PageTitle>@GetPageTitle()</PageTitle>
 
@@ -69,18 +73,17 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="row">
+                      <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="lastName" class="form-label">姓氏</label>
+                                <label for="lastName" class="form-label">姓氏 <span class="text-danger">*</span></label>
                                 <InputText @bind-Value="employee.LastName" class="form-control" id="lastName" />
                                 <ValidationMessage For="@(() => employee.LastName)" />
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="firstName" class="form-label">名字</label>
+                                <label for="firstName" class="form-label">名字 <span class="text-danger">*</span></label>
                                 <InputText @bind-Value="employee.FirstName" class="form-control" id="firstName" />
                                 <ValidationMessage For="@(() => employee.FirstName)" />
                             </div>
@@ -234,6 +237,192 @@
                 </div>
             </div>
         }
+
+        @* 聯絡方式管理 *@
+        <div class="card mb-4">
+            <GenericHeaderComponent Title="聯絡方式"
+                                   Subtitle="@($"管理員工的聯絡資訊 ({employeeContacts.Count} 筆)")"
+                                   TitleIcon="telephone"
+                                   IsCardHeader="true">
+                <ActionButtons>
+                    <button class="btn btn-primary" @onclick="AddContact">
+                        <i class="bi-plus me-1"></i>
+                        新增聯絡方式
+                    </button>
+                </ActionButtons>
+            </GenericHeaderComponent>
+            <div class="card-body">
+                @if (employeeContacts.Any())
+                {
+                    <div class="row g-3">
+                        @for (int i = 0; i < employeeContacts.Count; i++)
+                        {
+                            var index = i; // 為了閉包
+                            var contact = employeeContacts[index];
+                            <div class="col-md-6">
+                                <div class="card border-secondary">
+                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                        <small class="fw-bold text-muted">聯絡方式 #@(index + 1)</small>
+                                        <div class="btn-group btn-group-sm">
+                                            @if (contact.IsPrimary)
+                                            {
+                                                <span class="badge bg-primary">主要</span>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-outline-primary btn-sm" @onclick="() => SetPrimaryContact(index)" title="設為主要">
+                                                    <i class="bi bi-star"></i>
+                                                </button>
+                                            }
+                                            <button class="btn btn-outline-danger btn-sm" @onclick="() => RemoveContact(index)" title="移除">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-3">
+                                        <div class="mb-2">
+                                            <label class="form-label small">聯絡類型</label>
+                                            <select class="form-select form-select-sm" 
+                                                    @onchange="@(e => UpdateContactType(index, e.Value?.ToString()))"
+                                                    value="@contact.ContactTypeId">
+                                                <option value="">請選擇聯絡類型</option>
+                                                @foreach (var type in contactTypes)
+                                                {
+                                                    <option value="@type.Id">@type.TypeName</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="form-label small">聯絡內容</label>
+                                            <input type="text" class="form-control form-control-sm" 
+                                                   placeholder="請輸入聯絡內容"
+                                                   @bind="contact.ContactValue"
+                                                   @bind:event="oninput" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-telephone-x fs-1 mb-3 d-block"></i>
+                        <p>尚未建立聯絡方式</p>
+                        <button class="btn btn-outline-primary" @onclick="AddContact">
+                            <i class="bi bi-plus me-1"></i>
+                            新增第一個聯絡方式
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* 地址管理 *@
+        <div class="card mb-4">
+            <GenericHeaderComponent Title="地址資訊"
+                                   Subtitle="@($"管理員工的地址資料 ({employeeAddresses.Count} 筆)")"
+                                   TitleIcon="geo-alt"
+                                   IsCardHeader="true">
+                <ActionButtons>
+                    <button class="btn btn-primary" @onclick="AddAddress">
+                        <i class="bi-plus me-1"></i>
+                        新增地址
+                    </button>
+                </ActionButtons>
+            </GenericHeaderComponent>
+            <div class="card-body">
+                @if (employeeAddresses.Any())
+                {
+                    <div class="row g-3">
+                        @for (int i = 0; i < employeeAddresses.Count; i++)
+                        {
+                            var index = i; // 為了閉包
+                            var address = employeeAddresses[index];
+                            <div class="col-lg-6">
+                                <div class="card border-secondary">
+                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                        <small class="fw-bold text-muted">地址 #@(index + 1)</small>
+                                        <div class="btn-group btn-group-sm">
+                                            @if (address.IsPrimary)
+                                            {
+                                                <span class="badge bg-primary">主要</span>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-outline-primary btn-sm" @onclick="() => SetPrimaryAddress(index)" title="設為主要">
+                                                    <i class="bi bi-star"></i>
+                                                </button>
+                                            }
+                                            <button class="btn btn-outline-danger btn-sm" @onclick="() => RemoveAddress(index)" title="移除">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-3">
+                                        <div class="row g-2">
+                                            <div class="col-12">
+                                                <label class="form-label small">地址類型</label>
+                                                <select class="form-select form-select-sm" 
+                                                        @onchange="@(e => UpdateAddressType(index, e.Value?.ToString()))"
+                                                        value="@address.AddressTypeId">
+                                                    <option value="">請選擇地址類型</option>
+                                                    @foreach (var type in addressTypes)
+                                                    {
+                                                        <option value="@type.Id">@type.TypeName</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small">郵遞區號</label>
+                                                <input type="text" class="form-control form-control-sm" 
+                                                       placeholder="郵遞區號"
+                                                       @bind="address.PostalCode"
+                                                       @bind:event="oninput" />
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small">城市</label>
+                                                <input type="text" class="form-control form-control-sm" 
+                                                       placeholder="城市"
+                                                       @bind="address.City"
+                                                       @bind:event="oninput" />
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label small">行政區</label>
+                                                <input type="text" class="form-control form-control-sm" 
+                                                       placeholder="行政區"
+                                                       @bind="address.District"
+                                                       @bind:event="oninput" />
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label small">詳細地址</label>
+                                                <textarea class="form-control form-control-sm" 
+                                                          rows="2" 
+                                                          placeholder="詳細地址"
+                                                          @bind="address.Address"
+                                                          @bind:event="oninput"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-geo-alt-slash fs-1 mb-3 d-block"></i>
+                        <p>尚未建立地址資料</p>
+                        <button class="btn btn-outline-primary" @onclick="AddAddress">
+                            <i class="bi bi-plus me-1"></i>
+                            新增第一個地址
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
     </div>
 </div>
 
@@ -242,6 +431,14 @@
 
     private Employee employee = new();
     private List<Role> roles = new();
+    
+    // 聯絡方式與地址資料
+    private List<EmployeeContact> employeeContacts = new();
+    private List<EmployeeAddress> employeeAddresses = new();
+    
+    // 選項清單
+    private List<ContactType> contactTypes = new();
+    private List<AddressType> addressTypes = new();
     
     // 用於處理Email輸入的臨時屬性（Email現在透過EmployeeContact管理）
     private string emailValue = string.Empty;
@@ -268,9 +465,7 @@
     protected override async Task OnParametersSetAsync()
     {
         await InitializePageAsync();
-    }
-
-    private async Task InitializePageAsync()
+    }    private async Task InitializePageAsync()
     {
         try
         {
@@ -282,6 +477,9 @@
             
             // 載入角色清單
             await LoadRolesAsync();
+            
+            // 載入選項清單
+            await LoadOptionListsAsync();
             
             // 載入員工資料（編輯模式）
             if (!IsCreateMode)
@@ -295,6 +493,8 @@
                 {
                     Status = EntityStatus.Active
                 };
+                employeeContacts = new List<EmployeeContact>();
+                employeeAddresses = new List<EmployeeAddress>();
             }
         }
         catch (Exception ex)
@@ -332,13 +532,36 @@
         {
             await JSRuntime.InvokeVoidAsync("console.error", "載入角色清單失敗：", ex.Message);
         }
+    }
+
+    private async Task LoadOptionListsAsync()
+    {
+        try
+        {
+            // 載入聯絡類型清單
+            var contactTypesResult = await ContactTypeService.GetAllAsync();
+            if (contactTypesResult != null)
+            {
+                contactTypes = contactTypesResult;
+            }
+
+            // 載入地址類型清單
+            var addressTypesResult = await AddressTypeService.GetAllAsync();
+            if (addressTypesResult != null)
+            {
+                addressTypes = addressTypesResult;
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入選項清單失敗：", ex.Message);
+        }
     }    private async Task LoadEmployeeAsync()
     {
         if (!Id.HasValue) return;
 
         try
-        {
-            var result = await EmployeeService.GetByIdAsync(Id.Value);
+        {            var result = await EmployeeService.GetByIdAsync(Id.Value);
             if (result != null)
             {
                 employee = result;
@@ -347,21 +570,28 @@
                 var emailContact = employee.EmployeeContacts?
                     .FirstOrDefault(ec => ec.ContactType?.TypeName == "Email");
                 emailValue = emailContact?.ContactValue ?? "";
+                
+                // 載入聯絡方式資料
+                var contactsResult = await EmployeeContactService.GetByEmployeeIdAsync(Id.Value);
+                employeeContacts = contactsResult.IsSuccess && contactsResult.Data != null 
+                    ? contactsResult.Data 
+                    : new List<EmployeeContact>();
+                
+                // 載入地址資料
+                employeeAddresses = await EmployeeAddressService.GetByEmployeeIdAsync(Id.Value);
             }
             else
             {
-                await JSRuntime.InvokeVoidAsync("showToast", "error", "找不到指定的員工資料");
+                await JSRuntime.InvokeVoidAsync("alert", "找不到指定的員工資料");
                 Navigation.NavigateTo("/employees");
             }
         }
         catch (Exception ex)
         {
             await JSRuntime.InvokeVoidAsync("console.error", "載入員工資料失敗：", ex.Message);
-            await JSRuntime.InvokeVoidAsync("showToast", "error", "載入員工資料失敗");
+            await JSRuntime.InvokeVoidAsync("alert", "載入員工資料失敗");
         }
-    }
-
-    private async Task SaveEmployee()
+    }    private async Task SaveEmployee()
     {
         if (isSubmitting) return;
 
@@ -374,11 +604,12 @@
             if (!ValidateForm())
             {
                 return;
-            }            if (IsCreateMode)
+            }
+
+            if (IsCreateMode)
             {
                 // 新增員工
-                var createResult = await EmployeeService.CreateAsync(employee);
-                if (createResult.IsSuccess && createResult.Data != null)
+                var createResult = await EmployeeService.CreateAsync(employee);                if (createResult.IsSuccess && createResult.Data != null)
                 {
                     // 如果有設定密碼，進行密碼重設
                     if (!string.IsNullOrWhiteSpace(password))
@@ -386,33 +617,53 @@
                         await AuthenticationService.ResetPasswordAsync(createResult.Data.Id, password);
                     }
                     
-                    await JSRuntime.InvokeVoidAsync("showToast", "success", "員工建立成功");
+                    // 更新聯絡方式的員工ID
+                    foreach (var contact in employeeContacts)
+                    {
+                        contact.EmployeeId = createResult.Data.Id;
+                    }
+                    
+                    // 更新地址的員工ID
+                    foreach (var address in employeeAddresses)
+                    {
+                        address.EmployeeId = createResult.Data.Id;
+                    }
+                    
+                    // 儲存聯絡方式和地址
+                    await EmployeeService.UpdateEmployeeContactsAsync(createResult.Data.Id, employeeContacts);
+                    await EmployeeService.UpdateEmployeeAddressesAsync(createResult.Data.Id, employeeAddresses);
+                    
+                    await JSRuntime.InvokeVoidAsync("alert", "員工建立成功");
                     Navigation.NavigateTo($"/employees/detail/{createResult.Data.Id}");
                 }
                 else
                 {
-                    await JSRuntime.InvokeVoidAsync("showToast", "error", $"建立員工失敗：{createResult.ErrorMessage}");
+                    await JSRuntime.InvokeVoidAsync("alert", $"建立員工失敗：{createResult.ErrorMessage}");
                 }
-            }
-            else
+            }            else
             {
                 // 更新員工
                 var updateResult = await EmployeeService.UpdateAsync(employee);
                 if (updateResult != null)
                 {
-                    await JSRuntime.InvokeVoidAsync("showToast", "success", "員工資料更新成功");
+                    // 更新聯絡方式
+                    await EmployeeService.UpdateEmployeeContactsAsync(employee.Id, employeeContacts);
+                    
+                    // 更新地址資料
+                    await EmployeeService.UpdateEmployeeAddressesAsync(employee.Id, employeeAddresses);
+                    
+                    await JSRuntime.InvokeVoidAsync("alert", "員工資料更新成功");
                     Navigation.NavigateTo($"/employees/detail/{employee.Id}");
                 }
                 else
                 {
-                    await JSRuntime.InvokeVoidAsync("showToast", "error", "更新員工資料失敗");
+                    await JSRuntime.InvokeVoidAsync("alert", "更新員工資料失敗");
                 }
-            }
-        }
+            }        }
         catch (Exception ex)
         {
             await JSRuntime.InvokeVoidAsync("console.error", "儲存員工資料時發生錯誤：", ex.Message);
-            await JSRuntime.InvokeVoidAsync("showToast", "error", "儲存失敗");
+            await JSRuntime.InvokeVoidAsync("alert", "儲存失敗");
         }
         finally
         {
@@ -456,17 +707,15 @@
         }
 
         return true;
-    }
-
-    private async Task ResetFailedAttempts()
+    }    private async Task ResetFailedAttempts()
     {
         try
         {
             employee.FailedLoginAttempts = 0;
-            await JSRuntime.InvokeVoidAsync("showToast", "success", "登入失敗次數已重設");
+            await JSRuntime.InvokeVoidAsync("alert", "登入失敗次數已重設");
         }        catch (Exception)
         {
-            await JSRuntime.InvokeVoidAsync("showToast", "error", "重設失敗");
+            await JSRuntime.InvokeVoidAsync("alert", "重設失敗");
         }
     }
 
@@ -476,8 +725,7 @@
         {
             var newPassword = $"Temp{DateTime.Now:yyyyMMdd}!";
             var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-                $"確定要重設 {employee.Username} 的密碼嗎？\n新密碼將設為：{newPassword}");
-              if (confirmed)
+                $"確定要重設 {employee.Username} 的密碼嗎？\n新密碼將設為：{newPassword}");              if (confirmed)
             {
                 // 使用 AuthenticationService 重設密碼
                 var resetResult = await AuthenticationService.ResetPasswordAsync(employee.Id, newPassword);
@@ -485,16 +733,16 @@
                 {
                     employee.FailedLoginAttempts = 0;
                     employee.IsLocked = false;
-                    await JSRuntime.InvokeVoidAsync("showToast", "success", $"密碼已重設為：{newPassword}");
+                    await JSRuntime.InvokeVoidAsync("alert", $"密碼已重設為：{newPassword}");
                 }
                 else
                 {
-                    await JSRuntime.InvokeVoidAsync("showToast", "error", $"重設密碼失敗：{resetResult.ErrorMessage}");
+                    await JSRuntime.InvokeVoidAsync("alert", $"重設密碼失敗：{resetResult.ErrorMessage}");
                 }
             }
         }        catch (Exception)
         {
-            await JSRuntime.InvokeVoidAsync("showToast", "error", "重設密碼失敗");
+            await JSRuntime.InvokeVoidAsync("alert", "重設密碼失敗");
         }
     }
 
@@ -524,4 +772,143 @@
     {
         return IsCreateMode ? "person-plus" : "person-gear";
     }
+
+    #region 聯絡方式管理
+
+    private void AddContact()
+    {
+        var newContact = new EmployeeContact
+        {
+            EmployeeId = employee.Id,
+            ContactTypeId = null,
+            ContactValue = "",
+            IsPrimary = employeeContacts.Count == 0, // 第一個自動設為主要
+            Status = EntityStatus.Active
+        };
+        
+        employeeContacts.Add(newContact);
+        StateHasChanged();
+    }
+
+    private void RemoveContact(int index)
+    {
+        if (index >= 0 && index < employeeContacts.Count)
+        {
+            var removedContact = employeeContacts[index];
+            employeeContacts.RemoveAt(index);
+            
+            // 如果移除的是主要聯絡方式且還有其他聯絡方式，設定第一個為主要
+            if (removedContact.IsPrimary && employeeContacts.Any())
+            {
+                employeeContacts[0].IsPrimary = true;
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    private void SetPrimaryContact(int index)
+    {
+        if (index >= 0 && index < employeeContacts.Count)
+        {
+            // 清除所有主要標記
+            foreach (var contact in employeeContacts)
+            {
+                contact.IsPrimary = false;
+            }
+            
+            // 設定指定的為主要
+            employeeContacts[index].IsPrimary = true;
+            StateHasChanged();
+        }
+    }
+
+    private void UpdateContactType(int index, string? contactTypeIdStr)
+    {
+        if (index >= 0 && index < employeeContacts.Count)
+        {
+            if (int.TryParse(contactTypeIdStr, out var contactTypeId))
+            {
+                employeeContacts[index].ContactTypeId = contactTypeId;
+            }
+            else
+            {
+                employeeContacts[index].ContactTypeId = null;
+            }
+            StateHasChanged();
+        }
+    }
+
+    #endregion
+
+    #region 地址管理
+
+    private void AddAddress()
+    {
+        var newAddress = new EmployeeAddress
+        {
+            EmployeeId = employee.Id,
+            AddressTypeId = null,
+            PostalCode = "",
+            City = "",
+            District = "",
+            Address = "",
+            IsPrimary = employeeAddresses.Count == 0, // 第一個自動設為主要
+            Status = EntityStatus.Active
+        };
+        
+        employeeAddresses.Add(newAddress);
+        StateHasChanged();
+    }
+
+    private void RemoveAddress(int index)
+    {
+        if (index >= 0 && index < employeeAddresses.Count)
+        {
+            var removedAddress = employeeAddresses[index];
+            employeeAddresses.RemoveAt(index);
+            
+            // 如果移除的是主要地址且還有其他地址，設定第一個為主要
+            if (removedAddress.IsPrimary && employeeAddresses.Any())
+            {
+                employeeAddresses[0].IsPrimary = true;
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    private void SetPrimaryAddress(int index)
+    {
+        if (index >= 0 && index < employeeAddresses.Count)
+        {
+            // 清除所有主要標記
+            foreach (var address in employeeAddresses)
+            {
+                address.IsPrimary = false;
+            }
+            
+            // 設定指定的為主要
+            employeeAddresses[index].IsPrimary = true;
+            StateHasChanged();
+        }
+    }
+
+    private void UpdateAddressType(int index, string? addressTypeIdStr)
+    {
+        if (index >= 0 && index < employeeAddresses.Count)
+        {
+            if (int.TryParse(addressTypeIdStr, out var addressTypeId))
+            {
+                employeeAddresses[index].AddressTypeId = addressTypeId;
+            }
+            else
+            {
+                employeeAddresses[index].AddressTypeId = null;
+            }
+            StateHasChanged();
+        }
+    }
+
+    #endregion
 }

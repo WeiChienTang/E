@@ -66,6 +66,8 @@ namespace ERPCore2.Data
 
             // 認證和授權服務
             services.AddScoped<IEmployeeService, EmployeeService>();
+            services.AddScoped<IEmployeeContactService, EmployeeContactService>();
+            services.AddScoped<IEmployeeAddressService, EmployeeAddressService>();
             services.AddScoped<IRoleService, RoleService>();
             services.AddScoped<IPermissionService, PermissionService>();
             services.AddScoped<IPermissionManagementService, PermissionManagementService>();

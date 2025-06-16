@@ -94,5 +94,21 @@ namespace ERPCore2.Services
         /// <param name="prefix">前綴（可選）</param>
         /// <returns>新的員工編號</returns>
         Task<ServiceResult<string>> GenerateNextEmployeeCodeAsync(string prefix = "EMP");
+
+        /// <summary>
+        /// 更新員工聯絡資料
+        /// </summary>
+        /// <param name="employeeId">員工ID</param>
+        /// <param name="contacts">聯絡資料清單</param>
+        /// <returns>更新結果</returns>
+        Task<ServiceResult> UpdateEmployeeContactsAsync(int employeeId, List<EmployeeContact> contacts);
+
+        /// <summary>
+        /// 更新員工地址資料
+        /// </summary>
+        /// <param name="employeeId">員工ID</param>
+        /// <param name="addresses">地址資料清單</param>
+        /// <returns>更新結果</returns>
+        Task<ServiceResult> UpdateEmployeeAddressesAsync(int employeeId, List<EmployeeAddress> addresses);
     }
 }
