@@ -346,21 +346,16 @@ else
         }
     }    private async Task ToggleStatusAsync()
     {
-        if (supplier == null) return;
-
+        if (supplier == null) return;        
+        
         try
         {
             var result = await SupplierService.ToggleStatusAsync(supplier.Id);
             if (result.IsSuccess)
             {
-                supplier.Status = supplier.Status == Data.Enums.EntityStatus.Active 
-                    ? Data.Enums.EntityStatus.Inactive 
-                    : Data.Enums.EntityStatus.Active;
-                    
-                StateHasChanged();
-
-                var statusText = supplier.Status == Data.Enums.EntityStatus.Active ? "啟用" : "停用";
+                var statusText = supplier.Status == Data.Enums.EntityStatus.Active ? "停用" : "啟用";
                 ShowAlert($"廠商已{statusText}", AlertComponent.AlertType.Success);
+                await LoadSupplierData(); // 重新載入資料以確保狀態同步
             }
             else
             {

@@ -307,21 +307,14 @@ else
         }
     }    private async Task ToggleStatusAsync()
     {
-        if (warehouse == null) return;
-
-        try
+        if (warehouse == null) return;        try
         {
             var result = await WarehouseService.ToggleStatusAsync(warehouse.Id);
             if (result.IsSuccess)
             {
-                warehouse.Status = warehouse.Status == Data.Enums.EntityStatus.Active 
-                    ? Data.Enums.EntityStatus.Inactive 
-                    : Data.Enums.EntityStatus.Active;
-                    
-                StateHasChanged();
-
-                var statusText = warehouse.Status == Data.Enums.EntityStatus.Active ? "啟用" : "停用";
+                var statusText = warehouse.Status == Data.Enums.EntityStatus.Active ? "停用" : "啟用";
                 ShowAlert($"倉庫已{statusText}", AlertComponent.AlertType.Success);
+                await LoadWarehouseData(); // 重新載入資料以確保狀態同步
             }
             else
             {

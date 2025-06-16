@@ -1,10 +1,22 @@
 @page "/employees/detail/{employeeId:int}"
+@using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Components.Shared.Alerts
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
 @inject IEmployeeService EmployeeService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 <PageTitle>員工詳細資料</PageTitle>
+
+@* 顯示警告訊息 *@
+<AlertComponent 
+    Message="@alertMessage" 
+    Type="@alertType" 
+    IsVisible="@showAlert" 
+    IsDismissible="true"
+    OnDismiss="@(() => showAlert = false)" />
 
 @if (isLoading)
 {
@@ -305,6 +317,11 @@ else
     
     // 麵包屑導航
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    
+    // Alert 相關變數
+    private bool showAlert = false;
+    private string alertMessage = string.Empty;
+    private AlertComponent.AlertType alertType = AlertComponent.AlertType.Info;
 
     protected override async Task OnInitializedAsync()
     {
@@ -329,8 +346,7 @@ else
             StateHasChanged();
 
             // 載入員工基本資料
-            employee = await EmployeeService.GetByIdAsync(EmployeeId);
-        }
+            employee = await EmployeeService.GetByIdAsync(EmployeeId);        }
         catch (Exception ex)
         {
             await JSRuntime.InvokeVoidAsync("console.error", "載入員工資料失敗：", ex.Message);
@@ -353,6 +369,14 @@ else
         };
     }
 
+    private void ShowAlert(string message, AlertComponent.AlertType type)
+    {
+        alertMessage = message;
+        alertType = type;
+        showAlert = true;
+        StateHasChanged();
+    }
+
     private string GetPageTitle()
     {
         if (employee == null) return "員工詳細資料";
@@ -372,8 +396,7 @@ else
         return string.IsNullOrEmpty(fullName) ? employee.Username : fullName;
     }
 
-    private void EditEmployee()
-    {
+    private void EditEmployee()    {
         Navigation.NavigateTo($"/employees/edit/{EmployeeId}");
     }
 
@@ -385,14 +408,15 @@ else
             if (result.IsSuccess)
             {
                 await LoadEmployeeData();
-                await JSRuntime.InvokeVoidAsync("showToast", "success", "員工帳號已鎖定");
-            }            else
+                ShowAlert("員工帳號已鎖定", AlertComponent.AlertType.Success);
+            }
+            else
             {
-                await JSRuntime.InvokeVoidAsync("showToast", "error", result.ErrorMessage ?? "鎖定失敗");
+                ShowAlert(result.ErrorMessage ?? "鎖定失敗", AlertComponent.AlertType.Danger);
             }        }
         catch (Exception)
         {
-            await JSRuntime.InvokeVoidAsync("showToast", "error", "鎖定員工帳號時發生錯誤");
+            ShowAlert("鎖定員工帳號時發生錯誤", AlertComponent.AlertType.Danger);
         }
     }
 
@@ -404,44 +428,37 @@ else
             if (result.IsSuccess)
             {
                 await LoadEmployeeData();
-                await JSRuntime.InvokeVoidAsync("showToast", "success", "員工帳號已解鎖");
+                ShowAlert("員工帳號已解鎖", AlertComponent.AlertType.Success);
             }            else
             {
-                await JSRuntime.InvokeVoidAsync("showToast", "error", result.ErrorMessage ?? "解鎖失敗");
-            }        }
+                ShowAlert(result.ErrorMessage ?? "解鎖失敗", AlertComponent.AlertType.Danger);
+            }
+        }
         catch (Exception)
         {
-            await JSRuntime.InvokeVoidAsync("showToast", "error", "解鎖員工帳號時發生錯誤");
+            ShowAlert("解鎖員工帳號時發生錯誤", AlertComponent.AlertType.Danger);
         }
-    }
-
-    private async Task ResetPassword()
+    }    private Task ResetPassword()
     {
         try
         {
-            // 產生暫時密碼（實際應用中可能需要更安全的方式）
-            var tempPassword = $"Temp{DateTime.Now:yyyyMMdd}!";
-            
-            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-                $"確定要重設 {employee!.Username} 的密碼嗎？\n新密碼將設為：{tempPassword}");
-            
-            if (confirmed)
-            {
-                // 這裡應該調用 IAuthenticationService 的 ResetPasswordAsync 方法
-                // 由於目前的介面設計，我們暫時顯示提示
-                await JSRuntime.InvokeVoidAsync("showToast", "info", 
-                    $"密碼重設功能需要實作 IAuthenticationService.ResetPasswordAsync 方法");
-            }        }
+            // 這裡應該調用 IAuthenticationService 的 ResetPasswordAsync 方法
+            // 由於目前的介面設計，我們暫時顯示提示
+            ShowAlert("密碼重設功能需要實作 IAuthenticationService.ResetPasswordAsync 方法", AlertComponent.AlertType.Info);
+        }
         catch (Exception)
         {
-            await JSRuntime.InvokeVoidAsync("showToast", "error", "重設密碼時發生錯誤");
+            ShowAlert("重設密碼時發生錯誤", AlertComponent.AlertType.Danger);
         }
+        return Task.CompletedTask;
     }
 
     private void BackToEmployeeList()
     {
         Navigation.NavigateTo("/employees");
-    }    private async Task ToggleEmployeeStatus()
+    }
+
+    private async Task ToggleEmployeeStatus()
     {
         if (employee == null) return;
 
@@ -449,56 +466,44 @@ else
         var isActive = newStatus == EntityStatus.Active;
         var actionText = isActive ? "啟用" : "停用";
         
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"確定要{actionText}員工「{GetFullName()}」嗎？");
-        
-        if (confirmed)
+        try
         {
-            try
+            var result = await EmployeeService.SetEmployeeActiveStatusAsync(EmployeeId, isActive);
+            if (result.IsSuccess)
             {
-                var result = await EmployeeService.SetEmployeeActiveStatusAsync(EmployeeId, isActive);
-                if (result.IsSuccess)
-                {
-                    employee.Status = newStatus;
-                    StateHasChanged();
-                    await JSRuntime.InvokeVoidAsync("showToast", "success", $"員工{actionText}成功");
-                }
-                else
-                {
-                    await JSRuntime.InvokeVoidAsync("showToast", "error", result.ErrorMessage ?? $"{actionText}失敗");
-                }
+                ShowAlert($"員工{actionText}成功", AlertComponent.AlertType.Success);
+                await LoadEmployeeData(); // 重新載入資料以確保狀態同步
             }
-            catch (Exception ex)
-            {
-                await JSRuntime.InvokeVoidAsync("showToast", "error", $"{actionText}時發生錯誤：{ex.Message}");
+            else            {
+                ShowAlert(result.ErrorMessage ?? $"{actionText}失敗", AlertComponent.AlertType.Danger);
             }
+        }
+        catch (Exception ex)
+        {
+            ShowAlert($"{actionText}時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
         }
     }
 
     private async Task DeleteEmployee()
     {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"確定要刪除員工「{GetFullName()}」嗎？這個操作無法復原。");
-        
-        if (confirmed)
+        try
         {
-            try
+            var result = await EmployeeService.DeleteAsync(EmployeeId);
+            if (result.IsSuccess)
             {
-                var result = await EmployeeService.DeleteAsync(EmployeeId);
-                if (result.IsSuccess)
-                {
-                    await JSRuntime.InvokeVoidAsync("showToast", "success", "員工刪除成功");
-                    Navigation.NavigateTo("/employees");
-                }
-                else
-                {
-                    await JSRuntime.InvokeVoidAsync("showToast", "error", result.ErrorMessage ?? "刪除失敗");
-                }
+                ShowAlert("員工刪除成功", AlertComponent.AlertType.Success);
+                // 延遲一下再導航，讓用戶看到成功訊息
+                await Task.Delay(1500);
+                Navigation.NavigateTo("/employees");
             }
-            catch (Exception ex)
+            else
             {
-                await JSRuntime.InvokeVoidAsync("showToast", "error", $"刪除時發生錯誤：{ex.Message}");
+                ShowAlert(result.ErrorMessage ?? "刪除失敗", AlertComponent.AlertType.Danger);
             }
+        }
+        catch (Exception ex)
+        {
+            ShowAlert($"刪除時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
         }
     }
 }

@@ -52,7 +52,7 @@ else
                 EntityStatus="@customer?.Status"
                 IsLoading="@isLoading"
                 OnEditClick="@EditCustomer"
-                OnToggleStatusClick="@ToggleCustomerStatus"
+                OnToggleStatusClick="@ToggleStatusAsync"
                 OnDeleteClick="@DeleteCustomer"
                 OnBackClick="@BackToCustomerList"/>
         </ActionButtons>    
@@ -278,35 +278,27 @@ else
     }    private void BackToCustomerList()
     {
         Navigation.NavigateTo("/customers");
-    }
-
-    private async Task ToggleCustomerStatus()
+    }    private async Task ToggleStatusAsync()
     {
         if (customer == null) return;
 
-        var actionText = customer.Status == Data.Enums.EntityStatus.Active ? "停用" : "啟用";
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"確定要{actionText}客戶「{customer.CompanyName}」嗎？");
-        
-        if (confirmed)
+        try
         {
-            try
+            var result = await CustomerService.ToggleStatusAsync(CustomerId);
+            if (result.IsSuccess)
             {
-                var result = await CustomerService.ToggleStatusAsync(CustomerId);
-                
-                if (result.IsSuccess)
-                {
-                    ShowAlert($"{actionText}成功", AlertComponent.AlertType.Success);
-                    await LoadCustomerData();
-                }
-                else
-                {
-                    ShowAlert(result.ErrorMessage ?? $"{actionText}失敗", AlertComponent.AlertType.Danger);
-                }
-            }            catch (Exception ex)
-            {
-                ShowAlert($"{actionText}時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
+                var statusText = customer.Status == Data.Enums.EntityStatus.Active ? "停用" : "啟用";
+                ShowAlert($"客戶已{statusText}", AlertComponent.AlertType.Success);
+                await LoadCustomerData(); // 重新載入資料以確保狀態同步
             }
+            else
+            {
+                ShowAlert($"狀態更新失敗：{result.ErrorMessage}", AlertComponent.AlertType.Danger);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowAlert($"狀態更新失敗：{ex.Message}", AlertComponent.AlertType.Danger);
         }
     }
 
@@ -324,7 +316,7 @@ else
                 {
                     ShowAlert("客戶刪除成功", AlertComponent.AlertType.Success);
                     // 延遲一下再導航，讓用戶看到成功訊息
-                    await Task.Delay(1500);
+                    await Task.Delay(1000);
                     Navigation.NavigateTo("/customers");
                 }
                 else
