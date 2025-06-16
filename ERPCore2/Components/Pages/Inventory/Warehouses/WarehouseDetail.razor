@@ -28,11 +28,10 @@
     </div>
 }
 else if (warehouse == null)
-{
-    <div class="alert alert-warning">
+{    <div class="alert alert-warning">
         <h4>找不到倉庫資料</h4>
         <p>指定的倉庫不存在或已被刪除。</p>
-        <button class="btn btn-primary" @onclick="BackToWarehouseList">
+        <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/warehouses")'>
             返回倉庫列表
         </button>
     </div>
@@ -46,10 +45,14 @@ else
             <DetailActionButtonsComponent 
                 EntityStatus="@warehouse?.Status"
                 IsLoading="@isLoading"
-                OnEditClick="@(() => Navigation.NavigateTo($"/warehouses/edit/{warehouse?.Id}"))"
-                OnToggleStatusClick="@ToggleStatusAsync"
-                OnDeleteClick="@DeleteAsync"
-                OnBackClick="@BackToWarehouseList"/>
+                EntityName="倉庫"
+                EntityId="@Id.ToString()"
+                EntityDisplayName="@warehouse?.WarehouseName"
+                EntityService="@WarehouseService"
+                ListRoute="/warehouses"
+                EditRoute="/warehouses/edit"
+                OnShowAlert="@((tuple) => ShowAlert(tuple.message, Enum.Parse<AlertComponent.AlertType>(tuple.type, true)))"
+                OnReloadData="@LoadWarehouseData"/>
         </ActionButtons>
     </GenericHeaderComponent>
 
@@ -305,59 +308,7 @@ else
             isLoading = false;
             StateHasChanged();
         }
-    }    private async Task ToggleStatusAsync()
-    {
-        if (warehouse == null) return;        try
-        {
-            var result = await WarehouseService.ToggleStatusAsync(warehouse.Id);
-            if (result.IsSuccess)
-            {
-                var statusText = warehouse.Status == Data.Enums.EntityStatus.Active ? "停用" : "啟用";
-                ShowAlert($"倉庫已{statusText}", AlertComponent.AlertType.Success);
-                await LoadWarehouseData(); // 重新載入資料以確保狀態同步
-            }
-            else
-            {
-                ShowAlert($"狀態更新失敗：{result.ErrorMessage}", AlertComponent.AlertType.Danger);
-            }
-        }
-        catch (Exception ex)
-        {
-            ShowAlert($"狀態更新失敗：{ex.Message}", AlertComponent.AlertType.Danger);
-        }
-    }    private async Task DeleteAsync()
-    {
-        if (warehouse == null) return;
-
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "確定要刪除這個倉庫嗎？此操作無法復原。");
-        if (!confirmed) return;
-
-        try
-        {
-            await WarehouseService.DeleteAsync(warehouse.Id);
-            ShowAlert("倉庫已刪除", AlertComponent.AlertType.Success);
-            // 延遲一下再導航，讓用戶看到成功訊息
-            await Task.Delay(1500);
-            Navigation.NavigateTo("/inventory/warehouses");
-        }
-        catch (Exception ex)
-        {
-            ShowAlert($"刪除失敗：{ex.Message}", AlertComponent.AlertType.Danger);
-        }
-    }
-
-    private void BackToWarehouseList()
-    {
-        Navigation.NavigateTo("/inventory/warehouses");
-    }    private string GetWarehouseTypeText(Data.Enums.WarehouseTypeEnum type)    {
-        return type switch
-        {
-            Data.Enums.WarehouseTypeEnum.Main => "主倉庫",
-            Data.Enums.WarehouseTypeEnum.Branch => "分倉庫",
-            Data.Enums.WarehouseTypeEnum.Virtual => "虛擬倉庫",
-            _ => "未知"
-        };
-    }
+    }    
 
     private void ShowAlert(string message, AlertComponent.AlertType type)
     {
@@ -365,5 +316,16 @@ else
         alertType = type;
         showAlert = true;
         StateHasChanged();
+    }
+
+    private string GetWarehouseTypeText(WarehouseTypeEnum warehouseType)
+    {
+        return warehouseType switch
+        {
+            WarehouseTypeEnum.Main => "主倉庫",
+            WarehouseTypeEnum.Branch => "分倉庫", 
+            WarehouseTypeEnum.Virtual => "虛擬倉庫",
+            _ => "未知"
+        };
     }
 }

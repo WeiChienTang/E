@@ -19,8 +19,7 @@ else if (warehouseLocation == null)
 {
     <div class="alert alert-warning">
         <h4>找不到庫位資料</h4>
-        <p>指定的庫位不存在或已被刪除。</p>
-        <button class="btn btn-primary" @onclick="BackToWarehouseLocationList">
+        <p>指定的庫位不存在或已被刪除。</p>        <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/inventory/warehouse-locations")'>
             返回庫位列表
         </button>
     </div>
@@ -34,10 +33,13 @@ else
             <DetailActionButtonsComponent 
                 EntityStatus="@warehouseLocation?.Status"
                 IsLoading="@isLoading"
-                OnEditClick="@(() => Navigation.NavigateTo($"/inventory/warehouse-locations/edit/{warehouseLocation?.Id}"))"
-                OnToggleStatusClick="@ToggleStatusAsync"
-                OnDeleteClick="@DeleteAsync"
-                OnBackClick="@BackToWarehouseLocationList"/>
+                EntityName="庫位"
+                EntityId="@Id.ToString()"
+                EntityDisplayName="@warehouseLocation?.LocationName"
+                EntityService="@WarehouseLocationService"
+                ListRoute="/inventory/warehouse-locations"
+                EditRoute="/inventory/warehouse-locations/edit"
+                OnReloadData="@LoadWarehouseLocationAsync"/>
         </ActionButtons>
     </GenericHeaderComponent>
 
@@ -210,60 +212,5 @@ else
             new() { Text = "庫位管理", Href = "/inventory/warehouse-locations" },
             new() { Text = warehouseLocation?.LocationName ?? "庫位詳細" }
         };
-    }
-
-    private async Task ToggleStatusAsync()
-    {
-        if (warehouseLocation == null) return;
-
-        try
-        {
-            var result = await WarehouseLocationService.ToggleStatusAsync(warehouseLocation.Id);
-            if (result.IsSuccess)
-            {
-                warehouseLocation.IsActive = !warehouseLocation.IsActive;
-                await JSRuntime.InvokeVoidAsync("alert", $"庫位狀態已{(warehouseLocation.IsActive ? "啟用" : "停用")}");
-            }
-            else
-            {
-                await JSRuntime.InvokeVoidAsync("alert", "操作失敗");
-            }
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("alert", $"操作失敗：{ex.Message}");
-        }
-    }
-
-    private async Task DeleteAsync()
-    {
-        if (warehouseLocation == null) return;
-
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"確定要刪除庫位「{warehouseLocation.LocationName}」嗎？");
-        if (confirmed)
-        {
-            try
-            {
-                var result = await WarehouseLocationService.DeleteAsync(warehouseLocation.Id);
-                if (result.IsSuccess)
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", "庫位已刪除");
-                    BackToWarehouseLocationList();
-                }
-                else
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", "刪除失敗");
-                }
-            }
-            catch (Exception ex)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{ex.Message}");
-            }
-        }
-    }
-
-    private void BackToWarehouseLocationList()
-    {
-        Navigation.NavigateTo("/inventory/warehouse-locations");
     }
 }

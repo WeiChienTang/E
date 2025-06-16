@@ -16,11 +16,10 @@
     </div>
 }
 else if (transactionType == null)
-{
-    <div class="alert alert-warning">
+{    <div class="alert alert-warning">
         <h4>找不到異動類型資料</h4>
         <p>指定的異動類型不存在或已被刪除。</p>
-        <button class="btn btn-primary" @onclick="BackToTransactionTypeList">
+        <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/inventory/transaction-types")'>
             返回異動類型列表
         </button>
     </div>
@@ -34,10 +33,13 @@ else
             <DetailActionButtonsComponent 
                 EntityStatus="@transactionType?.Status"
                 IsLoading="@isLoading"
-                OnEditClick="@(() => Navigation.NavigateTo($"/inventory/transaction-types/edit/{transactionType?.Id}"))"
-                OnToggleStatusClick="@ToggleStatusAsync"
-                OnDeleteClick="@DeleteAsync"
-                OnBackClick="@BackToTransactionTypeList"/>
+                EntityName="交易類型"
+                EntityId="@Id.ToString()"
+                EntityDisplayName="@transactionType?.TypeName"
+                EntityService="@TransactionTypeService"
+                ListRoute="/inventory/transaction-types"
+                EditRoute="/inventory/transaction-types/edit"
+                OnReloadData="@LoadTransactionTypeAsync"/>
         </ActionButtons>
     </GenericHeaderComponent>
 
@@ -217,60 +219,5 @@ else
             new() { Text = "異動類型管理", Href = "/inventory/transaction-types" },
             new() { Text = transactionType?.TypeName ?? "異動類型詳細" }
         };
-    }
-
-    private async Task ToggleStatusAsync()
-    {
-        if (transactionType == null) return;
-
-        try
-        {
-            var result = await TransactionTypeService.ToggleStatusAsync(transactionType.Id);
-            if (result.IsSuccess)
-            {
-                transactionType.IsActive = !transactionType.IsActive;
-                await JSRuntime.InvokeVoidAsync("alert", $"異動類型狀態已{(transactionType.IsActive ? "啟用" : "停用")}");
-            }
-            else
-            {
-                await JSRuntime.InvokeVoidAsync("alert", "操作失敗");
-            }
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("alert", $"操作失敗：{ex.Message}");
-        }
-    }
-
-    private async Task DeleteAsync()
-    {
-        if (transactionType == null) return;
-
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"確定要刪除異動類型「{transactionType.TypeName}」嗎？");
-        if (confirmed)
-        {
-            try
-            {
-                var result = await TransactionTypeService.DeleteAsync(transactionType.Id);
-                if (result.IsSuccess)
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", "異動類型已刪除");
-                    BackToTransactionTypeList();
-                }
-                else
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", "刪除失敗");
-                }
-            }
-            catch (Exception ex)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{ex.Message}");
-            }
-        }
-    }
-
-    private void BackToTransactionTypeList()
-    {
-        Navigation.NavigateTo("/inventory/transaction-types");
     }
 }

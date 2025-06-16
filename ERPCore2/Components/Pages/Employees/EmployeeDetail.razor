@@ -30,11 +30,10 @@
     </div>
 }
 else if (employee == null)
-{
-    <div class="alert alert-warning">
+{    <div class="alert alert-warning">
         <h4>找不到員工資料</h4>
         <p>指定的員工不存在或已被刪除。</p>
-        <button class="btn btn-primary" @onclick="BackToEmployeeList">
+        <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/employees")'>
             返回員工列表
         </button>
     </div>
@@ -47,15 +46,18 @@ else
                            TitleIcon="person-circle"
                            HeadingLevel="h1"
                            BreadcrumbItems="@breadcrumbItems"
-                           ShowDivider="true">        
-                           <ActionButtons>
+                           ShowDivider="true">                           <ActionButtons>
             <DetailActionButtonsComponent 
                 EntityStatus="@employee?.Status"
                 IsLoading="@isLoading"
-                OnEditClick="@EditEmployee"
-                OnToggleStatusClick="@ToggleEmployeeStatus"
-                OnDeleteClick="@DeleteEmployee"
-                OnBackClick="@BackToEmployeeList"/>
+                EntityName="員工"
+                EntityId="@EmployeeId.ToString()"
+                EntityDisplayName="@GetFullName()"
+                EntityService="@EmployeeService"
+                ListRoute="/employees"
+                EditRoute="/employees/edit"
+                OnShowAlert="@((tuple) => ShowAlert(tuple.message, Enum.Parse<AlertComponent.AlertType>(tuple.type, true)))"
+                OnReloadData="@LoadEmployeeData"/>
         </ActionButtons>
     </GenericHeaderComponent>
 
@@ -451,59 +453,5 @@ else
             ShowAlert("重設密碼時發生錯誤", AlertComponent.AlertType.Danger);
         }
         return Task.CompletedTask;
-    }
-
-    private void BackToEmployeeList()
-    {
-        Navigation.NavigateTo("/employees");
-    }
-
-    private async Task ToggleEmployeeStatus()
-    {
-        if (employee == null) return;
-
-        var newStatus = employee.Status == EntityStatus.Active ? EntityStatus.Inactive : EntityStatus.Active;
-        var isActive = newStatus == EntityStatus.Active;
-        var actionText = isActive ? "啟用" : "停用";
-        
-        try
-        {
-            var result = await EmployeeService.SetEmployeeActiveStatusAsync(EmployeeId, isActive);
-            if (result.IsSuccess)
-            {
-                ShowAlert($"員工{actionText}成功", AlertComponent.AlertType.Success);
-                await LoadEmployeeData(); // 重新載入資料以確保狀態同步
-            }
-            else            {
-                ShowAlert(result.ErrorMessage ?? $"{actionText}失敗", AlertComponent.AlertType.Danger);
-            }
-        }
-        catch (Exception ex)
-        {
-            ShowAlert($"{actionText}時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
-        }
-    }
-
-    private async Task DeleteEmployee()
-    {
-        try
-        {
-            var result = await EmployeeService.DeleteAsync(EmployeeId);
-            if (result.IsSuccess)
-            {
-                ShowAlert("員工刪除成功", AlertComponent.AlertType.Success);
-                // 延遲一下再導航，讓用戶看到成功訊息
-                await Task.Delay(1500);
-                Navigation.NavigateTo("/employees");
-            }
-            else
-            {
-                ShowAlert(result.ErrorMessage ?? "刪除失敗", AlertComponent.AlertType.Danger);
-            }
-        }
-        catch (Exception ex)
-        {
-            ShowAlert($"刪除時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
-        }
     }
 }

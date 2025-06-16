@@ -27,11 +27,10 @@
     </div>
 }
 else if (unit == null)
-{
-    <div class="alert alert-warning">
+{    <div class="alert alert-warning">
         <h4>找不到單位資料</h4>
         <p>指定的單位不存在或已被刪除。</p>
-        <button class="btn btn-primary" @onclick="BackToUnitList">
+        <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/units")'>
             返回單位列表
         </button>
     </div>
@@ -44,16 +43,19 @@ else
                            TitleIcon="rulers"
                            HeadingLevel="h1"
                            BreadcrumbItems="@breadcrumbItems"
-                           ShowDivider="true">        
-        <ActionButtons>
+                           ShowDivider="true">          <ActionButtons>
             <DetailActionButtonsComponent 
                 EntityStatus="@unit?.Status"
                 IsLoading="@isLoading"
-                OnEditClick="@EditUnit"
-                OnToggleStatusClick="@ToggleUnitStatus"
-                OnDeleteClick="@DeleteUnit"
-                OnBackClick="@BackToUnitList"/>
-        </ActionButtons>    </GenericHeaderComponent>
+                EntityName="單位"
+                EntityId="@UnitId.ToString()"
+                EntityDisplayName="@unit?.UnitName"
+                EntityService="@UnitService"
+                ListRoute="/units"
+                EditRoute="/units/edit"
+                OnShowAlert="@((tuple) => ShowAlert(tuple.message, Enum.Parse<AlertComponent.AlertType>(tuple.type, true)))"
+                OnReloadData="@LoadUnitData"/>
+        </ActionButtons></GenericHeaderComponent>
 
     @* 基本資料 *@
     <div class="row">
@@ -221,69 +223,6 @@ else
     {
         Navigation.NavigateTo($"/units/edit/{UnitId}");
     }
-
-    private void BackToUnitList()
-    {
-        Navigation.NavigateTo("/units");
-    }
-
-    private async Task ToggleUnitStatus()
-    {
-        if (unit == null) return;
-
-        var actionText = unit.Status == Data.Enums.EntityStatus.Active ? "停用" : "啟用";
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"確定要{actionText}單位「{unit.UnitName}」嗎？");
-        
-        if (confirmed)
-        {            try
-            {
-                var result = await UnitService.ToggleStatusAsync(UnitId);
-                
-                if (result.IsSuccess)
-                {
-                    ShowAlert($"{actionText}成功", AlertComponent.AlertType.Success);
-                    await LoadUnitData();
-                }
-                else
-                {
-                    ShowAlert(result.ErrorMessage ?? $"{actionText}失敗", AlertComponent.AlertType.Danger);
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowAlert($"{actionText}時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
-            }
-        }
-    }    private async Task DeleteUnit()
-    {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"確定要刪除單位「{unit?.UnitName}」嗎？這個操作無法復原。");
-        
-        if (confirmed)
-        {
-            try
-            {
-                var result = await UnitService.DeleteAsync(UnitId);
-                if (result.IsSuccess)
-                {
-                    ShowAlert("單位刪除成功", AlertComponent.AlertType.Success);
-                    // 延遲一下再導航，讓用戶看到成功訊息
-                    await Task.Delay(1500);
-                    Navigation.NavigateTo("/units");
-                }
-                else
-                {
-                    ShowAlert(result.ErrorMessage ?? "刪除失敗", AlertComponent.AlertType.Danger);
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowAlert($"刪除時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
-            }
-        }
-    }
-
     private string GetPageTitle()
     {
         if (unit == null) return "單位詳細資料";

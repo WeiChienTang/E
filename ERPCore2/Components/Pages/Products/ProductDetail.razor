@@ -26,11 +26,10 @@
     </div>
 }
 else if (product == null)
-{
-    <div class="alert alert-warning">
+{    <div class="alert alert-warning">
         <h4>找不到產品資料</h4>
         <p>指定的產品不存在或已被刪除。</p>
-        <button class="btn btn-primary" @onclick="BackToProductList">
+        <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/products")'>
             返回產品列表
         </button>
     </div>
@@ -43,16 +42,20 @@ else
                            TitleIcon="box"
                            HeadingLevel="h1"
                            BreadcrumbItems="@breadcrumbItems"
-                           ShowDivider="true">        
-        <ActionButtons>
+                           ShowDivider="true">          <ActionButtons>
             <DetailActionButtonsComponent 
                 EntityStatus="@product?.Status"
                 IsLoading="@isLoading"
-                OnEditClick="@EditProduct"
-                OnToggleStatusClick="@ToggleProductStatus"
-                OnDeleteClick="@DeleteProduct"
-                OnBackClick="@BackToProductList"/>
-        </ActionButtons>    </GenericHeaderComponent>
+                EntityName="產品"
+                EntityId="@ProductId.ToString()"
+                EntityDisplayName="@product?.ProductName"
+                EntityService="@ProductService"
+                ListRoute="/products"
+                EditRoute="/products/edit"
+                OnShowAlert="@((tuple) => ShowAlert(tuple.message, Enum.Parse<AlertComponent.AlertType>(tuple.type, true)))"
+                OnReloadData="@LoadProductData"/>
+        </ActionButtons>
+    </GenericHeaderComponent>
 
     @* 基本資料 *@
     <div class="row">
@@ -77,7 +80,8 @@ else
                                 <label class="form-label text-muted">產品名稱</label>
                                 <div class="fw-bold">@product?.ProductName</div>
                             </div>
-                        </div>                        <div class="col-md-6">
+                        </div>
+                        <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label text-muted">分類</label>
                                 <div>-</div>
@@ -93,7 +97,7 @@ else
                             <div class="mb-3">
                                 <label class="form-label text-muted">狀態</label>
                                 <div>
-                                    @if (product?.Status == Data.Enums.EntityStatus.Active)
+                                    @if (product?.Status == EntityStatus.Active)
                                     {
                                         <span class="badge bg-success">啟用</span>
                                     }
@@ -126,7 +130,9 @@ else
                 </div>
             </div>
         </div>
-    </div>    @* 規格資訊 *@
+    </div>
+
+    @* 規格資訊 *@
     <div class="row">
         <div class="col-12">
             <div class="card mb-4">
@@ -235,71 +241,6 @@ else
         Navigation.NavigateTo($"/products/edit/{ProductId}");
     }
 
-    private void BackToProductList()
-    {
-        Navigation.NavigateTo("/products");
-    }
-
-    private async Task ToggleProductStatus()
-    {
-        if (product == null) return;
-
-        var actionText = product.Status == Data.Enums.EntityStatus.Active ? "停用" : "啟用";
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"確定要{actionText}產品「{product.ProductName}」嗎？");
-        
-        if (confirmed)
-        {
-            try
-            {
-                var result = await ProductService.ToggleStatusAsync(ProductId);
-                
-                if (result.IsSuccess)
-                {
-                    ShowAlert($"{actionText}成功", AlertComponent.AlertType.Success);
-                    await LoadProductData();
-                }
-                else
-                {
-                    ShowAlert(result.ErrorMessage ?? $"{actionText}失敗", AlertComponent.AlertType.Danger);
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowAlert($"{actionText}時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
-            }
-        }
-    }
-
-    private async Task DeleteProduct()
-    {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"確定要刪除產品「{product?.ProductName}」嗎？這個操作無法復原。");
-        
-        if (confirmed)
-        {
-            try
-            {
-                var result = await ProductService.DeleteAsync(ProductId);
-                if (result.IsSuccess)
-                {
-                    ShowAlert("產品刪除成功", AlertComponent.AlertType.Success);
-                    // 延遲一下再導航，讓用戶看到成功訊息
-                    await Task.Delay(1500);
-                    Navigation.NavigateTo("/products");
-                }
-                else
-                {
-                    ShowAlert(result.ErrorMessage ?? "刪除失敗", AlertComponent.AlertType.Danger);
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowAlert($"刪除時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
-            }
-        }
-    }
-
     private string GetPageTitle()
     {
         if (product == null) return "產品詳細資料";
@@ -310,7 +251,9 @@ else
     {
         if (product == null) return "";
         return $"產品代碼：{product.ProductCode ?? "未設定"}";
-    }    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
+    }
+
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
     {
         new("首頁", "/"),
         new("產品管理", "/products"),

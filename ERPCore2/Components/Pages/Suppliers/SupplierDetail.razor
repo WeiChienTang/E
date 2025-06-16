@@ -27,11 +27,10 @@
     </div>
 }
 else if (supplier == null)
-{
-    <div class="alert alert-warning">
+{    <div class="alert alert-warning">
         <h4>找不到廠商資料</h4>
         <p>指定的廠商不存在或已被刪除。</p>
-        <button class="btn btn-primary" @onclick="BackToSupplierList">
+        <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/suppliers")'>
             返回廠商列表
         </button>
     </div>
@@ -45,10 +44,14 @@ else
             <DetailActionButtonsComponent 
                 EntityStatus="@supplier?.Status"
                 IsLoading="@isLoading"
-                OnEditClick="@(() => Navigation.NavigateTo($"/suppliers/edit/{supplier?.Id}"))"
-                OnToggleStatusClick="@ToggleStatusAsync"
-                OnDeleteClick="@DeleteAsync"
-                OnBackClick="@BackToSupplierList"/>
+                EntityName="廠商"
+                EntityId="@SupplierId.ToString()"
+                EntityDisplayName="@supplier?.CompanyName"
+                EntityService="@SupplierService"
+                ListRoute="/suppliers"
+                EditRoute="/suppliers/edit"
+                OnShowAlert="@((tuple) => ShowAlert(tuple.message, Enum.Parse<AlertComponent.AlertType>(tuple.type, true)))"
+                OnReloadData="@LoadSupplierData"/>
         </ActionButtons>
     </GenericHeaderComponent>
 
@@ -344,52 +347,6 @@ else
             isLoading = false;
             StateHasChanged();
         }
-    }    private async Task ToggleStatusAsync()
-    {
-        if (supplier == null) return;        
-        
-        try
-        {
-            var result = await SupplierService.ToggleStatusAsync(supplier.Id);
-            if (result.IsSuccess)
-            {
-                var statusText = supplier.Status == Data.Enums.EntityStatus.Active ? "停用" : "啟用";
-                ShowAlert($"廠商已{statusText}", AlertComponent.AlertType.Success);
-                await LoadSupplierData(); // 重新載入資料以確保狀態同步
-            }
-            else
-            {
-                ShowAlert($"狀態更新失敗：{result.ErrorMessage}", AlertComponent.AlertType.Danger);
-            }
-        }
-        catch (Exception ex)
-        {
-            ShowAlert($"狀態更新失敗：{ex.Message}", AlertComponent.AlertType.Danger);
-        }
-    }    private async Task DeleteAsync()
-    {
-        if (supplier == null) return;
-
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "確定要刪除這個廠商嗎？此操作無法復原。");
-        if (!confirmed) return;
-
-        try
-        {
-            await SupplierService.DeleteAsync(supplier.Id);
-            ShowAlert("廠商已刪除", AlertComponent.AlertType.Success);
-            // 延遲一下再導航，讓用戶看到成功訊息
-            await Task.Delay(1500);
-            Navigation.NavigateTo("/suppliers");
-        }
-        catch (Exception ex)
-        {
-            ShowAlert($"刪除失敗：{ex.Message}", AlertComponent.AlertType.Danger);
-        }
-    }
-
-    private void BackToSupplierList()
-    {
-        Navigation.NavigateTo("/suppliers");
     }    private string GetFullAddress(SupplierAddress address)
     {
         var addressParts = new List<string>();
@@ -401,7 +358,9 @@ else
         if (!string.IsNullOrEmpty(address.District))
             addressParts.Add(address.District);
         if (!string.IsNullOrEmpty(address.Address))
-            addressParts.Add(address.Address);        return addressParts.Any() ? string.Join(" ", addressParts) : "-";
+            addressParts.Add(address.Address);
+
+        return addressParts.Any() ? string.Join(" ", addressParts) : "-";
     }
 
     private void ShowAlert(string message, AlertComponent.AlertType type)
