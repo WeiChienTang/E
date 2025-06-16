@@ -1,5 +1,4 @@
 @* Enhanced Detail 頁面動作按鈕組件 - 提供統一的編輯、啟用/停用、刪除和返回按鈕 *@
-@using ERPCore2.Data.Enums
 @using Microsoft.JSInterop
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -11,11 +10,9 @@
             <i class="@EditButtonIcon me-1"></i>
             @EditButtonText
         </button>
-    }
-
-    @if (ShowToggleStatusButton && EntityStatus.HasValue)
+    }    @if (ShowToggleStatusButton && EntityStatus != null)
     {
-        @if (EntityStatus == ERPCore2.Data.Enums.EntityStatus.Active)
+        @if (EntityStatus.ToString() == "Active")
         {
             <button class="btn btn-warning" @onclick="HandleToggleStatusClick" disabled="@IsLoading">
                 <i class="@DeactivateButtonIcon me-1"></i>
@@ -83,14 +80,14 @@
     [Parameter] public string DeactivateButtonIcon { get; set; } = "bi bi-power";
     [Parameter] public string DeleteButtonIcon { get; set; } = "bi bi-trash";
     [Parameter] public string PrintButtonIcon { get; set; } = "bi bi-printer";
-    [Parameter] public string BackButtonIcon { get; set; } = "bi bi-arrow-left";
-
+    [Parameter] public string BackButtonIcon { get; set; } = "bi bi-arrow-left";    
+    
     // 實體狀態
-    [Parameter] public ERPCore2.Data.Enums.EntityStatus? EntityStatus { get; set; }
+    [Parameter] public object? EntityStatus { get; set; }
 
     // 載入狀態
-    [Parameter] public bool IsLoading { get; set; } = false;
-
+    [Parameter] public bool IsLoading { get; set; } = false;    
+    
     // 新增：通用參數化操作
     [Parameter] public string? EntityName { get; set; }
     [Parameter] public string? EntityId { get; set; }
@@ -99,6 +96,9 @@
     [Parameter] public string? EditRoute { get; set; }
     [Parameter] public string? DeleteConfirmMessage { get; set; }
     [Parameter] public object? EntityService { get; set; }
+    
+    // 新增：服務方法類型
+    [Parameter] public Type? ServiceType { get; set; }
 
     // 事件處理器（用於Alert顯示和重新載入）
     [Parameter] public EventCallback<(string message, string type)> OnShowAlert { get; set; }
@@ -127,18 +127,68 @@
         {
             await OnEditClick.InvokeAsync();
         }
-    }
-
-    private async Task HandleToggleStatusClick()
+    }    private async Task HandleToggleStatusClick()
     {
-        // 新增：簡化的通用狀態切換邏輯（暫時使用回調）
-        if (OnToggleStatusClick.HasDelegate)
+        // 新增：通用狀態切換邏輯
+        if (!string.IsNullOrEmpty(EntityId) && EntityService != null)
+        {
+            try
+            {
+                // 使用反射調用服務的 ToggleStatusAsync 方法
+                var toggleMethod = EntityService.GetType().GetMethod("ToggleStatusAsync");
+                if (toggleMethod != null)
+                {
+                    var entityId = int.Parse(EntityId);
+                    var task = (Task)toggleMethod.Invoke(EntityService, new object[] { entityId })!;
+                    await task;
+                    
+                    // 獲取結果
+                    var resultProperty = task.GetType().GetProperty("Result");
+                    if (resultProperty != null)
+                    {
+                        var result = resultProperty.GetValue(task);
+                        var isSuccessProperty = result?.GetType().GetProperty("IsSuccess");
+                        var errorMessageProperty = result?.GetType().GetProperty("ErrorMessage");
+                        
+                        if (isSuccessProperty != null && (bool)isSuccessProperty.GetValue(result)!)
+                        {
+                            var statusText = EntityStatus?.ToString() == "Active" ? "停用" : "啟用";
+                            if (OnShowAlert.HasDelegate)
+                            {
+                                await OnShowAlert.InvokeAsync(($"{EntityName}已{statusText}", "success"));
+                            }
+                            
+                            // 重新載入數據
+                            if (OnReloadData.HasDelegate)
+                            {
+                                await OnReloadData.InvokeAsync();
+                            }
+                        }
+                        else
+                        {
+                            var errorMessage = errorMessageProperty?.GetValue(result)?.ToString() ?? "未知錯誤";
+                            if (OnShowAlert.HasDelegate)
+                            {
+                                await OnShowAlert.InvokeAsync(($"狀態更新失敗：{errorMessage}", "danger"));
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                if (OnShowAlert.HasDelegate)
+                {
+                    await OnShowAlert.InvokeAsync(($"狀態更新失敗：{ex.Message}", "danger"));
+                }
+            }
+        }
+        // 否則使用原有的回調方式（向下相容）
+        else if (OnToggleStatusClick.HasDelegate)
         {
             await OnToggleStatusClick.InvokeAsync();
         }
-    }
-
-    private async Task HandleDeleteClick()
+    }    private async Task HandleDeleteClick()
     {
         // 新增：通用刪除邏輯
         if (!string.IsNullOrEmpty(EntityName) && !string.IsNullOrEmpty(EntityDisplayName))
@@ -149,12 +199,57 @@
             
             var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", message);
             
-            if (confirmed)
+            if (confirmed && !string.IsNullOrEmpty(EntityId) && EntityService != null)
             {
-                // 暫時使用回調，之後可以擴展為直接調用服務
-                if (OnDeleteClick.HasDelegate)
+                try
                 {
-                    await OnDeleteClick.InvokeAsync();
+                    // 使用反射調用服務的 DeleteAsync 方法
+                    var deleteMethod = EntityService.GetType().GetMethod("DeleteAsync");
+                    if (deleteMethod != null)
+                    {
+                        var entityId = int.Parse(EntityId);
+                        var task = (Task)deleteMethod.Invoke(EntityService, new object[] { entityId })!;
+                        await task;
+                        
+                        // 獲取結果
+                        var resultProperty = task.GetType().GetProperty("Result");
+                        if (resultProperty != null)
+                        {
+                            var result = resultProperty.GetValue(task);
+                            var isSuccessProperty = result?.GetType().GetProperty("IsSuccess");
+                            var errorMessageProperty = result?.GetType().GetProperty("ErrorMessage");
+                            
+                            if (isSuccessProperty != null && (bool)isSuccessProperty.GetValue(result)!)
+                            {
+                                if (OnShowAlert.HasDelegate)
+                                {
+                                    await OnShowAlert.InvokeAsync(($"{EntityName}已刪除", "success"));
+                                }
+                                
+                                // 延遲後導航到列表頁面
+                                await Task.Delay(1000);
+                                if (!string.IsNullOrEmpty(ListRoute))
+                                {
+                                    Navigation.NavigateTo(ListRoute);
+                                }
+                            }
+                            else
+                            {
+                                var errorMessage = errorMessageProperty?.GetValue(result)?.ToString() ?? "未知錯誤";
+                                if (OnShowAlert.HasDelegate)
+                                {
+                                    await OnShowAlert.InvokeAsync(($"刪除失敗：{errorMessage}", "danger"));
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (OnShowAlert.HasDelegate)
+                    {
+                        await OnShowAlert.InvokeAsync(($"刪除失敗：{ex.Message}", "danger"));
+                    }
                 }
             }
         }

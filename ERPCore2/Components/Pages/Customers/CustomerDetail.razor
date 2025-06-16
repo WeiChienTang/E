@@ -46,17 +46,18 @@ else
                            TitleIcon="person-badge"
                            HeadingLevel="h1"
                            BreadcrumbItems="@breadcrumbItems"
-                           ShowDivider="true">          <ActionButtons>
+                           ShowDivider="true">        <ActionButtons>
             <DetailActionButtonsComponent 
                 EntityStatus="@customer?.Status"
                 IsLoading="@isLoading"
                 EntityName="客戶"
                 EntityId="@CustomerId.ToString()"
                 EntityDisplayName="@customer?.CompanyName"
+                EntityService="@CustomerService"
                 ListRoute="/customers"
                 EditRoute="/customers/edit"
-                OnToggleStatusClick="@ToggleStatusAsync"
-                OnDeleteClick="@DeleteCustomer"/>
+                OnShowAlert="@((tuple) => ShowAlert(tuple.message, Enum.Parse<AlertComponent.AlertType>(tuple.type, true)))"
+                OnReloadData="@LoadCustomerData"/>
         </ActionButtons>
         </GenericHeaderComponent>
 
@@ -270,59 +271,6 @@ else
         
         if (!string.IsNullOrEmpty(address.Address))
             parts.Add(address.Address);        return parts.Any() ? string.Join(" ", parts) : "地址不完整";
-    }
-
-    private async Task ToggleStatusAsync()
-    {
-        if (customer == null) return;
-
-        try
-        {
-            var result = await CustomerService.ToggleStatusAsync(CustomerId);
-            if (result.IsSuccess)
-            {
-                var statusText = customer.Status == Data.Enums.EntityStatus.Active ? "停用" : "啟用";
-                ShowAlert($"客戶已{statusText}", AlertComponent.AlertType.Success);
-                await LoadCustomerData(); // 重新載入資料以確保狀態同步
-            }
-            else
-            {
-                ShowAlert($"狀態更新失敗：{result.ErrorMessage}", AlertComponent.AlertType.Danger);
-            }
-        }
-        catch (Exception ex)
-        {
-            ShowAlert($"狀態更新失敗：{ex.Message}", AlertComponent.AlertType.Danger);
-        }
-    }
-
-    private async Task DeleteCustomer()
-    {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"確定要刪除客戶「{customer?.CompanyName}」嗎？這個操作無法復原。");
-        
-        if (confirmed)
-        {
-            try
-            {
-                var result = await CustomerService.DeleteAsync(CustomerId);
-                if (result.IsSuccess)
-                {
-                    ShowAlert("客戶刪除成功", AlertComponent.AlertType.Success);
-                    // 延遲一下再導航，讓用戶看到成功訊息
-                    await Task.Delay(1000);
-                    Navigation.NavigateTo("/customers");
-                }
-                else
-                {
-                    ShowAlert(result.ErrorMessage ?? "刪除失敗", AlertComponent.AlertType.Danger);
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowAlert($"刪除時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
-            }
-        }
     }
 
     private string GetPageTitle()
