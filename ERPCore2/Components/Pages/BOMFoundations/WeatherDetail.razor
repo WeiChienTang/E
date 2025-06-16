@@ -1,9 +1,4 @@
 @page "/BOMFoundation/weather/detail/{weatherId:int}"
-@using ERPCore2.Components.Shared.Details
-@using ERPCore2.Components.Shared.Buttons
-@using ERPCore2.Data.Entities
-@using ERPCore2.Services
-@using Microsoft.AspNetCore.Components.Web
 @inject IWeatherService WeatherService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -32,10 +27,137 @@ else if (weather == null)
 }
 else
 {
-    <GenericDetailsComponent Configuration="@detailConfiguration" 
-                           OnSectionLoad="HandleSectionLoad"
-                           OnItemClick="HandleItemClick"
-                           ActionButtons="@ActionButtons" />
+    <GenericHeaderComponent Title="@weather.Name" 
+                          Subtitle="@($"天氣代碼：{weather.Code}")"
+                          Icon="bi bi-cloud-sun"
+                          BreadcrumbItems="@breadcrumbItems">
+        <ActionButtons>
+            <DetailActionButtonsComponent 
+                Entity="@weather"
+                OnToggleStatus="ToggleStatusAsync"
+                OnDelete="DeleteAsync"
+                OnBack="BackToWeatherList" />
+        </ActionButtons>
+    </GenericHeaderComponent>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <!-- 基本資訊 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-info-circle me-2"></i>基本資訊
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">天氣代碼</label>
+                                    <div>@weather.Code</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">天氣名稱</label>
+                                    <div class="fw-bold">@weather.Name</div>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(weather.Icon))
+                            {
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">圖示</label>
+                                        <div>@weather.Icon</div>
+                                    </div>
+                                </div>
+                            }
+                            @if (weather.ReferenceTemperature.HasValue)
+                            {
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">參考溫度</label>
+                                        <div>@weather.ReferenceTemperature°C</div>
+                                    </div>
+                                </div>
+                            }
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">狀態</label>
+                                    <div>
+                                        @if (weather.Status == Data.Enums.EntityStatus.Active)
+                                        {
+                                            <span class="badge bg-success">啟用</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">停用</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(weather.Description))
+                            {
+                                <div class="col-12">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">描述</label>
+                                        <div>@weather.Description</div>
+                                    </div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(weather.Remarks))
+                            {
+                                <div class="col-12">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">備註</label>
+                                        <div>@weather.Remarks</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 系統資訊 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-gear me-2"></i>系統資訊
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">建立日期</label>
+                                    <div>@weather.CreatedAt.ToString("yyyy/MM/dd HH:mm")</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">建立者</label>
+                                    <div>@(weather.CreatedBy ?? "-")</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">最後更新</label>
+                                    <div>@(weather.UpdatedAt?.ToString("yyyy/MM/dd HH:mm") ?? "-")</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">更新者</label>
+                                    <div>@(weather.UpdatedBy ?? "-")</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 }
 
 @code {
@@ -43,12 +165,12 @@ else
 
     private Weather? weather;
     private bool isLoading = true;
-    private DetailViewConfiguration detailConfiguration = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
     protected override async Task OnInitializedAsync()
     {
+        InitializeBreadcrumb();
         await LoadWeatherData();
-        InitializeDetailConfiguration();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -56,8 +178,18 @@ else
         if (WeatherId > 0)
         {
             await LoadWeatherData();
-            InitializeDetailConfiguration();
         }
+    }
+
+    private void InitializeBreadcrumb()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new() { Text = "首頁", Href = "/" },
+            new() { Text = "BOM 基礎資料", Href = "/BOMFoundation" },
+            new() { Text = "天氣管理", Href = "/BOMFoundation/weather" },
+            new() { Text = "天氣詳情" }
+        };
     }
 
     private async Task LoadWeatherData()
@@ -67,7 +199,6 @@ else
             isLoading = true;
             StateHasChanged();
 
-            // 載入天氣基本資料
             weather = await WeatherService.GetByIdAsync(WeatherId);
         }
         catch (Exception ex)
@@ -81,223 +212,52 @@ else
         }
     }
 
-    private void InitializeDetailConfiguration()
+    private async Task ToggleStatusAsync()
     {
         if (weather == null) return;
 
-        detailConfiguration = new DetailViewConfiguration
+        try
         {
-            Title = weather.Name,
-            Subtitle = $"天氣代碼：{weather.Code}",
-            TitleIcon = "bi bi-cloud-sun",
-            UseTabs = false, // 使用分頁模式展示基本資料和天氣資訊
-            Sections = new List<DetailSection>
+            var result = await WeatherService.ToggleStatusAsync(weather.Id);
+            if (result.IsSuccess)
             {
-                CreateBasicInfoSection(),
-                CreateWeatherInfoSection()
+                weather.Status = weather.Status == Data.Enums.EntityStatus.Active 
+                    ? Data.Enums.EntityStatus.Inactive 
+                    : Data.Enums.EntityStatus.Active;
+                    
+                StateHasChanged();
+
+                var statusText = weather.Status == Data.Enums.EntityStatus.Active ? "啟用" : "停用";
+                await JSRuntime.InvokeVoidAsync("showToast", $"天氣已{statusText}", "success");
             }
-        };
-    }
-
-    private DetailSection CreateBasicInfoSection()
-    {
-        var items = new List<DetailItem>
-        {
-            new() { 
-                Label = "天氣名稱", 
-                Value = weather!.Name, 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6",
-                IsHighlight = true
-            },
-            new() { 
-                Label = "天氣代碼", 
-                Value = weather.Code, 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "狀態", 
-                Value = GetStatusText(weather.Status), 
-                DisplayType = DetailDisplayType.Status,
-                Format = new DetailItemFormat 
-                { 
-                    StatusColors = new Dictionary<string, string>
-                    {
-                        { "啟用", "bg-success" },
-                        { "停用", "bg-danger" },
-                        { "已刪除", "bg-secondary" }
-                    }
-                },
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "建立日期", 
-                Value = weather.CreatedAt, 
-                DisplayType = DetailDisplayType.DateTime,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "建立者", 
-                Value = weather.CreatedBy ?? "系統", 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("showToast", $"狀態更新失敗：{result.ErrorMessage}", "error");
             }
-        };
-
-        // 加入最後更新時間（如果有的話）
-        if (weather.UpdatedAt.HasValue)
-        {
-            items.Add(new DetailItem { 
-                Label = "最後更新", 
-                Value = weather.UpdatedAt, 
-                DisplayType = DetailDisplayType.DateTime,
-                ContainerCssClass = "col-md-6"
-            });
         }
-
-        // 加入更新者（如果有的話）
-        if (!string.IsNullOrWhiteSpace(weather.UpdatedBy))
+        catch (Exception ex)
         {
-            items.Add(new DetailItem { 
-                Label = "更新者", 
-                Value = weather.UpdatedBy, 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            });
+            await JSRuntime.InvokeVoidAsync("showToast", $"狀態更新失敗：{ex.Message}", "error");
         }
-
-        // 加入描述（如果有的話）
-        if (!string.IsNullOrWhiteSpace(weather.Description))
-        {
-            items.Add(new DetailItem { 
-                Label = "描述", 
-                Value = weather.Description, 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-12"
-            });
-        }
-
-        // 加入備註（如果有的話）
-        if (!string.IsNullOrWhiteSpace(weather.Remarks))
-        {
-            items.Add(new DetailItem { 
-                Label = "備註", 
-                Value = weather.Remarks, 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-12"
-            });
-        }
-
-        return new DetailSection
-        {
-            Id = "basic",
-            Title = "基本資料",
-            Icon = "bi bi-info-circle",
-            Items = items
-        };
     }
 
-    private DetailSection CreateWeatherInfoSection()
+    private async Task DeleteAsync()
     {
-        var items = new List<DetailItem>();        // 圖示
-        if (!string.IsNullOrWhiteSpace(weather!.Icon))
+        if (weather == null) return;
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "確定要刪除這個天氣資料嗎？此操作無法復原。");
+        if (!confirmed) return;
+
+        try
         {
-            items.Add(new DetailItem { 
-                Label = "圖示", 
-                Value = weather.Icon, 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6",
-                IsHighlight = true
-            });
+            await WeatherService.DeleteAsync(weather.Id);
+            await JSRuntime.InvokeVoidAsync("showToast", "天氣已刪除", "success");
+            Navigation.NavigateTo("/BOMFoundation/weather");
         }
-
-        // 參考溫度
-        if (weather.ReferenceTemperature.HasValue)
+        catch (Exception ex)
         {
-            items.Add(new DetailItem { 
-                Label = "參考溫度", 
-                Value = weather.ReferenceTemperature.Value.ToString("0.0") + "°C", 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            });
+            await JSRuntime.InvokeVoidAsync("showToast", $"刪除失敗：{ex.Message}", "error");
         }
-
-        // 如果沒有任何天氣資訊
-        if (!items.Any())
-        {
-            items.Add(new DetailItem { 
-                Label = "天氣資訊", 
-                Value = "暫無詳細天氣資訊", 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-12"
-            });
-        }
-
-        return new DetailSection
-        {
-            Id = "weatherinfo",
-            Title = "天氣資訊",
-            Icon = "bi bi-cloud-drizzle",
-            Items = items
-        };
-    }
-
-    private string GetStatusText(Data.Enums.EntityStatus status)
-    {
-        return status switch
-        {
-            Data.Enums.EntityStatus.Active => "啟用",
-            Data.Enums.EntityStatus.Inactive => "停用",
-            Data.Enums.EntityStatus.Deleted => "已刪除",
-            _ => "未知"
-        };
-    }    // Action Buttons
-    private RenderFragment ActionButtons => __builder =>
-    {
-        <div class="btn-group">
-            <button class="btn btn-primary" @onclick="EditWeather">
-                <i class="bi bi-pencil me-1"></i>
-                編輯
-            </button>
-            <button class="btn btn-outline-secondary" @onclick="PrintWeather">
-                <i class="bi bi-printer me-1"></i>
-                列印
-            </button>
-            <button class="btn btn-outline-secondary" @onclick="BackToList">
-                <i class="bi bi-arrow-left me-1"></i>
-                返回列表
-            </button>
-        </div>
-    };
-
-    private async Task HandleSectionLoad(string sectionId)
-    {
-        // 目前所有資料都在初始載入時取得，所以這裡不需要額外處理
-        // 未來如果需要延遲載入特定區塊的資料，可以在這裡實作
-        await Task.CompletedTask;
-    }
-
-    private async Task HandleItemClick(GenericDetailsComponent.DetailItemClickEventArgs args)
-    {
-        // 處理項目點擊事件
-        // 例如：點擊圖示預覽等
-        await Task.CompletedTask;
-    }
-
-    private void EditWeather()
-    {
-        Navigation.NavigateTo($"/BOMFoundation/weather/edit/{WeatherId}");
-    }
-
-    private async Task PrintWeather()
-    {
-        await JSRuntime.InvokeVoidAsync("window.print");
-    }
-
-    private void BackToList()
-    {
-        Navigation.NavigateTo("/BOMFoundation/weather");
     }
 
     private void BackToWeatherList()

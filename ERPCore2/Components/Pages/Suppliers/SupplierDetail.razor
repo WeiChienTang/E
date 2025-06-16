@@ -1,8 +1,4 @@
 @page "/suppliers/detail/{supplierId:int}"
-@using ERPCore2.Components.Shared.Details
-@using ERPCore2.Components.Shared.Buttons
-@using ERPCore2.Data.Entities
-@using Microsoft.AspNetCore.Components.Web
 @inject ISupplierService SupplierService
 @inject ISupplierContactService SupplierContactService
 @inject ISupplierAddressService SupplierAddressService
@@ -33,10 +29,245 @@ else if (supplier == null)
 }
 else
 {
-    <GenericDetailsComponent Configuration="@detailConfiguration" 
-                           OnSectionLoad="HandleSectionLoad"
-                           OnItemClick="HandleItemClick"
-                           ActionButtons="@ActionButtons" />
+    <GenericHeaderComponent Title="@supplier.CompanyName" 
+                          Subtitle="@($"廠商編號：{supplier.SupplierCode}")"
+                          Icon="bi bi-building-gear"
+                          BreadcrumbItems="@breadcrumbItems">
+        <ActionButtons>
+            <DetailActionButtonsComponent 
+                Entity="@supplier"
+                OnToggleStatus="ToggleStatusAsync"
+                OnDelete="DeleteAsync"
+                OnBack="BackToSupplierList" />
+        </ActionButtons>
+    </GenericHeaderComponent>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <!-- 基本資訊 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-info-circle me-2"></i>基本資訊
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">廠商代碼</label>
+                                    <div>@supplier.SupplierCode</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">公司名稱</label>
+                                    <div class="fw-bold">@supplier.CompanyName</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">聯絡人</label>
+                                    <div>@(supplier.ContactPerson ?? "-")</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">統一編號</label>
+                                    <div>@(supplier.TaxNumber ?? "-")</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">付款條件</label>
+                                    <div>@(supplier.PaymentTerms ?? "-")</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">信用額度</label>
+                                    <div>@(supplier.CreditLimit?.ToString("C") ?? "-")</div>
+                                </div>
+                            </div>                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">廠商類型</label>
+                                    <div>@(supplier.SupplierType?.TypeName ?? "-")</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">行業類型</label>
+                                    <div>@(supplier.IndustryType?.IndustryTypeName ?? "-")</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">狀態</label>
+                                    <div>
+                                        @if (supplier.Status == Data.Enums.EntityStatus.Active)
+                                        {
+                                            <span class="badge bg-success">啟用</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">停用</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(supplier.Remarks))
+                            {
+                                <div class="col-12">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">備註</label>
+                                        <div>@supplier.Remarks</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 聯絡方式 -->
+                @if (supplierContacts.Any())
+                {
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-telephone me-2"></i>聯絡方式
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>類型</th>
+                                            <th>值</th>
+                                            <th>主要</th>
+                                            <th>狀態</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var contact in supplierContacts)
+                                        {                                            <tr>
+                                                <td>@(contact.ContactType?.TypeName ?? "-")</td>
+                                                <td>@contact.ContactValue</td>
+                                                <td>
+                                                    @if (contact.IsPrimary)
+                                                    {
+                                                        <span class="badge bg-primary">主要</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @if (contact.Status == Data.Enums.EntityStatus.Active)
+                                                    {
+                                                        <span class="badge bg-success">啟用</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-danger">停用</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- 地址資料 -->
+                @if (supplierAddresses.Any())
+                {
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-geo-alt me-2"></i>地址資料
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>類型</th>
+                                            <th>地址</th>
+                                            <th>主要</th>
+                                            <th>狀態</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var address in supplierAddresses)
+                                        {                                            <tr>
+                                                <td>@(address.AddressType?.TypeName ?? "-")</td>
+                                                <td>@GetFullAddress(address)</td>
+                                                <td>
+                                                    @if (address.IsPrimary)
+                                                    {
+                                                        <span class="badge bg-primary">主要</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @if (address.Status == Data.Enums.EntityStatus.Active)
+                                                    {
+                                                        <span class="badge bg-success">啟用</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-danger">停用</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- 系統資訊 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-gear me-2"></i>系統資訊
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">建立日期</label>
+                                    <div>@supplier.CreatedAt.ToString("yyyy/MM/dd HH:mm")</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">建立者</label>
+                                    <div>@(supplier.CreatedBy ?? "-")</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">最後更新</label>
+                                    <div>@(supplier.UpdatedAt?.ToString("yyyy/MM/dd HH:mm") ?? "-")</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">更新者</label>
+                                    <div>@(supplier.UpdatedBy ?? "-")</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 }
 
 @code {
@@ -46,12 +277,12 @@ else
     private List<SupplierContact> supplierContacts = new();
     private List<SupplierAddress> supplierAddresses = new();
     private bool isLoading = true;
-    private DetailViewConfiguration detailConfiguration = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
     protected override async Task OnInitializedAsync()
     {
+        InitializeBreadcrumb();
         await LoadSupplierData();
-        InitializeDetailConfiguration();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -59,8 +290,15 @@ else
         if (SupplierId > 0)
         {
             await LoadSupplierData();
-            InitializeDetailConfiguration();
         }
+    }    private void InitializeBreadcrumb()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new() { Text = "首頁", Href = "/" },
+            new() { Text = "廠商管理", Href = "/suppliers" },
+            new() { Text = "廠商詳情" }
+        };
     }
 
     private async Task LoadSupplierData()
@@ -91,372 +329,70 @@ else
             isLoading = false;
             StateHasChanged();
         }
-    }
-
-    private void InitializeDetailConfiguration()
+    }    private async Task ToggleStatusAsync()
     {
         if (supplier == null) return;
 
-        detailConfiguration = new DetailViewConfiguration
+        try
         {
-            Title = supplier.CompanyName,
-            Subtitle = $"廠商編號：{supplier.SupplierCode}",
-            TitleIcon = "bi bi-building-gear",
-            UseTabs = true,
-            Sections = new List<DetailSection>
+            var result = await SupplierService.ToggleStatusAsync(supplier.Id);
+            if (result.IsSuccess)
             {
-                CreateBasicInfoSection(),
-                CreateContactSection(),
-                CreateAddressSection()
-            }
-        };
-    }
+                supplier.Status = supplier.Status == Data.Enums.EntityStatus.Active 
+                    ? Data.Enums.EntityStatus.Inactive 
+                    : Data.Enums.EntityStatus.Active;
+                    
+                StateHasChanged();
 
-    private DetailSection CreateBasicInfoSection()
-    {
-        var items = new List<DetailItem>
-        {
-            new()
-            {
-                Label = "廠商代碼",
-                Value = supplier!.SupplierCode,
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                Label = "公司名稱",
-                Value = supplier.CompanyName,
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6",
-                IsHighlight = true
-            },
-            new()
-            {
-                Label = "聯絡人",
-                Value = supplier.ContactPerson ?? "-",
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                Label = "統一編號",
-                Value = supplier.TaxNumber ?? "-",
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                Label = "付款條件",
-                Value = supplier.PaymentTerms ?? "-",
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                Label = "信用額度",
-                Value = supplier.CreditLimit,
-                DisplayType = DetailDisplayType.Currency,
-                ContainerCssClass = "col-md-6",
-                Format = new DetailItemFormat { CurrencySymbol = "NT$", DecimalPlaces = 0 }
-            },
-            new()
-            {
-                Label = "狀態",
-                Value = GetStatusText(supplier.Status),
-                DisplayType = DetailDisplayType.Status,
-                Format = new DetailItemFormat
-                {
-                    StatusColors = new Dictionary<string, string>
-                    {
-                        { "啟用", "bg-success" },
-                        { "停用", "bg-danger" },
-                        { "已刪除", "bg-secondary" }
-                    }
-                },
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                Label = "建立日期",
-                Value = supplier.CreatedAt,
-                DisplayType = DetailDisplayType.DateTime,
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                Label = "最後更新",
-                Value = supplier.UpdatedAt,
-                DisplayType = DetailDisplayType.DateTime,
-                ContainerCssClass = "col-md-6"
-            }
-        };
-
-        // 加入備註（如果有的話）
-        if (!string.IsNullOrWhiteSpace(supplier.Remarks))
-        {
-            items.Add(new DetailItem
-            {
-                Label = "備註",
-                Value = supplier.Remarks,
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-12"
-            });
-        }
-
-        return new DetailSection
-        {
-            Id = "basic",
-            Title = "基本資料",
-            Icon = "bi bi-info-circle",
-            Items = items
-        };
-    }
-
-    private DetailSection CreateContactSection()
-    {
-        var items = new List<DetailItem>();
-        
-        if (supplierContacts.Any())
-        {
-            foreach (var contact in supplierContacts.OrderBy(c => c.ContactType?.TypeName))
-            {
-                var displayType = GetContactDisplayType(contact.ContactType?.TypeName);
-                
-                items.Add(new DetailItem
-                {
-                    Label = $"{contact.ContactType?.TypeName ?? "未知類型"}{(contact.IsPrimary ? " (主要)" : "")}",
-                    Value = contact.ContactValue,
-                    DisplayType = displayType,
-                    ContainerCssClass = "col-md-6",
-                    IsHighlight = contact.IsPrimary
-                });
-            }
-        }
-        else
-        {
-            items.Add(new DetailItem
-            {
-                Label = "聯絡方式",
-                Value = "尚未建立任何聯絡方式",
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-12"
-            });
-        }
-
-        return new DetailSection
-        {
-            Id = "contact",
-            Title = "聯絡方式",
-            Icon = "bi bi-telephone",
-            Items = items
-        };
-    }
-
-    private DetailSection CreateAddressSection()
-    {
-        var items = new List<DetailItem>();
-        
-        if (supplierAddresses.Any())
-        {
-            foreach (var address in supplierAddresses.OrderByDescending(a => a.IsPrimary))
-            {
-                var fullAddress = BuildFullAddress(address);
-                
-                items.Add(new DetailItem
-                {
-                    Label = address.AddressType?.TypeName ?? "地址",
-                    Value = fullAddress,
-                    DisplayType = DetailDisplayType.Text,
-                    ContainerCssClass = "col-md-6",
-                    IsHighlight = address.IsPrimary
-                });
-            }
-        }
-        else
-        {
-            items.Add(new DetailItem
-            {
-                Label = "地址",
-                Value = "尚未建立任何地址資料",
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-12"
-            });
-        }
-
-        return new DetailSection
-        {
-            Id = "address",
-            Title = "地址資料",
-            Icon = "bi bi-geo-alt",
-            Items = items
-        };
-    }
-
-    private string BuildFullAddress(SupplierAddress address)
-    {
-        var parts = new List<string>();
-        
-        if (!string.IsNullOrEmpty(address.PostalCode))
-            parts.Add(address.PostalCode);
-        if (!string.IsNullOrEmpty(address.City))
-            parts.Add(address.City);
-        if (!string.IsNullOrEmpty(address.District))
-            parts.Add(address.District);
-        if (!string.IsNullOrEmpty(address.Address))
-            parts.Add(address.Address);
-            
-        return parts.Any() ? string.Join(" ", parts) : "-";
-    }
-
-    private DetailDisplayType GetContactDisplayType(string? contactTypeName)
-    {
-        if (string.IsNullOrEmpty(contactTypeName))
-            return DetailDisplayType.Text;
-
-        return contactTypeName.ToLower() switch
-        {
-            var name when name.Contains("電話") || name.Contains("手機") || name.Contains("傳真") => DetailDisplayType.Phone,
-            var name when name.Contains("email") || name.Contains("郵件") || name.Contains("信箱") => DetailDisplayType.Email,
-            var name when name.Contains("網站") || name.Contains("網址") => DetailDisplayType.Link,
-            _ => DetailDisplayType.Text
-        };
-    }
-
-    private string GetStatusText(Data.Enums.EntityStatus status)
-    {
-        return status switch
-        {
-            Data.Enums.EntityStatus.Active => "啟用",
-            Data.Enums.EntityStatus.Inactive => "停用",
-            Data.Enums.EntityStatus.Deleted => "已刪除",
-            _ => "未知"
-        };
-    }
-
-    private async Task HandleSectionLoad(string sectionId)
-    {
-        // 處理動態載入區段資料
-        await Task.CompletedTask;
-    }
-
-    private async Task HandleItemClick(GenericDetailsComponent.DetailItemClickEventArgs args)
-    {
-        // 處理項目點擊事件
-        if (args.Item.DisplayType == DetailDisplayType.Phone && !string.IsNullOrEmpty(args.Item.Value?.ToString()))
-        {
-            await JSRuntime.InvokeVoidAsync("window.open", $"tel:{args.Item.Value}");
-        }
-        else if (args.Item.DisplayType == DetailDisplayType.Email && !string.IsNullOrEmpty(args.Item.Value?.ToString()))
-        {
-            await JSRuntime.InvokeVoidAsync("window.open", $"mailto:{args.Item.Value}");
-        }
-    }
-
-    private async Task BackToSupplierList()
-    {
-        Navigation.NavigateTo("/suppliers");
-        await Task.CompletedTask;
-    }
-
-    private async Task EditSupplier()
-    {
-        Navigation.NavigateTo($"/suppliers/edit/{SupplierId}");
-        await Task.CompletedTask;
-    }
-
-    private async Task DeleteSupplier()
-    {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"確定要刪除廠商「{supplier?.CompanyName}」嗎？這個操作無法復原。");
-        
-        if (confirmed)
-        {
-            try
-            {
-                var result = await SupplierService.DeleteAsync(SupplierId);
-                if (result.IsSuccess)
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", "廠商刪除成功");
-                    Navigation.NavigateTo("/suppliers");
-                }
-                else
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{result.ErrorMessage}");
-                }
-            }
-            catch (Exception ex)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", $"刪除時發生錯誤：{ex.Message}");
-            }
-        }
-    }
-
-    private async Task ToggleSupplierStatus()
-    {
-        if (supplier == null) return;
-
-        var newStatus = supplier.Status == Data.Enums.EntityStatus.Active ? Data.Enums.EntityStatus.Inactive : Data.Enums.EntityStatus.Active;
-        var actionText = newStatus == Data.Enums.EntityStatus.Active ? "啟用" : "停用";
-        
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"確定要{actionText}廠商「{supplier.CompanyName}」嗎？");
-        
-        if (confirmed)
-        {
-            try
-            {
-                var result = await SupplierService.UpdateSupplierStatusAsync(SupplierId, newStatus);
-                if (result.IsSuccess)
-                {
-                    supplier.Status = newStatus;
-                    InitializeDetailConfiguration();
-                    StateHasChanged();
-                    await JSRuntime.InvokeVoidAsync("alert", $"廠商{actionText}成功");
-                }
-                else
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", $"{actionText}失敗：{result.ErrorMessage}");
-                }
-            }
-            catch (Exception ex)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", $"{actionText}時發生錯誤：{ex.Message}");
-            }
-        }
-    }    // 動作按鈕配置
-    private RenderFragment ActionButtons => __builder =>
-    {
-        <div class="btn-group">
-            <button class="btn btn-primary" @onclick="EditSupplier">
-                <i class="bi bi-pencil me-1"></i>
-                編輯
-            </button>
-            
-            @if (supplier?.Status == Data.Enums.EntityStatus.Active)
-            {
-                <button class="btn btn-warning" @onclick="ToggleSupplierStatus">
-                    <i class="bi bi-power me-1"></i>
-                    停用廠商
-                </button>
+                var statusText = supplier.Status == Data.Enums.EntityStatus.Active ? "啟用" : "停用";
+                await JSRuntime.InvokeVoidAsync("showToast", $"廠商已{statusText}", "success");
             }
             else
             {
-                <button class="btn btn-success" @onclick="ToggleSupplierStatus">
-                    <i class="bi bi-power me-1"></i>
-                    啟用廠商
-                </button>
+                await JSRuntime.InvokeVoidAsync("showToast", $"狀態更新失敗：{result.ErrorMessage}", "error");
             }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("showToast", $"狀態更新失敗：{ex.Message}", "error");
+        }
+    }
 
-            <button class="btn btn-danger" @onclick="DeleteSupplier">
-                <i class="bi bi-trash me-1"></i>
-                刪除廠商
-            </button>
+    private async Task DeleteAsync()
+    {
+        if (supplier == null) return;
 
-            <button class="btn btn-outline-secondary" @onclick="BackToSupplierList">
-                <i class="bi bi-arrow-left me-1"></i>
-                返回列表
-            </button>
-        </div>
-    };
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "確定要刪除這個廠商嗎？此操作無法復原。");
+        if (!confirmed) return;
+
+        try
+        {
+            await SupplierService.DeleteAsync(supplier.Id);
+            await JSRuntime.InvokeVoidAsync("showToast", "廠商已刪除", "success");
+            Navigation.NavigateTo("/suppliers");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("showToast", $"刪除失敗：{ex.Message}", "error");
+        }
+    }
+
+    private void BackToSupplierList()
+    {
+        Navigation.NavigateTo("/suppliers");
+    }    private string GetFullAddress(SupplierAddress address)
+    {
+        var addressParts = new List<string>();
+        
+        if (!string.IsNullOrEmpty(address.PostalCode))
+            addressParts.Add(address.PostalCode);
+        if (!string.IsNullOrEmpty(address.City))
+            addressParts.Add(address.City);
+        if (!string.IsNullOrEmpty(address.District))
+            addressParts.Add(address.District);
+        if (!string.IsNullOrEmpty(address.Address))
+            addressParts.Add(address.Address);
+
+        return addressParts.Any() ? string.Join(" ", addressParts) : "-";
+    }
 }

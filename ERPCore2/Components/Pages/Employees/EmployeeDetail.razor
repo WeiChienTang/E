@@ -1,9 +1,4 @@
 @page "/employees/detail/{employeeId:int}"
-@using ERPCore2.Data.Entities
-@using ERPCore2.Data.Enums
-@using ERPCore2.Components.Shared.Headers
-@using Microsoft.AspNetCore.Components
-@using Microsoft.JSInterop
 @inject IEmployeeService EmployeeService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -40,39 +35,20 @@ else
                            TitleIcon="person-circle"
                            HeadingLevel="h1"
                            BreadcrumbItems="@breadcrumbItems"
-                           ShowDivider="true">
-        <ActionButtons>
-            <div class="btn-group">
-                <button class="btn btn-primary" @onclick="EditEmployee">
-                    <i class="bi bi-pencil me-1"></i>
-                    編輯
-                </button>
-                
-                @if (employee.IsLocked)
-                {
-                    <button class="btn btn-success" @onclick="UnlockEmployee">
-                        <i class="bi bi-unlock me-1"></i>
-                        解鎖帳號
-                    </button>
-                }
-                else
-                {
-                    <button class="btn btn-warning" @onclick="LockEmployee">
-                        <i class="bi bi-lock me-1"></i>
-                        鎖定帳號
-                    </button>
-                }
-
-                <button class="btn btn-info" @onclick="ResetPassword">
-                    <i class="bi bi-key me-1"></i>
-                    重設密碼
-                </button>
-
-                <button class="btn btn-outline-secondary" @onclick="BackToEmployeeList">
-                    <i class="bi bi-arrow-left me-1"></i>
-                    返回列表
-                </button>
-            </div>
+                           ShowDivider="true">        
+                           <ActionButtons>
+            <DetailActionButtonsComponent 
+                EntityStatus="@employee?.Status"
+                IsLoading="@isLoading"
+                OnEditClick="@EditEmployee"
+                OnToggleStatusClick="@ToggleEmployeeStatus"
+                OnDeleteClick="@DeleteEmployee"
+                OnBackClick="@BackToEmployeeList"
+                ShowPrintButton="false"
+                DeactivateButtonText="停用"
+                ActivateButtonText="啟用"
+                DeleteButtonText="刪除"
+                BackButtonText="返回" />
         </ActionButtons>
     </GenericHeaderComponent>
 
@@ -470,5 +446,64 @@ else
     private void BackToEmployeeList()
     {
         Navigation.NavigateTo("/employees");
+    }    private async Task ToggleEmployeeStatus()
+    {
+        if (employee == null) return;
+
+        var newStatus = employee.Status == EntityStatus.Active ? EntityStatus.Inactive : EntityStatus.Active;
+        var isActive = newStatus == EntityStatus.Active;
+        var actionText = isActive ? "啟用" : "停用";
+        
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"確定要{actionText}員工「{GetFullName()}」嗎？");
+        
+        if (confirmed)
+        {
+            try
+            {
+                var result = await EmployeeService.SetEmployeeActiveStatusAsync(EmployeeId, isActive);
+                if (result.IsSuccess)
+                {
+                    employee.Status = newStatus;
+                    StateHasChanged();
+                    await JSRuntime.InvokeVoidAsync("showToast", "success", $"員工{actionText}成功");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("showToast", "error", result.ErrorMessage ?? $"{actionText}失敗");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("showToast", "error", $"{actionText}時發生錯誤：{ex.Message}");
+            }
+        }
+    }
+
+    private async Task DeleteEmployee()
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"確定要刪除員工「{GetFullName()}」嗎？這個操作無法復原。");
+        
+        if (confirmed)
+        {
+            try
+            {
+                var result = await EmployeeService.DeleteAsync(EmployeeId);
+                if (result.IsSuccess)
+                {
+                    await JSRuntime.InvokeVoidAsync("showToast", "success", "員工刪除成功");
+                    Navigation.NavigateTo("/employees");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("showToast", "error", result.ErrorMessage ?? "刪除失敗");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("showToast", "error", $"刪除時發生錯誤：{ex.Message}");
+            }
+        }
     }
 }

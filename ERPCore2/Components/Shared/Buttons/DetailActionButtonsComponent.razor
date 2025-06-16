@@ -1,0 +1,128 @@
+@* Detail 頁面動作按鈕組件 - 提供統一的編輯、啟用/停用、刪除和返回按鈕 *@
+@using ERPCore2.Data.Enums
+
+<div class="btn-group">
+    @if (ShowEditButton)
+    {
+        <button class="btn btn-primary" @onclick="HandleEditClick" disabled="@IsLoading">
+            <i class="@EditButtonIcon me-1"></i>
+            @EditButtonText
+        </button>
+    }
+
+    @if (ShowToggleStatusButton && EntityStatus.HasValue)
+    {
+        @if (EntityStatus == Data.Enums.EntityStatus.Active)
+        {
+            <button class="btn btn-warning" @onclick="HandleToggleStatusClick" disabled="@IsLoading">
+                <i class="@DeactivateButtonIcon me-1"></i>
+                @DeactivateButtonText
+            </button>
+        }
+        else
+        {
+            <button class="btn btn-success" @onclick="HandleToggleStatusClick" disabled="@IsLoading">
+                <i class="@ActivateButtonIcon me-1"></i>
+                @ActivateButtonText
+            </button>
+        }
+    }    @if (ShowDeleteButton)
+    {
+        <button class="btn btn-danger" @onclick="HandleDeleteClick" disabled="@IsLoading">
+            <i class="@DeleteButtonIcon me-1"></i>
+            @DeleteButtonText
+        </button>
+    }
+
+    @if (ShowPrintButton)
+    {
+        <button class="btn btn-info" @onclick="HandlePrintClick" disabled="@IsLoading">
+            <i class="@PrintButtonIcon me-1"></i>
+            @PrintButtonText
+        </button>
+    }    @if (ShowBackButton)
+    {
+        <button class="btn btn-outline-primary" @onclick="HandleBackClick" disabled="@IsLoading">
+            <i class="@BackButtonIcon me-1"></i>
+            @BackButtonText
+        </button>
+    }
+
+    @if (CustomButtons != null)
+    {
+        @CustomButtons
+    }
+</div>
+
+@code {    // 按鈕顯示控制
+    [Parameter] public bool ShowEditButton { get; set; } = true;
+    [Parameter] public bool ShowToggleStatusButton { get; set; } = true;
+    [Parameter] public bool ShowDeleteButton { get; set; } = true;
+    [Parameter] public bool ShowPrintButton { get; set; } = false;
+    [Parameter] public bool ShowBackButton { get; set; } = true;    // 按鈕文字自定義
+    [Parameter] public string EditButtonText { get; set; } = "編輯";
+    [Parameter] public string ActivateButtonText { get; set; } = "啟用";
+    [Parameter] public string DeactivateButtonText { get; set; } = "停用";
+    [Parameter] public string DeleteButtonText { get; set; } = "刪除";
+    [Parameter] public string PrintButtonText { get; set; } = "列印";
+    [Parameter] public string BackButtonText { get; set; } = "返回";    // 按鈕圖示自定義
+    [Parameter] public string EditButtonIcon { get; set; } = "bi bi-pencil";
+    [Parameter] public string ActivateButtonIcon { get; set; } = "bi bi-power";
+    [Parameter] public string DeactivateButtonIcon { get; set; } = "bi bi-power";
+    [Parameter] public string DeleteButtonIcon { get; set; } = "bi bi-trash";
+    [Parameter] public string PrintButtonIcon { get; set; } = "bi bi-printer";
+    [Parameter] public string BackButtonIcon { get; set; } = "bi bi-arrow-left";
+
+    // 實體狀態
+    [Parameter] public EntityStatus? EntityStatus { get; set; }
+
+    // 載入狀態
+    [Parameter] public bool IsLoading { get; set; } = false;    // 事件回調
+    [Parameter] public EventCallback OnEditClick { get; set; }
+    [Parameter] public EventCallback OnToggleStatusClick { get; set; }
+    [Parameter] public EventCallback OnDeleteClick { get; set; }
+    [Parameter] public EventCallback OnPrintClick { get; set; }
+    [Parameter] public EventCallback OnBackClick { get; set; }
+
+    // 自定義按鈕
+    [Parameter] public RenderFragment? CustomButtons { get; set; }
+
+    // 事件處理方法
+    private async Task HandleEditClick()
+    {
+        if (OnEditClick.HasDelegate)
+        {
+            await OnEditClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandleToggleStatusClick()
+    {
+        if (OnToggleStatusClick.HasDelegate)
+        {
+            await OnToggleStatusClick.InvokeAsync();
+        }
+    }    private async Task HandleDeleteClick()
+    {
+        if (OnDeleteClick.HasDelegate)
+        {
+            await OnDeleteClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandlePrintClick()
+    {
+        if (OnPrintClick.HasDelegate)
+        {
+            await OnPrintClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandleBackClick()
+    {
+        if (OnBackClick.HasDelegate)
+        {
+            await OnBackClick.InvokeAsync();
+        }
+    }
+}

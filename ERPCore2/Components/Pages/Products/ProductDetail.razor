@@ -1,13 +1,10 @@
 @page "/products/detail/{productId:int}"
-@using ERPCore2.Components.Shared.Details
-@using ERPCore2.Components.Shared.Buttons
-@using ERPCore2.Data.Entities
-@using ERPCore2.Services
-@using Microsoft.AspNetCore.Components.Web
 @inject IProductService ProductService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
+
+<PageTitle>產品詳細資料</PageTitle>
 
 @if (isLoading)
 {
@@ -32,10 +29,150 @@ else if (product == null)
 }
 else
 {
-    <GenericDetailsComponent Configuration="@detailConfiguration" 
-                           OnSectionLoad="HandleSectionLoad"
-                           OnItemClick="HandleItemClick"
-                           ActionButtons="@ActionButtons" />
+    @* 頁面標題 *@
+    <GenericHeaderComponent Title="@GetPageTitle()"
+                           Subtitle="@GetSubtitle()"
+                           TitleIcon="box"
+                           HeadingLevel="h1"
+                           BreadcrumbItems="@breadcrumbItems"
+                           ShowDivider="true">        
+        <ActionButtons>
+            <DetailActionButtonsComponent 
+                EntityStatus="@product?.Status"
+                IsLoading="@isLoading"
+                OnEditClick="@EditProduct"
+                OnToggleStatusClick="@ToggleProductStatus"
+                OnDeleteClick="@DeleteProduct"
+                OnBackClick="@BackToProductList"
+                ShowPrintButton="false"
+                DeactivateButtonText="停用"
+                ActivateButtonText="啟用"
+                DeleteButtonText="刪除"
+                BackButtonText="返回列表" />
+        </ActionButtons>    </GenericHeaderComponent>
+
+    @* 基本資料 *@
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-box me-2"></i>
+                        基本資料
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">產品代碼</label>
+                                <div class="fw-bold text-primary">@product?.ProductCode</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">產品名稱</label>
+                                <div class="fw-bold">@product?.ProductName</div>
+                            </div>
+                        </div>                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">分類</label>
+                                <div>-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">單位</label>
+                                <div>@(product?.Unit?.UnitName ?? "-")</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">狀態</label>
+                                <div>
+                                    @if (product?.Status == Data.Enums.EntityStatus.Active)
+                                    {
+                                        <span class="badge bg-success">啟用</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">停用</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(product?.Description))
+                        {
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">產品描述</label>
+                                    <div>@product.Description</div>
+                                </div>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(product?.Remarks))
+                        {
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">備註</label>
+                                    <div>@product.Remarks</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>    @* 規格資訊 *@
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-gear me-2"></i>
+                        規格資訊
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-muted">規格資訊尚未設定</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* 供應商資訊 *@
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-truck me-2"></i>
+                        供應商資訊
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (productSuppliers.Any())
+                    {
+                        <div class="row">
+                            @foreach (var ps in productSuppliers)
+                            {
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">供應商</label>
+                                        <div>@(ps.Supplier?.CompanyName ?? "未知供應商")</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted">尚未設定供應商</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
 }
 
 @code {
@@ -44,12 +181,10 @@ else
     private Product? product;
     private List<ProductSupplier> productSuppliers = new();
     private bool isLoading = true;
-    private DetailViewConfiguration detailConfiguration = new();
 
     protected override async Task OnInitializedAsync()
     {
         await LoadProductData();
-        InitializeDetailConfiguration();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -57,7 +192,6 @@ else
         if (ProductId > 0)
         {
             await LoadProductData();
-            InitializeDetailConfiguration();
         }
     }
 
@@ -73,7 +207,7 @@ else
             
             if (product != null)
             {
-                // 載入產品供應商關聯
+                // 載入供應商關聯資料
                 productSuppliers = await ProductService.GetProductSuppliersAsync(ProductId);
             }
         }
@@ -88,333 +222,90 @@ else
         }
     }
 
-    private void InitializeDetailConfiguration()
-    {
-        if (product == null) return;
-
-        detailConfiguration = new DetailViewConfiguration
-        {
-            Title = product.ProductName,
-            Subtitle = $"產品編號：{product.ProductCode}",
-            TitleIcon = "bi bi-box-seam",
-            UseTabs = true,
-            Sections = new List<DetailSection>
-            {
-                CreateBasicInfoSection(),
-                CreatePriceStockSection(),
-                CreateSupplierSection()
-            }
-        };
-    }
-
-    private DetailSection CreateBasicInfoSection()
-    {
-        var items = new List<DetailItem>
-        {
-            new() { 
-                Label = "產品代碼", 
-                Value = product!.ProductCode, 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "產品名稱", 
-                Value = product.ProductName, 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6",
-                IsHighlight = true
-            },
-            new() { 
-                Label = "產品分類", 
-                Value = product.ProductCategory?.CategoryName ?? "-", 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },            new() { 
-                Label = "單位", 
-                Value = product.Unit?.UnitName ?? "-", 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "規格說明", 
-                Value = product.Specification ?? "-", 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "啟用狀態", 
-                Value = GetActiveStatusText(product.IsActive), 
-                DisplayType = DetailDisplayType.Status,
-                Format = new DetailItemFormat 
-                { 
-                    StatusColors = new Dictionary<string, string>
-                    {
-                        { "啟用", "bg-success" },
-                        { "停用", "bg-danger" }
-                    }
-                },
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "實體狀態", 
-                Value = GetStatusText(product.Status), 
-                DisplayType = DetailDisplayType.Status,
-                Format = new DetailItemFormat 
-                { 
-                    StatusColors = new Dictionary<string, string>
-                    {
-                        { "啟用", "bg-success" },
-                        { "停用", "bg-danger" },
-                        { "已刪除", "bg-secondary" }
-                    }
-                },
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "建立日期", 
-                Value = product.CreatedAt, 
-                DisplayType = DetailDisplayType.DateTime,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "最後更新", 
-                Value = product.UpdatedAt, 
-                DisplayType = DetailDisplayType.DateTime,
-                ContainerCssClass = "col-md-6"
-            }
-        };
-
-        // 加入描述（如果有的話）
-        if (!string.IsNullOrWhiteSpace(product.Description))
-        {
-            items.Add(new DetailItem { 
-                Label = "產品描述", 
-                Value = product.Description, 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-12"
-            });
-        }
-
-        // 加入備註（如果有的話）
-        if (!string.IsNullOrWhiteSpace(product.Remarks))
-        {
-            items.Add(new DetailItem { 
-                Label = "備註", 
-                Value = product.Remarks, 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-12"
-            });
-        }
-
-        return new DetailSection
-        {
-            Id = "basic",
-            Title = "基本資料",
-            Icon = "bi bi-info-circle",
-            Items = items
-        };
-    }
-
-    private DetailSection CreatePriceStockSection()
-    {
-        var items = new List<DetailItem>
-        {
-            new() { 
-                Label = "單價", 
-                Value = product!.UnitPrice?.ToString("C") ?? "-", 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6",
-                IsHighlight = product.UnitPrice.HasValue
-            },
-            new() { 
-                Label = "成本價", 
-                Value = product.CostPrice?.ToString("C") ?? "-", 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "現有庫存", 
-                Value = product.CurrentStock.ToString("N0"), 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6",
-                IsHighlight = true
-            },
-            new() { 
-                Label = "最低庫存量", 
-                Value = product.MinStockLevel?.ToString("N0") ?? "-", 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "最高庫存量", 
-                Value = product.MaxStockLevel?.ToString("N0") ?? "-", 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "庫存狀態", 
-                Value = GetStockStatusText(), 
-                DisplayType = DetailDisplayType.Status,
-                Format = new DetailItemFormat 
-                { 
-                    StatusColors = new Dictionary<string, string>
-                    {
-                        { "正常", "bg-success" },
-                        { "不足", "bg-warning" },
-                        { "缺貨", "bg-danger" },
-                        { "超量", "bg-info" }
-                    }
-                },
-                ContainerCssClass = "col-md-6"
-            }
-        };
-
-        return new DetailSection
-        {
-            Id = "pricestock",
-            Title = "價格與庫存",
-            Icon = "bi bi-currency-dollar",
-            Items = items
-        };
-    }
-
-    private DetailSection CreateSupplierSection()
-    {
-        var items = new List<DetailItem>();
-        
-        // 主要供應商
-        if (product!.PrimarySupplier != null)
-        {
-            items.Add(new DetailItem 
-            { 
-                Label = "主要供應商", 
-                Value = product.PrimarySupplier.CompanyName, 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6",
-                IsHighlight = true
-            });
-        }
-        
-        // 所有供應商
-        if (productSuppliers.Any())
-        {
-            var supplierNames = productSuppliers
-                .Where(ps => ps.Supplier != null)
-                .Select(ps => $"{ps.Supplier!.CompanyName}")
-                .ToList();
-                
-            if (supplierNames.Any())
-            {
-                items.Add(new DetailItem 
-                { 
-                    Label = "所有供應商", 
-                    Value = string.Join(", ", supplierNames), 
-                    DisplayType = DetailDisplayType.Text,
-                    ContainerCssClass = "col-12"
-                });
-            }
-        }
-        
-        if (!items.Any())
-        {
-            items.Add(new DetailItem 
-            { 
-                Label = "供應商資訊", 
-                Value = "暫無供應商資訊", 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-12"
-            });
-        }
-
-        return new DetailSection
-        {
-            Id = "supplier",
-            Title = "供應商資訊",
-            Icon = "bi bi-truck",
-            Items = items
-        };
-    }
-
-    private string GetActiveStatusText(bool isActive)
-    {
-        return isActive ? "啟用" : "停用";
-    }
-
-    private string GetStatusText(Data.Enums.EntityStatus status)
-    {
-        return status switch
-        {
-            Data.Enums.EntityStatus.Active => "啟用",
-            Data.Enums.EntityStatus.Inactive => "停用",
-            Data.Enums.EntityStatus.Deleted => "已刪除",
-            _ => "未知"
-        };
-    }
-
-    private string GetStockStatusText()
-    {
-        if (product == null) return "未知";
-
-        if (product.CurrentStock <= 0)
-            return "缺貨";
-        
-        if (product.MinStockLevel.HasValue && product.CurrentStock <= product.MinStockLevel)
-            return "不足";
-            
-        if (product.MaxStockLevel.HasValue && product.CurrentStock >= product.MaxStockLevel)
-            return "超量";
-            
-        return "正常";
-    }    // Action Buttons
-    private RenderFragment ActionButtons => __builder =>
-    {
-        <div class="btn-group">
-            <button class="btn btn-primary" @onclick="EditProduct">
-                <i class="bi bi-pencil me-1"></i>
-                編輯
-            </button>
-            <button class="btn btn-outline-secondary" @onclick="PrintProduct">
-                <i class="bi bi-printer me-1"></i>
-                列印
-            </button>
-            <button class="btn btn-outline-secondary" @onclick="BackToList">
-                <i class="bi bi-arrow-left me-1"></i>
-                返回列表
-            </button>
-        </div>
-    };
-
-    private async Task HandleSectionLoad(string sectionId)
-    {
-        // 目前所有資料都在初始載入時取得，所以這裡不需要額外處理
-        // 未來如果需要延遲載入特定區塊的資料，可以在這裡實作
-        await Task.CompletedTask;
-    }
-
-    private async Task HandleItemClick(GenericDetailsComponent.DetailItemClickEventArgs args)
-    {
-        // 處理項目點擊事件
-        // 例如：點擊供應商名稱跳轉到供應商詳細頁面等
-        await Task.CompletedTask;
-    }
-
     private void EditProduct()
     {
         Navigation.NavigateTo($"/products/edit/{ProductId}");
-    }
-
-    private async Task PrintProduct()
-    {
-        await JSRuntime.InvokeVoidAsync("window.print");
-    }
-
-    private void BackToList()
-    {
-        Navigation.NavigateTo("/products");
     }
 
     private void BackToProductList()
     {
         Navigation.NavigateTo("/products");
     }
+
+    private async Task ToggleProductStatus()
+    {
+        if (product == null) return;
+
+        var actionText = product.Status == Data.Enums.EntityStatus.Active ? "停用" : "啟用";
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"確定要{actionText}產品「{product.ProductName}」嗎？");
+        
+        if (confirmed)
+        {
+            try
+            {
+                var result = await ProductService.ToggleStatusAsync(ProductId);
+                
+                if (result.IsSuccess)
+                {
+                    await JSRuntime.InvokeVoidAsync("showToast", "success", $"{actionText}成功");
+                    await LoadProductData();
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("showToast", "error", result.ErrorMessage ?? $"{actionText}失敗");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("showToast", "error", $"{actionText}時發生錯誤：{ex.Message}");
+            }
+        }
+    }
+
+    private async Task DeleteProduct()
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"確定要刪除產品「{product?.ProductName}」嗎？這個操作無法復原。");
+        
+        if (confirmed)
+        {
+            try
+            {
+                var result = await ProductService.DeleteAsync(ProductId);
+                if (result.IsSuccess)
+                {
+                    await JSRuntime.InvokeVoidAsync("showToast", "success", "產品刪除成功");
+                    Navigation.NavigateTo("/products");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("showToast", "error", result.ErrorMessage ?? "刪除失敗");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("showToast", "error", $"刪除時發生錯誤：{ex.Message}");
+            }
+        }
+    }
+
+    private string GetPageTitle()
+    {
+        if (product == null) return "產品詳細資料";
+        return $"{product.ProductName}";
+    }
+
+    private string GetSubtitle()
+    {
+        if (product == null) return "";
+        return $"產品代碼：{product.ProductCode ?? "未設定"}";
+    }
+
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
+    {
+        new("首頁", "/"),
+        new("產品管理", "/products"),
+        new("產品詳細資料")
+    };
 }

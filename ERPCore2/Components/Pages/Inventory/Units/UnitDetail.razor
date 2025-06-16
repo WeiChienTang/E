@@ -1,14 +1,11 @@
 @page "/units/detail/{id:int}"
 @page "/inventory/units/detail/{id:int}"
-@using ERPCore2.Components.Shared.Details
-@using ERPCore2.Components.Shared.Buttons
-@using ERPCore2.Data.Entities
-@using ERPCore2.Services
-@using Microsoft.AspNetCore.Components.Web
 @inject IUnitService UnitService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
+
+<PageTitle>單位詳細資料</PageTitle>
 
 @if (isLoading)
 {
@@ -33,10 +30,136 @@ else if (unit == null)
 }
 else
 {
-    <GenericDetailsComponent Configuration="@detailConfiguration" 
-                           OnSectionLoad="HandleSectionLoad"
-                           OnItemClick="HandleItemClick"
-                           ActionButtons="@ActionButtons" />
+    @* 頁面標題 *@
+    <GenericHeaderComponent Title="@GetPageTitle()"
+                           Subtitle="@GetSubtitle()"
+                           TitleIcon="rulers"
+                           HeadingLevel="h1"
+                           BreadcrumbItems="@breadcrumbItems"
+                           ShowDivider="true">        
+        <ActionButtons>
+            <DetailActionButtonsComponent 
+                EntityStatus="@unit?.Status"
+                IsLoading="@isLoading"
+                OnEditClick="@EditUnit"
+                OnToggleStatusClick="@ToggleUnitStatus"
+                OnDeleteClick="@DeleteUnit"
+                OnBackClick="@BackToUnitList"
+                ShowPrintButton="false"
+                DeactivateButtonText="停用"
+                ActivateButtonText="啟用"
+                DeleteButtonText="刪除"
+                BackButtonText="返回列表" />
+        </ActionButtons>    </GenericHeaderComponent>
+
+    @* 基本資料 *@
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-rulers me-2"></i>
+                        基本資料
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">單位代碼</label>
+                                <div class="fw-bold text-primary">@unit?.UnitCode</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">單位名稱</label>
+                                <div class="fw-bold">@unit?.UnitName</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">單位符號</label>
+                                <div>@(unit?.Symbol ?? "-")</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">是否為基本單位</label>
+                                <div>
+                                    @if (unit?.IsBaseUnit == true)
+                                    {
+                                        <span class="badge bg-primary">是</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">否</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">狀態</label>
+                                <div>
+                                    @if (unit?.Status == Data.Enums.EntityStatus.Active)
+                                    {
+                                        <span class="badge bg-success">啟用</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">停用</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(unit?.Remarks))
+                        {
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">備註</label>
+                                    <div>@unit.Remarks</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* 轉換資訊 *@
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-arrow-repeat me-2"></i>
+                        轉換資訊
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (convertibleUnits.Any())
+                    {
+                        <div class="row">
+                            @foreach (var u in convertibleUnits)
+                            {
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">可轉換單位</label>
+                                        <div>@($"{u.UnitName} ({u.Symbol})")</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted">無可轉換的單位</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
 }
 
 @code {
@@ -45,12 +168,10 @@ else
     private Unit? unit;
     private List<Unit> convertibleUnits = new();
     private bool isLoading = true;
-    private DetailViewConfiguration detailConfiguration = new();
 
     protected override async Task OnInitializedAsync()
     {
         await LoadUnitData();
-        InitializeDetailConfiguration();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -58,7 +179,6 @@ else
         if (UnitId > 0)
         {
             await LoadUnitData();
-            InitializeDetailConfiguration();
         }
     }
 
@@ -74,8 +194,8 @@ else
             
             if (unit != null)
             {
-                // 載入可轉換的單位
-                convertibleUnits = await UnitService.GetConvertibleUnitsAsync(UnitId);
+                // 暫時設定空的可轉換單位清單，等後續實作
+                convertibleUnits = new List<Unit>();
             }
         }
         catch (Exception ex)
@@ -89,194 +209,91 @@ else
         }
     }
 
-    private void InitializeDetailConfiguration()
-    {
-        if (unit == null) return;
-
-        detailConfiguration = new DetailViewConfiguration
-        {
-            Title = unit.UnitName,
-            Subtitle = $"單位代碼：{unit.UnitCode}",
-            TitleIcon = "bi bi-rulers",
-            UseTabs = true,
-            Sections = new List<DetailSection>
-            {
-                CreateBasicInfoSection(),
-                CreateConversionSection()
-            }
-        };
-    }
-
-    private DetailSection CreateBasicInfoSection()
-    {
-        var items = new List<DetailItem>
-        {
-            new() { 
-                Label = "單位代碼", 
-                Value = unit!.UnitCode, 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "單位名稱", 
-                Value = unit.UnitName, 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6",
-                IsHighlight = true
-            },
-            new() { 
-                Label = "單位符號", 
-                Value = unit.Symbol ?? "-", 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "基本單位", 
-                Value = unit.IsBaseUnit ? "是" : "否", 
-                DisplayType = DetailDisplayType.Status,
-                Format = new DetailItemFormat 
-                { 
-                    StatusColors = new Dictionary<string, string>
-                    {
-                        { "是", "bg-primary" },
-                        { "否", "bg-secondary" }
-                    }
-                },
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "狀態", 
-                Value = unit.IsActive ? "啟用" : "停用", 
-                DisplayType = DetailDisplayType.Status,
-                Format = new DetailItemFormat 
-                { 
-                    StatusColors = new Dictionary<string, string>
-                    {
-                        { "啟用", "bg-success" },
-                        { "停用", "bg-danger" }
-                    }
-                },
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "建立日期", 
-                Value = unit.CreatedAt, 
-                DisplayType = DetailDisplayType.DateTime,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "最後更新", 
-                Value = unit.UpdatedAt, 
-                DisplayType = DetailDisplayType.DateTime,
-                ContainerCssClass = "col-md-6"
-            }
-        };
-
-        return new DetailSection
-        {
-            Id = "basic",
-            Title = "基本資料",
-            Icon = "bi bi-info-circle",
-            Items = items
-        };
-    }
-
-    private DetailSection CreateConversionSection()
-    {
-        var items = new List<DetailItem>();
-        
-        if (convertibleUnits.Any())
-        {
-            foreach (var convertibleUnit in convertibleUnits.OrderBy(u => u.UnitCode))
-            {
-                items.Add(new DetailItem 
-                { 
-                    Label = $"{convertibleUnit.UnitCode} - {convertibleUnit.UnitName}", 
-                    Value = $"符號：{convertibleUnit.Symbol ?? "無"} | 狀態：{(convertibleUnit.IsActive ? "啟用" : "停用")}", 
-                    DisplayType = DetailDisplayType.Text,
-                    ContainerCssClass = "col-md-6",
-                    IsHighlight = convertibleUnit.IsActive
-                });
-            }
-        }
-        else
-        {
-            items.Add(new DetailItem 
-            { 
-                Label = "轉換關係", 
-                Value = "暫無轉換關係設定", 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-12"
-            });
-        }
-
-        return new DetailSection
-        {
-            Id = "conversions",
-            Title = $"轉換關係 ({convertibleUnits.Count} 個可轉換單位)",
-            Icon = "bi bi-arrow-left-right",
-            Items = items
-        };
-    }
-
-    // Action Buttons
-    private RenderFragment ActionButtons => __builder =>
-    {
-        <div class="btn-group">
-            <button class="btn btn-primary" @onclick="EditUnit">
-                <i class="bi bi-pencil me-1"></i>
-                編輯
-            </button>
-            <button class="btn btn-outline-info" @onclick="ManageConversions">
-                <i class="bi bi-arrow-left-right me-1"></i>
-                管理轉換
-            </button>
-            <button class="btn btn-outline-secondary" @onclick="PrintUnit">
-                <i class="bi bi-printer me-1"></i>
-                列印
-            </button>
-            <button class="btn btn-outline-secondary" @onclick="BackToList">
-                <i class="bi bi-arrow-left me-1"></i>
-                返回列表
-            </button>
-        </div>
-    };
-
-    private async Task HandleSectionLoad(string sectionId)
-    {
-        // 目前所有資料都在初始載入時取得，所以這裡不需要額外處理
-        await Task.CompletedTask;
-    }
-
-    private async Task HandleItemClick(GenericDetailsComponent.DetailItemClickEventArgs args)
-    {
-        // 處理項目點擊事件
-        await Task.CompletedTask;
-    }
-
     private void EditUnit()
     {
-        Navigation.NavigateTo($"/inventory/units/edit/{UnitId}");
-    }
-
-    private async Task ManageConversions()
-    {
-        // TODO: 實作單位轉換管理功能
-        await JSRuntime.InvokeVoidAsync("alert", "單位轉換管理功能開發中...");
-    }
-
-    private async Task PrintUnit()
-    {
-        await JSRuntime.InvokeVoidAsync("window.print");
-    }
-
-    private void BackToList()
-    {
-        Navigation.NavigateTo("/inventory/units");
+        Navigation.NavigateTo($"/units/edit/{UnitId}");
     }
 
     private void BackToUnitList()
     {
-        Navigation.NavigateTo("/inventory/units");
+        Navigation.NavigateTo("/units");
     }
+
+    private async Task ToggleUnitStatus()
+    {
+        if (unit == null) return;
+
+        var actionText = unit.Status == Data.Enums.EntityStatus.Active ? "停用" : "啟用";
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"確定要{actionText}單位「{unit.UnitName}」嗎？");
+        
+        if (confirmed)
+        {
+            try
+            {
+                var result = await UnitService.ToggleStatusAsync(UnitId);
+                
+                if (result.IsSuccess)
+                {
+                    await JSRuntime.InvokeVoidAsync("showToast", "success", $"{actionText}成功");
+                    await LoadUnitData();
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("showToast", "error", result.ErrorMessage ?? $"{actionText}失敗");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("showToast", "error", $"{actionText}時發生錯誤：{ex.Message}");
+            }
+        }
+    }
+
+    private async Task DeleteUnit()
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"確定要刪除單位「{unit?.UnitName}」嗎？這個操作無法復原。");
+        
+        if (confirmed)
+        {
+            try
+            {
+                var result = await UnitService.DeleteAsync(UnitId);
+                if (result.IsSuccess)
+                {
+                    await JSRuntime.InvokeVoidAsync("showToast", "success", "單位刪除成功");
+                    Navigation.NavigateTo("/units");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("showToast", "error", result.ErrorMessage ?? "刪除失敗");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("showToast", "error", $"刪除時發生錯誤：{ex.Message}");
+            }
+        }
+    }
+
+    private string GetPageTitle()
+    {
+        if (unit == null) return "單位詳細資料";
+        return $"{unit.UnitName}";
+    }
+
+    private string GetSubtitle()
+    {
+        if (unit == null) return "";
+        return $"單位代碼：{unit.UnitCode ?? "未設定"}";
+    }
+
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
+    {
+        new("首頁", "/"),
+        new("庫存管理", "/inventory"),
+        new("單位管理", "/units"),
+        new("單位詳細資料")
+    };
 }

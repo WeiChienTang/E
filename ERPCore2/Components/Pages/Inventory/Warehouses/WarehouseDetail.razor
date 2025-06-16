@@ -1,10 +1,8 @@
 @page "/warehouses/detail/{id:int}"
 @page "/inventory/warehouses/detail/{id:int}"
-@using ERPCore2.Components.Shared.Details
-@using ERPCore2.Components.Shared.Buttons
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services
-@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components
 @inject IWarehouseService WarehouseService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -33,33 +31,241 @@ else if (warehouse == null)
 }
 else
 {
-    <GenericDetailsComponent Configuration="@detailConfiguration" 
-                           OnSectionLoad="HandleSectionLoad"
-                           OnItemClick="HandleItemClick"
-                           ActionButtons="@ActionButtons" />
+    <GenericHeaderComponent Title="@warehouse.WarehouseName" 
+                          Subtitle="@($"倉庫代碼：{warehouse.WarehouseCode}")"
+                          Icon="bi bi-building"
+                          BreadcrumbItems="@breadcrumbItems">
+        <ActionButtons>
+            <DetailActionButtonsComponent 
+                Entity="@warehouse"
+                OnToggleStatus="ToggleStatusAsync"
+                OnDelete="DeleteAsync"
+                OnBack="BackToWarehouseList" />
+        </ActionButtons>
+    </GenericHeaderComponent>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <!-- 基本資訊 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-info-circle me-2"></i>基本資訊
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">倉庫代碼</label>
+                                    <div>@warehouse.WarehouseCode</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">倉庫名稱</label>
+                                    <div class="fw-bold">@warehouse.WarehouseName</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">倉庫類型</label>
+                                    <div>@GetWarehouseTypeText(warehouse.WarehouseType)</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">是否為預設</label>
+                                    <div>
+                                        @if (warehouse.IsDefault)
+                                        {
+                                            <span class="badge bg-primary">是</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">否</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(warehouse.ContactPerson))
+                            {
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">聯絡人</label>
+                                        <div>@warehouse.ContactPerson</div>
+                                    </div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(warehouse.Phone))
+                            {
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">聯絡電話</label>
+                                        <div>@warehouse.Phone</div>
+                                    </div>
+                                </div>
+                            }
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">狀態</label>
+                                    <div>
+                                        @if (warehouse.Status == Data.Enums.EntityStatus.Active)
+                                        {
+                                            <span class="badge bg-success">啟用</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">停用</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(warehouse.Address))
+                            {
+                                <div class="col-12">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">地址</label>
+                                        <div>@warehouse.Address</div>
+                                    </div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(warehouse.Remarks))
+                            {
+                                <div class="col-12">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">備註</label>
+                                        <div>@warehouse.Remarks</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 倉庫位置 -->
+                @if (warehouseLocations.Any())
+                {
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-geo-alt me-2"></i>倉庫位置
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>位置代碼</th>
+                                            <th>位置名稱</th>                                            <th>區域</th>
+                                            <th>排</th>
+                                            <th>層</th>
+                                            <th>位</th>
+                                            <th>狀態</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var location in warehouseLocations)
+                                        {
+                                            <tr>
+                                                <td>@location.LocationCode</td>
+                                                <td>@location.LocationName</td>                                                <td>@(location.Zone ?? "-")</td>
+                                                <td>@(location.Aisle ?? "-")</td>
+                                                <td>@(location.Level ?? "-")</td>
+                                                <td>@(location.Position ?? "-")</td>
+                                                <td>
+                                                    @if (location.Status == Data.Enums.EntityStatus.Active)
+                                                    {
+                                                        <span class="badge bg-success">啟用</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-danger">停用</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- 系統資訊 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-gear me-2"></i>系統資訊
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">建立日期</label>
+                                    <div>@warehouse.CreatedAt.ToString("yyyy/MM/dd HH:mm")</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">建立者</label>
+                                    <div>@(warehouse.CreatedBy ?? "-")</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">最後更新</label>
+                                    <div>@(warehouse.UpdatedAt?.ToString("yyyy/MM/dd HH:mm") ?? "-")</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">更新者</label>
+                                    <div>@(warehouse.UpdatedBy ?? "-")</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 }
 
 @code {
-    [Parameter] public int WarehouseId { get; set; }
+    [Parameter] public int Id { get; set; }
 
     private Warehouse? warehouse;
     private List<WarehouseLocation> warehouseLocations = new();
     private bool isLoading = true;
-    private DetailViewConfiguration detailConfiguration = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
     protected override async Task OnInitializedAsync()
     {
+        InitializeBreadcrumb();
         await LoadWarehouseData();
-        InitializeDetailConfiguration();
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        if (WarehouseId > 0)
+        if (Id > 0)
         {
             await LoadWarehouseData();
-            InitializeDetailConfiguration();
         }
+    }
+
+    private void InitializeBreadcrumb()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new() { Text = "首頁", Href = "/" },
+            new() { Text = "庫存管理", Href = "/inventory" },
+            new() { Text = "倉庫管理", Href = "/inventory/warehouses" },
+            new() { Text = "倉庫詳情" }
+        };
     }
 
     private async Task LoadWarehouseData()
@@ -69,17 +275,11 @@ else
             isLoading = true;
             StateHasChanged();
 
-            // 載入倉庫基本資料
-            warehouse = await WarehouseService.GetByIdAsync(WarehouseId);
-            
-            if (warehouse != null)
+            warehouse = await WarehouseService.GetByIdAsync(Id);
+              if (warehouse != null)
             {
-                // 載入庫位資料
-                var warehouseWithLocations = await WarehouseService.GetWarehouseWithLocationsAsync(WarehouseId);
-                if (warehouseWithLocations != null)
-                {
-                    warehouseLocations = warehouseWithLocations.WarehouseLocations.ToList();
-                }
+                // 載入倉庫位置 (如果 service 有此方法)
+                // warehouseLocations = await WarehouseService.GetWarehouseLocationsAsync(Id);
             }
         }
         catch (Exception ex)
@@ -93,274 +293,65 @@ else
         }
     }
 
-    private void InitializeDetailConfiguration()
+    private async Task ToggleStatusAsync()
     {
         if (warehouse == null) return;
 
-        detailConfiguration = new DetailViewConfiguration
-        {
-            Title = warehouse.WarehouseName,
-            Subtitle = $"倉庫代碼：{warehouse.WarehouseCode}",
-            TitleIcon = "bi bi-house-door",
-            UseTabs = true,
-            Sections = new List<DetailSection>
-            {
-                CreateBasicInfoSection(),
-                CreateLocationSection()
-            }
-        };
-    }
-
-    private DetailSection CreateBasicInfoSection()
-    {
-        var items = new List<DetailItem>
-        {
-            new() { 
-                Label = "倉庫代碼", 
-                Value = warehouse!.WarehouseCode, 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "倉庫名稱", 
-                Value = warehouse.WarehouseName, 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6",
-                IsHighlight = true
-            },
-            new() { 
-                Label = "倉庫類型", 
-                Value = GetWarehouseTypeText(warehouse.WarehouseType), 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "聯絡人", 
-                Value = warehouse.ContactPerson ?? "-", 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "聯絡電話", 
-                Value = warehouse.Phone ?? "-", 
-                DisplayType = DetailDisplayType.Phone,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "地址", 
-                Value = warehouse.Address ?? "-", 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "預設倉庫", 
-                Value = warehouse.IsDefault ? "是" : "否", 
-                DisplayType = DetailDisplayType.Status,
-                Format = new DetailItemFormat 
-                { 
-                    StatusColors = new Dictionary<string, string>
-                    {
-                        { "是", "bg-primary" },
-                        { "否", "bg-secondary" }
-                    }
-                },
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "狀態", 
-                Value = warehouse.IsActive ? "啟用" : "停用", 
-                DisplayType = DetailDisplayType.Status,
-                Format = new DetailItemFormat 
-                { 
-                    StatusColors = new Dictionary<string, string>
-                    {
-                        { "啟用", "bg-success" },
-                        { "停用", "bg-danger" }
-                    }
-                },
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "建立日期", 
-                Value = warehouse.CreatedAt, 
-                DisplayType = DetailDisplayType.DateTime,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                Label = "最後更新", 
-                Value = warehouse.UpdatedAt, 
-                DisplayType = DetailDisplayType.DateTime,
-                ContainerCssClass = "col-md-6"
-            }
-        };
-
-        return new DetailSection
-        {
-            Id = "basic",
-            Title = "基本資料",
-            Icon = "bi bi-info-circle",
-            Items = items
-        };
-    }
-
-    private DetailSection CreateLocationSection()
-    {
-        var items = new List<DetailItem>();
-        
-        if (warehouseLocations.Any())
-        {
-            foreach (var location in warehouseLocations.OrderBy(l => l.LocationCode))
-            {
-                var locationInfo = BuildLocationInfo(location);
-                
-                items.Add(new DetailItem 
-                { 
-                    Label = $"{location.LocationCode} - {location.LocationName}", 
-                    Value = locationInfo, 
-                    DisplayType = DetailDisplayType.Text,
-                    ContainerCssClass = "col-md-6",
-                    IsHighlight = location.IsActive
-                });
-            }
-        }
-        else
-        {
-            items.Add(new DetailItem 
-            { 
-                Label = "庫位資訊", 
-                Value = "暫無庫位資料", 
-                DisplayType = DetailDisplayType.Text,
-                ContainerCssClass = "col-12"
-            });
-        }
-
-        return new DetailSection
-        {
-            Id = "locations",
-            Title = $"庫位資訊 ({warehouseLocations.Count} 個庫位)",
-            Icon = "bi bi-grid-3x3",
-            Items = items
-        };
-    }
-
-    private string GetWarehouseTypeText(WarehouseTypeEnum warehouseType)
-    {
-        return warehouseType switch
-        {
-            WarehouseTypeEnum.Main => "主倉庫",
-            WarehouseTypeEnum.Branch => "分倉庫",
-            WarehouseTypeEnum.Virtual => "虛擬倉庫",
-            WarehouseTypeEnum.Return => "退貨倉庫",
-            _ => "未知類型"
-        };
-    }
-
-    private string BuildLocationInfo(WarehouseLocation location)
-    {
-        var parts = new List<string>();
-        
-        if (!string.IsNullOrEmpty(location.Zone))
-            parts.Add($"區域：{location.Zone}");
-        
-        if (!string.IsNullOrEmpty(location.Aisle))
-            parts.Add($"排：{location.Aisle}");
-        
-        if (!string.IsNullOrEmpty(location.Level))
-            parts.Add($"層：{location.Level}");
-        
-        if (!string.IsNullOrEmpty(location.Position))
-            parts.Add($"位：{location.Position}");
-
-        if (location.MaxCapacity.HasValue)
-            parts.Add($"容量：{location.MaxCapacity}");
-
-        var statusText = location.IsActive ? "啟用" : "停用";
-        parts.Add($"狀態：{statusText}");
-
-        return parts.Any() ? string.Join(" | ", parts) : "資訊不完整";
-    }
-
-    // Action Buttons
-    private RenderFragment ActionButtons => __builder =>
-    {
-        <div class="btn-group">
-            <button class="btn btn-primary" @onclick="EditWarehouse">
-                <i class="bi bi-pencil me-1"></i>
-                編輯
-            </button>
-            <button class="btn btn-outline-secondary" @onclick="PrintWarehouse">
-                <i class="bi bi-printer me-1"></i>
-                列印
-            </button>
-            @if (!warehouse!.IsDefault)
-            {
-                <button class="btn btn-outline-success" @onclick="SetAsDefault">
-                    <i class="bi bi-star me-1"></i>
-                    設為預設
-                </button>
-            }
-            <button class="btn btn-outline-secondary" @onclick="BackToList">
-                <i class="bi bi-arrow-left me-1"></i>
-                返回列表
-            </button>
-        </div>
-    };
-
-    private async Task HandleSectionLoad(string sectionId)
-    {
-        // 目前所有資料都在初始載入時取得，所以這裡不需要額外處理
-        await Task.CompletedTask;
-    }
-
-    private async Task HandleItemClick(GenericDetailsComponent.DetailItemClickEventArgs args)
-    {
-        // 處理項目點擊事件
-        if (args.Item.DisplayType == DetailDisplayType.Phone)
-        {
-            await JSRuntime.InvokeVoidAsync("window.open", $"tel:{args.Item.Value}");
-        }
-    }
-
-    private void EditWarehouse()
-    {
-        Navigation.NavigateTo($"/inventory/warehouses/edit/{WarehouseId}");
-    }
-
-    private async Task PrintWarehouse()
-    {
-        await JSRuntime.InvokeVoidAsync("window.print");
-    }
-
-    private async Task SetAsDefault()
-    {
         try
         {
-            var result = await WarehouseService.SetDefaultWarehouseAsync(WarehouseId);
+            var result = await WarehouseService.ToggleStatusAsync(warehouse.Id);
             if (result.IsSuccess)
             {
-                await JSRuntime.InvokeVoidAsync("alert", $"已設定「{warehouse!.WarehouseName}」為預設倉庫");
-                await LoadWarehouseData();
-                InitializeDetailConfiguration();
+                warehouse.Status = warehouse.Status == Data.Enums.EntityStatus.Active 
+                    ? Data.Enums.EntityStatus.Inactive 
+                    : Data.Enums.EntityStatus.Active;
+                    
                 StateHasChanged();
+
+                var statusText = warehouse.Status == Data.Enums.EntityStatus.Active ? "啟用" : "停用";
+                await JSRuntime.InvokeVoidAsync("showToast", $"倉庫已{statusText}", "success");
             }
             else
             {
-                await JSRuntime.InvokeVoidAsync("alert", $"設定失敗：{result.ErrorMessage}");
+                await JSRuntime.InvokeVoidAsync("showToast", $"狀態更新失敗：{result.ErrorMessage}", "error");
             }
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"設定時發生錯誤：{ex.Message}");
+            await JSRuntime.InvokeVoidAsync("showToast", $"狀態更新失敗：{ex.Message}", "error");
         }
     }
 
-    private void BackToList()
+    private async Task DeleteAsync()
     {
-        Navigation.NavigateTo("/inventory/warehouses");
+        if (warehouse == null) return;
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "確定要刪除這個倉庫嗎？此操作無法復原。");
+        if (!confirmed) return;
+
+        try
+        {
+            await WarehouseService.DeleteAsync(warehouse.Id);
+            await JSRuntime.InvokeVoidAsync("showToast", "倉庫已刪除", "success");
+            Navigation.NavigateTo("/inventory/warehouses");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("showToast", $"刪除失敗：{ex.Message}", "error");
+        }
     }
 
     private void BackToWarehouseList()
     {
         Navigation.NavigateTo("/inventory/warehouses");
+    }    private string GetWarehouseTypeText(Data.Enums.WarehouseTypeEnum type)
+    {
+        return type switch
+        {
+            Data.Enums.WarehouseTypeEnum.Main => "主倉庫",
+            Data.Enums.WarehouseTypeEnum.Branch => "分倉庫",
+            Data.Enums.WarehouseTypeEnum.Virtual => "虛擬倉庫",
+            _ => "未知"
+        };
     }
 }
