@@ -30,13 +30,19 @@ else
     <GenericHeaderComponent Title="@color.Name" 
                           Subtitle="@($"顏色代碼：{color.Code}")"
                           Icon="bi bi-palette"
-                          BreadcrumbItems="@breadcrumbItems">
-        <ActionButtons>
+                          BreadcrumbItems="@breadcrumbItems">        <ActionButtons>
             <DetailActionButtonsComponent 
-                Entity="@color"
-                OnToggleStatus="ToggleStatusAsync"
-                OnDelete="DeleteAsync"
-                OnBack="BackToColorList" />
+                EntityStatus="@color?.Status"
+                IsLoading="@isLoading"
+                OnEditClick="@(() => Navigation.NavigateTo($"/BOMFoundation/colors/edit/{color?.Id}"))"
+                OnToggleStatusClick="@ToggleStatusAsync"
+                OnDeleteClick="@DeleteAsync"
+                OnBackClick="@BackToColorList"
+                ShowPrintButton="false"
+                DeactivateButtonText="停用"
+                ActivateButtonText="啟用"
+                DeleteButtonText="刪除"
+                BackButtonText="返回" />
         </ActionButtons>
     </GenericHeaderComponent>
 

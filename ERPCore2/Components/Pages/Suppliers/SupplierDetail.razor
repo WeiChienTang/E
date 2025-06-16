@@ -1,4 +1,5 @@
 @page "/suppliers/detail/{supplierId:int}"
+@using ERPCore2.Components.Shared.Buttons
 @inject ISupplierService SupplierService
 @inject ISupplierContactService SupplierContactService
 @inject ISupplierAddressService SupplierAddressService
@@ -32,13 +33,19 @@ else
     <GenericHeaderComponent Title="@supplier.CompanyName" 
                           Subtitle="@($"廠商編號：{supplier.SupplierCode}")"
                           Icon="bi bi-building-gear"
-                          BreadcrumbItems="@breadcrumbItems">
-        <ActionButtons>
+                          BreadcrumbItems="@breadcrumbItems">        <ActionButtons>
             <DetailActionButtonsComponent 
-                Entity="@supplier"
-                OnToggleStatus="ToggleStatusAsync"
-                OnDelete="DeleteAsync"
-                OnBack="BackToSupplierList" />
+                EntityStatus="@supplier?.Status"
+                IsLoading="@isLoading"
+                OnEditClick="@(() => Navigation.NavigateTo($"/suppliers/edit/{supplier?.Id}"))"
+                OnToggleStatusClick="@ToggleStatusAsync"
+                OnDeleteClick="@DeleteAsync"
+                OnBackClick="@BackToSupplierList"
+                ShowPrintButton="false"
+                DeactivateButtonText="停用"
+                ActivateButtonText="啟用"
+                DeleteButtonText="刪除"
+                BackButtonText="返回列表" />
         </ActionButtons>
     </GenericHeaderComponent>
 

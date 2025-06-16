@@ -34,13 +34,19 @@ else
     <GenericHeaderComponent Title="@warehouse.WarehouseName" 
                           Subtitle="@($"倉庫代碼：{warehouse.WarehouseCode}")"
                           Icon="bi bi-building"
-                          BreadcrumbItems="@breadcrumbItems">
-        <ActionButtons>
+                          BreadcrumbItems="@breadcrumbItems">        <ActionButtons>
             <DetailActionButtonsComponent 
-                Entity="@warehouse"
-                OnToggleStatus="ToggleStatusAsync"
-                OnDelete="DeleteAsync"
-                OnBack="BackToWarehouseList" />
+                EntityStatus="@warehouse?.Status"
+                IsLoading="@isLoading"
+                OnEditClick="@(() => Navigation.NavigateTo($"/warehouses/edit/{warehouse?.Id}"))"
+                OnToggleStatusClick="@ToggleStatusAsync"
+                OnDeleteClick="@DeleteAsync"
+                OnBackClick="@BackToWarehouseList"
+                ShowPrintButton="false"
+                DeactivateButtonText="停用"
+                ActivateButtonText="啟用"
+                DeleteButtonText="刪除"
+                BackButtonText="返回" />
         </ActionButtons>
     </GenericHeaderComponent>
 

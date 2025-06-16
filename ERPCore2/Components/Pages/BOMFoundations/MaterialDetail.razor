@@ -30,13 +30,19 @@ else
     <GenericHeaderComponent Title="@material.Name" 
                           Subtitle="@($"材質代碼：{material.Code}")"
                           Icon="bi bi-layers"
-                          BreadcrumbItems="@breadcrumbItems">
-        <ActionButtons>
+                          BreadcrumbItems="@breadcrumbItems">        <ActionButtons>
             <DetailActionButtonsComponent 
-                Entity="@material"
-                OnToggleStatus="ToggleStatusAsync"
-                OnDelete="DeleteAsync"
-                OnBack="BackToMaterialList" />
+                EntityStatus="@material?.Status"
+                IsLoading="@isLoading"
+                OnEditClick="@(() => Navigation.NavigateTo($"/BOMFoundation/materials/edit/{material?.Id}"))"
+                OnToggleStatusClick="@ToggleStatusAsync"
+                OnDeleteClick="@DeleteAsync"
+                OnBackClick="@BackToMaterialList"
+                ShowPrintButton="false"
+                DeactivateButtonText="停用"
+                ActivateButtonText="啟用"
+                DeleteButtonText="刪除"
+                BackButtonText="返回" />
         </ActionButtons>
     </GenericHeaderComponent>
 

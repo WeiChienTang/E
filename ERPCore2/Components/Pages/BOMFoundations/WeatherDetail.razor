@@ -30,13 +30,19 @@ else
     <GenericHeaderComponent Title="@weather.Name" 
                           Subtitle="@($"天氣代碼：{weather.Code}")"
                           Icon="bi bi-cloud-sun"
-                          BreadcrumbItems="@breadcrumbItems">
-        <ActionButtons>
+                          BreadcrumbItems="@breadcrumbItems">        <ActionButtons>
             <DetailActionButtonsComponent 
-                Entity="@weather"
-                OnToggleStatus="ToggleStatusAsync"
-                OnDelete="DeleteAsync"
-                OnBack="BackToWeatherList" />
+                EntityStatus="@weather?.Status"
+                IsLoading="@isLoading"
+                OnEditClick="@(() => Navigation.NavigateTo($"/BOMFoundation/weather/edit/{weather?.Id}"))"
+                OnToggleStatusClick="@ToggleStatusAsync"
+                OnDeleteClick="@DeleteAsync"
+                OnBackClick="@BackToWeatherList"
+                ShowPrintButton="false"
+                DeactivateButtonText="停用"
+                ActivateButtonText="啟用"
+                DeleteButtonText="刪除"
+                BackButtonText="返回" />
         </ActionButtons>
     </GenericHeaderComponent>
 

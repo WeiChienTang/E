@@ -30,13 +30,19 @@ else
     <GenericHeaderComponent Title="@transactionType.TypeName" 
                           Subtitle="@($"類型代碼：{transactionType.TypeCode}")"
                           Icon="bi bi-list-ul"
-                          BreadcrumbItems="@breadcrumbItems">
-        <ActionButtons>
+                          BreadcrumbItems="@breadcrumbItems">        <ActionButtons>
             <DetailActionButtonsComponent 
-                Entity="@transactionType"
-                OnToggleStatus="ToggleStatusAsync"
-                OnDelete="DeleteAsync"
-                OnBack="BackToTransactionTypeList" />
+                EntityStatus="@transactionType?.Status"
+                IsLoading="@isLoading"
+                OnEditClick="@(() => Navigation.NavigateTo($"/inventory/transaction-types/edit/{transactionType?.Id}"))"
+                OnToggleStatusClick="@ToggleStatusAsync"
+                OnDeleteClick="@DeleteAsync"
+                OnBackClick="@BackToTransactionTypeList"
+                ShowPrintButton="false"
+                DeactivateButtonText="停用"
+                ActivateButtonText="啟用"
+                DeleteButtonText="刪除"
+                BackButtonText="返回列表" />
         </ActionButtons>
     </GenericHeaderComponent>
 
