@@ -17,14 +17,12 @@
                        LoadingText="載入中..."
                        ShowDivider="true">
     <ActionButtons>
-        <button class="btn btn-primary" @onclick="ShowCreateTransactionType">
-            <i class="bi bi-plus-circle me-1"></i>
-            新增異動類型
-        </button>
-        <button class="btn btn-outline-secondary" @onclick="RefreshData">
-            <i class="bi bi-arrow-clockwise me-1"></i>
-            重新整理
-        </button>
+        <IndexActionButtonsComponent 
+            AddButtonText="新增異動類型"
+            AddButtonIcon="bi-plus-circle"
+            OnAddClick="ShowCreateTransactionType"
+            OnRefreshClick="RefreshData"
+            IsLoading="@isLoading" />
     </ActionButtons>
 </GenericHeaderComponent>
 

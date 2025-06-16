@@ -8,16 +8,15 @@
         <h6 class="card-title mb-0">
             <i class="fas fa-filter me-2"></i>
             搜尋篩選
-        </h6>
-        <div class="d-flex gap-2">
+        </h6>        <div class="d-flex gap-2">
             @if (ShowAdvancedToggle && HasAdvancedFilters())
             {
-                <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ToggleAdvancedFilters">
+                <button type="button" class="btn btn-primary" @onclick="ToggleAdvancedFilters">
                     <i class="fas fa-@(showAdvanced ? "chevron-up" : "chevron-down") me-1"></i>
                     @(showAdvanced ? "隱藏" : "顯示")進階篩選
                 </button>
             }
-            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="ClearAllFilters">
+            <button type="button" class="btn btn-danger" @onclick="ClearAllFilters">
                 <i class="fas fa-times me-1"></i>
                 清除篩選
             </button>

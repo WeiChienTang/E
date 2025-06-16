@@ -14,16 +14,16 @@
                        BreadcrumbItems="@breadcrumbItems"
                        IsLoading="@isLoading"
                        LoadingText="載入中..."
-                       ShowDivider="true">
+                       ShowDivider="true">    
     <ActionButtons>
-        <button class="btn btn-primary" @onclick="ShowCreateCustomer">
-            <i class="bi bi-plus-circle me-1"></i>
-            新增客戶
-        </button>
-        <button class="btn btn-outline-secondary" @onclick="RefreshData">
-            <i class="bi bi-arrow-clockwise me-1"></i>
-            重新整理
-        </button>
+        <IndexActionButtonsComponent 
+            AddButtonText="新增客戶"
+            AddButtonIcon="bi bi-plus-circle"
+            AddButtonTitle="新增客戶資料"
+            OnAddClick="ShowCreateCustomer"
+            OnRefreshClick="RefreshData"
+            IsLoading="@isLoading"
+            LoadingOnRefresh="true" />
     </ActionButtons>
 </GenericHeaderComponent>
 

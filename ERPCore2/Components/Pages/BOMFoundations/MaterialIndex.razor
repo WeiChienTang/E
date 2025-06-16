@@ -19,14 +19,12 @@
                        LoadingText="載入中..."
                        ShowDivider="true">
     <ActionButtons>
-        <button class="btn btn-primary" @onclick="ShowCreateMaterial">
-            <i class="bi bi-plus-circle me-1"></i>
-            新增材質
-        </button>
-        <button class="btn btn-outline-secondary" @onclick="RefreshData">
-            <i class="bi bi-arrow-clockwise me-1"></i>
-            重新整理
-        </button>
+        <IndexActionButtonsComponent 
+            AddButtonText="新增材質"
+            AddButtonIcon="bi-plus-circle"
+            OnAddClick="ShowCreateMaterial"
+            OnRefreshClick="RefreshData"
+            IsLoading="@isLoading" />
     </ActionButtons>
 </GenericHeaderComponent>
 

@@ -1,0 +1,103 @@
+@* Index 頁面動作按鈕組件 - 統一管理新增和重新整理按鈕 *@
+@using ERPCore2.Components.Shared.Buttons
+
+<div class="d-flex gap-2">
+    @if (ShowAddButton)
+    {
+        <button class="btn btn-primary" 
+                type="button"
+                title="@AddButtonTitle"
+                disabled="@(IsLoading || IsAddDisabled)"
+                @onclick="HandleAddClick">
+            @if (!string.IsNullOrEmpty(AddButtonIcon))
+            {
+                <i class="@AddButtonIcon me-1"></i>
+            }
+            @if (IsLoading && LoadingOnAdd)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+            }
+            @AddButtonText
+        </button>
+    }
+
+    @if (ShowRefreshButton)
+    {
+        <button class="btn btn-success" 
+                type="button"
+                title="@RefreshButtonTitle"
+                disabled="@(IsLoading || IsRefreshDisabled)"
+                @onclick="HandleRefreshClick">
+            @if (!string.IsNullOrEmpty(RefreshButtonIcon))
+            {
+                <i class="@RefreshButtonIcon me-1"></i>
+            }
+            @if (IsLoading && LoadingOnRefresh)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+            }
+            @RefreshButtonText
+        </button>
+    }
+
+    @* 允許添加自訂按鈕 *@
+    @CustomButtons
+</div>
+
+@code {
+    // 新增按鈕相關參數
+    [Parameter] public bool ShowAddButton { get; set; } = true;
+    [Parameter] public string AddButtonText { get; set; } = "新增";
+    [Parameter] public string AddButtonIcon { get; set; } = "bi bi-plus-circle";
+    [Parameter] public string AddButtonTitle { get; set; } = "";
+    [Parameter] public bool IsAddDisabled { get; set; } = false;
+    [Parameter] public bool LoadingOnAdd { get; set; } = false;
+    [Parameter] public EventCallback OnAddClick { get; set; }
+
+    // 重新整理按鈕相關參數
+    [Parameter] public bool ShowRefreshButton { get; set; } = true;
+    [Parameter] public string RefreshButtonText { get; set; } = "重新整理";
+    [Parameter] public string RefreshButtonIcon { get; set; } = "bi bi-arrow-clockwise";
+    [Parameter] public string RefreshButtonTitle { get; set; } = "";
+    [Parameter] public bool IsRefreshDisabled { get; set; } = false;
+    [Parameter] public bool LoadingOnRefresh { get; set; } = false;
+    [Parameter] public EventCallback OnRefreshClick { get; set; }
+
+    // 通用狀態參數
+    [Parameter] public bool IsLoading { get; set; } = false;
+    
+    // 自訂按鈕內容
+    [Parameter] public RenderFragment? CustomButtons { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        // 設定預設的 Title 如果沒有提供
+        if (string.IsNullOrEmpty(AddButtonTitle))
+        {
+            AddButtonTitle = AddButtonText;
+        }
+        
+        if (string.IsNullOrEmpty(RefreshButtonTitle))
+        {
+            RefreshButtonTitle = RefreshButtonText;
+        }
+        
+        base.OnParametersSet();
+    }
+
+    private async Task HandleAddClick()
+    {
+        if (OnAddClick.HasDelegate && !IsLoading && !IsAddDisabled)
+        {
+            await OnAddClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandleRefreshClick()
+    {
+        if (OnRefreshClick.HasDelegate && !IsLoading && !IsRefreshDisabled)
+        {
+            await OnRefreshClick.InvokeAsync();
+        }
+    }
+}
