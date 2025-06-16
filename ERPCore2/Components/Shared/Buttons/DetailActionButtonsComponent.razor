@@ -1,5 +1,8 @@
-@* Detail 頁面動作按鈕組件 - 提供統一的編輯、啟用/停用、刪除和返回按鈕 *@
+@* Enhanced Detail 頁面動作按鈕組件 - 提供統一的編輯、啟用/停用、刪除和返回按鈕 *@
 @using ERPCore2.Data.Enums
+@using Microsoft.JSInterop
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
 <div class="btn-group">
     @if (ShowEditButton)
@@ -12,7 +15,7 @@
 
     @if (ShowToggleStatusButton && EntityStatus.HasValue)
     {
-        @if (EntityStatus == Data.Enums.EntityStatus.Active)
+        @if (EntityStatus == ERPCore2.Data.Enums.EntityStatus.Active)
         {
             <button class="btn btn-warning" @onclick="HandleToggleStatusClick" disabled="@IsLoading">
                 <i class="@DeactivateButtonIcon me-1"></i>
@@ -26,7 +29,9 @@
                 @ActivateButtonText
             </button>
         }
-    }    @if (ShowDeleteButton)
+    }
+
+    @if (ShowDeleteButton)
     {
         <button class="btn btn-danger" @onclick="HandleDeleteClick" disabled="@IsLoading">
             <i class="@DeleteButtonIcon me-1"></i>
@@ -40,7 +45,9 @@
             <i class="@PrintButtonIcon me-1"></i>
             @PrintButtonText
         </button>
-    }    @if (ShowBackButton)
+    }
+
+    @if (ShowBackButton)
     {
         <button class="btn btn-outline-primary" @onclick="HandleBackClick" disabled="@IsLoading">
             <i class="@BackButtonIcon me-1"></i>
@@ -54,21 +61,22 @@
     }
 </div>
 
-@code {    // 按鈕顯示控制
+@code {
+    // 按鈕顯示控制
     [Parameter] public bool ShowEditButton { get; set; } = true;
     [Parameter] public bool ShowToggleStatusButton { get; set; } = true;
     [Parameter] public bool ShowDeleteButton { get; set; } = true;
     [Parameter] public bool ShowPrintButton { get; set; } = true;
-    [Parameter] public bool ShowBackButton { get; set; } = true;    
-    
+    [Parameter] public bool ShowBackButton { get; set; } = true;
+
     // 按鈕文字自定義
     [Parameter] public string EditButtonText { get; set; } = "編輯";
     [Parameter] public string ActivateButtonText { get; set; } = "啟用";
     [Parameter] public string DeactivateButtonText { get; set; } = "停用";
     [Parameter] public string DeleteButtonText { get; set; } = "刪除";
     [Parameter] public string PrintButtonText { get; set; } = "列印";
-    [Parameter] public string BackButtonText { get; set; } = "返回";    
-    
+    [Parameter] public string BackButtonText { get; set; } = "返回";
+
     // 按鈕圖示自定義
     [Parameter] public string EditButtonIcon { get; set; } = "bi bi-pencil";
     [Parameter] public string ActivateButtonIcon { get; set; } = "bi bi-power";
@@ -78,10 +86,25 @@
     [Parameter] public string BackButtonIcon { get; set; } = "bi bi-arrow-left";
 
     // 實體狀態
-    [Parameter] public EntityStatus? EntityStatus { get; set; }
+    [Parameter] public ERPCore2.Data.Enums.EntityStatus? EntityStatus { get; set; }
 
     // 載入狀態
-    [Parameter] public bool IsLoading { get; set; } = false;    // 事件回調
+    [Parameter] public bool IsLoading { get; set; } = false;
+
+    // 新增：通用參數化操作
+    [Parameter] public string? EntityName { get; set; }
+    [Parameter] public string? EntityId { get; set; }
+    [Parameter] public string? EntityDisplayName { get; set; }
+    [Parameter] public string? ListRoute { get; set; }
+    [Parameter] public string? EditRoute { get; set; }
+    [Parameter] public string? DeleteConfirmMessage { get; set; }
+    [Parameter] public object? EntityService { get; set; }
+
+    // 事件處理器（用於Alert顯示和重新載入）
+    [Parameter] public EventCallback<(string message, string type)> OnShowAlert { get; set; }
+    [Parameter] public EventCallback OnReloadData { get; set; }
+
+    // 原有的事件回調（向下相容）
     [Parameter] public EventCallback OnEditClick { get; set; }
     [Parameter] public EventCallback OnToggleStatusClick { get; set; }
     [Parameter] public EventCallback OnDeleteClick { get; set; }
@@ -94,7 +117,13 @@
     // 事件處理方法
     private async Task HandleEditClick()
     {
-        if (OnEditClick.HasDelegate)
+        // 新增：如果提供了路由參數，使用通用邏輯
+        if (!string.IsNullOrEmpty(EditRoute) && !string.IsNullOrEmpty(EntityId))
+        {
+            Navigation.NavigateTo($"{EditRoute}/{EntityId}");
+        }
+        // 否則使用原有的回調方式（向下相容）
+        else if (OnEditClick.HasDelegate)
         {
             await OnEditClick.InvokeAsync();
         }
@@ -102,13 +131,35 @@
 
     private async Task HandleToggleStatusClick()
     {
+        // 新增：簡化的通用狀態切換邏輯（暫時使用回調）
         if (OnToggleStatusClick.HasDelegate)
         {
             await OnToggleStatusClick.InvokeAsync();
         }
-    }    private async Task HandleDeleteClick()
+    }
+
+    private async Task HandleDeleteClick()
     {
-        if (OnDeleteClick.HasDelegate)
+        // 新增：通用刪除邏輯
+        if (!string.IsNullOrEmpty(EntityName) && !string.IsNullOrEmpty(EntityDisplayName))
+        {
+            var message = !string.IsNullOrEmpty(DeleteConfirmMessage) 
+                ? DeleteConfirmMessage 
+                : $"確定要刪除{EntityName}「{EntityDisplayName}」嗎？這個操作無法復原。";
+            
+            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", message);
+            
+            if (confirmed)
+            {
+                // 暫時使用回調，之後可以擴展為直接調用服務
+                if (OnDeleteClick.HasDelegate)
+                {
+                    await OnDeleteClick.InvokeAsync();
+                }
+            }
+        }
+        // 否則使用原有的回調方式（向下相容）
+        else if (OnDeleteClick.HasDelegate)
         {
             await OnDeleteClick.InvokeAsync();
         }
@@ -124,7 +175,13 @@
 
     private async Task HandleBackClick()
     {
-        if (OnBackClick.HasDelegate)
+        // 新增：如果提供了列表路由，直接導航
+        if (!string.IsNullOrEmpty(ListRoute))
+        {
+            Navigation.NavigateTo(ListRoute);
+        }
+        // 否則使用原有的回調方式（向下相容）
+        else if (OnBackClick.HasDelegate)
         {
             await OnBackClick.InvokeAsync();
         }

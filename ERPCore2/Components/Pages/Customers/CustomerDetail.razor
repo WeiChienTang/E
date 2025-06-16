@@ -33,7 +33,7 @@ else if (customer == null)
     <div class="alert alert-warning">
         <h4>找不到客戶資料</h4>
         <p>指定的客戶不存在或已被刪除。</p>        
-        <button class="btn btn-primary" @onclick="BackToCustomerList">
+        <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/customers")'>
             返回客戶列表
         </button>
     </div>
@@ -46,16 +46,18 @@ else
                            TitleIcon="person-badge"
                            HeadingLevel="h1"
                            BreadcrumbItems="@breadcrumbItems"
-                           ShowDivider="true">        
-        <ActionButtons>
+                           ShowDivider="true">          <ActionButtons>
             <DetailActionButtonsComponent 
                 EntityStatus="@customer?.Status"
                 IsLoading="@isLoading"
-                OnEditClick="@EditCustomer"
+                EntityName="客戶"
+                EntityId="@CustomerId.ToString()"
+                EntityDisplayName="@customer?.CompanyName"
+                ListRoute="/customers"
+                EditRoute="/customers/edit"
                 OnToggleStatusClick="@ToggleStatusAsync"
-                OnDeleteClick="@DeleteCustomer"
-                OnBackClick="@BackToCustomerList"/>
-        </ActionButtons>    
+                OnDeleteClick="@DeleteCustomer"/>
+        </ActionButtons>
         </GenericHeaderComponent>
 
     @* 基本資料 *@
@@ -267,18 +269,10 @@ else
             parts.Add(address.District);
         
         if (!string.IsNullOrEmpty(address.Address))
-            parts.Add(address.Address);
-
-        return parts.Any() ? string.Join(" ", parts) : "地址不完整";
+            parts.Add(address.Address);        return parts.Any() ? string.Join(" ", parts) : "地址不完整";
     }
 
-    private void EditCustomer()
-    {
-        Navigation.NavigateTo($"/customers/edit/{CustomerId}");
-    }    private void BackToCustomerList()
-    {
-        Navigation.NavigateTo("/customers");
-    }    private async Task ToggleStatusAsync()
+    private async Task ToggleStatusAsync()
     {
         if (customer == null) return;
 
