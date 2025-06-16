@@ -186,8 +186,7 @@
     [Parameter] public string ActionsHeader { get; set; } = "操作";
     [Parameter] public Func<TItem, string>? GetRowCssClass { get; set; }
     [Parameter] public EventCallback<TItem> OnRowClick { get; set; }
-    [Parameter] public bool EnableRowClick { get; set; } = false;
-    [Parameter] public string RowClickCursor { get; set; } = "pointer";
+    [Parameter] public bool EnableRowClick { get; set; } = false;    [Parameter] public string RowClickCursor { get; set; } = "pointer";
     [Parameter] public bool EnableSorting { get; set; } = false;
     [Parameter] public EventCallback<string> OnSort { get; set; }
 
@@ -228,9 +227,7 @@
             classes.Add(CssClass);
             
         return string.Join(" ", classes.Where(c => !string.IsNullOrEmpty(c)));
-    }
-
-    private string GetHeaderClass()
+    }    private string GetHeaderClass()
     {
         return "table-header-primary";
     }

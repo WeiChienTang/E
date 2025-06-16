@@ -29,34 +29,45 @@
 
 @* 天氣管理主要內容區域 *@
 <div class="row">
-    <div class="col-12">
-        <div class="card">            <div class="card-header">
-                <GenericSearchFilterComponent TModel="SearchFilterModel"
-                                      FilterDefinitions="@filterDefinitions"
-                                      FilterModel="@searchModel"
-                                      OnSearch="HandleSearch"
-                                      OnFilterChanged="HandleFilterChanged"
-                                      AutoSearch="true"
-                                      ShowSearchButton="false"
-                                      SearchDelayMs="500" />
+    <div class="col-12">        <div class="card section-card">            
+        <div class="card-header section-header-primary">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-gear me-2"></i>⚙️ 天氣搜尋與管理
+                </h5>
             </div>
-            <div class="card-body">                <GenericTableComponent TItem="Weather"
-                                     Items="@pagedWeathers"
-                                     ColumnDefinitions="@columnDefinitions"
-                                     OnRowClick="HandleRowClick"
-                                     ActionsTemplate="@ActionsTemplate"
-                                     Size="TableSize.Normal"
-                                     EmptyMessage="沒有找到符合條件的天氣資料"
-                                     ActionsHeader="操作"
-                                     EnablePagination="true"
-                                     CurrentPage="@currentPage"
-                                     PageSize="@pageSize"
-                                     TotalItems="@totalItems"
-                                     OnPageChanged="HandlePageChanged"
-                                     OnPageSizeChanged="HandlePageSizeChanged"
-                                     ShowPageSizeSelector="true"
-                                     EnableRowClick="true">
-                </GenericTableComponent>
+            <div class="card-body">
+                @* 搜尋篩選區域 *@
+                <GenericSearchFilterComponent TModel="SearchFilterModel"
+                                             FilterDefinitions="@filterDefinitions"
+                                             FilterModel="@searchModel"
+                                             OnSearch="HandleSearch"
+                                             OnFilterChanged="HandleFilterChanged"
+                                             AutoSearch="true"
+                                             ShowSearchButton="false"
+                                             SearchDelayMs="500" />                
+                                             @* 天氣列表表格 *@
+                <div class="mt-4">                    
+                    <GenericTableComponent TItem="Weather"
+                                         Items="@pagedWeathers"
+                                         ColumnDefinitions="@columnDefinitions"
+                                         OnRowClick="HandleRowClick"
+                                         ActionsTemplate="@ActionsTemplate"
+                                         EnableRowClick="true"
+                                         IsStriped="true"
+                                         IsHoverable="true"
+                                         IsBordered="false"
+                                         Size="TableSize.Normal"
+                                         EmptyMessage="沒有找到符合條件的天氣資料"
+                                         ActionsHeader="操作"
+                                         EnablePagination="true"
+                                         CurrentPage="@currentPage"
+                                         PageSize="@pageSize"
+                                         TotalItems="@totalItems"
+                                         OnPageChanged="HandlePageChanged"
+                                         OnPageSizeChanged="HandlePageSizeChanged"
+                                         ShowPageSizeSelector="true">
+                    </GenericTableComponent>
+                </div>
             </div>
         </div>
     </div>

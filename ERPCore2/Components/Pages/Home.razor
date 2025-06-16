@@ -72,7 +72,7 @@
     private List<SearchFilterDefinition> filterDefinitions = new();
     private bool hasSearched = false;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         InitializeFilters();
     }

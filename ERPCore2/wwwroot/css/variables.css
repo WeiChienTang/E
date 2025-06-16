@@ -271,6 +271,20 @@
   font-weight: 600 !important;
 }
 
+/* 自定義表格標題樣式 - 基礎單位頁面使用綠色 */
+.table-header-foundation {
+  background-color: var(--success-color) !important;
+  color: var(--primary-white) !important;
+  border-color: var(--success-color) !important;
+}
+
+.table-header-foundation th {
+  background-color: var(--success-color) !important;
+  color: var(--primary-white) !important;
+  border-color: var(--success-color) !important;
+  font-weight: 600 !important;
+}
+
 /* FormSection 標題樣式 - 使用更高優先級的選擇器 */
 .card-header.form-section-header-basic {
   background-color: var(--primary-blue) !important;
@@ -550,6 +564,24 @@ hr {
 }
 
 .section-header-primary .card-title i {
+  color: var(--primary-white) !important;
+}
+
+/* 基礎單位頁面 - 綠色主題 */
+.section-header-foundation {
+  background-color: var(--success-color) !important;
+  color: var(--primary-white) !important;
+  border-bottom: 1px solid var(--success-color) !important;
+  padding: 1rem 1.25rem !important;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+}
+
+.section-header-foundation .card-title {
+  margin-bottom: 0 !important;
+  font-weight: 600 !important;
+}
+
+.section-header-foundation .card-title i {
   color: var(--primary-white) !important;
 }
 

@@ -1,7 +1,5 @@
 @page "/color"
 @page "/BOMFoundation/color"
-@using ERPCore2.Data.Entities
-@using ERPCore2.Services
 @inject IColorService ColorService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -30,37 +28,44 @@
 @* 顏色管理主要內容區域 *@
 <div class="row">
     <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <GenericSearchFilterComponent TModel="SearchFilterModel"
-                                      FilterDefinitions="@filterDefinitions"
-                                      FilterModel="@searchModel"
-                                      OnSearch="HandleSearch"
-                                      OnFilterChanged="HandleFilterChanged"
-                                      AutoSearch="true"
-                                      ShowSearchButton="false"
-                                      SearchDelayMs="500" />
+        <div class="card section-card">
+            <div class="card-header section-header-primary">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-gear me-2"></i>⚙️ 顏色搜尋與管理
+                </h5>
             </div>
             <div class="card-body">
-                <GenericTableComponent TItem="Color"
-                                     Items="@pagedColors"
-                                     ColumnDefinitions="@columnDefinitions"
-                                     EnableRowClick="true"
-                                     OnRowClick="HandleRowClick"
-                                     ActionsTemplate="@ActionsTemplate"
-                                     Size="TableSize.Normal"
-                                     IsStriped="true"
-                                     IsHoverable="true"
-                                     EmptyMessage="沒有找到符合條件的顏色資料"
-                                     ActionsHeader="操作"
-                                     EnablePagination="true"
-                                     CurrentPage="@currentPage"
-                                     PageSize="@pageSize"
-                                     TotalItems="@totalItems"
-                                     OnPageChanged="HandlePageChanged"
-                                     OnPageSizeChanged="HandlePageSizeChanged"
-                                     ShowPageSizeSelector="true">
-                </GenericTableComponent>
+                @* 搜尋篩選區域 *@
+                <GenericSearchFilterComponent TModel="SearchFilterModel"
+                                             FilterDefinitions="@filterDefinitions"
+                                             FilterModel="@searchModel"
+                                             OnSearch="HandleSearch"
+                                             OnFilterChanged="HandleFilterChanged"
+                                             AutoSearch="true"
+                                             ShowSearchButton="false"
+                                             SearchDelayMs="500" />                @* 顏色列表表格 *@
+                <div class="mt-4">
+                    <GenericTableComponent TItem="Color"
+                                         Items="@pagedColors"
+                                         ColumnDefinitions="@columnDefinitions"
+                                         OnRowClick="HandleRowClick"
+                                         ActionsTemplate="@ActionsTemplate"
+                                         EnableRowClick="true"
+                                         IsStriped="true"
+                                         IsHoverable="true"
+                                         IsBordered="false"
+                                         Size="TableSize.Normal"
+                                         EmptyMessage="沒有找到符合條件的顏色資料"
+                                         ActionsHeader="操作"
+                                         EnablePagination="true"
+                                         CurrentPage="@currentPage"
+                                         PageSize="@pageSize"
+                                         TotalItems="@totalItems"
+                                         OnPageChanged="HandlePageChanged"
+                                         OnPageSizeChanged="HandlePageSizeChanged"
+                                         ShowPageSizeSelector="true">
+                    </GenericTableComponent>
+                </div>>
             </div>
         </div>
     </div>
