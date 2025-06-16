@@ -349,7 +349,7 @@ public class NavigationSearchService : INavigationSearchService
                     {
                         Name = "顏色管理",
                         Description = "管理產品顏色分類",
-                        Route = "/BOMFoundation/color",
+                        Route = "/BOMFoundation/colors",
                         IconClass = "bi bi-palette-fill",
                         Category = "BOM管理",
                         RequiredPermission = "Color.Read",

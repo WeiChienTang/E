@@ -2,7 +2,16 @@
 @inject IWeatherService WeatherService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
+@using ERPCore2.Components.Shared.Alerts
 @rendermode InteractiveServer
+
+@* 顯示警告訊息 *@
+<AlertComponent 
+    Message="@alertMessage" 
+    Type="@alertType" 
+    IsVisible="@showAlert" 
+    IsDismissible="true"
+    OnDismiss="@(() => showAlert = false)" />
 
 @if (isLoading)
 {
@@ -30,8 +39,7 @@ else
     <GenericHeaderComponent Title="@weather.Name" 
                           Subtitle="@($"天氣代碼：{weather.Code}")"
                           Icon="bi bi-cloud-sun"
-                          BreadcrumbItems="@breadcrumbItems">        <ActionButtons>
-            <DetailActionButtonsComponent 
+                          BreadcrumbItems="@breadcrumbItems">        <ActionButtons>            <DetailActionButtonsComponent 
                 EntityStatus="@weather?.Status"
                 IsLoading="@isLoading"
                 EntityName="天氣"
@@ -40,6 +48,7 @@ else
                 EntityService="@WeatherService"
                 ListRoute="/BOMFoundation/weather"
                 EditRoute="/BOMFoundation/weather/edit"
+                OnShowAlert="@((tuple) => ShowAlert(tuple.message, Enum.Parse<AlertComponent.AlertType>(tuple.type, true)))"
                 OnReloadData="@LoadWeatherData"/>
         </ActionButtons>
     </GenericHeaderComponent>
@@ -171,6 +180,11 @@ else
     private bool isLoading = true;
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
+    // Alert 相關變數
+    private bool showAlert = false;
+    private string alertMessage = string.Empty;
+    private AlertComponent.AlertType alertType = AlertComponent.AlertType.Info;
+
     protected override async Task OnInitializedAsync()
     {
         InitializeBreadcrumb();
@@ -219,5 +233,13 @@ else
     private void BackToWeatherList()
     {
         Navigation.NavigateTo("/BOMFoundation/weather");
+    }
+
+    private void ShowAlert(string message, AlertComponent.AlertType type)
+    {
+        alertMessage = message;
+        alertType = type;
+        showAlert = true;
+        StateHasChanged();
     }
 }

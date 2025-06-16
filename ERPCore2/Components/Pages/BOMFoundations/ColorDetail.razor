@@ -2,7 +2,16 @@
 @inject IColorService ColorService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
+@using ERPCore2.Components.Shared.Alerts
 @rendermode InteractiveServer
+
+@* 顯示警告訊息 *@
+<AlertComponent 
+    Message="@alertMessage" 
+    Type="@alertType" 
+    IsVisible="@showAlert" 
+    IsDismissible="true"
+    OnDismiss="@(() => showAlert = false)" />
 
 @if (isLoading)
 {
@@ -30,7 +39,8 @@ else
     <GenericHeaderComponent Title="@color.Name" 
                           Subtitle="@($"顏色代碼：{color.Code}")"
                           Icon="bi bi-palette"
-                          BreadcrumbItems="@breadcrumbItems">        <ActionButtons>
+                          BreadcrumbItems="@breadcrumbItems">        
+                          <ActionButtons>
             <DetailActionButtonsComponent 
                 EntityStatus="@color?.Status"
                 IsLoading="@isLoading"
@@ -40,6 +50,7 @@ else
                 EntityService="@ColorService"
                 ListRoute="/BOMFoundation/colors"
                 EditRoute="/BOMFoundation/colors/edit"
+                OnShowAlert="@((tuple) => ShowAlert(tuple.message, Enum.Parse<AlertComponent.AlertType>(tuple.type, true)))"
                 OnReloadData="@LoadColorData"/>
         </ActionButtons>
     </GenericHeaderComponent>
@@ -194,6 +205,11 @@ else
     private bool isLoading = true;
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
+    // Alert 相關變數
+    private bool showAlert = false;
+    private string alertMessage = string.Empty;
+    private AlertComponent.AlertType alertType = AlertComponent.AlertType.Info;
+
     protected override async Task OnInitializedAsync()
     {
         InitializeBreadcrumb();
@@ -242,5 +258,13 @@ else
     private void BackToColorList()
     {
         Navigation.NavigateTo("/BOMFoundation/colors");
+    }
+
+    private void ShowAlert(string message, AlertComponent.AlertType type)
+    {
+        alertMessage = message;
+        alertType = type;
+        showAlert = true;
+        StateHasChanged();
     }
 }

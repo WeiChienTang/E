@@ -1,5 +1,5 @@
-@page "/color"
-@page "/BOMFoundation/color"
+@page "/colors"
+@page "/BOMFoundation/colors"
 @inject IColorService ColorService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -273,11 +273,9 @@
         searchModel = filterModel;
         // 自動搜尋功能已啟用，這裡不需要立即執行搜尋
         await Task.CompletedTask;
-    }
-
-    private async Task HandleRowClick(Color color)
+    }    private async Task HandleRowClick(Color color)
     {
-        Navigation.NavigateTo($"/BOMFoundation/color/detail/{color.Id}");
+        Navigation.NavigateTo($"/BOMFoundation/colors/detail/{color.Id}");
         await Task.CompletedTask;
     }
 
@@ -285,17 +283,13 @@
     {
         await LoadColorsAsync();
         StateHasChanged();
-    }
-
-    private async Task ShowCreateColor()
+    }    private async Task ShowCreateColor()
     {
-        Navigation.NavigateTo("/BOMFoundation/color/edit");
+        Navigation.NavigateTo("/BOMFoundation/colors/edit");
         await Task.CompletedTask;
-    }
-
-    private async Task EditColor(Color color)
+    }    private async Task EditColor(Color color)
     {
-        Navigation.NavigateTo($"/BOMFoundation/color/edit/{color.Id}");
+        Navigation.NavigateTo($"/BOMFoundation/colors/edit/{color.Id}");
         await Task.CompletedTask;
     }
 
@@ -326,11 +320,9 @@
                 await JSRuntime.InvokeVoidAsync("alert", "刪除失敗，請稍後再試");
             }
         }
-    }
-
-    private async Task ViewColor(Color color)
+    }    private async Task ViewColor(Color color)
     {
-        Navigation.NavigateTo($"/BOMFoundation/color/detail/{color.Id}");
+        Navigation.NavigateTo($"/BOMFoundation/colors/detail/{color.Id}");
         await Task.CompletedTask;
     }
 
