@@ -7,6 +7,14 @@
 
 <PageTitle>單位詳細資料</PageTitle>
 
+@* 顯示警告訊息 *@
+<AlertComponent 
+    Message="@alertMessage" 
+    Type="@alertType" 
+    IsVisible="@showAlert" 
+    IsDismissible="true"
+    OnDismiss="@(() => showAlert = false)" />
+
 @if (isLoading)
 {
     <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
@@ -44,12 +52,7 @@ else
                 OnEditClick="@EditUnit"
                 OnToggleStatusClick="@ToggleUnitStatus"
                 OnDeleteClick="@DeleteUnit"
-                OnBackClick="@BackToUnitList"
-                ShowPrintButton="false"
-                DeactivateButtonText="停用"
-                ActivateButtonText="啟用"
-                DeleteButtonText="刪除"
-                BackButtonText="返回列表" />
+                OnBackClick="@BackToUnitList"/>
         </ActionButtons>    </GenericHeaderComponent>
 
     @* 基本資料 *@
@@ -168,6 +171,11 @@ else
     private Unit? unit;
     private List<Unit> convertibleUnits = new();
     private bool isLoading = true;
+    
+    // Alert 相關變數
+    private bool showAlert = false;
+    private string alertMessage = string.Empty;
+    private AlertComponent.AlertType alertType = AlertComponent.AlertType.Info;
 
     protected override async Task OnInitializedAsync()
     {
@@ -228,29 +236,26 @@ else
             $"確定要{actionText}單位「{unit.UnitName}」嗎？");
         
         if (confirmed)
-        {
-            try
+        {            try
             {
                 var result = await UnitService.ToggleStatusAsync(UnitId);
                 
                 if (result.IsSuccess)
                 {
-                    await JSRuntime.InvokeVoidAsync("showToast", "success", $"{actionText}成功");
+                    ShowAlert($"{actionText}成功", AlertComponent.AlertType.Success);
                     await LoadUnitData();
                 }
                 else
                 {
-                    await JSRuntime.InvokeVoidAsync("showToast", "error", result.ErrorMessage ?? $"{actionText}失敗");
+                    ShowAlert(result.ErrorMessage ?? $"{actionText}失敗", AlertComponent.AlertType.Danger);
                 }
             }
             catch (Exception ex)
             {
-                await JSRuntime.InvokeVoidAsync("showToast", "error", $"{actionText}時發生錯誤：{ex.Message}");
+                ShowAlert($"{actionText}時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
             }
         }
-    }
-
-    private async Task DeleteUnit()
+    }    private async Task DeleteUnit()
     {
         var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
             $"確定要刪除單位「{unit?.UnitName}」嗎？這個操作無法復原。");
@@ -262,17 +267,19 @@ else
                 var result = await UnitService.DeleteAsync(UnitId);
                 if (result.IsSuccess)
                 {
-                    await JSRuntime.InvokeVoidAsync("showToast", "success", "單位刪除成功");
+                    ShowAlert("單位刪除成功", AlertComponent.AlertType.Success);
+                    // 延遲一下再導航，讓用戶看到成功訊息
+                    await Task.Delay(1500);
                     Navigation.NavigateTo("/units");
                 }
                 else
                 {
-                    await JSRuntime.InvokeVoidAsync("showToast", "error", result.ErrorMessage ?? "刪除失敗");
+                    ShowAlert(result.ErrorMessage ?? "刪除失敗", AlertComponent.AlertType.Danger);
                 }
             }
             catch (Exception ex)
             {
-                await JSRuntime.InvokeVoidAsync("showToast", "error", $"刪除時發生錯誤：{ex.Message}");
+                ShowAlert($"刪除時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
             }
         }
     }
@@ -289,11 +296,18 @@ else
         return $"單位代碼：{unit.UnitCode ?? "未設定"}";
     }
 
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
-    {
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()    {
         new("首頁", "/"),
         new("庫存管理", "/inventory"),
         new("單位管理", "/units"),
         new("單位詳細資料")
     };
+
+    private void ShowAlert(string message, AlertComponent.AlertType type)
+    {
+        alertMessage = message;
+        alertType = type;
+        showAlert = true;
+        StateHasChanged();
+    }
 }

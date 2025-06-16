@@ -4,9 +4,18 @@
 @inject ICustomerAddressService CustomerAddressService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
+@using ERPCore2.Components.Shared.Alerts
 @rendermode InteractiveServer
 
 <PageTitle>客戶詳細資料</PageTitle>
+
+@* 顯示警告訊息 *@
+<AlertComponent 
+    Message="@alertMessage" 
+    Type="@alertType" 
+    IsVisible="@showAlert" 
+    IsDismissible="true"
+    OnDismiss="@(() => showAlert = false)" />
 
 @if (isLoading)
 {
@@ -45,13 +54,9 @@ else
                 OnEditClick="@EditCustomer"
                 OnToggleStatusClick="@ToggleCustomerStatus"
                 OnDeleteClick="@DeleteCustomer"
-                OnBackClick="@BackToCustomerList"
-                ShowPrintButton="false"
-                DeactivateButtonText="停用"
-                ActivateButtonText="啟用"
-                DeleteButtonText="刪除"
-                BackButtonText="返回列表" />
-        </ActionButtons>    </GenericHeaderComponent>
+                OnBackClick="@BackToCustomerList"/>
+        </ActionButtons>    
+        </GenericHeaderComponent>
 
     @* 基本資料 *@
     <div class="row">
@@ -199,6 +204,11 @@ else
     private List<CustomerContact> customerContacts = new();
     private List<CustomerAddress> customerAddresses = new();
     private bool isLoading = true;
+    
+    // Alert 相關變數
+    private bool showAlert = false;
+    private string alertMessage = string.Empty;
+    private AlertComponent.AlertType alertType = AlertComponent.AlertType.Info;
 
     protected override async Task OnInitializedAsync()
     {
@@ -265,12 +275,12 @@ else
     private void EditCustomer()
     {
         Navigation.NavigateTo($"/customers/edit/{CustomerId}");
-    }
-
-    private void BackToCustomerList()
+    }    private void BackToCustomerList()
     {
         Navigation.NavigateTo("/customers");
-    }    private async Task ToggleCustomerStatus()
+    }
+
+    private async Task ToggleCustomerStatus()
     {
         if (customer == null) return;
 
@@ -286,17 +296,16 @@ else
                 
                 if (result.IsSuccess)
                 {
-                    await JSRuntime.InvokeVoidAsync("showToast", "success", $"{actionText}成功");
+                    ShowAlert($"{actionText}成功", AlertComponent.AlertType.Success);
                     await LoadCustomerData();
                 }
                 else
                 {
-                    await JSRuntime.InvokeVoidAsync("showToast", "error", result.ErrorMessage ?? $"{actionText}失敗");
+                    ShowAlert(result.ErrorMessage ?? $"{actionText}失敗", AlertComponent.AlertType.Danger);
                 }
-            }
-            catch (Exception ex)
+            }            catch (Exception ex)
             {
-                await JSRuntime.InvokeVoidAsync("showToast", "error", $"{actionText}時發生錯誤：{ex.Message}");
+                ShowAlert($"{actionText}時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
             }
         }
     }
@@ -313,17 +322,19 @@ else
                 var result = await CustomerService.DeleteAsync(CustomerId);
                 if (result.IsSuccess)
                 {
-                    await JSRuntime.InvokeVoidAsync("showToast", "success", "客戶刪除成功");
+                    ShowAlert("客戶刪除成功", AlertComponent.AlertType.Success);
+                    // 延遲一下再導航，讓用戶看到成功訊息
+                    await Task.Delay(1500);
                     Navigation.NavigateTo("/customers");
                 }
                 else
                 {
-                    await JSRuntime.InvokeVoidAsync("showToast", "error", result.ErrorMessage ?? "刪除失敗");
+                    ShowAlert(result.ErrorMessage ?? "刪除失敗", AlertComponent.AlertType.Danger);
                 }
             }
             catch (Exception ex)
             {
-                await JSRuntime.InvokeVoidAsync("showToast", "error", $"刪除時發生錯誤：{ex.Message}");
+                ShowAlert($"刪除時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
             }
         }
     }
@@ -336,12 +347,18 @@ else
     {
         if (customer == null) return "";
         return $"統一編號：{customer.TaxNumber ?? "未設定"}";
-    }
-
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
+    }    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
     {
         new("首頁", "/"),
         new("客戶管理", "/customers"),
         new("客戶詳細資料")
     };
+
+    private void ShowAlert(string message, AlertComponent.AlertType type)
+    {
+        alertMessage = message;
+        alertType = type;
+        showAlert = true;
+        StateHasChanged();
+    }
 }

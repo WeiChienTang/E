@@ -6,6 +6,14 @@
 
 <PageTitle>產品詳細資料</PageTitle>
 
+@* 顯示警告訊息 *@
+<AlertComponent 
+    Message="@alertMessage" 
+    Type="@alertType" 
+    IsVisible="@showAlert" 
+    IsDismissible="true"
+    OnDismiss="@(() => showAlert = false)" />
+
 @if (isLoading)
 {
     <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
@@ -43,12 +51,7 @@ else
                 OnEditClick="@EditProduct"
                 OnToggleStatusClick="@ToggleProductStatus"
                 OnDeleteClick="@DeleteProduct"
-                OnBackClick="@BackToProductList"
-                ShowPrintButton="false"
-                DeactivateButtonText="停用"
-                ActivateButtonText="啟用"
-                DeleteButtonText="刪除"
-                BackButtonText="返回列表" />
+                OnBackClick="@BackToProductList"/>
         </ActionButtons>    </GenericHeaderComponent>
 
     @* 基本資料 *@
@@ -181,6 +184,11 @@ else
     private Product? product;
     private List<ProductSupplier> productSuppliers = new();
     private bool isLoading = true;
+    
+    // Alert 相關變數
+    private bool showAlert = false;
+    private string alertMessage = string.Empty;
+    private AlertComponent.AlertType alertType = AlertComponent.AlertType.Info;
 
     protected override async Task OnInitializedAsync()
     {
@@ -248,17 +256,17 @@ else
                 
                 if (result.IsSuccess)
                 {
-                    await JSRuntime.InvokeVoidAsync("showToast", "success", $"{actionText}成功");
+                    ShowAlert($"{actionText}成功", AlertComponent.AlertType.Success);
                     await LoadProductData();
                 }
                 else
                 {
-                    await JSRuntime.InvokeVoidAsync("showToast", "error", result.ErrorMessage ?? $"{actionText}失敗");
+                    ShowAlert(result.ErrorMessage ?? $"{actionText}失敗", AlertComponent.AlertType.Danger);
                 }
             }
             catch (Exception ex)
             {
-                await JSRuntime.InvokeVoidAsync("showToast", "error", $"{actionText}時發生錯誤：{ex.Message}");
+                ShowAlert($"{actionText}時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
             }
         }
     }
@@ -275,17 +283,19 @@ else
                 var result = await ProductService.DeleteAsync(ProductId);
                 if (result.IsSuccess)
                 {
-                    await JSRuntime.InvokeVoidAsync("showToast", "success", "產品刪除成功");
+                    ShowAlert("產品刪除成功", AlertComponent.AlertType.Success);
+                    // 延遲一下再導航，讓用戶看到成功訊息
+                    await Task.Delay(1500);
                     Navigation.NavigateTo("/products");
                 }
                 else
                 {
-                    await JSRuntime.InvokeVoidAsync("showToast", "error", result.ErrorMessage ?? "刪除失敗");
+                    ShowAlert(result.ErrorMessage ?? "刪除失敗", AlertComponent.AlertType.Danger);
                 }
             }
             catch (Exception ex)
             {
-                await JSRuntime.InvokeVoidAsync("showToast", "error", $"刪除時發生錯誤：{ex.Message}");
+                ShowAlert($"刪除時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
             }
         }
     }
@@ -300,12 +310,18 @@ else
     {
         if (product == null) return "";
         return $"產品代碼：{product.ProductCode ?? "未設定"}";
-    }
-
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
+    }    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
     {
         new("首頁", "/"),
         new("產品管理", "/products"),
         new("產品詳細資料")
     };
+
+    private void ShowAlert(string message, AlertComponent.AlertType type)
+    {
+        alertMessage = message;
+        alertType = type;
+        showAlert = true;
+        StateHasChanged();
+    }
 }

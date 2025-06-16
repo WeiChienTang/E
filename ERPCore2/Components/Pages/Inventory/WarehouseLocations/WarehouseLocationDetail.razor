@@ -37,12 +37,7 @@ else
                 OnEditClick="@(() => Navigation.NavigateTo($"/inventory/warehouse-locations/edit/{warehouseLocation?.Id}"))"
                 OnToggleStatusClick="@ToggleStatusAsync"
                 OnDeleteClick="@DeleteAsync"
-                OnBackClick="@BackToWarehouseLocationList"
-                ShowPrintButton="false"
-                DeactivateButtonText="停用"
-                ActivateButtonText="啟用"
-                DeleteButtonText="刪除"
-                BackButtonText="返回" />
+                OnBackClick="@BackToWarehouseLocationList"/>
         </ActionButtons>
     </GenericHeaderComponent>
 

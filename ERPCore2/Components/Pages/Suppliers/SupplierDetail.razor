@@ -7,6 +7,14 @@
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
+@* 顯示警告訊息 *@
+<AlertComponent 
+    Message="@alertMessage" 
+    Type="@alertType" 
+    IsVisible="@showAlert" 
+    IsDismissible="true"
+    OnDismiss="@(() => showAlert = false)" />
+
 @if (isLoading)
 {
     <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
@@ -40,12 +48,7 @@ else
                 OnEditClick="@(() => Navigation.NavigateTo($"/suppliers/edit/{supplier?.Id}"))"
                 OnToggleStatusClick="@ToggleStatusAsync"
                 OnDeleteClick="@DeleteAsync"
-                OnBackClick="@BackToSupplierList"
-                ShowPrintButton="false"
-                DeactivateButtonText="停用"
-                ActivateButtonText="啟用"
-                DeleteButtonText="刪除"
-                BackButtonText="返回列表" />
+                OnBackClick="@BackToSupplierList"/>
         </ActionButtons>
     </GenericHeaderComponent>
 
@@ -285,6 +288,11 @@ else
     private List<SupplierAddress> supplierAddresses = new();
     private bool isLoading = true;
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    
+    // Alert 相關變數
+    private bool showAlert = false;
+    private string alertMessage = string.Empty;
+    private AlertComponent.AlertType alertType = AlertComponent.AlertType.Info;
 
     protected override async Task OnInitializedAsync()
     {
@@ -352,20 +360,18 @@ else
                 StateHasChanged();
 
                 var statusText = supplier.Status == Data.Enums.EntityStatus.Active ? "啟用" : "停用";
-                await JSRuntime.InvokeVoidAsync("showToast", $"廠商已{statusText}", "success");
+                ShowAlert($"廠商已{statusText}", AlertComponent.AlertType.Success);
             }
             else
             {
-                await JSRuntime.InvokeVoidAsync("showToast", $"狀態更新失敗：{result.ErrorMessage}", "error");
+                ShowAlert($"狀態更新失敗：{result.ErrorMessage}", AlertComponent.AlertType.Danger);
             }
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("showToast", $"狀態更新失敗：{ex.Message}", "error");
+            ShowAlert($"狀態更新失敗：{ex.Message}", AlertComponent.AlertType.Danger);
         }
-    }
-
-    private async Task DeleteAsync()
+    }    private async Task DeleteAsync()
     {
         if (supplier == null) return;
 
@@ -375,12 +381,14 @@ else
         try
         {
             await SupplierService.DeleteAsync(supplier.Id);
-            await JSRuntime.InvokeVoidAsync("showToast", "廠商已刪除", "success");
+            ShowAlert("廠商已刪除", AlertComponent.AlertType.Success);
+            // 延遲一下再導航，讓用戶看到成功訊息
+            await Task.Delay(1500);
             Navigation.NavigateTo("/suppliers");
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("showToast", $"刪除失敗：{ex.Message}", "error");
+            ShowAlert($"刪除失敗：{ex.Message}", AlertComponent.AlertType.Danger);
         }
     }
 
@@ -398,8 +406,14 @@ else
         if (!string.IsNullOrEmpty(address.District))
             addressParts.Add(address.District);
         if (!string.IsNullOrEmpty(address.Address))
-            addressParts.Add(address.Address);
+            addressParts.Add(address.Address);        return addressParts.Any() ? string.Join(" ", addressParts) : "-";
+    }
 
-        return addressParts.Any() ? string.Join(" ", addressParts) : "-";
+    private void ShowAlert(string message, AlertComponent.AlertType type)
+    {
+        alertMessage = message;
+        alertType = type;
+        showAlert = true;
+        StateHasChanged();
     }
 }

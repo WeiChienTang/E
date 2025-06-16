@@ -58,14 +58,18 @@
     [Parameter] public bool ShowEditButton { get; set; } = true;
     [Parameter] public bool ShowToggleStatusButton { get; set; } = true;
     [Parameter] public bool ShowDeleteButton { get; set; } = true;
-    [Parameter] public bool ShowPrintButton { get; set; } = false;
-    [Parameter] public bool ShowBackButton { get; set; } = true;    // 按鈕文字自定義
+    [Parameter] public bool ShowPrintButton { get; set; } = true;
+    [Parameter] public bool ShowBackButton { get; set; } = true;    
+    
+    // 按鈕文字自定義
     [Parameter] public string EditButtonText { get; set; } = "編輯";
     [Parameter] public string ActivateButtonText { get; set; } = "啟用";
     [Parameter] public string DeactivateButtonText { get; set; } = "停用";
     [Parameter] public string DeleteButtonText { get; set; } = "刪除";
     [Parameter] public string PrintButtonText { get; set; } = "列印";
-    [Parameter] public string BackButtonText { get; set; } = "返回";    // 按鈕圖示自定義
+    [Parameter] public string BackButtonText { get; set; } = "返回";    
+    
+    // 按鈕圖示自定義
     [Parameter] public string EditButtonIcon { get; set; } = "bi bi-pencil";
     [Parameter] public string ActivateButtonIcon { get; set; } = "bi bi-power";
     [Parameter] public string DeactivateButtonIcon { get; set; } = "bi bi-power";

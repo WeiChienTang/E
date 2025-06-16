@@ -37,12 +37,7 @@ else
                 OnEditClick="@(() => Navigation.NavigateTo($"/inventory/transaction-types/edit/{transactionType?.Id}"))"
                 OnToggleStatusClick="@ToggleStatusAsync"
                 OnDeleteClick="@DeleteAsync"
-                OnBackClick="@BackToTransactionTypeList"
-                ShowPrintButton="false"
-                DeactivateButtonText="停用"
-                ActivateButtonText="啟用"
-                DeleteButtonText="刪除"
-                BackButtonText="返回列表" />
+                OnBackClick="@BackToTransactionTypeList"/>
         </ActionButtons>
     </GenericHeaderComponent>
 

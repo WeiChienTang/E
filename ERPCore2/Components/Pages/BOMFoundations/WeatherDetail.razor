@@ -37,12 +37,7 @@ else
                 OnEditClick="@(() => Navigation.NavigateTo($"/BOMFoundation/weather/edit/{weather?.Id}"))"
                 OnToggleStatusClick="@ToggleStatusAsync"
                 OnDeleteClick="@DeleteAsync"
-                OnBackClick="@BackToWeatherList"
-                ShowPrintButton="false"
-                DeactivateButtonText="停用"
-                ActivateButtonText="啟用"
-                DeleteButtonText="刪除"
-                BackButtonText="返回" />
+                OnBackClick="@BackToWeatherList"/>
         </ActionButtons>
     </GenericHeaderComponent>
 

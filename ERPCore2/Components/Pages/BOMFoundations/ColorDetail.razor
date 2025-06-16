@@ -37,12 +37,7 @@ else
                 OnEditClick="@(() => Navigation.NavigateTo($"/BOMFoundation/colors/edit/{color?.Id}"))"
                 OnToggleStatusClick="@ToggleStatusAsync"
                 OnDeleteClick="@DeleteAsync"
-                OnBackClick="@BackToColorList"
-                ShowPrintButton="false"
-                DeactivateButtonText="停用"
-                ActivateButtonText="啟用"
-                DeleteButtonText="刪除"
-                BackButtonText="返回" />
+                OnBackClick="@BackToColorList"/>
         </ActionButtons>
     </GenericHeaderComponent>
 
