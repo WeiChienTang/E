@@ -522,3 +522,97 @@ hr {
   font-weight: 600 !important;
   margin-bottom: 0.25rem !important;
 }
+
+/* 通用區段卡片樣式 */
+.section-card {
+  background-color: var(--bg-primary) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow) !important;
+  transition: box-shadow 0.2s ease-in-out !important;
+}
+
+.section-card:hover {
+  box-shadow: var(--shadow-md) !important;
+}
+
+.section-header-primary {
+  background-color: var(--primary-blue) !important;
+  color: var(--primary-white) !important;
+  border-bottom: 1px solid var(--primary-blue) !important;
+  padding: 1rem 1.25rem !important;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+}
+
+.section-header-primary .card-title {
+  margin-bottom: 0 !important;
+  font-weight: 600 !important;
+}
+
+.section-header-primary .card-title i {
+  color: var(--primary-white) !important;
+}
+
+/* 搜尋結果區域樣式 */
+.search-results-section h6 {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+}
+
+.search-results-section h6 i {
+  color: var(--primary-blue) !important;
+}
+
+/* 空狀態樣式 - 搜尋無結果 */
+.search-empty-state {
+  color: var(--text-light) !important;
+  padding: 2rem 1rem !important;
+}
+
+.search-empty-state i {
+  color: var(--text-light) !important;
+  opacity: 0.7 !important;
+}
+
+.search-empty-state p {
+  color: var(--text-secondary) !important;
+  font-size: 0.95rem !important;
+  margin-bottom: 0 !important;
+}
+
+/* NavigationCard 樣式優化 - 搜尋結果卡片 */
+.search-result-card {
+  transition: all 0.2s ease-in-out !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.search-result-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: var(--shadow-md) !important;
+  border-color: var(--primary-blue) !important;
+}
+
+/* 響應式設計 - 搜尋頁面 */
+@media (max-width: 576px) {
+  .home-search-header {
+    padding: 0.75rem 1rem !important;
+  }
+  
+  .home-search-header .card-title {
+    font-size: 1.1rem !important;
+  }
+  
+  .search-results-section {
+    margin-top: 1.5rem !important;
+  }
+  
+  .search-empty-state {
+    padding: 1.5rem 0.5rem !important;
+  }
+  
+  .search-empty-state i {
+    font-size: 3rem !important;
+  }
+}

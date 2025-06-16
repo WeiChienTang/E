@@ -26,7 +26,8 @@ else if (customer == null)
 {
     <div class="alert alert-warning">
         <h4>找不到客戶資料</h4>
-        <p>指定的客戶不存在或已被刪除。</p>        <button class="btn btn-primary" @onclick="BackToCustomerList">
+        <p>指定的客戶不存在或已被刪除。</p>        
+        <button class="btn btn-primary" @onclick="BackToCustomerList">
             返回客戶列表
         </button>
     </div>
@@ -156,7 +157,8 @@ else
             new() { 
                 Label = "狀態", 
                 Value = GetStatusText(customer.Status), 
-                DisplayType = DetailDisplayType.Status,                Format = new DetailItemFormat 
+                DisplayType = DetailDisplayType.Status,                
+                Format = new DetailItemFormat 
                 { 
                     StatusColors = new Dictionary<string, string>
                     {
