@@ -1,0 +1,393 @@
+@page "/BOMFoundation/materials/detail/{materialId:int}"
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@using Microsoft.AspNetCore.Components.Web
+@inject IMaterialService MaterialService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">載入中...</span>
+            </div>
+            <div class="mt-2">載入材質資料中...</div>
+        </div>
+    </div>
+}
+else if (material == null)
+{
+    <div class="alert alert-warning">
+        <h4>找不到材質資料</h4>
+        <p>指定的材質不存在或已被刪除。</p>
+        <button class="btn btn-primary" @onclick="BackToMaterialList">
+            返回材質列表
+        </button>
+    </div>
+}
+else
+{
+    <GenericDetailsComponent Configuration="@detailConfiguration" 
+                           OnSectionLoad="HandleSectionLoad"
+                           OnItemClick="HandleItemClick"
+                           ActionButtons="@ActionButtons" />
+}
+
+@code {
+    [Parameter] public int MaterialId { get; set; }
+
+    private Material? material;
+    private bool isLoading = true;
+    private DetailViewConfiguration detailConfiguration = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMaterialData();
+        InitializeDetailConfiguration();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (MaterialId > 0)
+        {
+            await LoadMaterialData();
+            InitializeDetailConfiguration();
+        }
+    }
+
+    private async Task LoadMaterialData()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // 載入材質基本資料
+            material = await MaterialService.GetByIdAsync(MaterialId);
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入材質資料失敗：", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void InitializeDetailConfiguration()
+    {
+        if (material == null) return;
+
+        detailConfiguration = new DetailViewConfiguration
+        {
+            Title = material.Name,
+            Subtitle = $"材質代碼：{material.Code}",
+            TitleIcon = "bi bi-layers",
+            UseTabs = false, // 使用分頁模式展示基本資料和材質資訊
+            Sections = new List<DetailSection>
+            {
+                CreateBasicInfoSection(),
+                CreatePhysicalPropertiesSection(),
+                CreateSupplierInfoSection()
+            }
+        };
+    }
+
+    private DetailSection CreateBasicInfoSection()
+    {
+        var items = new List<DetailItem>
+        {
+            new() { 
+                Label = "材質名稱", 
+                Value = material!.Name, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6",
+                IsHighlight = true
+            },
+            new() { 
+                Label = "材質代碼", 
+                Value = material.Code, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6"
+            },
+            new() { 
+                Label = "材質類別", 
+                Value = material.Category ?? "未分類", 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6"
+            },
+            new() { 
+                Label = "狀態", 
+                Value = GetStatusText(material.Status), 
+                DisplayType = DetailDisplayType.Status,
+                Format = new DetailItemFormat 
+                { 
+                    StatusColors = new Dictionary<string, string>
+                    {
+                        { "啟用", "bg-success" },
+                        { "停用", "bg-danger" },
+                        { "已刪除", "bg-secondary" }
+                    }
+                },
+                ContainerCssClass = "col-md-6"
+            },
+            new() { 
+                Label = "環保材質", 
+                Value = material.IsEcoFriendly ? "是" : "否", 
+                DisplayType = DetailDisplayType.Status,
+                Format = new DetailItemFormat 
+                { 
+                    StatusColors = new Dictionary<string, string>
+                    {
+                        { "是", "bg-success" },
+                        { "否", "bg-secondary" }
+                    }
+                },
+                ContainerCssClass = "col-md-6"
+            },
+            new() { 
+                Label = "建立日期", 
+                Value = material.CreatedAt, 
+                DisplayType = DetailDisplayType.DateTime,
+                ContainerCssClass = "col-md-6"
+            },
+            new() { 
+                Label = "建立者", 
+                Value = material.CreatedBy ?? "系統", 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6"
+            }
+        };
+
+        // 加入最後更新時間（如果有的話）
+        if (material.UpdatedAt.HasValue)
+        {
+            items.Add(new DetailItem { 
+                Label = "最後更新", 
+                Value = material.UpdatedAt, 
+                DisplayType = DetailDisplayType.DateTime,
+                ContainerCssClass = "col-md-6"
+            });
+        }
+
+        // 加入更新者（如果有的話）
+        if (!string.IsNullOrWhiteSpace(material.UpdatedBy))
+        {
+            items.Add(new DetailItem { 
+                Label = "更新者", 
+                Value = material.UpdatedBy, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6"
+            });
+        }
+
+        // 加入描述（如果有的話）
+        if (!string.IsNullOrWhiteSpace(material.Description))
+        {
+            items.Add(new DetailItem { 
+                Label = "材質描述", 
+                Value = material.Description, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-12"
+            });
+        }
+
+        // 加入備註（如果有的話）
+        if (!string.IsNullOrWhiteSpace(material.Remarks))
+        {
+            items.Add(new DetailItem { 
+                Label = "備註", 
+                Value = material.Remarks, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-12"
+            });
+        }
+
+        return new DetailSection
+        {
+            Id = "basic",
+            Title = "基本資料",
+            Icon = "bi bi-info-circle",
+            Items = items
+        };
+    }
+
+    private DetailSection CreatePhysicalPropertiesSection()
+    {
+        var items = new List<DetailItem>();
+
+        // 密度
+        if (material!.Density.HasValue)
+        {
+            items.Add(new DetailItem { 
+                Label = "密度", 
+                Value = material.Density.Value.ToString("0.00") + " g/cm³", 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6",
+                IsHighlight = true
+            });
+        }
+
+        // 熔點
+        if (material.MeltingPoint.HasValue)
+        {
+            items.Add(new DetailItem { 
+                Label = "熔點", 
+                Value = material.MeltingPoint.Value.ToString("0.0") + "°C", 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6"
+            });
+        }
+
+        // 如果沒有任何物理特性資料
+        if (!items.Any())
+        {
+            items.Add(new DetailItem { 
+                Label = "物理特性", 
+                Value = "暫無物理特性資料", 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-12"
+            });
+        }
+
+        return new DetailSection
+        {
+            Id = "physical",
+            Title = "物理特性",
+            Icon = "bi bi-speedometer2",
+            Items = items
+        };
+    }
+
+    private DetailSection CreateSupplierInfoSection()
+    {
+        var items = new List<DetailItem>();
+
+        // 供應商資訊
+        if (material!.SupplierId.HasValue && material.Supplier != null)
+        {
+            items.Add(new DetailItem { 
+                Label = "主要供應商", 
+                Value = material.Supplier.CompanyName, 
+                DisplayType = DetailDisplayType.Link,
+                LinkUrl = $"/suppliers/detail/{material.SupplierId}",
+                ContainerCssClass = "col-md-6",
+                IsHighlight = true
+            });
+
+            items.Add(new DetailItem { 
+                Label = "供應商代碼", 
+                Value = material.Supplier.SupplierCode, 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-md-6"
+            });
+
+            // 供應商聯絡資訊 - 檢查是否有聯絡人資料
+            var phoneContact = material.Supplier.SupplierContacts?.FirstOrDefault(c => c.ContactType?.TypeName?.Contains("電話") == true);
+            var emailContact = material.Supplier.SupplierContacts?.FirstOrDefault(c => c.ContactType?.TypeName?.Contains("電子郵件") == true || c.ContactType?.TypeName?.Contains("Email") == true);
+            
+            if (phoneContact != null && !string.IsNullOrWhiteSpace(phoneContact.ContactValue))
+            {
+                items.Add(new DetailItem { 
+                    Label = "供應商電話", 
+                    Value = phoneContact.ContactValue, 
+                    DisplayType = DetailDisplayType.Text,
+                    ContainerCssClass = "col-md-6"
+                });
+            }
+
+            if (emailContact != null && !string.IsNullOrWhiteSpace(emailContact.ContactValue))
+            {
+                items.Add(new DetailItem { 
+                    Label = "供應商電郵", 
+                    Value = emailContact.ContactValue, 
+                    DisplayType = DetailDisplayType.Email,
+                    ContainerCssClass = "col-md-6"
+                });
+            }
+        }
+        else
+        {
+            items.Add(new DetailItem { 
+                Label = "主要供應商", 
+                Value = "未指定供應商", 
+                DisplayType = DetailDisplayType.Text,
+                ContainerCssClass = "col-12"
+            });
+        }
+
+        return new DetailSection
+        {
+            Id = "supplier",
+            Title = "供應商資訊",
+            Icon = "bi bi-building",
+            Items = items
+        };
+    }
+
+    private string GetStatusText(Data.Enums.EntityStatus status)
+    {
+        return status switch
+        {
+            Data.Enums.EntityStatus.Active => "啟用",
+            Data.Enums.EntityStatus.Inactive => "停用",
+            Data.Enums.EntityStatus.Deleted => "已刪除",
+            _ => "未知"
+        };
+    }
+
+    // Action Buttons
+    private RenderFragment ActionButtons => __builder =>
+    {
+        <button class="btn btn-primary btn-sm me-2" @onclick="EditMaterial">
+            <i class="fas fa-edit me-1"></i>編輯
+        </button>
+        <button class="btn btn-outline-secondary btn-sm me-2" @onclick="PrintMaterial">
+            <i class="fas fa-print me-1"></i>列印
+        </button>
+        <button class="btn btn-outline-primary btn-sm" @onclick="BackToList">
+            <i class="fas fa-arrow-left me-1"></i>返回列表
+        </button>
+    };
+
+    private async Task HandleSectionLoad(string sectionId)
+    {
+        // 目前所有資料都在初始載入時取得，所以這裡不需要額外處理
+        // 未來如果需要延遲載入特定區塊的資料，可以在這裡實作
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleItemClick(GenericDetailsComponent.DetailItemClickEventArgs args)
+    {
+        // 處理項目點擊事件
+        // 例如：點擊供應商連結跳轉到供應商詳細頁面
+        await Task.CompletedTask;
+    }
+
+    private void EditMaterial()
+    {
+        Navigation.NavigateTo($"/BOMFoundation/materials/edit/{MaterialId}");
+    }
+
+    private async Task PrintMaterial()
+    {
+        await JSRuntime.InvokeVoidAsync("window.print");
+    }
+
+    private void BackToList()
+    {
+        Navigation.NavigateTo("/BOMFoundation/materials");
+    }
+
+    private void BackToMaterialList()
+    {
+        Navigation.NavigateTo("/BOMFoundation/materials");
+    }
+}

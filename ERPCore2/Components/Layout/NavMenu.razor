@@ -129,7 +129,7 @@
                 <!-- 基礎單位管理選單 -->
                 <div class="nav-item px-3">
                     <div class="nav-link dropdown" onclick="toggleDropdown(event)">
-                        <span class="bi bi-gear-fill" aria-hidden="true"></span> BOM表基礎單位管理
+                        <span class="bi bi-gear-fill" aria-hidden="true"></span> BOM表單位管理
                         <span class="bi bi-chevron-down ms-auto dropdown-arrow"></span>
                     </div>
                     <div class="dropdown-menu">
@@ -144,6 +144,13 @@
                         <PermissionCheck Permission="Color.Read">
                             <NavLink class="dropdown-item" href="BOMFoundation/color">
                                 <span class="bi bi-palette-fill" aria-hidden="true"></span> 顏色管理
+                            </NavLink>
+                        </PermissionCheck>
+                        
+                        <!-- 材質管理 - 需要 Material.Read 權限 -->
+                        <PermissionCheck Permission="Material.Read">
+                            <NavLink class="dropdown-item" href="BOMFoundation/materials">
+                                <span class="bi bi-layers-fill" aria-hidden="true"></span> 材質管理
                             </NavLink>
                         </PermissionCheck>
                     </div>

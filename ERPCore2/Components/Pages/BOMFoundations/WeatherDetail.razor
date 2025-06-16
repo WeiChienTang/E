@@ -200,10 +200,8 @@ else
 
     private DetailSection CreateWeatherInfoSection()
     {
-        var items = new List<DetailItem>();
-
-        // 圖示
-        if (!string.IsNullOrWhiteSpace(weather.Icon))
+        var items = new List<DetailItem>();        // 圖示
+        if (!string.IsNullOrWhiteSpace(weather!.Icon))
         {
             items.Add(new DetailItem { 
                 Label = "圖示", 

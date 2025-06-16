@@ -20,7 +20,9 @@ namespace ERPCore2.Data
             // Database Configuration - 使用 DbContextFactory 解決並發問題
             services.AddDbContextFactory<AppDbContext>(options =>
                 options.UseSqlServer(connectionString));
-        }        /// <summary>
+        }
+
+        /// <summary>
         /// 註冊業務邏輯服務
         /// </summary>
         /// <param name="services">服務集合</param>
@@ -34,36 +36,41 @@ namespace ERPCore2.Data
 
             // 共用資料服務
             services.AddScoped<IContactTypeService, ContactTypeService>();
-            services.AddScoped<IAddressTypeService, AddressTypeService>();            // 行業類型服務
+            services.AddScoped<IAddressTypeService, AddressTypeService>();
+
+            // 行業類型服務
             services.AddScoped<IIndustryTypeService, IndustryTypeService>();
-            
+
             // 廠商相關服務
             services.AddScoped<ISupplierService, SupplierService>();
             services.AddScoped<ISupplierContactService, SupplierContactService>();
             services.AddScoped<ISupplierAddressService, SupplierAddressService>();
-            services.AddScoped<ISupplierTypeService, SupplierTypeService>();            // 商品相關服務
+            services.AddScoped<ISupplierTypeService, SupplierTypeService>();
+
+            // 商品相關服務
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<IProductCategoryService, ProductCategoryService>();
             services.AddScoped<IProductSupplierService, ProductSupplierService>();
-            
+
             // 庫存相關服務
             services.AddScoped<IWarehouseService, WarehouseService>();
             services.AddScoped<IWarehouseLocationService, WarehouseLocationService>();
             services.AddScoped<IUnitService, UnitService>();
             services.AddScoped<IUnitConversionService, UnitConversionService>();
             services.AddScoped<IInventoryTransactionTypeService, InventoryTransactionTypeService>();
-            
-            // 基礎單位服務
+
+            // BOM基礎資料表服務
             services.AddScoped<IWeatherService, WeatherService>();
             services.AddScoped<IColorService, ColorService>();
-            
+            services.AddScoped<IMaterialService, MaterialService>();
+
             // 認證和授權服務
             services.AddScoped<IEmployeeService, EmployeeService>();
             services.AddScoped<IRoleService, RoleService>();
             services.AddScoped<IPermissionService, PermissionService>();
             services.AddScoped<IPermissionManagementService, PermissionManagementService>();
             services.AddScoped<IAuthenticationService, AuthenticationService>();
-            
+
             // 記憶體快取服務（用於權限快取）
             services.AddMemoryCache();
         }

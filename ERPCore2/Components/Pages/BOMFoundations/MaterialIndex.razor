@@ -1,0 +1,390 @@
+@page "/materials"
+@page "/BOMFoundation/materials"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@inject IMaterialService MaterialService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>材質管理</PageTitle>
+
+@* 頁面標題 *@
+<GenericHeaderComponent Title="材質管理"
+                       Subtitle="管理所有材質資料"
+                       TitleIcon="layers-fill"
+                       HeadingLevel="h1"
+                       BreadcrumbItems="@breadcrumbItems"
+                       IsLoading="@isLoading"
+                       LoadingText="載入中..."
+                       ShowDivider="true">
+    <ActionButtons>
+        <button class="btn btn-primary" @onclick="ShowCreateMaterial">
+            <i class="bi bi-plus-circle me-1"></i>
+            新增材質
+        </button>
+        <button class="btn btn-outline-secondary" @onclick="RefreshData">
+            <i class="bi bi-arrow-clockwise me-1"></i>
+            重新整理
+        </button>
+    </ActionButtons>
+</GenericHeaderComponent>
+
+@* 材質管理主要內容區域 *@
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <GenericSearchFilterComponent TModel="SearchFilterModel"
+                                      FilterDefinitions="@filterDefinitions"
+                                      FilterModel="@searchModel"
+                                      OnSearch="HandleSearch"
+                                      OnFilterChanged="HandleFilterChanged"
+                                      AutoSearch="true"
+                                      ShowSearchButton="false"
+                                      SearchDelayMs="500" />
+            </div>
+            <div class="card-body">
+                <GenericTableComponent TItem="Material"
+                                     Items="@pagedMaterials"
+                                     ColumnDefinitions="@columnDefinitions"
+                                     OnRowClick="HandleRowClick"
+                                     ActionsTemplate="@ActionsTemplate"
+                                     Size="TableSize.Normal"
+                                     EmptyMessage="沒有找到符合條件的材質資料"
+                                     ActionsHeader="操作"
+                                     EnablePagination="true"
+                                     CurrentPage="@currentPage"
+                                     PageSize="@pageSize"
+                                     TotalItems="@totalItems"
+                                     OnPageChanged="HandlePageChanged"
+                                     OnPageSizeChanged="HandlePageSizeChanged"
+                                     ShowPageSizeSelector="true"
+                                     EnableRowClick="true">
+                </GenericTableComponent>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // 資料來源
+    private List<Material> materials = new();
+    private List<Material> allMaterials = new();
+    
+    // 篩選相關
+    private SearchFilterModel searchModel = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    
+    // 表格相關
+    private List<TableColumnDefinition> columnDefinitions = new();
+    
+    // 分頁相關
+    private int currentPage = 1;
+    private int pageSize = 20;
+    private int totalItems = 0;
+    private List<Material> pagedMaterials = new();
+    
+    // 狀態管理
+    private bool isLoading = true;
+    
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitializePageAsync();
+    }
+
+    private async Task InitializePageAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // 初始化麵包屑
+            InitializeBreadcrumbs();
+            
+            // 初始化篩選器
+            InitializeFilters();
+            
+            // 初始化表格欄位
+            InitializeTableColumns();
+            
+            // 載入材質資料
+            await LoadMaterialsAsync();
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤
+            await JSRuntime.InvokeVoidAsync("console.error", "載入材質資料時發生錯誤：", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("產品基礎元素", "/BOMFoundation"),
+            new("材質管理")
+        };
+    }
+
+    private void InitializeFilters()
+    {
+        // 準備狀態選項
+        var statusOptions = new List<SelectOption>
+        {
+            new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
+            new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
+        };
+
+        // 準備環保選項
+        var ecoFriendlyOptions = new List<SelectOption>
+        {
+            new() { Text = "是", Value = "true" },
+            new() { Text = "否", Value = "false" }
+        };
+
+        // 建立篩選定義
+        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+            .AddText("Name", "材質名稱", "輸入材質名稱搜尋")
+            .AddText("Code", "材質代碼", "輸入材質代碼搜尋")
+            .AddText("Category", "材質類別", "輸入材質類別搜尋")
+            .AddText("Description", "描述", "輸入描述搜尋")
+            .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
+            .AddSelect("IsEcoFriendly", "環保材質", ecoFriendlyOptions, isAdvanced: true)
+            .Build();
+    }
+
+    private void InitializeTableColumns()
+    {
+        columnDefinitions = new List<TableColumnDefinition>
+        {
+            TableColumnDefinition.Text("材質代碼", nameof(Material.Code)),
+            TableColumnDefinition.Text("材質名稱", nameof(Material.Name)),
+            TableColumnDefinition.Text("類別", nameof(Material.Category)),
+            TableColumnDefinition.Text("描述", nameof(Material.Description)),
+            TableColumnDefinition.Template("密度", item => 
+            {
+                var material = (Material)item;
+                return @<span>@(material.Density?.ToString("0.00") + " g/cm³" ?? "-")</span>;
+            }),
+            TableColumnDefinition.Template("環保", item => 
+            {
+                var material = (Material)item;
+                return @<span>@(material.IsEcoFriendly ? "是" : "否")</span>;
+            }),
+            TableColumnDefinition.Status("狀態", nameof(Material.Status), new Dictionary<object, string>
+            {
+                { EntityStatus.Active, "bg-success" },
+                { EntityStatus.Inactive, "bg-secondary" }
+            }),
+            TableColumnDefinition.Date("建立日期", nameof(Material.CreatedAt), "yyyy/MM/dd")
+        };
+    }
+
+    private async Task LoadMaterialsAsync()
+    {
+        try
+        {
+            allMaterials = await MaterialService.GetAllAsync();
+            await ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入材質資料失敗：", ex.Message);
+            materials = new List<Material>();
+            pagedMaterials = new List<Material>();
+        }
+    }
+
+    private async Task ApplyFilters()
+    {
+        var filteredMaterials = allMaterials.AsQueryable();
+
+        // 材質名稱篩選
+        var nameFilter = searchModel.GetFilterValue("Name")?.ToString();
+        if (!string.IsNullOrWhiteSpace(nameFilter))
+        {
+            filteredMaterials = filteredMaterials.Where(m => 
+                m.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 材質代碼篩選
+        var codeFilter = searchModel.GetFilterValue("Code")?.ToString();
+        if (!string.IsNullOrWhiteSpace(codeFilter))
+        {
+            filteredMaterials = filteredMaterials.Where(m => 
+                m.Code.Contains(codeFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 材質類別篩選
+        var categoryFilter = searchModel.GetFilterValue("Category")?.ToString();
+        if (!string.IsNullOrWhiteSpace(categoryFilter))
+        {
+            filteredMaterials = filteredMaterials.Where(m => 
+                !string.IsNullOrEmpty(m.Category) && 
+                m.Category.Contains(categoryFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 描述篩選
+        var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
+        if (!string.IsNullOrWhiteSpace(descriptionFilter))
+        {
+            filteredMaterials = filteredMaterials.Where(m => 
+                !string.IsNullOrEmpty(m.Description) && 
+                m.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 狀態篩選
+        var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
+        if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
+        {
+            filteredMaterials = filteredMaterials.Where(m => m.Status == status);
+        }
+
+        // 環保材質篩選
+        var ecoFriendlyFilter = searchModel.GetFilterValue("IsEcoFriendly")?.ToString();
+        if (!string.IsNullOrWhiteSpace(ecoFriendlyFilter) && bool.TryParse(ecoFriendlyFilter, out var isEcoFriendly))
+        {
+            filteredMaterials = filteredMaterials.Where(m => m.IsEcoFriendly == isEcoFriendly);
+        }
+
+        materials = filteredMaterials.OrderBy(m => m.Code).ToList();
+        totalItems = materials.Count;
+        
+        // 重置分頁到第一頁（如果是搜尋操作）
+        currentPage = 1;
+        
+        // 應用分頁
+        ApplyPagination();
+        
+        await Task.CompletedTask;
+    }
+
+    private void ApplyPagination()
+    {
+        // 確保當前頁面有效
+        var maxPage = totalItems > 0 ? (int)Math.Ceiling((double)totalItems / pageSize) : 1;
+        if (currentPage > maxPage)
+        {
+            currentPage = Math.Max(1, maxPage);
+        }
+        
+        // 計算分頁資料
+        pagedMaterials = materials
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+    }
+
+    private async Task HandlePageChanged(int newPage)
+    {
+        currentPage = newPage;
+        ApplyPagination();
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task HandlePageSizeChanged(int newPageSize)
+    {
+        pageSize = newPageSize;
+        currentPage = 1; // 重置到第一頁
+        ApplyPagination();
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleSearch(SearchFilterModel filterModel)
+    {
+        searchModel = filterModel;
+        await ApplyFilters();
+        StateHasChanged();
+    }
+
+    private async Task HandleFilterChanged(SearchFilterModel filterModel)
+    {
+        searchModel = filterModel;
+        // 自動搜尋功能已啟用，這裡不需要立即執行搜尋
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleRowClick(Material material)
+    {
+        Navigation.NavigateTo($"/BOMFoundation/materials/detail/{material.Id}");
+        await Task.CompletedTask;
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadMaterialsAsync();
+        StateHasChanged();
+    }
+
+    private async Task ShowCreateMaterial()
+    {
+        Navigation.NavigateTo("/BOMFoundation/materials/edit");
+        await Task.CompletedTask;
+    }
+
+    private async Task EditMaterial(Material material)
+    {
+        Navigation.NavigateTo($"/BOMFoundation/materials/edit/{material.Id}");
+        await Task.CompletedTask;
+    }
+
+    private async Task DeleteMaterial(Material material)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"確定要刪除材質「{material.Name}」嗎？");
+        
+        if (confirmed)
+        {
+            try
+            {
+                var result = await MaterialService.DeleteAsync(material.Id);
+                if (result.IsSuccess)
+                {
+                    await RefreshData();
+                    await JSRuntime.InvokeVoidAsync("alert", "材質刪除成功");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{result.ErrorMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"刪除時發生錯誤：{ex.Message}");
+            }
+        }
+    }
+
+    private async Task ViewMaterial(Material material)
+    {
+        Navigation.NavigateTo($"/BOMFoundation/materials/detail/{material.Id}");
+        await Task.CompletedTask;
+    }
+
+    // 表格操作範本
+    private RenderFragment<Material> ActionsTemplate => material => 
+        @<div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-primary" @onclick="() => ViewMaterial(material)" title="檢視">
+                <i class="bi bi-eye"></i>
+            </button>
+            <button class="btn btn-outline-warning" @onclick="() => EditMaterial(material)" title="編輯">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-outline-danger" @onclick="() => DeleteMaterial(material)" title="刪除">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>;
+}

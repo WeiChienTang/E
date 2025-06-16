@@ -1,0 +1,336 @@
+@page "/BOMFoundation/materials/edit"
+@page "/BOMFoundation/materials/edit/{id:int?}"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@inject IMaterialService MaterialService
+@inject ISupplierService SupplierService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>@(Id.HasValue ? "編輯材質" : "新增材質")</PageTitle>
+
+@* 頁面標題 *@
+<GenericHeaderComponent Title="@(Id.HasValue ? "編輯材質" : "新增材質")"
+                       Subtitle="@(Id.HasValue ? $"編輯材質: {material.Name}" : "新增材質資料")"
+                       TitleIcon="layers"
+                       HeadingLevel="h1"
+                       BreadcrumbItems="@breadcrumbItems"
+                       IsLoading="@isLoading"
+                       LoadingText="載入中..."
+                       ShowDivider="true">
+    <ActionButtons>
+        <button class="btn btn-success" @onclick="SaveMaterial" disabled="@(isSubmitting || isLoading)">
+            @if (isSubmitting)
+            {
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            }
+            else
+            {
+                <i class="bi bi-check-circle me-1"></i>
+            }
+            儲存
+        </button>
+        <button class="btn btn-outline-secondary" @onclick="Cancel" disabled="@isSubmitting">
+            <i class="bi bi-x-circle me-1"></i>
+            取消
+        </button>
+    </ActionButtons>
+</GenericHeaderComponent>
+
+@* 主要內容區域 *@
+<div class="row">
+    <div class="col-12">
+        <!-- 基本資料表單 -->
+        <div class="card mb-4">
+            <div class="card-header form-section-header-basic">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    基本資料
+                </h5>
+            </div>
+            <div class="card-body">
+                <EditForm Model="@material" OnValidSubmit="SaveMaterial">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="text-danger" />
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="code" class="form-label">材質代碼 <span class="text-danger">*</span></label>
+                            <InputText id="code" class="form-control" @bind-Value="material.Code" placeholder="請輸入材質代碼" />
+                            <ValidationMessage For="@(() => material.Code!)" />
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">材質名稱 <span class="text-danger">*</span></label>
+                            <InputText id="name" class="form-control" @bind-Value="material.Name" placeholder="請輸入材質名稱" />
+                            <ValidationMessage For="@(() => material.Name!)" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="category" class="form-label">材質類別</label>
+                            <InputText id="category" class="form-control" @bind-Value="material.Category" placeholder="請輸入材質類別" />
+                            <ValidationMessage For="@(() => material.Category)" />
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="status" class="form-label">狀態</label>
+                            <InputSelect id="status" class="form-select" @bind-Value="material.Status">
+                                <option value="@EntityStatus.Active">啟用</option>
+                                <option value="@EntityStatus.Inactive">停用</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => material.Status)" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="description" class="form-label">材質描述</label>
+                            <InputTextArea id="description" class="form-control" rows="3" @bind-Value="material.Description" placeholder="請輸入材質描述" />
+                            <ValidationMessage For="@(() => material.Description)" />
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+
+        <!-- 物理特性 -->
+        <div class="card mb-4">
+            <div class="card-header form-section-header-contact">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-speedometer2 me-2"></i>
+                    物理特性
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="density" class="form-label">密度 (g/cm³)</label>
+                        <InputNumber id="density" class="form-control" @bind-Value="material.Density" placeholder="請輸入密度" step="0.01" />
+                        <ValidationMessage For="@(() => material.Density)" />
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="meltingPoint" class="form-label">熔點 (°C)</label>
+                        <InputNumber id="meltingPoint" class="form-control" @bind-Value="material.MeltingPoint" placeholder="請輸入熔點" step="0.1" />
+                        <ValidationMessage For="@(() => material.MeltingPoint)" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check">
+                            <InputCheckbox id="isEcoFriendly" class="form-check-input" @bind-Value="material.IsEcoFriendly" />
+                            <label class="form-check-label" for="isEcoFriendly">
+                                環保材質
+                            </label>
+                        </div>
+                        <ValidationMessage For="@(() => material.IsEcoFriendly)" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 供應商資訊 -->
+        <div class="card mb-4">
+            <div class="card-header form-section-header-financial">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-building me-2"></i>
+                    供應商資訊
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label for="supplierId" class="form-label">主要供應商</label>
+                        <InputSelect id="supplierId" class="form-select" @bind-Value="material.SupplierId">
+                            <option value="">請選擇供應商</option>
+                            @foreach (var supplier in suppliers)
+                            {
+                                <option value="@supplier.Id">@supplier.CompanyName</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => material.SupplierId)" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 系統資訊 -->
+        <div class="card mb-4">
+            <div class="card-header form-section-header-system">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-gear me-2"></i>
+                    系統資訊
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <label for="remarks" class="form-label">備註</label>
+                        <InputTextArea id="remarks" class="form-control" rows="3" @bind-Value="material.Remarks" placeholder="請輸入備註" />
+                        <ValidationMessage For="@(() => material.Remarks)" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private Material material = new();
+    private List<Supplier> suppliers = new();
+    private bool isLoading = false;
+    private bool isSubmitting = false;
+
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        InitializeBreadcrumbs();
+        await base.OnParametersSetAsync();
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("產品基礎元素", "#"),
+            new("材質管理", "/BOMFoundation/materials"),
+            new(Id.HasValue ? "編輯材質" : "新增材質")
+        };
+    }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 載入供應商列表
+            await LoadSuppliersAsync();
+
+            if (Id.HasValue)
+            {
+                await LoadMaterial();
+            }
+            else
+            {
+                material = new Material
+                {
+                    Status = EntityStatus.Active,
+                    IsEcoFriendly = false
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "初始化頁面時發生錯誤：", ex.Message);
+        }
+    }
+
+    private async Task LoadSuppliersAsync()
+    {
+        try
+        {
+            suppliers = await SupplierService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入供應商列表失敗：", ex.Message);
+            suppliers = new List<Supplier>();
+        }
+    }
+
+    private async Task LoadMaterial()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            if (!Id.HasValue) return;
+            
+            var materialResult = await MaterialService.GetByIdAsync(Id.Value);
+            if (materialResult == null)
+            {
+                Navigation.NavigateTo("/BOMFoundation/materials");
+                return;
+            }
+            material = materialResult;
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入材質資料時發生錯誤：", ex.Message);
+            Navigation.NavigateTo("/BOMFoundation/materials");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SaveMaterial()
+    {
+        isSubmitting = true;
+        StateHasChanged();
+
+        try
+        {
+            // 檢查材質代碼是否重複
+            var codeExists = await MaterialService.IsCodeExistsAsync(material.Code, Id);
+            if (codeExists)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "材質代碼已存在，請使用其他代碼");
+                return;
+            }
+
+            if (Id.HasValue)
+            {
+                var result = await MaterialService.UpdateAsync(material);
+                if (result.IsSuccess)
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "材質更新成功");
+                    Navigation.NavigateTo("/BOMFoundation/materials");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", $"更新失敗：{result.ErrorMessage}");
+                }
+            }
+            else
+            {
+                var result = await MaterialService.CreateAsync(material);
+                if (result.IsSuccess)
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "材質新增成功");
+                    Navigation.NavigateTo("/BOMFoundation/materials");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", $"新增失敗：{result.ErrorMessage}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "儲存材質資料時發生錯誤：", ex.Message);
+            await JSRuntime.InvokeVoidAsync("alert", $"儲存失敗：{ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/BOMFoundation/materials");
+    }
+}

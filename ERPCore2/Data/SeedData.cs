@@ -72,7 +72,8 @@ namespace ERPCore2.Data
                 new ProductSeeder(),
                 new InventorySeeder(),
                 new WeatherSeeder(),
-                new ColorSeeder()
+                new ColorSeeder(),
+                new MaterialSeeder() // 新增材質 Seeder
             };
         }
     }

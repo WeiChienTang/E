@@ -39,6 +39,9 @@ namespace ERPCore2.Data.Context
       public DbSet<Weather> Weathers { get; set; }
       public DbSet<Color> Colors { get; set; }
 
+      // BOM Foundations
+      public DbSet<Material> Materials { get; set; }
+
       protected override void OnModelCreating(ModelBuilder modelBuilder)
       {
             base.OnModelCreating(modelBuilder);
@@ -170,6 +173,21 @@ namespace ERPCore2.Data.Context
                   .WithMany(u => u.ToUnitConversions)
                   .HasForeignKey(uc => uc.ToUnitId)
                   .OnDelete(DeleteBehavior.Restrict);
+            });
+            
+            // BOM Foundations Relationships
+            modelBuilder.Entity<Material>(entity =>
+            {
+                  entity.HasOne(m => m.Supplier)
+                  .WithMany()
+                  .HasForeignKey(m => m.SupplierId)
+                  .OnDelete(DeleteBehavior.SetNull);
+                  
+                  entity.Property(m => m.Density)
+                  .HasPrecision(10, 4);
+                  
+                  entity.Property(m => m.MeltingPoint)
+                  .HasPrecision(10, 2);
             });
       }
     }
