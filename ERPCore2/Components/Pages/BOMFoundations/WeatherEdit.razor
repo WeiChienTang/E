@@ -1,7 +1,5 @@
 @page "/BOMFoundation/weather/edit"
 @page "/BOMFoundation/weather/edit/{id:int?}"
-@using ERPCore2.Data.Entities
-@using ERPCore2.Services
 @inject IWeatherService WeatherService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -9,89 +7,36 @@
 
 <PageTitle>@(Id.HasValue ? "編輯天氣" : "新增天氣")</PageTitle>
 
-@* 頁面標題 *@
-<GenericHeaderComponent Title="@(Id.HasValue ? "編輯天氣" : "新增天氣")"
-                       Subtitle="@(Id.HasValue ? $"編輯天氣: {weather.Name}" : "新增天氣類型資料")"
-                       TitleIcon="cloud-sun"
-                       HeadingLevel="h1"
-                       BreadcrumbItems="@breadcrumbItems"
-                       IsLoading="@isLoading"
-                       LoadingText="載入中..."
-                       ShowDivider="true">    <ActionButtons>
-        <EditActionButtonsComponent 
-            SaveButtonText="儲存"
-            CancelButtonText="取消"
-            OnSaveClick="SaveWeather"
-            OnCancelClick="Cancel"
-            IsSubmitting="@isSubmitting"
-            IsLoading="@isLoading" />
-    </ActionButtons>
-</GenericHeaderComponent>
-
-@* 主要內容區域 *@
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-info-circle me-2"></i>
-                    基本資料
-                </h5>
-            </div>
-            <div class="card-body">
-                <EditForm Model="@weather" OnValidSubmit="SaveWeather">
-                    <DataAnnotationsValidator />
-                    <ValidationSummary class="text-danger" />
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="name" class="form-label">名稱 <span class="text-danger">*</span></label>                            <InputText id="name" class="form-control" @bind-Value="weather.Name" placeholder="請輸入天氣名稱" />
-                            <ValidationMessage For="@(() => weather.Name!)" />
-                        </div>
-
-                        <div class="col-md-6 mb-3">
-                            <label for="status" class="form-label">狀態</label>
-                            <InputSelect id="status" class="form-select" @bind-Value="weather.Status">
-                                <option value="@EntityStatus.Active">啟用</option>
-                                <option value="@EntityStatus.Inactive">停用</option>
-                            </InputSelect>
-                            <ValidationMessage For="@(() => weather.Status)" />
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-12 mb-3">
-                            <label for="description" class="form-label">描述</label>
-                            <InputTextArea id="description" class="form-control" rows="3" @bind-Value="weather.Description" placeholder="請輸入天氣描述" />
-                            <ValidationMessage For="@(() => weather.Description)" />
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-12 mb-3">
-                            <label for="remarks" class="form-label">備註</label>
-                            <InputTextArea id="remarks" class="form-control" rows="2" @bind-Value="weather.Remarks" placeholder="請輸入備註" />
-                            <ValidationMessage For="@(() => weather.Remarks)" />
-                        </div>
-                    </div>
-                </EditForm>
-            </div>
-        </div>
-    </div>
-</div>
+<GenericEditPageComponent TEntity="Weather" 
+                         TService="IWeatherService"
+                         @ref="editComponent"
+                         Id="@Id"
+                         Service="@WeatherService"
+                         EntityName="天氣"
+                         EntityNamePlural="天氣"
+                         IndexRoute="/BOMFoundation/weather"
+                         FormTitle="基本資料"
+                         FormSubtitle="天氣的基本資訊"
+                         FormIcon="info-circle"
+                         UseGenericForm="true"
+                         FormFields="@formFields"
+                         FormSections="@formSections"
+                         BreadcrumbItems="@breadcrumbItems"
+                         DataLoader="@LoadWeatherData"
+                         SaveHandler="@SaveWeatherData"
+                         OnSaveSuccess="@HandleSaveSuccess"
+                         OnCancel="@HandleCancel" />
 
 @code {
     [Parameter] public int? Id { get; set; }
-
-    private Weather weather = new();
-    private bool isLoading = false;
-    private bool isSubmitting = false;    // 麵包屑導航
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
-
-    protected override async Task OnParametersSetAsync()
+    
+    private GenericEditPageComponent<Weather, IWeatherService>? editComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();    protected override void OnInitialized()
     {
         InitializeBreadcrumbs();
-        await base.OnParametersSetAsync();
+        InitializeFormFields();
     }
 
     private void InitializeBreadcrumbs()
@@ -104,78 +49,119 @@
             new(Id.HasValue ? "編輯天氣" : "新增天氣")
         };
     }
-    
-    protected override async Task OnInitializedAsync()
+
+    private void InitializeFormFields()
     {
-        if (Id.HasValue)
+        formFields = new List<FormFieldDefinition>
         {
-            await LoadWeather();
-        }
-        else
+            new()
+            {
+                PropertyName = nameof(Weather.Name),
+                Label = "名稱",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入天氣名稱",
+                IsRequired = true,
+                ContainerCssClass = "col-md-6"
+            },
+            new()
+            {
+                PropertyName = nameof(Weather.Status),
+                Label = "狀態",
+                FieldType = FormFieldType.Select,
+                Options = new List<SelectOption>
+                {
+                    new() { Text = "啟用", Value = "Active" },
+                    new() { Text = "停用", Value = "Inactive" }
+                },
+                ContainerCssClass = "col-md-6"
+            },
+            new()
+            {
+                PropertyName = nameof(Weather.Description),
+                Label = "描述",
+                FieldType = FormFieldType.TextArea,
+                Placeholder = "請輸入天氣描述",
+                Rows = 3,
+                ContainerCssClass = "col-12"
+            },
+            new()
+            {
+                PropertyName = nameof(Weather.Remarks),
+                Label = "備註",
+                FieldType = FormFieldType.TextArea,
+                Placeholder = "請輸入備註",
+                Rows = 2,
+                ContainerCssClass = "col-12"
+            }
+        };
+
+        formSections = new Dictionary<string, string>
         {
-            weather = new Weather
+            { nameof(Weather.Name), "基本資訊" },
+            { nameof(Weather.Status), "基本資訊" },
+            { nameof(Weather.Description), "詳細資訊" },
+            { nameof(Weather.Remarks), "其他資訊" }
+        };
+    }
+
+    private async Task<Weather?> LoadWeatherData()
+    {
+        if (!Id.HasValue) 
+        {
+            return new Weather
             {
                 Status = EntityStatus.Active
             };
         }
-    }    private async Task LoadWeather()
-    {
-        isLoading = true;
-        StateHasChanged();        try
+
+        try
         {
-            if (!Id.HasValue) return;
-            
-            var weatherResult = await WeatherService.GetByIdAsync(Id.Value);
-            if (weatherResult == null)
+            var weather = await WeatherService.GetByIdAsync(Id.Value);
+            if (weather == null)
             {
+                await JSRuntime.InvokeVoidAsync("alert", "找不到指定的天氣資料");
                 Navigation.NavigateTo("/BOMFoundation/weather");
-                return;
+                return null;
             }
-            weather = weatherResult;
+            return weather;
         }
         catch (Exception ex)
         {
             await JSRuntime.InvokeVoidAsync("console.error", "載入天氣資料時發生錯誤：", ex.Message);
             Navigation.NavigateTo("/BOMFoundation/weather");
-        }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
+            return null;
         }
     }
 
-    private async Task SaveWeather()
+    private async Task<bool> SaveWeatherData(Weather weather)
     {
-        isSubmitting = true;
-        StateHasChanged();
-
         try
         {
             if (Id.HasValue)
             {
-                await WeatherService.UpdateAsync(weather);
+                var result = await WeatherService.UpdateAsync(weather);
+                return result.IsSuccess;
             }
             else
             {
-                await WeatherService.CreateAsync(weather);
+                var result = await WeatherService.CreateAsync(weather);
+                return result.IsSuccess;
             }
-
-            Navigation.NavigateTo("/BOMFoundation/weather");
         }
         catch (Exception ex)
         {
             await JSRuntime.InvokeVoidAsync("console.error", "儲存天氣資料時發生錯誤：", ex.Message);
+            return false;
         }
-        finally
-        {
-            isSubmitting = false;
-            StateHasChanged();
-        }
-    }
-
-    private void Cancel()
+    }    private Task HandleSaveSuccess()
     {
         Navigation.NavigateTo("/BOMFoundation/weather");
+        return Task.CompletedTask;
+    }
+
+    private Task HandleCancel()
+    {
+        Navigation.NavigateTo("/BOMFoundation/weather");
+        return Task.CompletedTask;
     }
 }

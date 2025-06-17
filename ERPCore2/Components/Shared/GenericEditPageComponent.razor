@@ -1,0 +1,315 @@
+@* 泛型Edit頁面基底組件 *@
+@using ERPCore2.Data
+@typeparam TEntity where TEntity : BaseEntity, new()
+@typeparam TService
+
+@* 頁面標題 *@
+<GenericHeaderComponent Title="@GetPageTitle()"
+                       Subtitle="@GetPageSubtitle()"
+                       TitleIcon="@GetPageIcon()"
+                       HeadingLevel="h1"
+                       BreadcrumbItems="@BreadcrumbItems"
+                       IsLoading="@IsLoading"
+                       LoadingText="載入中..."
+                       ShowDivider="true">    
+    <ActionButtons>
+        <EditActionButtonsComponent 
+            SaveButtonText="@SaveButtonText"
+            CancelButtonText="@CancelButtonText"
+            OnSaveClick="HandleSave"
+            OnCancelClick="HandleCancel"
+            IsSubmitting="@IsSubmitting"
+            IsLoading="@IsLoading" />
+    </ActionButtons>
+</GenericHeaderComponent>
+
+@* 主要內容區域 *@
+<div class="row">
+    <div class="col-12">
+        @* 基本資料表單 *@
+        <div class="card mb-4">
+            <GenericHeaderComponent Title="@FormTitle"
+                                   Subtitle="@FormSubtitle"
+                                   TitleIcon="@FormIcon"
+                                   IsCardHeader="true">
+            </GenericHeaderComponent>
+            <div class="card-body">
+                @if (UseGenericForm)
+                {
+                    <GenericFormComponent TModel="TEntity"
+                                        Model="@Entity"
+                                        FieldDefinitions="@FormFields"
+                                        FieldSections="@FormSections"
+                                        OnFormSubmit="HandleFormSubmit"
+                                        ShowFormHeader="false"
+                                        ShowFormButtons="false"
+                                        ShowValidationSummary="true"
+                                        FormCssClass=""
+                                        FormBodyCssClass="">
+                    </GenericFormComponent>
+                }
+                else
+                {
+                    <EditForm Model="@Entity" OnValidSubmit="HandleFormSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger" />
+                        @CustomFormContent
+                    </EditForm>
+                }
+            </div>
+        </div>
+
+        @* 額外區塊 *@
+        @if (AdditionalSections != null)
+        {
+            @AdditionalSections
+        }
+    </div>
+</div>
+
+@code {
+    // ===== 參數 =====
+    
+    // 核心參數
+    [Parameter] public int? Id { get; set; }
+    [Parameter] public TEntity Entity { get; set; } = new();
+    [Parameter] public TService Service { get; set; } = default!;
+    
+    // 頁面設定
+    [Parameter] public string EntityName { get; set; } = "資料";
+    [Parameter] public string EntityNamePlural { get; set; } = "資料";
+    [Parameter] public string CreateTitle { get; set; } = string.Empty;
+    [Parameter] public string EditTitle { get; set; } = string.Empty;
+    [Parameter] public string CreateSubtitle { get; set; } = string.Empty;
+    [Parameter] public string EditSubtitle { get; set; } = string.Empty;
+    [Parameter] public string CreateIcon { get; set; } = "plus-circle";
+    [Parameter] public string EditIcon { get; set; } = "pencil-square";
+    [Parameter] public string IndexRoute { get; set; } = "/";
+    
+    // 按鈕設定
+    [Parameter] public string SaveButtonText { get; set; } = "儲存";
+    [Parameter] public string CancelButtonText { get; set; } = "取消";
+    
+    // 表單設定
+    [Parameter] public string FormTitle { get; set; } = "基本資料";
+    [Parameter] public string FormSubtitle { get; set; } = string.Empty;
+    [Parameter] public string FormIcon { get; set; } = "info-circle";
+    [Parameter] public bool UseGenericForm { get; set; } = true;
+    [Parameter] public List<FormFieldDefinition> FormFields { get; set; } = new();
+    [Parameter] public Dictionary<string, string> FormSections { get; set; } = new();
+    
+    // 麵包屑導航
+    [Parameter] public List<GenericHeaderComponent.BreadcrumbItem> BreadcrumbItems { get; set; } = new();
+    
+    // 自訂內容
+    [Parameter] public RenderFragment? CustomFormContent { get; set; }
+    [Parameter] public RenderFragment? AdditionalSections { get; set; }
+    
+    // 事件和邏輯
+    [Parameter] public Func<Task<TEntity?>> DataLoader { get; set; } = default!;
+    [Parameter] public Func<TEntity, Task<bool>> SaveHandler { get; set; } = default!;
+    [Parameter] public Func<Task> AdditionalDataLoader { get; set; } = default!;
+    [Parameter] public Func<TEntity, Task<bool>> CustomValidation { get; set; } = default!;
+    [Parameter] public EventCallback OnSaveSuccess { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    
+    // ===== 內部狀態 =====
+    
+    private bool isLoading = true;
+    private bool isSubmitting = false;
+    
+    // ===== 公開屬性 =====
+    
+    public bool IsCreateMode => !Id.HasValue || Id.Value == 0;
+    public bool IsEditMode => !IsCreateMode;
+    public bool IsLoading => isLoading;
+    public bool IsSubmitting => isSubmitting;    // ===== 生命週期 =====
+    
+    private bool _hasInitialized = false;
+    private int? _lastId = null;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        if (!_hasInitialized)
+        {
+            await InitializePageAsync();
+            _hasInitialized = true;
+            _lastId = Id;
+        }
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        // 檢查 ID 是否變化，如果變化則重新載入資料
+        if (_hasInitialized && _lastId != Id)
+        {
+            await InitializePageAsync();
+            _lastId = Id;
+        }
+        else if (!_hasInitialized)
+        {
+            await InitializePageAsync();
+            _hasInitialized = true;
+            _lastId = Id;
+        }
+    }
+    
+    // ===== 初始化方法 =====
+      private async Task InitializePageAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+            
+            // 載入額外資料
+            if (AdditionalDataLoader != null)
+            {
+                await AdditionalDataLoader();
+            }
+            
+            // 載入實體資料（編輯模式）
+            if (IsEditMode && DataLoader != null)
+            {
+                var loadedEntity = await DataLoader();
+                if (loadedEntity != null)
+                {
+                    Entity = loadedEntity;
+                    StateHasChanged(); // 確保UI更新
+                }
+            }
+            else if (IsCreateMode)
+            {
+                // 初始化新實體
+                if (DataLoader != null)
+                {
+                    var newEntity = await DataLoader();
+                    if (newEntity != null)
+                    {
+                        Entity = newEntity;
+                    }
+                }
+                else
+                {
+                    Entity = new TEntity();
+                }
+                StateHasChanged(); // 確保UI更新
+            }
+        }
+        catch (Exception ex)
+        {
+            // 錯誤處理 - 可以考慮加入錯誤通知
+            Console.Error.WriteLine($"載入資料時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    // ===== 事件處理方法 =====
+    
+    private async Task HandleFormSubmit()
+    {
+        await HandleSave();
+    }
+    
+    private async Task HandleSave()
+    {
+        if (isSubmitting) return;
+        
+        try
+        {
+            isSubmitting = true;
+            StateHasChanged();
+            
+            // 自訂驗證
+            if (CustomValidation != null)
+            {
+                var isValid = await CustomValidation(Entity);
+                if (!isValid)
+                {
+                    return;
+                }
+            }
+            
+            // 執行儲存邏輯
+            bool success = false;
+            if (SaveHandler != null)
+            {
+                success = await SaveHandler(Entity);
+            }
+            
+            if (success)
+            {
+                // 觸發成功事件
+                await OnSaveSuccess.InvokeAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            // 錯誤處理
+            Console.Error.WriteLine($"儲存資料時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task HandleCancel()
+    {
+        await OnCancel.InvokeAsync();
+    }
+    
+    // ===== 輔助方法 =====
+    
+    private string GetPageTitle()
+    {
+        if (IsCreateMode)
+        {
+            return !string.IsNullOrEmpty(CreateTitle) ? CreateTitle : $"新增{EntityName}";
+        }
+        else
+        {
+            return !string.IsNullOrEmpty(EditTitle) ? EditTitle : $"編輯{EntityName}";
+        }
+    }
+    
+    private string GetPageSubtitle()
+    {
+        if (IsCreateMode)
+        {
+            return !string.IsNullOrEmpty(CreateSubtitle) ? CreateSubtitle : $"建立新的{EntityName}資料";
+        }
+        else
+        {
+            return !string.IsNullOrEmpty(EditSubtitle) ? EditSubtitle : $"修改{EntityName}資料";
+        }
+    }
+    
+    private string GetPageIcon()
+    {
+        return IsCreateMode ? CreateIcon : EditIcon;
+    }
+    
+    // ===== 公開方法 =====
+    
+    public async Task Refresh()
+    {
+        await InitializePageAsync();
+    }
+    
+    public void SetEntity(TEntity entity)
+    {
+        Entity = entity;
+        StateHasChanged();
+    }
+    
+    public TEntity GetEntity()
+    {
+        return Entity;
+    }
+}

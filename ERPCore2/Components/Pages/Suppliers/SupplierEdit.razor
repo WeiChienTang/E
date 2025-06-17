@@ -8,52 +8,32 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
+@implements IDisposable
 
 <PageTitle>@GetPageTitle()</PageTitle>
 
-@* 頁面標題 *@
-<GenericHeaderComponent Title="@GetPageTitle()"
-                       Subtitle="@GetSubtitle()"
-                       TitleIcon="@GetTitleIcon()"
-                       HeadingLevel="h1"
-                       BreadcrumbItems="@breadcrumbItems"
-                       IsLoading="@isLoading"
-                       LoadingText="載入中..."
-                       ShowDivider="true">    <ActionButtons>
-        <EditActionButtonsComponent 
-            SaveButtonText="儲存"
-            CancelButtonText="取消"
-            OnSaveClick="SaveSupplier"
-            OnCancelClick="Cancel"
-            IsSubmitting="@isSubmitting"
-            IsLoading="@isLoading" />
-    </ActionButtons>
-</GenericHeaderComponent>
+<GenericEditPageComponent TEntity="Supplier" 
+                         TService="ISupplierService"
+                         Id="@Id"
+                         Entity="@supplier"
+                         Service="@SupplierService"
+                         EntityName="廠商"
+                         EntityNamePlural="廠商"
+                         FormTitle="基本資料"
+                         FormSubtitle="廠商的基本公司資訊"
+                         FormIcon="building-gear"
+                         IndexRoute="/suppliers"
+                         UseGenericForm="true"
+                         FormFields="@basicFormFields"
+                         FormSections="@basicFormSections"
+                         BreadcrumbItems="@breadcrumbItems"
+                         DataLoader="@LoadSupplierData"
+                         SaveHandler="@SaveSupplier"
+                         AdditionalDataLoader="@LoadAdditionalData"
+                         OnSaveSuccess="@HandleSaveSuccess"
+                         OnCancel="@HandleCancel">
 
-@* 主要內容區域 *@
-<div class="row">
-    <div class="col-12">
-        @* 基本資料表單 *@
-        <div class="card mb-4">
-            <GenericHeaderComponent Title="基本資料"
-                                   Subtitle="廠商的基本公司資訊"
-                                   TitleIcon="building-gear"
-                                   IsCardHeader="true">
-            </GenericHeaderComponent>
-            <div class="card-body">
-                <GenericFormComponent TModel="Supplier"
-                                    Model="@supplier"
-                                    FieldDefinitions="@basicFormFields"
-                                    FieldSections="@basicFormSections"
-                                    OnFormSubmit="HandleBasicFormSubmit"
-                                    ShowFormHeader="false"
-                                    ShowFormButtons="false"
-                                    ShowValidationSummary="true"
-                                    FormCssClass=""
-                                    FormBodyCssClass="">
-                </GenericFormComponent>
-            </div>
-        </div>
+    <AdditionalSections>
 
         @* 聯絡方式管理 *@
         <div class="card mb-4">
@@ -232,12 +212,11 @@
                             <i class="bi bi-plus me-1"></i>
                             新增第一個地址
                         </button>
-                    </div>
-                }
+                    </div>                }
             </div>
         </div>
-    </div>
-</div>
+    </AdditionalSections>
+</GenericEditPageComponent>
 
 @code {
     [Parameter] public int? Id { get; set; }
@@ -257,56 +236,22 @@
     private List<FormFieldDefinition> basicFormFields = new();
     private Dictionary<string, string> basicFormSections = new();
     
-    // 狀態管理
-    private bool isLoading = true;
-    private bool isSubmitting = false;
-    private bool isEditMode => Id.HasValue && Id.Value > 0;
+    // 防止重複載入
+    private bool _isLoadingData = false;
+    private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
     
     // 麵包屑導航
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
     protected override async Task OnInitializedAsync()
     {
-        await InitializePageAsync();
-    }
-
-    private async Task InitializePageAsync()
+        InitializeBreadcrumbs();
+        await LoadAdditionalData();
+    }    protected override Task OnParametersSetAsync()
     {
-        try
-        {
-            isLoading = true;
-            StateHasChanged();
-
-            // 初始化麵包屑
-            InitializeBreadcrumbs();
-            
-            // 載入基礎資料
-            await LoadBasicDataAsync();
-            
-            // 初始化表單欄位
-            InitializeFormFields();
-            
-            if (isEditMode)
-            {
-                // 編輯模式：載入現有廠商資料
-                await LoadSupplierDataAsync(Id!.Value);
-            }
-            else
-            {
-                // 新增模式：初始化新廠商
-                InitializeNewSupplier();
-            }
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入廠商資料時發生錯誤：", ex.Message);
-            await JSRuntime.InvokeVoidAsync("alert", $"載入資料失敗：{ex.Message}");
-        }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
-        }
+        // 當參數變化時（例如從 Detail 導航到 Edit），重新初始化麵包屑
+        InitializeBreadcrumbs();
+        return Task.CompletedTask;
     }
 
     private void InitializeBreadcrumbs()
@@ -315,14 +260,43 @@
         {
             new("首頁", "/"),
             new("廠商管理", "/suppliers"),
-            new(isEditMode ? "編輯廠商" : "新增廠商")
+            new(Id.HasValue ? "編輯廠商" : "新增廠商")
         };
-    }    private async Task LoadBasicDataAsync()
+    }
+
+    private async Task LoadAdditionalData()
     {
-        supplierTypes = await SupplierService.GetSupplierTypesAsync();
-        industryTypes = await SupplierService.GetIndustryTypesAsync();
-        contactTypes = await ContactTypeService.GetActiveAsync();
-        addressTypes = await AddressTypeService.GetActiveAsync();
+        await _loadingSemaphore.WaitAsync();
+        try
+        {
+            if (_isLoadingData) return; // 防止重複載入
+            
+            _isLoadingData = true;
+            
+            // 順序執行以避免DbContext併發問題
+            supplierTypes = await SupplierService.GetSupplierTypesAsync();
+            industryTypes = await SupplierService.GetIndustryTypesAsync();
+            contactTypes = await ContactTypeService.GetActiveAsync();
+            addressTypes = await AddressTypeService.GetActiveAsync();
+            
+            // 在載入完基礎資料後初始化表單欄位
+            InitializeFormFields();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"載入額外資料時發生錯誤：{ex.Message}");
+            // 初始化空列表以防止UI錯誤
+            supplierTypes = new List<SupplierType>();
+            industryTypes = new List<IndustryType>();
+            contactTypes = new List<ContactType>();
+            addressTypes = new List<AddressType>();
+            InitializeFormFields(); // 即使出錯也要初始化表單欄位
+        }
+        finally
+        {
+            _isLoadingData = false;
+            _loadingSemaphore.Release();
+        }
     }
 
     private void InitializeFormFields()
@@ -408,166 +382,212 @@
                 FieldType = FormFieldType.Number,
                 Placeholder = "請輸入信用額度",
                 ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                PropertyName = nameof(Supplier.Remarks),
-                Label = "備註",
-                FieldType = FormFieldType.TextArea,
-                Placeholder = "請輸入備註",
-                ContainerCssClass = "col-12"
             }
-        };        basicFormSections = new Dictionary<string, string>
+        };
+
+        basicFormSections = new Dictionary<string, string>
         {
             { nameof(Supplier.SupplierCode), "基本資訊" },
             { nameof(Supplier.CompanyName), "基本資訊" },
-            { nameof(Supplier.ContactPerson), "基本資訊" },
-            { nameof(Supplier.TaxNumber), "基本資訊" },
+            { nameof(Supplier.ContactPerson), "聯絡資訊" },
+            { nameof(Supplier.TaxNumber), "財務資訊" },
             { nameof(Supplier.SupplierTypeId), "分類資訊" },
             { nameof(Supplier.IndustryTypeId), "分類資訊" },
             { nameof(Supplier.PaymentTerms), "財務資訊" },
-            { nameof(Supplier.CreditLimit), "財務資訊" },
-            { nameof(Supplier.Remarks), "其他資訊" }
-        };}    private async Task LoadSupplierDataAsync(int supplierId)
-    {
-        var result = await SupplierService.GetByIdAsync(supplierId);
-        if (result != null)
-        {
-            supplier = result;
-            
-            // 載入聯絡方式
-            supplierContacts = await SupplierService.GetSupplierContactsAsync(supplierId);
-            
-            // 載入地址資料
-            supplierAddresses = await SupplierService.GetSupplierAddressesAsync(supplierId);
-        }
-        else
-        {
-            await JSRuntime.InvokeVoidAsync("alert", "找不到指定的廠商資料");
-            Navigation.NavigateTo("/suppliers");
-        }
-    }    private void InitializeNewSupplier()
-    {
-        supplier = new Supplier
-        {
-            Status = EntityStatus.Active,
-            CreatedAt = DateTime.Now
+            { nameof(Supplier.CreditLimit), "財務資訊" }
         };
-        
-        // 初始化空的聯絡方式清單
-        supplierContacts = new List<SupplierContact>();
-        
-        // 初始化空的地址資料清單
-        supplierAddresses = new List<SupplierAddress>();
     }
 
-    private async Task HandleBasicFormSubmit(object model)
+    private async Task<Supplier?> LoadSupplierData()
     {
-        // 基本表單提交處理
-        if (model is Supplier submittedSupplier)
+        await _loadingSemaphore.WaitAsync();
+        try
         {
-            supplier = submittedSupplier;
+            if (!Id.HasValue) 
+            {
+                var newSupplier = new Supplier
+                {
+                    SupplierCode = GenerateSupplierCode(),
+                    CompanyName = "",
+                    ContactPerson = "",
+                    TaxNumber = "",
+                    Status = EntityStatus.Active
+                };
+                supplier = newSupplier;
+                supplierContacts = new List<SupplierContact>();
+                supplierAddresses = new List<SupplierAddress>();
+                return newSupplier;
+            }
+
+            // 載入廠商基本資料
+            var loadedSupplier = await SupplierService.GetByIdAsync(Id.Value);
+            if (loadedSupplier != null)
+            {
+                supplier = loadedSupplier;
+                
+                // 載入聯絡方式
+                supplierContacts = await SupplierService.GetSupplierContactsAsync(Id.Value);
+                
+                // 載入地址資料
+                supplierAddresses = await SupplierAddressService.GetBySupplierIdAsync(Id.Value);
+                
+                // 觸發 UI 更新
+                StateHasChanged();
+                
+                return supplier;
+            }
+            else
+            {
+                // 如果找不到廠商，建立新的
+                supplier = new Supplier();
+                supplierContacts = new List<SupplierContact>();
+                supplierAddresses = new List<SupplierAddress>();
+                return supplier;
+            }
         }
-        await Task.CompletedTask;
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入廠商詳細資料失敗：", ex.Message);
+            throw;
+        }
+        finally
+        {
+            _loadingSemaphore.Release();
+        }
     }
 
-    private async Task SaveSupplier()
+    private string GenerateSupplierCode()
+    {
+        return $"S{DateTime.Now:yyyyMMddHHmmss}";
+    }
+
+    private string GetPageTitle()
+    {
+        return Id.HasValue ? "編輯廠商" : "新增廠商";
+    }
+
+    private async Task<bool> SaveSupplier(Supplier entity)
     {
         try
         {
-            isSubmitting = true;
-            StateHasChanged();
-
-            ServiceResult<Supplier> result;
-            
-            if (isEditMode)
+            // 驗證基本資料
+            if (string.IsNullOrWhiteSpace(entity.SupplierCode))
             {
-                // 更新廠商
-                result = await SupplierService.UpdateAsync(supplier);
+                await JSRuntime.InvokeVoidAsync("alert", "廠商代碼為必填");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(entity.CompanyName))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "公司名稱為必填");
+                return false;
+            }
+
+            ServiceResult result;
+            
+            if (Id.HasValue)
+            {
+                // 更新現有廠商
+                result = await SupplierService.UpdateAsync(entity);
                 if (result.IsSuccess)
                 {
                     // 更新聯絡方式
-                    await SupplierService.UpdateSupplierContactsAsync(supplier.Id, supplierContacts);
+                    await SupplierService.UpdateSupplierContactsAsync(entity.Id, supplierContacts);
                     
                     // 更新地址資料
-                    await SupplierService.UpdateSupplierAddressesAsync(supplier.Id, supplierAddresses);
+                    await SupplierAddressService.UpdateSupplierAddressesAsync(entity.Id, supplierAddresses);
                 }
             }
             else
             {
                 // 新增廠商
-                result = await SupplierService.CreateAsync(supplier);
-                if (result.IsSuccess && result.Data != null)
+                result = await SupplierService.CreateAsync(entity);
+                if (result.IsSuccess)
                 {
-                    supplier = result.Data;
-                    
-                    // 設定聯絡方式的廠商ID
+                    // 更新聯絡方式的廠商ID
                     foreach (var contact in supplierContacts)
                     {
-                        contact.SupplierId = supplier.Id;
+                        contact.SupplierId = entity.Id;
                     }
-                    await SupplierService.UpdateSupplierContactsAsync(supplier.Id, supplierContacts);
                     
-                    // 設定地址的廠商ID
+                    // 更新地址的廠商ID
                     foreach (var address in supplierAddresses)
                     {
-                        address.SupplierId = supplier.Id;
+                        address.SupplierId = entity.Id;
                     }
-                    await SupplierService.UpdateSupplierAddressesAsync(supplier.Id, supplierAddresses);
+                    
+                    // 儲存聯絡方式和地址
+                    await SupplierService.UpdateSupplierContactsAsync(entity.Id, supplierContacts);
+                    await SupplierAddressService.UpdateSupplierAddressesAsync(entity.Id, supplierAddresses);
                 }
             }
 
             if (result.IsSuccess)
             {
-                await JSRuntime.InvokeVoidAsync("alert", $"廠商{(isEditMode ? "更新" : "新增")}成功！");
-                Navigation.NavigateTo("/suppliers");
+                await JSRuntime.InvokeVoidAsync("alert", "廠商資料儲存成功！");
+                return true;
             }
             else
             {
                 await JSRuntime.InvokeVoidAsync("alert", $"儲存失敗：{result.ErrorMessage}");
+                return false;
             }
         }
         catch (Exception ex)
         {
+            await JSRuntime.InvokeVoidAsync("console.error", "儲存廠商資料時發生錯誤：", ex.Message);
             await JSRuntime.InvokeVoidAsync("alert", $"儲存時發生錯誤：{ex.Message}");
-        }
-        finally
-        {
-            isSubmitting = false;
-            StateHasChanged();
+            return false;
         }
     }
 
-    private async Task Cancel()
+    private Task HandleSaveSuccess()
     {
         Navigation.NavigateTo("/suppliers");
-        await Task.CompletedTask;
+        return Task.CompletedTask;
+    }
+
+    private Task HandleCancel()
+    {
+        Navigation.NavigateTo("/suppliers");
+        return Task.CompletedTask;
     }
 
     #region 聯絡方式管理
 
-    private async Task AddContact()
+    private void AddContact()
     {
-        var newContact = SupplierContactService.CreateNewContact(supplier.Id, supplierContacts.Count);
+        var newContact = new SupplierContact
+        {
+            SupplierId = supplier.Id,
+            ContactTypeId = null,
+            ContactValue = "",
+            IsPrimary = supplierContacts.Count == 0, // 第一個自動設為主要
+            Status = EntityStatus.Active
+        };
+        
         supplierContacts.Add(newContact);
         StateHasChanged();
-        await Task.CompletedTask;
     }
 
-    private async Task RemoveContact(int index)
+    private void RemoveContact(int index)
     {
         if (index >= 0 && index < supplierContacts.Count)
         {
+            var removedContact = supplierContacts[index];
             supplierContacts.RemoveAt(index);
             
-            // 重新檢查主要聯絡方式
-            SupplierContactService.EnsurePrimaryContactExists(supplierContacts);
+            // 如果移除的是主要聯絡方式且還有其他聯絡方式，設定第一個為主要
+            if (removedContact.IsPrimary && supplierContacts.Any())
+            {
+                supplierContacts[0].IsPrimary = true;
+            }
+            
             StateHasChanged();
         }
-        await Task.CompletedTask;
     }
 
-    private async Task SetPrimaryContact(int index)
+    private void SetPrimaryContact(int index)
     {
         if (index >= 0 && index < supplierContacts.Count)
         {
@@ -577,39 +597,52 @@
                 contact.IsPrimary = false;
             }
             
-            // 設定新的主要聯絡方式
+            // 設定指定的為主要
             supplierContacts[index].IsPrimary = true;
             StateHasChanged();
         }
-        await Task.CompletedTask;
     }
 
     #endregion
 
     #region 地址管理
 
-    private async Task AddAddress()
+    private void AddAddress()
     {
-        var newAddress = SupplierAddressService.CreateNewAddress(supplier.Id, supplierAddresses.Count);
+        var newAddress = new SupplierAddress
+        {
+            SupplierId = supplier.Id,
+            AddressTypeId = null,
+            PostalCode = "",
+            City = "",
+            District = "",
+            Address = "",
+            IsPrimary = supplierAddresses.Count == 0, // 第一個自動設為主要
+            Status = EntityStatus.Active
+        };
+        
         supplierAddresses.Add(newAddress);
         StateHasChanged();
-        await Task.CompletedTask;
     }
 
-    private async Task RemoveAddress(int index)
+    private void RemoveAddress(int index)
     {
         if (index >= 0 && index < supplierAddresses.Count)
         {
+            var removedAddress = supplierAddresses[index];
             supplierAddresses.RemoveAt(index);
             
-            // 重新檢查主要地址
-            SupplierAddressService.EnsurePrimaryAddressExists(supplierAddresses);
+            // 如果移除的是主要地址且還有其他地址，設定第一個為主要
+            if (removedAddress.IsPrimary && supplierAddresses.Any())
+            {
+                supplierAddresses[0].IsPrimary = true;
+            }
+            
             StateHasChanged();
         }
-        await Task.CompletedTask;
     }
 
-    private async Task SetPrimaryAddress(int index)
+    private void SetPrimaryAddress(int index)
     {
         if (index >= 0 && index < supplierAddresses.Count)
         {
@@ -619,35 +652,16 @@
                 address.IsPrimary = false;
             }
             
-            // 設定新的主要地址
+            // 設定指定的為主要
             supplierAddresses[index].IsPrimary = true;
             StateHasChanged();
         }
-        await Task.CompletedTask;
     }
 
     #endregion
 
-    #region 輔助方法
-
-    private string GetPageTitle()
+    public void Dispose()
     {
-        return isEditMode ? "編輯廠商" : "新增廠商";
+        _loadingSemaphore?.Dispose();
     }
-
-    private string GetSubtitle()
-    {
-        if (isEditMode && !string.IsNullOrEmpty(supplier.CompanyName))
-        {
-            return $"編輯廠商「{supplier.CompanyName}」的詳細資料";
-        }
-        return "建立新的廠商資料，包含基本資訊、聯絡方式和地址";
-    }
-
-    private string GetTitleIcon()
-    {
-        return isEditMode ? "pencil-square" : "plus-circle";
-    }
-
-    #endregion
 }

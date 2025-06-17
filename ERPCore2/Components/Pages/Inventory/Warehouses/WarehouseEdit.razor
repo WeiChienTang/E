@@ -9,110 +9,51 @@
 
 <PageTitle>@GetPageTitle()</PageTitle>
 
-@* 頁面標題 *@
-<GenericHeaderComponent Title="@GetPageTitle()"
-                       Subtitle="@GetSubtitle()"
-                       TitleIcon="@GetTitleIcon()"
-                       HeadingLevel="h1"
-                       BreadcrumbItems="@breadcrumbItems"
-                       IsLoading="@isLoading"
-                       LoadingText="載入中..."
-                       ShowDivider="true">
-    <ActionButtons>
-        <EditActionButtonsComponent 
-            SaveButtonText="儲存"
-            CancelButtonText="取消"
-            OnSaveClick="SaveWarehouse"
-            OnCancelClick="Cancel"
-            IsSubmitting="@isSubmitting"
-            IsLoading="@isLoading" />
-    </ActionButtons>
-</GenericHeaderComponent>
-
-@* 主要內容區域 *@
-<div class="row">
-    <div class="col-12">
-        @* 基本資料表單 *@
-        <div class="card mb-4">
-            <GenericHeaderComponent Title="基本資料"
-                                   Subtitle="倉庫的基本資訊設定"
-                                   TitleIcon="house-door"
-                                   IsCardHeader="true">
-            </GenericHeaderComponent>
-            <div class="card-body">
-                <GenericFormComponent TModel="Warehouse"
-                                    Model="@warehouse"
-                                    FieldDefinitions="@formFields"
-                                    FieldSections="@formSections"
-                                    OnFormSubmit="HandleFormSubmit"
-                                    ShowFormHeader="false"
-                                    ShowFormButtons="false"
-                                    ShowValidationSummary="true"
-                                    FormCssClass=""
-                                    FormBodyCssClass="">
-                </GenericFormComponent>
-            </div>
-        </div>
-    </div>
-</div>
+<GenericEditPageComponent TEntity="Warehouse" 
+                         TService="IWarehouseService"
+                         Id="@Id"
+                         Entity="@warehouse"
+                         Service="@WarehouseService"
+                         EntityName="倉庫"
+                         EntityNamePlural="倉庫"
+                         FormTitle="基本資料"
+                         FormSubtitle="倉庫的基本資訊設定"
+                         FormIcon="house-door"
+                         IndexRoute="/inventory/warehouses"
+                         BreadcrumbItems="@breadcrumbItems"
+                         UseGenericForm="true"
+                         FormFields="@formFields"
+                         FormSections="@formSections"
+                         DataLoader="@LoadEntityAsync"
+                         SaveHandler="@SaveEntityAsync"
+                         CustomValidation="@ValidateEntityAsync"
+                         OnSaveSuccess="@HandleSaveSuccess"
+                         OnCancel="@HandleCancel">
+    
+</GenericEditPageComponent>
 
 @code {
     [Parameter] public int? Id { get; set; }
     
     // 資料模型
-    private Warehouse warehouse = new();
+    private Warehouse warehouse = new() 
+    { 
+        IsActive = true,
+        IsDefault = false,
+        WarehouseType = WarehouseTypeEnum.Main
+    };
     
     // 表單欄位定義
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     
-    // 狀態管理
-    private bool isLoading = true;
-    private bool isSubmitting = false;
-    private bool isEditMode => Id.HasValue && Id.Value > 0;
-    
     // 麵包屑導航
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnParametersSet()
     {
-        await InitializePageAsync();
-    }
-
-    private async Task InitializePageAsync()
-    {
-        try
-        {
-            isLoading = true;
-            StateHasChanged();
-
-            // 初始化麵包屑
-            InitializeBreadcrumbs();
-            
-            // 初始化表單欄位
-            InitializeFormFields();
-            
-            if (isEditMode)
-            {
-                // 編輯模式：載入現有倉庫資料
-                await LoadWarehouseDataAsync(Id!.Value);
-            }
-            else
-            {
-                // 新增模式：初始化新倉庫
-                InitializeNewWarehouse();
-            }
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入倉庫資料時發生錯誤：", ex.Message);
-            await JSRuntime.InvokeVoidAsync("alert", $"載入資料失敗：{ex.Message}");
-        }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
-        }
+        InitializeBreadcrumbs();
+        InitializeFormFields();
     }
 
     private void InitializeBreadcrumbs()
@@ -122,7 +63,7 @@
             new("首頁", "/"),
             new("庫存管理", "/inventory"),
             new("倉庫管理", "/inventory/warehouses"),
-            new(isEditMode ? "編輯倉庫" : "新增倉庫")
+            new(Id.HasValue ? "編輯倉庫" : "新增倉庫")
         };
     }
 
@@ -219,136 +160,114 @@
         };
     }
 
-    private async Task LoadWarehouseDataAsync(int warehouseId)
-    {
-        try
-        {
-            warehouse = await WarehouseService.GetByIdAsync(warehouseId) ?? new Warehouse();
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入倉庫詳細資料失敗：", ex.Message);
-            throw;
-        }
-    }
-
-    private void InitializeNewWarehouse()
-    {
-        warehouse = new Warehouse
-        {
-            WarehouseCode = GenerateWarehouseCode(),
-            WarehouseName = "",
-            WarehouseType = WarehouseTypeEnum.Main,
-            ContactPerson = "",
-            Phone = "",
-            Address = "",
-            IsDefault = false,
-            IsActive = true
-        };
-    }
-
-    private string GenerateWarehouseCode()
-    {
-        // 生成倉庫代碼邏輯
-        return $"WH{DateTime.Now:yyyyMMddHHmmss}";
-    }
-
-    #region 頁面標題相關
-
     private string GetPageTitle()
     {
-        return isEditMode ? "編輯倉庫" : "新增倉庫";
+        return Id.HasValue ? "編輯倉庫" : "新增倉庫";
     }
 
-    private string GetSubtitle()
+    // GenericEditPageComponent 回調方法
+    private async Task<Warehouse?> LoadEntityAsync()
     {
-        if (isEditMode && !string.IsNullOrEmpty(warehouse.WarehouseName))
+        if (!Id.HasValue) return null;
+        
+        var result = await WarehouseService.GetByIdAsync(Id.Value);
+        if (result == null)
         {
-            return $"修改「{warehouse.WarehouseName}」的資料";
+            throw new InvalidOperationException($"找不到 ID 為 {Id.Value} 的倉庫");
         }
-        return "建立新的倉庫資料";
+        return result;
     }
 
-    private string GetTitleIcon()
-    {
-        return isEditMode ? "pencil-square" : "plus-circle";
-    }
-
-    #endregion
-
-    #region 表單處理
-
-    private async Task HandleFormSubmit(Warehouse model)
-    {
-        // 這個方法由 GenericFormComponent 呼叫，但我們統一在 SaveWarehouse 處理
-        await Task.CompletedTask;
-    }
-
-    private async Task SaveWarehouse()
+    private async Task<bool> SaveEntityAsync(Warehouse entity)
     {
         try
         {
-            isSubmitting = true;
-            StateHasChanged();
-
-            // 驗證基本資料
-            if (string.IsNullOrWhiteSpace(warehouse.WarehouseCode))
+            if (Id.HasValue)
             {
-                await JSRuntime.InvokeVoidAsync("alert", "倉庫代碼為必填");
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(warehouse.WarehouseName))
-            {
-                await JSRuntime.InvokeVoidAsync("alert", "倉庫名稱為必填");
-                return;
-            }
-
-            ServiceResult result;
-            
-            if (isEditMode)
-            {
-                // 更新現有倉庫
-                var updateResult = await WarehouseService.UpdateAsync(warehouse);
-                result = new ServiceResult { IsSuccess = updateResult.IsSuccess, ErrorMessage = updateResult.ErrorMessage };
-            }
-            else
-            {
-                // 新增倉庫
-                var createResult = await WarehouseService.CreateAsync(warehouse);
-                result = new ServiceResult { IsSuccess = createResult.IsSuccess, ErrorMessage = createResult.ErrorMessage };
-                if (createResult.IsSuccess && createResult.Data != null)
+                var result = await WarehouseService.UpdateAsync(entity);
+                if (!result.IsSuccess)
                 {
-                    warehouse = createResult.Data;
+                    if (OperatingSystem.IsBrowser())
+                    {
+                        await JSRuntime.InvokeVoidAsync("alert", $"更新失敗：{result.ErrorMessage}");
+                    }
+                    return false;
+                }
+                if (OperatingSystem.IsBrowser())
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "倉庫更新成功");
                 }
             }
-
-            if (result.IsSuccess)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", "倉庫資料儲存成功！");
-                Navigation.NavigateTo("/inventory/warehouses");
-            }
             else
             {
-                await JSRuntime.InvokeVoidAsync("alert", $"儲存失敗：{result.ErrorMessage}");
+                var result = await WarehouseService.CreateAsync(entity);
+                if (!result.IsSuccess)
+                {
+                    if (OperatingSystem.IsBrowser())
+                    {
+                        await JSRuntime.InvokeVoidAsync("alert", $"新增失敗：{result.ErrorMessage}");
+                    }
+                    return false;
+                }
+                if (OperatingSystem.IsBrowser())
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "倉庫新增成功");
+                }
             }
+            return true;
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "儲存倉庫資料時發生錯誤：", ex.Message);
-            await JSRuntime.InvokeVoidAsync("alert", $"儲存時發生錯誤：{ex.Message}");
-        }
-        finally
-        {
-            isSubmitting = false;
-            StateHasChanged();
+            Console.WriteLine($"儲存倉庫資料時發生錯誤：{ex.Message}");
+            if (OperatingSystem.IsBrowser())
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"儲存失敗：{ex.Message}");
+            }
+            return false;
         }
     }
 
-    private void Cancel()
+    private async Task<bool> ValidateEntityAsync(Warehouse entity)
+    {
+        try
+        {
+            // 驗證基本資料
+            if (string.IsNullOrWhiteSpace(entity.WarehouseCode))
+            {
+                if (OperatingSystem.IsBrowser())
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "倉庫代碼為必填");
+                }
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(entity.WarehouseName))
+            {
+                if (OperatingSystem.IsBrowser())
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "倉庫名稱為必填");
+                }
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"驗證倉庫資料時發生錯誤：{ex.Message}");
+            return false;
+        }
+    }
+
+    private Task HandleSaveSuccess()
     {
         Navigation.NavigateTo("/inventory/warehouses");
+        return Task.CompletedTask;
     }
 
-    #endregion
+    private Task HandleCancel()
+    {
+        Navigation.NavigateTo("/inventory/warehouses");
+        return Task.CompletedTask;
+    }
 }

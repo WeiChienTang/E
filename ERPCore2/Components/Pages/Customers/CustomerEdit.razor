@@ -6,59 +6,39 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
+@implements IDisposable
 
 <PageTitle>@GetPageTitle()</PageTitle>
 
-@* 頁面標題 *@
-<GenericHeaderComponent Title="@GetPageTitle()"
-                       Subtitle="@GetSubtitle()"
-                       TitleIcon="@GetTitleIcon()"
-                       HeadingLevel="h1"
-                       BreadcrumbItems="@breadcrumbItems"
-                       IsLoading="@isLoading"
-                       LoadingText="載入中..."
-                       ShowDivider="true">    <ActionButtons>
-        <EditActionButtonsComponent 
-            SaveButtonText="儲存"
-            CancelButtonText="取消"
-            OnSaveClick="SaveCustomer"
-            OnCancelClick="Cancel"
-            IsSubmitting="@isSubmitting"
-            IsLoading="@isLoading" />
-    </ActionButtons>
-</GenericHeaderComponent>
+<GenericEditPageComponent TEntity="Customer" 
+                         TService="ICustomerService"
+                         Id="@Id"
+                         Entity="@customer"
+                         Service="@CustomerService"
+                         EntityName="客戶"
+                         EntityNamePlural="客戶"
+                         FormTitle="基本資料"
+                         FormSubtitle="客戶的基本公司資訊"
+                         FormIcon="building"
+                         IndexRoute="/customers"
+                         UseGenericForm="true"
+                         FormFields="@basicFormFields"
+                         FormSections="@basicFormSections"
+                         BreadcrumbItems="@breadcrumbItems"
+                         DataLoader="@LoadCustomerData"
+                         SaveHandler="@SaveCustomer"
+                         AdditionalDataLoader="@LoadAdditionalData"
+                         OnSaveSuccess="@HandleSaveSuccess"
+                         OnCancel="@HandleCancel">
 
-@* 主要內容區域 *@
-<div class="row">
-    <div class="col-12">
-        @* 基本資料表單 *@
-        <div class="card mb-4">
-            <GenericHeaderComponent Title="基本資料"
-                                   Subtitle="客戶的基本公司資訊"
-                                   TitleIcon="building"
-                                   IsCardHeader="true">
-            </GenericHeaderComponent>
-            <div class="card-body">
-                <GenericFormComponent TModel="Customer"
-                                    Model="@customer"
-                                    FieldDefinitions="@basicFormFields"
-                                    FieldSections="@basicFormSections"
-                                    OnFormSubmit="HandleBasicFormSubmit"
-                                    ShowFormHeader="false"
-                                    ShowFormButtons="false"
-                                    ShowValidationSummary="true"
-                                    FormCssClass=""
-                                    FormBodyCssClass="">
-                </GenericFormComponent>
-            </div>
-        </div>
-
+    <AdditionalSections>
         @* 聯絡方式管理 *@
         <div class="card mb-4">
             <GenericHeaderComponent Title="聯絡方式"
                                    Subtitle="@($"管理客戶的聯絡資訊 ({customerContacts.Count} 筆)")"
                                    TitleIcon="telephone"
-                                   IsCardHeader="true">                <ActionButtons>
+                                   IsCardHeader="true">                
+                <ActionButtons>
                     <button class="btn btn-primary" @onclick="AddContact">
                         <i class="bi-plus me-1"></i>
                         新增聯絡方式
@@ -138,7 +118,8 @@
             <GenericHeaderComponent Title="地址資訊"
                                    Subtitle="@($"管理客戶的地址資料 ({customerAddresses.Count} 筆)")"
                                    TitleIcon="geo-alt"
-                                   IsCardHeader="true">                <ActionButtons>
+                                   IsCardHeader="true">                
+                <ActionButtons>
                     <button class="btn btn-primary" @onclick="AddAddress">
                         <i class="bi-plus me-1"></i>
                         新增地址
@@ -236,8 +217,8 @@
                 }
             </div>
         </div>
-    </div>
-</div>
+    </AdditionalSections>
+</GenericEditPageComponent>
 
 @code {
     [Parameter] public int? Id { get; set; }
@@ -252,61 +233,24 @@
     private List<IndustryType> industryTypes = new();
     private List<ContactType> contactTypes = new();
     private List<AddressType> addressTypes = new();
-    
-    // 表單欄位定義
+      // 表單欄位定義
     private List<FormFieldDefinition> basicFormFields = new();
     private Dictionary<string, string> basicFormSections = new();
-    
-    // 狀態管理
-    private bool isLoading = true;
-    private bool isSubmitting = false;
-    private bool isEditMode => Id.HasValue && Id.Value > 0;
+      // 防止重複載入
+    private bool _isLoadingData = false;
+    private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
     
     // 麵包屑導航
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
-
-    protected override async Task OnInitializedAsync()
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();    protected override async Task OnInitializedAsync()
     {
-        await InitializePageAsync();
+        InitializeBreadcrumbs();
+        await LoadAdditionalData();
     }
 
-    private async Task InitializePageAsync()
+    protected override async Task OnParametersSetAsync()
     {
-        try
-        {
-            isLoading = true;
-            StateHasChanged();
-
-            // 初始化麵包屑
-            InitializeBreadcrumbs();
-            
-            // 載入基礎資料
-            await LoadBasicDataAsync();
-            
-            // 初始化表單欄位
-            InitializeFormFields();
-            
-            if (isEditMode)
-            {
-                // 編輯模式：載入現有客戶資料
-                await LoadCustomerDataAsync(Id!.Value);
-            }
-            else
-            {
-                // 新增模式：初始化新客戶
-                InitializeNewCustomer();
-            }
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入客戶資料時發生錯誤：", ex.Message);
-            await JSRuntime.InvokeVoidAsync("alert", $"載入資料失敗：{ex.Message}");
-        }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
-        }
+        // 當參數變化時（例如從 Detail 導航到 Edit），重新初始化麵包屑
+        InitializeBreadcrumbs();
     }
 
     private void InitializeBreadcrumbs()
@@ -315,16 +259,41 @@
         {
             new("首頁", "/"),
             new("客戶管理", "/customers"),
-            new(isEditMode ? "編輯客戶" : "新增客戶")
+            new(Id.HasValue ? "編輯客戶" : "新增客戶")
         };
-    }
-
-    private async Task LoadBasicDataAsync()
+    }    private async Task LoadAdditionalData()
     {
-        customerTypes = await CustomerService.GetCustomerTypesAsync();
-        industryTypes = await CustomerService.GetIndustryTypesAsync();
-        contactTypes = await CustomerService.GetContactTypesAsync();
-        addressTypes = await CustomerService.GetAddressTypesAsync();
+        await _loadingSemaphore.WaitAsync();
+        try
+        {
+            if (_isLoadingData) return; // 防止重複載入
+            
+            _isLoadingData = true;
+            
+            // 順序執行以避免DbContext併發問題
+            customerTypes = await CustomerService.GetCustomerTypesAsync();
+            industryTypes = await CustomerService.GetIndustryTypesAsync();
+            contactTypes = await CustomerService.GetContactTypesAsync();
+            addressTypes = await CustomerService.GetAddressTypesAsync();
+            
+            // 在載入完基礎資料後初始化表單欄位
+            InitializeFormFields();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"載入額外資料時發生錯誤：{ex.Message}");
+            // 初始化空列表以防止UI錯誤
+            customerTypes = new List<CustomerType>();
+            industryTypes = new List<IndustryType>();
+            contactTypes = new List<ContactType>();
+            addressTypes = new List<AddressType>();
+            InitializeFormFields(); // 即使出錯也要初始化表單欄位
+        }
+        finally
+        {
+            _isLoadingData = false;
+            _loadingSemaphore.Release();
+        }
     }
 
     private void InitializeFormFields()
@@ -406,71 +375,158 @@
             { nameof(Customer.CustomerTypeId), "分類資訊" },
             { nameof(Customer.IndustryTypeId), "分類資訊" }
         };
-    }
-
-    private async Task LoadCustomerDataAsync(int customerId)
+    }    private async Task<Customer?> LoadCustomerData()
     {
+        await _loadingSemaphore.WaitAsync();
         try
         {
+            if (!Id.HasValue) 
+            {
+                var newCustomer = new Customer
+                {
+                    CustomerCode = GenerateCustomerCode(),
+                    CompanyName = "",
+                    ContactPerson = "",
+                    TaxNumber = "",
+                    Status = EntityStatus.Active
+                };
+                customer = newCustomer;
+                customerContacts = new List<CustomerContact>();
+                customerAddresses = new List<CustomerAddress>();
+                return newCustomer;
+            }
+
             // 載入客戶基本資料
-            customer = await CustomerService.GetByIdAsync(customerId) ?? new Customer();
-            
-            // 載入聯絡方式
-            customerContacts = await CustomerService.GetCustomerContactsAsync(customerId);
-            
-            // 載入地址資料
-            customerAddresses = await CustomerAddressService.GetByCustomerIdAsync(customerId);
+            var loadedCustomer = await CustomerService.GetByIdAsync(Id.Value);
+            if (loadedCustomer != null)
+            {
+                customer = loadedCustomer;
+                
+                // 載入聯絡方式
+                customerContacts = await CustomerService.GetCustomerContactsAsync(Id.Value);
+                
+                // 載入地址資料
+                customerAddresses = await CustomerAddressService.GetByCustomerIdAsync(Id.Value);
+                
+                // 觸發 UI 更新
+                StateHasChanged();
+                
+                return customer;
+            }
+            else
+            {
+                // 如果找不到客戶，建立新的
+                customer = new Customer();
+                customerContacts = new List<CustomerContact>();
+                customerAddresses = new List<CustomerAddress>();
+                return customer;
+            }
         }
         catch (Exception ex)
         {
             await JSRuntime.InvokeVoidAsync("console.error", "載入客戶詳細資料失敗：", ex.Message);
             throw;
         }
-    }
-
-    private void InitializeNewCustomer()
-    {
-        customer = new Customer
+        finally
         {
-            CustomerCode = GenerateCustomerCode(),
-            CompanyName = "",
-            ContactPerson = "",
-            TaxNumber = "",
-            Status = EntityStatus.Active
-        };
-        
-        customerContacts = new List<CustomerContact>();
-        customerAddresses = new List<CustomerAddress>();
+            _loadingSemaphore.Release();
+        }
     }
 
     private string GenerateCustomerCode()
     {
-        // 生成客戶代碼邏輯
         return $"C{DateTime.Now:yyyyMMddHHmmss}";
     }
 
-    #region 頁面標題相關
-
     private string GetPageTitle()
     {
-        return isEditMode ? "編輯客戶" : "新增客戶";
+        return Id.HasValue ? "編輯客戶" : "新增客戶";
     }
 
-    private string GetSubtitle()
+    private async Task<bool> SaveCustomer(Customer entity)
     {
-        if (isEditMode && !string.IsNullOrEmpty(customer.CompanyName))
+        try
         {
-            return $"修改「{customer.CompanyName}」的資料";
+            // 驗證基本資料
+            if (string.IsNullOrWhiteSpace(entity.CustomerCode))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "客戶代碼為必填");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(entity.CompanyName))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "公司名稱為必填");
+                return false;
+            }
+
+            ServiceResult result;
+            
+            if (Id.HasValue)
+            {
+                // 更新現有客戶
+                result = await CustomerService.UpdateAsync(entity);
+                if (result.IsSuccess)
+                {
+                    // 更新聯絡方式
+                    await CustomerService.UpdateCustomerContactsAsync(entity.Id, customerContacts);
+                    
+                    // 更新地址資料
+                    await CustomerAddressService.UpdateCustomerAddressesAsync(entity.Id, customerAddresses);
+                }
+            }
+            else
+            {
+                // 新增客戶
+                result = await CustomerService.CreateAsync(entity);
+                if (result.IsSuccess)
+                {
+                    // 更新聯絡方式的客戶ID
+                    foreach (var contact in customerContacts)
+                    {
+                        contact.CustomerId = entity.Id;
+                    }
+                    
+                    // 更新地址的客戶ID
+                    foreach (var address in customerAddresses)
+                    {
+                        address.CustomerId = entity.Id;
+                    }
+                    
+                    // 儲存聯絡方式和地址
+                    await CustomerService.UpdateCustomerContactsAsync(entity.Id, customerContacts);
+                    await CustomerAddressService.UpdateCustomerAddressesAsync(entity.Id, customerAddresses);
+                }
+            }
+
+            if (result.IsSuccess)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "客戶資料儲存成功！");
+                return true;
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"儲存失敗：{result.ErrorMessage}");
+                return false;
+            }
         }
-        return "建立新的客戶資料";
-    }
-
-    private string GetTitleIcon()
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "儲存客戶資料時發生錯誤：", ex.Message);
+            await JSRuntime.InvokeVoidAsync("alert", $"儲存時發生錯誤：{ex.Message}");
+            return false;
+        }
+    }    private Task HandleSaveSuccess()
     {
-        return isEditMode ? "pencil-square" : "plus-circle";
+        Navigation.NavigateTo("/customers");
+        return Task.CompletedTask;
     }
 
-    #endregion
+    private Task HandleCancel()
+    {
+        Navigation.NavigateTo("/customers");
+        return Task.CompletedTask;
+    }
 
     #region 聯絡方式管理
 
@@ -605,105 +661,13 @@
             {
                 customerAddresses[index].AddressTypeId = null;
             }
-            StateHasChanged();
-        }
+            StateHasChanged();        }
     }
 
     #endregion
-
-    #region 表單處理
-
-    private async Task HandleBasicFormSubmit(Customer model)
+    
+    public void Dispose()
     {
-        // 這個方法由 GenericFormComponent 呼叫，但我們統一在 SaveCustomer 處理
-        await Task.CompletedTask;
+        _loadingSemaphore?.Dispose();
     }
-
-    private async Task SaveCustomer()
-    {
-        try
-        {
-            isSubmitting = true;
-            StateHasChanged();
-
-            // 驗證基本資料
-            if (string.IsNullOrWhiteSpace(customer.CustomerCode))
-            {
-                await JSRuntime.InvokeVoidAsync("alert", "客戶代碼為必填");
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(customer.CompanyName))
-            {
-                await JSRuntime.InvokeVoidAsync("alert", "公司名稱為必填");
-                return;
-            }
-
-            ServiceResult result;
-            
-            if (isEditMode)
-            {
-                // 更新現有客戶
-                result = await CustomerService.UpdateAsync(customer);
-                if (result.IsSuccess)
-                {
-                    // 更新聯絡方式
-                    await CustomerService.UpdateCustomerContactsAsync(customer.Id, customerContacts);
-                    
-                    // 更新地址資料
-                    await CustomerAddressService.UpdateCustomerAddressesAsync(customer.Id, customerAddresses);
-                }
-            }
-            else
-            {
-                // 新增客戶
-                result = await CustomerService.CreateAsync(customer);
-                if (result.IsSuccess)
-                {
-                    // 更新聯絡方式的客戶ID
-                    foreach (var contact in customerContacts)
-                    {
-                        contact.CustomerId = customer.Id;
-                    }
-                    
-                    // 更新地址的客戶ID
-                    foreach (var address in customerAddresses)
-                    {
-                        address.CustomerId = customer.Id;
-                    }
-                    
-                    // 儲存聯絡方式和地址
-                    await CustomerService.UpdateCustomerContactsAsync(customer.Id, customerContacts);
-                    await CustomerAddressService.UpdateCustomerAddressesAsync(customer.Id, customerAddresses);
-                }
-            }
-
-            if (result.IsSuccess)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", "客戶資料儲存成功！");
-                Navigation.NavigateTo("/customers");
-            }
-            else
-            {
-                await JSRuntime.InvokeVoidAsync("alert", $"儲存失敗：{result.ErrorMessage}");
-            }
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "儲存客戶資料時發生錯誤：", ex.Message);
-            await JSRuntime.InvokeVoidAsync("alert", $"儲存時發生錯誤：{ex.Message}");
-        }
-        finally
-        {
-            isSubmitting = false;
-            StateHasChanged();
-        }
-    }
-
-    private void Cancel()
-    {
-        Navigation.NavigateTo("/customers");
-    }
-
-    #endregion
 }

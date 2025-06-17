@@ -2,216 +2,140 @@
 @page "/inventory/transaction-types/create"
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
+@using ERPCore2.Components.Shared.Forms
 @inject IInventoryTransactionTypeService TransactionTypeService
 @inject NavigationManager Navigation
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">
-                            <i class="bi bi-list-ul me-2"></i>@(IsEditMode ? "編輯異動類型" : "新增異動類型")
-                        </h4>                        <button class="btn btn-outline-secondary" @onclick="@(() => Navigation.NavigateTo("/inventory/transaction-types"))">
-                            <i class="bi bi-arrow-left me-1"></i>返回列表
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    @if (transactionType == null)
-                    {
-                        <div class="d-flex justify-content-center align-items-center" style="height: 300px;">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">載入中...</span>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <EditForm Model="transactionType" OnValidSubmit="HandleSubmitAsync">
-                            <DataAnnotationsValidator />
-                            <ValidationSummary class="alert alert-danger" />
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h5 class="text-primary mb-3">基本資訊</h5>
-                                    
-                                    <div class="mb-3">
-                                        <label class="form-label">類型代碼 <span class="text-danger">*</span></label>
-                                        <InputText @bind-Value="transactionType.TypeCode" class="form-control" />
-                                        <ValidationMessage For="() => transactionType.TypeCode" class="text-danger" />
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label">類型名稱 <span class="text-danger">*</span></label>
-                                        <InputText @bind-Value="transactionType.TypeName" class="form-control" />
-                                        <ValidationMessage For="() => transactionType.TypeName" class="text-danger" />
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label">異動類型 <span class="text-danger">*</span></label>
-                                        <InputSelect @bind-Value="transactionType.TransactionType" class="form-select">
-                                            <option value="">請選擇異動類型</option>
-                                            <option value="@InventoryTransactionTypeEnum.In">入庫</option>
-                                            <option value="@InventoryTransactionTypeEnum.Out">出庫</option>
-                                            <option value="@InventoryTransactionTypeEnum.Adjustment">調整</option>
-                                            <option value="@InventoryTransactionTypeEnum.Stocktaking">盤點</option>
-                                            <option value="@InventoryTransactionTypeEnum.Transfer">轉倉</option>
-                                        </InputSelect>
-                                        <ValidationMessage For="() => transactionType.TransactionType" class="text-danger" />
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label">單號前綴</label>
-                                        <InputText @bind-Value="transactionType.NumberPrefix" class="form-control" />
-                                        <ValidationMessage For="() => transactionType.NumberPrefix" class="text-danger" />
-                                        <div class="form-text">用於自動產生單號時的前綴</div>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <h5 class="text-primary mb-3">控制選項</h5>
-                                    
-                                    <div class="mb-3">
-                                        <div class="form-check">
-                                            <InputCheckbox @bind-Value="transactionType.AffectsCost" class="form-check-input" id="affectsCost" />
-                                            <label class="form-check-label" for="affectsCost">
-                                                影響成本
-                                            </label>
-                                            <div class="form-text">此類型的異動是否會影響商品成本計算</div>
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <div class="form-check">
-                                            <InputCheckbox @bind-Value="transactionType.RequiresApproval" class="form-check-input" id="requiresApproval" />
-                                            <label class="form-check-label" for="requiresApproval">
-                                                需要審核
-                                            </label>
-                                            <div class="form-text">此類型的異動是否需要審核才能生效</div>
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <div class="form-check">
-                                            <InputCheckbox @bind-Value="transactionType.AutoGenerateNumber" class="form-check-input" id="autoGenerateNumber" />
-                                            <label class="form-check-label" for="autoGenerateNumber">
-                                                自動產生單號
-                                            </label>
-                                            <div class="form-text">系統是否自動為此類型異動產生單號</div>
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <div class="form-check">
-                                            <InputCheckbox @bind-Value="transactionType.IsActive" class="form-check-input" id="isActive" />
-                                            <label class="form-check-label" for="isActive">
-                                                啟用
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-12">
-                                    <div class="mb-3">
-                                        <label class="form-label">備註</label>
-                                        <InputTextArea @bind-Value="transactionType.Remarks" class="form-control" rows="3" />
-                                        <ValidationMessage For="() => transactionType.Remarks" class="text-danger" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="d-flex justify-content-end gap-2">                                <button type="button" class="btn btn-secondary" @onclick="@(() => Navigation.NavigateTo("/inventory/transaction-types"))">
-                                    <i class="bi bi-x-lg me-1"></i>取消
-                                </button>
-                                <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
-                                    @if (isSubmitting)
-                                    {
-                                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                                    }
-                                    else
-                                    {
-                                        <i class="bi bi-check-lg me-1"></i>
-                                    }
-                                    @(IsEditMode ? "更新" : "新增")
-                                </button>
-                            </div>
-                        </EditForm>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<GenericEditPageComponent TEntity="InventoryTransactionType"
+                          TService="IInventoryTransactionTypeService"
+                          Id="@Id"
+                          Entity="@transactionType"
+                          Service="@TransactionTypeService"
+                          EntityName="異動類型"
+                          EntityNamePlural="異動類型"
+                          FormTitle="異動類型設定"
+                          FormSubtitle="庫存異動類型的設定"
+                          FormIcon="list-ul"
+                          IndexRoute="/inventory/transaction-types"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          BreadcrumbItems="@breadcrumbItems"
+                          DataLoader="@LoadTransactionTypeData"
+                          SaveHandler="@SaveTransactionType"
+                          OnSaveSuccess="@HandleSaveSuccess">
+</GenericEditPageComponent>
 
 @code {
     [Parameter] public int? Id { get; set; }
 
     private InventoryTransactionType transactionType = new();
-    private bool isSubmitting = false;
-
-    private bool IsEditMode => Id.HasValue && Id.Value > 0;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
     protected override async Task OnInitializedAsync()
     {
-        if (IsEditMode)
+        SetupFormDefinition();
+        SetupBreadcrumbs();
+        
+        if (Id.HasValue && Id.Value > 0)
         {
-            await LoadTransactionTypeAsync();
+            transactionType = await LoadTransactionTypeData() ?? new InventoryTransactionType();
         }
         else
         {
-            transactionType = new InventoryTransactionType
-            {
-                IsActive = true,
-                Status = EntityStatus.Active,
-                AffectsCost = true,
-                RequiresApproval = false,
-                AutoGenerateNumber = true
-            };
-        }
-    }    private async Task LoadTransactionTypeAsync()
-    {
-        if (!Id.HasValue) return;
-
-        var result = await TransactionTypeService.GetByIdAsync(Id.Value);
-        if (result == null)
-        {
-            Navigation.NavigateTo("/inventory/transaction-types");
-        }
-        else
-        {
-            transactionType = result;
+            transactionType = CreateNewTransactionType();
         }
     }
 
-    private async Task HandleSubmitAsync()
+    private void SetupFormDefinition()
     {
-        isSubmitting = true;
+        formSections = new Dictionary<string, string>
+        {
+            { "basic", "基本資訊" },
+            { "options", "控制選項" },
+            { "remarks", "備註" }
+        };        formFields = new List<FormFieldDefinition>
+        {
+            new() { PropertyName = "TypeCode", Label = "類型代碼", FieldType = FormFieldType.Text, IsRequired = true, GroupName = "basic" },
+            new() { PropertyName = "TypeName", Label = "類型名稱", FieldType = FormFieldType.Text, IsRequired = true, GroupName = "basic" },
+            new() { 
+                PropertyName = "TransactionType", 
+                Label = "異動類型", 
+                FieldType = FormFieldType.Select, 
+                IsRequired = true, 
+                GroupName = "basic",
+                Options = new List<SelectOption>
+                {
+                    new() { Value = "", Text = "請選擇異動類型" },
+                    new() { Value = InventoryTransactionTypeEnum.In.ToString(), Text = "入庫" },
+                    new() { Value = InventoryTransactionTypeEnum.Out.ToString(), Text = "出庫" },
+                    new() { Value = InventoryTransactionTypeEnum.Adjustment.ToString(), Text = "調整" },
+                    new() { Value = InventoryTransactionTypeEnum.Stocktaking.ToString(), Text = "盤點" },
+                    new() { Value = InventoryTransactionTypeEnum.Transfer.ToString(), Text = "轉倉" }
+                }
+            },
+            new() { PropertyName = "NumberPrefix", Label = "單號前綴", FieldType = FormFieldType.Text, GroupName = "basic", HelpText = "用於自動產生單號時的前綴" },
+            new() { PropertyName = "AffectsCost", Label = "影響成本", FieldType = FormFieldType.Checkbox, GroupName = "options", HelpText = "此類型的異動是否會影響商品成本計算" },
+            new() { PropertyName = "RequiresApproval", Label = "需要審核", FieldType = FormFieldType.Checkbox, GroupName = "options", HelpText = "此類型的異動是否需要審核才能生效" },
+            new() { PropertyName = "AutoGenerateNumber", Label = "自動產生單號", FieldType = FormFieldType.Checkbox, GroupName = "options", HelpText = "系統是否自動為此類型異動產生單號" },
+            new() { PropertyName = "IsActive", Label = "啟用", FieldType = FormFieldType.Checkbox, GroupName = "options" },
+            new() { PropertyName = "Remarks", Label = "備註", FieldType = FormFieldType.TextArea, GroupName = "remarks", Rows = 3 }
+        };
+    }    private void SetupBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new() { Text = "首頁", Href = "/" },
+            new() { Text = "庫存管理", Href = "/inventory" },
+            new() { Text = "異動類型", Href = "/inventory/transaction-types" },
+            new() { Text = Id.HasValue && Id.Value > 0 ? "編輯" : "新增" }
+        };
+    }
+
+    private async Task<InventoryTransactionType?> LoadTransactionTypeData()
+    {
+        if (!Id.HasValue) return null;
+        return await TransactionTypeService.GetByIdAsync(Id.Value);
+    }
+
+    private InventoryTransactionType CreateNewTransactionType()
+    {
+        return new InventoryTransactionType
+        {
+            IsActive = true,
+            Status = EntityStatus.Active,
+            AffectsCost = true,
+            RequiresApproval = false,
+            AutoGenerateNumber = true
+        };
+    }
+
+    private async Task<bool> SaveTransactionType(InventoryTransactionType entity)
+    {
         try
         {
-            if (IsEditMode)
+            if (Id.HasValue && Id.Value > 0)
             {
-                var result = await TransactionTypeService.UpdateAsync(transactionType);
-                if (result.IsSuccess)
-                {
-                    Navigation.NavigateTo("/inventory/transaction-types");
-                }
+                var result = await TransactionTypeService.UpdateAsync(entity);
+                return result.IsSuccess;
             }
             else
             {
-                var result = await TransactionTypeService.CreateAsync(transactionType);
-                if (result.IsSuccess)
-                {
-                    Navigation.NavigateTo("/inventory/transaction-types");
-                }
+                var result = await TransactionTypeService.CreateAsync(entity);
+                return result.IsSuccess;
             }
         }
-        finally
+        catch
         {
-            isSubmitting = false;
+            return false;
         }
+    }
+
+    private Task HandleSaveSuccess()
+    {
+        Navigation.NavigateTo("/inventory/transaction-types");
+        return Task.CompletedTask;
     }
 }

@@ -2,75 +2,141 @@
 @page "/BOMFoundation/colors/edit/{id:int?}"
 @inject IColorService ColorService
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
 
-<h3>@(Id.HasValue ? "編輯顏色" : "新增顏色")</h3>
+<PageTitle>@(Id.HasValue ? "編輯顏色" : "新增顏色")</PageTitle>
 
-<div class="row">
-    <div class="col-md-6">
-        <EditForm Model="@color" OnValidSubmit="SaveColor">
-            <DataAnnotationsValidator />
-            
-            <div class="mb-3">
-                <label class="form-label">名稱</label>
-                <InputText class="form-control" @bind-Value="color.Name" />
-                <ValidationMessage For="@(() => color.Name)" />
-            </div>
-            
-            <div class="mb-3">
-                <label class="form-label">描述</label>
-                <InputTextArea class="form-control" @bind-Value="color.Description" />
-                <ValidationMessage For="@(() => color.Description)" />
-            </div>
-            
-            <div class="mb-3">
-                <label class="form-label">狀態</label>
-                <InputSelect class="form-select" @bind-Value="color.Status">
-                    <option value="@EntityStatus.Active">啟用</option>
-                    <option value="@EntityStatus.Inactive">停用</option>
-                </InputSelect>
-                <ValidationMessage For="@(() => color.Status)" />
-            </div>
-            
-            <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
-                @if (isSubmitting)
-                {
-                    <span class="spinner-border spinner-border-sm me-2"></span>
-                }
-                儲存
-            </button>
-            <button type="button" class="btn btn-secondary ms-2" @onclick="Cancel">取消</button>
-        </EditForm>
-    </div>
-</div>
+<GenericEditPageComponent TEntity="Color" 
+                         TService="IColorService"
+                         @ref="editComponent"
+                         Id="@Id"
+                         Service="@ColorService"
+                         EntityName="顏色"
+                         EntityNamePlural="顏色"
+                         IndexRoute="/BOMFoundation/colors"
+                         FormTitle="基本資料"
+                         FormSubtitle="顏色的基本資訊"
+                         FormIcon="info-circle"
+                         UseGenericForm="true"
+                         FormFields="@formFields"
+                         FormSections="@formSections"
+                         BreadcrumbItems="@breadcrumbItems"
+                         DataLoader="@LoadColorData"
+                         SaveHandler="@SaveColorData"
+                         OnSaveSuccess="@HandleSaveSuccess"
+                         OnCancel="@HandleCancel" />
 
 @code {
     [Parameter] public int? Id { get; set; }
     
-    private Color color = new();
-    private bool isSubmitting = false;
-    
-    protected override async Task OnInitializedAsync()
+    private GenericEditPageComponent<Color, IColorService>? editComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override void OnInitialized()
     {
-        if (Id.HasValue)
+        InitializeBreadcrumbs();
+        InitializeFormFields();
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
         {
-            var colorResult = await ColorService.GetByIdAsync(Id.Value);
-            if (colorResult == null)
+            new("首頁", "/"),
+            new("產品基礎元素", "#"),
+            new("顏色管理", "/BOMFoundation/colors"),
+            new(Id.HasValue ? "編輯顏色" : "新增顏色")
+        };
+    }
+
+    private void InitializeFormFields()
+    {
+        formFields = new List<FormFieldDefinition>
+        {
+            new()
             {
-                Navigation.NavigateTo("/BOMFoundation/colors");
-                return;
+                PropertyName = nameof(Color.Name),
+                Label = "名稱",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入顏色名稱",
+                IsRequired = true,
+                ContainerCssClass = "col-md-6"
+            },
+            new()
+            {
+                PropertyName = nameof(Color.Status),
+                Label = "狀態",
+                FieldType = FormFieldType.Select,
+                Options = new List<SelectOption>
+                {
+                    new() { Text = "啟用", Value = "Active" },
+                    new() { Text = "停用", Value = "Inactive" }
+                },
+                ContainerCssClass = "col-md-6"
+            },
+            new()
+            {
+                PropertyName = nameof(Color.Description),
+                Label = "描述",
+                FieldType = FormFieldType.TextArea,
+                Placeholder = "請輸入顏色描述",
+                Rows = 3,
+                ContainerCssClass = "col-12"
+            },
+            new()
+            {
+                PropertyName = nameof(Color.Remarks),
+                Label = "備註",
+                FieldType = FormFieldType.TextArea,
+                Placeholder = "請輸入備註",
+                Rows = 2,
+                ContainerCssClass = "col-12"
             }
-            color = colorResult;
-        }
-        else
+        };
+
+        formSections = new Dictionary<string, string>
         {
-            color = new Color { Status = EntityStatus.Active };
+            { nameof(Color.Name), "基本資訊" },
+            { nameof(Color.Status), "基本資訊" },
+            { nameof(Color.Description), "詳細資訊" },
+            { nameof(Color.Remarks), "其他資訊" }
+        };
+    }
+
+    private async Task<Color?> LoadColorData()
+    {
+        if (!Id.HasValue) 
+        {
+            return new Color
+            {
+                Status = EntityStatus.Active
+            };
+        }
+
+        try
+        {
+            var color = await ColorService.GetByIdAsync(Id.Value);
+            if (color == null)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "找不到指定的顏色資料");
+                Navigation.NavigateTo("/BOMFoundation/colors");
+                return null;
+            }
+            return color;
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入顏色資料時發生錯誤：", ex.Message);
+            Navigation.NavigateTo("/BOMFoundation/colors");
+            return null;
         }
     }
-    
-    private async Task SaveColor()
+
+    private async Task<bool> SaveColorData(Color color)
     {
-        isSubmitting = true;
-        
         try
         {
             ServiceResult<Color> result;
@@ -84,19 +150,24 @@
                 result = await ColorService.CreateAsync(color);
             }
             
-            if (result.IsSuccess)
-            {
-                Navigation.NavigateTo("/BOMFoundation/colors");
-            }
+            return result.IsSuccess;
         }
-        finally
+        catch (Exception ex)
         {
-            isSubmitting = false;
+            await JSRuntime.InvokeVoidAsync("console.error", "儲存顏色資料時發生錯誤：", ex.Message);
+            return false;
         }
     }
-    
-    private void Cancel()
+
+    private Task HandleSaveSuccess()
     {
         Navigation.NavigateTo("/BOMFoundation/colors");
+        return Task.CompletedTask;
+    }
+
+    private Task HandleCancel()
+    {
+        Navigation.NavigateTo("/BOMFoundation/colors");
+        return Task.CompletedTask;
     }
 }

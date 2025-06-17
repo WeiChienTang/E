@@ -1,0 +1,253 @@
+@* 主從式編輯頁面基底組件 *@
+@using ERPCore2.Data
+@typeparam TMaster where TMaster : BaseEntity, new()
+@typeparam TService
+
+@* 頁面標題 *@
+<GenericHeaderComponent Title="@GetPageTitle()"
+                       Subtitle="@GetPageSubtitle()"
+                       TitleIcon="@GetPageIcon()"
+                       HeadingLevel="h1"
+                       BreadcrumbItems="@BreadcrumbItems"
+                       IsLoading="@IsLoading"
+                       LoadingText="載入中..."
+                       ShowDivider="true">    
+    <ActionButtons>
+        <EditActionButtonsComponent 
+            SaveButtonText="@SaveButtonText"
+            CancelButtonText="@CancelButtonText"
+            OnSaveClick="HandleSave"
+            OnCancelClick="HandleCancel"
+            IsSubmitting="@IsSubmitting"
+            IsLoading="@IsLoading" />
+    </ActionButtons>
+</GenericHeaderComponent>
+
+@* 主要內容區域 *@
+<div class="row">
+    <div class="col-12">
+        @* 主實體表單 *@
+        <div class="card mb-4">
+            <GenericHeaderComponent Title="@MasterFormTitle"
+                                   Subtitle="@MasterFormSubtitle"
+                                   TitleIcon="@MasterFormIcon"
+                                   IsCardHeader="true">
+            </GenericHeaderComponent>
+            <div class="card-body">
+                @if (UseGenericForm)
+                {
+                    <GenericFormComponent TModel="TMaster"
+                                        Model="@MasterEntity"
+                                        FieldDefinitions="@MasterFormFields"
+                                        FieldSections="@MasterFormSections"
+                                        OnFormSubmit="HandleFormSubmit"
+                                        ShowFormHeader="false"
+                                        ShowFormButtons="false"
+                                        ShowValidationSummary="true"
+                                        FormCssClass=""
+                                        FormBodyCssClass="">
+                    </GenericFormComponent>
+                }
+                else
+                {
+                    <EditForm Model="@MasterEntity" OnValidSubmit="HandleFormSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger" />
+                        @CustomMasterFormContent
+                    </EditForm>
+                }
+            </div>
+        </div>
+
+        @* 子實體管理區域 *@
+        @if (DetailSections != null)
+        {
+            @DetailSections
+        }
+    </div>
+</div>
+
+@code {
+    // ===== 參數 =====
+    
+    // 核心參數
+    [Parameter] public int? Id { get; set; }
+    [Parameter] public TMaster MasterEntity { get; set; } = new();
+    [Parameter] public TService Service { get; set; } = default!;
+    
+    // 頁面設定
+    [Parameter] public string EntityName { get; set; } = "資料";
+    [Parameter] public string EntityNamePlural { get; set; } = "資料";
+    [Parameter] public string CreateTitle { get; set; } = string.Empty;
+    [Parameter] public string EditTitle { get; set; } = string.Empty;
+    [Parameter] public string CreateSubtitle { get; set; } = string.Empty;
+    [Parameter] public string EditSubtitle { get; set; } = string.Empty;
+    [Parameter] public string CreateIcon { get; set; } = "plus-circle";
+    [Parameter] public string EditIcon { get; set; } = "pencil-square";
+    [Parameter] public string IndexRoute { get; set; } = "/";
+    
+    // 按鈕設定
+    [Parameter] public string SaveButtonText { get; set; } = "儲存";
+    [Parameter] public string CancelButtonText { get; set; } = "取消";
+    
+    // 主表單設定
+    [Parameter] public string MasterFormTitle { get; set; } = "基本資料";
+    [Parameter] public string MasterFormSubtitle { get; set; } = string.Empty;
+    [Parameter] public string MasterFormIcon { get; set; } = "info-circle";
+    [Parameter] public bool UseGenericForm { get; set; } = true;
+    [Parameter] public List<FormFieldDefinition> MasterFormFields { get; set; } = new();
+    [Parameter] public Dictionary<string, string> MasterFormSections { get; set; } = new();
+    
+    // 麵包屑導航
+    [Parameter] public List<GenericHeaderComponent.BreadcrumbItem> BreadcrumbItems { get; set; } = new();
+    
+    // 自訂內容
+    [Parameter] public RenderFragment? CustomMasterFormContent { get; set; }
+    [Parameter] public RenderFragment? DetailSections { get; set; }
+    
+    // 事件和邏輯
+    [Parameter] public Func<Task<TMaster?>> DataLoader { get; set; } = default!;
+    [Parameter] public Func<TMaster, Task<bool>> SaveHandler { get; set; } = default!;
+    [Parameter] public Func<Task> AdditionalDataLoader { get; set; } = default!;
+    [Parameter] public Func<TMaster, Task<bool>> CustomValidation { get; set; } = default!;
+    [Parameter] public EventCallback OnSaveSuccess { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    
+    // ===== 內部狀態 =====
+    
+    private bool isLoading = true;
+    private bool isSubmitting = false;
+    
+    // ===== 公開屬性 =====
+    
+    public bool IsCreateMode => !Id.HasValue || Id.Value == 0;
+    public bool IsEditMode => !IsCreateMode;
+    public bool IsLoading => isLoading;
+    public bool IsSubmitting => isSubmitting;
+    
+    // ===== 生命週期 =====
+    
+    private bool _hasInitialized = false;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        if (!_hasInitialized)
+        {
+            await InitializePageAsync();
+            _hasInitialized = true;
+        }
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        // 只有在Id參數變化時才重新初始化
+        if (!_hasInitialized)
+        {
+            await InitializePageAsync();
+            _hasInitialized = true;
+        }
+    }
+    
+    // ===== 初始化方法 =====
+    
+    private async Task InitializePageAsync()
+    {
+        try
+        {
+            isLoading = true;
+            
+            // 載入額外資料（下拉選單等）
+            if (AdditionalDataLoader != null)
+            {
+                await AdditionalDataLoader();
+            }
+            
+            // 載入主實體資料
+            if (DataLoader != null)
+            {
+                var loadedEntity = await DataLoader();
+                if (loadedEntity != null)
+                {
+                    MasterEntity = loadedEntity;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"初始化頁面時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    // ===== 事件處理 =====
+    
+    private async Task HandleFormSubmit()
+    {
+        await HandleSave();
+    }
+    
+    private async Task HandleSave()
+    {
+        if (isSubmitting) return;
+        
+        try
+        {
+            isSubmitting = true;
+            
+            // 自訂驗證
+            if (CustomValidation != null)
+            {
+                var isValid = await CustomValidation(MasterEntity);
+                if (!isValid) return;
+            }
+            
+            // 儲存資料
+            if (SaveHandler != null)
+            {
+                var success = await SaveHandler(MasterEntity);
+                if (success)
+                {
+                    await OnSaveSuccess.InvokeAsync();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"儲存時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+    
+    private async Task HandleCancel()
+    {
+        await OnCancel.InvokeAsync();
+    }
+    
+    // ===== 標題生成方法 =====
+    
+    private string GetPageTitle()
+    {
+        if (!string.IsNullOrEmpty(CreateTitle) && IsCreateMode) return CreateTitle;
+        if (!string.IsNullOrEmpty(EditTitle) && IsEditMode) return EditTitle;
+        return IsCreateMode ? $"新增{EntityName}" : $"編輯{EntityName}";
+    }
+    
+    private string GetPageSubtitle()
+    {
+        if (!string.IsNullOrEmpty(CreateSubtitle) && IsCreateMode) return CreateSubtitle;
+        if (!string.IsNullOrEmpty(EditSubtitle) && IsEditMode) return EditSubtitle;
+        return IsCreateMode ? $"建立新的{EntityName}資料" : $"修改{EntityName}資料";
+    }
+    
+    private string GetPageIcon()
+    {
+        return IsCreateMode ? CreateIcon : EditIcon;
+    }
+}
