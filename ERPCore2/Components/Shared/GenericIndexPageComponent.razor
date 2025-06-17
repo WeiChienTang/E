@@ -1,0 +1,309 @@
+@* 泛型Index頁面基底組件 *@
+@using ERPCore2.Data
+@using ERPCore2.Data.Entities
+@using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.Tables
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Data.Enums
+@using Microsoft.AspNetCore.Components.Web
+@typeparam TEntity where TEntity : BaseEntity
+@typeparam TService
+
+@* 頁面標題 *@
+<GenericHeaderComponent Title="@PageTitle"
+                       Subtitle="@PageSubtitle"
+                       TitleIcon="@PageIcon"
+                       HeadingLevel="h1"
+                       BreadcrumbItems="@BreadcrumbItems"
+                       IsLoading="@IsLoading"
+                       LoadingText="載入中..."
+                       ShowDivider="true">    
+    <ActionButtons>
+        <IndexActionButtonsComponent 
+            AddButtonText="@AddButtonText"
+            AddButtonIcon="@AddButtonIcon"
+            AddButtonTitle="@AddButtonTitle"
+            OnAddClick="@OnAddClick"
+            OnRefreshClick="@RefreshData"
+            IsLoading="@IsLoading"
+            LoadingOnRefresh="true" />
+    </ActionButtons>
+</GenericHeaderComponent>
+
+@* 主要內容區域 *@
+<div class="row">
+    <div class="col-12">
+        <div class="card section-card">
+            <div class="card-header section-header-primary">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-search me-2"></i>
+                    @SearchSectionTitle
+                </h5>
+            </div>
+            <div class="card-body">                
+                @* 搜尋篩選區域 *@
+                <GenericSearchFilterComponent TModel="SearchFilterModel"
+                                             FilterDefinitions="@FilterDefinitions"
+                                             FilterModel="@SearchModel"
+                                             OnSearch="@HandleSearch"
+                                             OnFilterChanged="@HandleFilterChanged"
+                                             AutoSearch="@AutoSearch"
+                                             ShowSearchButton="@ShowSearchButton"
+                                             ShowAdvancedToggle="@ShowAdvancedToggle"
+                                             SearchDelayMs="@SearchDelayMs" />
+
+                @* 列表表格 *@
+                <div class="mt-4">
+                    <GenericTableComponent TItem="TEntity"
+                                          Items="@PagedItems"
+                                          ColumnDefinitions="@ColumnDefinitions"
+                                          ShowActions="@ShowActions"
+                                          ActionsTemplate="@ActionsTemplate"
+                                          EnableRowClick="@EnableRowClick"
+                                          OnRowClick="@OnRowClick"
+                                          EnableSorting="@EnableSorting"
+                                          IsStriped="@IsStriped"
+                                          IsHoverable="@IsHoverable"
+                                          IsBordered="@IsBordered"
+                                          Size="@TableSize"
+                                          EmptyMessage="@EmptyMessage"
+                                          ActionsHeader="@ActionsHeader"
+                                          EnablePagination="@EnablePagination"
+                                          CurrentPage="@CurrentPage"
+                                          PageSize="@PageSize"
+                                          TotalItems="@TotalItems"
+                                          OnPageChanged="@HandlePageChanged"
+                                          OnPageSizeChanged="@HandlePageSizeChanged"
+                                          ShowPageSizeSelector="@ShowPageSizeSelector">
+                    </GenericTableComponent>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // ===== 參數 =====
+    
+    // 頁面基本設定
+    [Parameter] public string PageTitle { get; set; } = "資料管理";
+    [Parameter] public string PageSubtitle { get; set; } = "管理資料";
+    [Parameter] public string PageIcon { get; set; } = "table";
+    [Parameter] public string AddButtonText { get; set; } = "新增";
+    [Parameter] public string AddButtonIcon { get; set; } = "bi bi-plus-circle";
+    [Parameter] public string AddButtonTitle { get; set; } = "新增資料";
+    [Parameter] public string SearchSectionTitle { get; set; } = "搜尋與管理";
+    [Parameter] public string EmptyMessage { get; set; } = "沒有找到符合條件的資料";
+    [Parameter] public string ActionsHeader { get; set; } = "操作";
+    
+    // 麵包屑導航
+    [Parameter] public List<GenericHeaderComponent.BreadcrumbItem> BreadcrumbItems { get; set; } = new();
+    
+    // 服務和資料相關
+    [Parameter] public TService Service { get; set; } = default!;
+    [Parameter] public Func<Task<List<TEntity>>> DataLoader { get; set; } = default!;
+    [Parameter] public Func<Task> InitializeBasicData { get; set; } = default!;
+    
+    // 篩選和表格設定
+    [Parameter] public List<SearchFilterDefinition> FilterDefinitions { get; set; } = new();
+    [Parameter] public List<TableColumnDefinition> ColumnDefinitions { get; set; } = new();
+    [Parameter] public Func<SearchFilterModel, IQueryable<TEntity>, IQueryable<TEntity>> FilterApplier { get; set; } = default!;
+    
+    // 搜尋組件設定
+    [Parameter] public bool AutoSearch { get; set; } = true;
+    [Parameter] public bool ShowSearchButton { get; set; } = true;
+    [Parameter] public bool ShowAdvancedToggle { get; set; } = true;
+    [Parameter] public int SearchDelayMs { get; set; } = 500;
+    
+    // 表格組件設定
+    [Parameter] public bool ShowActions { get; set; } = true;
+    [Parameter] public bool EnableRowClick { get; set; } = true;
+    [Parameter] public bool EnableSorting { get; set; } = false;
+    [Parameter] public bool IsStriped { get; set; } = true;
+    [Parameter] public bool IsHoverable { get; set; } = true;
+    [Parameter] public bool IsBordered { get; set; } = false;
+    [Parameter] public TableSize TableSize { get; set; } = TableSize.Normal;
+    [Parameter] public bool EnablePagination { get; set; } = true;
+    [Parameter] public bool ShowPageSizeSelector { get; set; } = true;
+    [Parameter] public int DefaultPageSize { get; set; } = 20;
+    
+    // 事件處理
+    [Parameter] public EventCallback OnAddClick { get; set; }
+    [Parameter] public EventCallback<TEntity> OnRowClick { get; set; }
+    [Parameter] public RenderFragment<TEntity>? ActionsTemplate { get; set; }
+    
+    // ===== 內部狀態 =====
+    
+    // 資料來源
+    private List<TEntity> allItems = new();
+    private List<TEntity> filteredItems = new();
+    
+    // 篩選相關
+    private SearchFilterModel searchModel = new();
+    
+    // 分頁相關
+    private int currentPage = 1;
+    private int pageSize = 20;
+    private int totalItems = 0;
+    
+    // 狀態管理
+    private bool isLoading = true;
+    
+    // ===== 公開屬性 (供外部存取) =====
+    public SearchFilterModel SearchModel => searchModel;
+    public List<TEntity> PagedItems => GetPagedItems();
+    public int CurrentPage => currentPage;
+    public int PageSize => pageSize;
+    public int TotalItems => totalItems;
+    public bool IsLoading => isLoading;
+    
+    // ===== 生命週期 =====
+    
+    protected override async Task OnInitializedAsync()
+    {
+        pageSize = DefaultPageSize;
+        await InitializePageAsync();
+    }
+    
+    // ===== 初始化方法 =====
+    
+    private async Task InitializePageAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+            
+            // 初始化基礎資料 (如選項清單等)
+            if (InitializeBasicData != null)
+            {
+                await InitializeBasicData();
+            }
+            
+            // 載入主要資料
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            // 錯誤處理 - 可以透過參數提供自定義錯誤處理
+            Console.Error.WriteLine($"初始化頁面時發生錯誤: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            if (DataLoader != null)
+            {
+                allItems = await DataLoader();
+                await ApplyFilters();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"載入資料失敗: {ex.Message}");
+            allItems = new List<TEntity>();
+            filteredItems = new List<TEntity>();
+        }
+    }
+    
+    // ===== 篩選和分頁邏輯 =====
+    
+    private async Task ApplyFilters()
+    {
+        var query = allItems.AsQueryable();
+        
+        // 應用自定義篩選邏輯
+        if (FilterApplier != null)
+        {
+            query = FilterApplier(searchModel, query);
+        }
+        
+        filteredItems = query.ToList();
+        totalItems = filteredItems.Count;
+        
+        // 重置分頁到第一頁
+        currentPage = 1;
+        
+        await Task.CompletedTask;
+    }
+    
+    private List<TEntity> GetPagedItems()
+    {
+        // 確保當前頁面有效
+        var maxPage = totalItems > 0 ? (int)Math.Ceiling((double)totalItems / pageSize) : 1;
+        if (currentPage > maxPage)
+        {
+            currentPage = Math.Max(1, maxPage);
+        }
+        
+        // 計算分頁資料
+        return filteredItems
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+    }
+    
+    // ===== 事件處理方法 =====
+    
+    private async Task HandleSearch(SearchFilterModel filterModel)
+    {
+        searchModel = filterModel;
+        await ApplyFilters();
+        StateHasChanged();
+    }
+    
+    private async Task HandleFilterChanged(SearchFilterModel filterModel)
+    {
+        searchModel = filterModel;
+        // 如果啟用自動搜尋，這裡不需要立即執行搜尋
+        await Task.CompletedTask;
+    }
+    
+    private async Task HandlePageChanged(int newPage)
+    {
+        currentPage = newPage;
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+    
+    private async Task HandlePageSizeChanged(int newPageSize)
+    {
+        pageSize = newPageSize;
+        currentPage = 1; // 重置到第一頁
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+    
+    private async Task RefreshData()
+    {
+        await LoadDataAsync();
+        StateHasChanged();
+    }
+    
+    // ===== 公開方法 (供外部調用) =====
+    
+    public async Task Refresh()
+    {
+        await RefreshData();
+    }
+    
+    public async Task ReloadData()
+    {
+        await LoadDataAsync();
+    }
+    
+    public void ResetFilters()
+    {
+        searchModel = new SearchFilterModel();
+        _ = ApplyFilters();
+        StateHasChanged();
+    }
+}
