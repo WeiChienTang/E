@@ -1,127 +1,174 @@
 @page "/inventory/unit-conversions"
 @using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@using ERPCore2.Components.Shared
 @inject IUnitConversionService UnitConversionService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">
-                            <i class="bi bi-arrow-left-right me-2"></i>單位轉換管理
-                        </h4>
-                        <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/inventory/unit-conversions/add"))">
-                            <i class="bi bi-plus-lg me-1"></i>新增單位轉換
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    @if (isLoading)
-                    {
-                        <div class="d-flex justify-content-center align-items-center" style="height: 300px;">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">載入中...</span>
-                            </div>
-                        </div>
-                    }
-                    else if (unitConversions.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>來源單位</th>
-                                        <th>目標單位</th>
-                                        <th>轉換率</th>
-                                        <th>狀態</th>
-                                        <th>建立時間</th>
-                                        <th width="120">操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var conversion in unitConversions)
-                                    {
-                                        <tr>                                            <td>
-                                                @if (conversion.FromUnit != null)
-                                                {
-                                                    <span>@conversion.FromUnit.UnitName</span>
-                                                    <small class="text-muted d-block">@conversion.FromUnit.UnitCode</small>
-                                                }
-                                            </td>
-                                            <td>
-                                                @if (conversion.ToUnit != null)
-                                                {
-                                                    <span>@conversion.ToUnit.UnitName</span>
-                                                    <small class="text-muted d-block">@conversion.ToUnit.UnitCode</small>
-                                                }
-                                            </td>
-                                            <td>@conversion.ConversionRate.ToString("N4")</td>
-                                            <td>
-                                                @if (conversion.IsActive)
-                                                {
-                                                    <span class="badge bg-success">啟用</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge bg-secondary">停用</span>
-                                                }
-                                            </td>
-                                            <td>
-                                                @conversion.CreatedAt.ToString("yyyy/MM/dd")
-                                            </td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm">
-                                                    <button class="btn btn-outline-primary" @onclick="@(() => Navigation.NavigateTo($"/inventory/unit-conversions/{conversion.Id}/edit"))">
-                                                        <i class="bi bi-pencil"></i>
-                                                    </button>
-                                                    <button class="btn btn-outline-danger" @onclick="@(() => DeleteConversion(conversion.Id))">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-5">
-                            <i class="bi bi-inbox display-1 text-muted"></i>
-                            <h5 class="mt-3 text-muted">尚無單位轉換資料</h5>
-                            <p class="text-muted">請點擊上方按鈕新增第一個單位轉換</p>
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<PageTitle>單位轉換管理</PageTitle>
+
+<GenericIndexPageComponent TEntity="UnitConversion" 
+                          TService="IUnitConversionService"
+                          Service="@UnitConversionService"
+                          PageTitle="單位轉換管理"
+                          PageSubtitle="管理所有單位轉換規則與換算比率"
+                          PageIcon="arrow-left-right"
+                          AddButtonText="新增單位轉換"
+                          AddButtonIcon="bi bi-plus-circle"
+                          AddButtonTitle="新增單位轉換規則"
+                          SearchSectionTitle="單位轉換搜尋與管理"
+                          EmptyMessage="沒有找到符合條件的單位轉換資料"
+                          DataLoader="@LoadDataAsync"
+                          FilterApplier="@ApplyUnitConversionFilters"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          OnRowClick="@HandleRowClick"
+                          ActionsTemplate="@ActionButtonsTemplate"
+                          @ref="indexComponent">
+</GenericIndexPageComponent>
 
 @code {
-    private List<UnitConversion> unitConversions = new();
-    private bool isLoading = true;
+    private GenericIndexPageComponent<UnitConversion, IUnitConversionService> indexComponent = default!;
+    
+    // 設定選項
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadUnitConversionsAsync();
-        isLoading = false;
+        InitializeBreadcrumbs();
+        InitializeFilters();
+        InitializeTableColumns();
+        await Task.CompletedTask;
     }
 
-    private async Task LoadUnitConversionsAsync()
+    private void InitializeBreadcrumbs()
     {
-        unitConversions = await UnitConversionService.GetAllAsync();
-    }    private async Task DeleteConversion(int id)
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("庫存管理", "/inventory"),
+            new("單位轉換管理")
+        };
+    }
+
+    private void InitializeFilters()
     {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "確定要刪除此單位轉換嗎？");
+        // 準備狀態選項
+        var statusOptions = new List<SelectOption>
+        {
+            new() { Text = "啟用", Value = "true" },
+            new() { Text = "停用", Value = "false" }
+        };
+
+        // 建立篩選定義
+        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+            .AddText("FromUnitName", "來源單位", "輸入來源單位名稱搜尋")
+            .AddText("ToUnitName", "目標單位", "輸入目標單位名稱搜尋")
+            .AddSelect("IsActive", "狀態", statusOptions, isAdvanced: true)
+            .Build();
+    }    private void InitializeTableColumns()
+    {
+        columnDefinitions = new List<TableColumnDefinition>
+        {
+            TableColumnDefinition.Text("來源單位", "FromUnit.UnitName"),
+            TableColumnDefinition.Text("目標單位", "ToUnit.UnitName"),
+            TableColumnDefinition.Number("轉換率", nameof(UnitConversion.ConversionRate), "N4"),
+            TableColumnDefinition.Boolean("狀態", nameof(UnitConversion.IsActive)),
+            TableColumnDefinition.Date("建立日期", nameof(UnitConversion.CreatedAt), "yyyy/MM/dd")
+        };
+    }
+
+    // 資料載入委派
+    private async Task<List<UnitConversion>> LoadDataAsync()
+    {
+        return await UnitConversionService.GetAllAsync();
+    }
+
+    // 篩選邏輯委派
+    private IQueryable<UnitConversion> ApplyUnitConversionFilters(SearchFilterModel searchModel, IQueryable<UnitConversion> query)
+    {
+        // 來源單位篩選
+        var fromUnitFilter = searchModel.GetFilterValue("FromUnitName")?.ToString();
+        if (!string.IsNullOrWhiteSpace(fromUnitFilter))
+        {
+            query = query.Where(c => 
+                c.FromUnit != null && 
+                c.FromUnit.UnitName.Contains(fromUnitFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 目標單位篩選
+        var toUnitFilter = searchModel.GetFilterValue("ToUnitName")?.ToString();
+        if (!string.IsNullOrWhiteSpace(toUnitFilter))
+        {
+            query = query.Where(c => 
+                c.ToUnit != null && 
+                c.ToUnit.UnitName.Contains(toUnitFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 狀態篩選
+        var isActiveFilter = searchModel.GetFilterValue("IsActive")?.ToString();
+        if (!string.IsNullOrWhiteSpace(isActiveFilter) && bool.TryParse(isActiveFilter, out var isActive))
+        {
+            query = query.Where(c => c.IsActive == isActive);
+        }
+
+        return query.OrderBy(c => c.FromUnit!.UnitName).ThenBy(c => c.ToUnit!.UnitName);
+    }
+
+    // 行點擊事件
+    private async Task HandleRowClick(UnitConversion conversion)
+    {
+        Navigation.NavigateTo($"/inventory/unit-conversions/{conversion.Id}/edit");
+        await Task.CompletedTask;
+    }
+
+    // 自定義操作按鈕範本
+    private RenderFragment<UnitConversion> ActionButtonsTemplate => conversion => 
+        @<div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-warning" @onclick="() => EditConversion(conversion)" title="編輯">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-outline-danger" @onclick="() => DeleteConversion(conversion)" title="刪除">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>;
+
+    // 操作方法
+    private async Task EditConversion(UnitConversion conversion)
+    {
+        Navigation.NavigateTo($"/inventory/unit-conversions/{conversion.Id}/edit");
+        await Task.CompletedTask;
+    }
+
+    private async Task DeleteConversion(UnitConversion conversion)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            "確定要刪除此單位轉換嗎？");
+        
         if (confirmed)
         {
-            await UnitConversionService.DeleteAsync(id);
-            await LoadUnitConversionsAsync();
+            try
+            {
+                var result = await UnitConversionService.DeleteAsync(conversion.Id);
+                if (result.IsSuccess)
+                {
+                    await indexComponent.Refresh();
+                    await JSRuntime.InvokeVoidAsync("alert", "單位轉換刪除成功");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{result.ErrorMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"刪除時發生錯誤：{ex.Message}");
+            }
         }
     }
 }

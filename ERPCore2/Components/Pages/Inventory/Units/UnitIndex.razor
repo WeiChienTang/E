@@ -1,5 +1,6 @@
 @page "/units"
 @page "/inventory/units"
+@using ERPCore2.Components.Shared
 @inject IUnitService UnitService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -7,133 +8,41 @@
 
 <PageTitle>單位管理</PageTitle>
 
-@* 頁面標題 *@
-<GenericHeaderComponent Title="單位管理"
-                       Subtitle="管理所有計量單位與轉換關係"
-                       TitleIcon="rulers"
-                       HeadingLevel="h1"
-                       BreadcrumbItems="@breadcrumbItems"
-                       IsLoading="@isLoading"
-                       LoadingText="載入中..."
-                       ShowDivider="true">
-    <ActionButtons>
-        <IndexActionButtonsComponent 
-            AddButtonText="新增單位"
-            AddButtonIcon="bi-plus-circle"
-            OnAddClick="ShowCreateUnit"
-            OnRefreshClick="RefreshData"
-            IsLoading="@isLoading" />
-    </ActionButtons>
-</GenericHeaderComponent>
-
-@* 單位管理主要內容區域 *@
-<div class="row">
-    <div class="col-12">
-        <div class="card section-card">
-            <div class="card-header section-header-primary">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-gear me-2"></i>⚙️ 單位搜尋與管理
-                </h5>
-            </div>
-            <div class="card-body">
-                @* 搜尋篩選區域 *@
-                <GenericSearchFilterComponent TModel="SearchFilterModel"
-                                             FilterDefinitions="@filterDefinitions"
-                                             FilterModel="@searchModel"
-                                             OnSearch="HandleSearch"
-                                             OnFilterChanged="HandleFilterChanged"
-                                             AutoSearch="true"
-                                             ShowSearchButton="true"
-                                             ShowAdvancedToggle="true"
-                                             SearchDelayMs="500" />
-
-                @* 單位列表表格 *@
-                <div class="mt-4">
-                    <GenericTableComponent TItem="Unit"
-                                          Items="@pagedUnits"
-                                          ColumnDefinitions="@columnDefinitions"
-                                          ShowActions="true"
-                                          ActionsTemplate="@ActionsTemplate"
-                                          EnableRowClick="true"
-                                          OnRowClick="HandleRowClick"
-                                          EnableSorting="false"
-                                          IsStriped="true"
-                                          IsHoverable="true"
-                                          IsBordered="false"
-                                          Size="TableSize.Normal"
-                                          EmptyMessage="沒有找到符合條件的單位資料"
-                                          ActionsHeader="操作"
-                                          EnablePagination="true"
-                                          CurrentPage="@currentPage"
-                                          PageSize="@pageSize"
-                                          TotalItems="@totalItems"
-                                          OnPageChanged="HandlePageChanged"
-                                          OnPageSizeChanged="HandlePageSizeChanged"
-                                          ShowPageSizeSelector="true">
-                    </GenericTableComponent>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<GenericIndexPageComponent TEntity="Unit" 
+                          TService="IUnitService"
+                          Service="@UnitService"
+                          PageTitle="單位管理"
+                          PageSubtitle="管理所有計量單位與轉換關係"
+                          PageIcon="rulers"
+                          AddButtonText="新增單位"
+                          AddButtonIcon="bi bi-plus-circle"
+                          AddButtonTitle="新增單位資料"
+                          SearchSectionTitle="單位搜尋與管理"
+                          EmptyMessage="沒有找到符合條件的單位資料"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadUnitsAsync"
+                          FilterApplier="@ApplyUnitFilters"
+                          OnAddClick="@ShowCreateUnit"
+                          OnRowClick="@HandleRowClick"
+                          ActionsTemplate="@ActionsTemplate"
+                          AutoSearch="true"
+                          ShowSearchButton="true"
+                          ShowAdvancedToggle="true"
+                          SearchDelayMs="500" />
 
 @code {
-    // 資料來源
-    private List<Unit> units = new();
-    private List<Unit> allUnits = new();
-    
-    // 篩選相關
-    private SearchFilterModel searchModel = new();
+    // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
-    
-    // 表格相關
     private List<TableColumnDefinition> columnDefinitions = new();
-    
-    // 分頁相關
-    private int currentPage = 1;
-    private int pageSize = 20;
-    private int totalItems = 0;
-    private List<Unit> pagedUnits = new();
-    
-    // 狀態管理
-    private bool isLoading = true;
-    
-    // 麵包屑導航
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        await InitializePageAsync();
-    }
-
-    private async Task InitializePageAsync()
-    {
-        try
-        {
-            isLoading = true;
-            StateHasChanged();
-
-            // 初始化麵包屑
-            InitializeBreadcrumbs();
-            
-            // 初始化篩選器
-            InitializeFilters();
-            
-            // 初始化表格欄位
-            InitializeTableColumns();
-            
-            // 載入單位資料
-            await LoadUnitsAsync();
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入單位資料時發生錯誤：", ex.Message);
-        }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
-        }
+        InitializeBreadcrumbs();
+        InitializeFilters();
+        InitializeTableColumns();
     }
 
     private void InitializeBreadcrumbs()
@@ -144,6 +53,20 @@
             new("庫存管理", "/inventory"),
             new("單位管理")
         };
+    }
+
+    // 載入單位資料
+    private async Task<List<Unit>> LoadUnitsAsync()
+    {
+        try
+        {
+            return await UnitService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入單位資料失敗：", ex.Message);
+            return new List<Unit>();
+        }
     }
 
     private void InitializeFilters()
@@ -189,30 +112,14 @@
         };
     }
 
-    private async Task LoadUnitsAsync()
+    // 自定義篩選邏輯
+    private IQueryable<Unit> ApplyUnitFilters(SearchFilterModel searchModel, IQueryable<Unit> query)
     {
-        try
-        {
-            allUnits = await UnitService.GetAllAsync();
-            await ApplyFilters();
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入單位資料失敗：", ex.Message);
-            units = new List<Unit>();
-            pagedUnits = new List<Unit>();
-        }
-    }
-
-    private async Task ApplyFilters()
-    {
-        var filteredUnits = allUnits.AsQueryable();
-
         // 單位代碼篩選
         var unitCodeFilter = searchModel.GetFilterValue("UnitCode")?.ToString();
         if (!string.IsNullOrWhiteSpace(unitCodeFilter))
         {
-            filteredUnits = filteredUnits.Where(u => 
+            query = query.Where(u => 
                 u.UnitCode.Contains(unitCodeFilter, StringComparison.OrdinalIgnoreCase));
         }
 
@@ -220,7 +127,7 @@
         var unitNameFilter = searchModel.GetFilterValue("UnitName")?.ToString();
         if (!string.IsNullOrWhiteSpace(unitNameFilter))
         {
-            filteredUnits = filteredUnits.Where(u => 
+            query = query.Where(u => 
                 u.UnitName.Contains(unitNameFilter, StringComparison.OrdinalIgnoreCase));
         }
 
@@ -228,7 +135,7 @@
         var symbolFilter = searchModel.GetFilterValue("Symbol")?.ToString();
         if (!string.IsNullOrWhiteSpace(symbolFilter))
         {
-            filteredUnits = filteredUnits.Where(u => 
+            query = query.Where(u => 
                 !string.IsNullOrEmpty(u.Symbol) && 
                 u.Symbol.Contains(symbolFilter, StringComparison.OrdinalIgnoreCase));
         }
@@ -237,84 +144,24 @@
         var isBaseUnitFilter = searchModel.GetFilterValue("IsBaseUnit")?.ToString();
         if (!string.IsNullOrWhiteSpace(isBaseUnitFilter) && bool.TryParse(isBaseUnitFilter, out var isBaseUnit))
         {
-            filteredUnits = filteredUnits.Where(u => u.IsBaseUnit == isBaseUnit);
+            query = query.Where(u => u.IsBaseUnit == isBaseUnit);
         }
 
         // 狀態篩選
         var isActiveFilter = searchModel.GetFilterValue("IsActive")?.ToString();
         if (!string.IsNullOrWhiteSpace(isActiveFilter) && bool.TryParse(isActiveFilter, out var isActive))
         {
-            filteredUnits = filteredUnits.Where(u => u.IsActive == isActive);
+            query = query.Where(u => u.IsActive == isActive);
         }
 
-        units = filteredUnits.OrderBy(u => u.UnitCode).ToList();
-        totalItems = units.Count;
-        
-        // 重置分頁到第一頁（如果是搜尋操作）
-        currentPage = 1;
-        
-        // 應用分頁
-        ApplyPagination();
-        
-        await Task.CompletedTask;
+        return query.OrderBy(u => u.UnitCode);
     }
 
-    private void ApplyPagination()
-    {
-        // 確保當前頁面有效
-        var maxPage = totalItems > 0 ? (int)Math.Ceiling((double)totalItems / pageSize) : 1;
-        if (currentPage > maxPage)
-        {
-            currentPage = Math.Max(1, maxPage);
-        }
-        
-        // 計算分頁資料
-        pagedUnits = units
-            .Skip((currentPage - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
-    }
-
-    private async Task HandlePageChanged(int newPage)
-    {
-        currentPage = newPage;
-        ApplyPagination();
-        StateHasChanged();
-        await Task.CompletedTask;
-    }
-
-    private async Task HandlePageSizeChanged(int newPageSize)
-    {
-        pageSize = newPageSize;
-        currentPage = 1; // 重置到第一頁
-        ApplyPagination();
-        StateHasChanged();
-        await Task.CompletedTask;
-    }
-
-    private async Task HandleSearch(SearchFilterModel filterModel)
-    {
-        searchModel = filterModel;
-        await ApplyFilters();
-        StateHasChanged();
-    }
-
-    private async Task HandleFilterChanged(SearchFilterModel filterModel)
-    {
-        searchModel = filterModel;
-        await Task.CompletedTask;
-    }
-
+    // 事件處理
     private async Task HandleRowClick(Unit unit)
     {
         Navigation.NavigateTo($"/inventory/units/detail/{unit.Id}");
         await Task.CompletedTask;
-    }
-
-    private async Task RefreshData()
-    {
-        await LoadUnitsAsync();
-        StateHasChanged();
     }
 
     private async Task ShowCreateUnit()
@@ -341,7 +188,6 @@
                 var result = await UnitService.DeleteAsync(unit.Id);
                 if (result.IsSuccess)
                 {
-                    await RefreshData();
                     await JSRuntime.InvokeVoidAsync("alert", "單位刪除成功");
                 }
                 else

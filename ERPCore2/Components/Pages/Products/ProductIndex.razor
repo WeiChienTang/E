@@ -1,4 +1,5 @@
 @page "/products"
+@using ERPCore2.Components.Shared
 @inject IProductService ProductService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -6,142 +7,47 @@
 
 <PageTitle>產品管理</PageTitle>
 
-@* 頁面標題 *@
-<GenericHeaderComponent Title="產品管理"
-                       Subtitle="管理所有產品資料與庫存資訊"
-                       TitleIcon="box-fill"
-                       HeadingLevel="h1"
-                       BreadcrumbItems="@breadcrumbItems"
-                       IsLoading="@isLoading"
-                       LoadingText="載入中..."
-                       ShowDivider="true">    <ActionButtons>
-        <IndexActionButtonsComponent 
-            AddButtonText="新增產品"
-            AddButtonIcon="bi-plus-circle"
-            OnAddClick="ShowCreateProduct"
-            OnRefreshClick="RefreshData"
-            IsLoading="@isLoading" />
-    </ActionButtons>
-</GenericHeaderComponent>
-
-@* 產品管理主要內容區域 *@
-<div class="row">
-    <div class="col-12">        <div class="card section-card">
-            <div class="card-header section-header-primary">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-search me-2"></i>
-                    產品搜尋與管理
-                </h5>
-            </div>
-            <div class="card-body">                @* 搜尋篩選區域 *@
-                <GenericSearchFilterComponent TModel="SearchFilterModel"
-                                             FilterDefinitions="@filterDefinitions"
-                                             FilterModel="@searchModel"
-                                             OnSearch="HandleSearch"
-                                             OnFilterChanged="HandleFilterChanged"
-                                             AutoSearch="true"
-                                             ShowSearchButton="true"
-                                             ShowAdvancedToggle="true"
-                                             SearchDelayMs="500" />
-
-                @* 產品列表表格 *@
-                <div class="mt-4">
-                    <GenericTableComponent TItem="Product"
-                                          Items="@pagedProducts"
-                                          ColumnDefinitions="@columnDefinitions"
-                                          ShowActions="true"
-                                          ActionsTemplate="@ActionsTemplate"
-                                          EnableRowClick="true"
-                                          OnRowClick="HandleRowClick"
-                                          EnableSorting="false"
-                                          IsStriped="true"
-                                          IsHoverable="true"
-                                          IsBordered="false"
-                                          Size="TableSize.Normal"
-                                          EmptyMessage="沒有找到符合條件的產品資料"
-                                          ActionsHeader="操作"
-                                          EnablePagination="true"
-                                          CurrentPage="@currentPage"
-                                          PageSize="@pageSize"
-                                          TotalItems="@totalItems"
-                                          OnPageChanged="HandlePageChanged"
-                                          OnPageSizeChanged="HandlePageSizeChanged"
-                                          ShowPageSizeSelector="true">
-                    </GenericTableComponent>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<GenericIndexPageComponent TEntity="Product" 
+                          TService="IProductService"
+                          Service="@ProductService"
+                          PageTitle="產品管理"
+                          PageSubtitle="管理所有產品資料與庫存資訊"
+                          PageIcon="box-fill"
+                          AddButtonText="新增產品"
+                          AddButtonIcon="bi bi-plus-circle"
+                          AddButtonTitle="新增產品資料"
+                          SearchSectionTitle="產品搜尋與管理"
+                          EmptyMessage="沒有找到符合條件的產品資料"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadProductsAsync"
+                          InitializeBasicData="@LoadBasicDataAsync"
+                          FilterApplier="@ApplyProductFilters"
+                          OnAddClick="@ShowCreateProduct"
+                          OnRowClick="@HandleRowClick"
+                          ActionsTemplate="@ActionsTemplate"
+                          AutoSearch="true"
+                          ShowSearchButton="true"
+                          ShowAdvancedToggle="true"
+                          SearchDelayMs="500" />
 
 @code {
-    // 資料來源
-    private List<Product> products = new();
-    private List<Product> allProducts = new();
-    
-    // 篩選相關
-    private SearchFilterModel searchModel = new();
-    private List<SearchFilterDefinition> filterDefinitions = new();
-    
-    // 表格相關
-    private List<TableColumnDefinition> columnDefinitions = new();
-    
-    // 分頁相關
-    private int currentPage = 1;
-    private int pageSize = 20;
-    private int totalItems = 0;
-    private List<Product> pagedProducts = new();
-    
     // 選項清單
     private List<ProductCategory> productCategories = new();
     private List<Supplier> suppliers = new();
     
-    // 狀態管理
-    private bool isLoading = true;
-    
-    // 麵包屑導航
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        await InitializePageAsync();
-    }
-
-    private async Task InitializePageAsync()
-    {
-        try
-        {
-            isLoading = true;
-            StateHasChanged();
-
-            // 初始化麵包屑
-            InitializeBreadcrumbs();
-            
-            // 載入基礎資料
-            await LoadBasicDataAsync();
-            
-            // 初始化篩選器
-            InitializeFilters();
-            
-            // 初始化表格欄位
-            InitializeTableColumns();
-            
-            // 載入產品資料
-            await LoadProductsAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤（這裡可以加入日誌記錄）
-            await JSRuntime.InvokeVoidAsync("console.error", "載入產品資料時發生錯誤：", ex.Message);
-        }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
-        }
-    }
-
-    private void InitializeBreadcrumbs()
+        InitializeBreadcrumbs();
+        InitializeFilters();
+        InitializeTableColumns();
+    }    private void InitializeBreadcrumbs()
     {
         breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
         {
@@ -150,11 +56,36 @@
         };
     }
 
+    // 載入基礎資料（選項清單等）
     private async Task LoadBasicDataAsync()
     {
-        // 載入產品分類和供應商選項
-        productCategories = await ProductService.GetProductCategoriesAsync();
-        suppliers = await ProductService.GetSuppliersAsync();
+        try
+        {
+            productCategories = await ProductService.GetProductCategoriesAsync();
+            suppliers = await ProductService.GetSuppliersAsync();
+            // 重新初始化篩選器（因為需要選項資料）
+            InitializeFilters();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入基礎資料失敗：", ex.Message);
+            productCategories = new List<ProductCategory>();
+            suppliers = new List<Supplier>();
+        }
+    }
+
+    // 載入產品資料
+    private async Task<List<Product>> LoadProductsAsync()
+    {
+        try
+        {
+            return await ProductService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入產品資料失敗：", ex.Message);
+            return new List<Product>();
+        }
     }
 
     private void InitializeFilters()
@@ -219,32 +150,14 @@
             }),
             TableColumnDefinition.Date("建立日期", nameof(Product.CreatedAt), "yyyy/MM/dd")
         };
-    }
-
-    private async Task LoadProductsAsync()
+    }    // 自定義篩選邏輯
+    private IQueryable<Product> ApplyProductFilters(SearchFilterModel searchModel, IQueryable<Product> query)
     {
-        try
-        {
-            allProducts = await ProductService.GetAllAsync();
-            await ApplyFilters();
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入產品資料失敗：", ex.Message);
-            products = new List<Product>();
-            pagedProducts = new List<Product>();
-        }
-    }
-
-    private async Task ApplyFilters()
-    {
-        var filteredProducts = allProducts.AsQueryable();
-
         // 產品代碼篩選
         var productCodeFilter = searchModel.GetFilterValue("ProductCode")?.ToString();
         if (!string.IsNullOrWhiteSpace(productCodeFilter))
         {
-            filteredProducts = filteredProducts.Where(p => 
+            query = query.Where(p => 
                 p.ProductCode.Contains(productCodeFilter, StringComparison.OrdinalIgnoreCase));
         }
 
@@ -252,7 +165,7 @@
         var productNameFilter = searchModel.GetFilterValue("ProductName")?.ToString();
         if (!string.IsNullOrWhiteSpace(productNameFilter))
         {
-            filteredProducts = filteredProducts.Where(p => 
+            query = query.Where(p => 
                 p.ProductName.Contains(productNameFilter, StringComparison.OrdinalIgnoreCase));
         }
 
@@ -260,106 +173,45 @@
         var categoryIdFilter = searchModel.GetFilterValue("ProductCategoryId")?.ToString();
         if (!string.IsNullOrWhiteSpace(categoryIdFilter) && int.TryParse(categoryIdFilter, out var categoryId))
         {
-            filteredProducts = filteredProducts.Where(p => p.ProductCategoryId == categoryId);
+            query = query.Where(p => p.ProductCategoryId == categoryId);
         }
 
         // 主要供應商篩選
         var supplierIdFilter = searchModel.GetFilterValue("PrimarySupplierId")?.ToString();
         if (!string.IsNullOrWhiteSpace(supplierIdFilter) && int.TryParse(supplierIdFilter, out var supplierId))
         {
-            filteredProducts = filteredProducts.Where(p => p.PrimarySupplierId == supplierId);
+            query = query.Where(p => p.PrimarySupplierId == supplierId);
         }
 
         // 啟用狀態篩選
         var isActiveFilter = searchModel.GetFilterValue("IsActive")?.ToString();
         if (!string.IsNullOrWhiteSpace(isActiveFilter) && bool.TryParse(isActiveFilter, out var isActive))
         {
-            filteredProducts = filteredProducts.Where(p => p.IsActive == isActive);
+            query = query.Where(p => p.IsActive == isActive);
         }
 
         // 實體狀態篩選
         var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
         if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
         {
-            filteredProducts = filteredProducts.Where(p => p.Status == status);
-        }        // 單位篩選
+            query = query.Where(p => p.Status == status);
+        }
+
+        // 單位篩選
         var unitFilter = searchModel.GetFilterValue("Unit")?.ToString();
         if (!string.IsNullOrWhiteSpace(unitFilter))
         {
-            filteredProducts = filteredProducts.Where(p => 
+            query = query.Where(p => 
                 p.Unit != null && p.Unit.UnitName != null && 
                 p.Unit.UnitName.Contains(unitFilter, StringComparison.OrdinalIgnoreCase));
         }
 
-        products = filteredProducts.OrderBy(p => p.ProductCode).ToList();
-        totalItems = products.Count;
-        
-        // 重置分頁到第一頁（如果是搜尋操作）
-        currentPage = 1;
-        
-        // 應用分頁
-        ApplyPagination();
-        
-        await Task.CompletedTask;
-    }
-
-    private void ApplyPagination()
-    {
-        // 確保當前頁面有效
-        var maxPage = totalItems > 0 ? (int)Math.Ceiling((double)totalItems / pageSize) : 1;
-        if (currentPage > maxPage)
-        {
-            currentPage = Math.Max(1, maxPage);
-        }
-        
-        // 計算分頁資料
-        pagedProducts = products
-            .Skip((currentPage - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
-    }
-
-    private async Task HandlePageChanged(int newPage)
-    {
-        currentPage = newPage;
-        ApplyPagination();
-        StateHasChanged();
-        await Task.CompletedTask;
-    }
-
-    private async Task HandlePageSizeChanged(int newPageSize)
-    {
-        pageSize = newPageSize;
-        currentPage = 1; // 重置到第一頁
-        ApplyPagination();
-        StateHasChanged();
-        await Task.CompletedTask;
-    }
-
-    private async Task HandleSearch(SearchFilterModel filterModel)
-    {
-        searchModel = filterModel;
-        await ApplyFilters();
-        StateHasChanged();
-    }
-
-    private async Task HandleFilterChanged(SearchFilterModel filterModel)
-    {
-        searchModel = filterModel;
-        // 自動搜尋功能已啟用，這裡不需要立即執行搜尋
-        await Task.CompletedTask;
-    }
-
+        return query.OrderBy(p => p.ProductCode);
+    }// 事件處理
     private async Task HandleRowClick(Product product)
     {
         Navigation.NavigateTo($"/products/detail/{product.Id}");
         await Task.CompletedTask;
-    }
-
-    private async Task RefreshData()
-    {
-        await LoadProductsAsync();
-        StateHasChanged();
     }
 
     private async Task ShowCreateProduct()
@@ -376,7 +228,6 @@
 
     private async Task DeleteProduct(Product product)
     {
-        // TODO: 實作刪除產品功能
         var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
             $"確定要刪除產品「{product.ProductName}」嗎？");
         
@@ -387,7 +238,6 @@
                 var result = await ProductService.DeleteAsync(product.Id);
                 if (result.IsSuccess)
                 {
-                    await RefreshData();
                     await JSRuntime.InvokeVoidAsync("alert", "產品刪除成功");
                 }
                 else

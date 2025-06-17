@@ -6,140 +6,46 @@
 
 <PageTitle>廠商管理</PageTitle>
 
-@* 頁面標題 *@
-<GenericHeaderComponent Title="廠商管理"
-                       Subtitle="管理所有廠商資料與聯絡資訊"
-                       TitleIcon="building-gear"
-                       HeadingLevel="h1"
-                       BreadcrumbItems="@breadcrumbItems"
-                       IsLoading="@isLoading"
-                       LoadingText="載入中..."
-                       ShowDivider="true">    <ActionButtons>
-        <IndexActionButtonsComponent 
-            AddButtonText="新增廠商"
-            AddButtonIcon="bi-plus-circle"
-            OnAddClick="ShowCreateSupplier"
-            OnRefreshClick="RefreshData"
-            IsLoading="@isLoading" />
-    </ActionButtons>
-</GenericHeaderComponent>
-
-@* 廠商管理主要內容區域 *@
-<div class="row">
-    <div class="col-12">        <div class="card section-card">
-            <div class="card-header section-header-primary">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-search me-2"></i>
-                    廠商搜尋與管理
-                </h5>
-            </div>
-            <div class="card-body">
-                @* 搜尋篩選區域 *@
-                <GenericSearchFilterComponent TModel="SearchFilterModel"
-                                             FilterDefinitions="@filterDefinitions"
-                                             FilterModel="@searchModel"
-                                             OnSearch="HandleSearch"
-                                             OnFilterChanged="HandleFilterChanged"
-                                             AutoSearch="true"
-                                             ShowSearchButton="true"
-                                             ShowAdvancedToggle="true"
-                                             SearchDelayMs="500" />
-
-                @* 廠商列表表格 *@
-                <div class="mt-4">
-                    <GenericTableComponent TItem="Supplier"
-                                          Items="@pagedSuppliers"
-                                          ColumnDefinitions="@columnDefinitions"
-                                          ShowActions="true"
-                                          ActionsTemplate="@ActionsTemplate"
-                                          EnableRowClick="true"
-                                          OnRowClick="HandleRowClick"
-                                          EnableSorting="false"
-                                          IsStriped="true"
-                                          IsHoverable="true"
-                                          IsBordered="false"
-                                          Size="TableSize.Normal"
-                                          EmptyMessage="沒有找到符合條件的廠商資料"
-                                          ActionsHeader="操作"
-                                          EnablePagination="true"
-                                          CurrentPage="@currentPage"
-                                          PageSize="@pageSize"
-                                          TotalItems="@totalItems"
-                                          OnPageChanged="HandlePageChanged"
-                                          OnPageSizeChanged="HandlePageSizeChanged"
-                                          ShowPageSizeSelector="true">
-                    </GenericTableComponent>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<GenericIndexPageComponent TEntity="Supplier" 
+                          TService="ISupplierService"
+                          Service="@SupplierService"
+                          PageTitle="廠商管理"
+                          PageSubtitle="管理所有廠商資料與聯絡資訊"
+                          PageIcon="building-gear"
+                          AddButtonText="新增廠商"
+                          AddButtonIcon="bi bi-plus-circle"
+                          AddButtonTitle="新增廠商資料"
+                          SearchSectionTitle="廠商搜尋與管理"
+                          EmptyMessage="沒有找到符合條件的廠商資料"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadSuppliersAsync"
+                          InitializeBasicData="@LoadBasicDataAsync"
+                          FilterApplier="@ApplySupplierFilters"
+                          OnAddClick="@ShowCreateSupplier"
+                          OnRowClick="@HandleRowClick"
+                          ActionsTemplate="@ActionsTemplate"
+                          AutoSearch="true"
+                          ShowSearchButton="true"
+                          ShowAdvancedToggle="true"
+                          SearchDelayMs="500" />
 
 @code {
-    // 資料來源
-    private List<Supplier> suppliers = new();
-    private List<Supplier> allSuppliers = new();
-    
-    // 篩選相關
-    private SearchFilterModel searchModel = new();
-    private List<SearchFilterDefinition> filterDefinitions = new();
-    
-    // 表格相關
-    private List<TableColumnDefinition> columnDefinitions = new();
-    
-    // 分頁相關
-    private int currentPage = 1;
-    private int pageSize = 20;
-    private int totalItems = 0;
-    private List<Supplier> pagedSuppliers = new();
-    
     // 選項清單
     private List<SupplierType> supplierTypes = new();
     private List<IndustryType> industryTypes = new();
     
-    // 狀態管理
-    private bool isLoading = true;
-    
-    // 麵包屑導航
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        await InitializePageAsync();
-    }
-
-    private async Task InitializePageAsync()
-    {
-        try
-        {
-            isLoading = true;
-            StateHasChanged();
-
-            // 初始化麵包屑
-            InitializeBreadcrumbs();
-            
-            // 載入基礎資料
-            await LoadBasicDataAsync();
-            
-            // 初始化篩選器
-            InitializeFilters();
-            
-            // 初始化表格欄位
-            InitializeTableColumns();
-            
-            // 載入廠商資料
-            await LoadSuppliersAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤（這裡可以加入日誌記錄）
-            await JSRuntime.InvokeVoidAsync("console.error", "載入廠商資料時發生錯誤：", ex.Message);
-        }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
-        }
+        InitializeBreadcrumbs();
+        InitializeFilters();
+        InitializeTableColumns();
     }
 
     private void InitializeBreadcrumbs()
@@ -151,11 +57,37 @@
         };
     }
 
+    // 載入基礎資料（選項清單等）
     private async Task LoadBasicDataAsync()
     {
-        // 載入廠商類型和行業類型選項
-        supplierTypes = await SupplierService.GetSupplierTypesAsync();
-        industryTypes = await SupplierService.GetIndustryTypesAsync();
+        try
+        {
+            supplierTypes = await SupplierService.GetSupplierTypesAsync();
+            industryTypes = await SupplierService.GetIndustryTypesAsync();
+            
+            // 重新初始化篩選器（因為需要選項資料）
+            InitializeFilters();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入基礎資料失敗：", ex.Message);
+            supplierTypes = new List<SupplierType>();
+            industryTypes = new List<IndustryType>();
+        }
+    }
+
+    // 載入廠商資料
+    private async Task<List<Supplier>> LoadSuppliersAsync()
+    {
+        try
+        {
+            return await SupplierService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入廠商資料失敗：", ex.Message);
+            return new List<Supplier>();
+        }
     }
 
     private void InitializeFilters()
@@ -211,30 +143,14 @@
         };
     }
 
-    private async Task LoadSuppliersAsync()
+    // 自定義篩選邏輯
+    private IQueryable<Supplier> ApplySupplierFilters(SearchFilterModel searchModel, IQueryable<Supplier> query)
     {
-        try
-        {
-            allSuppliers = await SupplierService.GetAllAsync();
-            await ApplyFilters();
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入廠商資料失敗：", ex.Message);
-            suppliers = new List<Supplier>();
-            pagedSuppliers = new List<Supplier>();
-        }
-    }
-
-    private async Task ApplyFilters()
-    {
-        var filteredSuppliers = allSuppliers.AsQueryable();
-
         // 廠商代碼篩選
         var supplierCodeFilter = searchModel.GetFilterValue("SupplierCode")?.ToString();
         if (!string.IsNullOrWhiteSpace(supplierCodeFilter))
         {
-            filteredSuppliers = filteredSuppliers.Where(s => 
+            query = query.Where(s => 
                 s.SupplierCode.Contains(supplierCodeFilter, StringComparison.OrdinalIgnoreCase));
         }
 
@@ -242,7 +158,7 @@
         var companyNameFilter = searchModel.GetFilterValue("CompanyName")?.ToString();
         if (!string.IsNullOrWhiteSpace(companyNameFilter))
         {
-            filteredSuppliers = filteredSuppliers.Where(s => 
+            query = query.Where(s => 
                 s.CompanyName.Contains(companyNameFilter, StringComparison.OrdinalIgnoreCase));
         }
 
@@ -250,7 +166,7 @@
         var contactPersonFilter = searchModel.GetFilterValue("ContactPerson")?.ToString();
         if (!string.IsNullOrWhiteSpace(contactPersonFilter))
         {
-            filteredSuppliers = filteredSuppliers.Where(s => 
+            query = query.Where(s => 
                 !string.IsNullOrEmpty(s.ContactPerson) && 
                 s.ContactPerson.Contains(contactPersonFilter, StringComparison.OrdinalIgnoreCase));
         }
@@ -259,106 +175,45 @@
         var supplierTypeIdFilter = searchModel.GetFilterValue("SupplierTypeId")?.ToString();
         if (!string.IsNullOrWhiteSpace(supplierTypeIdFilter) && int.TryParse(supplierTypeIdFilter, out var supplierTypeId))
         {
-            filteredSuppliers = filteredSuppliers.Where(s => s.SupplierTypeId == supplierTypeId);
+            query = query.Where(s => s.SupplierTypeId == supplierTypeId);
         }
 
         // 行業類型篩選
         var industryTypeIdFilter = searchModel.GetFilterValue("IndustryTypeId")?.ToString();
         if (!string.IsNullOrWhiteSpace(industryTypeIdFilter) && int.TryParse(industryTypeIdFilter, out var industryTypeId))
         {
-            filteredSuppliers = filteredSuppliers.Where(s => s.IndustryTypeId == industryTypeId);
+            query = query.Where(s => s.IndustryTypeId == industryTypeId);
         }
 
         // 狀態篩選
         var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
         if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
         {
-            filteredSuppliers = filteredSuppliers.Where(s => s.Status == status);
+            query = query.Where(s => s.Status == status);
         }
 
         // 統一編號篩選
         var taxNumberFilter = searchModel.GetFilterValue("TaxNumber")?.ToString();
         if (!string.IsNullOrWhiteSpace(taxNumberFilter))
         {
-            filteredSuppliers = filteredSuppliers.Where(s => 
+            query = query.Where(s => 
                 !string.IsNullOrEmpty(s.TaxNumber) && 
                 s.TaxNumber.Contains(taxNumberFilter, StringComparison.OrdinalIgnoreCase));
         }
 
-        suppliers = filteredSuppliers.OrderBy(s => s.SupplierCode).ToList();
-        totalItems = suppliers.Count;
-        
-        // 重置分頁到第一頁（如果是搜尋操作）
-        currentPage = 1;
-        
-        // 應用分頁
-        ApplyPagination();
-        
-        await Task.CompletedTask;
+        return query.OrderBy(s => s.SupplierCode);
     }
 
-    private void ApplyPagination()
+    // 事件處理方法
+    private async Task ShowCreateSupplier()
     {
-        // 確保當前頁面有效
-        var maxPage = totalItems > 0 ? (int)Math.Ceiling((double)totalItems / pageSize) : 1;
-        if (currentPage > maxPage)
-        {
-            currentPage = Math.Max(1, maxPage);
-        }
-        
-        // 計算分頁資料
-        pagedSuppliers = suppliers
-            .Skip((currentPage - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
-    }
-
-    private async Task HandlePageChanged(int newPage)
-    {
-        currentPage = newPage;
-        ApplyPagination();
-        StateHasChanged();
-        await Task.CompletedTask;
-    }
-
-    private async Task HandlePageSizeChanged(int newPageSize)
-    {
-        pageSize = newPageSize;
-        currentPage = 1; // 重置到第一頁
-        ApplyPagination();
-        StateHasChanged();
-        await Task.CompletedTask;
-    }
-
-    private async Task HandleSearch(SearchFilterModel filterModel)
-    {
-        searchModel = filterModel;
-        await ApplyFilters();
-        StateHasChanged();
-    }
-
-    private async Task HandleFilterChanged(SearchFilterModel filterModel)
-    {
-        searchModel = filterModel;
-        // 自動搜尋功能已啟用，這裡不需要立即執行搜尋
+        Navigation.NavigateTo("/suppliers/edit");
         await Task.CompletedTask;
     }
 
     private async Task HandleRowClick(Supplier supplier)
     {
         Navigation.NavigateTo($"/suppliers/detail/{supplier.Id}");
-        await Task.CompletedTask;
-    }
-
-    private async Task RefreshData()
-    {
-        await LoadSuppliersAsync();
-        StateHasChanged();
-    }
-
-    private async Task ShowCreateSupplier()
-    {
-        Navigation.NavigateTo("/suppliers/edit");
         await Task.CompletedTask;
     }
 
@@ -370,7 +225,6 @@
 
     private async Task DeleteSupplier(Supplier supplier)
     {
-        // TODO: 實作刪除廠商功能
         var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
             $"確定要刪除廠商「{supplier.CompanyName}」嗎？");
         
@@ -381,8 +235,8 @@
                 var result = await SupplierService.DeleteAsync(supplier.Id);
                 if (result.IsSuccess)
                 {
-                    await RefreshData();
                     await JSRuntime.InvokeVoidAsync("alert", "廠商刪除成功");
+                    // TODO: 觸發基底組件重新載入
                 }
                 else
                 {
@@ -412,6 +266,7 @@
                 <i class="bi bi-pencil"></i>
             </button>
             <button class="btn btn-outline-danger" @onclick="() => DeleteSupplier(supplier)" title="刪除">
-                <i class="bi bi-trash"></i>            </button>
+                <i class="bi bi-trash"></i>
+            </button>
         </div>;
 }

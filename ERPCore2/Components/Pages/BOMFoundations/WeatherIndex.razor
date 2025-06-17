@@ -2,6 +2,7 @@
 @page "/BOMFoundation/weather"
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services
+@using ERPCore2.Components.Shared
 @inject IWeatherService WeatherService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -9,128 +10,41 @@
 
 <PageTitle>天氣管理</PageTitle>
 
-@* 頁面標題 *@
-<GenericHeaderComponent Title="天氣管理"
-                       Subtitle="管理所有天氣類型資料"
-                       TitleIcon="cloud-fill"
-                       HeadingLevel="h1"
-                       BreadcrumbItems="@breadcrumbItems"
-                       IsLoading="@isLoading"
-                       LoadingText="載入中..."
-                       ShowDivider="true">    <ActionButtons>
-        <IndexActionButtonsComponent 
-            AddButtonText="新增天氣"
-            AddButtonIcon="bi-plus-circle"
-            OnAddClick="ShowCreateWeather"
-            OnRefreshClick="RefreshData"
-            IsLoading="@isLoading" />
-    </ActionButtons>
-</GenericHeaderComponent>
+<GenericIndexPageComponent TEntity="Weather" 
+                          TService="IWeatherService"
+                          Service="@WeatherService"
+                          PageTitle="天氣管理"
+                          PageSubtitle="管理所有天氣類型資料"
+                          PageIcon="cloud-fill"
+                          AddButtonText="新增天氣"
+                          AddButtonIcon="bi bi-plus-circle"
+                          AddButtonTitle="新增天氣資料"
+                          SearchSectionTitle="天氣搜尋與管理"
+                          EmptyMessage="沒有找到符合條件的天氣資料"
+                          DataLoader="@LoadDataAsync"
+                          FilterApplier="@ApplyWeatherFilters"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"                          OnRowClick="@HandleRowClick"
+                          ActionsTemplate="@ActionButtonsTemplate"
+                          @ref="indexComponent">
+</GenericIndexPageComponent>
 
-@* 天氣管理主要內容區域 *@
-<div class="row">
-    <div class="col-12">        <div class="card section-card">            
-        <div class="card-header section-header-primary">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-gear me-2"></i>⚙️ 天氣搜尋與管理
-                </h5>
-            </div>
-            <div class="card-body">
-                @* 搜尋篩選區域 *@
-                <GenericSearchFilterComponent TModel="SearchFilterModel"
-                                             FilterDefinitions="@filterDefinitions"
-                                             FilterModel="@searchModel"
-                                             OnSearch="HandleSearch"
-                                             OnFilterChanged="HandleFilterChanged"
-                                             AutoSearch="true"
-                                             ShowSearchButton="false"
-                                             SearchDelayMs="500" />                
-                                             @* 天氣列表表格 *@
-                <div class="mt-4">                    
-                    <GenericTableComponent TItem="Weather"
-                                         Items="@pagedWeathers"
-                                         ColumnDefinitions="@columnDefinitions"
-                                         OnRowClick="HandleRowClick"
-                                         ActionsTemplate="@ActionsTemplate"
-                                         EnableRowClick="true"
-                                         IsStriped="true"
-                                         IsHoverable="true"
-                                         IsBordered="false"
-                                         Size="TableSize.Normal"
-                                         EmptyMessage="沒有找到符合條件的天氣資料"
-                                         ActionsHeader="操作"
-                                         EnablePagination="true"
-                                         CurrentPage="@currentPage"
-                                         PageSize="@pageSize"
-                                         TotalItems="@totalItems"
-                                         OnPageChanged="HandlePageChanged"
-                                         OnPageSizeChanged="HandlePageSizeChanged"
-                                         ShowPageSizeSelector="true">
-                    </GenericTableComponent>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 @code {
-    // 資料來源
-    private List<Weather> weathers = new();
-    private List<Weather> allWeathers = new();
+    private GenericIndexPageComponent<Weather, IWeatherService> indexComponent = default!;
     
-    // 篩選相關
-    private SearchFilterModel searchModel = new();
-    private List<SearchFilterDefinition> filterDefinitions = new();
-    
-    // 表格相關
-    private List<TableColumnDefinition> columnDefinitions = new();
-    
-    // 分頁相關
-    private int currentPage = 1;
-    private int pageSize = 20;
-    private int totalItems = 0;
-    private List<Weather> pagedWeathers = new();
-    
-    // 狀態管理
-    private bool isLoading = true;
-    
-    // 麵包屑導航
+    // 設定選項
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
 
     protected override async Task OnInitializedAsync()
     {
-        await InitializePageAsync();
-    }
-
-    private async Task InitializePageAsync()
-    {
-        try
-        {
-            isLoading = true;
-            StateHasChanged();
-
-            // 初始化麵包屑
-            InitializeBreadcrumbs();
-            
-            // 初始化篩選器
-            InitializeFilters();
-            
-            // 初始化表格欄位
-            InitializeTableColumns();
-            
-            // 載入天氣資料
-            await LoadWeathersAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤
-            await JSRuntime.InvokeVoidAsync("console.error", "載入天氣資料時發生錯誤：", ex.Message);
-        }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
-        }
+        InitializeBreadcrumbs();
+        InitializeFilters();
+        InitializeTableColumns();
+        await Task.CompletedTask;
     }
 
     private void InitializeBreadcrumbs()
@@ -173,40 +87,27 @@
             }),
             TableColumnDefinition.Date("建立日期", nameof(Weather.CreatedAt), "yyyy/MM/dd")
         };
+    }    // 資料載入委派
+    private async Task<List<Weather>> LoadDataAsync()
+    {
+        return await WeatherService.GetAllAsync();
     }
 
-    private async Task LoadWeathersAsync()
+    // 篩選邏輯委派
+    private IQueryable<Weather> ApplyWeatherFilters(SearchFilterModel searchModel, IQueryable<Weather> query)
     {
-        try
-        {
-            allWeathers = await WeatherService.GetAllAsync();
-            await ApplyFilters();
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入天氣資料失敗：", ex.Message);
-            weathers = new List<Weather>();
-            pagedWeathers = new List<Weather>();
-        }
-    }
-
-    private async Task ApplyFilters()
-    {
-        var filteredWeathers = allWeathers.AsQueryable();
-
         // 天氣名稱篩選
         var nameFilter = searchModel.GetFilterValue("Name")?.ToString();
         if (!string.IsNullOrWhiteSpace(nameFilter))
         {
-            filteredWeathers = filteredWeathers.Where(w => 
-                w.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
+            query = query.Where(w => w.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
         }
 
         // 描述篩選
         var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
         if (!string.IsNullOrWhiteSpace(descriptionFilter))
         {
-            filteredWeathers = filteredWeathers.Where(w => 
+            query = query.Where(w => 
                 !string.IsNullOrEmpty(w.Description) && 
                 w.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
         }
@@ -215,83 +116,37 @@
         var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
         if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
         {
-            filteredWeathers = filteredWeathers.Where(w => w.Status == status);
+            query = query.Where(w => w.Status == status);
         }
 
-        weathers = filteredWeathers.OrderBy(w => w.Name).ToList();
-        totalItems = weathers.Count;
-        
-        // 重置分頁到第一頁（如果是搜尋操作）
-        currentPage = 1;
-        
-        // 應用分頁
-        ApplyPagination();
-        
-        await Task.CompletedTask;
+        return query.OrderBy(w => w.Name);
     }
 
-    private void ApplyPagination()
-    {
-        // 確保當前頁面有效
-        var maxPage = totalItems > 0 ? (int)Math.Ceiling((double)totalItems / pageSize) : 1;
-        if (currentPage > maxPage)
-        {
-            currentPage = Math.Max(1, maxPage);
-        }
-        
-        // 計算分頁資料
-        pagedWeathers = weathers
-            .Skip((currentPage - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
-    }
-
-    private async Task HandlePageChanged(int newPage)
-    {
-        currentPage = newPage;
-        ApplyPagination();
-        StateHasChanged();
-        await Task.CompletedTask;
-    }
-
-    private async Task HandlePageSizeChanged(int newPageSize)
-    {
-        pageSize = newPageSize;
-        currentPage = 1; // 重置到第一頁
-        ApplyPagination();
-        StateHasChanged();
-        await Task.CompletedTask;
-    }
-
-    private async Task HandleSearch(SearchFilterModel filterModel)
-    {
-        searchModel = filterModel;
-        await ApplyFilters();
-        StateHasChanged();
-    }
-
-    private async Task HandleFilterChanged(SearchFilterModel filterModel)
-    {
-        searchModel = filterModel;
-        // 自動搜尋功能已啟用，這裡不需要立即執行搜尋
-        await Task.CompletedTask;
-    }
-
+    // 行點擊事件
     private async Task HandleRowClick(Weather weather)
     {
         Navigation.NavigateTo($"/BOMFoundation/weather/detail/{weather.Id}");
         await Task.CompletedTask;
     }
 
-    private async Task RefreshData()
-    {
-        await LoadWeathersAsync();
-        StateHasChanged();
-    }
+    // 自定義操作按鈕範本
+    private RenderFragment<Weather> ActionButtonsTemplate => weather => 
+        @<div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-primary" @onclick="() => ViewWeather(weather)" title="檢視">
+                <i class="bi bi-eye"></i>
+            </button>
+            <button class="btn btn-outline-warning" @onclick="() => EditWeather(weather)" title="編輯">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-outline-danger" @onclick="() => DeleteWeather(weather)" title="刪除">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>;
 
-    private async Task ShowCreateWeather()
+    // 操作方法
+    private async Task ViewWeather(Weather weather)
     {
-        Navigation.NavigateTo("/BOMFoundation/weather/edit");
+        Navigation.NavigateTo($"/BOMFoundation/weather/detail/{weather.Id}");
         await Task.CompletedTask;
     }
 
@@ -313,7 +168,7 @@
                 var result = await WeatherService.DeleteAsync(weather.Id);
                 if (result.IsSuccess)
                 {
-                    await RefreshData();
+                    await indexComponent.Refresh();
                     await JSRuntime.InvokeVoidAsync("alert", "天氣刪除成功");
                 }
                 else
@@ -327,24 +182,4 @@
             }
         }
     }
-
-    private async Task ViewWeather(Weather weather)
-    {
-        Navigation.NavigateTo($"/BOMFoundation/weather/detail/{weather.Id}");
-        await Task.CompletedTask;
-    }
-
-    // 表格操作範本
-    private RenderFragment<Weather> ActionsTemplate => weather => 
-        @<div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-primary" @onclick="() => ViewWeather(weather)" title="檢視">
-                <i class="bi bi-eye"></i>
-            </button>
-            <button class="btn btn-outline-warning" @onclick="() => EditWeather(weather)" title="編輯">
-                <i class="bi bi-pencil"></i>
-            </button>
-            <button class="btn btn-outline-danger" @onclick="() => DeleteWeather(weather)" title="刪除">
-                <i class="bi bi-trash"></i>
-            </button>
-        </div>;
 }

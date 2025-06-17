@@ -1,132 +1,191 @@
 @page "/inventory/warehouse-locations"
 @using ERPCore2.Data.Entities
-@using Microsoft.JSInterop
+@using ERPCore2.Services
+@using ERPCore2.Components.Shared
 @inject IWarehouseLocationService WarehouseLocationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
 
 <PageTitle>庫位管理</PageTitle>
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">
-                            <i class="bi bi-diagram-3 me-2"></i>庫位管理
-                        </h4>
-                        <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/inventory/warehouse-locations/new"))">
-                            <i class="bi bi-plus-lg me-1"></i>新增庫位
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    @if (locations == null)
-                    {
-                        <div class="d-flex justify-content-center align-items-center" style="height: 300px;">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">載入中...</span>
-                            </div>
-                        </div>
-                    }
-                    else if (!locations.Any())
-                    {
-                        <div class="text-center py-5">
-                            <i class="bi bi-diagram-3 text-muted" style="font-size: 3rem;"></i>
-                            <h5 class="text-muted mt-3">目前沒有庫位資料</h5>
-                            <p class="text-muted">您可以點擊上方的「新增庫位」按鈕來建立第一個庫位。</p>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>庫位代碼</th>
-                                        <th>庫位名稱</th>
-                                        <th>所屬倉庫</th>
-                                        <th>描述</th>
-                                        <th>狀態</th>
-                                        <th>建立時間</th>
-                                        <th width="120">操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var location in locations)
-                                    {
-                                        <tr>
-                                            <td>@location.LocationCode</td>
-                                            <td>@location.LocationName</td>
-                                            <td>@(location.Warehouse?.WarehouseName ?? "未設定")</td>
-                                            <td>@(location.Description ?? "無")</td>
-                                            <td>
-                                                @if (location.IsActive)
-                                                {
-                                                    <span class="badge bg-success">啟用</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge bg-secondary">停用</span>
-                                                }
-                                            </td>
-                                            <td>@location.CreatedAt.ToString("yyyy/MM/dd")</td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm">
-                                                    <button class="btn btn-outline-primary" 
-                                                            @onclick="@(() => Navigation.NavigateTo($"/inventory/warehouse-locations/{location.Id}"))">
-                                                        <i class="bi bi-eye"></i>
-                                                    </button>
-                                                    <button class="btn btn-outline-secondary" 
-                                                            @onclick="@(() => Navigation.NavigateTo($"/inventory/warehouse-locations/{location.Id}/edit"))">
-                                                        <i class="bi bi-pencil"></i>
-                                                    </button>
-                                                    <button class="btn btn-outline-danger" 
-                                                            @onclick="@(() => DeleteLocationAsync(location))">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<GenericIndexPageComponent TEntity="WarehouseLocation" 
+                          TService="IWarehouseLocationService"
+                          Service="@WarehouseLocationService"
+                          PageTitle="庫位管理"
+                          PageSubtitle="管理所有庫位資料與位置資訊"
+                          PageIcon="diagram-3"
+                          AddButtonText="新增庫位"
+                          AddButtonIcon="bi bi-plus-circle"
+                          AddButtonTitle="新增庫位資料"
+                          SearchSectionTitle="庫位搜尋與管理"
+                          EmptyMessage="沒有找到符合條件的庫位資料"
+                          DataLoader="@LoadDataAsync"
+                          FilterApplier="@ApplyWarehouseLocationFilters"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          OnRowClick="@HandleRowClick"
+                          ActionsTemplate="@ActionButtonsTemplate"
+                          @ref="indexComponent">
+</GenericIndexPageComponent>
 
 @code {
-    private List<WarehouseLocation>? locations;
+    private GenericIndexPageComponent<WarehouseLocation, IWarehouseLocationService> indexComponent = default!;
+    
+    // 設定選項
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadLocationsAsync();
+        InitializeBreadcrumbs();
+        InitializeFilters();
+        InitializeTableColumns();
+        await Task.CompletedTask;
     }
 
-    private async Task LoadLocationsAsync()
+    private void InitializeBreadcrumbs()
     {
-        locations = await WarehouseLocationService.GetAllAsync();
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("庫存管理", "/inventory"),
+            new("庫位管理")
+        };
     }
 
-    private async Task DeleteLocationAsync(WarehouseLocation location)
+    private void InitializeFilters()
     {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"確定要刪除庫位「{location.LocationName}」嗎？");
+        // 準備狀態選項
+        var statusOptions = new List<SelectOption>
+        {
+            new() { Text = "啟用", Value = "true" },
+            new() { Text = "停用", Value = "false" }
+        };
+
+        // 建立篩選定義
+        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+            .AddText("LocationCode", "庫位代碼", "輸入庫位代碼搜尋")
+            .AddText("LocationName", "庫位名稱", "輸入庫位名稱搜尋")
+            .AddText("Description", "描述", "輸入描述搜尋", isAdvanced: true)
+            .AddSelect("IsActive", "狀態", statusOptions, isAdvanced: true)
+            .Build();
+    }
+
+    private void InitializeTableColumns()
+    {
+        columnDefinitions = new List<TableColumnDefinition>
+        {
+            TableColumnDefinition.Text("庫位代碼", nameof(WarehouseLocation.LocationCode)),
+            TableColumnDefinition.Text("庫位名稱", nameof(WarehouseLocation.LocationName)),
+            TableColumnDefinition.Text("所屬倉庫", "Warehouse.WarehouseName"),
+            TableColumnDefinition.Text("描述", nameof(WarehouseLocation.Description)),
+            TableColumnDefinition.Boolean("狀態", nameof(WarehouseLocation.IsActive)),
+            TableColumnDefinition.Date("建立日期", nameof(WarehouseLocation.CreatedAt), "yyyy/MM/dd")
+        };
+    }
+
+    // 資料載入委派
+    private async Task<List<WarehouseLocation>> LoadDataAsync()
+    {
+        return await WarehouseLocationService.GetAllAsync();
+    }
+
+    // 篩選邏輯委派
+    private IQueryable<WarehouseLocation> ApplyWarehouseLocationFilters(SearchFilterModel searchModel, IQueryable<WarehouseLocation> query)
+    {
+        // 庫位代碼篩選
+        var locationCodeFilter = searchModel.GetFilterValue("LocationCode")?.ToString();
+        if (!string.IsNullOrWhiteSpace(locationCodeFilter))
+        {
+            query = query.Where(l => l.LocationCode.Contains(locationCodeFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 庫位名稱篩選
+        var locationNameFilter = searchModel.GetFilterValue("LocationName")?.ToString();
+        if (!string.IsNullOrWhiteSpace(locationNameFilter))
+        {
+            query = query.Where(l => l.LocationName.Contains(locationNameFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 描述篩選
+        var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
+        if (!string.IsNullOrWhiteSpace(descriptionFilter))
+        {
+            query = query.Where(l => 
+                !string.IsNullOrEmpty(l.Description) && 
+                l.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 狀態篩選
+        var isActiveFilter = searchModel.GetFilterValue("IsActive")?.ToString();
+        if (!string.IsNullOrWhiteSpace(isActiveFilter) && bool.TryParse(isActiveFilter, out var isActive))
+        {
+            query = query.Where(l => l.IsActive == isActive);
+        }
+
+        return query.OrderBy(l => l.LocationCode);
+    }
+
+    // 行點擊事件
+    private async Task HandleRowClick(WarehouseLocation location)
+    {
+        Navigation.NavigateTo($"/inventory/warehouse-locations/{location.Id}");
+        await Task.CompletedTask;
+    }
+
+    // 自定義操作按鈕範本
+    private RenderFragment<WarehouseLocation> ActionButtonsTemplate => location => 
+        @<div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-primary" @onclick="() => ViewLocation(location)" title="檢視">
+                <i class="bi bi-eye"></i>
+            </button>
+            <button class="btn btn-outline-warning" @onclick="() => EditLocation(location)" title="編輯">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-outline-danger" @onclick="() => DeleteLocation(location)" title="刪除">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>;
+
+    // 操作方法
+    private async Task ViewLocation(WarehouseLocation location)
+    {
+        Navigation.NavigateTo($"/inventory/warehouse-locations/{location.Id}");
+        await Task.CompletedTask;
+    }
+
+    private async Task EditLocation(WarehouseLocation location)
+    {
+        Navigation.NavigateTo($"/inventory/warehouse-locations/{location.Id}/edit");
+        await Task.CompletedTask;
+    }
+
+    private async Task DeleteLocation(WarehouseLocation location)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"確定要刪除庫位「{location.LocationName}」嗎？");
+        
         if (confirmed)
         {
-            var result = await WarehouseLocationService.DeleteAsync(location.Id);
-            if (result.IsSuccess)
+            try
             {
-                await LoadLocationsAsync();
-                await JSRuntime.InvokeVoidAsync("alert", "庫位已成功刪除！");
+                var result = await WarehouseLocationService.DeleteAsync(location.Id);
+                if (result.IsSuccess)
+                {
+                    await indexComponent.Refresh();
+                    await JSRuntime.InvokeVoidAsync("alert", "庫位刪除成功");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{result.ErrorMessage}");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{result.ErrorMessage}");
+                await JSRuntime.InvokeVoidAsync("alert", $"刪除時發生錯誤：{ex.Message}");
             }
         }
     }

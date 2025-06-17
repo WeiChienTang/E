@@ -1,5 +1,8 @@
 @page "/colors"
 @page "/BOMFoundation/colors"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@using ERPCore2.Components.Shared
 @inject IColorService ColorService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -7,128 +10,41 @@
 
 <PageTitle>顏色管理</PageTitle>
 
-@* 頁面標題 *@
-<GenericHeaderComponent Title="顏色管理"
-                       Subtitle="管理所有顏色類型資料"
-                       TitleIcon="palette-fill"
-                       HeadingLevel="h1"
-                       BreadcrumbItems="@breadcrumbItems"
-                       IsLoading="@isLoading"
-                       LoadingText="載入中..."
-                       ShowDivider="true">    <ActionButtons>
-        <IndexActionButtonsComponent 
-            AddButtonText="新增顏色"
-            AddButtonIcon="bi-plus-circle"
-            OnAddClick="ShowCreateColor"
-            OnRefreshClick="RefreshData"
-            IsLoading="@isLoading" />
-    </ActionButtons>
-</GenericHeaderComponent>
-
-@* 顏色管理主要內容區域 *@
-<div class="row">
-    <div class="col-12">
-        <div class="card section-card">
-            <div class="card-header section-header-primary">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-gear me-2"></i>⚙️ 顏色搜尋與管理
-                </h5>
-            </div>
-            <div class="card-body">
-                @* 搜尋篩選區域 *@
-                <GenericSearchFilterComponent TModel="SearchFilterModel"
-                                             FilterDefinitions="@filterDefinitions"
-                                             FilterModel="@searchModel"
-                                             OnSearch="HandleSearch"
-                                             OnFilterChanged="HandleFilterChanged"
-                                             AutoSearch="true"
-                                             ShowSearchButton="false"
-                                             SearchDelayMs="500" />                @* 顏色列表表格 *@
-                <div class="mt-4">
-                    <GenericTableComponent TItem="Color"
-                                         Items="@pagedColors"
-                                         ColumnDefinitions="@columnDefinitions"
-                                         OnRowClick="HandleRowClick"
-                                         ActionsTemplate="@ActionsTemplate"
-                                         EnableRowClick="true"
-                                         IsStriped="true"
-                                         IsHoverable="true"
-                                         IsBordered="false"
-                                         Size="TableSize.Normal"
-                                         EmptyMessage="沒有找到符合條件的顏色資料"
-                                         ActionsHeader="操作"
-                                         EnablePagination="true"
-                                         CurrentPage="@currentPage"
-                                         PageSize="@pageSize"
-                                         TotalItems="@totalItems"
-                                         OnPageChanged="HandlePageChanged"
-                                         OnPageSizeChanged="HandlePageSizeChanged"
-                                         ShowPageSizeSelector="true">
-                    </GenericTableComponent>
-                </div>>
-            </div>
-        </div>
-    </div>
-</div>
+<GenericIndexPageComponent TEntity="Color" 
+                          TService="IColorService"
+                          Service="@ColorService"
+                          PageTitle="顏色管理"
+                          PageSubtitle="管理所有顏色資料與色彩資訊"
+                          PageIcon="palette-fill"
+                          AddButtonText="新增顏色"
+                          AddButtonIcon="bi bi-plus-circle"
+                          AddButtonTitle="新增顏色資料"
+                          SearchSectionTitle="顏色搜尋與管理"
+                          EmptyMessage="沒有找到符合條件的顏色資料"
+                          DataLoader="@LoadDataAsync"
+                          FilterApplier="@ApplyColorFilters"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          OnRowClick="@HandleRowClick"
+                          ActionsTemplate="@ActionButtonsTemplate"
+                          @ref="indexComponent">
+</GenericIndexPageComponent>
 
 @code {
-    // 資料來源
-    private List<Color> colors = new();
-    private List<Color> allColors = new();
+    private GenericIndexPageComponent<Color, IColorService> indexComponent = default!;
     
-    // 篩選相關
-    private SearchFilterModel searchModel = new();
-    private List<SearchFilterDefinition> filterDefinitions = new();
-    
-    // 表格相關
-    private List<TableColumnDefinition> columnDefinitions = new();
-    
-    // 分頁相關
-    private int currentPage = 1;
-    private int pageSize = 20;
-    private int totalItems = 0;
-    private List<Color> pagedColors = new();
-    
-    // 狀態管理
-    private bool isLoading = true;
-    
-    // 麵包屑導航
+    // 設定選項
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
 
     protected override async Task OnInitializedAsync()
     {
-        await InitializePageAsync();
-    }
-
-    private async Task InitializePageAsync()
-    {
-        try
-        {
-            isLoading = true;
-            StateHasChanged();
-
-            // 初始化麵包屑
-            InitializeBreadcrumbs();
-            
-            // 初始化篩選器
-            InitializeFilters();
-            
-            // 初始化表格欄位
-            InitializeTableColumns();
-            
-            // 載入顏色資料
-            await LoadColorsAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤（這裡可以加入日誌記錄）
-            await JSRuntime.InvokeVoidAsync("console.error", "載入顏色資料時發生錯誤：", ex.Message);
-        }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
-        }
+        InitializeBreadcrumbs();
+        InitializeFilters();
+        InitializeTableColumns();
+        await Task.CompletedTask;
     }
 
     private void InitializeBreadcrumbs()
@@ -152,17 +68,18 @@
 
         // 建立篩選定義
         filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-            .AddText("Name", "名稱", "輸入顏色名稱搜尋")
+            .AddText("Name", "顏色名稱", "輸入顏色名稱搜尋")
+            .AddText("HexCode", "色碼", "輸入HEX色碼搜尋")
             .AddText("Description", "描述", "輸入描述搜尋")
             .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
             .Build();
-    }
-
-    private void InitializeTableColumns()
+    }    private void InitializeTableColumns()
     {
         columnDefinitions = new List<TableColumnDefinition>
         {
-            TableColumnDefinition.Text("名稱", nameof(Color.Name)),
+            TableColumnDefinition.Text("顏色名稱", nameof(Color.Name)),
+            TableColumnDefinition.Text("顏色代碼", nameof(Color.Code)),
+            TableColumnDefinition.Text("HEX色碼", nameof(Color.HexCode)),
             TableColumnDefinition.Text("描述", nameof(Color.Description)),
             TableColumnDefinition.Status("狀態", nameof(Color.Status), new Dictionary<object, string>
             {
@@ -173,38 +90,36 @@
         };
     }
 
-    private async Task LoadColorsAsync()
+    // 資料載入委派
+    private async Task<List<Color>> LoadDataAsync()
     {
-        try
-        {
-            allColors = await ColorService.GetAllAsync();
-            await ApplyFilters();
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入顏色資料失敗：", ex.Message);
-            colors = new List<Color>();
-            pagedColors = new List<Color>();
-        }
+        return await ColorService.GetAllAsync();
     }
 
-    private async Task ApplyFilters()
+    // 篩選邏輯委派
+    private IQueryable<Color> ApplyColorFilters(SearchFilterModel searchModel, IQueryable<Color> query)
     {
-        var filteredColors = allColors.AsQueryable();
-
-        // 名稱篩選
+        // 顏色名稱篩選
         var nameFilter = searchModel.GetFilterValue("Name")?.ToString();
         if (!string.IsNullOrWhiteSpace(nameFilter))
         {
-            filteredColors = filteredColors.Where(c => 
-                c.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
+            query = query.Where(c => c.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // HEX色碼篩選
+        var hexCodeFilter = searchModel.GetFilterValue("HexCode")?.ToString();
+        if (!string.IsNullOrWhiteSpace(hexCodeFilter))
+        {
+            query = query.Where(c => 
+                !string.IsNullOrEmpty(c.HexCode) && 
+                c.HexCode.Contains(hexCodeFilter, StringComparison.OrdinalIgnoreCase));
         }
 
         // 描述篩選
         var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
         if (!string.IsNullOrWhiteSpace(descriptionFilter))
         {
-            filteredColors = filteredColors.Where(c => 
+            query = query.Where(c => 
                 !string.IsNullOrEmpty(c.Description) && 
                 c.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
         }
@@ -213,121 +128,21 @@
         var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
         if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
         {
-            filteredColors = filteredColors.Where(c => c.Status == status);
+            query = query.Where(c => c.Status == status);
         }
 
-        colors = filteredColors.OrderBy(c => c.Name).ToList();
-        totalItems = colors.Count;
-        
-        // 重置分頁到第一頁（如果是搜尋操作）
-        currentPage = 1;
-        
-        // 應用分頁
-        ApplyPagination();
-        
-        await Task.CompletedTask;
+        return query.OrderBy(c => c.Name);
     }
 
-    private void ApplyPagination()
-    {
-        // 確保當前頁面有效
-        var maxPage = totalItems > 0 ? (int)Math.Ceiling((double)totalItems / pageSize) : 1;
-        if (currentPage > maxPage)
-        {
-            currentPage = Math.Max(1, maxPage);
-        }
-        
-        // 計算分頁資料
-        pagedColors = colors
-            .Skip((currentPage - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
-    }
-
-    private async Task HandlePageChanged(int newPage)
-    {
-        currentPage = newPage;
-        ApplyPagination();
-        StateHasChanged();
-        await Task.CompletedTask;
-    }
-
-    private async Task HandlePageSizeChanged(int newPageSize)
-    {
-        pageSize = newPageSize;
-        currentPage = 1; // 重置到第一頁
-        ApplyPagination();
-        StateHasChanged();
-        await Task.CompletedTask;
-    }
-
-    private async Task HandleSearch(SearchFilterModel filterModel)
-    {
-        searchModel = filterModel;
-        await ApplyFilters();
-        StateHasChanged();
-    }
-
-    private async Task HandleFilterChanged(SearchFilterModel filterModel)
-    {
-        searchModel = filterModel;
-        // 自動搜尋功能已啟用，這裡不需要立即執行搜尋
-        await Task.CompletedTask;
-    }    private async Task HandleRowClick(Color color)
+    // 行點擊事件
+    private async Task HandleRowClick(Color color)
     {
         Navigation.NavigateTo($"/BOMFoundation/colors/detail/{color.Id}");
         await Task.CompletedTask;
     }
 
-    private async Task RefreshData()
-    {
-        await LoadColorsAsync();
-        StateHasChanged();
-    }    private async Task ShowCreateColor()
-    {
-        Navigation.NavigateTo("/BOMFoundation/colors/edit");
-        await Task.CompletedTask;
-    }    private async Task EditColor(Color color)
-    {
-        Navigation.NavigateTo($"/BOMFoundation/colors/edit/{color.Id}");
-        await Task.CompletedTask;
-    }
-
-    private async Task DeleteColor(Color color)
-    {
-        // TODO: 實作刪除顏色功能
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"確定要刪除顏色「{color.Name}」嗎？");
-        
-        if (confirmed)
-        {
-            try
-            {
-                var result = await ColorService.DeleteAsync(color.Id);
-                if (result.IsSuccess)
-                {
-                    await LoadColorsAsync();
-                    StateHasChanged();
-                }
-                else
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{result.ErrorMessage}");
-                }
-            }
-            catch (Exception ex)
-            {
-                await JSRuntime.InvokeVoidAsync("console.error", "刪除顏色失敗：", ex.Message);
-                await JSRuntime.InvokeVoidAsync("alert", "刪除失敗，請稍後再試");
-            }
-        }
-    }    private async Task ViewColor(Color color)
-    {
-        Navigation.NavigateTo($"/BOMFoundation/colors/detail/{color.Id}");
-        await Task.CompletedTask;
-    }
-
-    // 表格操作範本
-    private RenderFragment<Color> ActionsTemplate => color => 
+    // 自定義操作按鈕範本
+    private RenderFragment<Color> ActionButtonsTemplate => color => 
         @<div class="btn-group btn-group-sm">
             <button class="btn btn-outline-primary" @onclick="() => ViewColor(color)" title="檢視">
                 <i class="bi bi-eye"></i>
@@ -339,4 +154,44 @@
                 <i class="bi bi-trash"></i>
             </button>
         </div>;
+
+    // 操作方法
+    private async Task ViewColor(Color color)
+    {
+        Navigation.NavigateTo($"/BOMFoundation/colors/detail/{color.Id}");
+        await Task.CompletedTask;
+    }
+
+    private async Task EditColor(Color color)
+    {
+        Navigation.NavigateTo($"/BOMFoundation/colors/edit/{color.Id}");
+        await Task.CompletedTask;
+    }
+
+    private async Task DeleteColor(Color color)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"確定要刪除顏色「{color.Name}」嗎？");
+        
+        if (confirmed)
+        {
+            try
+            {
+                var result = await ColorService.DeleteAsync(color.Id);
+                if (result.IsSuccess)
+                {
+                    await indexComponent.Refresh();
+                    await JSRuntime.InvokeVoidAsync("alert", "顏色刪除成功");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{result.ErrorMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"刪除時發生錯誤：{ex.Message}");
+            }
+        }
+    }
 }
