@@ -1,14 +1,5 @@
 @page "/employees/edit"
 @page "/employees/edit/{id:int?}"
-@using ERPCore2.Data.Entities
-@using ERPCore2.Data.Enums
-@using ERPCore2.Services
-@using ERPCore2.Components.Shared.Headers
-@using ERPCore2.Components.Shared.Forms
-@using Microsoft.AspNetCore.Components
-@using Microsoft.AspNetCore.Components.Forms
-@using Microsoft.AspNetCore.Components.Web
-@using Microsoft.JSInterop
 @inject IEmployeeService EmployeeService
 @inject IEmployeeContactService EmployeeContactService
 @inject IEmployeeAddressService EmployeeAddressService
@@ -18,212 +9,35 @@
 @inject IAuthenticationService AuthenticationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@rendermode @(new InteractiveServerRenderMode())
+@rendermode InteractiveServer
 @implements IDisposable
 
-<GenericEditPageComponent TEntity="Employee"
+<PageTitle>@GetPageTitle()</PageTitle>
+
+<GenericEditPageComponent TEntity="Employee" 
                          TService="IEmployeeService"
                          Id="@Id"
+                         Entity="@employee"
                          Service="@EmployeeService"
                          EntityName="員工"
                          EntityNamePlural="員工"
-                         CreateTitle="新增員工"
-                         EditTitle="編輯員工"
-                         CreateSubtitle="建立新的員工帳號"
-                         EditSubtitle="修改員工資料"
-                         CreateIcon="person-plus"
-                         EditIcon="person-gear"
+                         FormTitle="基本資料"
+                         FormSubtitle="員工的基本資訊"
+                         FormIcon="person"
                          IndexRoute="/employees"
-                         BreadcrumbItems="@GetBreadcrumbItems()"
-                         FormFields="@GetFormFields()"
-                         FormSections="@GetFormSections()"
-                         AdditionalSections="@CreateAdditionalSections()"
-                         DataLoader="@LoadEmployeeDataAsync"
-                         SaveHandler="@SaveEmployeeAsync"
-                         CustomValidation="@ValidateEmployeeAsync">
-</GenericEditPageComponent>
+                         UseGenericForm="true"
+                         FormFields="@basicFormFields"
+                         FormSections="@basicFormSections"
+                         BreadcrumbItems="@breadcrumbItems"
+                         DataLoader="@LoadEmployeeData"
+                         SaveHandler="@SaveEmployee"
+                         AdditionalDataLoader="@LoadAdditionalData"
+                         OnSaveSuccess="@HandleSaveSuccess"
+                         OnCancel="@HandleCancel">
 
-@code {
-    [Parameter] public int? Id { get; set; }
-
-    // 資料清單
-    private List<Role> roles = new();
-    private List<ContactType> contactTypes = new();
-    private List<AddressType> addressTypes = new();
-    
-    // 主從資料
-    private List<EmployeeContact> employeeContacts = new();
-    private List<EmployeeAddress> employeeAddresses = new();
-    
-    // 特殊欄位
-    private string password = string.Empty;
-    private string confirmPassword = string.Empty;
-    private string passwordValidationMessage = string.Empty;
-    private string confirmPasswordValidationMessage = string.Empty;
-
-    // 併發控制
-    private readonly SemaphoreSlim _semaphore = new(1, 1);
-    private bool _disposed = false;
-
-    // 當前實體
-    private Employee? currentEmployee = null;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadDataAsync();
-    }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        await LoadDataAsync();
-    }
-
-    private async Task LoadDataAsync()
-    {
-        if (_disposed) return;
-
-        await _semaphore.WaitAsync();
-        try
-        {
-            // 載入角色清單
-            var rolesResult = await RoleService.GetAllAsync();
-            if (rolesResult != null)
-            {
-                roles = rolesResult;
-            }
-
-            // 載入聯絡類型清單
-            var contactTypesResult = await ContactTypeService.GetAllAsync();
-            if (contactTypesResult != null)
-            {
-                contactTypes = contactTypesResult;
-            }
-
-            // 載入地址類型清單
-            var addressTypesResult = await AddressTypeService.GetAllAsync();
-            if (addressTypesResult != null)
-            {
-                addressTypes = addressTypesResult;
-            }
-
-            // 如果是編輯模式，載入主從資料
-            if (Id.HasValue && Id.Value > 0)
-            {
-                await LoadMasterDetailDataAsync();
-            }
-            else
-            {
-                // 新增模式，初始化空資料
-                employeeContacts = new List<EmployeeContact>();
-                employeeAddresses = new List<EmployeeAddress>();
-            }
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
-    }
-
-    private async Task LoadMasterDetailDataAsync()
-    {
-        if (!Id.HasValue || Id.Value <= 0) return;
-
-        try
-        {
-            // 載入聯絡方式資料
-            var contactsResult = await EmployeeContactService.GetByEmployeeIdAsync(Id.Value);
-            employeeContacts = contactsResult.IsSuccess && contactsResult.Data != null 
-                ? contactsResult.Data 
-                : new List<EmployeeContact>();
-            
-            // 載入地址資料
-            employeeAddresses = await EmployeeAddressService.GetByEmployeeIdAsync(Id.Value);
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入主從資料失敗：", ex.Message);
-        }
-    }    private List<FormFieldDefinition> GetFormFields()
-    {
-        var fields = new List<FormFieldDefinition>
-        {
-            new() { 
-                PropertyName = nameof(Employee.EmployeeCode), 
-                Label = "員工代碼", 
-                FieldType = FormFieldType.Text, 
-                IsRequired = true,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                PropertyName = nameof(Employee.Username), 
-                Label = "帳號", 
-                FieldType = FormFieldType.Text, 
-                IsRequired = true,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                PropertyName = nameof(Employee.LastName), 
-                Label = "姓氏", 
-                FieldType = FormFieldType.Text, 
-                IsRequired = true,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                PropertyName = nameof(Employee.FirstName), 
-                Label = "名字", 
-                FieldType = FormFieldType.Text, 
-                IsRequired = true,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                PropertyName = nameof(Employee.Department), 
-                Label = "部門", 
-                FieldType = FormFieldType.Text,
-                ContainerCssClass = "col-md-6"
-            },
-            new() { 
-                PropertyName = nameof(Employee.Position), 
-                Label = "職位", 
-                FieldType = FormFieldType.Text,
-                ContainerCssClass = "col-md-6"
-            }
-        };
-
-        // 添加角色選擇欄位
-        if (roles.Any())
-        {
-            var roleField = new FormFieldDefinition
-            {
-                PropertyName = nameof(Employee.RoleId),
-                Label = "角色",
-                FieldType = FormFieldType.Select,
-                IsRequired = true,
-                ContainerCssClass = "col-md-6",
-                Options = roles.Select(r => new SelectOption { Value = r.Id.ToString(), Text = r.RoleName }).ToList()
-            };
-            fields.Insert(4, roleField);
-        }
-
-        return fields;
-    }
-
-    private Dictionary<string, string> GetFormSections()
-    {
-        return new Dictionary<string, string>
-        {
-            { "基本資料", "person" }
-        };
-    }
-
-    private RenderFragment CreateAdditionalSections() => @<text>
-        @CreatePasswordSection()
-        @CreateAccountSettingsSection()
-        @CreateContactsSection()
-        @CreateAddressesSection()
-    </text>;
-
-    private RenderFragment CreatePasswordSection() => @<text>
-        @if (IsCreateMode)
+    <AdditionalSections>
+        @* 密碼設定區塊（僅新增模式） *@
+        @if (!Id.HasValue)
         {
             <div class="card mb-4">
                 <div class="card-header">
@@ -259,10 +73,9 @@
                 </div>
             </div>
         }
-    </text>;
 
-    private RenderFragment CreateAccountSettingsSection() => @<text>
-        @if (!IsCreateMode && currentEmployee != null)
+        @* 帳號設定區塊（僅編輯模式） *@
+        @if (Id.HasValue && employee != null)
         {
             <div class="card mb-4">
                 <div class="card-header">
@@ -279,14 +92,14 @@
                                 <div>
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="radio" name="status" id="statusActive" 
-                                               checked="@(currentEmployee.Status == EntityStatus.Active)" 
-                                               @onchange="@(() => currentEmployee.Status = EntityStatus.Active)">
+                                               checked="@(employee.Status == EntityStatus.Active)" 
+                                               @onchange="@(() => employee.Status = EntityStatus.Active)">
                                         <label class="form-check-label" for="statusActive">啟用</label>
                                     </div>
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="radio" name="status" id="statusInactive" 
-                                               checked="@(currentEmployee.Status == EntityStatus.Inactive)" 
-                                               @onchange="@(() => currentEmployee.Status = EntityStatus.Inactive)">
+                                               checked="@(employee.Status == EntityStatus.Inactive)" 
+                                               @onchange="@(() => employee.Status = EntityStatus.Inactive)">
                                         <label class="form-check-label" for="statusInactive">停用</label>
                                     </div>
                                 </div>
@@ -296,8 +109,8 @@
                             <div class="mb-3">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="isLocked" 
-                                           checked="@currentEmployee.IsLocked" 
-                                           @onchange="@((ChangeEventArgs e) => currentEmployee.IsLocked = (bool)e.Value!)">
+                                           checked="@employee.IsLocked" 
+                                           @onchange="@((ChangeEventArgs e) => employee.IsLocked = (bool)e.Value!)">
                                     <label class="form-check-label" for="isLocked">鎖定帳號</label>
                                 </div>
                                 <div class="form-text">勾選此項將阻止使用者登入</div>
@@ -305,14 +118,14 @@
                         </div>
                     </div>
                     
-                    @if (currentEmployee.FailedLoginAttempts > 0)
+                    @if (employee.FailedLoginAttempts > 0)
                     {
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">失敗登入次數</label>
-                                    <div class="fw-bold @(currentEmployee.FailedLoginAttempts >= 3 ? "text-danger" : "text-warning")">
-                                        @currentEmployee.FailedLoginAttempts
+                                    <div class="fw-bold @(employee.FailedLoginAttempts >= 3 ? "text-danger" : "text-warning")">
+                                        @employee.FailedLoginAttempts
                                     </div>
                                     <button type="button" class="btn btn-sm btn-outline-secondary mt-1" @onclick="ResetFailedAttempts">
                                         重設登入失敗次數
@@ -332,17 +145,17 @@
                 </div>
             </div>
         }
-    </text>;
 
-    private RenderFragment CreateContactsSection() => @<text>
+        @* 聯絡方式管理 *@
         <div class="card mb-4">
             <GenericHeaderComponent Title="聯絡方式"
                                    Subtitle="@($"管理員工的聯絡資訊 ({employeeContacts.Count} 筆)")"
                                    TitleIcon="telephone"
-                                   IsCardHeader="true">
+                                   IsCardHeader="true">                
                 <ActionButtons>
                     <button class="btn btn-primary" @onclick="AddContact">
-                        <i class="bi-plus me-1"></i>新增聯絡方式
+                        <i class="bi-plus me-1"></i>
+                        新增聯絡方式
                     </button>
                 </ActionButtons>
             </GenericHeaderComponent>
@@ -352,7 +165,7 @@
                     <div class="row g-3">
                         @for (int i = 0; i < employeeContacts.Count; i++)
                         {
-                            var index = i;
+                            var index = i; // 為了閉包
                             var contact = employeeContacts[index];
                             <div class="col-md-6">
                                 <div class="card border-secondary">
@@ -406,23 +219,24 @@
                         <i class="bi bi-telephone-x fs-1 mb-3 d-block"></i>
                         <p>尚未建立聯絡方式</p>
                         <button class="btn btn-outline-primary" @onclick="AddContact">
-                            <i class="bi bi-plus me-1"></i>新增第一個聯絡方式
+                            <i class="bi bi-plus me-1"></i>
+                            新增第一個聯絡方式
                         </button>
                     </div>
                 }
             </div>
         </div>
-    </text>;
 
-    private RenderFragment CreateAddressesSection() => @<text>
+        @* 地址管理 *@
         <div class="card mb-4">
             <GenericHeaderComponent Title="地址資訊"
                                    Subtitle="@($"管理員工的地址資料 ({employeeAddresses.Count} 筆)")"
                                    TitleIcon="geo-alt"
-                                   IsCardHeader="true">
+                                   IsCardHeader="true">                
                 <ActionButtons>
                     <button class="btn btn-primary" @onclick="AddAddress">
-                        <i class="bi-plus me-1"></i>新增地址
+                        <i class="bi-plus me-1"></i>
+                        新增地址
                     </button>
                 </ActionButtons>
             </GenericHeaderComponent>
@@ -432,7 +246,7 @@
                     <div class="row g-3">
                         @for (int i = 0; i < employeeAddresses.Count; i++)
                         {
-                            var index = i;
+                            var index = i; // 為了閉包
                             var address = employeeAddresses[index];
                             <div class="col-lg-6">
                                 <div class="card border-secondary">
@@ -510,151 +324,474 @@
                         <i class="bi bi-geo-alt-slash fs-1 mb-3 d-block"></i>
                         <p>尚未建立地址資料</p>
                         <button class="btn btn-outline-primary" @onclick="AddAddress">
-                            <i class="bi bi-plus me-1"></i>新增第一個地址
+                            <i class="bi bi-plus me-1"></i>
+                            新增第一個地址
                         </button>
                     </div>
                 }
             </div>
         </div>
-    </text>;
+    </AdditionalSections>
+</GenericEditPageComponent>
 
-    private List<GenericHeaderComponent.BreadcrumbItem> GetBreadcrumbItems()
+@code {
+    [Parameter] public int? Id { get; set; }
+    
+    // 資料模型
+    private Employee employee = new();
+    private List<EmployeeContact> employeeContacts = new();
+    private List<EmployeeAddress> employeeAddresses = new();
+    
+    // 選項清單
+    private List<Role> roles = new();
+    private List<ContactType> contactTypes = new();
+    private List<AddressType> addressTypes = new();
+    
+    // 表單欄位定義
+    private List<FormFieldDefinition> basicFormFields = new();
+    private Dictionary<string, string> basicFormSections = new();
+    
+    // 密碼欄位
+    private string password = string.Empty;
+    private string confirmPassword = string.Empty;
+    private string passwordValidationMessage = string.Empty;
+    private string confirmPasswordValidationMessage = string.Empty;
+    
+    // 防止重複載入
+    private bool _isLoadingData = false;
+    private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
+    
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
     {
-        return new List<GenericHeaderComponent.BreadcrumbItem>
+        InitializeBreadcrumbs();
+        await LoadAdditionalData();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // 當參數變化時（例如從 Detail 導航到 Edit），重新初始化麵包屑
+        InitializeBreadcrumbs();
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
         {
             new("首頁", "/"),
             new("員工管理", "/employees"),
-            new(IsCreateMode ? "新增員工" : "編輯員工")
+            new(Id.HasValue ? "編輯員工" : "新增員工")
         };
     }
 
-    private bool IsCreateMode => !Id.HasValue || Id.Value == 0;
-
-    // GenericEditPageComponent 需要的方法
-    private async Task<Employee?> LoadEmployeeDataAsync()
+    private async Task LoadAdditionalData()
     {
-        if (!Id.HasValue || Id.Value <= 0)
-        {
-            currentEmployee = new Employee { Status = EntityStatus.Active };
-            return currentEmployee;
-        }
-
+        await _loadingSemaphore.WaitAsync();
         try
         {
-            var result = await EmployeeService.GetByIdAsync(Id.Value);
-            currentEmployee = result;
-            return result;
+            if (_isLoadingData) return; // 防止重複載入
+            
+            _isLoadingData = true;
+            
+            // 順序執行以避免DbContext併發問題
+            var rolesResult = await RoleService.GetAllAsync();
+            roles = rolesResult ?? new List<Role>();
+            
+            var contactTypesResult = await ContactTypeService.GetAllAsync();
+            contactTypes = contactTypesResult ?? new List<ContactType>();
+            
+            var addressTypesResult = await AddressTypeService.GetAllAsync();
+            addressTypes = addressTypesResult ?? new List<AddressType>();
+            
+            // 在載入完基礎資料後初始化表單欄位
+            InitializeFormFields();
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入員工資料失敗：", ex.Message);
-            return null;
+            Console.Error.WriteLine($"載入額外資料時發生錯誤：{ex.Message}");
+            // 初始化空列表以防止UI錯誤
+            roles = new List<Role>();
+            contactTypes = new List<ContactType>();
+            addressTypes = new List<AddressType>();
+            InitializeFormFields(); // 即使出錯也要初始化表單欄位
+        }
+        finally
+        {
+            _isLoadingData = false;
+            _loadingSemaphore.Release();
         }
     }
 
-    private async Task<bool> SaveEmployeeAsync(Employee entity)
+    private void InitializeFormFields()
+    {
+        // 角色選項
+        var roleOptions = roles.Select(r => new SelectOption
+        {
+            Text = r.RoleName,
+            Value = r.Id.ToString()
+        }).ToList();
+
+        basicFormFields = new List<FormFieldDefinition>
+        {
+            new()
+            {
+                PropertyName = nameof(Employee.EmployeeCode),
+                Label = "員工代碼",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入員工代碼",
+                IsRequired = true,
+                ContainerCssClass = "col-md-6"
+            },
+            new()
+            {
+                PropertyName = nameof(Employee.Username),
+                Label = "帳號",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入帳號",
+                IsRequired = true,
+                ContainerCssClass = "col-md-6"
+            },
+            new()
+            {
+                PropertyName = nameof(Employee.LastName),
+                Label = "姓氏",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入姓氏",
+                IsRequired = true,
+                ContainerCssClass = "col-md-6"
+            },
+            new()
+            {
+                PropertyName = nameof(Employee.FirstName),
+                Label = "名字",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入名字",
+                IsRequired = true,
+                ContainerCssClass = "col-md-6"
+            },
+            new()
+            {
+                PropertyName = nameof(Employee.RoleId),
+                Label = "角色",
+                FieldType = FormFieldType.Select,
+                Options = roleOptions,
+                IsRequired = true,
+                ContainerCssClass = "col-md-6"
+            },
+            new()
+            {
+                PropertyName = nameof(Employee.Department),
+                Label = "部門",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入部門",
+                ContainerCssClass = "col-md-6"
+            },
+            new()
+            {
+                PropertyName = nameof(Employee.Position),
+                Label = "職位",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入職位",
+                ContainerCssClass = "col-md-6"
+            }
+        };
+
+        basicFormSections = new Dictionary<string, string>
+        {
+            { nameof(Employee.EmployeeCode), "基本資訊" },
+            { nameof(Employee.Username), "基本資訊" },
+            { nameof(Employee.LastName), "基本資訊" },
+            { nameof(Employee.FirstName), "基本資訊" },
+            { nameof(Employee.RoleId), "角色權限" },
+            { nameof(Employee.Department), "工作資訊" },
+            { nameof(Employee.Position), "工作資訊" }
+        };
+    }
+
+    private async Task<Employee?> LoadEmployeeData()
+    {
+        await _loadingSemaphore.WaitAsync();
+        try
+        {
+            if (!Id.HasValue) 
+            {
+                var newEmployee = new Employee
+                {
+                    EmployeeCode = GenerateEmployeeCode(),
+                    Username = "",
+                    LastName = "",
+                    FirstName = "",
+                    Department = "",
+                    Position = "",
+                    Status = EntityStatus.Active,
+                    IsLocked = false,
+                    FailedLoginAttempts = 0
+                };
+                employee = newEmployee;
+                employeeContacts = new List<EmployeeContact>();
+                employeeAddresses = new List<EmployeeAddress>();
+                return newEmployee;
+            }
+
+            // 載入員工基本資料
+            var loadedEmployee = await EmployeeService.GetByIdAsync(Id.Value);
+            if (loadedEmployee != null)
+            {
+                employee = loadedEmployee;
+                
+                // 載入聯絡方式
+                var contactsResult = await EmployeeContactService.GetByEmployeeIdAsync(Id.Value);
+                employeeContacts = contactsResult.IsSuccess && contactsResult.Data != null 
+                    ? contactsResult.Data 
+                    : new List<EmployeeContact>();
+                
+                // 載入地址資料
+                employeeAddresses = await EmployeeAddressService.GetByEmployeeIdAsync(Id.Value);
+                
+                // 觸發 UI 更新
+                StateHasChanged();
+                
+                return employee;
+            }
+            else
+            {
+                // 如果找不到員工，建立新的
+                employee = new Employee();
+                employeeContacts = new List<EmployeeContact>();
+                employeeAddresses = new List<EmployeeAddress>();
+                return employee;
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入員工詳細資料失敗：", ex.Message);
+            throw;
+        }
+        finally
+        {
+            _loadingSemaphore.Release();
+        }
+    }
+
+    private string GenerateEmployeeCode()
+    {
+        return $"E{DateTime.Now:yyyyMMddHHmmss}";
+    }
+
+    private string GetPageTitle()
+    {
+        return Id.HasValue ? "編輯員工" : "新增員工";
+    }
+
+    private async Task<bool> SaveEmployee(Employee entity)
     {
         try
         {
-            currentEmployee = entity;
-
-            if (IsCreateMode)
+            // 驗證基本資料
+            if (string.IsNullOrWhiteSpace(entity.EmployeeCode))
             {
-                var createResult = await EmployeeService.CreateAsync(entity);
-                if (createResult.IsSuccess && createResult.Data != null)
+                await JSRuntime.InvokeVoidAsync("alert", "員工代碼為必填");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(entity.Username))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "帳號為必填");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(entity.LastName))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "姓氏為必填");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(entity.FirstName))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "名字為必填");
+                return false;
+            }
+
+            // 新增模式時驗證密碼
+            if (!Id.HasValue)
+            {
+                if (!ValidatePassword())
+                {
+                    return false;
+                }
+            }
+
+            ServiceResult<Employee> result;
+            
+            if (Id.HasValue)
+            {
+                // 更新現有員工
+                result = await EmployeeService.UpdateAsync(entity);
+                if (result.IsSuccess)
+                {
+                    // 更新聯絡方式
+                    await EmployeeService.UpdateEmployeeContactsAsync(entity.Id, employeeContacts);
+                    
+                    // 更新地址資料
+                    await EmployeeService.UpdateEmployeeAddressesAsync(entity.Id, employeeAddresses);
+                }
+            }
+            else
+            {
+                // 新增員工
+                result = await EmployeeService.CreateAsync(entity);
+                if (result.IsSuccess && result.Data != null)
                 {
                     // 設定密碼
                     if (!string.IsNullOrWhiteSpace(password))
                     {
-                        await AuthenticationService.ResetPasswordAsync(createResult.Data.Id, password);
+                        await AuthenticationService.ResetPasswordAsync(result.Data.Id, password);
                     }
                     
-                    // 更新聯絡方式和地址的員工ID
+                    // 更新聯絡方式的員工ID
                     foreach (var contact in employeeContacts)
                     {
-                        contact.EmployeeId = createResult.Data.Id;
+                        contact.EmployeeId = result.Data.Id;
                     }
                     
+                    // 更新地址的員工ID
                     foreach (var address in employeeAddresses)
                     {
-                        address.EmployeeId = createResult.Data.Id;
+                        address.EmployeeId = result.Data.Id;
                     }
                     
                     // 儲存聯絡方式和地址
-                    await EmployeeService.UpdateEmployeeContactsAsync(createResult.Data.Id, employeeContacts);
-                    await EmployeeService.UpdateEmployeeAddressesAsync(createResult.Data.Id, employeeAddresses);
-                    
-                    // 導航到詳細頁面
-                    Navigation.NavigateTo($"/employees/detail/{createResult.Data.Id}");
-                    return true;
+                    await EmployeeService.UpdateEmployeeContactsAsync(result.Data.Id, employeeContacts);
+                    await EmployeeService.UpdateEmployeeAddressesAsync(result.Data.Id, employeeAddresses);
                 }
-                return false;
+            }
+
+            if (result.IsSuccess)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "員工資料儲存成功！");
+                return true;
             }
             else
             {
-                var updateResult = await EmployeeService.UpdateAsync(entity);
-                if (updateResult != null)
-                {
-                    await EmployeeService.UpdateEmployeeContactsAsync(entity.Id, employeeContacts);
-                    await EmployeeService.UpdateEmployeeAddressesAsync(entity.Id, employeeAddresses);
-                    
-                    Navigation.NavigateTo($"/employees/detail/{entity.Id}");
-                    return true;
-                }
+                await JSRuntime.InvokeVoidAsync("alert", $"儲存失敗：{result.ErrorMessage}");
                 return false;
             }
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "儲存員工資料失敗：", ex.Message);
+            await JSRuntime.InvokeVoidAsync("console.error", "儲存員工資料時發生錯誤：", ex.Message);
+            await JSRuntime.InvokeVoidAsync("alert", $"儲存時發生錯誤：{ex.Message}");
             return false;
         }
     }
 
-    private async Task<bool> ValidateEmployeeAsync(Employee entity)
+    private bool ValidatePassword()
     {
         passwordValidationMessage = string.Empty;
         confirmPasswordValidationMessage = string.Empty;
 
-        if (IsCreateMode)
+        if (string.IsNullOrWhiteSpace(password))
         {
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                passwordValidationMessage = "請輸入密碼";
-                return false;
-            }
+            passwordValidationMessage = "請輸入密碼";
+            return false;
+        }
 
-            if (password.Length < 8)
-            {
-                passwordValidationMessage = "密碼長度至少需要 8 個字元";
-                return false;
-            }
+        if (password.Length < 8)
+        {
+            passwordValidationMessage = "密碼長度至少需要 8 個字元";
+            return false;
+        }
 
-            if (string.IsNullOrWhiteSpace(confirmPassword))
-            {
-                confirmPasswordValidationMessage = "請確認密碼";
-                return false;
-            }
+        if (string.IsNullOrWhiteSpace(confirmPassword))
+        {
+            confirmPasswordValidationMessage = "請確認密碼";
+            return false;
+        }
 
-            if (password != confirmPassword)
-            {
-                confirmPasswordValidationMessage = "密碼確認不一致";
-                return false;
-            }
+        if (password != confirmPassword)
+        {
+            confirmPasswordValidationMessage = "密碼確認不一致";
+            return false;
         }
 
         return true;
     }
 
-    // 聯絡方式管理
+    private Task HandleSaveSuccess()
+    {
+        Navigation.NavigateTo("/employees");
+        return Task.CompletedTask;
+    }
+
+    private Task HandleCancel()
+    {
+        Navigation.NavigateTo("/employees");
+        return Task.CompletedTask;
+    }
+
+    #region 帳號管理
+
+    private async Task ResetFailedAttempts()
+    {
+        try
+        {
+            if (employee != null)
+            {
+                employee.FailedLoginAttempts = 0;
+                await JSRuntime.InvokeVoidAsync("alert", "登入失敗次數已重設");
+            }
+        }
+        catch (Exception)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "重設失敗");
+        }
+    }
+
+    private async Task ShowPasswordResetDialog()
+    {
+        try
+        {
+            if (employee == null) return;
+
+            var newPassword = $"Temp{DateTime.Now:yyyyMMdd}!";
+            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+                $"確定要重設 {employee.Username} 的密碼嗎？\n新密碼將設為：{newPassword}");
+
+            if (confirmed)
+            {
+                var resetResult = await AuthenticationService.ResetPasswordAsync(employee.Id, newPassword);
+                if (resetResult.IsSuccess)
+                {
+                    employee.FailedLoginAttempts = 0;
+                    employee.IsLocked = false;
+                    await JSRuntime.InvokeVoidAsync("alert", $"密碼已重設為：{newPassword}");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", $"重設密碼失敗：{resetResult.ErrorMessage}");
+                }
+            }
+        }
+        catch (Exception)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "重設密碼失敗");
+        }
+    }
+
+    #endregion
+
+    #region 聯絡方式管理
+
     private void AddContact()
     {
         var newContact = new EmployeeContact
         {
-            EmployeeId = Id ?? 0,
+            EmployeeId = employee.Id,
             ContactTypeId = null,
             ContactValue = "",
-            IsPrimary = employeeContacts.Count == 0,
+            IsPrimary = employeeContacts.Count == 0, // 第一個自動設為主要
             Status = EntityStatus.Active
         };
         
@@ -669,6 +806,7 @@
             var removedContact = employeeContacts[index];
             employeeContacts.RemoveAt(index);
             
+            // 如果移除的是主要聯絡方式且還有其他聯絡方式，設定第一個為主要
             if (removedContact.IsPrimary && employeeContacts.Any())
             {
                 employeeContacts[0].IsPrimary = true;
@@ -682,11 +820,13 @@
     {
         if (index >= 0 && index < employeeContacts.Count)
         {
+            // 清除所有主要標記
             foreach (var contact in employeeContacts)
             {
                 contact.IsPrimary = false;
             }
             
+            // 設定指定的為主要
             employeeContacts[index].IsPrimary = true;
             StateHasChanged();
         }
@@ -708,18 +848,21 @@
         }
     }
 
-    // 地址管理
+    #endregion
+
+    #region 地址管理
+
     private void AddAddress()
     {
         var newAddress = new EmployeeAddress
         {
-            EmployeeId = Id ?? 0,
+            EmployeeId = employee.Id,
             AddressTypeId = null,
             PostalCode = "",
             City = "",
             District = "",
             Address = "",
-            IsPrimary = employeeAddresses.Count == 0,
+            IsPrimary = employeeAddresses.Count == 0, // 第一個自動設為主要
             Status = EntityStatus.Active
         };
         
@@ -734,6 +877,7 @@
             var removedAddress = employeeAddresses[index];
             employeeAddresses.RemoveAt(index);
             
+            // 如果移除的是主要地址且還有其他地址，設定第一個為主要
             if (removedAddress.IsPrimary && employeeAddresses.Any())
             {
                 employeeAddresses[0].IsPrimary = true;
@@ -747,11 +891,13 @@
     {
         if (index >= 0 && index < employeeAddresses.Count)
         {
+            // 清除所有主要標記
             foreach (var address in employeeAddresses)
             {
                 address.IsPrimary = false;
             }
             
+            // 設定指定的為主要
             employeeAddresses[index].IsPrimary = true;
             StateHasChanged();
         }
@@ -773,57 +919,10 @@
         }
     }
 
-    // 帳號管理
-    private async Task ResetFailedAttempts()
-    {
-        try
-        {
-            if (currentEmployee != null)
-            {
-                currentEmployee.FailedLoginAttempts = 0;
-                await JSRuntime.InvokeVoidAsync("alert", "登入失敗次數已重設");
-            }
-        }
-        catch (Exception)
-        {
-            await JSRuntime.InvokeVoidAsync("alert", "重設失敗");
-        }
-    }
-
-    private async Task ShowPasswordResetDialog()
-    {
-        try
-        {
-            if (currentEmployee == null) return;
-
-            var newPassword = $"Temp{DateTime.Now:yyyyMMdd}!";
-            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-                $"確定要重設 {currentEmployee.Username} 的密碼嗎？\n新密碼將設為：{newPassword}");
-
-            if (confirmed)
-            {
-                var resetResult = await AuthenticationService.ResetPasswordAsync(currentEmployee.Id, newPassword);
-                if (resetResult.IsSuccess)
-                {
-                    currentEmployee.FailedLoginAttempts = 0;
-                    currentEmployee.IsLocked = false;
-                    await JSRuntime.InvokeVoidAsync("alert", $"密碼已重設為：{newPassword}");
-                }
-                else
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", $"重設密碼失敗：{resetResult.ErrorMessage}");
-                }
-            }
-        }
-        catch (Exception)
-        {
-            await JSRuntime.InvokeVoidAsync("alert", "重設密碼失敗");
-        }
-    }
-
+    #endregion
+    
     public void Dispose()
     {
-        _disposed = true;
-        _semaphore?.Dispose();
+        _loadingSemaphore?.Dispose();
     }
 }

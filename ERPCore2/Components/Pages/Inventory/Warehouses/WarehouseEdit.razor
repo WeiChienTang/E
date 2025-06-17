@@ -22,7 +22,7 @@
                          IndexRoute="/inventory/warehouses"
                          BreadcrumbItems="@breadcrumbItems"
                          UseGenericForm="true"
-                         FormFields="@formFields"
+                         FormFields="@GetFormFields()"
                          FormSections="@formSections"
                          DataLoader="@LoadEntityAsync"
                          SaveHandler="@SaveEntityAsync"
@@ -158,6 +158,11 @@
             { nameof(Warehouse.IsDefault), "設定選項" },
             { nameof(Warehouse.IsActive), "設定選項" }
         };
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
     }
 
     private string GetPageTitle()

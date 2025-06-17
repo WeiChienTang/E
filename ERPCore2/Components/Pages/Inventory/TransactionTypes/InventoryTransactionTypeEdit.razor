@@ -18,7 +18,7 @@
                           FormIcon="list-ul"
                           IndexRoute="/inventory/transaction-types"
                           UseGenericForm="true"
-                          FormFields="@formFields"
+                          FormFields="@GetFormFields()"
                           FormSections="@formSections"
                           BreadcrumbItems="@breadcrumbItems"
                           DataLoader="@LoadTransactionTypeData"
@@ -79,11 +79,17 @@
             new() { PropertyName = "NumberPrefix", Label = "單號前綴", FieldType = FormFieldType.Text, GroupName = "basic", HelpText = "用於自動產生單號時的前綴" },
             new() { PropertyName = "AffectsCost", Label = "影響成本", FieldType = FormFieldType.Checkbox, GroupName = "options", HelpText = "此類型的異動是否會影響商品成本計算" },
             new() { PropertyName = "RequiresApproval", Label = "需要審核", FieldType = FormFieldType.Checkbox, GroupName = "options", HelpText = "此類型的異動是否需要審核才能生效" },
-            new() { PropertyName = "AutoGenerateNumber", Label = "自動產生單號", FieldType = FormFieldType.Checkbox, GroupName = "options", HelpText = "系統是否自動為此類型異動產生單號" },
-            new() { PropertyName = "IsActive", Label = "啟用", FieldType = FormFieldType.Checkbox, GroupName = "options" },
+            new() { PropertyName = "AutoGenerateNumber", Label = "自動產生單號", FieldType = FormFieldType.Checkbox, GroupName = "options", HelpText = "系統是否自動為此類型異動產生單號" },            new() { PropertyName = "IsActive", Label = "啟用", FieldType = FormFieldType.Checkbox, GroupName = "options" },
             new() { PropertyName = "Remarks", Label = "備註", FieldType = FormFieldType.TextArea, GroupName = "remarks", Rows = 3 }
         };
-    }    private void SetupBreadcrumbs()
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    private void SetupBreadcrumbs()
     {
         breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
         {

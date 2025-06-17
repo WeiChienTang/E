@@ -18,7 +18,7 @@
                           FormIcon="arrow-left-right"
                           IndexRoute="/inventory/unit-conversions"
                           UseGenericForm="true"
-                          FormFields="@formFields"
+                          FormFields="@GetFormFields()"
                           FormSections="@formSections"
                           BreadcrumbItems="@breadcrumbItems"
                           DataLoader="@LoadUnitConversionData"
@@ -88,8 +88,12 @@
                 Step = 0.0001m
             },
             new() { PropertyName = "IsActive", Label = "啟用", FieldType = FormFieldType.Checkbox, GroupName = "status" },
-            new() { PropertyName = "Remarks", Label = "備註", FieldType = FormFieldType.TextArea, GroupName = "remarks", Rows = 3 }
-        };
+            new() { PropertyName = "Remarks", Label = "備註", FieldType = FormFieldType.TextArea, GroupName = "remarks", Rows = 3 }        };
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
     }
 
     private List<SelectOption> GetUnitOptions()

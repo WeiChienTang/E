@@ -19,7 +19,7 @@
                          FormSubtitle="天氣的基本資訊"
                          FormIcon="info-circle"
                          UseGenericForm="true"
-                         FormFields="@formFields"
+                         FormFields="@GetFormFields()"
                          FormSections="@formSections"
                          BreadcrumbItems="@breadcrumbItems"
                          DataLoader="@LoadWeatherData"
@@ -48,9 +48,7 @@
             new("天氣管理", "/BOMFoundation/weather"),
             new(Id.HasValue ? "編輯天氣" : "新增天氣")
         };
-    }
-
-    private void InitializeFormFields()
+    }    private void InitializeFormFields()
     {
         formFields = new List<FormFieldDefinition>
         {
@@ -93,15 +91,18 @@
                 Rows = 2,
                 ContainerCssClass = "col-12"
             }
-        };
-
-        formSections = new Dictionary<string, string>
+        };        formSections = new Dictionary<string, string>
         {
             { nameof(Weather.Name), "基本資訊" },
             { nameof(Weather.Status), "基本資訊" },
             { nameof(Weather.Description), "詳細資訊" },
             { nameof(Weather.Remarks), "其他資訊" }
         };
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
     }
 
     private async Task<Weather?> LoadWeatherData()

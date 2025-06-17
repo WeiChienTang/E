@@ -19,7 +19,7 @@
                          FormSubtitle="顏色的基本資訊"
                          FormIcon="info-circle"
                          UseGenericForm="true"
-                         FormFields="@formFields"
+                         FormFields="@GetFormFields()"
                          FormSections="@formSections"
                          BreadcrumbItems="@breadcrumbItems"
                          DataLoader="@LoadColorData"
@@ -104,6 +104,11 @@
             { nameof(Color.Description), "詳細資訊" },
             { nameof(Color.Remarks), "其他資訊" }
         };
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
     }
 
     private async Task<Color?> LoadColorData()

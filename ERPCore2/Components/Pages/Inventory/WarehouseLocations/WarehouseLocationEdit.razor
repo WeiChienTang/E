@@ -19,7 +19,7 @@
                           FormIcon="diagram-3"
                           IndexRoute="/inventory/warehouse-locations"
                           UseGenericForm="true"
-                          FormFields="@formFields"
+                          FormFields="@GetFormFields()"
                           FormSections="@formSections"
                           BreadcrumbItems="@breadcrumbItems"                          DataLoader="@LoadWarehouseLocationData"
                           SaveHandler="@SaveWarehouseLocation"
@@ -80,8 +80,12 @@
             new() { PropertyName = "Position", Label = "位置", FieldType = FormFieldType.Text, GroupName = "location" },
             new() { PropertyName = "MaxCapacity", Label = "最大容量", FieldType = FormFieldType.Number, GroupName = "location" },
             new() { PropertyName = "IsActive", Label = "啟用", FieldType = FormFieldType.Checkbox, GroupName = "status" },
-            new() { PropertyName = "Remarks", Label = "備註", FieldType = FormFieldType.TextArea, GroupName = "remarks", Rows = 3 }
-        };
+            new() { PropertyName = "Remarks", Label = "備註", FieldType = FormFieldType.TextArea, GroupName = "remarks", Rows = 3 }        };
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
     }
 
     private List<SelectOption> GetWarehouseOptions()
