@@ -1,0 +1,326 @@
+@* 泛型Detail頁面基底組件 *@
+@using ERPCore2.Data
+@using ERPCore2.Data.Enums
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Alerts
+@using ERPCore2.Components.Shared.Loading
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Buttons
+@using static ERPCore2.Components.Shared.Loading.LoadingComponent
+@inject NavigationManager Navigation
+@typeparam TEntity where TEntity : BaseEntity
+@typeparam TService
+
+@* 警告訊息區域 *@
+<AlertComponent 
+    Message="@alertMessage" 
+    Type="@alertType" 
+    IsVisible="@showAlert" 
+    IsDismissible="true"
+    OnDismiss="@(() => showAlert = false)" />
+
+@if (IsLoading)
+{
+    @* 載入狀態 *@
+    <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
+        <div class="text-center">
+            <LoadingComponent IsLoading="true" 
+                            LoadingText="@LoadingText" 
+                            ShowText="true" 
+                            Size="LoadingSize.Large" />
+        </div>
+    </div>
+}
+else if (Entity == null && !IsLoading)
+{
+    @* 找不到資料 *@
+    <div class="alert alert-warning">
+        <h4>找不到@(EntityName)資料</h4>
+        <p>指定的@(EntityName)不存在或已被刪除。</p>
+        <button class="btn btn-primary" @onclick="() => Navigation.NavigateTo(IndexRoute)">
+            返回@(EntityNamePlural)列表
+        </button>
+    </div>
+}
+else
+{
+    @* 頁面標題 *@
+    <GenericHeaderComponent Title="@GetPageTitle()"
+                           Subtitle="@GetPageSubtitle()"
+                           TitleIcon="@PageIcon"
+                           HeadingLevel="h1"
+                           BreadcrumbItems="@BreadcrumbItems"
+                           ShowDivider="true">        
+        <ActionButtons>
+            <DetailActionButtonsComponent 
+                EntityStatus="@GetEntityStatus()"
+                IsLoading="@IsLoading"
+                EntityName="@EntityName"
+                EntityId="@GetEntityId()"
+                EntityDisplayName="@GetEntityDisplayName()"
+                EntityService="@Service"
+                ListRoute="@IndexRoute"
+                EditRoute="@EditRoute"
+                OnShowAlert="@HandleShowAlert"
+                OnReloadData="@RefreshData"/>
+        </ActionButtons>
+    </GenericHeaderComponent>
+
+    @* 詳細內容區域 *@
+    @if (UseGenericDetails && DetailConfiguration != null)
+    {
+        @* 使用通用詳細組件 *@
+        <GenericDetailsComponent Configuration="@DetailConfiguration" />
+    }
+    else
+    {
+        @* 自訂詳細內容 *@
+        @if (CustomDetailContent != null)
+        {
+            @CustomDetailContent
+        }
+        else
+        {
+            @* 預設詳細內容布局 *@
+            @DefaultDetailSections
+        }
+    }
+
+    @* 額外區塊 *@
+    @if (AdditionalSections != null)
+    {
+        @AdditionalSections
+    }
+}
+
+@code {
+    // ===== 參數 =====
+    
+    // 核心參數
+    [Parameter] public int? EntityId { get; set; }
+    [Parameter] public TEntity? Entity { get; set; }
+    [Parameter] public TService Service { get; set; } = default!;
+    
+    // 頁面設定
+    [Parameter] public string EntityName { get; set; } = "資料";
+    [Parameter] public string EntityNamePlural { get; set; } = "資料";
+    [Parameter] public string PageTitle { get; set; } = string.Empty;
+    [Parameter] public string PageSubtitle { get; set; } = string.Empty;
+    [Parameter] public string PageIcon { get; set; } = "info-circle";
+    [Parameter] public string IndexRoute { get; set; } = "/";
+    [Parameter] public string EditRoute { get; set; } = "/edit";
+    [Parameter] public string LoadingText { get; set; } = "載入中...";
+    
+    // 麵包屑導航
+    [Parameter] public List<GenericHeaderComponent.BreadcrumbItem> BreadcrumbItems { get; set; } = new();
+    
+    // 詳細內容設定
+    [Parameter] public bool UseGenericDetails { get; set; } = false;
+    [Parameter] public DetailViewConfiguration? DetailConfiguration { get; set; }
+    [Parameter] public RenderFragment? CustomDetailContent { get; set; }
+    [Parameter] public RenderFragment? DefaultDetailSections { get; set; }
+    [Parameter] public RenderFragment? AdditionalSections { get; set; }
+    
+    // 事件和邏輯
+    [Parameter] public Func<Task<TEntity?>> DataLoader { get; set; } = default!;
+    [Parameter] public Func<Task> AdditionalDataLoader { get; set; } = default!;
+    [Parameter] public Func<TEntity, string> EntityTitleSelector { get; set; } = default!;
+    [Parameter] public Func<TEntity, string> EntitySubtitleSelector { get; set; } = default!;
+    [Parameter] public Func<TEntity, string> EntityDisplayNameSelector { get; set; } = default!;
+    [Parameter] public EventCallback OnDataLoaded { get; set; }
+    
+    // ===== 內部狀態 =====
+    
+    private bool isLoading = true;
+    private bool showAlert = false;
+    private string alertMessage = string.Empty;
+    private AlertComponent.AlertType alertType = AlertComponent.AlertType.Info;
+      // ===== 公開屬性 =====
+    
+    public bool IsLoading => isLoading;
+    public bool ShowAlert => showAlert;
+    public string AlertMessage => alertMessage;
+    public AlertComponent.AlertType AlertType => alertType;
+      // ===== 生命週期 =====
+    
+    private bool _hasInitialized = false;
+    private int? _lastEntityId = null;
+    private bool _isInitializing = false; // 防止重複初始化
+    
+    protected override async Task OnInitializedAsync()
+    {
+        if (!_hasInitialized && !_isInitializing)
+        {
+            _isInitializing = true;
+            try
+            {
+                await InitializePageAsync();
+                _hasInitialized = true;
+                _lastEntityId = EntityId;
+            }
+            finally
+            {
+                _isInitializing = false;
+            }
+        }
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        // 檢查 EntityId 是否變化，如果變化則重新載入資料
+        if (_hasInitialized && _lastEntityId != EntityId && !_isInitializing)
+        {
+            _isInitializing = true;
+            try
+            {
+                await InitializePageAsync();
+                _lastEntityId = EntityId;
+            }
+            finally
+            {
+                _isInitializing = false;
+            }
+        }
+        else if (!_hasInitialized && !_isInitializing)
+        {
+            _isInitializing = true;
+            try
+            {
+                await InitializePageAsync();
+                _hasInitialized = true;
+                _lastEntityId = EntityId;
+            }
+            finally
+            {
+                _isInitializing = false;
+            }
+        }
+    }
+      // ===== 初始化方法 =====
+      private async Task InitializePageAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+            
+            // 先載入實體資料
+            if (EntityId.HasValue && EntityId.Value > 0 && DataLoader != null)
+            {
+                var loadedEntity = await DataLoader();
+                if (loadedEntity != null)
+                {
+                    Entity = loadedEntity;
+                    StateHasChanged(); // 確保實體資料先更新到UI
+                }
+            }
+            
+            // 實體資料載入完成後再載入額外資料（如果需要）
+            if (Entity != null && AdditionalDataLoader != null)
+            {
+                await AdditionalDataLoader();
+            }
+            
+            // 觸發資料載入完成事件
+            if (OnDataLoaded.HasDelegate)
+            {
+                await OnDataLoaded.InvokeAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            // 錯誤處理
+            ShowAlertMessage($"載入{EntityName}資料時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
+            Console.Error.WriteLine($"載入{EntityName}資料時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    // ===== 輔助方法 =====
+    
+    private string GetPageTitle()
+    {
+        if (!string.IsNullOrEmpty(PageTitle))
+            return PageTitle;
+        
+        if (Entity != null && EntityTitleSelector != null)
+            return EntityTitleSelector(Entity);
+        
+        return $"{EntityName}詳細資料";
+    }
+    
+    private string GetPageSubtitle()
+    {
+        if (!string.IsNullOrEmpty(PageSubtitle))
+            return PageSubtitle;
+        
+        if (Entity != null && EntitySubtitleSelector != null)
+            return EntitySubtitleSelector(Entity);
+        
+        return $"檢視{EntityName}的詳細資訊";
+    }
+    
+    private EntityStatus? GetEntityStatus()
+    {
+        if (Entity is BaseEntity baseEntity)
+            return baseEntity.Status;
+        return null;
+    }
+    
+    private string GetEntityId()
+    {
+        if (Entity is BaseEntity baseEntity)
+            return baseEntity.Id.ToString();
+        return EntityId?.ToString() ?? "0";
+    }
+    
+    private string GetEntityDisplayName()
+    {
+        if (Entity != null && EntityDisplayNameSelector != null)
+            return EntityDisplayNameSelector(Entity);
+        
+        return Entity?.ToString() ?? EntityName;
+    }
+    
+    private void HandleShowAlert((string message, string type) tuple)
+    {
+        if (Enum.TryParse<AlertComponent.AlertType>(tuple.type, true, out var parsedType))
+        {
+            ShowAlertMessage(tuple.message, parsedType);
+        }
+        else
+        {
+            ShowAlertMessage(tuple.message, AlertComponent.AlertType.Info);
+        }
+    }
+    
+    // ===== 公開方法 =====
+    
+    public async Task RefreshData()
+    {
+        await InitializePageAsync();
+    }
+    
+    public void ShowAlertMessage(string message, AlertComponent.AlertType type = AlertComponent.AlertType.Info)
+    {
+        alertMessage = message;
+        alertType = type;
+        showAlert = true;
+        StateHasChanged();
+    }
+    
+    public void SetEntity(TEntity entity)
+    {
+        Entity = entity;
+        StateHasChanged();
+    }
+    
+    public TEntity? GetEntity()
+    {
+        return Entity;
+    }
+}

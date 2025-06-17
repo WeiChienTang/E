@@ -1,0 +1,46 @@
+@* 通用詳細資料欄位元件 *@
+<div class="col-md-@ColSize">
+    <div class="mb-3">
+        <label class="form-label text-muted">@Label</label>
+        <div class="@GetValueClass()">
+            @if (ChildContent != null)
+            {
+                @ChildContent
+            }
+            else
+            {
+                @GetDisplayValue()
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = string.Empty;
+    [Parameter] public object? Value { get; set; }
+    [Parameter] public string? EmptyText { get; set; } = "-";
+    [Parameter] public int ColSize { get; set; } = 6;
+    [Parameter] public bool IsPrimary { get; set; } = false;
+    [Parameter] public bool IsBold { get; set; } = false;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string GetValueClass()
+    {
+        var classes = new List<string>();
+        
+        if (IsPrimary)
+            classes.Add("fw-bold text-primary");
+        else if (IsBold)
+            classes.Add("fw-bold");
+        
+        return string.Join(" ", classes);
+    }
+
+    private string GetDisplayValue()
+    {
+        if (Value == null || (Value is string str && string.IsNullOrEmpty(str)))
+            return EmptyText ?? "-";
+        
+        return Value.ToString() ?? "-";
+    }
+}

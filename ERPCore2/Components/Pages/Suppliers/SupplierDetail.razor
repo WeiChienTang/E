@@ -1,4 +1,7 @@
 @page "/suppliers/detail/{supplierId:int}"
+@using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Badges
 @using ERPCore2.Components.Shared.Buttons
 @inject ISupplierService SupplierService
 @inject ISupplierContactService SupplierContactService
@@ -7,281 +10,146 @@
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-@* 顯示警告訊息 *@
-<AlertComponent 
-    Message="@alertMessage" 
-    Type="@alertType" 
-    IsVisible="@showAlert" 
-    IsDismissible="true"
-    OnDismiss="@(() => showAlert = false)" />
+<PageTitle>廠商詳細資料</PageTitle>
 
-@if (isLoading)
-{
-    <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
-        <div class="text-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">載入中...</span>
+<GenericDetailPageComponent TEntity="Supplier" 
+                           TService="ISupplierService"
+                           EntityId="@SupplierId"
+                           Entity="@supplier"
+                           Service="@SupplierService"
+                           EntityName="廠商"
+                           EntityNamePlural="廠商"
+                           PageIcon="building-gear"
+                           IndexRoute="/suppliers"
+                           EditRoute="/suppliers/edit"
+                           LoadingText="載入廠商資料中..."
+                           BreadcrumbItems="@breadcrumbItems"
+                           DataLoader="@LoadSupplierDataAsync"
+                           AdditionalDataLoader="@LoadAdditionalDataAsync"
+                           EntityTitleSelector="@(s => s.CompanyName)"
+                           EntitySubtitleSelector="@(s => $"廠商編號：{s.SupplierCode}")"
+                           EntityDisplayNameSelector="@(s => s.CompanyName)"
+                           OnDataLoaded="@OnSupplierDataLoaded"
+                           UseGenericDetails="false">
+
+    <CustomDetailContent>        @* 基本資料 - 使用模組化元件 *@
+        <DetailCardComponent Title="基本資訊" Icon="info-circle">
+            <div class="row">
+                <DetailFieldComponent Label="廠商代碼" Value="@supplier?.SupplierCode" IsPrimary="true" />
+                <DetailFieldComponent Label="公司名稱" Value="@supplier?.CompanyName" IsBold="true" />
+                <DetailFieldComponent Label="聯絡人" Value="@supplier?.ContactPerson" />
+                <DetailFieldComponent Label="統一編號" Value="@supplier?.TaxNumber" />
+                <DetailFieldComponent Label="付款條件" Value="@supplier?.PaymentTerms" />
+                <DetailFieldComponent Label="信用額度" Value="@(supplier?.CreditLimit?.ToString("C"))" />
+                <DetailFieldComponent Label="廠商類型" Value="@supplier?.SupplierType?.TypeName" />
+                <DetailFieldComponent Label="行業類型" Value="@supplier?.IndustryType?.IndustryTypeName" />
+                <DetailFieldComponent Label="狀態">
+                    @if (supplier?.Status != null)
+                    {
+                        <StatusBadgeComponent Status="@supplier.Status" />
+                    }
+                </DetailFieldComponent>
+                @if (!string.IsNullOrEmpty(supplier?.Remarks))
+                {
+                    <DetailFieldComponent Label="備註" Value="@supplier.Remarks" ColSize="12" />
+                }
             </div>
-            <div class="mt-2">載入廠商資料中...</div>
-        </div>
-    </div>
-}
-else if (supplier == null)
-{    <div class="alert alert-warning">
-        <h4>找不到廠商資料</h4>
-        <p>指定的廠商不存在或已被刪除。</p>
-        <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/suppliers")'>
-            返回廠商列表
-        </button>
-    </div>
-}
-else
-{
-    <GenericHeaderComponent Title="@supplier.CompanyName" 
-                          Subtitle="@($"廠商編號：{supplier.SupplierCode}")"
-                          Icon="bi bi-building-gear"
-                          BreadcrumbItems="@breadcrumbItems">        <ActionButtons>
-            <DetailActionButtonsComponent 
-                EntityStatus="@supplier?.Status"
-                IsLoading="@isLoading"
-                EntityName="廠商"
-                EntityId="@SupplierId.ToString()"
-                EntityDisplayName="@supplier?.CompanyName"
-                EntityService="@SupplierService"
-                ListRoute="/suppliers"
-                EditRoute="/suppliers/edit"
-                OnShowAlert="@((tuple) => ShowAlert(tuple.message, Enum.Parse<AlertComponent.AlertType>(tuple.type, true)))"
-                OnReloadData="@LoadSupplierData"/>
-        </ActionButtons>
-    </GenericHeaderComponent>
+        </DetailCardComponent>
 
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                <!-- 基本資訊 -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-info-circle me-2"></i>基本資訊
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">廠商代碼</label>
-                                    <div>@supplier.SupplierCode</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">公司名稱</label>
-                                    <div class="fw-bold">@supplier.CompanyName</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">聯絡人</label>
-                                    <div>@(supplier.ContactPerson ?? "-")</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">統一編號</label>
-                                    <div>@(supplier.TaxNumber ?? "-")</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">付款條件</label>
-                                    <div>@(supplier.PaymentTerms ?? "-")</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">信用額度</label>
-                                    <div>@(supplier.CreditLimit?.ToString("C") ?? "-")</div>
-                                </div>
-                            </div>                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">廠商類型</label>
-                                    <div>@(supplier.SupplierType?.TypeName ?? "-")</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">行業類型</label>
-                                    <div>@(supplier.IndustryType?.IndustryTypeName ?? "-")</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">狀態</label>
-                                    <div>
-                                        @if (supplier.Status == Data.Enums.EntityStatus.Active)
-                                        {
-                                            <span class="badge bg-success">啟用</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-danger">停用</span>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                            @if (!string.IsNullOrEmpty(supplier.Remarks))
+        @* 聯絡方式 - 使用模組化元件 *@
+        <DetailCardComponent Title="聯絡方式" Icon="telephone">
+            @if (supplierContacts.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>類型</th>
+                                <th>值</th>
+                                <th>主要</th>
+                                <th>狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var contact in supplierContacts)
                             {
-                                <div class="col-12">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">備註</label>
-                                        <div>@supplier.Remarks</div>
-                                    </div>
-                                </div>
+                                <tr>
+                                    <td>@(contact.ContactType?.TypeName ?? "-")</td>
+                                    <td>@contact.ContactValue</td>
+                                    <td>
+                                        @if (contact.IsPrimary)
+                                        {
+                                            <span class="badge bg-primary">主要</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <StatusBadgeComponent Status="@contact.Status" />
+                                    </td>
+                                </tr>
                             }
-                        </div>
-                    </div>
+                        </tbody>
+                    </table>
                 </div>
+            }
+            else
+            {
+                <div class="text-muted">尚未設定聯絡方式</div>
+            }
+        </DetailCardComponent>
 
-                <!-- 聯絡方式 -->
-                @if (supplierContacts.Any())
-                {
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-telephone me-2"></i>聯絡方式
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>類型</th>
-                                            <th>值</th>
-                                            <th>主要</th>
-                                            <th>狀態</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var contact in supplierContacts)
-                                        {                                            <tr>
-                                                <td>@(contact.ContactType?.TypeName ?? "-")</td>
-                                                <td>@contact.ContactValue</td>
-                                                <td>
-                                                    @if (contact.IsPrimary)
-                                                    {
-                                                        <span class="badge bg-primary">主要</span>
-                                                    }
-                                                </td>
-                                                <td>
-                                                    @if (contact.Status == Data.Enums.EntityStatus.Active)
-                                                    {
-                                                        <span class="badge bg-success">啟用</span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="badge bg-danger">停用</span>
-                                                    }
-                                                </td>
-                                            </tr>
+        @* 地址資料 - 使用模組化元件 *@
+        <DetailCardComponent Title="地址資料" Icon="geo-alt">
+            @if (supplierAddresses.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>類型</th>
+                                <th>地址</th>
+                                <th>主要</th>
+                                <th>狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var address in supplierAddresses)
+                            {
+                                <tr>
+                                    <td>@(address.AddressType?.TypeName ?? "-")</td>
+                                    <td>@GetFullAddress(address)</td>
+                                    <td>
+                                        @if (address.IsPrimary)
+                                        {
+                                            <span class="badge bg-primary">主要</span>
                                         }
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                }
-
-                <!-- 地址資料 -->
-                @if (supplierAddresses.Any())
-                {
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-geo-alt me-2"></i>地址資料
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>類型</th>
-                                            <th>地址</th>
-                                            <th>主要</th>
-                                            <th>狀態</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var address in supplierAddresses)
-                                        {                                            <tr>
-                                                <td>@(address.AddressType?.TypeName ?? "-")</td>
-                                                <td>@GetFullAddress(address)</td>
-                                                <td>
-                                                    @if (address.IsPrimary)
-                                                    {
-                                                        <span class="badge bg-primary">主要</span>
-                                                    }
-                                                </td>
-                                                <td>
-                                                    @if (address.Status == Data.Enums.EntityStatus.Active)
-                                                    {
-                                                        <span class="badge bg-success">啟用</span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="badge bg-danger">停用</span>
-                                                    }
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                }
-
-                <!-- 系統資訊 -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-gear me-2"></i>系統資訊
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">建立日期</label>
-                                    <div>@supplier.CreatedAt.ToString("yyyy/MM/dd HH:mm")</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">建立者</label>
-                                    <div>@(supplier.CreatedBy ?? "-")</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">最後更新</label>
-                                    <div>@(supplier.UpdatedAt?.ToString("yyyy/MM/dd HH:mm") ?? "-")</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">更新者</label>
-                                    <div>@(supplier.UpdatedBy ?? "-")</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                                    </td>
+                                    <td>
+                                        <StatusBadgeComponent Status="@address.Status" />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
+            }
+            else
+            {
+                <div class="text-muted">尚未設定地址</div>
+            }
+        </DetailCardComponent>
+
+        @* 系統資訊 - 使用模組化元件 *@
+        <DetailCardComponent Title="系統資訊" Icon="gear">
+            <div class="row">
+                <DetailFieldComponent Label="建立日期" Value="@supplier?.CreatedAt.ToString("yyyy/MM/dd HH:mm")" />
+                <DetailFieldComponent Label="建立者" Value="@supplier?.CreatedBy" />
+                <DetailFieldComponent Label="最後更新" Value="@(supplier?.UpdatedAt?.ToString("yyyy/MM/dd HH:mm"))" />
+                <DetailFieldComponent Label="更新者" Value="@supplier?.UpdatedBy" />
             </div>
-        </div>
-    </div>
-}
+        </DetailCardComponent>
+    </CustomDetailContent>
+
+</GenericDetailPageComponent>
 
 @code {
     [Parameter] public int SupplierId { get; set; }
@@ -289,46 +157,51 @@ else
     private Supplier? supplier;
     private List<SupplierContact> supplierContacts = new();
     private List<SupplierAddress> supplierAddresses = new();
-    private bool isLoading = true;
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
-    
-    // Alert 相關變數
-    private bool showAlert = false;
-    private string alertMessage = string.Empty;
-    private AlertComponent.AlertType alertType = AlertComponent.AlertType.Info;
+    private bool _isLoading = false; // 防止重複載入
 
-    protected override async Task OnInitializedAsync()
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
     {
-        InitializeBreadcrumb();
-        await LoadSupplierData();
-    }
+        new("首頁", "/"),
+        new("廠商管理", "/suppliers"),
+        new("廠商詳細資料")
+    };
 
-    protected override async Task OnParametersSetAsync()
+    // GenericDetailPageComponent 需要的方法
+    private async Task<Supplier?> LoadSupplierDataAsync()
     {
-        if (SupplierId > 0)
+        // 防止重複載入
+        if (_isLoading)
         {
-            await LoadSupplierData();
+            Console.WriteLine("[SupplierDetail] 載入中，跳過重複調用");
+            return supplier;
         }
-    }    private void InitializeBreadcrumb()
-    {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        
+        try
         {
-            new() { Text = "首頁", Href = "/" },
-            new() { Text = "廠商管理", Href = "/suppliers" },
-            new() { Text = "廠商詳情" }
-        };
+            _isLoading = true;
+            if (SupplierId <= 0) return null;
+            
+            var result = await SupplierService.GetByIdAsync(SupplierId);
+            supplier = result; // 保持本地變數同步
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[SupplierDetail] 載入廠商資料失敗：{ex.Message}");
+            throw;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
     }
 
-    private async Task LoadSupplierData()
+    private async Task LoadAdditionalDataAsync()
     {
         try
         {
-            isLoading = true;
-            StateHasChanged();
-
-            // 載入廠商基本資料
-            supplier = await SupplierService.GetByIdAsync(SupplierId);
-            
             if (supplier != null)
             {
                 // 載入聯絡方式
@@ -340,19 +213,23 @@ else
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入廠商資料失敗：", ex.Message);
+            Console.Error.WriteLine($"[SupplierDetail] 載入額外資料失敗：{ex.Message}");
         }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
-        }
-    }    private string GetFullAddress(SupplierAddress address)
+    }
+
+    private Task OnSupplierDataLoaded()
+    {
+        // 資料載入完成後的處理
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private string GetFullAddress(SupplierAddress address)
     {
         var addressParts = new List<string>();
         
         if (!string.IsNullOrEmpty(address.PostalCode))
-            addressParts.Add(address.PostalCode);
+            addressParts.Add($"({address.PostalCode})");
         if (!string.IsNullOrEmpty(address.City))
             addressParts.Add(address.City);
         if (!string.IsNullOrEmpty(address.District))
@@ -360,14 +237,6 @@ else
         if (!string.IsNullOrEmpty(address.Address))
             addressParts.Add(address.Address);
 
-        return addressParts.Any() ? string.Join(" ", addressParts) : "-";
-    }
-
-    private void ShowAlert(string message, AlertComponent.AlertType type)
-    {
-        alertMessage = message;
-        alertType = type;
-        showAlert = true;
-        StateHasChanged();
+        return addressParts.Any() ? string.Join(" ", addressParts) : "地址不完整";
     }
 }

@@ -1,259 +1,155 @@
 @page "/customers/detail/{customerId:int}"
+@using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Badges
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@using ERPCore2.Components.Shared.Headers
 @inject ICustomerService CustomerService
 @inject ICustomerContactService CustomerContactService
 @inject ICustomerAddressService CustomerAddressService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
-@using ERPCore2.Components.Shared.Alerts
 @rendermode InteractiveServer
 
 <PageTitle>客戶詳細資料</PageTitle>
 
-@* 顯示警告訊息 *@
-<AlertComponent 
-    Message="@alertMessage" 
-    Type="@alertType" 
-    IsVisible="@showAlert" 
-    IsDismissible="true"
-    OnDismiss="@(() => showAlert = false)" />
-
-@if (isLoading)
-{
-    <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
-        <div class="text-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">載入中...</span>
-            </div>
-            <div class="mt-2">載入客戶資料中...</div>
-        </div>
-    </div>
-}
-else if (customer == null)
-{
-    <div class="alert alert-warning">
-        <h4>找不到客戶資料</h4>
-        <p>指定的客戶不存在或已被刪除。</p>        
-        <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/customers")'>
-            返回客戶列表
-        </button>
-    </div>
-}
-else
-{
-    @* 頁面標題 *@
-    <GenericHeaderComponent Title="@GetPageTitle()"
-                           Subtitle="@GetSubtitle()"
-                           TitleIcon="person-badge"
-                           HeadingLevel="h1"
+<GenericDetailPageComponent TEntity="Customer" 
+                           TService="ICustomerService"
+                           EntityId="@CustomerId"
+                           Entity="@customer"
+                           Service="@CustomerService"
+                           EntityName="客戶"
+                           EntityNamePlural="客戶"
+                           PageIcon="person-badge"
+                           IndexRoute="/customers"
+                           EditRoute="/customers/edit"
+                           LoadingText="載入客戶資料中..."
                            BreadcrumbItems="@breadcrumbItems"
-                           ShowDivider="true">        <ActionButtons>
-            <DetailActionButtonsComponent 
-                EntityStatus="@customer?.Status"
-                IsLoading="@isLoading"
-                EntityName="客戶"
-                EntityId="@CustomerId.ToString()"
-                EntityDisplayName="@customer?.CompanyName"
-                EntityService="@CustomerService"
-                ListRoute="/customers"
-                EditRoute="/customers/edit"
-                OnShowAlert="@((tuple) => ShowAlert(tuple.message, Enum.Parse<AlertComponent.AlertType>(tuple.type, true)))"
-                OnReloadData="@LoadCustomerData"/>
-        </ActionButtons>
-        </GenericHeaderComponent>
-
-    @* 基本資料 *@
-    <div class="row">
-        <div class="col-12">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-building me-2"></i>
-                        基本資料
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">統一編號</label>
-                                <div class="fw-bold text-primary">@(customer?.TaxNumber ?? "未設定")</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">公司名稱</label>
-                                <div class="fw-bold">@customer?.CompanyName</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">聯絡人</label>
-                                <div>@(customer?.ContactPerson ?? "-")</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">客戶類型</label>
-                                <div>@(customer?.CustomerType?.TypeName ?? "-")</div>
-                            </div>
-                        </div>                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">行業類型</label>
-                                <div>@(customer?.IndustryType?.IndustryTypeName ?? "-")</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">狀態</label>
-                                <div>
-                                    @if (customer?.Status == Data.Enums.EntityStatus.Active)
-                                    {
-                                        <span class="badge bg-success">啟用</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-danger">停用</span>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                        @if (!string.IsNullOrEmpty(customer?.Remarks))
-                        {
-                            <div class="col-12">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">備註</label>
-                                    <div>@customer.Remarks</div>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
+                           DataLoader="@LoadCustomerDataAsync"
+                           AdditionalDataLoader="@LoadAdditionalDataAsync"
+                           EntityTitleSelector="@(c => c.CompanyName)"
+                           EntitySubtitleSelector="@(c => $"統一編號：{c.TaxNumber ?? "未設定"}")"
+                           EntityDisplayNameSelector="@(c => c.CompanyName)"
+                           OnDataLoaded="@OnCustomerDataLoaded"
+                           UseGenericDetails="false">    <CustomDetailContent>
+        @* 基本資料 - 使用模組化元件 *@
+        <DetailCardComponent Title="基本資料" Icon="building">
+            <div class="row">
+                <DetailFieldComponent Label="統一編號" Value="@customer?.TaxNumber" IsPrimary="true" EmptyText="未設定" />
+                <DetailFieldComponent Label="公司名稱" Value="@customer?.CompanyName" IsBold="true" />
+                <DetailFieldComponent Label="聯絡人" Value="@customer?.ContactPerson" />
+                <DetailFieldComponent Label="客戶類型" Value="@customer?.CustomerType?.TypeName" />
+                <DetailFieldComponent Label="行業類型" Value="@customer?.IndustryType?.IndustryTypeName" />
+                <DetailFieldComponent Label="狀態">
+                    @if (customer?.Status != null)
+                    {
+                        <StatusBadgeComponent Status="@customer.Status" />
+                    }
+                </DetailFieldComponent>
+                @if (!string.IsNullOrEmpty(customer?.Remarks))
+                {
+                    <DetailFieldComponent Label="備註" Value="@customer.Remarks" ColSize="12" />
+                }
             </div>
-        </div>
-    </div>
+        </DetailCardComponent>        @* 聯絡方式 - 使用模組化元件 *@
+        <DetailCardComponent Title="聯絡方式" Icon="telephone">
+            @if (customerContacts.Any())
+            {
+                <div class="row">
+                    @foreach (var contact in customerContacts)
+                    {
+                        <DetailFieldComponent Label="@(contact.ContactType?.TypeName ?? "聯絡方式")" 
+                                            Value="@contact.ContactValue" />
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-muted">尚未設定聯絡方式</div>
+            }
+        </DetailCardComponent>        @* 地址資料 - 使用模組化元件 *@
+        <DetailCardComponent Title="地址資料" Icon="geo-alt">
+            @if (customerAddresses.Any())
+            {
+                <div class="row">
+                    @foreach (var address in customerAddresses)
+                    {
+                        <DetailFieldComponent Label="@(address.AddressType?.TypeName ?? "地址")" 
+                                            Value="@BuildAddressText(address)" />
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-muted">尚未設定地址</div>
+            }
+        </DetailCardComponent>
+    </CustomDetailContent>
 
-    @* 聯絡方式 *@
-    <div class="row">
-        <div class="col-12">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-telephone me-2"></i>
-                        聯絡方式
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if (customerContacts.Any())
-                    {
-                        <div class="row">
-                            @foreach (var contact in customerContacts)
-                            {
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">@contact.ContactType?.TypeName</label>
-                                        <div>@contact.ContactValue</div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-muted">尚未設定聯絡方式</div>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
+</GenericDetailPageComponent>
 
-    @* 地址資料 *@
-    <div class="row">
-        <div class="col-12">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-geo-alt me-2"></i>
-                        地址資料
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if (customerAddresses.Any())
-                    {
-                        <div class="row">
-                            @foreach (var address in customerAddresses)
-                            {
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">@address.AddressType?.TypeName</label>
-                                        <div>@BuildAddressText(address)</div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-muted">尚未設定地址</div>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
-@code {
-    [Parameter] public int CustomerId { get; set; }
+@code {    [Parameter] public int CustomerId { get; set; }
 
     private Customer? customer;
     private List<CustomerContact> customerContacts = new();
     private List<CustomerAddress> customerAddresses = new();
-    private bool isLoading = true;
-    
-    // Alert 相關變數
-    private bool showAlert = false;
-    private string alertMessage = string.Empty;
-    private AlertComponent.AlertType alertType = AlertComponent.AlertType.Info;
+    private bool _isLoading = false; // 防止重複載入
 
-    protected override async Task OnInitializedAsync()
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
     {
-        await LoadCustomerData();
-    }
+        new("首頁", "/"),
+        new("客戶管理", "/customers"),
+        new("客戶詳細資料")
+    };
 
-    protected override async Task OnParametersSetAsync()
+    // GenericDetailPageComponent 需要的方法
+    private async Task<Customer?> LoadCustomerDataAsync()
     {
-        if (CustomerId > 0)
+        // 防止重複載入
+        if (_isLoading)
         {
-            await LoadCustomerData();
+            Console.WriteLine("[CustomerDetail] 載入中，跳過重複調用");
+            return customer;
         }
-    }
-
-    private async Task LoadCustomerData()
-    {
+        
         try
         {
-            isLoading = true;
-            StateHasChanged();
-
-            // 載入客戶基本資料
-            customer = await CustomerService.GetByIdAsync(CustomerId);
+            _isLoading = true;
+            if (CustomerId <= 0) return null;
+              var result = await CustomerService.GetByIdAsync(CustomerId);
+            customer = result; // 保持本地變數同步
             
+            // 從已載入的關聯資料中取得聯絡方式和地址
             if (customer != null)
             {
-                // 載入聯絡方式
-                customerContacts = await CustomerService.GetCustomerContactsAsync(CustomerId);
-                
-                // 載入地址資料
-                customerAddresses = await CustomerAddressService.GetByCustomerIdAsync(CustomerId);
+                customerContacts = customer.CustomerContacts?.ToList() ?? new List<CustomerContact>();
+                customerAddresses = customer.CustomerAddresses?.ToList() ?? new List<CustomerAddress>();
             }
+            
+            return result;
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入客戶資料失敗：", ex.Message);
-        }
+            Console.Error.WriteLine($"[CustomerDetail] 載入客戶資料失敗：{ex.Message}");
+            throw;        }
         finally
         {
-            isLoading = false;
-            StateHasChanged();
+            _isLoading = false;
         }
+    }    private Task LoadAdditionalDataAsync()
+    {
+        // 由於GetByIdAsync已經Include所有關聯資料，這裡不需要額外查詢
+        // 所有資料已在LoadCustomerDataAsync中處理完成
+        return Task.CompletedTask;
+    }
+
+    private Task OnCustomerDataLoaded()
+    {
+        // 資料載入完成後的處理
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 
     private string BuildAddressText(CustomerAddress address)
@@ -270,29 +166,8 @@ else
             parts.Add(address.District);
         
         if (!string.IsNullOrEmpty(address.Address))
-            parts.Add(address.Address);        return parts.Any() ? string.Join(" ", parts) : "地址不完整";
-    }
-
-    private string GetPageTitle()
-    {
-        if (customer == null) return "客戶詳細資料";
-        return $"{customer.CompanyName}";
-    }    private string GetSubtitle()
-    {
-        if (customer == null) return "";
-        return $"統一編號：{customer.TaxNumber ?? "未設定"}";
-    }    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
-    {
-        new("首頁", "/"),
-        new("客戶管理", "/customers"),
-        new("客戶詳細資料")
-    };
-
-    private void ShowAlert(string message, AlertComponent.AlertType type)
-    {
-        alertMessage = message;
-        alertType = type;
-        showAlert = true;
-        StateHasChanged();
+            parts.Add(address.Address);
+        
+        return parts.Any() ? string.Join(" ", parts) : "地址不完整";
     }
 }

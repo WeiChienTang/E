@@ -1,4 +1,10 @@
 @page "/products/detail/{productId:int}"
+@using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Badges
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@using ERPCore2.Components.Shared.Headers
 @inject IProductService ProductService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -6,265 +12,126 @@
 
 <PageTitle>產品詳細資料</PageTitle>
 
-@* 顯示警告訊息 *@
-<AlertComponent 
-    Message="@alertMessage" 
-    Type="@alertType" 
-    IsVisible="@showAlert" 
-    IsDismissible="true"
-    OnDismiss="@(() => showAlert = false)" />
-
-@if (isLoading)
-{
-    <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
-        <div class="text-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">載入中...</span>
-            </div>
-            <div class="mt-2">載入產品資料中...</div>
-        </div>
-    </div>
-}
-else if (product == null)
-{    <div class="alert alert-warning">
-        <h4>找不到產品資料</h4>
-        <p>指定的產品不存在或已被刪除。</p>
-        <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/products")'>
-            返回產品列表
-        </button>
-    </div>
-}
-else
-{
-    @* 頁面標題 *@
-    <GenericHeaderComponent Title="@GetPageTitle()"
-                           Subtitle="@GetSubtitle()"
-                           TitleIcon="box"
-                           HeadingLevel="h1"
+<GenericDetailPageComponent TEntity="Product" 
+                           TService="IProductService"
+                           EntityId="@ProductId"
+                           Entity="@product"
+                           Service="@ProductService"
+                           EntityName="產品"
+                           EntityNamePlural="產品"
+                           PageIcon="box"
+                           IndexRoute="/products"
+                           EditRoute="/products/edit"
+                           LoadingText="載入產品資料中..."
                            BreadcrumbItems="@breadcrumbItems"
-                           ShowDivider="true">          <ActionButtons>
-            <DetailActionButtonsComponent 
-                EntityStatus="@product?.Status"
-                IsLoading="@isLoading"
-                EntityName="產品"
-                EntityId="@ProductId.ToString()"
-                EntityDisplayName="@product?.ProductName"
-                EntityService="@ProductService"
-                ListRoute="/products"
-                EditRoute="/products/edit"
-                OnShowAlert="@((tuple) => ShowAlert(tuple.message, Enum.Parse<AlertComponent.AlertType>(tuple.type, true)))"
-                OnReloadData="@LoadProductData"/>
-        </ActionButtons>
-    </GenericHeaderComponent>
-
-    @* 基本資料 *@
-    <div class="row">
-        <div class="col-12">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-box me-2"></i>
-                        基本資料
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">產品代碼</label>
-                                <div class="fw-bold text-primary">@product?.ProductCode</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">產品名稱</label>
-                                <div class="fw-bold">@product?.ProductName</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">分類</label>
-                                <div>-</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">單位</label>
-                                <div>@(product?.Unit?.UnitName ?? "-")</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">狀態</label>
-                                <div>
-                                    @if (product?.Status == EntityStatus.Active)
-                                    {
-                                        <span class="badge bg-success">啟用</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-danger">停用</span>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                        @if (!string.IsNullOrEmpty(product?.Description))
+                           DataLoader="@LoadProductDataAsync"
+                           AdditionalDataLoader="@LoadAdditionalDataAsync"
+                           EntityTitleSelector="@(p => p.ProductName)"
+                           EntitySubtitleSelector="@GetProductSubtitle"
+                           EntityDisplayNameSelector="@(p => p.ProductName)"
+                           OnDataLoaded="@OnProductDataLoaded"
+                           UseGenericDetails="false">
+    <CustomDetailContent>
+        @* 基本資料 *@
+        <DetailCardComponent Title="基本資料" Icon="box">
+            <div class="row">
+                <DetailFieldComponent Label="產品名稱" Value="@product?.ProductName" IsBold="true" />
+                <DetailFieldComponent Label="產品編號" Value="@product?.ProductCode" IsPrimary="true" />
+                <DetailFieldComponent Label="分類" Value="-" />
+                <DetailFieldComponent Label="單位" Value="@GetUnitName()" />
+                <DetailFieldComponent Label="狀態">
+                    <ChildContent>
+                        @if (product?.Status == Data.Enums.EntityStatus.Active)
                         {
-                            <div class="col-12">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">產品描述</label>
-                                    <div>@product.Description</div>
-                                </div>
-                            </div>
+                            <StatusBadgeComponent Status="Data.Enums.EntityStatus.Active" />
                         }
-                        @if (!string.IsNullOrEmpty(product?.Remarks))
+                        else
                         {
-                            <div class="col-12">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">備註</label>
-                                    <div>@product.Remarks</div>
-                                </div>
-                            </div>
+                            <StatusBadgeComponent Status="Data.Enums.EntityStatus.Inactive" />
                         }
-                    </div>
-                </div>
+                    </ChildContent>
+                </DetailFieldComponent>
+                @if (!string.IsNullOrEmpty(product?.Description))
+                {
+                    <DetailFieldComponent Label="描述" Value="@product.Description" ColSize="12" />
+                }
+                @if (!string.IsNullOrEmpty(product?.Remarks))
+                {
+                    <DetailFieldComponent Label="備註" Value="@product.Remarks" ColSize="12" />
+                }
             </div>
-        </div>
-    </div>
+        </DetailCardComponent>
 
-    @* 規格資訊 *@
-    <div class="row">
-        <div class="col-12">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-gear me-2"></i>
-                        規格資訊
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="text-muted">規格資訊尚未設定</div>
-                </div>
+        @* 規格資訊 *@
+        <DetailCardComponent Title="規格資訊" Icon="gear">
+            <div class="row">
+                <DetailFieldComponent Label="重量" Value="@(product?.Weight?.ToString("F2") + " kg" ?? "-")" />
+                <DetailFieldComponent Label="長度" Value="@(product?.Length?.ToString("F2") + " cm" ?? "-")" />
+                <DetailFieldComponent Label="寬度" Value="@(product?.Width?.ToString("F2") + " cm" ?? "-")" />
+                <DetailFieldComponent Label="高度" Value="@(product?.Height?.ToString("F2") + " cm" ?? "-")" />
+                <DetailFieldComponent Label="最小庫存" Value="@(product?.MinStockLevel?.ToString() ?? "-")" />
+                <DetailFieldComponent Label="最大庫存" Value="@(product?.MaxStockLevel?.ToString() ?? "-")" />
             </div>
-        </div>
-    </div>
+        </DetailCardComponent>
 
-    @* 供應商資訊 *@
-    <div class="row">
-        <div class="col-12">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-truck me-2"></i>
-                        供應商資訊
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if (productSuppliers.Any())
-                    {
-                        <div class="row">
-                            @foreach (var ps in productSuppliers)
-                            {
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">供應商</label>
-                                        <div>@(ps.Supplier?.CompanyName ?? "未知供應商")</div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-muted">尚未設定供應商</div>
-                    }
-                </div>
+        @* 供應商資訊 *@
+        <DetailCardComponent Title="供應商資訊" Icon="truck">
+            <div class="row">
+                <DetailFieldComponent Label="主要供應商" Value="@(product?.MainSupplier?.CompanyName ?? "-")" />
+                <DetailFieldComponent Label="供應商產品編號" Value="@(product?.SupplierProductCode ?? "-")" />
+                <DetailFieldComponent Label="採購價格" Value="@(product?.PurchasePrice?.ToString("C") ?? "-")" />
+                <DetailFieldComponent Label="銷售價格" Value="@(product?.SalePrice?.ToString("C") ?? "-")" />
             </div>
-        </div>
-    </div>
-}
+        </DetailCardComponent>
+    </CustomDetailContent>
+</GenericDetailPageComponent>
 
 @code {
     [Parameter] public int ProductId { get; set; }
 
     private Product? product;
-    private List<ProductSupplier> productSuppliers = new();
-    private bool isLoading = true;
-    
-    // Alert 相關變數
-    private bool showAlert = false;
-    private string alertMessage = string.Empty;
-    private AlertComponent.AlertType alertType = AlertComponent.AlertType.Info;
+    private List<HeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private bool _isLoading = false;
 
-    protected override async Task OnInitializedAsync()
+    private async Task LoadProductDataAsync()
     {
-        await LoadProductData();
-    }
+        if (_isLoading) return;
+        _isLoading = true;
 
-    protected override async Task OnParametersSetAsync()
-    {
-        if (ProductId > 0)
-        {
-            await LoadProductData();
-        }
-    }
-
-    private async Task LoadProductData()
-    {
         try
         {
-            isLoading = true;
-            StateHasChanged();
-
-            // 載入產品基本資料
             product = await ProductService.GetByIdAsync(ProductId);
             
-            if (product != null)
+            // 設定麵包屑
+            breadcrumbItems = new List<HeaderComponent.BreadcrumbItem>
             {
-                // 載入供應商關聯資料
-                productSuppliers = await ProductService.GetProductSuppliersAsync(ProductId);
-            }
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入產品資料失敗：", ex.Message);
+                new() { Text = "首頁", Link = "/" },
+                new() { Text = "產品管理", Link = "/products" },
+                new() { Text = "產品詳細資料", IsActive = true }
+            };
         }
         finally
         {
-            isLoading = false;
-            StateHasChanged();
+            _isLoading = false;
         }
     }
 
-    private void EditProduct()
+    private async Task LoadAdditionalDataAsync()
     {
-        Navigation.NavigateTo($"/products/edit/{ProductId}");
+        // 產品的額外資料已經在 GetByIdAsync 中載入
+        await Task.CompletedTask;
     }
 
-    private string GetPageTitle()
+    private void OnProductDataLoaded()
     {
-        if (product == null) return "產品詳細資料";
-        return $"{product.ProductName}";
-    }
-
-    private string GetSubtitle()
-    {
-        if (product == null) return "";
-        return $"產品代碼：{product.ProductCode ?? "未設定"}";
-    }
-
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
-    {
-        new("首頁", "/"),
-        new("產品管理", "/products"),
-        new("產品詳細資料")
-    };
-
-    private void ShowAlert(string message, AlertComponent.AlertType type)
-    {
-        alertMessage = message;
-        alertType = type;
-        showAlert = true;
         StateHasChanged();
+    }
+
+    private Func<Product, string> GetProductSubtitle => p => 
+        $"產品編號：{p.ProductCode ?? "未設定"}";
+
+    private string GetUnitName()
+    {
+        return product?.Unit?.UnitName ?? "-";
     }
 }
