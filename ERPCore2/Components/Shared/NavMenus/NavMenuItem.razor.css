@@ -44,7 +44,8 @@
 }
 
 .nav-menu-dropdown-content {
-    background-color: rgba(31, 41, 55, 0.8);
+    background-color: rgba(75, 112, 211, 0.3);
+    /* background-color: var(--info-color); */
     border-radius: var(--radius-lg);
     margin-top: 2px;
     overflow: hidden;

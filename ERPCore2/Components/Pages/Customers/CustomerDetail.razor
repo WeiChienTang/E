@@ -32,7 +32,9 @@
                            EntitySubtitleSelector="@(c => $"統一編號：{c.TaxNumber ?? "未設定"}")"
                            EntityDisplayNameSelector="@(c => c.CompanyName)"
                            OnDataLoaded="@OnCustomerDataLoaded"
-                           UseGenericDetails="false">    <CustomDetailContent>
+                           UseGenericDetails="false">    
+                           <CustomDetailContent>
+                            
         @* 基本資料 - 使用模組化元件 *@
         <DetailCardComponent Title="基本資料" Icon="building">
             <div class="row">
@@ -52,7 +54,9 @@
                     <DetailFieldComponent Label="備註" Value="@customer.Remarks" ColSize="12" />
                 }
             </div>
-        </DetailCardComponent>        @* 聯絡方式 - 使用模組化元件 *@
+        </DetailCardComponent>       
+        
+        @* 聯絡方式 - 使用模組化元件 *@
         <DetailCardComponent Title="聯絡方式" Icon="telephone">
             @if (customerContacts.Any())
             {
@@ -68,7 +72,9 @@
             {
                 <div class="text-muted">尚未設定聯絡方式</div>
             }
-        </DetailCardComponent>        @* 地址資料 - 使用模組化元件 *@
+        </DetailCardComponent>        
+        
+        @* 地址資料 - 使用模組化元件 *@
         <DetailCardComponent Title="地址資料" Icon="geo-alt">
             @if (customerAddresses.Any())
             {
@@ -86,7 +92,6 @@
             }
         </DetailCardComponent>
     </CustomDetailContent>
-
 </GenericDetailPageComponent>
 
 @code {    [Parameter] public int CustomerId { get; set; }
