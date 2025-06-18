@@ -13,7 +13,7 @@
 <GenericIndexPageComponent TEntity="Weather" 
                           TService="IWeatherService"
                           Service="@WeatherService"
-                          EntityBasePath="/weathers"
+                          EntityBasePath="/BOMFoundation/weather"
                           PageTitle="天氣管理"
                           PageSubtitle="管理所有天氣類型資料"
                           PageIcon="cloud-fill"
@@ -27,7 +27,10 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
-                          ActionsTemplate="@ActionButtonsTemplate"
+                          EnableStandardActions="true"
+                          EntityName="天氣"
+                          GetEntityDisplayName="@(weather => weather.Name)"
+                          DeleteSuccessMessage="天氣刪除成功"                          DeleteConfirmMessage="確定要刪除天氣「{0}」嗎？"
                           @ref="indexComponent">
 </GenericIndexPageComponent>
 
@@ -118,69 +121,6 @@
         if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
         {
             query = query.Where(w => w.Status == status);
-        }
-
-        return query.OrderBy(w => w.Name);
-    }
-
-    // 行點擊事件
-    private async Task HandleRowClick(Weather weather)
-    {
-        Navigation.NavigateTo($"/BOMFoundation/weather/detail/{weather.Id}");
-        await Task.CompletedTask;
-    }
-
-    // 自定義操作按鈕範本
-    private RenderFragment<Weather> ActionButtonsTemplate => weather => 
-        @<div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-primary" @onclick="() => ViewWeather(weather)" title="檢視">
-                <i class="bi bi-eye"></i>
-            </button>
-            <button class="btn btn-outline-warning" @onclick="() => EditWeather(weather)" title="編輯">
-                <i class="bi bi-pencil"></i>
-            </button>
-            <button class="btn btn-outline-danger" @onclick="() => DeleteWeather(weather)" title="刪除">
-                <i class="bi bi-trash"></i>
-            </button>
-        </div>;
-
-    // 操作方法
-    private async Task ViewWeather(Weather weather)
-    {
-        Navigation.NavigateTo($"/BOMFoundation/weather/detail/{weather.Id}");
-        await Task.CompletedTask;
-    }
-
-    private async Task EditWeather(Weather weather)
-    {
-        Navigation.NavigateTo($"/BOMFoundation/weather/edit/{weather.Id}");
-        await Task.CompletedTask;
-    }
-
-    private async Task DeleteWeather(Weather weather)
-    {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"確定要刪除天氣「{weather.Name}」嗎？");
-        
-        if (confirmed)
-        {
-            try
-            {
-                var result = await WeatherService.DeleteAsync(weather.Id);
-                if (result.IsSuccess)
-                {
-                    await indexComponent.Refresh();
-                    await JSRuntime.InvokeVoidAsync("alert", "天氣刪除成功");
-                }
-                else
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{result.ErrorMessage}");
-                }
-            }
-            catch (Exception ex)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", $"刪除時發生錯誤：{ex.Message}");
-            }
-        }
+        }        return query.OrderBy(w => w.Name);
     }
 }

@@ -25,11 +25,18 @@
                           DataLoader="@LoadProductsAsync"
                           InitializeBasicData="@LoadBasicDataAsync"
                           FilterApplier="@ApplyProductFilters"
-                          ActionsTemplate="@ActionsTemplate"
                           AutoSearch="true"
                           ShowSearchButton="true"
                           ShowAdvancedToggle="true"
                           SearchDelayMs="500"
+                          EntityName="產品"
+                          GetEntityDisplayName="@(product => product.ProductName)"
+                          DeleteSuccessMessage="產品刪除成功"
+                          DeleteConfirmMessage="確定要刪除產品「{0}」嗎？"
+                          EnableStandardActions="true"
+                          ShowViewButton="true"
+                          ShowEditButton="true"
+                          ShowDeleteButton="true"
                           @ref="indexComponent" />
 
 @code {
@@ -206,51 +213,8 @@
         {
             query = query.Where(p => 
                 p.Unit != null && p.Unit.UnitName != null && 
-                p.Unit.UnitName.Contains(unitFilter, StringComparison.OrdinalIgnoreCase));        }
-
+                p.Unit.UnitName.Contains(unitFilter, StringComparison.OrdinalIgnoreCase));        
+        }        
         return query.OrderBy(p => p.ProductCode);
     }
-
-    // 刪除操作方法
-    private async Task DeleteProduct(Product product)
-    {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"確定要刪除產品「{product.ProductName}」嗎？");
-        
-        if (confirmed)
-        {
-            try
-            {
-                var result = await ProductService.DeleteAsync(product.Id);
-                if (result.IsSuccess)
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", "產品刪除成功");
-                    // 觸發基底組件重新載入
-                    await indexComponent.Refresh();
-                }
-                else
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{result.ErrorMessage}");
-                }
-            }
-            catch (Exception ex)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", $"刪除時發生錯誤：{ex.Message}");
-            }
-        }
-    }
-
-    // 表格操作範本
-    private RenderFragment<Product> ActionsTemplate => product => 
-        @<div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-primary" @onclick="() => indexComponent.NavigateToDetail(product)" title="檢視">
-                <i class="bi bi-eye"></i>
-            </button>
-            <button class="btn btn-outline-warning" @onclick="() => indexComponent.NavigateToEdit(product)" title="編輯">
-                <i class="bi bi-pencil"></i>
-            </button>
-            <button class="btn btn-outline-danger" @onclick="() => DeleteProduct(product)" title="刪除">
-                <i class="bi bi-trash"></i>
-            </button>
-        </div>;
 }

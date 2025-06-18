@@ -24,11 +24,18 @@
                           DataLoader="@LoadCustomersAsync"
                           InitializeBasicData="@LoadBasicDataAsync"
                           FilterApplier="@ApplyCustomerFilters"
-                          ActionsTemplate="@ActionsTemplate"
                           AutoSearch="true"
                           ShowSearchButton="true"
                           ShowAdvancedToggle="true"
                           SearchDelayMs="500"
+                          EntityName="客戶"
+                          GetEntityDisplayName="@(customer => customer.CompanyName)"
+                          DeleteSuccessMessage="客戶刪除成功"
+                          DeleteConfirmMessage="確定要刪除客戶「{0}」嗎？"
+                          EnableStandardActions="true"
+                          ShowViewButton="true"
+                          ShowEditButton="true"
+                          ShowDeleteButton="true"
                           @ref="indexComponent" />
 
 @code {
@@ -206,47 +213,4 @@
 
         return query.OrderBy(c => c.CustomerCode);
     }
-
-    // 刪除操作方法
-    private async Task DeleteCustomer(Customer customer)
-    {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"確定要刪除客戶「{customer.CompanyName}」嗎？");
-        
-        if (confirmed)
-        {
-            try
-            {
-                var result = await CustomerService.DeleteAsync(customer.Id);
-                if (result.IsSuccess)
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", "客戶刪除成功");
-                    // 觸發基底組件重新載入
-                    await indexComponent.Refresh();
-                }
-                else
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{result.ErrorMessage}");
-                }
-            }
-            catch (Exception ex)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", $"刪除時發生錯誤：{ex.Message}");
-            }
-        }
-    }
-
-    // 表格操作範本
-    private RenderFragment<Customer> ActionsTemplate => customer => 
-        @<div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-primary" @onclick="() => indexComponent.NavigateToDetail(customer)" title="檢視">
-                <i class="bi bi-eye"></i>
-            </button>
-            <button class="btn btn-outline-warning" @onclick="() => indexComponent.NavigateToEdit(customer)" title="編輯">
-                <i class="bi bi-pencil"></i>
-            </button>
-            <button class="btn btn-outline-danger" @onclick="() => DeleteCustomer(customer)" title="刪除">
-                <i class="bi bi-trash"></i>
-            </button>
-        </div>;
 }

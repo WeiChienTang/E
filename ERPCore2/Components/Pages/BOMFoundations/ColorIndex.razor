@@ -21,13 +21,20 @@
                           AddButtonIcon="bi bi-plus-circle"
                           AddButtonTitle="新增顏色資料"
                           SearchSectionTitle="顏色搜尋與管理"
-                          EmptyMessage="沒有找到符合條件的顏色資料"
+                          EmptyMessage="沒有找到符合條件的顏色資料"                          
                           DataLoader="@LoadDataAsync"
                           FilterApplier="@ApplyColorFilters"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
-                          ActionsTemplate="@ActionButtonsTemplate"
+                          EntityName="顏色"
+                          GetEntityDisplayName="@(color => color.Name)"
+                          DeleteSuccessMessage="顏色刪除成功"
+                          DeleteConfirmMessage="確定要刪除顏色「{0}」嗎？"
+                          EnableStandardActions="true"
+                          ShowViewButton="true"
+                          ShowEditButton="true"
+                          ShowDeleteButton="true"
                           @ref="indexComponent">
 </GenericIndexPageComponent>
 
@@ -71,9 +78,11 @@
             .AddText("Name", "顏色名稱", "輸入顏色名稱搜尋")
             .AddText("HexCode", "色碼", "輸入HEX色碼搜尋")
             .AddText("Description", "描述", "輸入描述搜尋")
-            .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
+            .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)            
             .Build();
-    }    private void InitializeTableColumns()
+    }
+
+    private void InitializeTableColumns()
     {
         columnDefinitions = new List<TableColumnDefinition>
         {
@@ -126,72 +135,10 @@
 
         // 狀態篩選
         var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
-        if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
-        {
+        if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))        {
             query = query.Where(c => c.Status == status);
         }
 
         return query.OrderBy(c => c.Name);
-    }
-
-    // 行點擊事件
-    private async Task HandleRowClick(Color color)
-    {
-        Navigation.NavigateTo($"/BOMFoundation/colors/detail/{color.Id}");
-        await Task.CompletedTask;
-    }
-
-    // 自定義操作按鈕範本
-    private RenderFragment<Color> ActionButtonsTemplate => color => 
-        @<div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-primary" @onclick="() => ViewColor(color)" title="檢視">
-                <i class="bi bi-eye"></i>
-            </button>
-            <button class="btn btn-outline-warning" @onclick="() => EditColor(color)" title="編輯">
-                <i class="bi bi-pencil"></i>
-            </button>
-            <button class="btn btn-outline-danger" @onclick="() => DeleteColor(color)" title="刪除">
-                <i class="bi bi-trash"></i>
-            </button>
-        </div>;
-
-    // 操作方法
-    private async Task ViewColor(Color color)
-    {
-        Navigation.NavigateTo($"/BOMFoundation/colors/detail/{color.Id}");
-        await Task.CompletedTask;
-    }
-
-    private async Task EditColor(Color color)
-    {
-        Navigation.NavigateTo($"/BOMFoundation/colors/edit/{color.Id}");
-        await Task.CompletedTask;
-    }
-
-    private async Task DeleteColor(Color color)
-    {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"確定要刪除顏色「{color.Name}」嗎？");
-        
-        if (confirmed)
-        {
-            try
-            {
-                var result = await ColorService.DeleteAsync(color.Id);
-                if (result.IsSuccess)
-                {
-                    await indexComponent.Refresh();
-                    await JSRuntime.InvokeVoidAsync("alert", "顏色刪除成功");
-                }
-                else
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{result.ErrorMessage}");
-                }
-            }
-            catch (Exception ex)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", $"刪除時發生錯誤：{ex.Message}");
-            }
-        }
     }
 }

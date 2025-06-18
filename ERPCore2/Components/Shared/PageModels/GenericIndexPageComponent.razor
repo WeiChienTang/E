@@ -10,6 +10,7 @@
 @typeparam TEntity where TEntity : BaseEntity
 @typeparam TService
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
 @* 頁面標題 *@
 <GenericHeaderComponent Title="@PageTitle"
@@ -55,12 +56,11 @@
                                              SearchDelayMs="@SearchDelayMs" />
 
                 @* 列表表格 *@
-                <div class="mt-4">
-                    <GenericTableComponent TItem="TEntity"
+                <div class="mt-4">                    <GenericTableComponent TItem="TEntity"
                                           Items="@PagedItems"
                                           ColumnDefinitions="@ColumnDefinitions"
                                           ShowActions="@ShowActions"
-                                          ActionsTemplate="@ActionsTemplate"
+                                          ActionsTemplate="@GetFinalActionsTemplate()"
                                           EnableRowClick="@EnableRowClick"
                                           OnRowClick="@HandleRowClick"
                                           EnableSorting="@EnableSorting"
@@ -135,11 +135,22 @@
     [Parameter] public bool ShowPageSizeSelector { get; set; } = true;
     [Parameter] public int DefaultPageSize { get; set; } = 20;
     
+    // === 通用刪除功能相關參數 ===
+    [Parameter] public string EntityName { get; set; } = "資料";
+    [Parameter] public Func<TEntity, string> GetEntityDisplayName { get; set; } = entity => entity.Id.ToString();
+    [Parameter] public string DeleteSuccessMessage { get; set; } = "";
+    [Parameter] public string DeleteConfirmMessage { get; set; } = "";
+    [Parameter] public bool EnableStandardActions { get; set; } = true;
+    [Parameter] public bool ShowViewButton { get; set; } = true;
+    [Parameter] public bool ShowEditButton { get; set; } = true;
+    [Parameter] public bool ShowDeleteButton { get; set; } = true;
+    [Parameter] public RenderFragment<TEntity>? CustomActionsTemplate { get; set; }
+    
     // 事件處理 - 修改為內建導航
     [Parameter] public EventCallback OnAddClick { get; set; }
     [Parameter] public EventCallback<TEntity> OnRowClick { get; set; }
     [Parameter] public RenderFragment<TEntity>? ActionsTemplate { get; set; }
-    
+
     // ===== 內建導航方法 =====
     
     private async Task HandleAddClick()
@@ -171,29 +182,138 @@
             Navigation.NavigateTo(url);
         }
     }
-    
-    // 公開方法供外部調用
-    public async Task NavigateToEdit(TEntity entity)
+      // 公開方法供外部調用
+    public void NavigateToEdit(TEntity entity)
     {
         var url = !string.IsNullOrEmpty(EditUrl) ? EditUrl.Replace("{id}", entity.Id.ToString()) : $"{EntityBasePath}/edit/{entity.Id}";
         Navigation.NavigateTo(url);
-        await Task.CompletedTask;
     }
     
-    public async Task NavigateToDetail(TEntity entity)
+    public void NavigateToDetail(TEntity entity)
     {
         var url = !string.IsNullOrEmpty(DetailUrl) ? DetailUrl.Replace("{id}", entity.Id.ToString()) : $"{EntityBasePath}/detail/{entity.Id}";
         Navigation.NavigateTo(url);
-        await Task.CompletedTask;
     }
     
-    public async Task NavigateToCreate()
+    public void NavigateToCreate()
     {
         var url = !string.IsNullOrEmpty(CreateUrl) ? CreateUrl : $"{EntityBasePath}/edit";
         Navigation.NavigateTo(url);
-        await Task.CompletedTask;
     }
     
+    // ===== 通用刪除操作 =====
+    
+    /// <summary>
+    /// 通用刪除方法
+    /// </summary>
+    public async Task DeleteEntityAsync(TEntity entity)
+    {
+        var displayName = GetEntityDisplayName(entity);
+        var confirmMessage = !string.IsNullOrEmpty(DeleteConfirmMessage) 
+            ? string.Format(DeleteConfirmMessage, displayName)
+            : $"確定要刪除{EntityName}「{displayName}」嗎？";
+        
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", confirmMessage);
+        
+        if (confirmed)
+        {
+            try
+            {
+                // 使用反射調用服務的 DeleteAsync 方法
+                var deleteMethod = Service?.GetType().GetMethod("DeleteAsync", new[] { typeof(int) });
+                if (deleteMethod != null)
+                {
+                    var task = (Task)deleteMethod.Invoke(Service, new object[] { entity.Id })!;
+                    await task;
+                    
+                    // 獲取結果
+                    var resultProperty = task.GetType().GetProperty("Result");
+                    if (resultProperty != null)
+                    {
+                        var result = resultProperty.GetValue(task);
+                        var isSuccessProperty = result?.GetType().GetProperty("IsSuccess");
+                        var errorMessageProperty = result?.GetType().GetProperty("ErrorMessage");
+                        
+                        if (isSuccessProperty != null)
+                        {
+                            var isSuccess = (bool)isSuccessProperty.GetValue(result)!;
+                            if (isSuccess)
+                            {
+                                var successMessage = !string.IsNullOrEmpty(DeleteSuccessMessage) 
+                                    ? DeleteSuccessMessage 
+                                    : $"{EntityName}刪除成功";
+                                await JSRuntime.InvokeVoidAsync("alert", successMessage);
+                                await Refresh();
+                            }
+                            else
+                            {
+                                var errorMessage = errorMessageProperty?.GetValue(result)?.ToString() ?? "刪除失敗";
+                                await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{errorMessage}");
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "找不到刪除方法");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"刪除時發生錯誤：{ex.Message}");
+            }        }
+    }
+      /// <summary>
+    /// 取得標準操作按鈕範本
+    /// </summary>
+    public RenderFragment<TEntity> GetStandardActionsTemplate()
+    {
+        return entity => 
+            @<div class="btn-group btn-group-sm">
+                @if (ShowViewButton)
+                {
+                    <button class="btn btn-outline-primary" @onclick="() => NavigateToDetail(entity)" @onclick:stopPropagation="true" title="檢視">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                }
+                @if (ShowEditButton)
+                {
+                    <button class="btn btn-outline-warning" @onclick="() => NavigateToEdit(entity)" @onclick:stopPropagation="true" title="編輯">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                }
+                @if (CustomActionsTemplate != null)
+                {
+                    @CustomActionsTemplate(entity)
+                }
+                @if (ShowDeleteButton)
+                {
+                    <button class="btn btn-outline-danger" @onclick="@(async () => await DeleteEntityAsync(entity))" @onclick:stopPropagation="true" title="刪除">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                }
+            </div>;
+    }
+    
+    /// <summary>
+    /// 取得最終的操作範本
+    /// </summary>
+    private RenderFragment<TEntity> GetFinalActionsTemplate()
+    {
+        if (ActionsTemplate != null)
+        {
+            return ActionsTemplate;
+        }
+        else if (EnableStandardActions)
+        {
+            return GetStandardActionsTemplate();
+        }
+        else
+        {
+            return entity => @<div></div>;
+        }
+    }
+
     // ===== 內部狀態 =====
     
     // 資料來源

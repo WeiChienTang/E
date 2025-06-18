@@ -28,11 +28,18 @@
                           ColumnDefinitions="@columnDefinitions"
                           DataLoader="@LoadCustomerTypesAsync"
                           FilterApplier="@ApplyCustomerTypeFilters"
-                          ActionsTemplate="@ActionsTemplate"
                           AutoSearch="true"
                           ShowSearchButton="true"
                           ShowAdvancedToggle="true"
                           SearchDelayMs="500"
+                          EntityName="客戶類型"
+                          GetEntityDisplayName="@(customerType => customerType.TypeName)"
+                          DeleteSuccessMessage="客戶類型刪除成功"
+                          DeleteConfirmMessage="確定要刪除客戶類型「{0}」嗎？"
+                          EnableStandardActions="true"
+                          ShowViewButton="true"
+                          ShowEditButton="true"
+                          ShowDeleteButton="true"
                           @ref="indexComponent" />
 
 @code {
@@ -133,49 +140,6 @@
         if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
         {
             query = query.Where(ct => ct.Status == status);
-        }
-
-        return query.OrderBy(ct => ct.TypeName);
-    }    // 刪除操作方法
-    private async Task DeleteCustomerType(CustomerType customerType)
-    {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"確定要刪除客戶類型「{customerType.TypeName}」嗎？");
-        
-        if (confirmed)
-        {
-            try
-            {
-                var result = await CustomerTypeService.DeleteAsync(customerType.Id);
-                if (result.IsSuccess)
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", "客戶類型刪除成功");
-                    // 觸發基底組件重新載入
-                    await indexComponent.Refresh();
-                }
-                else
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{result.ErrorMessage}");
-                }
-            }
-            catch (Exception ex)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", $"刪除時發生錯誤：{ex.Message}");
-            }
-        }
+        }        return query.OrderBy(ct => ct.TypeName);
     }
-
-    // 表格操作範本
-    private RenderFragment<CustomerType> ActionsTemplate => customerType => 
-        @<div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-primary" @onclick="() => indexComponent.NavigateToDetail(customerType)" title="檢視">
-                <i class="bi bi-eye"></i>
-            </button>
-            <button class="btn btn-outline-warning" @onclick="() => indexComponent.NavigateToEdit(customerType)" title="編輯">
-                <i class="bi bi-pencil"></i>
-            </button>
-            <button class="btn btn-outline-danger" @onclick="() => DeleteCustomerType(customerType)" title="刪除">
-                <i class="bi bi-trash"></i>
-            </button>
-        </div>;
 }
