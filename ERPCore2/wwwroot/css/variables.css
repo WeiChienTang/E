@@ -2,6 +2,7 @@
 :root {
   /* 主要色彩 */
   --primary-blue: #1E3A8A;
+  --primary-blue-hover: #1e40af;
   --primary-blue-alt: #1F2937;
   --primary-white: #FFFFFF;
   --primary-light-gray: #F9FAFB;
@@ -9,6 +10,7 @@
   /* 文字色彩 */
   --text-primary: #374151;
   --text-secondary: #6B7280;
+  --text-secondary-hover: #4b5563;
   --text-light: #9CA3AF;
   
   /* 邊框和分隔線 */
@@ -17,9 +19,14 @@
   
   /* 狀態色彩 */
   --success-color: #059669;
+  --success-color-hover: #047857;
   --warning-color: #EA580C;
+  --warning-color-hover: #c2410c;
   --danger-color: #DC2626;
+  --danger-color-hover: #b91c1c;
   --info-color: #1E3A8A;
+  --info-color-hover: #1e40af;
+
     /* 背景色彩 */
   --bg-primary: #FFFFFF;
   --bg-secondary: #F9FAFB;
@@ -34,6 +41,18 @@
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  
+  /* 陰影和focus效果 */
+  --focus-shadow-primary: 0 0 0 0.2rem rgba(30, 58, 138, 0.25);
+  
+  /* 警告框背景色 */
+  --alert-success-bg: rgba(5, 150, 105, 0.1);
+  --alert-warning-bg: rgba(234, 88, 12, 0.1);
+  --alert-danger-bg: rgba(220, 38, 38, 0.1);
+  --alert-info-bg: rgba(30, 58, 138, 0.1);
+  
+  /* 卡片hover陰影 */
+  --card-hover-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   
   /* 圓角 */
   --radius-sm: 0.125rem;
@@ -50,13 +69,13 @@
 }
 
 .btn-primary:hover {
-  background-color: #1e40af !important;
-  border-color: #1e40af !important;
+  background-color: var(--primary-blue-hover) !important;
+  border-color: var(--primary-blue-hover) !important;
   color: var(--primary-white) !important;
 }
 
 .btn-primary:focus {
-  box-shadow: 0 0 0 0.2rem rgba(30, 58, 138, 0.25) !important;
+  box-shadow: var(--focus-shadow-primary) !important;
 }
 
 .btn-outline-primary {
@@ -92,7 +111,7 @@
 
 .form-control:focus, .form-select:focus {
   border-color: var(--primary-blue);
-  box-shadow: 0 0 0 0.2rem rgba(30, 58, 138, 0.25);
+  box-shadow: var(--focus-shadow-primary);
 }
 
 /* 標籤樣式 */
@@ -107,27 +126,23 @@
 }
 
 .alert-success {
-  background-color: rgba(5, 150, 105, 0.1);
+  background-color: var(--alert-success-bg);
   color: var(--success-color);
 }
 
 .alert-warning {
-  background-color: rgba(234, 88, 12, 0.1);
+  background-color: var(--alert-warning-bg);
   color: var(--warning-color);
 }
 
 .alert-danger {
-  background-color: rgba(220, 38, 38, 0.1);
+  background-color: var(--alert-danger-bg);
   color: var(--danger-color);
 }
 
 .alert-info {
-  background-color: rgba(30, 58, 138, 0.1);
+  background-color: var(--alert-info-bg);
   color: var(--info-color);
-}
-
-.btn-primary:focus {
-  box-shadow: 0 0 0 0.2rem rgba(30, 58, 138, 0.25);
 }
 
 /* 成功狀態按鈕 */
@@ -138,8 +153,8 @@
 }
 
 .btn-success:hover {
-  background-color: #047857 !important;
-  border-color: #047857 !important;
+  background-color: var(--success-color-hover) !important;
+  border-color: var(--success-color-hover) !important;
   color: var(--primary-white) !important;
 }
 
@@ -151,8 +166,8 @@
 }
 
 .btn-warning:hover {
-  background-color: #c2410c !important;
-  border-color: #c2410c !important;
+  background-color: var(--warning-color-hover) !important;
+  border-color: var(--warning-color-hover) !important;
   color: var(--primary-white) !important;
 }
 
@@ -164,8 +179,8 @@
 }
 
 .btn-danger:hover {
-  background-color: #b91c1c !important;
-  border-color: #b91c1c !important;
+  background-color: var(--danger-color-hover) !important;
+  border-color: var(--danger-color-hover) !important;
   color: var(--primary-white) !important;
 }
 
@@ -177,8 +192,8 @@
 }
 
 .btn-info:hover {
-  background-color: #1e40af !important;
-  border-color: #1e40af !important;
+  background-color: var(--info-color-hover) !important;
+  border-color: var(--info-color-hover) !important;
   color: var(--primary-white) !important;
 }
 
@@ -190,8 +205,8 @@
 }
 
 .btn-secondary:hover {
-  background-color: #4b5563 !important;
-  border-color: #4b5563 !important;
+  background-color: var(--text-secondary-hover) !important;
+  border-color: var(--text-secondary-hover) !important;
   color: var(--primary-white) !important;
 }
 
@@ -271,37 +286,11 @@
   font-weight: 600 !important;
 }
 
-/* 自定義表格標題樣式 - 基礎單位頁面使用綠色 */
-.table-header-foundation {
-  background-color: var(--success-color) !important;
-  color: var(--primary-white) !important;
-  border-color: var(--success-color) !important;
-}
-
-.table-header-foundation th {
-  background-color: var(--success-color) !important;
-  color: var(--primary-white) !important;
-  border-color: var(--success-color) !important;
-  font-weight: 600 !important;
-}
-
 /* FormSection 標題樣式 - 使用更高優先級的選擇器 */
-.card-header.form-section-header-basic {
-  background-color: var(--primary-blue) !important;
-  color: var(--primary-white) !important;
-  border-color: var(--primary-blue) !important;
-}
-
 .card-header.form-section-header-contact {
   background-color: var(--info-color) !important;
   color: var(--primary-white) !important;
   border-color: var(--info-color) !important;
-}
-
-.card-header.form-section-header-address {
-  background-color: var(--success-color) !important;
-  color: var(--primary-white) !important;
-  border-color: var(--success-color) !important;
 }
 
 .card-header.form-section-header-financial {
@@ -339,7 +328,7 @@
 
 .form-control:focus {
   border-color: var(--primary-blue);
-  box-shadow: 0 0 0 0.2rem rgba(30, 58, 138, 0.25);
+  box-shadow: var(--focus-shadow-primary);
 }
 
 .form-label {
@@ -373,23 +362,6 @@
   color: var(--text-secondary) !important;
 }
 
-.text-light-custom {
-  color: var(--text-light) !important;
-}
-
-/* 背景顏色工具類 */
-.bg-primary-custom {
-  background-color: var(--bg-primary) !important;
-}
-
-.bg-secondary-custom {
-  background-color: var(--bg-secondary) !important;
-}
-
-.bg-tertiary-custom {
-  background-color: var(--bg-tertiary) !important;
-}
-
 /* 輸入群組樣式 */
 .input-group-text {
   background-color: var(--bg-secondary) !important;
@@ -399,31 +371,13 @@
 
 .input-group .form-control:focus {
   border-color: var(--primary-blue) !important;
-  box-shadow: 0 0 0 0.2rem rgba(30, 58, 138, 0.25) !important;
-}
-
-/* 邊框工具類 */
-.border-color {
-  border-color: var(--border-color) !important;
-}
-
-.border-light-color {
-  border-color: var(--border-light) !important;
+  box-shadow: var(--focus-shadow-primary) !important;
 }
 
 /* 分隔線樣式 */
 hr {
   border-color: var(--border-light) !important;
   opacity: 1 !important;
-}
-
-/* 空狀態樣式 */
-.empty-state {
-  color: var(--text-light) !important;
-}
-
-.empty-state i {
-  color: var(--text-light) !important;
 }
 
 /* 表單標籤增強 */
@@ -443,30 +397,13 @@ hr {
 }
 
 /* 管理頁面特殊樣式 */
-.feature-icon {
-  width: 80px;
-  height: 80px;
-}
-
-/* 卡片動畫效果 */
 .card {
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
 .card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-}
-
-/* 邊框設計 */
-.border-end {
-  border-right: 1px solid var(--border-color) !important;
-}
-
-/* 響應式設計 */
-.feature-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md) !important;
+  box-shadow: var(--card-hover-shadow) !important;
 }
 
 /* 移除最後一個邊框 */
@@ -477,33 +414,6 @@ hr {
     padding-bottom: 1rem !important;
     margin-bottom: 1rem !important;
   }
-}
-
-/* 管理頁面特定元件樣式 */
-.avatar-sm {
-  width: 32px;
-  height: 32px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.avatar-lg {
-  width: 80px;
-  height: 80px;
-}
-
-.avatar-circle {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-}
-
-.font-monospace {
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
 }
 
 /* 表格樣式增強 */
@@ -567,51 +477,6 @@ hr {
   color: var(--primary-white) !important;
 }
 
-/* 基礎單位頁面 - 綠色主題 */
-.section-header-foundation {
-  background-color: var(--success-color) !important;
-  color: var(--primary-white) !important;
-  border-bottom: 1px solid var(--success-color) !important;
-  padding: 1rem 1.25rem !important;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
-}
-
-.section-header-foundation .card-title {
-  margin-bottom: 0 !important;
-  font-weight: 600 !important;
-}
-
-.section-header-foundation .card-title i {
-  color: var(--primary-white) !important;
-}
-
-/* 搜尋結果區域樣式 */
-.search-results-section h6 {
-  color: var(--text-primary) !important;
-  font-weight: 600 !important;
-}
-
-.search-results-section h6 i {
-  color: var(--primary-blue) !important;
-}
-
-/* 空狀態樣式 - 搜尋無結果 */
-.search-empty-state {
-  color: var(--text-light) !important;
-  padding: 2rem 1rem !important;
-}
-
-.search-empty-state i {
-  color: var(--text-light) !important;
-  opacity: 0.7 !important;
-}
-
-.search-empty-state p {
-  color: var(--text-secondary) !important;
-  font-size: 0.95rem !important;
-  margin-bottom: 0 !important;
-}
-
 /* NavigationCard 樣式優化 - 搜尋結果卡片 */
 .search-result-card {
   transition: all 0.2s ease-in-out !important;
@@ -624,29 +489,6 @@ hr {
   transform: translateY(-2px) !important;
   box-shadow: var(--shadow-md) !important;
   border-color: var(--primary-blue) !important;
-}
-
-/* 響應式設計 - 搜尋頁面 */
-@media (max-width: 576px) {
-  .home-search-header {
-    padding: 0.75rem 1rem !important;
-  }
-  
-  .home-search-header .card-title {
-    font-size: 1.1rem !important;
-  }
-  
-  .search-results-section {
-    margin-top: 1.5rem !important;
-  }
-  
-  .search-empty-state {
-    padding: 1.5rem 0.5rem !important;
-  }
-  
-  .search-empty-state i {
-    font-size: 3rem !important;
-  }
 }
 
 /* NavMenu 移動裝置優化 */
