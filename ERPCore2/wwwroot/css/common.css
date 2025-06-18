@@ -1,5 +1,8 @@
 /* ERPCore2 共用元件樣式 - 通用於多個元件的樣式 */
 
+/* 引入 Bootstrap Icons */
+@import url('./bootstrap-icons.css');
+
 /* 按鈕群組樣式 */
 .btn-group .btn {
   margin-right: 2px;

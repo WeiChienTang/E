@@ -9,6 +9,7 @@
 @using Microsoft.AspNetCore.Components.Web
 @typeparam TEntity where TEntity : BaseEntity
 @typeparam TService
+@inject NavigationManager Navigation
 
 @* 頁面標題 *@
 <GenericHeaderComponent Title="@PageTitle"
@@ -19,12 +20,12 @@
                        IsLoading="@IsLoading"
                        LoadingText="載入中..."
                        ShowDivider="true">    
-    <ActionButtons>
+    <ActionButtons>                        
         <IndexActionButtonsComponent 
             AddButtonText="@AddButtonText"
             AddButtonIcon="@AddButtonIcon"
             AddButtonTitle="@AddButtonTitle"
-            OnAddClick="@OnAddClick"
+            OnAddClick="@HandleAddClick"
             OnRefreshClick="@RefreshData"
             IsLoading="@IsLoading"
             LoadingOnRefresh="true" />
@@ -61,7 +62,7 @@
                                           ShowActions="@ShowActions"
                                           ActionsTemplate="@ActionsTemplate"
                                           EnableRowClick="@EnableRowClick"
-                                          OnRowClick="@OnRowClick"
+                                          OnRowClick="@HandleRowClick"
                                           EnableSorting="@EnableSorting"
                                           IsStriped="@IsStriped"
                                           IsHoverable="@IsHoverable"
@@ -100,6 +101,12 @@
     // 麵包屑導航
     [Parameter] public List<GenericHeaderComponent.BreadcrumbItem> BreadcrumbItems { get; set; } = new();
     
+    // 導航URL設定 - 新增的參數
+    [Parameter] public string EntityBasePath { get; set; } = "";
+    [Parameter] public string CreateUrl { get; set; } = "";
+    [Parameter] public string DetailUrl { get; set; } = "";
+    [Parameter] public string EditUrl { get; set; } = "";
+    
     // 服務和資料相關
     [Parameter] public TService Service { get; set; } = default!;
     [Parameter] public Func<Task<List<TEntity>>> DataLoader { get; set; } = default!;
@@ -128,10 +135,64 @@
     [Parameter] public bool ShowPageSizeSelector { get; set; } = true;
     [Parameter] public int DefaultPageSize { get; set; } = 20;
     
-    // 事件處理
+    // 事件處理 - 修改為內建導航
     [Parameter] public EventCallback OnAddClick { get; set; }
     [Parameter] public EventCallback<TEntity> OnRowClick { get; set; }
     [Parameter] public RenderFragment<TEntity>? ActionsTemplate { get; set; }
+    
+    // ===== 內建導航方法 =====
+    
+    private async Task HandleAddClick()
+    {
+        // 先執行外部提供的事件處理
+        if (OnAddClick.HasDelegate)
+        {
+            await OnAddClick.InvokeAsync();
+        }
+        else
+        {
+            // 使用內建導航邏輯
+            var url = !string.IsNullOrEmpty(CreateUrl) ? CreateUrl : $"{EntityBasePath}/edit";
+            Navigation.NavigateTo(url);
+        }
+    }
+    
+    private async Task HandleRowClick(TEntity entity)
+    {
+        // 先執行外部提供的事件處理
+        if (OnRowClick.HasDelegate)
+        {
+            await OnRowClick.InvokeAsync(entity);
+        }
+        else
+        {
+            // 使用內建導航邏輯
+            var url = !string.IsNullOrEmpty(DetailUrl) ? DetailUrl.Replace("{id}", entity.Id.ToString()) : $"{EntityBasePath}/detail/{entity.Id}";
+            Navigation.NavigateTo(url);
+        }
+    }
+    
+    // 公開方法供外部調用
+    public async Task NavigateToEdit(TEntity entity)
+    {
+        var url = !string.IsNullOrEmpty(EditUrl) ? EditUrl.Replace("{id}", entity.Id.ToString()) : $"{EntityBasePath}/edit/{entity.Id}";
+        Navigation.NavigateTo(url);
+        await Task.CompletedTask;
+    }
+    
+    public async Task NavigateToDetail(TEntity entity)
+    {
+        var url = !string.IsNullOrEmpty(DetailUrl) ? DetailUrl.Replace("{id}", entity.Id.ToString()) : $"{EntityBasePath}/detail/{entity.Id}";
+        Navigation.NavigateTo(url);
+        await Task.CompletedTask;
+    }
+    
+    public async Task NavigateToCreate()
+    {
+        var url = !string.IsNullOrEmpty(CreateUrl) ? CreateUrl : $"{EntityBasePath}/edit";
+        Navigation.NavigateTo(url);
+        await Task.CompletedTask;
+    }
     
     // ===== 內部狀態 =====
     

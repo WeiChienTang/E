@@ -9,6 +9,7 @@
 <GenericIndexPageComponent TEntity="Customer" 
                           TService="ICustomerService"
                           Service="@CustomerService"
+                          EntityBasePath="/customers"
                           PageTitle="客戶管理"
                           PageSubtitle="管理所有客戶資料與聯絡資訊"
                           PageIcon="people-fill"
@@ -23,15 +24,17 @@
                           DataLoader="@LoadCustomersAsync"
                           InitializeBasicData="@LoadBasicDataAsync"
                           FilterApplier="@ApplyCustomerFilters"
-                          OnAddClick="@ShowCreateCustomer"
-                          OnRowClick="@HandleRowClick"
                           ActionsTemplate="@ActionsTemplate"
                           AutoSearch="true"
                           ShowSearchButton="true"
                           ShowAdvancedToggle="true"
-                          SearchDelayMs="500" />
+                          SearchDelayMs="500"
+                          @ref="indexComponent" />
 
 @code {
+    // 組件參考
+    private GenericIndexPageComponent<Customer, ICustomerService> indexComponent = default!;
+    
     // 選項清單
     private List<CustomerType> customerTypes = new();
     private List<IndustryType> industryTypes = new();
@@ -204,25 +207,7 @@
         return query.OrderBy(c => c.CustomerCode);
     }
 
-    // 事件處理方法
-    private async Task ShowCreateCustomer()
-    {
-        Navigation.NavigateTo("/customers/edit");
-        await Task.CompletedTask;
-    }
-
-    private async Task HandleRowClick(Customer customer)
-    {
-        Navigation.NavigateTo($"/customers/detail/{customer.Id}");
-        await Task.CompletedTask;
-    }
-
-    private async Task EditCustomer(Customer customer)
-    {
-        Navigation.NavigateTo($"/customers/edit/{customer.Id}");
-        await Task.CompletedTask;
-    }
-
+    // 刪除操作方法
     private async Task DeleteCustomer(Customer customer)
     {
         var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
@@ -235,9 +220,9 @@
                 var result = await CustomerService.DeleteAsync(customer.Id);
                 if (result.IsSuccess)
                 {
-                    // 重新載入資料 - 這裡可以觸發基底組件的重新載入
                     await JSRuntime.InvokeVoidAsync("alert", "客戶刪除成功");
-                    // TODO: 觸發基底組件重新載入
+                    // 觸發基底組件重新載入
+                    await indexComponent.Refresh();
                 }
                 else
                 {
@@ -251,19 +236,13 @@
         }
     }
 
-    private async Task ViewCustomer(Customer customer)
-    {
-        Navigation.NavigateTo($"/customers/detail/{customer.Id}");
-        await Task.CompletedTask;
-    }
-
     // 表格操作範本
     private RenderFragment<Customer> ActionsTemplate => customer => 
         @<div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-primary" @onclick="() => ViewCustomer(customer)" title="檢視">
+            <button class="btn btn-outline-primary" @onclick="() => indexComponent.NavigateToDetail(customer)" title="檢視">
                 <i class="bi bi-eye"></i>
             </button>
-            <button class="btn btn-outline-warning" @onclick="() => EditCustomer(customer)" title="編輯">
+            <button class="btn btn-outline-warning" @onclick="() => indexComponent.NavigateToEdit(customer)" title="編輯">
                 <i class="bi bi-pencil"></i>
             </button>
             <button class="btn btn-outline-danger" @onclick="() => DeleteCustomer(customer)" title="刪除">
