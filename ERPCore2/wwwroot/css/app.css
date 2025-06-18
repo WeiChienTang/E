@@ -1,0 +1,17 @@
+@import url('./css/variables.css');
+
+/* 全域基礎樣式 */
+html, body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+a, .btn-link {
+    color: var(--primary-blue);
+}
+
+/* 全域標題樣式 */
+h1:focus {
+    outline: none;
+}

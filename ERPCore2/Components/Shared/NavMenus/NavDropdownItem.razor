@@ -1,8 +1,6 @@
 @* 下拉選單項目元件 *@
 
-<a class="nav-dropdown-item" href="@Url"
-   @onmouseenter="@(() => isHovering = true)"
-   @onmouseleave="@(() => isHovering = false)">
+<a class="nav-dropdown-item" href="@Url">
     <span class="@IconClass bi" aria-hidden="true"></span> @Text
 </a>
 
@@ -11,9 +9,7 @@
     /// <summary>
     /// 下拉選單項目顯示的文字
     /// </summary>
-    [Parameter] public string Text { get; set; } = "";
-
-    /// <summary>
+    [Parameter] public string Text { get; set; } = "";    /// <summary>
     /// 圖示的 CSS 類別（例如 "bi bi-person-lines-fill"）
     /// </summary>
     [Parameter] public string IconClass { get; set; } = "";
@@ -22,6 +18,4 @@
     /// 連結的 URL
     /// </summary>
     [Parameter] public string Url { get; set; } = "";
-
-    private bool isHovering = false;
 }

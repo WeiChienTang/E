@@ -1,0 +1,270 @@
+/* ERPCore2 共用元件樣式 - 通用於多個元件的樣式 */
+
+/* 按鈕群組樣式 */
+.btn-group .btn {
+  margin-right: 2px;
+}
+
+.btn-group .btn:last-child {
+  margin-right: 0;
+}
+
+/* 表格樣式 */
+.table {
+  --bs-table-bg: var(--bg-primary);
+  --bs-table-border-color: var(--border-color);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > td {
+  background-color: var(--bg-secondary);
+}
+
+/* 自定義表格 hover 效果 - 黃橙色 */
+.table-hover > tbody > tr:hover > td,
+.table-hover > tbody > tr:hover > th {
+  background-color: var(--table-hover-bg);
+  color: var(--table-hover-text);
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+/* 確保條紋表格的 hover 效果優先級 */
+.table-striped.table-hover > tbody > tr:hover > td,
+.table-striped.table-hover > tbody > tr:hover > th {
+  background-color: var(--table-hover-bg-striped);
+  color: var(--table-hover-text);
+}
+
+/* 自定義表格標題樣式 - 使用主要藍色 */
+.table-header-primary {
+  background-color: var(--primary-blue);
+  color: var(--primary-white);
+  border-color: var(--primary-blue);
+}
+
+.table-header-primary th {
+  background-color: var(--primary-blue);
+  color: var(--primary-white);
+  border-color: var(--primary-blue);
+  font-weight: 600;
+}
+
+/* 表格樣式增強 */
+.table td {
+  vertical-align: middle;
+}
+
+/* 卡片樣式 */
+.card {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--card-hover-shadow);
+}
+
+.card-header {
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary);
+  padding: 1rem 1.25rem;
+}
+
+/* 卡片標題圖標樣式 */
+.card-title i {
+  color: var(--primary-blue);
+}
+
+/* 警告和訊息 */
+.alert {
+  border-radius: var(--radius-md);
+  border: none;
+}
+
+.alert-success {
+  background-color: var(--alert-success-bg);
+  color: var(--success-color);
+}
+
+.alert-warning {
+  background-color: var(--alert-warning-bg);
+  color: var(--warning-color);
+}
+
+.alert-danger {
+  background-color: var(--alert-danger-bg);
+  color: var(--danger-color);
+}
+
+.alert-info {
+  background-color: var(--alert-info-bg);
+  color: var(--info-color);
+}
+
+/* 徽章樣式 */
+.badge {
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+}
+
+/* 狀態徽章 */
+.badge.bg-success {
+  background-color: var(--success-color);
+}
+
+.badge.bg-warning {
+  background-color: var(--warning-color);
+}
+
+.badge.bg-danger {
+  background-color: var(--danger-color);
+}
+
+.badge.bg-info {
+  background-color: var(--info-color);
+}
+
+/* FormSection 標題樣式 - 保留 !important 因為需要覆寫 Bootstrap 的卡片標題樣式 */
+.card-header.form-section-header-contact {
+  background-color: var(--info-color) !important;
+  color: var(--primary-white) !important;
+  border-color: var(--info-color) !important;
+}
+
+.card-header.form-section-header-financial {
+  background-color: var(--warning-color) !important;
+  color: var(--primary-white) !important;
+  border-color: var(--warning-color) !important;
+}
+
+.card-header.form-section-header-system {
+  background-color: var(--text-secondary) !important;
+  color: var(--primary-white) !important;
+  border-color: var(--text-secondary) !important;
+}
+
+/* 表單樣式 */
+.form-control, .form-select {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary-blue);
+  box-shadow: var(--focus-shadow-primary);
+}
+
+.form-label {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* 表單標籤樣式增強 */
+.form-label.small {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+/* 表單幫助文字 */
+.form-text {
+  color: var(--text-secondary);
+}
+
+/* 無效回饋 */
+.invalid-feedback {
+  color: var(--danger-color);
+}
+
+/* 輸入群組樣式 */
+.input-group-text {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+.input-group .form-control:focus {
+  border-color: var(--primary-blue);
+  box-shadow: var(--focus-shadow-primary);
+}
+
+/* 分隔線樣式 */
+hr {
+  border-color: var(--border-light);
+  opacity: 1;
+}
+
+/* 文字顏色工具類 - 保留 !important 因為這是工具類別，需要高優先級 */
+.text-primary-custom {
+  color: var(--text-primary) !important;
+}
+
+.text-secondary-custom {
+  color: var(--text-secondary) !important;
+}
+
+/* 自定義區段卡片樣式 - 這些是自定義類別，移除 !important */
+.section-card {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.section-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.section-header-primary {
+  background-color: var(--primary-blue);
+  color: var(--primary-white);
+  border-bottom: 1px solid var(--primary-blue);
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.section-header-primary .card-title {
+  margin-bottom: 0;
+  font-weight: 600;
+}
+
+.section-header-primary .card-title i {
+  color: var(--primary-white);
+}
+
+/* NavigationCard 樣式優化 - 自定義類別，移除 !important */
+.search-result-card {
+  transition: all 0.2s ease-in-out;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.search-result-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-blue);
+}
+
+/* 響應式設計 - 保留 !important 因為需要覆寫預設的 border 樣式 */
+@media (max-width: 767.98px) {
+  .border-end:last-child {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding-bottom: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+}
+
+/* NavMenu 移動裝置優化 */
+@media (max-width: 768px) {
+  .dropdown-item {
+    padding: 0.6rem 1rem 0.6rem 2rem;
+  }
+}

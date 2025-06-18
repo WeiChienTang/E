@@ -5,10 +5,7 @@
     @if (HasDropdownItems)
     {
         <!-- 下拉選單容器 -->
-        <div class="nav-menu-dropdown-container @(isDropdownOpen ? "expanded" : "")">            
-            <div class="nav-menu-dropdown-toggle-btn" @onclick="ToggleDropdown" 
-                 @onmouseenter="@(() => isHovering = true)"
-                 @onmouseleave="@(() => isHovering = false)">
+        <div class="nav-menu-dropdown-container @(isDropdownOpen ? "expanded" : "")">              <div class="nav-menu-dropdown-toggle-btn" @onclick="ToggleDropdown">
                 <span class="@IconClass nav-menu-bi" aria-hidden="true"></span> 
                 @Text
                 <span class="nav-menu-dropdown-arrow @(isDropdownOpen ? "up" : "down")">▼</span>
@@ -20,10 +17,7 @@
     }
     else
     {
-        <!-- 簡單連結 -->
-        <a class="nav-menu-nav-link" href="@Url"
-           @onmouseenter="@(() => isHovering = true)"
-           @onmouseleave="@(() => isHovering = false)">
+        <!-- 簡單連結 -->        <a class="nav-menu-nav-link" href="@Url">
             <span class="@IconClass nav-menu-bi" aria-hidden="true"></span> @Text
         </a>
     }
@@ -53,10 +47,7 @@
     /// <summary>
     /// 是否有下拉選單項目
     /// </summary>
-    private bool HasDropdownItems => DropdownItems != null;
-
-    private bool isDropdownOpen = false;
-    private bool isHovering = false;
+    private bool HasDropdownItems => DropdownItems != null;    private bool isDropdownOpen = false;
 
     private void ToggleDropdown()
     {

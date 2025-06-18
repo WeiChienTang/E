@@ -1,4 +1,4 @@
-/* ERPCore2 設計風格變數 - 根據 README_Pages.md 定義 */
+/* ERPCore2 設計風格變數 */
 :root {
   /* 主要色彩 */
   --primary-blue: #1E3A8A;
@@ -61,439 +61,134 @@
   --radius-lg: 0.5rem;
 }
 
-/* 自訂按鈕樣式 - 根據設計規範，使用 !important 確保優先級 */
+
+/* 主要按鈕樣式 - 移除不必要的 !important */
 .btn-primary {
-  background-color: var(--primary-blue) !important;
-  border-color: var(--primary-blue) !important;
-  color: var(--primary-white) !important;
+  background-color: var(--primary-blue);
+  border-color: var(--primary-blue);
+  color: var(--primary-white);
 }
 
 .btn-primary:hover {
-  background-color: var(--primary-blue-hover) !important;
-  border-color: var(--primary-blue-hover) !important;
-  color: var(--primary-white) !important;
+  background-color: var(--primary-blue-hover);
+  border-color: var(--primary-blue-hover);
+  color: var(--primary-white);
 }
 
 .btn-primary:focus {
-  box-shadow: var(--focus-shadow-primary) !important;
-}
-
-.btn-outline-primary {
-  color: var(--primary-blue) !important;
-  border-color: var(--primary-blue) !important;
-  background-color: transparent !important;
-}
-
-.btn-outline-primary:hover {
-  background-color: var(--primary-blue) !important;
-  border-color: var(--primary-blue) !important;
-  color: var(--primary-white) !important;
-}
-
-/* 卡片樣式 */
-.card {
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-}
-
-.card-header {
-  background-color: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-light);
-  padding: 1rem 1.25rem;
-}
-
-/* 表單元素 */
-.form-control, .form-select {
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-}
-
-.form-control:focus, .form-select:focus {
-  border-color: var(--primary-blue);
   box-shadow: var(--focus-shadow-primary);
 }
 
-/* 標籤樣式 */
-.badge {
-  border-radius: var(--radius);
+.btn-outline-primary {
+  color: var(--primary-blue);
+  border-color: var(--primary-blue);
+  background-color: transparent;
 }
 
-/* 警告和訊息 */
-.alert {
-  border-radius: var(--radius-md);
-  border: none;
-}
-
-.alert-success {
-  background-color: var(--alert-success-bg);
-  color: var(--success-color);
-}
-
-.alert-warning {
-  background-color: var(--alert-warning-bg);
-  color: var(--warning-color);
-}
-
-.alert-danger {
-  background-color: var(--alert-danger-bg);
-  color: var(--danger-color);
-}
-
-.alert-info {
-  background-color: var(--alert-info-bg);
-  color: var(--info-color);
+.btn-outline-primary:hover {
+  background-color: var(--primary-blue);
+  border-color: var(--primary-blue);
+  color: var(--primary-white);
 }
 
 /* 成功狀態按鈕 */
 .btn-success {
-  background-color: var(--success-color) !important;
-  border-color: var(--success-color) !important;
-  color: var(--primary-white) !important;
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+  color: var(--primary-white);
 }
 
 .btn-success:hover {
-  background-color: var(--success-color-hover) !important;
-  border-color: var(--success-color-hover) !important;
-  color: var(--primary-white) !important;
+  background-color: var(--success-color-hover);
+  border-color: var(--success-color-hover);
+  color: var(--primary-white);
 }
 
 /* 警告狀態按鈕 */
 .btn-warning {
-  background-color: var(--warning-color) !important;
-  border-color: var(--warning-color) !important;
-  color: var(--primary-white) !important;
+  background-color: var(--warning-color);
+  border-color: var(--warning-color);
+  color: var(--primary-white);
 }
 
 .btn-warning:hover {
-  background-color: var(--warning-color-hover) !important;
-  border-color: var(--warning-color-hover) !important;
-  color: var(--primary-white) !important;
+  background-color: var(--warning-color-hover);
+  border-color: var(--warning-color-hover);
+  color: var(--primary-white);
 }
 
 /* 危險狀態按鈕 */
 .btn-danger {
-  background-color: var(--danger-color) !important;
-  border-color: var(--danger-color) !important;
-  color: var(--primary-white) !important;
+  background-color: var(--danger-color);
+  border-color: var(--danger-color);
+  color: var(--primary-white);
 }
 
 .btn-danger:hover {
-  background-color: var(--danger-color-hover) !important;
-  border-color: var(--danger-color-hover) !important;
-  color: var(--primary-white) !important;
+  background-color: var(--danger-color-hover);
+  border-color: var(--danger-color-hover);
+  color: var(--primary-white);
 }
 
 /* 資訊狀態按鈕 */
 .btn-info {
-  background-color: var(--info-color) !important;
-  border-color: var(--info-color) !important;
-  color: var(--primary-white) !important;
+  background-color: var(--info-color);
+  border-color: var(--info-color);
+  color: var(--primary-white);
 }
 
 .btn-info:hover {
-  background-color: var(--info-color-hover) !important;
-  border-color: var(--info-color-hover) !important;
-  color: var(--primary-white) !important;
+  background-color: var(--info-color-hover);
+  border-color: var(--info-color-hover);
+  color: var(--primary-white);
 }
 
 /* 次要按鈕 */
 .btn-secondary {
-  background-color: var(--text-secondary) !important;
-  border-color: var(--text-secondary) !important;
-  color: var(--primary-white) !important;
+  background-color: var(--text-secondary);
+  border-color: var(--text-secondary);
+  color: var(--primary-white);
 }
 
 .btn-secondary:hover {
-  background-color: var(--text-secondary-hover) !important;
-  border-color: var(--text-secondary-hover) !important;
-  color: var(--primary-white) !important;
+  background-color: var(--text-secondary-hover);
+  border-color: var(--text-secondary-hover);
+  color: var(--primary-white);
 }
 
 /* Outline 按鈕樣式 */
 .btn-outline-warning {
-  color: var(--warning-color) !important;
-  border-color: var(--warning-color) !important;
-  background-color: transparent !important;
+  color: var(--warning-color);
+  border-color: var(--warning-color);
+  background-color: transparent;
 }
 
 .btn-outline-warning:hover {
-  background-color: var(--warning-color) !important;
-  border-color: var(--warning-color) !important;
-  color: var(--primary-white) !important;
+  background-color: var(--warning-color);
+  border-color: var(--warning-color);
+  color: var(--primary-white);
 }
 
 .btn-outline-danger {
-  color: var(--danger-color) !important;
-  border-color: var(--danger-color) !important;
-  background-color: transparent !important;
+  color: var(--danger-color);
+  border-color: var(--danger-color);
+  background-color: transparent;
 }
 
 .btn-outline-danger:hover {
-  background-color: var(--danger-color) !important;
-  border-color: var(--danger-color) !important;
-  color: var(--primary-white) !important;
+  background-color: var(--danger-color);
+  border-color: var(--danger-color);
+  color: var(--primary-white);
 }
 
 .btn-outline-info {
-  color: var(--info-color) !important;
-  border-color: var(--info-color) !important;
-  background-color: transparent !important;
+  color: var(--info-color);
+  border-color: var(--info-color);
+  background-color: transparent;
 }
 
 .btn-outline-info:hover {
-  background-color: var(--info-color) !important;
-  border-color: var(--info-color) !important;
-  color: var(--primary-white) !important;
-}
-
-/* 表格樣式 */
-.table {
-  --bs-table-bg: var(--bg-primary);
-  --bs-table-border-color: var(--border-color);
-}
-
-.table-striped > tbody > tr:nth-of-type(odd) > td {
-  background-color: var(--bg-secondary);
-}
-
-/* 自定義表格 hover 效果 - 黃橙色 */
-.table-hover > tbody > tr:hover > td,
-.table-hover > tbody > tr:hover > th {
-  background-color: var(--table-hover-bg) !important;
-  color: var(--table-hover-text) !important;
-  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
-}
-
-/* 確保條紋表格的 hover 效果優先級 */
-.table-striped.table-hover > tbody > tr:hover > td,
-.table-striped.table-hover > tbody > tr:hover > th {
-  background-color: var(--table-hover-bg-striped) !important;
-  color: var(--table-hover-text) !important;
-}
-
-/* 自定義表格標題樣式 - 使用主要藍色 */
-.table-header-primary {
-  background-color: var(--primary-blue) !important;
-  color: var(--primary-white) !important;
-  border-color: var(--primary-blue) !important;
-}
-
-.table-header-primary th {
-  background-color: var(--primary-blue) !important;
-  color: var(--primary-white) !important;
-  border-color: var(--primary-blue) !important;
-  font-weight: 600 !important;
-}
-
-/* FormSection 標題樣式 - 使用更高優先級的選擇器 */
-.card-header.form-section-header-contact {
-  background-color: var(--info-color) !important;
-  color: var(--primary-white) !important;
-  border-color: var(--info-color) !important;
-}
-
-.card-header.form-section-header-financial {
-  background-color: var(--warning-color) !important;
-  color: var(--primary-white) !important;
-  border-color: var(--warning-color) !important;
-}
-
-.card-header.form-section-header-system {
-  background-color: var(--text-secondary) !important;
-  color: var(--primary-white) !important;
-  border-color: var(--text-secondary) !important;
-}
-
-/* 卡片樣式 */
-.card {
-  background-color: var(--bg-primary) !important;
-  border: 1px solid var(--border-light) !important;
-  border-radius: var(--radius-lg) !important;
-  box-shadow: var(--shadow-sm) !important;
-}
-
-.card-header {
-  background-color: var(--bg-secondary) !important;
-  border-bottom: 1px solid var(--border-light) !important;
-  color: var(--text-primary) !important;
-  padding: 1rem 1.25rem !important;
-}
-
-/* 表單樣式 */
-.form-control {
-  border-color: var(--border-color);
-  color: var(--text-primary);
-}
-
-.form-control:focus {
-  border-color: var(--primary-blue);
-  box-shadow: var(--focus-shadow-primary);
-}
-
-.form-label {
-  color: var(--text-primary) !important;
-  font-weight: 500 !important;
-}
-
-/* 狀態徽章 */
-.badge.bg-success {
-  background-color: var(--success-color) !important;
-}
-
-.badge.bg-warning {
-  background-color: var(--warning-color) !important;
-}
-
-.badge.bg-danger {
-  background-color: var(--danger-color) !important;
-}
-
-.badge.bg-info {
-  background-color: var(--info-color) !important;
-}
-
-/* 文字顏色工具類 */
-.text-primary-custom {
-  color: var(--text-primary) !important;
-}
-
-.text-secondary-custom {
-  color: var(--text-secondary) !important;
-}
-
-/* 輸入群組樣式 */
-.input-group-text {
-  background-color: var(--bg-secondary) !important;
-  border-color: var(--border-color) !important;
-  color: var(--text-secondary) !important;
-}
-
-.input-group .form-control:focus {
-  border-color: var(--primary-blue) !important;
-  box-shadow: var(--focus-shadow-primary) !important;
-}
-
-/* 分隔線樣式 */
-hr {
-  border-color: var(--border-light) !important;
-  opacity: 1 !important;
-}
-
-/* 表單標籤增強 */
-.form-label {
-  color: var(--text-primary) !important;
-  font-weight: 500 !important;
-}
-
-/* 表單幫助文字 */
-.form-text {
-  color: var(--text-secondary) !important;
-}
-
-/* 無效回饋 */
-.invalid-feedback {
-  color: var(--danger-color) !important;
-}
-
-/* 管理頁面特殊樣式 */
-.card {
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--card-hover-shadow) !important;
-}
-
-/* 移除最後一個邊框 */
-@media (max-width: 767.98px) {
-  .border-end:last-child {
-    border-right: none !important;
-    border-bottom: 1px solid var(--border-color) !important;
-    padding-bottom: 1rem !important;
-    margin-bottom: 1rem !important;
-  }
-}
-
-/* 表格樣式增強 */
-.table td {
-  vertical-align: middle !important;
-}
-
-/* 按鈕群組樣式 */
-.btn-group .btn {
-  margin-right: 2px;
-}
-
-.btn-group .btn:last-child {
-  margin-right: 0;
-}
-
-/* 徽章樣式增強 */
-.badge {
-  font-size: 0.75rem !important;
-}
-
-/* 卡片標題圖標樣式 */
-.card-title i {
-  color: var(--primary-blue) !important;
-}
-
-/* 表單標籤樣式增強 */
-.form-label.small {
-  font-size: 0.875rem !important;
-  font-weight: 600 !important;
-  margin-bottom: 0.25rem !important;
-}
-
-/* 通用區段卡片樣式 */
-.section-card {
-  background-color: var(--bg-primary) !important;
-  border: 1px solid var(--border-light) !important;
-  border-radius: var(--radius-lg) !important;
-  box-shadow: var(--shadow) !important;
-  transition: box-shadow 0.2s ease-in-out !important;
-}
-
-.section-card:hover {
-  box-shadow: var(--shadow-md) !important;
-}
-
-.section-header-primary {
-  background-color: var(--primary-blue) !important;
-  color: var(--primary-white) !important;
-  border-bottom: 1px solid var(--primary-blue) !important;
-  padding: 1rem 1.25rem !important;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
-}
-
-.section-header-primary .card-title {
-  margin-bottom: 0 !important;
-  font-weight: 600 !important;
-}
-
-.section-header-primary .card-title i {
-  color: var(--primary-white) !important;
-}
-
-/* NavigationCard 樣式優化 - 搜尋結果卡片 */
-.search-result-card {
-  transition: all 0.2s ease-in-out !important;
-  border: 1px solid var(--border-light) !important;
-  border-radius: var(--radius-lg) !important;
-  box-shadow: var(--shadow-sm) !important;
-}
-
-.search-result-card:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: var(--shadow-md) !important;
-  border-color: var(--primary-blue) !important;
-}
-
-/* NavMenu 移動裝置優化 */
-@media (max-width: 768px) {
-  .dropdown-item {
-    padding: 0.6rem 1rem 0.6rem 2rem;
-  }
+  background-color: var(--info-color);
+  border-color: var(--info-color);
+  color: var(--primary-white);
 }

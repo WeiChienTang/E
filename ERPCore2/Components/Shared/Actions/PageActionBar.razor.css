@@ -1,0 +1,76 @@
+/* PageActionBar 元件專用樣式 */
+
+/* 主容器樣式 */
+.page-action-bar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem; /* 8px 間距 (gap-2) */
+    margin-bottom: 1rem; /* 16px 底部邊距 (mb-3) */
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* 主要操作區域 */
+.primary-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* 次要操作區域 */
+.secondary-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* 響應式設計 - 小螢幕時調整佈局 */
+@media (max-width: 767.98px) {
+    .page-action-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    
+    .primary-actions,
+    .secondary-actions {
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .primary-actions {
+        order: 1;
+    }
+    
+    .secondary-actions {
+        order: 2;
+    }
+}
+
+/* 確保按鈕在動作區域內有適當的最小寬度 */
+.primary-actions .btn,
+.secondary-actions .btn {
+    min-width: 80px;
+    border-radius: var(--radius, 0.25rem);
+}
+
+/* 小螢幕時的按鈕樣式調整 */
+@media (max-width: 767.98px) {
+    .primary-actions .btn,
+    .secondary-actions .btn {
+        min-width: 60px;
+        flex: 1;
+        max-width: 150px;
+    }
+}
+
+/* 確保動作容器在空間不足時能夠正確換行 */
+.page-action-bar > div:not(:last-child) {
+    margin-right: 0.5rem;
+}
+
+@media (max-width: 767.98px) {
+    .page-action-bar > div:not(:last-child) {
+        margin-right: 0;
+    }
+}
