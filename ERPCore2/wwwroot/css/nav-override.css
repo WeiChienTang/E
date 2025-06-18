@@ -1,0 +1,19 @@
+/* 全域導航選單樣式覆蓋 - 保留基本的通用樣式 */
+
+/* 保留基本的圖示樣式，因為可能被其他地方使用 */
+.bi {
+    display: inline-block;
+    position: relative;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.75rem;
+    top: -1px;
+    background-size: cover;
+}
+
+/* 特殊情況下的圖示尺寸調整 */
+.dropdown-item .bi {
+    margin-right: 0.75rem !important;
+    width: 1rem !important;
+    height: 1rem !important;
+}

@@ -1,0 +1,177 @@
+@* 通用導航選單項目元件 *@
+@rendermode @(new Microsoft.AspNetCore.Components.Web.InteractiveServerRenderMode())
+
+<style>
+    /* NavMenuItem 專用樣式 - Scoped CSS 具有最高優先級 */
+    .dropdown-container {
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+        background-color: transparent !important;
+        border-radius: 8px !important;
+    }
+    
+    .dropdown-toggle-btn {
+        color: #FFFFFF !important;
+        background-color: transparent !important;
+        border: none !important;
+        border-radius: 8px !important;
+        height: 3rem !important;
+        display: flex !important;
+        align-items: center !important;
+        width: 100% !important;
+        text-decoration: none !important;
+        cursor: pointer !important;
+        padding: 0.5rem 1rem !important;
+        transition: all 0.2s ease !important;
+        font-size: 0.9rem !important;
+        box-sizing: border-box !important;
+        font-weight: normal !important;
+    }
+    
+    .dropdown-toggle-btn:hover {
+        background-color: #fef3c7 !important;
+        color: #92400e !important;
+        transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out !important;
+    }
+    
+    /* 展開狀態背景 - 比主側邊欄更淡的藍色 */
+    .dropdown-container.expanded .dropdown-toggle-btn:not(:hover) {
+        background-color: rgba(30, 58, 138, 0.3) !important;
+        border-radius: 8px !important;
+    }
+    
+    /* 展開且 hover 時保持黃色 */
+    .dropdown-container.expanded .dropdown-toggle-btn:hover {
+        background-color: #fef3c7 !important;
+        color: #92400e !important;
+        border-radius: 8px !important;
+    }
+    
+    .dropdown-content {
+        background-color: rgba(31, 41, 55, 0.8) !important;
+        border-radius: 8px !important;
+        margin-top: 2px !important;
+        overflow: hidden !important;
+        transition: all 0.3s ease !important;
+        border: none !important;
+        display: none;
+    }
+    
+    .dropdown-content.show {
+        display: block !important;
+    }
+    
+    .dropdown-arrow {
+        margin-left: auto !important;
+        font-size: 0.8rem !important;
+        transition: transform 0.3s ease !important;
+        color: inherit !important;
+    }
+    
+    .dropdown-arrow.up {
+        transform: rotate(180deg) !important;
+    }
+    
+    .dropdown-arrow.down {
+        transform: rotate(0deg) !important;
+    }
+    
+    .nav-link {
+        color: #FFFFFF !important;
+        background-color: transparent !important;
+        border: none !important;
+        border-radius: 8px !important;
+        height: 3rem !important;
+        display: flex !important;
+        align-items: center !important;
+        width: 100% !important;
+        text-decoration: none !important;
+        padding: 0.5rem 1rem !important;
+        transition: all 0.2s ease !important;
+        font-size: 0.9rem !important;
+        box-sizing: border-box !important;
+        font-weight: normal !important;
+    }
+    
+    .nav-link:hover {
+        background-color: #fef3c7 !important;
+        color: #92400e !important;
+        transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out !important;
+        text-decoration: none !important;
+    }
+    
+    .bi {
+        display: inline-block;
+        position: relative;
+        width: 1.25rem;
+        height: 1.25rem;
+        margin-right: 0.75rem;
+        top: -1px;
+        background-size: cover;
+    }
+</style>
+
+<div class="nav-item px-3">
+    @if (HasDropdownItems)
+    {
+        <!-- 下拉選單容器 -->
+        <div class="dropdown-container @(isDropdownOpen ? "expanded" : "")">            
+            <div class="dropdown-toggle-btn" @onclick="ToggleDropdown" 
+                 @onmouseenter="@(() => isHovering = true)"
+                 @onmouseleave="@(() => isHovering = false)">
+                <span class="@IconClass bi" aria-hidden="true"></span> 
+                @Text
+                <span class="dropdown-arrow @(isDropdownOpen ? "up" : "down")">▼</span>
+            </div>
+            <div class="dropdown-content @(isDropdownOpen ? "show" : "")">
+                @DropdownItems
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- 簡單連結 -->
+        <a class="nav-link" href="@Url"
+           @onmouseenter="@(() => isHovering = true)"
+           @onmouseleave="@(() => isHovering = false)">
+            <span class="@IconClass bi" aria-hidden="true"></span> @Text
+        </a>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// 選單項目顯示的文字
+    /// </summary>
+    [Parameter] public string Text { get; set; } = "";
+
+    /// <summary>
+    /// 圖示的 CSS 類別（例如 "bi bi-house-door-fill-nav-menu"）
+    /// </summary>
+    [Parameter] public string IconClass { get; set; } = "";
+
+    /// <summary>
+    /// 簡單連結的 URL（當 HasDropdownItems 為 false 時使用）
+    /// </summary>
+    [Parameter] public string Url { get; set; } = "";
+
+    /// <summary>
+    /// 下拉選單的內容（RenderFragment）
+    /// </summary>
+    [Parameter] public RenderFragment? DropdownItems { get; set; }
+
+    /// <summary>
+    /// 是否有下拉選單項目
+    /// </summary>
+    private bool HasDropdownItems => DropdownItems != null;
+
+    private bool isDropdownOpen = false;
+    private bool isHovering = false;
+
+    private void ToggleDropdown()
+    {
+        isDropdownOpen = !isDropdownOpen;
+        StateHasChanged();
+    }
+}

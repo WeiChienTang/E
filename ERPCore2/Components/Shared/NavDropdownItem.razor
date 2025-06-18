@@ -1,0 +1,67 @@
+@* 下拉選單項目元件 *@
+
+<style>
+    /* NavDropdownItem 專用樣式 - Scoped CSS 具有最高優先級 */
+    .dropdown-item {
+        display: flex !important;
+        align-items: center !important;
+        padding: 0.75rem 1rem 0.75rem 2.5rem !important;
+        color: #FFFFFF !important;
+        text-decoration: none !important;
+        transition: all 0.2s ease !important;
+        font-size: 0.85rem !important;
+        background-color: transparent !important;
+        border: none !important;
+        border-radius: 6px !important;
+        width: 100% !important;
+        clear: both !important;
+        font-weight: 400 !important;
+        line-height: 1.5 !important;
+        white-space: nowrap !important;
+    }
+    
+    .dropdown-item:hover {
+        background-color: #fef3c7 !important;
+        color: #92400e !important;
+        text-decoration: none !important;
+        transform: translateX(5px) !important;
+        transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out, transform 0.2s ease !important;
+    }
+    
+    .dropdown-item .bi {
+        margin-right: 0.75rem !important;
+        width: 1rem !important;
+        height: 1rem !important;
+        display: inline-block;
+        position: relative;
+        top: -1px;
+        background-size: cover;
+    }
+</style>
+
+<a class="dropdown-item" href="@Url"
+   @onmouseenter="@(() => isHovering = true)"
+   @onmouseleave="@(() => isHovering = false)">
+    <span class="@IconClass bi" aria-hidden="true"></span> @Text
+</a>
+
+
+
+@code {
+    /// <summary>
+    /// 下拉選單項目顯示的文字
+    /// </summary>
+    [Parameter] public string Text { get; set; } = "";
+
+    /// <summary>
+    /// 圖示的 CSS 類別（例如 "bi bi-person-lines-fill"）
+    /// </summary>
+    [Parameter] public string IconClass { get; set; } = "";
+
+    /// <summary>
+    /// 連結的 URL
+    /// </summary>
+    [Parameter] public string Url { get; set; } = "";
+
+    private bool isHovering = false;
+}

@@ -1,21 +1,152 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 
-<head>    <meta charset="utf-8" />
+<head>    
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />    <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    <link rel="stylesheet" href="@Assets["css/variables.css"]" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />    <link rel="stylesheet" href="@Assets["css/variables.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["ERPCore2.styles.css"]" />
+    <link rel="stylesheet" href="@Assets["css/nav-override.css"]" />    <style>
+        /* 強制覆蓋導航選單樣式 - 最高優先級 - 包含所有可能的 Bootstrap 類別 */
+        .sidebar .nav-scrollable .nav-item .nav-link,
+        .sidebar .nav-scrollable .nav-item .dropdown-toggle-btn,
+        .nav-scrollable .nav-item .nav-link,
+        .nav-scrollable .nav-item .dropdown-toggle-btn,
+        .nav-scrollable .nav .nav-item .nav-link,
+        .nav-scrollable .nav .nav-item .dropdown-toggle-btn,
+        .nav.flex-column .nav-item .nav-link,
+        .nav.flex-column .nav-item .dropdown-toggle-btn,
+        .nav-item .nav-link,
+        .nav-item .dropdown-toggle-btn,
+        a.nav-link,
+        div.dropdown-toggle-btn,
+        /* 針對 Bootstrap 的強化選擇器 */
+        .nav-scrollable nav.nav .nav-item a.nav-link,
+        .nav-scrollable nav.nav .nav-item div.dropdown-toggle-btn {
+            color: #FFFFFF !important;
+            background-color: #1F2937 !important;
+            border: none !important;
+            border-radius: 4px !important;
+            height: 3rem !important;
+            display: flex !important;
+            align-items: center !important;
+            line-height: 3rem !important;
+            width: 100% !important;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            padding: 0.5rem 1rem !important;
+            transition: all 0.2s ease !important;
+            font-size: 0.9rem !important;
+            box-sizing: border-box !important;
+        }
+        
+        /* 強制 hover 樣式 - 包含所有可能的選擇器 */
+        .sidebar .nav-scrollable .nav-item .nav-link:hover,
+        .sidebar .nav-scrollable .nav-item .dropdown-toggle-btn:hover,
+        .nav-scrollable .nav-item .nav-link:hover,
+        .nav-scrollable .nav-item .dropdown-toggle-btn:hover,
+        .nav-scrollable .nav .nav-item .nav-link:hover,
+        .nav-scrollable .nav .nav-item .dropdown-toggle-btn:hover,
+        .nav.flex-column .nav-item .nav-link:hover,
+        .nav.flex-column .nav-item .dropdown-toggle-btn:hover,
+        .nav-item .nav-link:hover,
+        .nav-item .dropdown-toggle-btn:hover,
+        a.nav-link:hover,
+        div.dropdown-toggle-btn:hover,
+        .nav-scrollable nav.nav .nav-item a.nav-link:hover,
+        .nav-scrollable nav.nav .nav-item div.dropdown-toggle-btn:hover {
+            background-color: #fef3c7 !important;
+            color: #92400e !important;
+            transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out !important;
+            text-decoration: none !important;
+        }
+        
+        /* 下拉選單樣式 */
+        .dropdown-content {
+            background-color: rgba(31, 41, 55, 0.8) !important;
+            border-radius: 0 0 4px 4px !important;
+            margin-top: 2px !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        .dropdown-content.show {
+            display: block !important;
+        }
+        
+        /* 下拉選單項目樣式 - 包含所有可能的選擇器 */
+        .dropdown-content .dropdown-item,
+        .dropdown-item,
+        .nav-item .dropdown-content .dropdown-item,
+        .nav-item .dropdown-item,
+        .dropdown-menu .dropdown-item,
+        a.dropdown-item {
+            display: flex !important;
+            align-items: center !important;
+            padding: 0.75rem 1rem 0.75rem 2.5rem !important;
+            color: #FFFFFF !important;
+            text-decoration: none !important;
+            font-size: 0.85rem !important;
+            background-color: transparent !important;
+            border: none !important;
+            width: 100% !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        .dropdown-content .dropdown-item:hover,
+        .dropdown-item:hover,
+        .nav-item .dropdown-content .dropdown-item:hover,
+        .nav-item .dropdown-item:hover,
+        .dropdown-menu .dropdown-item:hover,
+        a.dropdown-item:hover {
+            background-color: #fef3c7 !important;
+            color: #92400e !important;
+            text-decoration: none !important;
+            transform: translateX(5px) !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        /* 圖示樣式 */
+        .bi {
+            display: inline-block;
+            position: relative;
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 0.75rem;
+            top: -1px;
+            background-size: cover;
+        }
+        
+        .dropdown-item .bi {
+            margin-right: 0.75rem !important;
+            width: 1rem !important;
+            height: 1rem !important;
+        }
+        
+        /* 箭頭樣式 */
+        .dropdown-arrow {
+            margin-left: auto !important;
+            font-size: 0.8rem !important;
+            transition: transform 0.3s ease !important;
+            color: inherit !important;
+        }
+        
+        .dropdown-arrow.up {
+            transform: rotate(180deg) !important;
+        }
+        
+        .dropdown-arrow.down {
+            transform: rotate(0deg) !important;
+        }
+    </style>
     <ImportMap />
     <link rel="icon" type="image/png" href="favicon.png" />
     <HeadOutlet />
 </head>
 
-<body>
-    <Routes />
-    <script src="@Assets["lib/bootstrap/dist/js/bootstrap.bundle.min.js"]"></script>
+<body>    
+    <Routes/>    <script src="@Assets["lib/bootstrap/dist/js/bootstrap.bundle.min.js"]"></script>
     <script src="@Assets["js/bootstrap-helpers.js"]"></script>
     <script src="_framework/blazor.web.js"></script>
 </body>

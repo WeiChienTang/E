@@ -1,222 +1,70 @@
-﻿@using Microsoft.AspNetCore.Components.Authorization
-@using Microsoft.AspNetCore.Authorization
-@using ERPCore2.Components.Shared
-
-@code {
-    private string? activeDropdown = null;
-
-    protected override void OnInitialized()
-    {
-        base.OnInitialized();
-    }
-
-    private void ToggleDropdown(string dropdownName)
-    {
-        if (activeDropdown == dropdownName)
-        {
-            activeDropdown = null;
-        }
-        else
-        {
-            activeDropdown = dropdownName;
-        }
-    }
-
-    private string GetDropdownClass(string dropdownName)
-    {
-        return activeDropdown == dropdownName ? "show" : "";
-    }
-
-    private string GetArrowClass(string dropdownName)
-    {
-        return activeDropdown == dropdownName ? "bi-chevron-up" : "bi-chevron-down";
-    }
-}
+@rendermode @(new Microsoft.AspNetCore.Components.Web.InteractiveServerRenderMode())
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid d-flex justify-content-between align-items-center">
         <a class="navbar-brand" href="">美莊磚業</a>
-        <AuthorizeView>
-            <Authorized>
-                <div class="d-flex align-items-center">
-                    <span class="text-white me-3">
-                        <i class="bi bi-person-fill me-1"></i>
-                        歡迎，@context.User.Identity?.Name
-                    </span>
-                    <a href="/auth/logout" class="btn btn-sm btn-outline-light">
-                        <i class="bi bi-box-arrow-right me-1"></i>
-                        登出
-                    </a>
-                </div>
-            </Authorized>
-            <NotAuthorized>
-                <a href="/auth/login" class="btn btn-sm btn-outline-light">
-                    <i class="bi bi-box-arrow-in-right me-1"></i>
-                    登入
-                </a>
-            </NotAuthorized>
-        </AuthorizeView>
+        <div class="d-flex align-items-center">
+            <span class="text-white me-3">歡迎使用系統</span>
+            <a href="/auth/logout" class="btn btn-sm btn-outline-light">登出</a>
+        </div>
     </div>
 </div>
 
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
-<div class="nav-scrollable">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> 首頁
-            </NavLink>
-        </div>
+<div class="nav-scrollable">    <nav class="nav flex-column">
+        <!-- 首頁 -->
+        <NavMenuItem Text="首頁" IconClass="bi bi-house-door-fill-nav-menu" Url="/" />
 
-        <!-- 只有登入用戶才能看到的菜單 -->
-        <AuthorizeView>
-            <Authorized>
-                <!-- 客戶管理 -->
-                <div class="nav-item px-3">                      <div class="nav-link dropdown-toggle @(activeDropdown == "customer" ? "active" : "")" 
-                         @onclick='() => ToggleDropdown("customer")'>>
-                        <span class="bi bi-people-fill" aria-hidden="true"></span> 客戶管理
-                        <span class="bi @GetArrowClass("customer") ms-auto dropdown-arrow"></span>
-                    </div>
-                    <div class="dropdown-menu @GetDropdownClass("customer")">
-                        <PermissionCheck Permission="Customer.Read">
-                            <NavLink class="dropdown-item" href="customers">
-                                <span class="bi bi-person-lines-fill" aria-hidden="true"></span> 客戶維護
-                            </NavLink>
-                        </PermissionCheck>
-                        <NavLink class="dropdown-item" href="customer-types">
-                            <span class="bi bi-tags-fill" aria-hidden="true"></span> 客戶類型
-                        </NavLink>
-                    </div>
-                </div>
+        <!-- 客戶管理下拉選單 -->
+        <NavMenuItem Text="客戶管理" IconClass="bi bi-people-fill">
+            <DropdownItems>
+                <NavDropdownItem Text="客戶維護" IconClass="bi bi-person-lines-fill" Url="/customers" />
+                <NavDropdownItem Text="客戶類型" IconClass="bi bi-tags-fill" Url="/customer-types" />
+            </DropdownItems>
+        </NavMenuItem>
 
-                <PermissionCheck Permission="Supplier.Read">
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="suppliers">
-                            <span class="bi bi-building-gear" aria-hidden="true"></span> 廠商管理
-                        </NavLink>
-                    </div>
-                </PermissionCheck>
+        <!-- 廠商管理 -->
+        <NavMenuItem Text="廠商管理" IconClass="bi bi-building-gear" Url="/suppliers" />
 
-                <PermissionCheck Permission="Employee.Read">
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="employees">
-                            <span class="bi bi-person-badge-fill" aria-hidden="true"></span> 員工管理
-                        </NavLink>
-                    </div>
-                </PermissionCheck>
+        <!-- 員工管理 -->
+        <NavMenuItem Text="員工管理" IconClass="bi bi-person-badge-fill" Url="/employees" />
 
-                <PermissionCheck Permission="Product.Read">
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="products">
-                            <span class="bi bi-box-seam-fill" aria-hidden="true"></span> 產品管理
-                        </NavLink>
-                    </div>
-                </PermissionCheck>
+        <!-- 產品管理下拉選單 -->
+        <NavMenuItem Text="產品管理" IconClass="bi bi-box-seam-fill">
+            <DropdownItems>
+                <NavDropdownItem Text="產品維護" IconClass="bi bi-box-seam" Url="/products" />
+                <NavDropdownItem Text="產品分類" IconClass="bi bi-diagram-3-fill" Url="/product-categories" />
+                <NavDropdownItem Text="單位設定" IconClass="bi bi-rulers" Url="/units" />
+            </DropdownItems>
+        </NavMenuItem>
 
-                <!-- 庫存管理選單 -->
-                <div class="nav-item px-3">                      <div class="nav-link dropdown-toggle @(activeDropdown == "inventory" ? "active" : "")"
-                         @onclick='() => ToggleDropdown("inventory")'>>
-                        <span class="bi bi-boxes" aria-hidden="true"></span> 庫存管理
-                        <span class="bi @GetArrowClass("inventory") ms-auto dropdown-arrow"></span>
-                    </div>
-                    <div class="dropdown-menu @GetDropdownClass("inventory")">
-                        <NavLink class="dropdown-item" href="inventory/warehouses">
-                            <span class="bi bi-building" aria-hidden="true"></span> 倉庫管理
-                        </NavLink>
-                        <NavLink class="dropdown-item" href="inventory/warehouse-locations">
-                            <span class="bi bi-diagram-3" aria-hidden="true"></span> 庫位管理
-                        </NavLink>
-                        <NavLink class="dropdown-item" href="inventory/units">
-                            <span class="bi bi-rulers" aria-hidden="true"></span> 單位管理
-                        </NavLink>
-                        <NavLink class="dropdown-item" href="inventory/unit-conversions">
-                            <span class="bi bi-arrow-left-right" aria-hidden="true"></span> 單位轉換管理
-                        </NavLink>
-                        <NavLink class="dropdown-item" href="inventory/transaction-types">
-                            <span class="bi bi-list-ul" aria-hidden="true"></span> 異動類型管理
-                        </NavLink>
-                        <NavLink class="dropdown-item" href="inventory/reports">
-                            <span class="bi bi-graph-up" aria-hidden="true"></span> 庫存報表
-                        </NavLink>
-                    </div>
-                </div>
+        <!-- 庫存管理下拉選單 -->
+        <NavMenuItem Text="庫存管理" IconClass="bi bi-boxes">
+            <DropdownItems>
+                <NavDropdownItem Text="庫存查詢" IconClass="bi bi-search" Url="/inventory" />
+                <NavDropdownItem Text="進貨管理" IconClass="bi bi-arrow-down-circle-fill" Url="/purchase" />
+                <NavDropdownItem Text="出貨管理" IconClass="bi bi-arrow-up-circle-fill" Url="/sales" />
+                <NavDropdownItem Text="庫存調整" IconClass="bi bi-arrow-left-right" Url="/inventory-adjustment" />
+            </DropdownItems>
+        </NavMenuItem>
 
-                <!-- BOM表選單 -->
-                <div class="nav-item px-3">                      <div class="nav-link dropdown-toggle @(activeDropdown == "bom" ? "active" : "")"
-                         @onclick='() => ToggleDropdown("bom")'>>
-                        <span class="bi bi-gear-fill" aria-hidden="true"></span> BOM表
-                        <span class="bi @GetArrowClass("bom") ms-auto dropdown-arrow"></span>
-                    </div>
-                    <div class="dropdown-menu @GetDropdownClass("bom")">
-                        <PermissionCheck Permission="Weather.Read">
-                            <NavLink class="dropdown-item" href="BOMFoundation/weather">
-                                <span class="bi bi-cloud-fill" aria-hidden="true"></span> 天氣管理
-                            </NavLink>
-                        </PermissionCheck>
-                        <PermissionCheck Permission="Color.Read">
-                            <NavLink class="dropdown-item" href="BOMFoundation/colors">
-                                <span class="bi bi-palette-fill" aria-hidden="true"></span> 顏色管理
-                            </NavLink>
-                        </PermissionCheck>
-                        <PermissionCheck Permission="Material.Read">
-                            <NavLink class="dropdown-item" href="BOMFoundation/materials">
-                                <span class="bi bi-layers-fill" aria-hidden="true"></span> 材質管理
-                            </NavLink>
-                        </PermissionCheck>
-                    </div>
-                </div>
-            </Authorized>
-        </AuthorizeView>
+        <!-- BOM 管理下拉選單 -->
+        <NavMenuItem Text="BOM 管理" IconClass="bi bi-diagram-2-fill">
+            <DropdownItems>
+                <NavDropdownItem Text="BOM 維護" IconClass="bi bi-diagram-2" Url="/bom" />
+                <NavDropdownItem Text="BOM 查詢" IconClass="bi bi-search" Url="/bom-search" />
+                <NavDropdownItem Text="成本分析" IconClass="bi bi-calculator-fill" Url="/cost-analysis" />
+            </DropdownItems>
+        </NavMenuItem>
 
-        <!-- 開發用元件展示 -->
-        <div class="nav-item px-3">              
-            <div class="nav-link dropdown-toggle @(activeDropdown == "demo" ? "active" : "")"
-                 @onclick='() => ToggleDropdown("demo")'>>
-                <span class="bi bi-puzzle-fill" aria-hidden="true"></span> 元件展示
-                <span class="bi @GetArrowClass("demo") ms-auto dropdown-arrow"></span>
-            </div>
-            <div class="dropdown-menu @GetDropdownClass("demo")">
-                <NavLink class="dropdown-item" href="sharedcomponentsdemo/actions">
-                    <span class="bi bi-lightning-fill" aria-hidden="true"></span> Actions
-                </NavLink>
-                <NavLink class="dropdown-item" href="sharedcomponentsdemo/alerts">
-                    <span class="bi bi-exclamation-triangle-fill" aria-hidden="true"></span> Alerts
-                </NavLink>
-                <NavLink class="dropdown-item" href="sharedcomponentsdemo/badges">
-                    <span class="bi bi-award-fill" aria-hidden="true"></span> Badges
-                </NavLink>
-                <NavLink class="dropdown-item" href="sharedcomponentsdemo/buttons">
-                    <span class="bi bi-hand-index-fill" aria-hidden="true"></span> Buttons
-                </NavLink>
-                <NavLink class="dropdown-item" href="sharedcomponentsdemo/details/new">
-                    <span class="bi bi-card-text" aria-hidden="true"></span> Details
-                </NavLink>
-                <NavLink class="dropdown-item" href="demo/forms">
-                    <span class="bi bi-ui-checks" aria-hidden="true"></span> FormsDemo
-                </NavLink>
-                <NavLink class="dropdown-item" href="demo/forms/generic">
-                    <span class="bi bi-ui-checks" aria-hidden="true"></span> GenericFormDemo
-                </NavLink>
-                <NavLink class="dropdown-item" href="demo/forms/search-filter">
-                    <span class="bi bi-ui-checks" aria-hidden="true"></span> GenericSearchFilterDemo
-                </NavLink>
-                <NavLink class="dropdown-item" href="demo/headers/generic">
-                    <span class="bi bi-header" aria-hidden="true"></span> Headers
-                </NavLink>
-                <NavLink class="dropdown-item" href="sharedcomponentsdemo/loading">
-                    <span class="bi bi-arrow-repeat" aria-hidden="true"></span> Loading
-                </NavLink>
-                <NavLink class="dropdown-item" href="demo/tables/generic">
-                    <span class="bi bi-table" aria-hidden="true"></span> GenericTableDemoTables
-                </NavLink>
-                <NavLink class="dropdown-item" href="demo/tables">
-                    <span class="bi bi-table" aria-hidden="true"></span> IndexTables
-                </NavLink>
-                <NavLink class="dropdown-item" href="demo/navigation-search">
-                    <span class="bi bi-search" aria-hidden="true"></span> 導航搜尋測試
-                </NavLink>
-            </div>
-        </div>    
+        <!-- 系統設定下拉選單 -->
+        <NavMenuItem Text="系統設定" IconClass="bi bi-gear-fill">
+            <DropdownItems>
+                <NavDropdownItem Text="使用者管理" IconClass="bi bi-person-gear" Url="/users" />
+                <NavDropdownItem Text="權限設定" IconClass="bi bi-shield-check" Url="/permissions" />
+                <NavDropdownItem Text="系統參數" IconClass="bi bi-sliders" Url="/system-config" />
+            </DropdownItems>
+        </NavMenuItem>
     </nav>
 </div>
