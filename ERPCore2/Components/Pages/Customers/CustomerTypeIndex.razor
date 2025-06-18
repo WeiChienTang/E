@@ -14,6 +14,7 @@
 <GenericIndexPageComponent TEntity="CustomerType" 
                           TService="ICustomerTypeService"
                           Service="@CustomerTypeService"
+                          EntityBasePath="/customer-types"
                           PageTitle="客戶類型管理"
                           PageSubtitle="管理客戶分類類型設定"
                           PageIcon="tags-fill"
@@ -27,15 +28,17 @@
                           ColumnDefinitions="@columnDefinitions"
                           DataLoader="@LoadCustomerTypesAsync"
                           FilterApplier="@ApplyCustomerTypeFilters"
-                          OnAddClick="@ShowCreateCustomerType"
-                          OnRowClick="@HandleRowClick"
                           ActionsTemplate="@ActionsTemplate"
                           AutoSearch="true"
                           ShowSearchButton="true"
                           ShowAdvancedToggle="true"
-                          SearchDelayMs="500" />
+                          SearchDelayMs="500"
+                          @ref="indexComponent" />
 
 @code {
+    // 組件參考
+    private GenericIndexPageComponent<CustomerType, ICustomerTypeService> indexComponent = default!;
+    
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
@@ -133,27 +136,7 @@
         }
 
         return query.OrderBy(ct => ct.TypeName);
-    }
-
-    // 事件處理方法
-    private async Task ShowCreateCustomerType()
-    {
-        Navigation.NavigateTo("/customer-types/edit");
-        await Task.CompletedTask;
-    }
-
-    private async Task HandleRowClick(CustomerType customerType)
-    {
-        Navigation.NavigateTo($"/customer-types/detail/{customerType.Id}");
-        await Task.CompletedTask;
-    }
-
-    private async Task EditCustomerType(CustomerType customerType)
-    {
-        Navigation.NavigateTo($"/customer-types/edit/{customerType.Id}");
-        await Task.CompletedTask;
-    }
-
+    }    // 刪除操作方法
     private async Task DeleteCustomerType(CustomerType customerType)
     {
         var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
@@ -167,7 +150,8 @@
                 if (result.IsSuccess)
                 {
                     await JSRuntime.InvokeVoidAsync("alert", "客戶類型刪除成功");
-                    // TODO: 觸發基底組件重新載入
+                    // 觸發基底組件重新載入
+                    await indexComponent.Refresh();
                 }
                 else
                 {
@@ -181,19 +165,13 @@
         }
     }
 
-    private async Task ViewCustomerType(CustomerType customerType)
-    {
-        Navigation.NavigateTo($"/customer-types/detail/{customerType.Id}");
-        await Task.CompletedTask;
-    }
-
     // 表格操作範本
     private RenderFragment<CustomerType> ActionsTemplate => customerType => 
         @<div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-primary" @onclick="() => ViewCustomerType(customerType)" title="檢視">
+            <button class="btn btn-outline-primary" @onclick="() => indexComponent.NavigateToDetail(customerType)" title="檢視">
                 <i class="bi bi-eye"></i>
             </button>
-            <button class="btn btn-outline-warning" @onclick="() => EditCustomerType(customerType)" title="編輯">
+            <button class="btn btn-outline-warning" @onclick="() => indexComponent.NavigateToEdit(customerType)" title="編輯">
                 <i class="bi bi-pencil"></i>
             </button>
             <button class="btn btn-outline-danger" @onclick="() => DeleteCustomerType(customerType)" title="刪除">

@@ -11,6 +11,7 @@
 <GenericIndexPageComponent TEntity="Material" 
                           TService="IMaterialService"
                           Service="@MaterialService"
+                          EntityBasePath="/BOMFoundation/materials"
                           PageTitle="材質管理"
                           PageSubtitle="管理所有材質資料與屬性設定"
                           PageIcon="layers-fill"
@@ -24,15 +25,17 @@
                           ColumnDefinitions="@columnDefinitions"
                           DataLoader="@LoadMaterialsAsync"
                           FilterApplier="@ApplyMaterialFilters"
-                          OnAddClick="@ShowCreateMaterial"
-                          OnRowClick="@HandleRowClick"
                           ActionsTemplate="@ActionsTemplate"
                           AutoSearch="true"
                           ShowSearchButton="true"
                           ShowAdvancedToggle="true"
-                          SearchDelayMs="500" />
+                          SearchDelayMs="500"
+                          @ref="indexComponent" />
 
 @code {
+    // 組件參考
+    private GenericIndexPageComponent<Material, IMaterialService> indexComponent = default!;
+    
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
@@ -184,18 +187,7 @@
         await Task.CompletedTask;
     }
 
-    private async Task ShowCreateMaterial()
-    {
-        Navigation.NavigateTo("/BOMFoundation/materials/edit");
-        await Task.CompletedTask;
-    }
-
-    private async Task EditMaterial(Material material)
-    {
-        Navigation.NavigateTo($"/BOMFoundation/materials/edit/{material.Id}");
-        await Task.CompletedTask;
-    }
-
+    // 刪除操作方法
     private async Task DeleteMaterial(Material material)
     {
         var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
@@ -209,6 +201,8 @@
                 if (result.IsSuccess)
                 {
                     await JSRuntime.InvokeVoidAsync("alert", "材質刪除成功");
+                    // 觸發基底組件重新載入
+                    await indexComponent.Refresh();
                 }
                 else
                 {
@@ -222,19 +216,13 @@
         }
     }
 
-    private async Task ViewMaterial(Material material)
-    {
-        Navigation.NavigateTo($"/BOMFoundation/materials/detail/{material.Id}");
-        await Task.CompletedTask;
-    }
-
     // 表格操作範本
     private RenderFragment<Material> ActionsTemplate => material => 
         @<div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-primary" @onclick="() => ViewMaterial(material)" title="檢視">
+            <button class="btn btn-outline-primary" @onclick="() => indexComponent.NavigateToDetail(material)" title="檢視">
                 <i class="bi bi-eye"></i>
             </button>
-            <button class="btn btn-outline-warning" @onclick="() => EditMaterial(material)" title="編輯">
+            <button class="btn btn-outline-warning" @onclick="() => indexComponent.NavigateToEdit(material)" title="編輯">
                 <i class="bi bi-pencil"></i>
             </button>
             <button class="btn btn-outline-danger" @onclick="() => DeleteMaterial(material)" title="刪除">

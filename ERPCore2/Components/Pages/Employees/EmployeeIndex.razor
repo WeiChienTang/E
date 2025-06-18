@@ -10,6 +10,7 @@
 <GenericIndexPageComponent TEntity="Employee" 
                           TService="IEmployeeService"
                           Service="@EmployeeService"
+                          EntityBasePath="/employees"
                           PageTitle="員工管理"
                           PageSubtitle="管理所有員工資料與權限設定"
                           PageIcon="people-fill"
@@ -24,15 +25,17 @@
                           DataLoader="@LoadEmployeesAsync"
                           InitializeBasicData="@LoadBasicDataAsync"
                           FilterApplier="@ApplyEmployeeFilters"
-                          OnAddClick="@ShowCreateEmployee"
-                          OnRowClick="@HandleRowClick"
                           ActionsTemplate="@ActionsTemplate"
                           AutoSearch="true"
                           ShowSearchButton="true"
                           ShowAdvancedToggle="true"
-                          SearchDelayMs="500" />
+                          SearchDelayMs="500"
+                          @ref="indexComponent" />
 
 @code {
+    // 組件參考
+    private GenericIndexPageComponent<Employee, IEmployeeService> indexComponent = default!;
+    
     // 選項清單
     private List<Role> roles = new();
     
@@ -246,28 +249,10 @@
         if (!string.IsNullOrWhiteSpace(isLockedFilter) && bool.TryParse(isLockedFilter, out var isLocked))
         {
             query = query.Where(e => e.IsLocked == isLocked);
-        }
-
-        return query.OrderBy(e => e.EmployeeCode);
-    }    // 事件處理方法
-    private async Task ShowCreateEmployee()
-    {
-        Navigation.NavigateTo("/employees/edit");
-        await Task.CompletedTask;
+        }        return query.OrderBy(e => e.EmployeeCode);
     }
 
-    private async Task HandleRowClick(Employee employee)
-    {
-        Navigation.NavigateTo($"/employees/detail/{employee.Id}");
-        await Task.CompletedTask;
-    }
-
-    private async Task EditEmployee(Employee employee)
-    {
-        Navigation.NavigateTo($"/employees/edit/{employee.Id}");
-        await Task.CompletedTask;
-    }
-
+    // 刪除操作方法
     private async Task DeleteEmployee(Employee employee)
     {
         var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
@@ -281,7 +266,8 @@
                 if (result.IsSuccess)
                 {
                     await JSRuntime.InvokeVoidAsync("alert", "員工刪除成功");
-                    // TODO: 觸發基底組件重新載入
+                    // 觸發基底組件重新載入
+                    await indexComponent.Refresh();
                 }
                 else
                 {
@@ -295,12 +281,6 @@
         }
     }
 
-    private async Task ViewEmployee(Employee employee)
-    {
-        Navigation.NavigateTo($"/employees/detail/{employee.Id}");
-        await Task.CompletedTask;
-    }
-
     private async Task LockEmployee(Employee employee)
     {
         try
@@ -309,7 +289,8 @@
             if (result.IsSuccess)
             {
                 await JSRuntime.InvokeVoidAsync("alert", "員工帳號已鎖定");
-                // TODO: 觸發基底組件重新載入
+                // 觸發基底組件重新載入
+                await indexComponent.Refresh();
             }
             else
             {
@@ -330,7 +311,8 @@
             if (result.IsSuccess)
             {
                 await JSRuntime.InvokeVoidAsync("alert", "員工帳號已解鎖");
-                // TODO: 觸發基底組件重新載入
+                // 觸發基底組件重新載入
+                await indexComponent.Refresh();
             }
             else
             {
@@ -346,10 +328,10 @@
     // 表格操作範本
     private RenderFragment<Employee> ActionsTemplate => employee => 
         @<div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-primary" @onclick="() => ViewEmployee(employee)" title="檢視">
+            <button class="btn btn-outline-primary" @onclick="() => indexComponent.NavigateToDetail(employee)" title="檢視">
                 <i class="bi bi-eye"></i>
             </button>
-            <button class="btn btn-outline-warning" @onclick="() => EditEmployee(employee)" title="編輯">
+            <button class="btn btn-outline-warning" @onclick="() => indexComponent.NavigateToEdit(employee)" title="編輯">
                 <i class="bi bi-pencil"></i>
             </button>
             @if (employee.IsLocked)

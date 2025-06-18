@@ -10,6 +10,7 @@
 <GenericIndexPageComponent TEntity="Product" 
                           TService="IProductService"
                           Service="@ProductService"
+                          EntityBasePath="/products"
                           PageTitle="產品管理"
                           PageSubtitle="管理所有產品資料與庫存資訊"
                           PageIcon="box-fill"
@@ -24,15 +25,17 @@
                           DataLoader="@LoadProductsAsync"
                           InitializeBasicData="@LoadBasicDataAsync"
                           FilterApplier="@ApplyProductFilters"
-                          OnAddClick="@ShowCreateProduct"
-                          OnRowClick="@HandleRowClick"
                           ActionsTemplate="@ActionsTemplate"
                           AutoSearch="true"
                           ShowSearchButton="true"
                           ShowAdvancedToggle="true"
-                          SearchDelayMs="500" />
+                          SearchDelayMs="500"
+                          @ref="indexComponent" />
 
 @code {
+    // 組件參考
+    private GenericIndexPageComponent<Product, IProductService> indexComponent = default!;
+    
     // 選項清單
     private List<ProductCategory> productCategories = new();
     private List<Supplier> suppliers = new();
@@ -203,29 +206,12 @@
         {
             query = query.Where(p => 
                 p.Unit != null && p.Unit.UnitName != null && 
-                p.Unit.UnitName.Contains(unitFilter, StringComparison.OrdinalIgnoreCase));
-        }
+                p.Unit.UnitName.Contains(unitFilter, StringComparison.OrdinalIgnoreCase));        }
 
         return query.OrderBy(p => p.ProductCode);
-    }// 事件處理
-    private async Task HandleRowClick(Product product)
-    {
-        Navigation.NavigateTo($"/products/detail/{product.Id}");
-        await Task.CompletedTask;
     }
 
-    private async Task ShowCreateProduct()
-    {
-        Navigation.NavigateTo("/products/edit");
-        await Task.CompletedTask;
-    }
-
-    private async Task EditProduct(Product product)
-    {
-        Navigation.NavigateTo($"/products/edit/{product.Id}");
-        await Task.CompletedTask;
-    }
-
+    // 刪除操作方法
     private async Task DeleteProduct(Product product)
     {
         var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
@@ -239,6 +225,8 @@
                 if (result.IsSuccess)
                 {
                     await JSRuntime.InvokeVoidAsync("alert", "產品刪除成功");
+                    // 觸發基底組件重新載入
+                    await indexComponent.Refresh();
                 }
                 else
                 {
@@ -252,19 +240,13 @@
         }
     }
 
-    private async Task ViewProduct(Product product)
-    {
-        Navigation.NavigateTo($"/products/detail/{product.Id}");
-        await Task.CompletedTask;
-    }
-
     // 表格操作範本
     private RenderFragment<Product> ActionsTemplate => product => 
         @<div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-primary" @onclick="() => ViewProduct(product)" title="檢視">
+            <button class="btn btn-outline-primary" @onclick="() => indexComponent.NavigateToDetail(product)" title="檢視">
                 <i class="bi bi-eye"></i>
             </button>
-            <button class="btn btn-outline-warning" @onclick="() => EditProduct(product)" title="編輯">
+            <button class="btn btn-outline-warning" @onclick="() => indexComponent.NavigateToEdit(product)" title="編輯">
                 <i class="bi bi-pencil"></i>
             </button>
             <button class="btn btn-outline-danger" @onclick="() => DeleteProduct(product)" title="刪除">

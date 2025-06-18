@@ -9,6 +9,7 @@
 <GenericIndexPageComponent TEntity="Supplier" 
                           TService="ISupplierService"
                           Service="@SupplierService"
+                          EntityBasePath="/suppliers"
                           PageTitle="廠商管理"
                           PageSubtitle="管理所有廠商資料與聯絡資訊"
                           PageIcon="building-gear"
@@ -23,15 +24,17 @@
                           DataLoader="@LoadSuppliersAsync"
                           InitializeBasicData="@LoadBasicDataAsync"
                           FilterApplier="@ApplySupplierFilters"
-                          OnAddClick="@ShowCreateSupplier"
-                          OnRowClick="@HandleRowClick"
                           ActionsTemplate="@ActionsTemplate"
                           AutoSearch="true"
                           ShowSearchButton="true"
                           ShowAdvancedToggle="true"
-                          SearchDelayMs="500" />
+                          SearchDelayMs="500"
+                          @ref="indexComponent" />
 
 @code {
+    // 組件參考
+    private GenericIndexPageComponent<Supplier, ISupplierService> indexComponent = default!;
+    
     // 選項清單
     private List<SupplierType> supplierTypes = new();
     private List<IndustryType> industryTypes = new();
@@ -202,27 +205,7 @@
         }
 
         return query.OrderBy(s => s.SupplierCode);
-    }
-
-    // 事件處理方法
-    private async Task ShowCreateSupplier()
-    {
-        Navigation.NavigateTo("/suppliers/edit");
-        await Task.CompletedTask;
-    }
-
-    private async Task HandleRowClick(Supplier supplier)
-    {
-        Navigation.NavigateTo($"/suppliers/detail/{supplier.Id}");
-        await Task.CompletedTask;
-    }
-
-    private async Task EditSupplier(Supplier supplier)
-    {
-        Navigation.NavigateTo($"/suppliers/edit/{supplier.Id}");
-        await Task.CompletedTask;
-    }
-
+    }    // 刪除操作方法
     private async Task DeleteSupplier(Supplier supplier)
     {
         var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
@@ -236,7 +219,8 @@
                 if (result.IsSuccess)
                 {
                     await JSRuntime.InvokeVoidAsync("alert", "廠商刪除成功");
-                    // TODO: 觸發基底組件重新載入
+                    // 觸發基底組件重新載入
+                    await indexComponent.Refresh();
                 }
                 else
                 {
@@ -250,19 +234,13 @@
         }
     }
 
-    private async Task ViewSupplier(Supplier supplier)
-    {
-        Navigation.NavigateTo($"/suppliers/detail/{supplier.Id}");
-        await Task.CompletedTask;
-    }
-
     // 表格操作範本
     private RenderFragment<Supplier> ActionsTemplate => supplier => 
         @<div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-primary" @onclick="() => ViewSupplier(supplier)" title="檢視">
+            <button class="btn btn-outline-primary" @onclick="() => indexComponent.NavigateToDetail(supplier)" title="檢視">
                 <i class="bi bi-eye"></i>
             </button>
-            <button class="btn btn-outline-warning" @onclick="() => EditSupplier(supplier)" title="編輯">
+            <button class="btn btn-outline-warning" @onclick="() => indexComponent.NavigateToEdit(supplier)" title="編輯">
                 <i class="bi bi-pencil"></i>
             </button>
             <button class="btn btn-outline-danger" @onclick="() => DeleteSupplier(supplier)" title="刪除">

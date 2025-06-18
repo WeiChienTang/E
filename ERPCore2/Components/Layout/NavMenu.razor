@@ -19,51 +19,38 @@
         <!-- 客戶管理下拉選單 -->
         <NavMenuItem Text="客戶管理" IconClass="bi bi-people-fill">
             <DropdownItems>
-                <NavDropdownItem Text="客戶維護" IconClass="bi bi-person-lines-fill" Url="/customers" />
-                <NavDropdownItem Text="客戶類型" IconClass="bi bi-tags-fill" Url="/customer-types" />
+                <NavDropdownItem Text="客戶維護" Url="/customers" />
+                <NavDropdownItem Text="客戶類型" Url="/customer-types" />
             </DropdownItems>
         </NavMenuItem>
 
         <!-- 廠商管理 -->
-        <NavMenuItem Text="廠商管理" IconClass="bi bi-building-gear" Url="/suppliers" />
+        <NavMenuItem Text="廠商管理" IconClass="">
+            <DropdownItems>
+                <NavMenuItem Text="廠商維護" Url="/suppliers" />
+            </DropdownItems>
+        </NavMenuItem>
 
         <!-- 員工管理 -->
-        <NavMenuItem Text="員工管理" IconClass="bi bi-person-badge-fill" Url="/employees" />
+        <NavMenuItem Text="員工管理" IconClass="">
+            <DropdownItems>
+                <NavMenuItem Text="員工維護" Url="/employees" />
+            </DropdownItems>
+        </NavMenuItem>
 
         <!-- 產品管理下拉選單 -->
         <NavMenuItem Text="產品管理" IconClass="bi bi-box-seam-fill">
             <DropdownItems>
-                <NavDropdownItem Text="產品維護" IconClass="bi bi-box-seam" Url="/products" />
-                <NavDropdownItem Text="產品分類" IconClass="bi bi-diagram-3-fill" Url="/product-categories" />
-                <NavDropdownItem Text="單位設定" IconClass="bi bi-rulers" Url="/units" />
-            </DropdownItems>
-        </NavMenuItem>
-
-        <!-- 庫存管理下拉選單 -->
-        <NavMenuItem Text="庫存管理" IconClass="bi bi-boxes">
-            <DropdownItems>
-                <NavDropdownItem Text="庫存查詢" IconClass="bi bi-search" Url="/inventory" />
-                <NavDropdownItem Text="進貨管理" IconClass="bi bi-arrow-down-circle-fill" Url="/purchase" />
-                <NavDropdownItem Text="出貨管理" IconClass="bi bi-arrow-up-circle-fill" Url="/sales" />
-                <NavDropdownItem Text="庫存調整" IconClass="bi bi-arrow-left-right" Url="/inventory-adjustment" />
+                <NavDropdownItem Text="產品維護" Url="/products" />
             </DropdownItems>
         </NavMenuItem>
 
         <!-- BOM 管理下拉選單 -->
         <NavMenuItem Text="BOM 管理" IconClass="bi bi-diagram-2-fill">
             <DropdownItems>
-                <NavDropdownItem Text="BOM 維護" IconClass="bi bi-diagram-2" Url="/bom" />
-                <NavDropdownItem Text="BOM 查詢" IconClass="bi bi-search" Url="/bom-search" />
-                <NavDropdownItem Text="成本分析" IconClass="bi bi-calculator-fill" Url="/cost-analysis" />
-            </DropdownItems>
-        </NavMenuItem>
-
-        <!-- 系統設定下拉選單 -->
-        <NavMenuItem Text="系統設定" IconClass="bi bi-gear-fill">
-            <DropdownItems>
-                <NavDropdownItem Text="使用者管理" IconClass="bi bi-person-gear" Url="/users" />
-                <NavDropdownItem Text="權限設定" IconClass="bi bi-shield-check" Url="/permissions" />
-                <NavDropdownItem Text="系統參數" IconClass="bi bi-sliders" Url="/system-config" />
+                <NavDropdownItem Text="顏色" Url="/colors" />
+                <NavDropdownItem Text="天氣" Url="/weather" />
+                <NavDropdownItem Text="材質" Url="/materials" />
             </DropdownItems>
         </NavMenuItem>
     </nav>

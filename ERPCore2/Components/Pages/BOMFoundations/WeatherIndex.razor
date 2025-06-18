@@ -13,6 +13,7 @@
 <GenericIndexPageComponent TEntity="Weather" 
                           TService="IWeatherService"
                           Service="@WeatherService"
+                          EntityBasePath="/weathers"
                           PageTitle="天氣管理"
                           PageSubtitle="管理所有天氣類型資料"
                           PageIcon="cloud-fill"
@@ -25,7 +26,7 @@
                           FilterApplier="@ApplyWeatherFilters"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
-                          ColumnDefinitions="@columnDefinitions"                          OnRowClick="@HandleRowClick"
+                          ColumnDefinitions="@columnDefinitions"
                           ActionsTemplate="@ActionButtonsTemplate"
                           @ref="indexComponent">
 </GenericIndexPageComponent>

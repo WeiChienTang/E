@@ -13,6 +13,7 @@
 <GenericIndexPageComponent TEntity="Color" 
                           TService="IColorService"
                           Service="@ColorService"
+                          EntityBasePath="/colors"
                           PageTitle="顏色管理"
                           PageSubtitle="管理所有顏色資料與色彩資訊"
                           PageIcon="palette-fill"
@@ -26,7 +27,6 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
-                          OnRowClick="@HandleRowClick"
                           ActionsTemplate="@ActionButtonsTemplate"
                           @ref="indexComponent">
 </GenericIndexPageComponent>
