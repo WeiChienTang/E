@@ -22,7 +22,7 @@
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
                           EmptyMessage="沒有找到符合條件的異動類型資料"
-                          OnCustomFilter="@ApplyCustomFilter"
+                          FilterApplier="@ApplyCustomFilter"
                           OnAddClick="@ShowCreateTransactionType"
                           OnRowClick="@HandleRowClick"
                           ActionsTemplate="@ActionsTemplate" />
@@ -108,7 +108,7 @@
         };
     }
 
-    private Task<IQueryable<InventoryTransactionType>> ApplyCustomFilter(IQueryable<InventoryTransactionType> query, SearchFilterModel searchModel)
+    private IQueryable<InventoryTransactionType> ApplyCustomFilter(SearchFilterModel searchModel, IQueryable<InventoryTransactionType> query)
     {
         // 類型代碼篩選
         var typeCodeFilter = searchModel.GetFilterValue("TypeCode")?.ToString();
@@ -154,7 +154,7 @@
             query = query.Where(t => t.IsActive == isActive);
         }
 
-        return Task.FromResult(query.OrderBy(t => t.TypeCode).AsQueryable());
+        return query.OrderBy(t => t.TypeCode);
     }
 
     private async Task HandleRowClick(InventoryTransactionType transactionType)

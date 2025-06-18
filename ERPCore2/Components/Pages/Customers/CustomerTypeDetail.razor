@@ -1,0 +1,153 @@
+@page "/customer-types/detail/{customerTypeId:int}"
+@using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Badges
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Services
+@inject ICustomerTypeService CustomerTypeService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>客戶類型詳細資料</PageTitle>
+
+<GenericDetailPageComponent TEntity="CustomerType" 
+                           TService="ICustomerTypeService"
+                           EntityId="@CustomerTypeId"
+                           Entity="@customerType"
+                           Service="@CustomerTypeService"
+                           EntityName="客戶類型"
+                           EntityNamePlural="客戶類型"
+                           PageIcon="tags"
+                           IndexRoute="/customer-types"
+                           EditRoute="/customer-types/edit"
+                           LoadingText="載入客戶類型資料中..."
+                           BreadcrumbItems="@breadcrumbItems"
+                           DataLoader="@LoadCustomerTypeDataAsync"
+                           EntityTitleSelector="@(ct => ct.TypeName)"
+                           EntitySubtitleSelector="@(ct => $"描述：{ct.Description ?? "未設定"}")"
+                           EntityDisplayNameSelector="@(ct => ct.TypeName)"
+                           OnDataLoaded="@OnCustomerTypeDataLoaded"
+                           UseGenericDetails="false">
+
+    <CustomDetailContent>
+        @* 基本資料 - 使用模組化元件 *@
+        <DetailCardComponent Title="基本資料" Icon="tags">
+            <div class="row">
+                <DetailFieldComponent Label="類型名稱" Value="@customerType?.TypeName" IsPrimary="true" IsBold="true" />
+                <DetailFieldComponent Label="描述" Value="@customerType?.Description" EmptyText="未設定" ColSize="12" />
+                <DetailFieldComponent Label="狀態">
+                    @if (customerType?.Status != null)
+                    {
+                        <StatusBadgeComponent Status="@customerType.Status" />
+                    }
+                </DetailFieldComponent>
+                @if (!string.IsNullOrEmpty(customerType?.Remarks))
+                {
+                    <DetailFieldComponent Label="備註" Value="@customerType.Remarks" ColSize="12" />
+                }
+            </div>
+        </DetailCardComponent>
+
+        @* 系統資訊 - 使用模組化元件 *@
+        <DetailCardComponent Title="系統資訊" Icon="info-circle">
+            <div class="row">
+                <DetailFieldComponent Label="建立時間" Value="@customerType?.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")" />
+                <DetailFieldComponent Label="建立者" Value="@customerType?.CreatedBy" EmptyText="系統" />
+                <DetailFieldComponent Label="更新時間" Value="@customerType?.UpdatedAt?.ToString("yyyy/MM/dd HH:mm:ss")" EmptyText="未更新" />
+                <DetailFieldComponent Label="更新者" Value="@customerType?.UpdatedBy" EmptyText="無" />
+            </div>
+        </DetailCardComponent>
+
+        @* 使用統計 - 使用模組化元件 *@
+        <DetailCardComponent Title="使用統計" Icon="bar-chart">
+            <div class="row">
+                <DetailFieldComponent Label="使用此類型的客戶數" Value="@(customerType?.Customers?.Count().ToString() ?? "0")" />
+                @if (customerType?.Customers?.Any() == true)
+                {
+                    <div class="col-12 mt-3">
+                        <h6>使用此類型的客戶：</h6>
+                        <div class="row">
+                            @foreach (var customer in customerType.Customers.Take(10))
+                            {
+                                <div class="col-md-6 mb-2">
+                                    <a href="/customers/detail/@customer.Id" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-building"></i> @customer.CompanyName
+                                    </a>
+                                </div>
+                            }
+                            @if (customerType.Customers.Count() > 10)
+                            {
+                                <div class="col-12">
+                                    <small class="text-muted">還有 @(customerType.Customers.Count() - 10) 個客戶使用此類型...</small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="col-12">
+                        <div class="text-muted">目前沒有客戶使用此類型</div>
+                    </div>
+                }
+            </div>
+        </DetailCardComponent>
+    </CustomDetailContent>
+
+</GenericDetailPageComponent>
+
+@code {
+    [Parameter] public int CustomerTypeId { get; set; }
+
+    private CustomerType? customerType;
+    private bool _isLoading = false; // 防止重複載入
+
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
+    {
+        new("首頁", "/"),
+        new("客戶管理", "/customers"),
+        new("客戶類型管理", "/customer-types"),
+        new("客戶類型詳細資料")
+    };
+
+    // GenericDetailPageComponent 需要的方法
+    private async Task<CustomerType?> LoadCustomerTypeDataAsync()
+    {
+        // 防止重複載入
+        if (_isLoading)
+        {
+            Console.WriteLine("[CustomerTypeDetail] 載入中，跳過重複調用");
+            return customerType;
+        }
+        
+        try
+        {
+            _isLoading = true;
+            if (CustomerTypeId <= 0) return null;
+              var result = await CustomerTypeService.GetByIdAsync(CustomerTypeId);
+            customerType = result; // 保持本地變數同步
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[CustomerTypeDetail] 載入客戶類型資料失敗：{ex.Message}");
+            throw;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private Task OnCustomerTypeDataLoaded()
+    {
+        // 資料載入完成後的處理
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+}

@@ -3,11 +3,33 @@
 @using ERPCore2.Components.Shared
 
 @code {
+    private string? activeDropdown = null;
+
     protected override void OnInitialized()
     {
-        Console.WriteLine("🚀 NavMenu 組件初始化開始");
         base.OnInitialized();
-        Console.WriteLine("✅ NavMenu 組件初始化完成");
+    }
+
+    private void ToggleDropdown(string dropdownName)
+    {
+        if (activeDropdown == dropdownName)
+        {
+            activeDropdown = null;
+        }
+        else
+        {
+            activeDropdown = dropdownName;
+        }
+    }
+
+    private string GetDropdownClass(string dropdownName)
+    {
+        return activeDropdown == dropdownName ? "show" : "";
+    }
+
+    private string GetArrowClass(string dropdownName)
+    {
+        return activeDropdown == dropdownName ? "bi-chevron-up" : "bi-chevron-down";
     }
 }
 
@@ -39,36 +61,35 @@
 
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+<div class="nav-scrollable">
     <nav class="nav flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> 首頁
             </NavLink>
         </div>
-          <!-- 只有登入用戶才能看到的菜單 -->
+
+        <!-- 只有登入用戶才能看到的菜單 -->
         <AuthorizeView>
             <Authorized>
-                @{
-                    Console.WriteLine("🔍 NavMenu AuthorizeView - 使用者已認證");
-                    Console.WriteLine($"  - IsAuthenticated: {context.User.Identity?.IsAuthenticated}");
-                    Console.WriteLine($"  - Name: {context.User.Identity?.Name}");
-                    Console.WriteLine($"  - Claims 數量: {context.User.Claims?.Count() ?? 0}");
-                    
-                    foreach (var claim in context.User.Claims ?? Enumerable.Empty<System.Security.Claims.Claim>())
-                    {
-                        Console.WriteLine($"    - {claim.Type}: {claim.Value}");
-                    }
-                }                  <!-- 客戶管理 - 需要 Customer.Read 權限 -->
-                <PermissionCheck Permission="Customer.Read">
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="customers">
-                            <span class="bi bi-people-fill" aria-hidden="true"></span> 客戶管理
+                <!-- 客戶管理 -->
+                <div class="nav-item px-3">                      <div class="nav-link dropdown-toggle @(activeDropdown == "customer" ? "active" : "")" 
+                         @onclick='() => ToggleDropdown("customer")'>>
+                        <span class="bi bi-people-fill" aria-hidden="true"></span> 客戶管理
+                        <span class="bi @GetArrowClass("customer") ms-auto dropdown-arrow"></span>
+                    </div>
+                    <div class="dropdown-menu @GetDropdownClass("customer")">
+                        <PermissionCheck Permission="Customer.Read">
+                            <NavLink class="dropdown-item" href="customers">
+                                <span class="bi bi-person-lines-fill" aria-hidden="true"></span> 客戶維護
+                            </NavLink>
+                        </PermissionCheck>
+                        <NavLink class="dropdown-item" href="customer-types">
+                            <span class="bi bi-tags-fill" aria-hidden="true"></span> 客戶類型
                         </NavLink>
                     </div>
-                </PermissionCheck>
+                </div>
 
-                <!-- 廠商管理 - 需要 Supplier.Read 權限 -->
                 <PermissionCheck Permission="Supplier.Read">
                     <div class="nav-item px-3">
                         <NavLink class="nav-link" href="suppliers">
@@ -77,14 +98,14 @@
                     </div>
                 </PermissionCheck>
 
-                <!-- 員工管理 - 需要 Employee.Read 權限 -->
                 <PermissionCheck Permission="Employee.Read">
                     <div class="nav-item px-3">
                         <NavLink class="nav-link" href="employees">
                             <span class="bi bi-person-badge-fill" aria-hidden="true"></span> 員工管理
                         </NavLink>
                     </div>
-                </PermissionCheck>                <!-- 產品管理 - 需要 Product.Read 權限 -->
+                </PermissionCheck>
+
                 <PermissionCheck Permission="Product.Read">
                     <div class="nav-item px-3">
                         <NavLink class="nav-link" href="products">
@@ -94,60 +115,50 @@
                 </PermissionCheck>
 
                 <!-- 庫存管理選單 -->
-                <div class="nav-item px-3">
-                    <div class="nav-link dropdown" onclick="toggleDropdown(event)">
+                <div class="nav-item px-3">                      <div class="nav-link dropdown-toggle @(activeDropdown == "inventory" ? "active" : "")"
+                         @onclick='() => ToggleDropdown("inventory")'>>
                         <span class="bi bi-boxes" aria-hidden="true"></span> 庫存管理
-                        <span class="bi bi-chevron-down ms-auto dropdown-arrow"></span>
+                        <span class="bi @GetArrowClass("inventory") ms-auto dropdown-arrow"></span>
                     </div>
-                    <div class="dropdown-menu">
-                        <!-- 倉庫管理 -->
+                    <div class="dropdown-menu @GetDropdownClass("inventory")">
                         <NavLink class="dropdown-item" href="inventory/warehouses">
                             <span class="bi bi-building" aria-hidden="true"></span> 倉庫管理
                         </NavLink>
-                        <!-- 庫位管理 -->
                         <NavLink class="dropdown-item" href="inventory/warehouse-locations">
                             <span class="bi bi-diagram-3" aria-hidden="true"></span> 庫位管理
                         </NavLink>
-                        <!-- 單位管理 -->
                         <NavLink class="dropdown-item" href="inventory/units">
                             <span class="bi bi-rulers" aria-hidden="true"></span> 單位管理
                         </NavLink>
-                        <!-- 單位轉換管理 -->
                         <NavLink class="dropdown-item" href="inventory/unit-conversions">
                             <span class="bi bi-arrow-left-right" aria-hidden="true"></span> 單位轉換管理
                         </NavLink>
-                        <!-- 異動類型管理 -->
                         <NavLink class="dropdown-item" href="inventory/transaction-types">
                             <span class="bi bi-list-ul" aria-hidden="true"></span> 異動類型管理
                         </NavLink>
-                        <!-- 庫存報表 -->                        <NavLink class="dropdown-item" href="inventory/reports">
+                        <NavLink class="dropdown-item" href="inventory/reports">
                             <span class="bi bi-graph-up" aria-hidden="true"></span> 庫存報表
                         </NavLink>
                     </div>
                 </div>
 
-                <!-- 基礎單位管理選單 -->
-                <div class="nav-item px-3">
-                    <div class="nav-link dropdown" onclick="toggleDropdown(event)">
+                <!-- BOM表選單 -->
+                <div class="nav-item px-3">                      <div class="nav-link dropdown-toggle @(activeDropdown == "bom" ? "active" : "")"
+                         @onclick='() => ToggleDropdown("bom")'>>
                         <span class="bi bi-gear-fill" aria-hidden="true"></span> BOM表
-                        <span class="bi bi-chevron-down ms-auto dropdown-arrow"></span>
+                        <span class="bi @GetArrowClass("bom") ms-auto dropdown-arrow"></span>
                     </div>
-                    <div class="dropdown-menu">
-                        <!-- 天氣管理 - 需要 Weather.Read 權限 -->
+                    <div class="dropdown-menu @GetDropdownClass("bom")">
                         <PermissionCheck Permission="Weather.Read">
                             <NavLink class="dropdown-item" href="BOMFoundation/weather">
                                 <span class="bi bi-cloud-fill" aria-hidden="true"></span> 天氣管理
                             </NavLink>
                         </PermissionCheck>
-                        
-                        <!-- 顏色管理 - 需要 Color.Read 權限 -->
                         <PermissionCheck Permission="Color.Read">
                             <NavLink class="dropdown-item" href="BOMFoundation/colors">
                                 <span class="bi bi-palette-fill" aria-hidden="true"></span> 顏色管理
                             </NavLink>
                         </PermissionCheck>
-                        
-                        <!-- 材質管理 - 需要 Material.Read 權限 -->
                         <PermissionCheck Permission="Material.Read">
                             <NavLink class="dropdown-item" href="BOMFoundation/materials">
                                 <span class="bi bi-layers-fill" aria-hidden="true"></span> 材質管理
@@ -157,14 +168,15 @@
                 </div>
             </Authorized>
         </AuthorizeView>
-        
-        <!-- 開發用元件展示 - 只在開發環境顯示 -->
-        <div class="nav-item px-3">
-            <div class="nav-link dropdown" onclick="toggleDropdown(event)">
+
+        <!-- 開發用元件展示 -->
+        <div class="nav-item px-3">              
+            <div class="nav-link dropdown-toggle @(activeDropdown == "demo" ? "active" : "")"
+                 @onclick='() => ToggleDropdown("demo")'>>
                 <span class="bi bi-puzzle-fill" aria-hidden="true"></span> 元件展示
-                <span class="bi bi-chevron-down ms-auto dropdown-arrow"></span>
+                <span class="bi @GetArrowClass("demo") ms-auto dropdown-arrow"></span>
             </div>
-            <div class="dropdown-menu">
+            <div class="dropdown-menu @GetDropdownClass("demo")">
                 <NavLink class="dropdown-item" href="sharedcomponentsdemo/actions">
                     <span class="bi bi-lightning-fill" aria-hidden="true"></span> Actions
                 </NavLink>
@@ -176,7 +188,8 @@
                 </NavLink>
                 <NavLink class="dropdown-item" href="sharedcomponentsdemo/buttons">
                     <span class="bi bi-hand-index-fill" aria-hidden="true"></span> Buttons
-                </NavLink>                <NavLink class="dropdown-item" href="sharedcomponentsdemo/details/new">
+                </NavLink>
+                <NavLink class="dropdown-item" href="sharedcomponentsdemo/details/new">
                     <span class="bi bi-card-text" aria-hidden="true"></span> Details
                 </NavLink>
                 <NavLink class="dropdown-item" href="demo/forms">
@@ -193,7 +206,7 @@
                 </NavLink>
                 <NavLink class="dropdown-item" href="sharedcomponentsdemo/loading">
                     <span class="bi bi-arrow-repeat" aria-hidden="true"></span> Loading
-                </NavLink>        
+                </NavLink>
                 <NavLink class="dropdown-item" href="demo/tables/generic">
                     <span class="bi bi-table" aria-hidden="true"></span> GenericTableDemoTables
                 </NavLink>
@@ -204,25 +217,6 @@
                     <span class="bi bi-search" aria-hidden="true"></span> 導航搜尋測試
                 </NavLink>
             </div>
-        </div>
+        </div>    
     </nav>
 </div>
-
-<script>
-    function toggleDropdown(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        const dropdown = event.currentTarget.parentElement;
-        dropdown.classList.toggle('show');
-    }
-    
-    document.addEventListener('click', function(event) {
-        const dropdowns = document.querySelectorAll('.nav-item.show');
-        dropdowns.forEach(dropdown => {
-            if (!dropdown.contains(event.target)) {
-                dropdown.classList.remove('show');
-            }
-        });
-    });
-</script>
-

@@ -245,12 +245,11 @@
     {
         InitializeBreadcrumbs();
         await LoadAdditionalData();
-    }
-
-    protected override async Task OnParametersSetAsync()
+    }    protected override Task OnParametersSetAsync()
     {
         // 當參數變化時（例如從 Detail 導航到 Edit），重新初始化麵包屑
         InitializeBreadcrumbs();
+        return Task.CompletedTask;
     }
 
     private void InitializeBreadcrumbs()
