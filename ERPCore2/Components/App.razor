@@ -8,7 +8,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />    <link rel="stylesheet" href="@Assets["css/variables.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["ERPCore2.styles.css"]" />
-    <link rel="stylesheet" href="@Assets["css/nav-override.css"]" />    <style>
+    <link rel="stylesheet" href="@Assets["css/nav-override.css"]" />
+    <link rel="stylesheet" href="@Assets["css/nav-dropdown-item.css"]" />
+    <link rel="stylesheet" href="@Assets["css/nav-menu-item.css"]" /><style>
         /* 強制覆蓋導航選單樣式 - 最高優先級 - 包含所有可能的 Bootstrap 類別 */
         .sidebar .nav-scrollable .nav-item .nav-link,
         .sidebar .nav-scrollable .nav-item .dropdown-toggle-btn,
@@ -74,14 +76,13 @@
         .dropdown-content.show {
             display: block !important;
         }
-        
-        /* 下拉選單項目樣式 - 包含所有可能的選擇器 */
-        .dropdown-content .dropdown-item,
-        .dropdown-item,
-        .nav-item .dropdown-content .dropdown-item,
-        .nav-item .dropdown-item,
-        .dropdown-menu .dropdown-item,
-        a.dropdown-item {
+          /* 下拉選單項目樣式 - 包含所有可能的選擇器 */
+        .dropdown-content .nav-dropdown-item,
+        .nav-dropdown-item,
+        .nav-item .dropdown-content .nav-dropdown-item,
+        .nav-item .nav-dropdown-item,
+        .dropdown-menu .nav-dropdown-item,
+        a.nav-dropdown-item {
             display: flex !important;
             align-items: center !important;
             padding: 0.75rem 1rem 0.75rem 2.5rem !important;
@@ -94,34 +95,17 @@
             transition: all 0.2s ease !important;
         }
         
-        .dropdown-content .dropdown-item:hover,
-        .dropdown-item:hover,
-        .nav-item .dropdown-content .dropdown-item:hover,
-        .nav-item .dropdown-item:hover,
-        .dropdown-menu .dropdown-item:hover,
-        a.dropdown-item:hover {
+        .dropdown-content .nav-dropdown-item:hover,
+        .nav-dropdown-item:hover,
+        .nav-item .dropdown-content .nav-dropdown-item:hover,
+        .nav-item .nav-dropdown-item:hover,
+        .dropdown-menu .nav-dropdown-item:hover,
+        a.nav-dropdown-item:hover {
             background-color: #fef3c7 !important;
             color: #92400e !important;
             text-decoration: none !important;
             transform: translateX(5px) !important;
             transition: all 0.2s ease !important;
-        }
-        
-        /* 圖示樣式 */
-        .bi {
-            display: inline-block;
-            position: relative;
-            width: 1.25rem;
-            height: 1.25rem;
-            margin-right: 0.75rem;
-            top: -1px;
-            background-size: cover;
-        }
-        
-        .dropdown-item .bi {
-            margin-right: 0.75rem !important;
-            width: 1rem !important;
-            height: 1rem !important;
         }
         
         /* 箭頭樣式 */

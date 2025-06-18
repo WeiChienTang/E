@@ -1,0 +1,36 @@
+/* NavDropdownItem 元件專用樣式 */
+.nav-dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    color: var(--primary-white);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 0.85rem;
+    background-color: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    width: 100%;
+    clear: both;
+    font-weight: 400;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.nav-dropdown-item:hover {
+    background-color: var(--table-hover-bg);
+    color: var(--table-hover-text);
+    text-decoration: none;
+    transform: translateX(5px);
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out, transform 0.2s ease;
+}
+
+.nav-dropdown-item .bi {
+    margin-right: 0.75rem;
+    width: 1rem;
+    height: 1rem;
+    display: inline-block;
+    position: relative;
+    top: -1px;
+    background-size: cover;
+}
