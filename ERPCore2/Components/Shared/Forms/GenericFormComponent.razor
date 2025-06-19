@@ -2,6 +2,7 @@
 @using System.ComponentModel.DataAnnotations
 @using System.Reflection
 @using Microsoft.AspNetCore.Components.Rendering
+@inject IJSRuntime JSRuntime
 @typeparam TModel
 @implements IDisposable
 
@@ -546,27 +547,27 @@
             {
                 builder.OpenElement(sequence + 30, "div");
                 builder.AddAttribute(sequence + 31, "class", "dropdown-menu show position-absolute w-100");
-                builder.AddAttribute(sequence + 32, "style", "max-height: 200px; overflow-y: auto; z-index: 1000;");
-                  var optionSequence = sequence + 40;
+                builder.AddAttribute(sequence + 32, "style", "max-height: 200px; overflow-y: auto; z-index: 1000;");                var optionSequence = sequence + 40;
                 var optionIndex = 0;
                 foreach (var option in options)
                 {
                     var isHighlighted = highlightedOptionIndex.GetValueOrDefault(fieldId, -1) == optionIndex;
                     var cssClass = isHighlighted ? "dropdown-item highlighted" : "dropdown-item";
+                    var optionId = $"{fieldId}_option_{optionIndex}";
                     
                     builder.OpenElement(optionSequence, "button");
                     builder.AddAttribute(optionSequence + 1, "type", "button");
                     builder.AddAttribute(optionSequence + 2, "class", cssClass);
+                    builder.AddAttribute(optionSequence + 3, "id", optionId);
                     
                     // 滑鼠移動時更新高亮索引
-                    builder.AddAttribute(optionSequence + 3, "onmousemove", EventCallback.Factory.Create(this, () =>
+                    builder.AddAttribute(optionSequence + 4, "onmousemove", EventCallback.Factory.Create(this, () =>
                     {
                         highlightedOptionIndex[fieldId] = optionIndex;
                         keyboardNavigationActive[fieldId] = false;
                         StateHasChanged();
                     }));
-                    
-                    builder.AddAttribute(optionSequence + 4, "onmousedown", EventCallback.Factory.Create(this, () =>
+                      builder.AddAttribute(optionSequence + 5, "onmousedown", EventCallback.Factory.Create(this, () =>
                     {
                         autoCompleteDisplayValues[fieldId] = option.Text;
                         SetPropertyValue(Model, field.PropertyName, option.Value);
@@ -574,9 +575,9 @@
                         ResetKeyboardNavigation(fieldId);
                         StateHasChanged();
                     }));
-                    builder.AddContent(optionSequence + 5, option.Text);
+                    builder.AddContent(optionSequence + 6, option.Text);
                     builder.CloseElement();
-                    optionSequence += 6;
+                    optionSequence += 7;
                     optionIndex++;
                 }
                 
@@ -687,8 +688,7 @@
         
         StateHasChanged();
     }
-    
-    private void MoveHighlight(string fieldId, List<SelectOption> options, int direction)
+      private void MoveHighlight(string fieldId, List<SelectOption> options, int direction)
     {
         if (!options.Any()) return;
         
@@ -703,6 +703,23 @@
             
         highlightedOptionIndex[fieldId] = newIndex;
         keyboardNavigationActive[fieldId] = true;
+        
+        // 滾動到可見區域
+        _ = ScrollToHighlightedOption(fieldId, newIndex);
+    }
+    
+    private async Task ScrollToHighlightedOption(string fieldId, int optionIndex)
+    {
+        try
+        {
+            var optionId = $"{fieldId}_option_{optionIndex}";
+            await JSRuntime.InvokeVoidAsync("scrollToElement", optionId);
+        }
+        catch (Exception ex)
+        {
+            // 靜默處理滾動錯誤，不影響主要功能
+            Console.Error.WriteLine($"ScrollToHighlightedOption error: {ex.Message}");
+        }
     }
       private Task SelectHighlightedOption(FormFieldDefinition field, List<SelectOption> options)
     {

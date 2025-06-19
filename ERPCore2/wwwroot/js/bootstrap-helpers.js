@@ -76,8 +76,7 @@ window.bootstrapHelpers = {
     },
     
     // 新增調試函數
-    debugModal: function (modalId) {
-        console.log('=== Modal Debug Info ===');
+    debugModal: function (modalId) {        console.log('=== Modal Debug Info ===');
         console.log('Modal ID:', modalId);
         console.log('Bootstrap loaded:', typeof bootstrap !== 'undefined');
         
@@ -91,5 +90,24 @@ window.bootstrapHelpers = {
         }
         
         console.log('========================');
+    }
+};
+
+// 自動完成滾動輔助函式
+window.scrollToElement = function (elementId) {
+    try {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'nearest'
+            });
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error('Error scrolling to element:', error);
+        return false;
     }
 };
