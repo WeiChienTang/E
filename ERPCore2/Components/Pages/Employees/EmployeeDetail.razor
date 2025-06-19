@@ -1,6 +1,10 @@
 @page "/employees/detail/{employeeId:int}"
+@using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Badges
 @using ERPCore2.Components.Shared.Buttons
 @using ERPCore2.Components.Shared.Alerts
+@using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @inject IEmployeeService EmployeeService
@@ -30,7 +34,8 @@
     </div>
 }
 else if (employee == null)
-{    <div class="alert alert-warning">
+{
+    <div class="alert alert-warning">
         <h4>找不到員工資料</h4>
         <p>指定的員工不存在或已被刪除。</p>
         <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/employees")'>
@@ -46,7 +51,8 @@ else
                            TitleIcon="person-circle"
                            HeadingLevel="h1"
                            BreadcrumbItems="@breadcrumbItems"
-                           ShowDivider="true">                           <ActionButtons>
+                           ShowDivider="true">
+        <ActionButtons>
             <DetailActionButtonsComponent 
                 EntityStatus="@employee?.Status"
                 IsLoading="@isLoading"
@@ -61,254 +67,105 @@ else
         </ActionButtons>
     </GenericHeaderComponent>
 
-    @* 基本資料 *@
-    <div class="row">
-        <div class="col-12">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-person me-2"></i>
-                        基本資料
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">員工代碼</label>
-                                <div class="fw-bold text-primary">@employee.EmployeeCode</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">帳號</label>
-                                <div class="fw-bold">@employee.Username</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">姓名</label>
-                                <div>@GetFullName()</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">                            <div class="mb-3">
-                                <label class="form-label text-muted">電子郵件</label>
-                                <div>
-                                    @{
-                                        var emailContact = employee.EmployeeContacts?
-                                            .FirstOrDefault(ec => ec.ContactType?.TypeName == "Email");
-                                        var emailValue = emailContact?.ContactValue;
-                                    }
-                                    @if (!string.IsNullOrEmpty(emailValue))
-                                    {
-                                        <a href="mailto:@emailValue" class="text-decoration-underline">@emailValue</a>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">-</span>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">部門</label>
-                                <div>@(employee.Department ?? "-")</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">職位</label>
-                                <div>@(employee.Position ?? "-")</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    @* 基本資料 - 使用模組化元件 *@
+    <DetailCardComponent Title="基本資料" Icon="person">
+        <div class="row">
+            <DetailFieldComponent Label="員工代碼" Value="@employee.EmployeeCode" IsPrimary="true" IsBold="true" />
+            <DetailFieldComponent Label="帳號" Value="@employee.Username" IsBold="true" />
+            <DetailFieldComponent Label="姓名" Value="@GetFullName()" />
+            <DetailFieldComponent Label="電子郵件" Value="@GetEmailContact()" />
+            <DetailFieldComponent Label="部門" Value="@employee.Department" EmptyText="-" />
+            <DetailFieldComponent Label="職位" Value="@employee.Position" EmptyText="-" />
+            <DetailFieldComponent Label="狀態">
+                @if (employee?.Status != null)
+                {
+                    <StatusBadgeComponent Status="@employee.Status" />
+                }
+            </DetailFieldComponent>
+            @if (!string.IsNullOrEmpty(employee?.Remarks))
+            {
+                <DetailFieldComponent Label="備註" Value="@employee.Remarks" ColSize="12" />
+            }
         </div>
-    </div>
+    </DetailCardComponent>
 
-    @* 帳號資訊 *@
-    <div class="row">
-        <div class="col-12">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-shield-lock me-2"></i>
-                        帳號資訊
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">帳號狀態</label>
-                                <div>
-                                    @if (employee.Status == EntityStatus.Active)
-                                    {
-                                        <span class="badge bg-success">啟用</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-danger">停用</span>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">鎖定狀態</label>
-                                <div>
-                                    @if (employee.IsLocked)
-                                    {
-                                        <span class="badge bg-danger">已鎖定</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-success">正常</span>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                        @if (employee.FailedLoginAttempts > 0)
-                        {
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">失敗登入次數</label>
-                                    <div class="@(employee.FailedLoginAttempts >= 3 ? "text-danger fw-bold" : "text-warning")">
-                                        @employee.FailedLoginAttempts
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                        @if (employee.LockedAt.HasValue)
-                        {
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">鎖定時間</label>
-                                    <div class="text-muted">@employee.LockedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</div>
-                                </div>
-                            </div>
-                        }
-                        @if (employee.LastLoginAt.HasValue)
-                        {
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">最後登入時間</label>
-                                    <div class="text-info">@employee.LastLoginAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</div>
-                                </div>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">登入記錄</label>
-                                    <div class="text-warning">從未登入</div>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
+    @* 帳號資訊 - 使用模組化元件 *@
+    <DetailCardComponent Title="帳號資訊" Icon="shield-lock">
+        <div class="row">
+            <DetailFieldComponent Label="帳號狀態">
+                @if (employee.Status == EntityStatus.Active)
+                {
+                    <span class="badge bg-success">啟用</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">停用</span>
+                }
+            </DetailFieldComponent>
+            <DetailFieldComponent Label="鎖定狀態">
+                @if (employee.IsLocked)
+                {
+                    <span class="badge bg-danger">已鎖定</span>
+                }
+                else
+                {
+                    <span class="badge bg-success">正常</span>
+                }
+            </DetailFieldComponent>
+            @if (employee.FailedLoginAttempts > 0)
+            {
+                <DetailFieldComponent Label="失敗登入次數" Value="@employee.FailedLoginAttempts.ToString()" />
+            }
+            @if (employee.LockedAt.HasValue)
+            {
+                <DetailFieldComponent Label="鎖定時間" Value="@employee.LockedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
+            }
+            @if (employee.LastLoginAt.HasValue)
+            {
+                <DetailFieldComponent Label="最後登入時間" Value="@employee.LastLoginAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
+            }
+            else
+            {
+                <DetailFieldComponent Label="登入記錄" Value='"從未登入"' />
+            }
         </div>
-    </div>
+    </DetailCardComponent>
 
-    @* 角色權限 *@
-    <div class="row">
-        <div class="col-12">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-key me-2"></i>
-                        角色權限
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        @if (employee.Role != null)
-                        {
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">角色名稱</label>
-                                    <div class="fw-bold text-primary">@employee.Role.RoleName</div>
-                                </div>
-                            </div>
-                            @if (!string.IsNullOrWhiteSpace(employee.Role.Description))
-                            {
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">角色描述</label>
-                                        <div>@employee.Role.Description</div>
-                                    </div>
-                                </div>
-                            }
-                        }
-                        else
-                        {
-                            <div class="col-12">
-                                <div class="alert alert-warning">
-                                    <i class="bi bi-exclamation-triangle me-2"></i>
-                                    未設定角色
-                                </div>
-                            </div>
-                        }
+    @* 角色權限 - 使用模組化元件 *@
+    <DetailCardComponent Title="角色權限" Icon="key">
+        <div class="row">
+            @if (employee.Role != null)
+            {
+                <DetailFieldComponent Label="角色名稱" Value="@employee.Role.RoleName" IsBold="true" />
+                @if (!string.IsNullOrWhiteSpace(employee.Role.Description))
+                {
+                    <DetailFieldComponent Label="角色描述" Value="@employee.Role.Description" />
+                }
+            }
+            else
+            {
+                <div class="col-12">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        未設定角色
                     </div>
                 </div>
-            </div>
+            }
         </div>
-    </div>
+    </DetailCardComponent>
 
-    @* 活動記錄 *@
-    <div class="row">
-        <div class="col-12">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-clock-history me-2"></i>
-                        活動記錄
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">建立時間</label>
-                                <div class="text-muted">@employee.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")</div>
-                            </div>
-                        </div>
-                        @if (!string.IsNullOrWhiteSpace(employee.CreatedBy))
-                        {
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">建立者</label>
-                                    <div class="text-muted">@employee.CreatedBy</div>
-                                </div>
-                            </div>
-                        }
-                        @if (employee.UpdatedAt.HasValue)
-                        {
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">最後更新時間</label>
-                                    <div class="text-muted">@employee.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</div>
-                                </div>
-                            </div>
-                            @if (!string.IsNullOrWhiteSpace(employee.UpdatedBy))
-                            {
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">更新者</label>
-                                        <div class="text-muted">@employee.UpdatedBy</div>
-                                    </div>
-                                </div>
-                            }
-                        }
-                    </div>
-                </div>
-            </div>
+    @* 系統資訊 - 使用模組化元件 *@
+    <DetailCardComponent Title="系統資訊" Icon="clock-history">
+        <div class="row">
+            <DetailFieldComponent Label="建立時間" Value="@employee.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")" />
+            <DetailFieldComponent Label="建立者" Value="@employee.CreatedBy" EmptyText="系統" />
+            @if (employee.UpdatedAt.HasValue)
+            {
+                <DetailFieldComponent Label="最後更新時間" Value="@employee.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
+                <DetailFieldComponent Label="更新者" Value="@employee.UpdatedBy" EmptyText="無" />
+            }
         </div>
-    </div>
+    </DetailCardComponent>
 }
 
 @code {
@@ -348,7 +205,8 @@ else
             StateHasChanged();
 
             // 載入員工基本資料
-            employee = await EmployeeService.GetByIdAsync(EmployeeId);        }
+            employee = await EmployeeService.GetByIdAsync(EmployeeId);
+        }
         catch (Exception ex)
         {
             await JSRuntime.InvokeVoidAsync("console.error", "載入員工資料失敗：", ex.Message);
@@ -398,7 +256,18 @@ else
         return string.IsNullOrEmpty(fullName) ? employee.Username : fullName;
     }
 
-    private void EditEmployee()    {
+    private string GetEmailContact()
+    {
+        if (employee?.EmployeeContacts == null) return "-";
+        
+        var emailContact = employee.EmployeeContacts
+            .FirstOrDefault(ec => ec.ContactType?.TypeName == "Email");
+        
+        return emailContact?.ContactValue ?? "-";
+    }
+
+    private void EditEmployee()
+    {
         Navigation.NavigateTo($"/employees/edit/{EmployeeId}");
     }
 
@@ -415,7 +284,8 @@ else
             else
             {
                 ShowAlert(result.ErrorMessage ?? "鎖定失敗", AlertComponent.AlertType.Danger);
-            }        }
+            }
+        }
         catch (Exception)
         {
             ShowAlert("鎖定員工帳號時發生錯誤", AlertComponent.AlertType.Danger);
@@ -431,7 +301,8 @@ else
             {
                 await LoadEmployeeData();
                 ShowAlert("員工帳號已解鎖", AlertComponent.AlertType.Success);
-            }            else
+            }
+            else
             {
                 ShowAlert(result.ErrorMessage ?? "解鎖失敗", AlertComponent.AlertType.Danger);
             }
@@ -440,7 +311,9 @@ else
         {
             ShowAlert("解鎖員工帳號時發生錯誤", AlertComponent.AlertType.Danger);
         }
-    }    private Task ResetPassword()
+    }
+
+    private Task ResetPassword()
     {
         try
         {

@@ -1,5 +1,11 @@
 @page "/BOMFoundation/weather/detail/{weatherId:int}"
 @page "/weather/detail/{weatherId:int}"
+@using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Badges
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
 @inject IWeatherService WeatherService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -40,7 +46,9 @@ else
     <GenericHeaderComponent Title="@weather.Name" 
                           Subtitle="@($"天氣代碼：{weather.Code}")"
                           Icon="bi bi-cloud-sun"
-                          BreadcrumbItems="@breadcrumbItems">        <ActionButtons>            <DetailActionButtonsComponent 
+                          BreadcrumbItems="@breadcrumbItems">        
+        <ActionButtons>            
+            <DetailActionButtonsComponent 
                 EntityStatus="@weather?.Status"
                 IsLoading="@isLoading"
                 EntityName="天氣"
@@ -54,124 +62,52 @@ else
         </ActionButtons>
     </GenericHeaderComponent>
 
-    <div class="container-fluid">
+    @* 基本資訊 - 使用模組化元件 *@
+    <DetailCardComponent Title="基本資訊" Icon="info-circle">
         <div class="row">
-            <div class="col-12">
-                <!-- 基本資訊 -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-info-circle me-2"></i>基本資訊
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">天氣代碼</label>
-                                    <div>@weather.Code</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">天氣名稱</label>
-                                    <div class="fw-bold">@weather.Name</div>
-                                </div>
-                            </div>
-                            @if (!string.IsNullOrEmpty(weather.Icon))
-                            {
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">圖示</label>
-                                        <div>@weather.Icon</div>
-                                    </div>
-                                </div>
-                            }
-                            @if (weather.ReferenceTemperature.HasValue)
-                            {
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">參考溫度</label>
-                                        <div>@weather.ReferenceTemperature°C</div>
-                                    </div>
-                                </div>
-                            }
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">狀態</label>
-                                    <div>
-                                        @if (weather.Status == Data.Enums.EntityStatus.Active)
-                                        {
-                                            <span class="badge bg-success">啟用</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-danger">停用</span>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                            @if (!string.IsNullOrEmpty(weather.Description))
-                            {
-                                <div class="col-12">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">描述</label>
-                                        <div>@weather.Description</div>
-                                    </div>
-                                </div>
-                            }
-                            @if (!string.IsNullOrEmpty(weather.Remarks))
-                            {
-                                <div class="col-12">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">備註</label>
-                                        <div>@weather.Remarks</div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 系統資訊 -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-gear me-2"></i>系統資訊
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">建立日期</label>
-                                    <div>@weather.CreatedAt.ToString("yyyy/MM/dd HH:mm")</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">建立者</label>
-                                    <div>@(weather.CreatedBy ?? "-")</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">最後更新</label>
-                                    <div>@(weather.UpdatedAt?.ToString("yyyy/MM/dd HH:mm") ?? "-")</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">更新者</label>
-                                    <div>@(weather.UpdatedBy ?? "-")</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <DetailFieldComponent Label="天氣代碼" Value="@weather.Code" IsPrimary="true" />
+            <DetailFieldComponent Label="天氣名稱" Value="@weather.Name" IsBold="true" />
+            @if (!string.IsNullOrEmpty(weather.Icon))
+            {
+                <DetailFieldComponent Label="圖示" Value="@weather.Icon" />
+            }
+            @if (weather.ReferenceTemperature.HasValue)
+            {
+                <DetailFieldComponent Label="參考溫度" Value="@($"{weather.ReferenceTemperature}°C")" />
+            }
+            <DetailFieldComponent Label="狀態">
+                @if (weather.Status == Data.Enums.EntityStatus.Active)
+                {
+                    <span class="badge bg-success">啟用</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">停用</span>
+                }
+            </DetailFieldComponent>
+            @if (!string.IsNullOrEmpty(weather.Description))
+            {
+                <DetailFieldComponent Label="描述" Value="@weather.Description" ColSize="12" />
+            }
+            @if (!string.IsNullOrEmpty(weather.Remarks))
+            {
+                <DetailFieldComponent Label="備註" Value="@weather.Remarks" ColSize="12" />
+            }
         </div>
-    </div>
+    </DetailCardComponent>
+
+    @* 系統資訊 - 使用模組化元件 *@
+    <DetailCardComponent Title="系統資訊" Icon="gear">
+        <div class="row">
+            <DetailFieldComponent Label="建立時間" Value="@weather.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")" />
+            <DetailFieldComponent Label="建立者" Value="@weather.CreatedBy" EmptyText="系統" />
+            @if (weather.UpdatedAt.HasValue)
+            {
+                <DetailFieldComponent Label="更新時間" Value="@weather.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
+                <DetailFieldComponent Label="更新者" Value="@weather.UpdatedBy" EmptyText="無" />
+            }
+        </div>
+    </DetailCardComponent>
 }
 
 @code {

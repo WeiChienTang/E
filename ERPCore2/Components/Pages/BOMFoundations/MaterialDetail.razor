@@ -1,4 +1,10 @@
 @page "/BOMFoundation/materials/detail/{materialId:int}"
+@using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Badges
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
 @inject IMaterialService MaterialService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -30,7 +36,8 @@ else
     <GenericHeaderComponent Title="@material.Name" 
                           Subtitle="@($"材質代碼：{material.Code}")"
                           Icon="bi bi-layers"
-                          BreadcrumbItems="@breadcrumbItems">        <ActionButtons>
+                          BreadcrumbItems="@breadcrumbItems">        
+        <ActionButtons>
             <DetailActionButtonsComponent 
                 EntityStatus="@material?.Status"
                 IsLoading="@isLoading"
@@ -44,192 +51,75 @@ else
         </ActionButtons>
     </GenericHeaderComponent>
 
-    <div class="container-fluid">
+    @* 基本資訊 - 使用模組化元件 *@
+    <DetailCardComponent Title="基本資訊" Icon="info-circle">
         <div class="row">
-            <div class="col-12">
-                <!-- 基本資訊 -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-info-circle me-2"></i>基本資訊
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">材質代碼</label>
-                                    <div>@material.Code</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">材質名稱</label>
-                                    <div class="fw-bold">@material.Name</div>
-                                </div>
-                            </div>
-                            @if (!string.IsNullOrEmpty(material.Category))
-                            {
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">材質類別</label>
-                                        <div>@material.Category</div>
-                                    </div>
-                                </div>
-                            }
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">環保材質</label>
-                                    <div>
-                                        @if (material.IsEcoFriendly)
-                                        {
-                                            <span class="badge bg-success">是</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-secondary">否</span>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">狀態</label>
-                                    <div>
-                                        @if (material.Status == Data.Enums.EntityStatus.Active)
-                                        {
-                                            <span class="badge bg-success">啟用</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-danger">停用</span>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                            @if (!string.IsNullOrEmpty(material.Description))
-                            {
-                                <div class="col-12">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">描述</label>
-                                        <div>@material.Description</div>
-                                    </div>
-                                </div>
-                            }
-                            @if (!string.IsNullOrEmpty(material.Remarks))
-                            {
-                                <div class="col-12">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">備註</label>
-                                        <div>@material.Remarks</div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 物理特性 -->
-                @if (material.Density.HasValue || material.MeltingPoint.HasValue)
+            <DetailFieldComponent Label="材質代碼" Value="@material.Code" IsPrimary="true" />
+            <DetailFieldComponent Label="材質名稱" Value="@material.Name" IsBold="true" />
+            @if (!string.IsNullOrEmpty(material.Category))
+            {
+                <DetailFieldComponent Label="材質類別" Value="@material.Category" />
+            }
+            <DetailFieldComponent Label="環保材質">
+                @if (material.IsEcoFriendly)
                 {
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-speedometer2 me-2"></i>物理特性
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                @if (material.Density.HasValue)
-                                {
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label text-muted">密度</label>
-                                            <div>@material.Density g/cm³</div>
-                                        </div>
-                                    </div>
-                                }
-                                @if (material.MeltingPoint.HasValue)
-                                {
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label text-muted">熔點</label>
-                                            <div>@material.MeltingPoint°C</div>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    </div>
+                    <span class="badge bg-success">是</span>
                 }
-
-                <!-- 供應商資訊 -->
-                @if (material.Supplier != null)
+                else
                 {
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-building me-2"></i>供應商資訊
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">主要供應商</label>
-                                        <div>@material.Supplier.CompanyName</div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">供應商代碼</label>
-                                        <div>@material.Supplier.SupplierCode</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <span class="badge bg-secondary">否</span>
                 }
-
-                <!-- 系統資訊 -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-gear me-2"></i>系統資訊
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">建立日期</label>
-                                    <div>@material.CreatedAt.ToString("yyyy/MM/dd HH:mm")</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">建立者</label>
-                                    <div>@(material.CreatedBy ?? "-")</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">最後更新</label>
-                                    <div>@(material.UpdatedAt?.ToString("yyyy/MM/dd HH:mm") ?? "-")</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">更新者</label>
-                                    <div>@(material.UpdatedBy ?? "-")</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            </DetailFieldComponent>
+            <DetailFieldComponent Label="狀態">
+                @if (material.Status == Data.Enums.EntityStatus.Active)
+                {
+                    <span class="badge bg-success">啟用</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">停用</span>
+                }
+            </DetailFieldComponent>
+            @if (!string.IsNullOrEmpty(material.Description))
+            {
+                <DetailFieldComponent Label="描述" Value="@material.Description" ColSize="12" />
+            }
+            @if (!string.IsNullOrEmpty(material.Remarks))
+            {
+                <DetailFieldComponent Label="備註" Value="@material.Remarks" ColSize="12" />
+            }
         </div>
-    </div>
+    </DetailCardComponent>
+
+    @* 物理特性 - 使用模組化元件 *@
+    @if (material.Density.HasValue || material.MeltingPoint.HasValue)
+    {
+        <DetailCardComponent Title="物理特性" Icon="speedometer2">
+            <div class="row">
+                @if (material.Density.HasValue)
+                {
+                    <DetailFieldComponent Label="密度" Value="@($"{material.Density} g/cm³")" />
+                }
+                @if (material.MeltingPoint.HasValue)
+                {
+                    <DetailFieldComponent Label="熔點" Value="@($"{material.MeltingPoint}°C")" />
+                }
+            </div>
+        </DetailCardComponent>
+    }
+
+    @* 系統資訊 - 使用模組化元件 *@
+    <DetailCardComponent Title="系統資訊" Icon="gear">
+        <div class="row">
+            <DetailFieldComponent Label="建立時間" Value="@material.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")" />
+            <DetailFieldComponent Label="建立者" Value="@material.CreatedBy" EmptyText="系統" />
+            @if (material.UpdatedAt.HasValue)
+            {
+                <DetailFieldComponent Label="更新時間" Value="@material.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
+                <DetailFieldComponent Label="更新者" Value="@material.UpdatedBy" EmptyText="無" />
+            }
+        </div>
+    </DetailCardComponent>
 }
 
 @code {
@@ -283,6 +173,7 @@ else
             StateHasChanged();
         }
     }
+
     private void BackToMaterialList()
     {
         Navigation.NavigateTo("/BOMFoundation/materials");

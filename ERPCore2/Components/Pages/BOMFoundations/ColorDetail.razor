@@ -1,5 +1,11 @@
 @page "/BOMFoundation/colors/detail/{colorId:int}"
 @page "/colors/detail/{colorId:int}"
+@using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Badges
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
 @inject IColorService ColorService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -41,7 +47,7 @@ else
                           Subtitle="@($"顏色代碼：{color.Code}")"
                           Icon="bi bi-palette"
                           BreadcrumbItems="@breadcrumbItems">        
-                          <ActionButtons>
+        <ActionButtons>
             <DetailActionButtonsComponent 
                 EntityStatus="@color?.Status"
                 IsLoading="@isLoading"
@@ -56,147 +62,44 @@ else
         </ActionButtons>
     </GenericHeaderComponent>
 
-    <div class="container-fluid">
+    @* 基本資訊 - 使用模組化元件 *@
+    <DetailCardComponent Title="基本資訊" Icon="info-circle">
         <div class="row">
-            <div class="col-12">
-                <!-- 基本資訊 -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-info-circle me-2"></i>基本資訊
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">顏色代碼</label>
-                                    <div>@color.Code</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">顏色名稱</label>
-                                    <div class="fw-bold">@color.Name</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">狀態</label>
-                                    <div>
-                                        @if (color.Status == Data.Enums.EntityStatus.Active)
-                                        {
-                                            <span class="badge bg-success">啟用</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-danger">停用</span>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                            @if (!string.IsNullOrEmpty(color.Description))
-                            {
-                                <div class="col-12">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">描述</label>
-                                        <div>@color.Description</div>
-                                    </div>
-                                </div>
-                            }
-                            @if (!string.IsNullOrEmpty(color.Remarks))
-                            {
-                                <div class="col-12">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">備註</label>
-                                        <div>@color.Remarks</div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 顏色資訊 -->
-                @if (!string.IsNullOrEmpty(color.HexCode) || (color.RedValue.HasValue || color.GreenValue.HasValue || color.BlueValue.HasValue))
+            <DetailFieldComponent Label="顏色代碼" Value="@color.Code" IsPrimary="true" />
+            <DetailFieldComponent Label="顏色名稱" Value="@color.Name" IsBold="true" />
+            <DetailFieldComponent Label="狀態">
+                @if (color.Status == Data.Enums.EntityStatus.Active)
                 {
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-palette me-2"></i>顏色資訊
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                @if (!string.IsNullOrEmpty(color.HexCode))
-                                {
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label text-muted">十六進位色碼</label>
-                                            <div class="d-flex align-items-center">
-                                                <span class="me-2">@color.HexCode</span>
-                                                <div style="width: 30px; height: 30px; background-color: @color.HexCode; border: 1px solid #ddd; border-radius: 4px;"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                                @if (color.RedValue.HasValue || color.GreenValue.HasValue || color.BlueValue.HasValue)
-                                {
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label text-muted">RGB 值</label>
-                                            <div>
-                                                R: @(color.RedValue ?? 0), 
-                                                G: @(color.GreenValue ?? 0), 
-                                                B: @(color.BlueValue ?? 0)
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    </div>
+                    <span class="badge bg-success">啟用</span>
                 }
-
-                <!-- 系統資訊 -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-gear me-2"></i>系統資訊
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">建立日期</label>
-                                    <div>@color.CreatedAt.ToString("yyyy/MM/dd HH:mm")</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">建立者</label>
-                                    <div>@(color.CreatedBy ?? "-")</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">最後更新</label>
-                                    <div>@(color.UpdatedAt?.ToString("yyyy/MM/dd HH:mm") ?? "-")</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">更新者</label>
-                                    <div>@(color.UpdatedBy ?? "-")</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                else
+                {
+                    <span class="badge bg-danger">停用</span>
+                }
+            </DetailFieldComponent>
+            @if (!string.IsNullOrEmpty(color.Description))
+            {
+                <DetailFieldComponent Label="描述" Value="@color.Description" ColSize="12" />
+            }
+            @if (!string.IsNullOrEmpty(color.Remarks))
+            {
+                <DetailFieldComponent Label="備註" Value="@color.Remarks" ColSize="12" />
+            }
         </div>
-    </div>
+    </DetailCardComponent>
+
+    @* 系統資訊 - 使用模組化元件 *@
+    <DetailCardComponent Title="系統資訊" Icon="gear">
+        <div class="row">
+            <DetailFieldComponent Label="建立時間" Value="@color.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")" />
+            <DetailFieldComponent Label="建立者" Value="@color.CreatedBy" EmptyText="系統" />
+            @if (color.UpdatedAt.HasValue)
+            {
+                <DetailFieldComponent Label="更新時間" Value="@color.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
+                <DetailFieldComponent Label="更新者" Value="@color.UpdatedBy" EmptyText="無" />
+            }
+        </div>
+    </DetailCardComponent>
 }
 
 @code {
