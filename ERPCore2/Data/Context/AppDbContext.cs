@@ -46,8 +46,15 @@ namespace ERPCore2.Data.Context
             {
                   base.OnModelCreating(modelBuilder);
 
+                  // === 實體設定（包含欄位對應和關聯） ===
+                  
+                  // 客戶相關
                   modelBuilder.Entity<Customer>(entity =>
                   {
+                        // 欄位對應 - 主鍵在資料庫中就叫 Id，不需要欄位對應
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd(); // 確保 Identity
+                        
+                        // 關聯設定
                         entity.HasOne(e => e.CustomerType)
                         .WithMany(ct => ct.Customers)
                         .OnDelete(DeleteBehavior.SetNull);
@@ -56,9 +63,13 @@ namespace ERPCore2.Data.Context
                         .WithMany(i => i.Customers)
                         .OnDelete(DeleteBehavior.SetNull);
                   });
-
+                  
                   modelBuilder.Entity<CustomerContact>(entity =>
                   {
+                        // 欄位對應 - 主鍵在資料庫中就叫 Id，不需要欄位對應
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd(); // 確保 Identity
+                        
+                        // 關聯設定
                         entity.HasOne(e => e.Customer)
                         .WithMany(c => c.CustomerContacts)
                         .OnDelete(DeleteBehavior.Cascade);
@@ -67,9 +78,13 @@ namespace ERPCore2.Data.Context
                         .WithMany(ct => ct.CustomerContacts)
                         .OnDelete(DeleteBehavior.SetNull);
                   });
-
+                  
                   modelBuilder.Entity<CustomerAddress>(entity =>
                   {
+                        // 欄位對應 - 主鍵在資料庫中就叫 Id，不需要欄位對應
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd(); // 確保 Identity
+                        
+                        // 關聯設定
                         entity.HasOne(e => e.Customer)
                         .WithMany(c => c.CustomerAddresses)
                         .OnDelete(DeleteBehavior.Cascade);
@@ -78,25 +93,101 @@ namespace ERPCore2.Data.Context
                         .WithMany(at => at.CustomerAddresses)
                         .OnDelete(DeleteBehavior.SetNull);
                   });
+                  
+                  modelBuilder.Entity<CustomerType>(entity =>
+                  {
+                        // 欄位對應 - 主鍵在資料庫中就叫 Id，不需要欄位對應
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd(); // 確保 Identity
+                  });
 
+                  // 供應商相關
+                  modelBuilder.Entity<Supplier>(entity =>
+                  {
+                        // 欄位對應 - 主鍵在資料庫中就叫 Id，不需要欄位對應
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        
+                        // 關聯設定
+                        entity.HasOne(e => e.SupplierType)
+                        .WithMany(st => st.Suppliers)
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasOne(e => e.IndustryType)
+                        .WithMany(i => i.Suppliers)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
+                  
+                  modelBuilder.Entity<SupplierContact>(entity =>
+                  {
+                        // 欄位對應 - 主鍵在資料庫中就叫 Id，不需要欄位對應
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        
+                        // 關聯設定
+                        entity.HasOne(e => e.Supplier)
+                        .WithMany(s => s.SupplierContacts)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                        entity.HasOne(e => e.ContactType)
+                        .WithMany(ct => ct.SupplierContacts)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
+                  
+                  modelBuilder.Entity<SupplierAddress>(entity =>
+                  {
+                        // 欄位對應 - 主鍵在資料庫中就叫 Id，不需要欄位對應
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        
+                        // 關聯設定
+                        entity.HasOne(e => e.Supplier)
+                        .WithMany(s => s.SupplierAddresses)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                        entity.HasOne(e => e.AddressType)
+                        .WithMany(at => at.SupplierAddresses)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
+                  
+                  modelBuilder.Entity<SupplierType>(entity =>
+                  {
+                        // 欄位對應
+                        
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                  });
+                  
+                  // 員工相關
                   modelBuilder.Entity<Employee>(entity =>
                   {
+                        // 欄位對應
+                        
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        
+                        // 關聯設定
                         entity.HasOne(e => e.Role)
                         .WithMany(r => r.Employees)
                         .OnDelete(DeleteBehavior.Restrict);
-                  }); modelBuilder.Entity<RolePermission>(entity =>
-                  {
-                        entity.HasOne(rp => rp.Role)
-                        .WithMany(r => r.RolePermissions)
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                        entity.HasOne(rp => rp.Permission)
-                        .WithMany(p => p.RolePermissions)
-                        .OnDelete(DeleteBehavior.Cascade);
                   });
-
+                  
+                  modelBuilder.Entity<EmployeeContact>(entity =>
+                  {
+                        // 欄位對應
+                        
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                  });
+                  
+                  modelBuilder.Entity<EmployeeAddress>(entity =>
+                  {
+                        // 欄位對應
+                        
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                  });
+                  
+                  // 產品相關
                   modelBuilder.Entity<Product>(entity =>
                   {
+                        // 欄位對應
+                        
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        
+                        // 關聯設定
                         entity.HasOne(e => e.ProductCategory)
                         .WithMany(pc => pc.Products)
                         .OnDelete(DeleteBehavior.SetNull);
@@ -109,9 +200,14 @@ namespace ERPCore2.Data.Context
                         .WithMany(u => u.Products)
                         .OnDelete(DeleteBehavior.SetNull);
                   });
-
+                  
                   modelBuilder.Entity<ProductSupplier>(entity =>
                   {
+                        // 欄位對應
+                        
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        
+                        // 關聯設定
                         entity.HasOne(ps => ps.Product)
                         .WithMany(p => p.ProductSuppliers)
                         .OnDelete(DeleteBehavior.Cascade);
@@ -120,41 +216,42 @@ namespace ERPCore2.Data.Context
                         .WithMany(s => s.ProductSuppliers)
                         .OnDelete(DeleteBehavior.Cascade);
                   });
-
-                  modelBuilder.Entity<Supplier>(entity =>
+                  
+                  // 共用參考資料
+                  modelBuilder.Entity<IndustryType>(entity =>
                   {
-                        entity.HasOne(e => e.SupplierType)
-                        .WithMany(st => st.Suppliers)
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                        entity.HasOne(e => e.IndustryType)
-                        .WithMany(i => i.Suppliers)
-                        .OnDelete(DeleteBehavior.SetNull);
+                        // 欄位對應
+                        
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                  });
+                  
+                  modelBuilder.Entity<AddressType>(entity =>
+                  {
+                        // 欄位對應
+                        
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd(); // 確保 Identity
+                  });
+                  
+                  modelBuilder.Entity<ContactType>(entity =>
+                  {
+                        // 欄位對應
+                        
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd(); // 確保 Identity
                   });
 
-                  modelBuilder.Entity<SupplierContact>(entity =>
+                  // 權限管理
+                  modelBuilder.Entity<RolePermission>(entity =>
                   {
-                        entity.HasOne(e => e.Supplier)
-                        .WithMany(s => s.SupplierContacts)
+                        entity.HasOne(rp => rp.Role)
+                        .WithMany(r => r.RolePermissions)
                         .OnDelete(DeleteBehavior.Cascade);
 
-                        entity.HasOne(e => e.ContactType)
-                        .WithMany(ct => ct.SupplierContacts)
-                        .OnDelete(DeleteBehavior.SetNull);
-                  });
-
-                  modelBuilder.Entity<SupplierAddress>(entity =>
-                  {
-                        entity.HasOne(e => e.Supplier)
-                        .WithMany(s => s.SupplierAddresses)
+                        entity.HasOne(rp => rp.Permission)
+                        .WithMany(p => p.RolePermissions)
                         .OnDelete(DeleteBehavior.Cascade);
-
-                        entity.HasOne(e => e.AddressType)
-                        .WithMany(at => at.SupplierAddresses)
-                        .OnDelete(DeleteBehavior.SetNull);
                   });
 
-                  // Inventory Management Relationships
+                  // 庫存管理
                   modelBuilder.Entity<WarehouseLocation>(entity =>
                   {
                         entity.HasOne(wl => wl.Warehouse)
@@ -175,7 +272,7 @@ namespace ERPCore2.Data.Context
                         .OnDelete(DeleteBehavior.Restrict);
                   });
 
-                  // BOM Foundations Relationships
+                  // BOM 基礎
                   modelBuilder.Entity<Material>(entity =>
                   {
                         entity.HasOne(m => m.Supplier)

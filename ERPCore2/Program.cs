@@ -1,5 +1,6 @@
 using ERPCore2.Components;
 using ERPCore2.Data;
+using ERPCore2.Test;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -120,8 +121,16 @@ app.MapControllers();
 // Initialize seed data
 using (var scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;    try
-    {        // 初始化種子資料（包含認證系統資料）
+    var services = scope.ServiceProvider;
+    try
+    {
+        // 測試資料庫連接和查詢
+        if (app.Environment.IsDevelopment())
+        {
+            await DatabaseTestHelper.TestDatabaseConnection();
+        }
+        
+        // 初始化種子資料（包含認證系統資料）
         await SeedData.InitializeAsync(services);
     }
     catch (Exception ex)

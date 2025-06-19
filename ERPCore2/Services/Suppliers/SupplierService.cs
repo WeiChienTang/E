@@ -249,19 +249,26 @@ namespace ERPCore2.Services
                 {
                     contact.IsDeleted = true;
                     contact.UpdatedAt = DateTime.UtcNow;
-                }
-
-                // 更新或新增聯絡資料
+                }                // 更新或新增聯絡資料
                 foreach (var contact in contacts)
                 {
-                    contact.SupplierId = supplierId;
-                    
-                    if (contact.Id == 0)
+                    if (contact.Id <= 0) // 新增（包括負數臨時 ID）
                     {
-                        // 新增
-                        contact.CreatedAt = DateTime.UtcNow;
-                        contact.UpdatedAt = DateTime.UtcNow;
-                        _context.SupplierContacts.Add(contact);
+                        // 建立新的聯絡實體以避免 ID 衝突
+                        var newContact = new SupplierContact
+                        {
+                            SupplierId = supplierId,
+                            ContactTypeId = contact.ContactTypeId,
+                            ContactValue = contact.ContactValue,
+                            IsPrimary = contact.IsPrimary,
+                            Status = EntityStatus.Active,
+                            IsDeleted = false,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow,
+                            CreatedBy = "System", // TODO: 從認證取得使用者
+                            Remarks = contact.Remarks
+                        };
+                        _context.SupplierContacts.Add(newContact);
                     }
                     else
                     {

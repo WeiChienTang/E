@@ -359,14 +359,26 @@ namespace ERPCore2.Services
                 // 更新或新增關聯
                 foreach (var productSupplier in productSuppliers)
                 {
-                    productSupplier.ProductId = productId;
-                    
-                    if (productSupplier.Id == 0)
+                    if (productSupplier.Id <= 0) // 新增（包括負數臨時 ID）
                     {
-                        // 新增
-                        productSupplier.CreatedAt = DateTime.UtcNow;
-                        productSupplier.UpdatedAt = DateTime.UtcNow;
-                        _context.ProductSuppliers.Add(productSupplier);
+                        // 建立新的產品供應商實體以避免 ID 衝突
+                        var newProductSupplier = new ProductSupplier
+                        {
+                            ProductId = productId,
+                            SupplierId = productSupplier.SupplierId,
+                            SupplierProductCode = productSupplier.SupplierProductCode,
+                            SupplierPrice = productSupplier.SupplierPrice,
+                            LeadTime = productSupplier.LeadTime,
+                            MinOrderQuantity = productSupplier.MinOrderQuantity,
+                            IsPrimarySupplier = productSupplier.IsPrimarySupplier,
+                            Status = EntityStatus.Active,
+                            IsDeleted = false,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow,
+                            CreatedBy = "System", // TODO: 從認證取得使用者
+                            Remarks = productSupplier.Remarks
+                        };
+                        _context.ProductSuppliers.Add(newProductSupplier);
                     }
                     else
                     {

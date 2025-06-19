@@ -426,14 +426,24 @@ namespace ERPCore2.Services
                     .Where(ec => ec.EmployeeId == employeeId)
                     .ToListAsync();
                 _context.EmployeeContacts.RemoveRange(existingContacts);
-                
-                // 新增新的聯絡資料
-                foreach (var contact in contacts)
+                  // 新增新的聯絡資料
+                foreach (var contact in contacts.Where(c => !string.IsNullOrWhiteSpace(c.ContactValue)))
                 {
-                    contact.EmployeeId = employeeId;
-                    contact.CreatedAt = DateTime.Now;
-                    contact.UpdatedAt = DateTime.Now;
-                    _context.EmployeeContacts.Add(contact);
+                    // 建立新的聯絡實體以避免 ID 衝突
+                    var newContact = new EmployeeContact
+                    {
+                        EmployeeId = employeeId,
+                        ContactTypeId = contact.ContactTypeId,
+                        ContactValue = contact.ContactValue,
+                        IsPrimary = contact.IsPrimary,
+                        Status = EntityStatus.Active,
+                        IsDeleted = false,
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now,
+                        CreatedBy = "System", // TODO: 從認證取得使用者
+                        Remarks = contact.Remarks
+                    };
+                    _context.EmployeeContacts.Add(newContact);
                 }
                 
                 await _context.SaveChangesAsync();
@@ -457,14 +467,27 @@ namespace ERPCore2.Services
                     .Where(ea => ea.EmployeeId == employeeId)
                     .ToListAsync();
                 _context.EmployeeAddresses.RemoveRange(existingAddresses);
-                
-                // 新增新的地址資料
-                foreach (var address in addresses)
+                  // 新增新的地址資料
+                foreach (var address in addresses.Where(a => !string.IsNullOrWhiteSpace(a.Address) || !string.IsNullOrWhiteSpace(a.City)))
                 {
-                    address.EmployeeId = employeeId;
-                    address.CreatedAt = DateTime.Now;
-                    address.UpdatedAt = DateTime.Now;
-                    _context.EmployeeAddresses.Add(address);
+                    // 建立新的地址實體以避免 ID 衝突
+                    var newAddress = new EmployeeAddress
+                    {
+                        EmployeeId = employeeId,
+                        AddressTypeId = address.AddressTypeId,
+                        PostalCode = address.PostalCode,
+                        City = address.City,
+                        District = address.District,
+                        Address = address.Address,
+                        IsPrimary = address.IsPrimary,
+                        Status = EntityStatus.Active,
+                        IsDeleted = false,
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now,
+                        CreatedBy = "System", // TODO: 從認證取得使用者
+                        Remarks = address.Remarks
+                    };
+                    _context.EmployeeAddresses.Add(newAddress);
                 }
                 
                 await _context.SaveChangesAsync();

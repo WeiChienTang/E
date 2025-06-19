@@ -298,19 +298,29 @@ namespace ERPCore2.Services
                 {
                     address.IsDeleted = true;
                     address.UpdatedAt = DateTime.UtcNow;
-                }
-
-                // 更新或新增地址
+                }                // 更新或新增地址
                 foreach (var address in addresses)
                 {
-                    address.SupplierId = supplierId;
-                    
-                    if (address.Id == 0)
+                    if (address.Id <= 0) // 新增（包括負數臨時 ID）
                     {
-                        // 新增
-                        address.CreatedAt = DateTime.UtcNow;
-                        address.UpdatedAt = DateTime.UtcNow;
-                        _dbSet.Add(address);
+                        // 建立新的地址實體以避免 ID 衝突
+                        var newAddress = new SupplierAddress
+                        {
+                            SupplierId = supplierId,
+                            AddressTypeId = address.AddressTypeId,
+                            PostalCode = address.PostalCode,
+                            City = address.City,
+                            District = address.District,
+                            Address = address.Address,
+                            IsPrimary = address.IsPrimary,
+                            Status = EntityStatus.Active,
+                            IsDeleted = false,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow,
+                            CreatedBy = "System", // TODO: 從認證取得使用者
+                            Remarks = address.Remarks
+                        };
+                        _dbSet.Add(newAddress);
                     }
                     else
                     {
