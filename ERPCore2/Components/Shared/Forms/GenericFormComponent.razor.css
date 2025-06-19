@@ -1,0 +1,73 @@
+/* 自動完成下拉選單容器 - 使用 ::deep 穿透組件範圍 */
+::deep .dropdown-menu {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    background-color: var(--bg-primary);
+    padding: 0.5rem 0;
+}
+
+/* 自動完成下拉選單項目 */
+::deep .dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    clear: both;
+    font-weight: 400;
+    color: var(--text-primary);
+    text-align: inherit;
+    white-space: nowrap;
+    background-color: transparent;
+    border: 0;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+/* 自動完成下拉選單項目 hover 效果 */
+::deep .dropdown-item:hover {
+    background-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+}
+
+/* 自動完成下拉選單項目 focus 效果 */
+::deep .dropdown-item:focus {
+    background-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+    outline: none;
+}
+
+/* 自動完成下拉選單項目 active 效果 */
+::deep .dropdown-item:active {
+    background-color: var(--table-hover-bg);
+    color: var(--table-hover-text);
+}
+
+/* 自動完成下拉選單項目禁用狀態 */
+::deep .dropdown-item:disabled {
+    color: var(--text-light);
+    background-color: transparent;
+    cursor: not-allowed;
+}
+
+::deep .dropdown-item:disabled:hover {
+    background-color: transparent;
+    color: var(--text-light);
+}
+
+/* 載入指示器樣式 */
+::deep .spinner-border-sm {
+    color: var(--primary-blue);
+}
+
+/* 自動完成輸入框 focus 效果 */
+::deep .form-control:focus {
+    border-color: var(--primary-blue);
+    box-shadow: var(--focus-shadow-primary);
+}
+
+/* 確保下拉選單在其他元素之上 */
+::deep .dropdown-menu.show {
+    display: block;
+    z-index: 1000;
+}
