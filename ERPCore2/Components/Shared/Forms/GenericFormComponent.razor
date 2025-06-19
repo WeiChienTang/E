@@ -112,13 +112,16 @@
     [Parameter] public string FieldContainerCssClass { get; set; } = "col-md-6";
 
     private EditForm? editForm;
-    
-    // 自動完成相關狀態
+      // 自動完成相關狀態
     private readonly Dictionary<string, List<SelectOption>> autoCompleteOptions = new();
     private readonly Dictionary<string, bool> autoCompleteLoading = new();
     private readonly Dictionary<string, bool> autoCompleteVisible = new();
     private readonly Dictionary<string, Timer?> autoCompleteTimers = new();
     private readonly Dictionary<string, string> autoCompleteDisplayValues = new();
+    
+    // 鍵盤導航狀態
+    private readonly Dictionary<string, int> highlightedOptionIndex = new();
+    private readonly Dictionary<string, bool> keyboardNavigationActive = new();
 
     private async Task HandleValidSubmit()
     {
@@ -502,8 +505,7 @@
                 _ = HandleAutoCompleteInput(field, inputValue);
             }
         }));
-        
-        // 失去焦點事件處理
+          // 失去焦點事件處理
         builder.AddAttribute(sequence + 11, "onblur", EventCallback.Factory.Create(this, () =>
         {
             // 延遲隱藏下拉選單，讓使用者有時間點擊選項
@@ -514,6 +516,12 @@
                 InvokeAsync(StateHasChanged);
                 timer?.Dispose();
             }, null, 150, Timeout.Infinite);
+        }));
+        
+        // 鍵盤事件處理
+        builder.AddAttribute(sequence + 12, "onkeydown", EventCallback.Factory.Create<KeyboardEventArgs>(this, args =>
+        {
+            _ = HandleKeyDown(field, args);
         }));
         
         builder.CloseElement(); // input
@@ -539,23 +547,37 @@
                 builder.OpenElement(sequence + 30, "div");
                 builder.AddAttribute(sequence + 31, "class", "dropdown-menu show position-absolute w-100");
                 builder.AddAttribute(sequence + 32, "style", "max-height: 200px; overflow-y: auto; z-index: 1000;");
-                
-                var optionSequence = sequence + 40;
+                  var optionSequence = sequence + 40;
+                var optionIndex = 0;
                 foreach (var option in options)
                 {
+                    var isHighlighted = highlightedOptionIndex.GetValueOrDefault(fieldId, -1) == optionIndex;
+                    var cssClass = isHighlighted ? "dropdown-item highlighted" : "dropdown-item";
+                    
                     builder.OpenElement(optionSequence, "button");
                     builder.AddAttribute(optionSequence + 1, "type", "button");
-                    builder.AddAttribute(optionSequence + 2, "class", "dropdown-item");
-                    builder.AddAttribute(optionSequence + 3, "onmousedown", EventCallback.Factory.Create(this, () =>
+                    builder.AddAttribute(optionSequence + 2, "class", cssClass);
+                    
+                    // 滑鼠移動時更新高亮索引
+                    builder.AddAttribute(optionSequence + 3, "onmousemove", EventCallback.Factory.Create(this, () =>
+                    {
+                        highlightedOptionIndex[fieldId] = optionIndex;
+                        keyboardNavigationActive[fieldId] = false;
+                        StateHasChanged();
+                    }));
+                    
+                    builder.AddAttribute(optionSequence + 4, "onmousedown", EventCallback.Factory.Create(this, () =>
                     {
                         autoCompleteDisplayValues[fieldId] = option.Text;
                         SetPropertyValue(Model, field.PropertyName, option.Value);
                         autoCompleteVisible[fieldId] = false;
+                        ResetKeyboardNavigation(fieldId);
                         StateHasChanged();
                     }));
-                    builder.AddContent(optionSequence + 4, option.Text);
+                    builder.AddContent(optionSequence + 5, option.Text);
                     builder.CloseElement();
-                    optionSequence += 5;
+                    optionSequence += 6;
+                    optionIndex++;
                 }
                 
                 builder.CloseElement(); // dropdown-menu
@@ -612,8 +634,102 @@
                     StateHasChanged();
                 }            });
         }, null, field.AutoCompleteDelayMs, Timeout.Infinite);
+          return Task.CompletedTask;
+    }
+    
+    private async Task HandleKeyDown(FormFieldDefinition field, KeyboardEventArgs args)
+    {
+        var fieldId = field.PropertyName;
+        var options = autoCompleteOptions.GetValueOrDefault(fieldId, new List<SelectOption>());
+        
+        switch (args.Key)
+        {
+            case "ArrowDown":
+                // 如果下拉選單未顯示，顯示它
+                if (!autoCompleteVisible.GetValueOrDefault(fieldId, false))
+                {
+                    var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "");
+                    if (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= field.MinSearchLength)
+                    {
+                        await HandleAutoCompleteInput(field, inputValue);
+                    }
+                }
+                else if (options.Any())
+                {
+                    // 移動到下一個選項
+                    MoveHighlight(fieldId, options, 1);
+                }
+                break;
+                
+            case "ArrowUp":
+                if (autoCompleteVisible.GetValueOrDefault(fieldId, false) && options.Any())
+                {
+                    MoveHighlight(fieldId, options, -1);
+                }
+                break;
+                
+            case "Enter":
+                if (autoCompleteVisible.GetValueOrDefault(fieldId, false) && options.Any())
+                {
+                    await SelectHighlightedOption(field, options);
+                }
+                break;
+                
+            case "Escape":
+                HideDropdown(fieldId);
+                break;
+                
+            case "Tab":
+                HideDropdown(fieldId);
+                // 不阻止 Tab，讓它正常移動到下一個欄位
+                break;
+        }
+        
+        StateHasChanged();
+    }
+    
+    private void MoveHighlight(string fieldId, List<SelectOption> options, int direction)
+    {
+        if (!options.Any()) return;
+        
+        var currentIndex = highlightedOptionIndex.GetValueOrDefault(fieldId, -1);
+        var newIndex = currentIndex + direction;
+        
+        // 循環導航
+        if (newIndex < 0)
+            newIndex = options.Count - 1;
+        else if (newIndex >= options.Count)
+            newIndex = 0;
+            
+        highlightedOptionIndex[fieldId] = newIndex;
+        keyboardNavigationActive[fieldId] = true;
+    }
+      private Task SelectHighlightedOption(FormFieldDefinition field, List<SelectOption> options)
+    {
+        var fieldId = field.PropertyName;
+        var highlightedIndex = highlightedOptionIndex.GetValueOrDefault(fieldId, -1);
+        
+        if (highlightedIndex >= 0 && highlightedIndex < options.Count)
+        {
+            var selectedOption = options[highlightedIndex];
+            autoCompleteDisplayValues[fieldId] = selectedOption.Text;
+            SetPropertyValue(Model, field.PropertyName, selectedOption.Value);
+            HideDropdown(fieldId);
+        }
         
         return Task.CompletedTask;
+    }
+    
+    private void HideDropdown(string fieldId)
+    {
+        autoCompleteVisible[fieldId] = false;
+        ResetKeyboardNavigation(fieldId);
+    }
+    
+    private void ResetKeyboardNavigation(string fieldId)
+    {
+        highlightedOptionIndex[fieldId] = -1;
+        keyboardNavigationActive[fieldId] = false;
     }
 
     public void Dispose()

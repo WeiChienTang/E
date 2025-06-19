@@ -30,6 +30,18 @@
     color: var(--table-hover-text);
 }
 
+/* 自動完成下拉選單項目鍵盤高亮效果 */
+::deep .dropdown-item.highlighted {
+    background-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+}
+
+/* 確保鍵盤高亮優先於 hover */
+::deep .dropdown-item.highlighted:hover {
+    background-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+}
+
 /* 自動完成下拉選單項目 focus 效果 */
 ::deep .dropdown-item:focus {
     background-color: var(--table-hover-bg-striped);
