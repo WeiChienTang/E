@@ -3,6 +3,7 @@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services
 @using ERPCore2.Data.Enums
+@using ERPCore2.Components.Shared.SubCollections
 @inject IProductService ProductService
 @inject IProductCategoryService ProductCategoryService
 @inject ISupplierService SupplierService
@@ -11,179 +12,63 @@
 
 <PageTitle>@GetPageTitle()</PageTitle>
 
-<GenericMasterDetailEditComponent TMaster="Product" 
-                                TService="IProductService"
-                                Id="@Id"
-                                MasterEntity="@product"
-                                Service="@ProductService"
-                                EntityName="產品"
-                                EntityNamePlural="產品"
-                                CreateTitle="新增產品"
-                                EditTitle="@($"編輯產品 - {(product?.ProductName ?? "")}")"
-                                CreateSubtitle="建立新的產品資料"
-                                EditSubtitle="@(product?.ProductCode ?? "")"
-                                IndexRoute="/products"
-                                BreadcrumbItems="@breadcrumbItems"
-                                MasterFormFields="@GetMasterFormFields()"
-                                MasterFormSections="@GetMasterFormSections()"
-                                MasterFormTitle="基本資料"
-                                MasterFormIcon="bi-box"
-                                DataLoader="LoadProductData"
-                                SaveHandler="SaveProduct"
-                                OnSaveSuccess="HandleSaveSuccess"
-                                OnCancel="HandleCancel"
-                                UseGenericForm="true">
-    
-    <DetailSections>
+<GenericEditPageComponent TEntity="Product" 
+                         TService="IProductService"
+                         Id="@Id"
+                         Entity="@product"
+                         Service="@ProductService"
+                         EntityName="產品"
+                         EntityNamePlural="產品"
+                         FormTitle="基本資料"
+                         FormSubtitle="產品的基本資訊"
+                         FormIcon="bi-box"
+                         IndexRoute="/products"
+                         BreadcrumbItems="@breadcrumbItems"
+                         FormFields="@GetFormFields()"                         
+                         FormSections="@GetFormSections()"
+                         DataLoader="LoadProductData"
+                         SaveHandler="SaveProduct"
+                         UseGenericForm="true">
+      <AdditionalSections>
         @if (Id.HasValue && product != null)
         {
             @* 供應商管理區塊 *@
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-truck me-2"></i>
-                        供應商管理 (@productSuppliers.Count 筆)
-                    </h5>
-                    <button class="btn btn-sm btn-primary" @onclick="ShowAddSupplierModal">
-                        <i class="bi bi-plus me-1"></i>
-                        新增供應商
-                    </button>
-                </div>
-                <div class="card-body">
-                    @if (productSuppliers.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>供應商</th>
-                                        <th>聯絡人</th>
-                                        <th>電話</th>
-                                        <th>主要供應商</th>
-                                        <th>狀態</th>
-                                        <th>操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var ps in productSuppliers)
-                                    {
-                                        <tr>
-                                            <td>
-                                                <strong>@ps.Supplier?.CompanyName</strong>
-                                                @if (!string.IsNullOrEmpty(ps.Supplier?.SupplierCode))
-                                                {
-                                                    <br />
-                                                    <small class="text-muted">@ps.Supplier.SupplierCode</small>
-                                                }
-                                            </td>
-                                            <td>@ps.Supplier?.ContactPerson</td>
-                                            <td>-</td>
-                                            <td>
-                                                @if (ps.IsPrimarySupplier)
-                                                {
-                                                    <span class="badge bg-primary">主要</span>
-                                                }
-                                                else
-                                                {
-                                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => SetPrimarySupplier(ps)">
-                                                        設為主要
-                                                    </button>
-                                                }
-                                            </td>
-                                            <td>
-                                                @if (ps.Status == EntityStatus.Active)
-                                                {
-                                                    <span class="badge bg-success">啟用</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge bg-secondary">停用</span>
-                                                }
-                                            </td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm">
-                                                    <button class="btn btn-outline-danger" @onclick="() => RemoveSupplier(ps)">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-4 text-muted">
-                            <i class="bi bi-truck fs-1 mb-3 d-block"></i>
-                            <p>尚未設定供應商</p>
-                            <button class="btn btn-outline-primary" @onclick="ShowAddSupplierModal">
-                                <i class="bi bi-plus me-1"></i>
-                                新增第一個供應商
-                            </button>
-                        </div>
-                    }
-                </div>
-            </div>
+            <AssociationManagerComponent TAssociationEntity="ProductSupplier"
+                                       TParentEntity="Product"
+                                       TRelatedEntity="Supplier"
+                                       Items="@productSuppliers"
+                                       AvailableRelatedEntities="@availableSuppliers"
+                                       ParentEntityId="@(product?.Id ?? 0)"
+                                       Title="供應商管理"
+                                       Icon="truck"
+                                       ItemDisplayName="供應商"
+                                       RelatedEntityDisplayName="供應商"
+                                       ShowPrimaryOption="true"
+                                       GetIsPrimary="@(ps => ps.IsPrimarySupplier)"
+                                       GetIsActive="@(ps => ps.Status == EntityStatus.Active)"
+                                       GetRelatedEntityDisplayText="@(ps => ps.Supplier?.CompanyName ?? "")"
+                                       GetRelatedEntityId="@(s => s.Id)"
+                                       GetRelatedEntityText="@(s => $"{s.CompanyName} ({s.SupplierCode})")"
+                                       SetIsPrimary="@((ps, isPrimary) => ps.IsPrimarySupplier = isPrimary)"
+                                       SetParentId="@((ps, parentId) => ps.ProductId = parentId)"
+                                       SetRelatedEntityId="@((ps, supplierId) => ps.SupplierId = supplierId)"
+                                       ItemsChanged="@OnProductSuppliersChanged"
+                                       OnBeforeAdd="@BeforeAddSupplier"
+                                       OnAfterAdd="@AfterAddSupplier" />
         }
-    </DetailSections>
-</GenericMasterDetailEditComponent>
+    </AdditionalSections>
+</GenericEditPageComponent>
 
-@* 新增供應商 Modal *@
-@if (showAddSupplierModal)
-{
-    <div class="modal fade show d-block" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">新增供應商</h5>
-                    <button type="button" class="btn-close" @onclick="CloseAddSupplierModal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">選擇供應商</label>
-                        <select class="form-select" @bind="selectedSupplierId">
-                            <option value="">請選擇供應商</option>
-                            @foreach (var supplier in availableSuppliers)
-                            {
-                                <option value="@supplier.Id">@supplier.CompanyName (@supplier.SupplierCode)</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" @bind="newSupplierIsPrimary" id="isPrimaryCheck">
-                        <label class="form-check-label" for="isPrimaryCheck">
-                            設為主要供應商
-                        </label>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CloseAddSupplierModal">取消</button>
-                    <button type="button" class="btn btn-primary" @onclick="AddSupplier" disabled="@string.IsNullOrEmpty(selectedSupplierId)">
-                        新增
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal-backdrop fade show"></div>
-}
+@* 移除舊的 Modal 代碼 *@
 
 @code {
     [Parameter] public int? Id { get; set; }
-    
-    private Product product = new();
+      private Product product = new();
     private List<ProductCategory> productCategories = new();
     private List<ProductSupplier> productSuppliers = new();
     private List<Supplier> suppliers = new();
     private List<Supplier> availableSuppliers = new();
     private List<Unit> units = new();
-    
-    // Modal 相關
-    private bool showAddSupplierModal = false;
-    private string selectedSupplierId = string.Empty;
-    private bool newSupplierIsPrimary = false;
     
     // UI 狀態
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
@@ -207,7 +92,7 @@
     }
 
     // 主表單欄位定義
-    private List<FormFieldDefinition> GetMasterFormFields()
+    private List<FormFieldDefinition> GetFormFields()
     {
         return new List<FormFieldDefinition>
         {
@@ -318,7 +203,7 @@
             }
         };
     }    // 表單區塊定義
-    private Dictionary<string, string> GetMasterFormSections()
+    private Dictionary<string, string> GetFormSections()
     {
         return new Dictionary<string, string>
         {
@@ -429,20 +314,50 @@
         {
             Console.WriteLine($"儲存產品資料失敗：{ex.Message}");
             return false;
+        }    }
+
+#region 事件處理方法
+
+    private Task OnProductSuppliersChanged(List<ProductSupplier> updatedSuppliers)
+    {
+        productSuppliers = updatedSuppliers;
+        UpdateAvailableSuppliers();
+        StateHasChanged();
+        return Task.CompletedTask;
+    }    private Task<bool> BeforeAddSupplier(ProductSupplier newSupplier)
+    {
+        // 檢查是否已經存在相同的供應商
+        var exists = productSuppliers.Any(ps => ps.SupplierId == newSupplier.SupplierId);
+        if (exists)
+        {
+            // 這裡可以顯示錯誤訊息
+            return Task.FromResult(false);
         }
+        return Task.FromResult(true);
     }
 
-    // 事件處理方法
-    private async Task HandleSaveSuccess()
+    private async Task AfterAddSupplier(ProductSupplier newSupplier)
     {
-        await Task.Delay(100); // 給使用者一點反應時間
-        Navigation.NavigateTo("/products");
-    }
+        // 載入供應商詳細資料
+        var supplier = suppliers.FirstOrDefault(s => s.Id == newSupplier.SupplierId);
+        if (supplier != null)
+        {
+            newSupplier.Supplier = supplier;
+        }
 
-    private async Task HandleCancel()
-    {
-        Navigation.NavigateTo("/products");
-        await Task.CompletedTask;
+        // 儲存到資料庫
+        if (Id.HasValue)
+        {
+            var result = await ProductService.UpdateProductSuppliersAsync(Id.Value, productSuppliers);
+            if (!result.IsSuccess)
+            {
+                // 儲存失敗，移除剛才新增的項目
+                productSuppliers.Remove(newSupplier);
+                StateHasChanged();
+            }
+        }
+
+        UpdateAvailableSuppliers();
     }
 
     // 供應商管理方法
@@ -452,122 +367,5 @@
         availableSuppliers = suppliers.Where(s => !assignedSupplierIds.Contains(s.Id)).ToList();
     }
 
-    private void ShowAddSupplierModal()
-    {
-        UpdateAvailableSuppliers();
-        selectedSupplierId = string.Empty;
-        newSupplierIsPrimary = false;
-        showAddSupplierModal = true;
-    }
-
-    private void CloseAddSupplierModal()
-    {
-        showAddSupplierModal = false;
-        selectedSupplierId = string.Empty;
-        newSupplierIsPrimary = false;
-    }
-
-    private async Task AddSupplier()
-    {
-        if (string.IsNullOrEmpty(selectedSupplierId) || !Id.HasValue)
-            return;
-
-        try
-        {
-            var supplierId = int.Parse(selectedSupplierId);
-            var supplier = suppliers.FirstOrDefault(s => s.Id == supplierId);
-            if (supplier == null) return;
-
-            var productSupplier = new ProductSupplier
-            {
-                ProductId = Id.Value,
-                SupplierId = supplierId,
-                IsPrimarySupplier = newSupplierIsPrimary,
-                Status = EntityStatus.Active,
-                Supplier = supplier
-            };
-
-            // 如果設為主要供應商，先將其他供應商設為非主要
-            if (newSupplierIsPrimary)
-            {
-                foreach (var ps in productSuppliers)
-                {
-                    ps.IsPrimarySupplier = false;
-                }
-            }            productSuppliers.Add(productSupplier);
-            
-            // 使用 UpdateProductSuppliersAsync 來儲存變更
-            var result = await ProductService.UpdateProductSuppliersAsync(Id.Value, productSuppliers);
-            if (result.IsSuccess)
-            {
-                CloseAddSupplierModal();
-                StateHasChanged();
-            }
-            else
-            {
-                // 如果失敗，移除剛才新增的項目
-                productSuppliers.Remove(productSupplier);
-                Console.WriteLine($"新增供應商失敗：{result.ErrorMessage}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"新增供應商失敗：{ex.Message}");
-        }
-    }    private async Task RemoveSupplier(ProductSupplier productSupplier)
-    {
-        if (!Id.HasValue) return;
-        
-        try
-        {
-            productSuppliers.Remove(productSupplier);
-            
-            var result = await ProductService.UpdateProductSuppliersAsync(Id.Value, productSuppliers);
-            if (result.IsSuccess)
-            {
-                StateHasChanged();
-            }
-            else
-            {
-                // 如果失敗，重新加入項目
-                productSuppliers.Add(productSupplier);
-                Console.WriteLine($"移除供應商失敗：{result.ErrorMessage}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"移除供應商失敗：{ex.Message}");
-        }
-    }
-
-    private async Task SetPrimarySupplier(ProductSupplier productSupplier)
-    {
-        if (!Id.HasValue) return;
-        
-        try
-        {
-            // 先將所有供應商設為非主要
-            foreach (var ps in productSuppliers)
-            {
-                ps.IsPrimarySupplier = false;
-            }
-            
-            // 設定新的主要供應商
-            productSupplier.IsPrimarySupplier = true;
-            
-            var result = await ProductService.UpdateProductSuppliersAsync(Id.Value, productSuppliers);
-            if (result.IsSuccess)
-            {
-                StateHasChanged();
-            }
-            else
-            {
-                Console.WriteLine($"設定主要供應商失敗：{result.ErrorMessage}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"設定主要供應商失敗：{ex.Message}");
-        }
-    }
+#endregion
 }

@@ -22,12 +22,11 @@
                          FormIcon="info-circle"
                          UseGenericForm="true"
                          FormFields="@GetFormFields()"
-                         FormSections="@formSections"
-                         BreadcrumbItems="@breadcrumbItems"
+                         FormSections="@formSections"                         BreadcrumbItems="@breadcrumbItems"
                          DataLoader="@LoadWeatherData"
-                         SaveHandler="@SaveWeatherData"
-                         OnSaveSuccess="@HandleSaveSuccess"
-                         OnCancel="@HandleCancel" />
+                         UseGenericSave="true"
+                         SaveSuccessMessage="@(Id.HasValue ? "天氣更新成功" : "天氣新增成功")"
+                         SaveFailureMessage="天氣儲存失敗"/>
 
 @code {
     [Parameter] public int? Id { get; set; }
@@ -132,39 +131,6 @@
         {
             await JSRuntime.InvokeVoidAsync("console.error", "載入天氣資料時發生錯誤：", ex.Message);
             Navigation.NavigateTo("/BOMFoundation/weather");
-            return null;
-        }
-    }
-
-    private async Task<bool> SaveWeatherData(Weather weather)
-    {
-        try
-        {
-            if (Id.HasValue)
-            {
-                var result = await WeatherService.UpdateAsync(weather);
-                return result.IsSuccess;
-            }
-            else
-            {
-                var result = await WeatherService.CreateAsync(weather);
-                return result.IsSuccess;
-            }
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "儲存天氣資料時發生錯誤：", ex.Message);
-            return false;
-        }
-    }    private Task HandleSaveSuccess()
-    {
-        Navigation.NavigateTo("/BOMFoundation/weather");
-        return Task.CompletedTask;
-    }
-
-    private Task HandleCancel()
-    {
-        Navigation.NavigateTo("/BOMFoundation/weather");
-        return Task.CompletedTask;
+            return null;        }
     }
 }

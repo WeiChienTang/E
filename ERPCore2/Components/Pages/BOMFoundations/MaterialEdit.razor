@@ -26,9 +26,7 @@
                          DataLoader="@LoadEntityAsync"
                          SaveHandler="@SaveEntityAsync"
                          AdditionalDataLoader="@LoadAdditionalDataAsync"
-                         CustomValidation="@ValidateEntityAsync"
-                         OnSaveSuccess="@HandleSaveSuccess"
-                         OnCancel="@HandleCancel">
+>
     
     <CustomFormContent>
         <!-- 基本資料表單 -->
@@ -284,17 +282,5 @@
             Console.WriteLine($"驗證材質資料時發生錯誤：{ex.Message}");
             return false;
         }
-    }
-
-    private Task HandleSaveSuccess()
-    {
-        Navigation.NavigateTo("/BOMFoundation/materials");
-        return Task.CompletedTask;
-    }
-
-    private Task HandleCancel()
-    {
-        Navigation.NavigateTo("/BOMFoundation/materials");
-        return Task.CompletedTask;
     }
 }

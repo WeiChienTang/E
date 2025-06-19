@@ -1,5 +1,12 @@
-@* 泛型Edit頁面基底組件 *@
+@* 泛型Edit頁面組件 - 重新設計 *@
 @using ERPCore2.Data
+@using ERPCore2.Data.Enums
+@using ERPCore2.Services
+@using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.Headers
+@using Microsoft.AspNetCore.Components.Forms
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 @typeparam TEntity where TEntity : BaseEntity, new()
 @typeparam TService
 
@@ -13,56 +20,74 @@
                        LoadingText="載入中..."
                        ShowDivider="true">    
     <ActionButtons>
-        <EditActionButtonsComponent 
-            SaveButtonText="@SaveButtonText"
-            CancelButtonText="@CancelButtonText"
-            OnSaveClick="HandleSave"
-            OnCancelClick="HandleCancel"
-            IsSubmitting="@IsSubmitting"
-            IsLoading="@IsLoading" />
+        <div class="btn-group">
+            <button type="button" class="btn btn-success" @onclick="HandleSave" disabled="@(IsLoading || IsSubmitting)">
+                @if (IsSubmitting)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                }
+                else
+                {
+                    <i class="bi bi-check-circle me-1"></i>
+                }
+                @SaveButtonText
+            </button>
+            <button type="button" class="btn btn-outline-secondary" @onclick="HandleCancel" disabled="@(IsLoading || IsSubmitting)">
+                <i class="bi bi-x-circle me-1"></i>
+                @CancelButtonText
+            </button>
+        </div>
     </ActionButtons>
 </GenericHeaderComponent>
 
 @* 主要內容區域 *@
 <div class="row">
     <div class="col-12">
-        @* 基本資料表單 *@
-        <div class="card mb-4">
-            <GenericHeaderComponent Title="@FormTitle"
-                                   Subtitle="@FormSubtitle"
-                                   TitleIcon="@FormIcon"
-                                   IsCardHeader="true">
-            </GenericHeaderComponent>
-            <div class="card-body">
-                @if (UseGenericForm)
-                {
-                    <GenericFormComponent TModel="TEntity"
-                                        Model="@Entity"
-                                        FieldDefinitions="@FormFields"
-                                        FieldSections="@FormSections"
-                                        OnFormSubmit="HandleFormSubmit"
-                                        ShowFormHeader="false"
-                                        ShowFormButtons="false"
-                                        ShowValidationSummary="true"
-                                        FormCssClass=""
-                                        FormBodyCssClass="">
-                    </GenericFormComponent>
-                }
-                else
-                {
-                    <EditForm Model="@Entity" OnValidSubmit="HandleFormSubmit">
-                        <DataAnnotationsValidator />
-                        <ValidationSummary class="text-danger" />
-                        @CustomFormContent
-                    </EditForm>
-                }
-            </div>
-        </div>
-
-        @* 額外區塊 *@
-        @if (AdditionalSections != null)
+        @if (IsLoading)
         {
-            @AdditionalSections
+            <div class="d-flex justify-content-center align-items-center py-5">
+                <div class="spinner-border text-primary me-3" role="status"></div>
+                <span>@LoadingMessage</span>
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <div class="alert alert-danger" role="alert">
+                <h6 class="alert-heading">載入錯誤</h6>
+                @ErrorMessage
+            </div>
+        }
+        else
+        {
+            @* 基本表單 *@
+            @if (UseGenericForm && FormFields.Any())
+            {
+                <div class="card mb-4">
+                    <GenericHeaderComponent Title="@FormTitle"
+                                           Subtitle="@FormSubtitle"
+                                           TitleIcon="@FormIcon"
+                                           IsCardHeader="true" />
+                    <div class="card-body">                        <GenericFormComponent TModel="TEntity"
+                                            Model="@Entity"
+                                            FieldDefinitions="@FormFields"
+                                            FieldSections="@FormSections"
+                                            ShowFormHeader="false"
+                                            ShowFormButtons="false" />
+                    </div>
+                </div>
+            }            @* 自訂表單內容 *@
+            @if (CustomFormContent != null)
+            {
+                <CascadingValue Value="@editContext">
+                    @CustomFormContent
+                </CascadingValue>
+            }
+            
+            @* 額外區段 *@
+            @if (AdditionalSections != null)
+            {
+                @AdditionalSections
+            }
         }
     </div>
 </div>
@@ -75,16 +100,16 @@
     [Parameter] public TEntity Entity { get; set; } = new();
     [Parameter] public TService Service { get; set; } = default!;
     
-    // 頁面設定
+    // 頁面基本設定
     [Parameter] public string EntityName { get; set; } = "資料";
     [Parameter] public string EntityNamePlural { get; set; } = "資料";
-    [Parameter] public string CreateTitle { get; set; } = string.Empty;
-    [Parameter] public string EditTitle { get; set; } = string.Empty;
-    [Parameter] public string CreateSubtitle { get; set; } = string.Empty;
-    [Parameter] public string EditSubtitle { get; set; } = string.Empty;
-    [Parameter] public string CreateIcon { get; set; } = "plus-circle";
-    [Parameter] public string EditIcon { get; set; } = "pencil-square";
+    [Parameter] public string PageTitle { get; set; } = string.Empty;
+    [Parameter] public string PageSubtitle { get; set; } = string.Empty;
+    [Parameter] public string PageIcon { get; set; } = string.Empty;
     [Parameter] public string IndexRoute { get; set; } = "/";
+    
+    // 導航URL設定
+    [Parameter] public string EntityBasePath { get; set; } = "";
     
     // 按鈕設定
     [Parameter] public string SaveButtonText { get; set; } = "儲存";
@@ -105,211 +130,329 @@
     [Parameter] public RenderFragment? CustomFormContent { get; set; }
     [Parameter] public RenderFragment? AdditionalSections { get; set; }
     
-    // 事件和邏輯
-    [Parameter] public Func<Task<TEntity?>> DataLoader { get; set; } = default!;
-    [Parameter] public Func<TEntity, Task<bool>> SaveHandler { get; set; } = default!;
-    [Parameter] public Func<Task> AdditionalDataLoader { get; set; } = default!;
-    [Parameter] public Func<TEntity, Task<bool>> CustomValidation { get; set; } = default!;
-    [Parameter] public EventCallback OnSaveSuccess { get; set; }
-    [Parameter] public EventCallback OnCancel { get; set; }
+    // 委派參數 - 資料操作
+    [Parameter] public Func<Task<TEntity?>>? DataLoader { get; set; }
+    [Parameter] public Func<TEntity, Task<bool>>? SaveHandler { get; set; }
+    [Parameter] public Func<Task>? AdditionalDataLoader { get; set; }
+      // 新增：通用Save相關參數
+    [Parameter] public Func<TEntity, Task<bool>>? CustomValidator { get; set; }
+    [Parameter] public Func<TEntity, Task>? BeforeSave { get; set; }
+    [Parameter] public Func<TEntity, Task>? AfterSave { get; set; }
+    [Parameter] public bool UseGenericSave { get; set; } = false;
+    [Parameter] public string SaveSuccessMessage { get; set; } = "儲存成功";
+    [Parameter] public string SaveFailureMessage { get; set; } = "儲存失敗";
+      // 委派參數 - 事件處理
+    [Parameter] public Func<Task>? OnSaveSuccess { get; set; }
+    [Parameter] public Func<Task>? OnSaveFailure { get; set; }
+    [Parameter] public Func<Task>? OnCancel { get; set; }
+    
+    // 訊息設定
+    [Parameter] public string LoadingMessage { get; set; } = "載入資料中...";
     
     // ===== 內部狀態 =====
     
-    private bool isLoading = true;
-    private bool isSubmitting = false;
-    
-    // ===== 公開屬性 =====
-    
-    public bool IsCreateMode => !Id.HasValue || Id.Value == 0;
-    public bool IsEditMode => !IsCreateMode;
-    public bool IsLoading => isLoading;
-    public bool IsSubmitting => isSubmitting;    // ===== 生命週期 =====
-    
+    private bool IsLoading { get; set; } = true;
+    private bool IsSubmitting { get; set; } = false;
+    private string ErrorMessage { get; set; } = string.Empty;
     private bool _hasInitialized = false;
-    private int? _lastId = null;
+    private int? _lastId = null; // 追蹤上次的 Id 值
+    private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
+    private EditContext? editContext;
+    
+    // ===== 生命週期方法 =====
     
     protected override async Task OnInitializedAsync()
-    {
+    {        
+        // 初始化 EditContext
+        editContext = new EditContext(Entity);
+        
         if (!_hasInitialized)
         {
-            await InitializePageAsync();
+            _lastId = Id; // 先記錄初始 Id
+            await LoadAllData();
             _hasInitialized = true;
-            _lastId = Id;
         }
     }
-    
-    protected override async Task OnParametersSetAsync()
+      protected override async Task OnParametersSetAsync()
     {
-        // 檢查 ID 是否變化，如果變化則重新載入資料
+        // 只有當 Id 參數真的變化時才重新載入
         if (_hasInitialized && _lastId != Id)
         {
-            await InitializePageAsync();
-            _lastId = Id;
-        }
-        else if (!_hasInitialized)
-        {
-            await InitializePageAsync();
-            _hasInitialized = true;
-            _lastId = Id;
+            _lastId = Id; // 更新記錄的 Id
+            await LoadAllData();
         }
     }
     
-    // ===== 初始化方法 =====
-      private async Task InitializePageAsync()
+    // ===== 資料載入方法 =====
+    
+    private async Task LoadAllData()
     {
+        await _loadingSemaphore.WaitAsync();
         try
         {
-            isLoading = true;
+            IsLoading = true;
+            ErrorMessage = string.Empty;
             StateHasChanged();
             
-            // 載入額外資料
+            // 載入額外資料（如選項列表）
             if (AdditionalDataLoader != null)
             {
                 await AdditionalDataLoader();
             }
-            
-            // 載入實體資料（編輯模式）
-            if (IsEditMode && DataLoader != null)
+              // 載入實體資料
+            if (DataLoader != null)
             {
                 var loadedEntity = await DataLoader();
                 if (loadedEntity != null)
                 {
                     Entity = loadedEntity;
-                    StateHasChanged(); // 確保UI更新
+                    // 更新 EditContext
+                    editContext = new EditContext(Entity);
                 }
-            }
-            else if (IsCreateMode)
-            {
-                // 初始化新實體
-                if (DataLoader != null)
-                {
-                    var newEntity = await DataLoader();
-                    if (newEntity != null)
-                    {
-                        Entity = newEntity;
-                    }
-                }
-                else
-                {
-                    Entity = new TEntity();
-                }
-                StateHasChanged(); // 確保UI更新
             }
         }
         catch (Exception ex)
         {
-            // 錯誤處理 - 可以考慮加入錯誤通知
-            Console.Error.WriteLine($"載入資料時發生錯誤：{ex.Message}");
+            ErrorMessage = $"載入資料時發生錯誤：{ex.Message}";
+            await LogError("LoadAllData", ex);
         }
         finally
         {
-            isLoading = false;
+            IsLoading = false;
             StateHasChanged();
+            _loadingSemaphore.Release();
         }
     }
     
     // ===== 事件處理方法 =====
-    
-    private async Task HandleFormSubmit()
+      private async Task HandleSave()
     {
-        await HandleSave();
-    }
-    
-    private async Task HandleSave()
-    {
-        if (isSubmitting) return;
+        if (IsSubmitting) return;
         
         try
         {
-            isSubmitting = true;
+            IsSubmitting = true;
             StateHasChanged();
             
-            // 自訂驗證
-            if (CustomValidation != null)
+            bool success;
+            
+            if (UseGenericSave)
             {
-                var isValid = await CustomValidation(Entity);
-                if (!isValid)
+                success = await GenericSave(Entity);
+            }
+            else if (SaveHandler != null)
+            {
+                // 執行通用儲存前處理
+                if (BeforeSave != null)
                 {
-                    return;
+                    await BeforeSave(Entity);
+                }
+                
+                // 自訂驗證
+                if (CustomValidator != null)
+                {
+                    var isValid = await CustomValidator(Entity);
+                    if (!isValid)
+                    {
+                        await ShowErrorMessage("驗證失敗");
+                        return;
+                    }
+                }
+                
+                success = await SaveHandler(Entity);
+                
+                // 執行通用儲存後處理
+                if (success && AfterSave != null)
+                {
+                    await AfterSave(Entity);
                 }
             }
-            
-            // 執行儲存邏輯
-            bool success = false;
-            if (SaveHandler != null)
+            else
             {
-                success = await SaveHandler(Entity);
+                await ShowErrorMessage("沒有設定儲存處理器");
+                return;
             }
             
             if (success)
             {
-                // 觸發成功事件
-                await OnSaveSuccess.InvokeAsync();
+                await ShowSuccessMessage(SaveSuccessMessage);
+                
+                if (OnSaveSuccess != null)
+                {
+                    await OnSaveSuccess();
+                }
+                else
+                {
+                    // 預設行為：導航回索引頁
+                    Navigation.NavigateTo(IndexRoute);
+                }
+            }
+            else
+            {
+                if (!UseGenericSave) // GenericSave 已經顯示過錯誤訊息了
+                {
+                    await ShowErrorMessage(SaveFailureMessage);
+                }
+                
+                if (OnSaveFailure != null)
+                {
+                    await OnSaveFailure();
+                }
             }
         }
         catch (Exception ex)
         {
-            // 錯誤處理
-            Console.Error.WriteLine($"儲存資料時發生錯誤：{ex.Message}");
+            await ShowErrorMessage($"儲存時發生錯誤：{ex.Message}");
+            await LogError("HandleSave", ex);
+            
+            if (OnSaveFailure != null)
+            {
+                await OnSaveFailure();
+            }
         }
         finally
         {
-            isSubmitting = false;
+            IsSubmitting = false;
             StateHasChanged();
         }
     }
     
     private async Task HandleCancel()
     {
-        await OnCancel.InvokeAsync();
-    }
+        if (OnCancel != null)
+        {
+            await OnCancel();
+        }
+        else
+        {
+            // 預設行為：導航回索引頁
+            Navigation.NavigateTo(IndexRoute);
+        }    }
     
     // ===== 輔助方法 =====
     
     private string GetPageTitle()
     {
-        if (IsCreateMode)
-        {
-            return !string.IsNullOrEmpty(CreateTitle) ? CreateTitle : $"新增{EntityName}";
-        }
-        else
-        {
-            return !string.IsNullOrEmpty(EditTitle) ? EditTitle : $"編輯{EntityName}";
-        }
+        if (!string.IsNullOrEmpty(PageTitle))
+            return PageTitle;
+            
+        return Id.HasValue ? $"編輯{EntityName}" : $"新增{EntityName}";
     }
     
     private string GetPageSubtitle()
     {
-        if (IsCreateMode)
-        {
-            return !string.IsNullOrEmpty(CreateSubtitle) ? CreateSubtitle : $"建立新的{EntityName}資料";
-        }
-        else
-        {
-            return !string.IsNullOrEmpty(EditSubtitle) ? EditSubtitle : $"修改{EntityName}資料";
-        }
+        if (!string.IsNullOrEmpty(PageSubtitle))
+            return PageSubtitle;
+            
+        return Id.HasValue ? $"修改{EntityName}資料" : $"建立新的{EntityName}資料";
     }
     
     private string GetPageIcon()
     {
-        return IsCreateMode ? CreateIcon : EditIcon;
+        if (!string.IsNullOrEmpty(PageIcon))
+            return PageIcon;
+            
+        return Id.HasValue ? "pencil-square" : "plus-circle";    }
+    
+    // ===== 通知方法 =====
+    
+    private async Task ShowSuccessMessage(string message)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", message);
     }
     
-    // ===== 公開方法 =====
-    
-    public async Task Refresh()
+    private async Task ShowErrorMessage(string message)
     {
-        await InitializePageAsync();
+        await JSRuntime.InvokeVoidAsync("alert", message);
     }
     
-    public void SetEntity(TEntity entity)
+    private async Task LogError(string method, Exception ex)
     {
-        Entity = entity;
-        StateHasChanged();
+        await JSRuntime.InvokeVoidAsync("console.error", $"[{method}] 錯誤：", ex.Message);    }
+      // ===== 通用Save方法 =====
+    
+    /// <summary>
+    /// 通用的保存方法，適用於大部分簡單實體
+    /// </summary>
+    private async Task<bool> GenericSave(TEntity entity)
+    {
+        try
+        {
+            // 自訂驗證
+            if (CustomValidator != null && !await CustomValidator(entity))
+            {
+                return false; // CustomValidator 應該已經顯示錯誤訊息
+            }
+            
+            // 儲存前處理
+            if (BeforeSave != null)
+            {
+                await BeforeSave(entity);
+            }
+            
+            // 使用反射呼叫Service的CreateAsync或UpdateAsync
+            var serviceType = typeof(TService);
+            ServiceResult result;
+            
+            if (Id.HasValue)
+            {
+                // 更新
+                var updateMethod = serviceType.GetMethod("UpdateAsync");
+                if (updateMethod != null)
+                {
+                    var task = (Task<ServiceResult>)updateMethod.Invoke(Service, new object[] { entity })!;
+                    result = await task;
+                }
+                else
+                {
+                    await ShowErrorMessage("Service中找不到UpdateAsync方法");
+                    return false;
+                }
+            }
+            else
+            {
+                // 新增
+                var createMethod = serviceType.GetMethod("CreateAsync");
+                if (createMethod != null)
+                {
+                    var task = (Task<ServiceResult>)createMethod.Invoke(Service, new object[] { entity })!;
+                    result = await task;
+                }
+                else
+                {
+                    await ShowErrorMessage("Service中找不到CreateAsync方法");
+                    return false;
+                }
+            }
+            
+            if (result.IsSuccess)
+            {
+                // 儲存後處理
+                if (AfterSave != null)
+                {
+                    await AfterSave(entity);
+                }
+                
+                return true;
+            }
+            else
+            {
+                await ShowErrorMessage($"{SaveFailureMessage}：{result.ErrorMessage}");
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorMessage($"{SaveFailureMessage}：{ex.Message}");
+            await LogError("GenericSave", ex);
+            return false;
+        }
     }
     
-    public TEntity GetEntity()
+    // ===== 清理資源 =====
+    
+    public void Dispose()
     {
-        return Entity;
+        _loadingSemaphore?.Dispose();
     }
 }

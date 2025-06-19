@@ -26,12 +26,12 @@
                          IndexRoute="/customer-types"
                          UseGenericForm="true"
                          FormFields="@formFields"
-                         FormSections="@formSections"
-                         BreadcrumbItems="@breadcrumbItems"
+                         FormSections="@formSections"                         BreadcrumbItems="@breadcrumbItems"
                          DataLoader="@LoadCustomerTypeData"
-                         SaveHandler="@SaveCustomerType"
-                         OnSaveSuccess="@HandleSaveSuccess"
-                         OnCancel="@HandleCancel">
+                         UseGenericSave="true"
+                         CustomValidator="@ValidateCustomerType"
+                         SaveSuccessMessage="@(Id.HasValue ? "客戶類型更新成功" : "客戶類型新增成功")"
+                         SaveFailureMessage="客戶類型儲存失敗">
 </GenericEditPageComponent>
 
 @code {
@@ -80,7 +80,8 @@
         };
 
         formFields = new List<FormFieldDefinition>
-        {            new()
+        {            
+            new()
             {
                 PropertyName = nameof(CustomerType.TypeName),
                 Label = "類型名稱",
@@ -172,73 +173,25 @@
     private string GetPageTitle()
     {
         return Id.HasValue ? "編輯客戶類型" : "新增客戶類型";
-    }
-
-    private async Task<bool> SaveCustomerType(CustomerType entity)
+    }    private async Task<bool> ValidateCustomerType(CustomerType entity)
     {
-        try
+        // 驗證基本資料
+        if (string.IsNullOrWhiteSpace(entity.TypeName))
         {
-            // 驗證基本資料
-            if (string.IsNullOrWhiteSpace(entity.TypeName))
-            {
-                await JSRuntime.InvokeVoidAsync("alert", "類型名稱為必填欄位");
-                return false;
-            }
-
-            // 檢查類型名稱是否重複
-            var isNameExists = await CustomerTypeService.IsTypeNameExistsAsync(entity.TypeName, Id);
-            if (isNameExists)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", "此類型名稱已存在，請使用其他名稱");
-                return false;
-            }
-
-            ServiceResult result;
-            
-            if (Id.HasValue)
-            {
-                // 更新模式
-                result = await CustomerTypeService.UpdateAsync(entity);
-            }
-            else
-            {
-                // 新增模式
-                result = await CustomerTypeService.CreateAsync(entity);
-            }
-
-            if (result.IsSuccess)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", 
-                    Id.HasValue ? "客戶類型更新成功" : "客戶類型新增成功");
-                return true;
-            }
-            else
-            {
-                await JSRuntime.InvokeVoidAsync("alert", $"儲存失敗：{result.ErrorMessage}");
-                return false;
-            }
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "儲存客戶類型資料時發生錯誤：", ex.Message);
-            await JSRuntime.InvokeVoidAsync("alert", $"儲存時發生錯誤：{ex.Message}");
+            await JSRuntime.InvokeVoidAsync("alert", "類型名稱為必填欄位");
             return false;
         }
-    }
 
-    private Task HandleSaveSuccess()
-    {
-        Navigation.NavigateTo("/customer-types");
-        return Task.CompletedTask;
-    }
+        // 檢查類型名稱是否重複
+        var isNameExists = await CustomerTypeService.IsTypeNameExistsAsync(entity.TypeName, Id);
+        if (isNameExists)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "此類型名稱已存在，請使用其他名稱");
+            return false;
+        }
 
-    private Task HandleCancel()
-    {
-        Navigation.NavigateTo("/customer-types");
-        return Task.CompletedTask;
-    }
-    
-    public void Dispose()
+        return true;
+    }    public void Dispose()
     {
         _loadingSemaphore?.Dispose();
     }

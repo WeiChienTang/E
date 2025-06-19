@@ -25,9 +25,10 @@
                          FormSections="@formSections"
                          BreadcrumbItems="@breadcrumbItems"
                          DataLoader="@LoadColorData"
-                         SaveHandler="@SaveColorData"
-                         OnSaveSuccess="@HandleSaveSuccess"
-                         OnCancel="@HandleCancel" />
+                         UseGenericSave="true"
+                         SaveSuccessMessage="@(Id.HasValue ? "顏色更新成功" : "顏色新增成功")"
+                         SaveFailureMessage="顏色儲存失敗"
+ />
 
 @code {
     [Parameter] public int? Id { get; set; }
@@ -142,39 +143,4 @@
         }
     }
 
-    private async Task<bool> SaveColorData(Color color)
-    {
-        try
-        {
-            ServiceResult<Color> result;
-            
-            if (Id.HasValue)
-            {
-                result = await ColorService.UpdateAsync(color);
-            }
-            else
-            {
-                result = await ColorService.CreateAsync(color);
-            }
-            
-            return result.IsSuccess;
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "儲存顏色資料時發生錯誤：", ex.Message);
-            return false;
-        }
-    }
-
-    private Task HandleSaveSuccess()
-    {
-        Navigation.NavigateTo("/BOMFoundation/colors");
-        return Task.CompletedTask;
-    }
-
-    private Task HandleCancel()
-    {
-        Navigation.NavigateTo("/BOMFoundation/colors");
-        return Task.CompletedTask;
-    }
 }
