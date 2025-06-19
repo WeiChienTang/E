@@ -177,13 +177,13 @@
     private string GetSubtitle()
     {
         return $"管理{ItemDisplayName}資料 ({Items.Count} 筆)";
-    }
-    
-    public async Task AddItemAsync()
+    }    public async Task AddItemAsync()
     {
         if (IsReadOnly) return;
         
         var newItem = new TAddressEntity();
+        // 使用臨時負數 ID 來區分新項目（避免與資料庫現有 ID 衝突）
+        newItem.Id = -(Items.Count + 1 + DateTime.Now.Millisecond);
         SetParentId(newItem, ParentEntityId);
         SetPostalCode(newItem, "");
         SetCity(newItem, "");
@@ -191,6 +191,8 @@
         SetAddress(newItem, "");
         SetIsPrimary(newItem, Items.Count == 0); // 第一個自動設為主要
         newItem.Status = EntityStatus.Active;
+        newItem.CreatedAt = DateTime.Now;
+        newItem.IsDeleted = false;
         
         Items.Add(newItem);
         

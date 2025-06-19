@@ -297,10 +297,10 @@
         catch
         {
             return "C0001"; // 如果出錯，回傳預設值
-        }    }
-
+        }    
+    }    
     private async Task<bool> SaveCustomer(Customer entity)
-    {
+        {
         try
         {
             // 驗證基本資料
@@ -334,23 +334,12 @@
             else
             {
                 // 新增客戶
-                result = await CustomerService.CreateAsync(entity);
-                if (result.IsSuccess)
+                result = await CustomerService.CreateAsync(entity);                if (result.IsSuccess)
                 {
-                    // 更新聯絡方式的客戶ID
-                    foreach (var contact in customerContacts)
-                    {
-                        contact.CustomerId = entity.Id;
-                    }
-                    
-                    // 更新地址的客戶ID
-                    foreach (var address in customerAddresses)
-                    {
-                        address.CustomerId = entity.Id;
-                    }
-                    
-                    // 儲存聯絡方式和地址
+                    // 更新聯絡方式
                     await CustomerService.UpdateCustomerContactsAsync(entity.Id, customerContacts);
+                    
+                    // 更新地址資料
                     await CustomerAddressService.UpdateCustomerAddressesAsync(entity.Id, customerAddresses);
                 }
             }
@@ -371,7 +360,7 @@
             await JSRuntime.InvokeVoidAsync("console.error", "儲存客戶資料時發生錯誤：", ex.Message);
             await JSRuntime.InvokeVoidAsync("alert", $"儲存時發生錯誤：{ex.Message}");
             return false;
-        }    }    
+        }    }
 
     // ===== 子集合事件處理 =====
     

@@ -292,16 +292,23 @@ namespace ERPCore2.Services
                     .ToListAsync();
 
                 // 刪除現有聯絡資料
-                _context.CustomerContacts.RemoveRange(existingContacts);
-
-                // 新增更新的聯絡資料
+                _context.CustomerContacts.RemoveRange(existingContacts);                // 新增更新的聯絡資料
                 foreach (var contact in contacts.Where(c => !string.IsNullOrWhiteSpace(c.ContactValue)))
                 {
-                    contact.CustomerId = customerId;
-                    contact.CreatedAt = DateTime.UtcNow;
-                    contact.CreatedBy = "System"; // TODO: 從認證取得使用者
-                    contact.Status = EntityStatus.Active;
-                    _context.CustomerContacts.Add(contact);
+                    // 建立新的聯絡實體以避免 ID 衝突
+                    var newContact = new CustomerContact
+                    {
+                        CustomerId = customerId,
+                        ContactTypeId = contact.ContactTypeId,
+                        ContactValue = contact.ContactValue,
+                        IsPrimary = contact.IsPrimary,
+                        Status = EntityStatus.Active,
+                        IsDeleted = false,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = "System", // TODO: 從認證取得使用者
+                        Remarks = contact.Remarks
+                    };
+                    _context.CustomerContacts.Add(newContact);
                 }
 
                 await _context.SaveChangesAsync();

@@ -328,17 +328,27 @@ namespace ERPCore2.Services
                     .ToListAsync();
 
                 // 刪除現有地址
-                _context.CustomerAddresses.RemoveRange(existingAddresses);
-
-                // 新增更新的地址
+                _context.CustomerAddresses.RemoveRange(existingAddresses);                // 新增更新的地址
                 foreach (var address in addresses.Where(a => !string.IsNullOrWhiteSpace(a.Address) || 
                                                             !string.IsNullOrWhiteSpace(a.City)))
                 {
-                    address.CustomerId = customerId;
-                    address.CreatedAt = DateTime.UtcNow;
-                    address.CreatedBy = "System"; // TODO: 從認證取得使用者
-                    address.Status = EntityStatus.Active;
-                    _context.CustomerAddresses.Add(address);
+                    // 建立新的地址實體以避免 ID 衝突
+                    var newAddress = new CustomerAddress
+                    {
+                        CustomerId = customerId,
+                        AddressTypeId = address.AddressTypeId,
+                        PostalCode = address.PostalCode,
+                        City = address.City,
+                        District = address.District,
+                        Address = address.Address,
+                        IsPrimary = address.IsPrimary,
+                        Status = EntityStatus.Active,
+                        IsDeleted = false,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = "System", // TODO: 從認證取得使用者
+                        Remarks = address.Remarks
+                    };
+                    _context.CustomerAddresses.Add(newAddress);
                 }
 
                 await _context.SaveChangesAsync();
