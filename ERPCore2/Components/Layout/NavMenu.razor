@@ -12,7 +12,8 @@
 
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
-<div class="nav-scrollable">    <nav class="nav flex-column">
+<div class="nav-scrollable">    
+    <nav class="nav flex-column">
         <!-- 首頁 -->
         <NavMenuItem Text="首頁" IconClass="bi bi-house-door-fill-nav-menu" Url="/" />
 
@@ -22,19 +23,18 @@
                 <NavDropdownItem Text="客戶維護" Url="/customers" />
                 <NavDropdownItem Text="客戶類型" Url="/customer-types" />
             </DropdownItems>
-        </NavMenuItem>
-
-        <!-- 廠商管理 -->
-        <NavMenuItem Text="廠商管理" IconClass="">
+        </NavMenuItem>        
+          <!-- 廠商管理 -->
+        <NavMenuItem Text="廠商管理" IconClass="bi bi-building-gear">
             <DropdownItems>
-                <NavMenuItem Text="廠商維護" Url="/suppliers" />
+                <NavDropdownItem Text="廠商維護" Url="/suppliers" />
             </DropdownItems>
         </NavMenuItem>
 
         <!-- 員工管理 -->
-        <NavMenuItem Text="員工管理" IconClass="">
+        <NavMenuItem Text="員工管理" IconClass="bi bi-person-badge-fill">
             <DropdownItems>
-                <NavMenuItem Text="員工維護" Url="/employees" />
+                <NavDropdownItem Text="員工維護" Url="/employees" />
             </DropdownItems>
         </NavMenuItem>
 
