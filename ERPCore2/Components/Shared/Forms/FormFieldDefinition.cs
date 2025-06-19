@@ -86,11 +86,25 @@ public class FormFieldDefinition
     /// 文字區域列數
     /// </summary>
     public int? Rows { get; set; }
-    
-    /// <summary>
+      /// <summary>
     /// 選項清單 (選擇欄位)
     /// </summary>
     public List<SelectOption>? Options { get; set; }
+    
+    /// <summary>
+    /// 自動完成搜尋函式 (AutoComplete 欄位)
+    /// </summary>
+    public Func<string, Task<List<SelectOption>>>? SearchFunction { get; set; }
+    
+    /// <summary>
+    /// 自動完成延遲毫秒 (AutoComplete 欄位)
+    /// </summary>
+    public int AutoCompleteDelayMs { get; set; } = 300;
+    
+    /// <summary>
+    /// 自動完成最小搜尋字符數 (AutoComplete 欄位)
+    /// </summary>
+    public int MinSearchLength { get; set; } = 1;
     
     /// <summary>
     /// 預設值
@@ -187,6 +201,10 @@ public enum FormFieldType
     /// 隱藏欄位
     /// </summary>
     Hidden,
+      /// <summary>
+    /// 自動完成
+    /// </summary>
+    AutoComplete,
     
     /// <summary>
     /// 自定義

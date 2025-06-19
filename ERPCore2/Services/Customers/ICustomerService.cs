@@ -42,11 +42,20 @@ namespace ERPCore2.Services
         /// 取得聯絡類型清單
         /// </summary>
         Task<List<ContactType>> GetContactTypesAsync();
-        
-        /// <summary>
+          /// <summary>
         /// 取得地址類型清單
         /// </summary>
         Task<List<AddressType>> GetAddressTypesAsync();
+        
+        /// <summary>
+        /// 根據關鍵字搜尋客戶類型
+        /// </summary>
+        Task<List<CustomerType>> SearchCustomerTypesAsync(string keyword);
+        
+        /// <summary>
+        /// 根據關鍵字搜尋行業類型
+        /// </summary>
+        Task<List<IndustryType>> SearchIndustryTypesAsync(string keyword);
         
         #endregion
 

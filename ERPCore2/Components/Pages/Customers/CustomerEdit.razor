@@ -128,11 +128,10 @@
             // 轉換為子集合組件用的基礎實體清單
             contactTypeOptions = contactTypes.Cast<ERPCore2.Data.BaseEntity>().ToList();
             addressTypeOptions = addressTypes.Cast<ERPCore2.Data.BaseEntity>().ToList();
+              InitializeFormFields();
             
-            InitializeFormFields();
             // 不需要手動調用 StateHasChanged()，GenericEditPageComponent 會處理
-        }
-        catch (Exception ex)
+        }        catch (Exception ex)
         {
             Console.Error.WriteLine($"載入額外資料時發生錯誤：{ex.Message}");
         }
@@ -188,37 +187,70 @@
         };
     }    private void InitializeFormFields()
     {
-        // 客戶類型選項
-        var customerTypeOptions = customerTypes.Select(ct => new SelectOption
+        // 創建自動完成搜索函式
+        var customerTypeSearchFunction = new Func<string, Task<List<SelectOption>>>(async (keyword) =>
         {
-            Text = ct.TypeName,
-            Value = ct.Id.ToString()
-        }).ToList();
+            List<CustomerType> results;
+            if (string.IsNullOrWhiteSpace(keyword))
+            {
+                // 如果關鍵字為空，返回所有客戶類型（用於初始化顯示值）
+                results = customerTypes.Take(10).ToList();
+            }
+            else
+            {
+                results = await CustomerService.SearchCustomerTypesAsync(keyword);
+            }
+            
+            return results.Select(ct => new SelectOption
+            {
+                Text = ct.TypeName,
+                Value = ct.Id.ToString()
+            }).ToList();
+        });
 
-        // 行業類型選項
-        var industryTypeOptions = industryTypes.Select(it => new SelectOption
+        var industryTypeSearchFunction = new Func<string, Task<List<SelectOption>>>(async (keyword) =>
         {
-            Text = it.IndustryTypeName,
-            Value = it.Id.ToString()
-        }).ToList();
+            List<IndustryType> results;
+            if (string.IsNullOrWhiteSpace(keyword))
+            {
+                // 如果關鍵字為空，返回所有行業類型（用於初始化顯示值）
+                results = industryTypes.Take(10).ToList();
+            }
+            else
+            {
+                results = await CustomerService.SearchIndustryTypesAsync(keyword);
+            }
+            
+            return results.Select(it => new SelectOption
+            {
+                Text = it.IndustryTypeName,
+                Value = it.Id.ToString()
+            }).ToList();
+        });
 
-        // 添加需要選項的欄位到現有的basicFormFields
+        // 添加需要自動完成的欄位到現有的basicFormFields
         basicFormFields.AddRange(new List<FormFieldDefinition>
         {
             new()
             {
                 PropertyName = nameof(Customer.CustomerTypeId),
                 Label = "客戶類型",
-                FieldType = FormFieldType.Select,
-                Options = customerTypeOptions,
+                FieldType = FormFieldType.AutoComplete,
+                Placeholder = "輸入客戶類型名稱進行搜尋...",
+                SearchFunction = customerTypeSearchFunction,
+                MinSearchLength = 1,
+                AutoCompleteDelayMs = 300,
                 ContainerCssClass = "col-md-6"
             },
             new()
             {
                 PropertyName = nameof(Customer.IndustryTypeId),
                 Label = "行業類型",
-                FieldType = FormFieldType.Select,
-                Options = industryTypeOptions,
+                FieldType = FormFieldType.AutoComplete,
+                Placeholder = "輸入行業類型名稱進行搜尋...",
+                SearchFunction = industryTypeSearchFunction,
+                MinSearchLength = 1,
+                AutoCompleteDelayMs = 300,
                 ContainerCssClass = "col-md-6"
             }
         });
@@ -226,7 +258,9 @@
         // 更新表單區段
         basicFormSections[nameof(Customer.CustomerTypeId)] = "分類資訊";
         basicFormSections[nameof(Customer.IndustryTypeId)] = "分類資訊";
-    }private async Task<Customer?> LoadCustomerData()
+    }
+    
+    private async Task<Customer?> LoadCustomerData()
     {
         try
         {

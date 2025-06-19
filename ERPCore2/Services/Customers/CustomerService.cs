@@ -238,9 +238,7 @@ namespace ERPCore2.Services
                 _logger.LogError(ex, "Error getting contact types");
                 throw;
             }
-        }
-
-        public async Task<List<AddressType>> GetAddressTypesAsync()
+        }        public async Task<List<AddressType>> GetAddressTypesAsync()
         {
             try
             {
@@ -252,6 +250,48 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting address types");
+                throw;
+            }
+        }
+        
+        public async Task<List<CustomerType>> SearchCustomerTypesAsync(string keyword)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(keyword))
+                    return new List<CustomerType>();
+                    
+                return await _context.CustomerTypes
+                    .Where(ct => ct.Status == EntityStatus.Active && 
+                                ct.TypeName.Contains(keyword))
+                    .OrderBy(ct => ct.TypeName)
+                    .Take(10) // 限制結果數量
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching customer types with keyword: {Keyword}", keyword);
+                throw;
+            }
+        }
+        
+        public async Task<List<IndustryType>> SearchIndustryTypesAsync(string keyword)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(keyword))
+                    return new List<IndustryType>();
+                    
+                return await _context.IndustryTypes
+                    .Where(it => it.Status == EntityStatus.Active && 
+                                it.IndustryTypeName.Contains(keyword))
+                    .OrderBy(it => it.IndustryTypeName)
+                    .Take(10) // 限制結果數量
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching industry types with keyword: {Keyword}", keyword);
                 throw;
             }
         }

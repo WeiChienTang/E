@@ -3,6 +3,7 @@
 @using System.Reflection
 @using Microsoft.AspNetCore.Components.Rendering
 @typeparam TModel
+@implements IDisposable
 
 <div class="@GetFormCssClass()">
     @if (ShowFormHeader && !string.IsNullOrEmpty(FormTitle))
@@ -111,6 +112,13 @@
     [Parameter] public string FieldContainerCssClass { get; set; } = "col-md-6";
 
     private EditForm? editForm;
+    
+    // 自動完成相關狀態
+    private readonly Dictionary<string, List<SelectOption>> autoCompleteOptions = new();
+    private readonly Dictionary<string, bool> autoCompleteLoading = new();
+    private readonly Dictionary<string, bool> autoCompleteVisible = new();
+    private readonly Dictionary<string, Timer?> autoCompleteTimers = new();
+    private readonly Dictionary<string, string> autoCompleteDisplayValues = new();
 
     private async Task HandleValidSubmit()
     {
@@ -118,14 +126,58 @@
         {
             await OnFormSubmit.InvokeAsync(Model);
         }
-    }
-
-    private async Task HandleCancel()
+    }    private async Task HandleCancel()
     {
         if (OnCancel.HasDelegate)
         {
             await OnCancel.InvokeAsync();
         }
+    }    protected override void OnParametersSet()
+    {
+        // 初始化 AutoComplete 欄位的顯示值
+        if (FieldDefinitions != null && Model != null)
+        {
+            foreach (var field in FieldDefinitions.Where(f => f.FieldType == FormFieldType.AutoComplete))
+            {
+                var fieldId = field.PropertyName;
+                var value = GetPropertyValue(Model, field.PropertyName);
+                
+                if (value != null && !autoCompleteDisplayValues.ContainsKey(fieldId))
+                {
+                    // 對於新加載的資料，先設置 ID 值作為顯示值
+                    // 實際的顯示文字會在使用者與欄位互動時通過搜索獲取
+                    autoCompleteDisplayValues[fieldId] = "";
+                    
+                    // 如果我們能夠快速查找顯示文字，則設置它
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            if (field.SearchFunction != null)
+                            {
+                                // 嘗試使用空字符串搜索來獲取所有選項，然後找到匹配的項目
+                                var options = await field.SearchFunction("");
+                                var matchingOption = options.FirstOrDefault(o => o.Value == value.ToString());
+                                if (matchingOption != null)
+                                {
+                                    await InvokeAsync(() =>
+                                    {
+                                        autoCompleteDisplayValues[fieldId] = matchingOption.Text;
+                                        StateHasChanged();
+                                    });
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            // 靜默處理，保持原來的顯示值
+                        }
+                    });
+                }
+            }
+        }
+        
+        base.OnParametersSet();
     }
 
     private string GetFormCssClass()
@@ -188,9 +240,11 @@
                 break;
             case FormFieldType.Checkbox:
                 RenderCheckbox(builder, field, 9);
-                break;
-            case FormFieldType.Radio:
+                break;            case FormFieldType.Radio:
                 RenderRadio(builder, field, 9);
+                break;
+            case FormFieldType.AutoComplete:
+                RenderAutoComplete(builder, field, 9);
                 break;
             default:
                 RenderTextInput(builder, field, 9);
@@ -409,8 +463,167 @@
                 
                 builder.CloseElement();
                 radioSequence += 15;
+            }        }
+    }
+
+    private void RenderAutoComplete(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
+    {
+        var fieldId = field.PropertyName;
+        var currentValue = GetPropertyValue(Model, field.PropertyName);
+        var displayValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, currentValue?.ToString() ?? "");
+        
+        // 容器 div
+        builder.OpenElement(sequence, "div");
+        builder.AddAttribute(sequence + 1, "class", "position-relative");
+        
+        // 輸入框
+        builder.OpenElement(sequence + 2, "input");
+        builder.AddAttribute(sequence + 3, "type", "text");
+        builder.AddAttribute(sequence + 4, "class", GetInputCssClass(field));
+        builder.AddAttribute(sequence + 5, "id", fieldId);
+        builder.AddAttribute(sequence + 6, "placeholder", field.Placeholder);
+        builder.AddAttribute(sequence + 7, "readonly", field.IsReadOnly);
+        builder.AddAttribute(sequence + 8, "value", displayValue);
+        
+        // 輸入事件處理
+        builder.AddAttribute(sequence + 9, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
+        {
+            var inputValue = args.Value?.ToString() ?? "";
+            autoCompleteDisplayValues[fieldId] = inputValue;
+            _ = HandleAutoCompleteInput(field, inputValue);
+        }));
+        
+        // 焦點事件處理
+        builder.AddAttribute(sequence + 10, "onfocus", EventCallback.Factory.Create(this, () =>
+        {
+            var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "");
+            if (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= field.MinSearchLength)
+            {
+                _ = HandleAutoCompleteInput(field, inputValue);
+            }
+        }));
+        
+        // 失去焦點事件處理
+        builder.AddAttribute(sequence + 11, "onblur", EventCallback.Factory.Create(this, () =>
+        {
+            // 延遲隱藏下拉選單，讓使用者有時間點擊選項
+            Timer? timer = null;
+            timer = new Timer(_ =>
+            {
+                autoCompleteVisible[fieldId] = false;
+                InvokeAsync(StateHasChanged);
+                timer?.Dispose();
+            }, null, 150, Timeout.Infinite);
+        }));
+        
+        builder.CloseElement(); // input
+        
+        // 載入指示器
+        if (autoCompleteLoading.GetValueOrDefault(fieldId, false))
+        {
+            builder.OpenElement(sequence + 20, "div");
+            builder.AddAttribute(sequence + 21, "class", "position-absolute");
+            builder.AddAttribute(sequence + 22, "style", "right: 10px; top: 50%; transform: translateY(-50%);");
+            builder.OpenElement(sequence + 23, "span");
+            builder.AddAttribute(sequence + 24, "class", "spinner-border spinner-border-sm");
+            builder.CloseElement();
+            builder.CloseElement();
+        }
+        
+        // 下拉選項
+        if (autoCompleteVisible.GetValueOrDefault(fieldId, false) && autoCompleteOptions.ContainsKey(fieldId))
+        {
+            var options = autoCompleteOptions[fieldId];
+            if (options.Any())
+            {
+                builder.OpenElement(sequence + 30, "div");
+                builder.AddAttribute(sequence + 31, "class", "dropdown-menu show position-absolute w-100");
+                builder.AddAttribute(sequence + 32, "style", "max-height: 200px; overflow-y: auto; z-index: 1000;");
+                
+                var optionSequence = sequence + 40;
+                foreach (var option in options)
+                {
+                    builder.OpenElement(optionSequence, "button");
+                    builder.AddAttribute(optionSequence + 1, "type", "button");
+                    builder.AddAttribute(optionSequence + 2, "class", "dropdown-item");
+                    builder.AddAttribute(optionSequence + 3, "onmousedown", EventCallback.Factory.Create(this, () =>
+                    {
+                        autoCompleteDisplayValues[fieldId] = option.Text;
+                        SetPropertyValue(Model, field.PropertyName, option.Value);
+                        autoCompleteVisible[fieldId] = false;
+                        StateHasChanged();
+                    }));
+                    builder.AddContent(optionSequence + 4, option.Text);
+                    builder.CloseElement();
+                    optionSequence += 5;
+                }
+                
+                builder.CloseElement(); // dropdown-menu
             }
         }
+        
+        builder.CloseElement(); // container div
+    }
+    
+    private Task HandleAutoCompleteInput(FormFieldDefinition field, string inputValue)
+    {
+        var fieldId = field.PropertyName;
+        
+        // 清除之前的計時器
+        if (autoCompleteTimers.ContainsKey(fieldId))
+        {
+            autoCompleteTimers[fieldId]?.Dispose();
+        }
+          // 如果輸入長度不足，隱藏下拉選單
+        if (inputValue.Length < field.MinSearchLength)
+        {
+            autoCompleteVisible[fieldId] = false;
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        
+        // 設置載入狀態
+        autoCompleteLoading[fieldId] = true;
+        StateHasChanged();
+        
+        // 設置延遲搜尋計時器
+        autoCompleteTimers[fieldId] = new Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                try
+                {
+                    if (field.SearchFunction != null)
+                    {
+                        var results = await field.SearchFunction(inputValue);
+                        autoCompleteOptions[fieldId] = results;
+                        autoCompleteVisible[fieldId] = results.Any();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"AutoComplete search error: {ex.Message}");
+                    autoCompleteOptions[fieldId] = new List<SelectOption>();
+                    autoCompleteVisible[fieldId] = false;
+                }
+                finally
+                {
+                    autoCompleteLoading[fieldId] = false;
+                    StateHasChanged();
+                }            });
+        }, null, field.AutoCompleteDelayMs, Timeout.Infinite);
+        
+        return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        // 清理所有計時器
+        foreach (var timer in autoCompleteTimers.Values)
+        {
+            timer?.Dispose();
+        }
+        autoCompleteTimers.Clear();
     }
 
     private string GetInputType(FormFieldType fieldType)
