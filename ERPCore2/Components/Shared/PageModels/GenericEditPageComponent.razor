@@ -3,7 +3,7 @@
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
 @using ERPCore2.Components.Shared.Forms
-@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Buttons
 @using Microsoft.AspNetCore.Components.Forms
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -28,12 +28,11 @@
                 }
                 else
                 {
-                    <i class="bi bi-check-circle me-1"></i>
+                    <i class="bi-check-circle me-1"></i>
                 }
                 @SaveButtonText
-            </button>
-            <button type="button" class="btn btn-outline-secondary" @onclick="HandleCancel" disabled="@(IsLoading || IsSubmitting)">
-                <i class="bi bi-x-circle me-1"></i>
+            </button>              
+            <button type="button" class="btn btn-cancel-custom" @onclick="HandleCancel" disabled="@(IsLoading || IsSubmitting)">
                 @CancelButtonText
             </button>
         </div>
@@ -448,8 +447,7 @@
             return false;
         }
     }
-    
-    // ===== 清理資源 =====
+      // ===== 清理資源 =====
     
     public void Dispose()
     {

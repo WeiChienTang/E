@@ -91,8 +91,49 @@
 }
 
 /* 自動完成容器定位 */
-.autocomplete-container {
-    position: relative;
+.autocomplete-container {    position: relative;
+}
+
+/* ========================================= */
+/* 自定義按鈕樣式 - Custom Button Styles */
+/* ========================================= */
+
+/* 自定義取消按鈕樣式 */
+.btn-cancel-custom {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: white !important;
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
+}
+
+.btn-cancel-custom:hover {
+    background-color: #c82333 !important;
+    border-color: #bd2130 !important;
+    color: white !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+}
+
+.btn-cancel-custom:focus {
+    background-color: #c82333 !important;
+    border-color: #bd2130 !important;
+    color: white !important;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.btn-cancel-custom:active {
+    background-color: #bd2130 !important;
+    border-color: #b21f2d !important;
+    color: white !important;
+}
+
+.btn-cancel-custom:disabled {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    color: white !important;
+    opacity: 0.65;
+    cursor: not-allowed;
 }
 
 /* ========================================= */

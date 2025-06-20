@@ -14,7 +14,7 @@
 
 @if (ShowCancelButton)
 {
-    <button class="btn btn-danger" @onclick="HandleCancelClick" disabled="@IsSubmitting">
+    <button class="btn btn-outline-danger" @onclick="HandleCancelClick" disabled="@IsSubmitting">
         <i class="@CancelButtonIcon me-1"></i>
         @CancelButtonText
     </button>
