@@ -30,7 +30,9 @@
                          BreadcrumbItems="@breadcrumbItems"
                          DataLoader="@LoadSupplierData"
                          SaveHandler="@SaveSupplier"
-                         AdditionalDataLoader="@LoadAdditionalData">    <AdditionalSections>        @* 聯絡方式管理 *@
+                         AdditionalDataLoader="@LoadAdditionalData">    
+                         <AdditionalSections>        @* 聯絡方式管理 *@
+
         <ContactManagerComponent TContactEntity="SupplierContact"
                                TParentEntity="Supplier"
                                Items="@supplierContacts"
@@ -43,7 +45,9 @@
                                SetTypeId="@((c, typeId) => c.ContactTypeId = typeId)"
                                SetContactValue="@((c, value) => c.ContactValue = value)"
                                SetParentId="@((c, parentId) => c.SupplierId = parentId)"
-                               ItemsChanged="@OnSupplierContactsChanged" />@* 地址管理 *@
+                               ItemsChanged="@OnSupplierContactsChanged" />
+                               
+                               @* 地址管理 *@
         <AddressManagerComponent TAddressEntity="SupplierAddress"
                                TParentEntity="Supplier"
                                Items="@supplierAddresses"

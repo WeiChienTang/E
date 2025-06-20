@@ -3,51 +3,38 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
-<div class="btn-group">
+<div class="btn-group">    
     @if (ShowEditButton)
     {
         <button class="btn btn-primary" @onclick="HandleEditClick" disabled="@IsLoading">
-            <i class="@EditButtonIcon me-1"></i>
             @EditButtonText
         </button>
-    }    @if (ShowToggleStatusButton && EntityStatus != null)
-    {
-        @if (EntityStatus.ToString() == "Active")
+    }@if (ShowToggleStatusButton && EntityStatus != null)
+    {        @if (EntityStatus.ToString() == "Active")
         {
             <button class="btn btn-warning" @onclick="HandleToggleStatusClick" disabled="@IsLoading">
-                <i class="@DeactivateButtonIcon me-1"></i>
                 @DeactivateButtonText
             </button>
         }
         else
         {
             <button class="btn btn-success" @onclick="HandleToggleStatusClick" disabled="@IsLoading">
-                <i class="@ActivateButtonIcon me-1"></i>
                 @ActivateButtonText
             </button>
         }
-    }
-
-    @if (ShowDeleteButton)
+    }    @if (ShowDeleteButton)
     {
         <button class="btn btn-danger" @onclick="HandleDeleteClick" disabled="@IsLoading">
-            <i class="@DeleteButtonIcon me-1"></i>
             @DeleteButtonText
         </button>
-    }
-
-    @if (ShowPrintButton)
+    }    @if (ShowPrintButton)
     {
         <button class="btn btn-info" @onclick="HandlePrintClick" disabled="@IsLoading">
-            <i class="@PrintButtonIcon me-1"></i>
             @PrintButtonText
         </button>
-    }
-
-    @if (ShowBackButton)
+    }    @if (ShowBackButton)
     {
         <button class="btn btn-outline-primary" @onclick="HandleBackClick" disabled="@IsLoading">
-            <i class="@BackButtonIcon me-1"></i>
             @BackButtonText
         </button>
     }
@@ -64,8 +51,8 @@
     [Parameter] public bool ShowToggleStatusButton { get; set; } = true;
     [Parameter] public bool ShowDeleteButton { get; set; } = true;
     [Parameter] public bool ShowPrintButton { get; set; } = true;
-    [Parameter] public bool ShowBackButton { get; set; } = true;
-
+    [Parameter] public bool ShowBackButton { get; set; } = true;    
+    
     // 按鈕文字自定義
     [Parameter] public string EditButtonText { get; set; } = "編輯";
     [Parameter] public string ActivateButtonText { get; set; } = "啟用";
@@ -73,14 +60,6 @@
     [Parameter] public string DeleteButtonText { get; set; } = "刪除";
     [Parameter] public string PrintButtonText { get; set; } = "列印";
     [Parameter] public string BackButtonText { get; set; } = "返回";
-
-    // 按鈕圖示自定義
-    [Parameter] public string EditButtonIcon { get; set; } = "bi bi-pencil";
-    [Parameter] public string ActivateButtonIcon { get; set; } = "bi bi-power";
-    [Parameter] public string DeactivateButtonIcon { get; set; } = "bi bi-power";
-    [Parameter] public string DeleteButtonIcon { get; set; } = "bi bi-trash";
-    [Parameter] public string PrintButtonIcon { get; set; } = "bi bi-printer";
-    [Parameter] public string BackButtonIcon { get; set; } = "bi bi-arrow-left";    
     
     // 實體狀態
     [Parameter] public object? EntityStatus { get; set; }

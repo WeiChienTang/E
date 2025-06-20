@@ -1,29 +1,26 @@
 @* Edit 頁面動作按鈕組件 - 提供統一的儲存和取消按鈕 *@
 
-<button class="btn btn-success" @onclick="HandleSaveClick" disabled="@(IsSubmitting || IsLoading || !IsFormValid)">
-    @if (IsSubmitting)
-    {
-        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-    }
-    else
-    {
-        <i class="@SaveButtonIcon me-1"></i>
-    }
-    @SaveButtonText
-</button>
-
-@if (ShowCancelButton)
-{
-    <button class="btn btn-outline-danger" @onclick="HandleCancelClick" disabled="@IsSubmitting">
-        <i class="@CancelButtonIcon me-1"></i>
-        @CancelButtonText
+<div class="d-flex gap-2">
+    <button class="btn btn-success edit-action-btn edit-save-btn" @onclick="HandleSaveClick" disabled="@(IsSubmitting || IsLoading || !IsFormValid)">
+        @if (IsSubmitting)
+        {
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+        }
+        @SaveButtonText
     </button>
-}
 
-@if (CustomButtons != null)
-{
-    @CustomButtons
-}
+    @if (ShowCancelButton)
+    {
+        <button class="btn btn-outline-danger edit-action-btn edit-cancel-btn" @onclick="HandleCancelClick" disabled="@IsSubmitting">
+            @CancelButtonText
+        </button>
+    }
+
+    @if (CustomButtons != null)
+    {
+        @CustomButtons
+    }
+</div>
 
 @code {
     [Parameter] public string SaveButtonText { get; set; } = "儲存";

@@ -18,24 +18,16 @@
                        BreadcrumbItems="@BreadcrumbItems"
                        IsLoading="@IsLoading"
                        LoadingText="載入中..."
-                       ShowDivider="true">    
+                       ShowDivider="true">      
+                       
     <ActionButtons>
-        <div class="btn-group">
-            <button type="button" class="btn btn-success" @onclick="HandleSave" disabled="@(IsLoading || IsSubmitting)">
-                @if (IsSubmitting)
-                {
-                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                }
-                else
-                {
-                    <i class="bi-check-circle me-1"></i>
-                }
-                @SaveButtonText
-            </button>              
-            <button type="button" class="btn btn-cancel-custom" @onclick="HandleCancel" disabled="@(IsLoading || IsSubmitting)">
-                @CancelButtonText
-            </button>
-        </div>
+        <EditActionButtonsComponent SaveButtonText="@SaveButtonText"
+                                   CancelButtonText="@CancelButtonText"
+                                   IsSubmitting="@IsSubmitting"
+                                   IsLoading="@IsLoading"
+                                   IsFormValid="true"
+                                   OnSaveClick="HandleSave"
+                                   OnCancelClick="HandleCancel" />
     </ActionButtons>
 </GenericHeaderComponent>
 
@@ -66,7 +58,8 @@
                                            Subtitle="@FormSubtitle"
                                            TitleIcon="@FormIcon"
                                            IsCardHeader="true" />
-                    <div class="card-body">                        <GenericFormComponent TModel="TEntity"
+                    <div class="card-body">                        
+                        <GenericFormComponent TModel="TEntity"
                                             Model="@Entity"
                                             FieldDefinitions="@FormFields"
                                             FieldSections="@FormSections"
@@ -74,7 +67,8 @@
                                             ShowFormButtons="false" />
                     </div>
                 </div>
-            }            @* 自訂表單內容 *@
+            }            
+            @* 自訂表單內容 *@
             @if (CustomFormContent != null)
             {
                 <CascadingValue Value="@editContext">
