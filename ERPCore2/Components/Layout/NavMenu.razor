@@ -17,13 +17,21 @@
         <!-- 首頁 -->
         <NavMenuItem Text="首頁" IconClass="bi bi-house-door-fill-nav-menu" Url="/" />
 
+        <!-- 通用參數設定 -->
+        <NavMenuItem Text="通用參數" IconClass="bi-sliders nav-menu-bi">
+            <DropdownItems>
+                <NavDropdownItem Text="(單)行業類型" Url="/industrytypes"/>
+            </DropdownItems>
+        </NavMenuItem>
+
         <!-- 客戶管理下拉選單 -->
         <NavMenuItem Text="客戶管理" IconClass="bi bi-people-fill">
             <DropdownItems>
-                <NavDropdownItem Text="客戶維護" Url="/customers" />
-                <NavDropdownItem Text="客戶類型" Url="/customer-types" />
+                <NavDropdownItem Text="客戶維護" Url="/customers"/>
+                <NavDropdownItem Text="(單)客戶類型" Url="/customer-types"/>
             </DropdownItems>
-        </NavMenuItem>        
+        </NavMenuItem>   
+
           <!-- 廠商管理 -->
         <NavMenuItem Text="廠商管理" IconClass="bi bi-building-gear">
             <DropdownItems>
@@ -53,5 +61,7 @@
                 <NavDropdownItem Text="材質" Url="/materials" />
             </DropdownItems>
         </NavMenuItem>
+
+
     </nav>
 </div>
