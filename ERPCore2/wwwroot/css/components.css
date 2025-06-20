@@ -1,0 +1,100 @@
+/* ========================================= */
+/* 可重用組件樣式 - Components Styles */
+/* ========================================= */
+
+/* ========================================= */
+/* 自動完成組件樣式 - AutoComplete Component */
+/* ========================================= */
+
+/* 自動完成下拉選單容器 */
+.autocomplete-dropdown {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    background-color: var(--bg-primary);
+    padding: 0.5rem 0;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: block;
+}
+
+/* 自動完成下拉選單項目 */
+.autocomplete-item {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    clear: both;
+    font-weight: 400;
+    color: var(--text-primary);
+    text-align: inherit;
+    white-space: nowrap;
+    background-color: transparent;
+    border: 0;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+/* 自動完成下拉選單項目 hover 效果 */
+.autocomplete-item:hover {
+    background-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+}
+
+/* 自動完成下拉選單項目鍵盤高亮效果 */
+.autocomplete-item.highlighted {
+    background-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+}
+
+/* 確保鍵盤高亮優先於 hover */
+.autocomplete-item.highlighted:hover {
+    background-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+}
+
+/* 自動完成下拉選單項目 focus 效果 */
+.autocomplete-item:focus {
+    background-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+    outline: none;
+}
+
+/* 自動完成下拉選單項目 active 效果 */
+.autocomplete-item:active {
+    background-color: var(--table-hover-bg);
+    color: var(--table-hover-text);
+}
+
+/* 自動完成下拉選單項目禁用狀態 */
+.autocomplete-item:disabled {
+    color: var(--text-light);
+    background-color: transparent;
+    cursor: not-allowed;
+}
+
+.autocomplete-item:disabled:hover {
+    background-color: transparent;
+    color: var(--text-light);
+}
+
+/* 自動完成載入指示器樣式 */
+.autocomplete-loading .spinner-border-sm {
+    color: var(--primary-blue);
+}
+
+/* 自動完成輸入框 focus 效果 */
+.autocomplete-input:focus {
+    border-color: var(--primary-blue);
+    box-shadow: var(--focus-shadow-primary);
+}
+
+/* 自動完成容器定位 */
+.autocomplete-container {
+    position: relative;
+}
+
+/* ========================================= */
+/* 未來可以在這裡添加其他可重用組件樣式 */
+/* ========================================= */

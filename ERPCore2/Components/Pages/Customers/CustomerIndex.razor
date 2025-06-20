@@ -77,12 +77,19 @@
             
             // 重新初始化篩選器（因為需要選項資料）
             InitializeFilters();
+            
+            // 重要：通知組件狀態已改變，確保參數更新
+            StateHasChanged();
         }
         catch (Exception ex)
         {
             await JSRuntime.InvokeVoidAsync("console.error", "載入基礎資料失敗：", ex.Message);
             customerTypes = new List<CustomerType>();
             industryTypes = new List<IndustryType>();
+            
+            // 即使失敗也要重新初始化篩選器
+            InitializeFilters();
+            StateHasChanged();
         }
     }
 
@@ -102,20 +109,6 @@
 
     private void InitializeFilters()
     {
-        // 準備客戶類型選項
-        var customerTypeOptions = customerTypes.Select(ct => new SelectOption
-        {
-            Text = ct.TypeName,
-            Value = ct.Id.ToString()
-        }).ToList();
-
-        // 準備行業類型選項
-        var industryTypeOptions = industryTypes.Select(it => new SelectOption
-        {
-            Text = it.IndustryTypeName,
-            Value = it.Id.ToString()
-        }).ToList();
-
         // 準備狀態選項
         var statusOptions = new List<SelectOption>
         {
@@ -123,13 +116,13 @@
             new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
         };
 
-        // 建立篩選定義
+        // 建立篩選定義 - 使用模糊搜尋
         filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
             .AddText("CustomerCode", "客戶代碼", "輸入客戶代碼搜尋")
             .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
             .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
-            .AddSelect("CustomerTypeId", "客戶類型", customerTypeOptions, isAdvanced: true)
-            .AddSelect("IndustryTypeId", "行業類型", industryTypeOptions, isAdvanced: true)
+            .AddText("CustomerTypeName", "客戶類型", "輸入客戶類型名稱搜尋", isAdvanced: true)
+            .AddText("IndustryTypeName", "行業類型", "輸入行業類型名稱搜尋", isAdvanced: true)
             .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
             .AddText("TaxNumber", "統一編號", "輸入統一編號搜尋", isAdvanced: true)
             .Build();
@@ -181,18 +174,22 @@
                 c.ContactPerson.Contains(contactPersonFilter, StringComparison.OrdinalIgnoreCase));
         }
 
-        // 客戶類型篩選
-        var customerTypeIdFilter = searchModel.GetFilterValue("CustomerTypeId")?.ToString();
-        if (!string.IsNullOrWhiteSpace(customerTypeIdFilter) && int.TryParse(customerTypeIdFilter, out var customerTypeId))
+        // 客戶類型篩選 - 改為名稱模糊搜尋
+        var customerTypeNameFilter = searchModel.GetFilterValue("CustomerTypeName")?.ToString();
+        if (!string.IsNullOrWhiteSpace(customerTypeNameFilter))
         {
-            query = query.Where(c => c.CustomerTypeId == customerTypeId);
+            query = query.Where(c => 
+                c.CustomerType != null && 
+                c.CustomerType.TypeName.Contains(customerTypeNameFilter, StringComparison.OrdinalIgnoreCase));
         }
 
-        // 行業類型篩選
-        var industryTypeIdFilter = searchModel.GetFilterValue("IndustryTypeId")?.ToString();
-        if (!string.IsNullOrWhiteSpace(industryTypeIdFilter) && int.TryParse(industryTypeIdFilter, out var industryTypeId))
+        // 行業類型篩選 - 改為名稱模糊搜尋
+        var industryTypeNameFilter = searchModel.GetFilterValue("IndustryTypeName")?.ToString();
+        if (!string.IsNullOrWhiteSpace(industryTypeNameFilter))
         {
-            query = query.Where(c => c.IndustryTypeId == industryTypeId);
+            query = query.Where(c => 
+                c.IndustryType != null && 
+                c.IndustryType.IndustryTypeName.Contains(industryTypeNameFilter, StringComparison.OrdinalIgnoreCase));
         }
 
         // 狀態篩選

@@ -478,7 +478,7 @@
         
         // 容器 div
         builder.OpenElement(sequence, "div");
-        builder.AddAttribute(sequence + 1, "class", "position-relative");
+        builder.AddAttribute(sequence + 1, "class", "autocomplete-container");
         
         // 輸入框
         builder.OpenElement(sequence + 2, "input");
@@ -546,13 +546,13 @@
             if (options.Any())
             {
                 builder.OpenElement(sequence + 30, "div");
-                builder.AddAttribute(sequence + 31, "class", "dropdown-menu show position-absolute w-100");
+                builder.AddAttribute(sequence + 31, "class", "autocomplete-dropdown position-absolute w-100");
                 builder.AddAttribute(sequence + 32, "style", "max-height: 200px; overflow-y: auto; z-index: 1000;");                var optionSequence = sequence + 40;
                 var optionIndex = 0;
                 foreach (var option in options)
                 {
                     var isHighlighted = highlightedOptionIndex.GetValueOrDefault(fieldId, -1) == optionIndex;
-                    var cssClass = isHighlighted ? "dropdown-item highlighted" : "dropdown-item";
+                    var cssClass = isHighlighted ? "autocomplete-item highlighted" : "autocomplete-item";
                     var optionId = $"{fieldId}_option_{optionIndex}";
                     
                     builder.OpenElement(optionSequence, "button");

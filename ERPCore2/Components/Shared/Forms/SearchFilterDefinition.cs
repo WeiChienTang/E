@@ -17,7 +17,8 @@ public enum SearchFilterType
     Select,         // 單選下拉篩選
     MultiSelect,    // 多選篩選
     Boolean,        // 布林篩選
-    Custom          // 自定義篩選
+    Custom,         // 自定義篩選
+    AutoComplete    // 自動完成篩選
 }
 
 /// <summary>
@@ -96,12 +97,25 @@ public class SearchFilterDefinition
     /// <summary>
     /// 驗證規則
     /// </summary>
-    public List<ValidationRule> ValidationRules { get; set; } = new();
-
-    /// <summary>
+    public List<ValidationRule> ValidationRules { get; set; } = new();    /// <summary>
     /// 自定義屬性
     /// </summary>
     public Dictionary<string, object> Attributes { get; set; } = new();
+
+    /// <summary>
+    /// 自動完成搜尋函式（用於 AutoComplete 類型）
+    /// </summary>
+    public Func<string, Task<List<SelectOption>>>? SearchFunction { get; set; }
+
+    /// <summary>
+    /// 自動完成搜尋延遲毫秒數（預設: 300ms）
+    /// </summary>
+    public int AutoCompleteDelayMs { get; set; } = 300;
+
+    /// <summary>
+    /// 最小搜尋字符數（預設: 1）
+    /// </summary>
+    public int MinSearchLength { get; set; } = 1;
 }
 
 /// <summary>
@@ -492,9 +506,7 @@ public class SearchFilterBuilder<TModel>
             IsAdvanced = isAdvanced
         });
         return this;
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// 添加布林篩選
     /// </summary>
     public SearchFilterBuilder<TModel> AddBoolean(string name, string label, bool isAdvanced = false)
@@ -504,6 +516,32 @@ public class SearchFilterBuilder<TModel>
             Name = name,
             Label = label,
             Type = SearchFilterType.Boolean,
+            IsAdvanced = isAdvanced
+        });
+        return this;
+    }
+
+    /// <summary>
+    /// 添加自動完成篩選
+    /// </summary>
+    public SearchFilterBuilder<TModel> AddAutoComplete(
+        string name, 
+        string label, 
+        Func<string, Task<List<SelectOption>>> searchFunction,
+        string? placeholder = null,
+        int minSearchLength = 1,
+        int delayMs = 300,
+        bool isAdvanced = false)
+    {
+        _filters.Add(new SearchFilterDefinition
+        {
+            Name = name,
+            Label = label,
+            Type = SearchFilterType.AutoComplete,
+            SearchFunction = searchFunction,
+            Placeholder = placeholder,
+            MinSearchLength = minSearchLength,
+            AutoCompleteDelayMs = delayMs,
             IsAdvanced = isAdvanced
         });
         return this;
