@@ -62,7 +62,8 @@ else
                 OnReloadData="@RefreshData"/>
         </ActionButtons>
     </GenericHeaderComponent>    
-      @* 詳細內容區域 - 現代化標籤頁展示 *@
+
+    @* 詳細內容區域 - 現代化標籤頁展示 *@
     @if (UseTabLayout && (CustomDetailContent != null || TabSections.Any()))
     {
         @* 使用現代化標籤頁自訂內容 *@
@@ -82,7 +83,8 @@ else
                                     id="@tabId" 
                                     data-bs-toggle="tab" 
                                     data-bs-target="#@paneId" 
-                                    type="button"                                    role="tab" 
+                                    type="button"                                    
+                                    role="tab" 
                                     aria-controls="@paneId" 
                                     aria-selected="@(isActive.ToString().ToLower())"
                                     @onclick="@(() => HandleTabClick(currentIndex))">

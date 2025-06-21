@@ -1,0 +1,122 @@
+/* GenericDetailPageComponent 專用樣式 */
+
+/* 標籤頁容器樣式 */
+.detail-tabs-modern {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--detail-tab-shadow);
+    overflow: hidden;
+    border: 1px solid var(--detail-tab-border);
+}
+
+/* 標籤頁標題區域 */
+.detail-tabs-modern .card-header {
+    background-color: var(  --primary-blue-alt);
+    border-bottom: 1px solid var(--detail-tab-border);
+    padding: 0;
+}
+
+/* 標籤頁導航列表 */
+.detail-tabs-modern .nav-tabs {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+/* 標籤頁按鈕 */
+.detail-tabs-modern .nav-link {
+    border: none;
+    border-radius: 0;
+    background-color: transparent;
+    color: var(--text-secondary);
+    padding: 1rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+    position: relative;
+}
+
+/* 標籤頁按鈕 hover 效果 */
+.detail-tabs-modern .nav-link:hover {
+    background-color: var(--detail-tab-hover-bg);
+    color: var(--text-primary);
+    border-color: transparent;
+}
+
+/* 活躍標籤頁樣式 */
+.detail-tabs-modern .nav-link.active {
+    background-color: var(--detail-tab-active-bg);
+    color: var(--primary-blue);
+    border-color: transparent;
+    font-weight: 600;
+}
+
+/* 活躍標籤頁底部邊框 */
+.detail-tabs-modern .nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background-color: var(--detail-tab-active-border);
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+/* 標籤頁內容區域 */
+.detail-tabs-modern .card-body {
+    background-color: var(--detail-tab-content-bg);
+    padding: 2rem;
+    min-height: 400px;
+    border-top: 1px solid var(--detail-tab-border);
+    box-shadow: inset 0 1px 3px 0 rgb(0 0 0 / 0.05);
+}
+
+/* 標籤頁面板 */
+.detail-tabs-modern .tab-pane {
+    border: none;
+    padding: 0;
+    background-color: transparent;
+}
+
+/* 活躍的標籤頁面板增加微妙的框架效果 */
+.detail-tabs-modern .tab-pane.active {
+    animation: fadeInUp 0.3s ease-in-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 載入中的標籤頁樣式 */
+.detail-tabs-modern .nav-link .spinner-border {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .detail-tabs-modern .nav-link {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .detail-tabs-modern .card-body {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .detail-tabs-modern .nav-link {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+    }
+    
+    .detail-tabs-modern .card-body {
+        padding: 1rem;
+    }
+}

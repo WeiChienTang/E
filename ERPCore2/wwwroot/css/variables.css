@@ -41,6 +41,8 @@
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
   
   /* 陰影和focus效果 */
   --focus-shadow-primary: 0 0 0 0.2rem rgba(30, 58, 138, 0.25);
@@ -59,6 +61,15 @@
   --radius: 0.25rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
+  
+  /* 標籤頁色彩 - Detail Tabs */
+  --detail-tab-bg: var(--bg-secondary);           /* 標籤頁標題背景 */
+  --detail-tab-content-bg: var(--bg-primary);     /* 標籤頁內容背景 */
+  --detail-tab-border: var(--border-light);       /* 邊框顏色 */
+  --detail-tab-active-bg: var(--bg-primary);      /* 活躍標籤背景 */
+  --detail-tab-active-border: #fde68a;            /* 活躍標籤底線 - 黃色 */
+  --detail-tab-hover-bg: var(--bg-tertiary);      /* hover 背景 */
+  --detail-tab-shadow: var(--shadow-lg);          /* 標籤頁容器陰影 */
 }
 
 
