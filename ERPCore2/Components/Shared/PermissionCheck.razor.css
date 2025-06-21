@@ -1,0 +1,178 @@
+/* PermissionCheck 專用樣式 */
+
+/* 權限檢查容器 */
+.permission-container {
+    display: contents;
+}
+
+/* 權限拒絕訊息 */
+.permission-denied {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    text-align: center;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    min-height: 300px;
+}
+
+.permission-denied-icon {
+    font-size: 4rem;
+    color: var(--warning-color);
+    margin-bottom: 1rem;
+}
+
+.permission-denied-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.permission-denied-message {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1.5;
+    max-width: 400px;
+    margin-bottom: 2rem;
+}
+
+.permission-denied-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* 權限載入狀態 */
+.permission-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    min-height: 200px;
+}
+
+.permission-loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    color: var(--text-secondary);
+}
+
+.permission-loading-spinner {
+    color: var(--primary-blue);
+}
+
+.permission-loading-text {
+    font-size: 0.9rem;
+}
+
+/* 權限錯誤狀態 */
+.permission-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+    text-align: center;
+    background-color: var(--alert-danger-bg);
+    border: 1px solid var(--danger-color);
+    border-radius: var(--radius-lg);
+    color: var(--danger-color);
+}
+
+.permission-error-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.permission-error-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.permission-error-message {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 1.5rem;
+}
+
+/* 權限提示 */
+.permission-hint {
+    background-color: var(--alert-info-bg);
+    border: 1px solid var(--info-color);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    color: var(--info-color);
+}
+
+.permission-hint-icon {
+    margin-right: 0.5rem;
+}
+
+.permission-hint-text {
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* 隱藏未授權內容 */
+.permission-hidden {
+    display: none !important;
+}
+
+/* 權限降級顯示 */
+.permission-degraded {
+    opacity: 0.6;
+    pointer-events: none;
+    position: relative;
+}
+
+.permission-degraded::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: inherit;
+    z-index: 1;
+}
+
+/* 響應式設計 */
+@media (max-width: 767.98px) {
+    .permission-denied {
+        padding: 2rem 1rem;
+        min-height: 250px;
+    }
+    
+    .permission-denied-icon {
+        font-size: 3rem;
+    }
+    
+    .permission-denied-title {
+        font-size: 1.25rem;
+    }
+    
+    .permission-denied-message {
+        font-size: 0.9rem;
+    }
+    
+    .permission-denied-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .permission-denied-actions .btn {
+        width: 100%;
+    }
+}

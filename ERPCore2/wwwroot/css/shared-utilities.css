@@ -1,0 +1,327 @@
+/* ERPCore2 共用工具樣式 - 僅包含真正跨組件的必要樣式 */
+
+/* 引入顏色變數 */
+@import url('./colors.css');
+
+/* 引入 Bootstrap Icons */
+@import url('./bootstrap-icons.css');
+
+/* ========================================= */
+/* Bootstrap 覆寫 - 全域必要的基礎樣式 */
+/* ========================================= */
+
+/* 表格基礎樣式覆寫 */
+.table {
+  --bs-table-bg: var(--bg-primary);
+  --bs-table-border-color: var(--border-color);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > td {
+  background-color: var(--bg-secondary);
+}
+
+/* 表格 hover 效果 - 全域統一 */
+.table-hover > tbody > tr:hover > td,
+.table-hover > tbody > tr:hover > th {
+  background-color: var(--table-hover-bg);
+  color: var(--table-hover-text);
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+.table-striped.table-hover > tbody > tr:hover > td,
+.table-striped.table-hover > tbody > tr:hover > th {
+  background-color: var(--table-hover-bg-striped);
+  color: var(--table-hover-text);
+}
+
+/* 表格標題樣式 - 跨組件使用 */
+.table-header-primary {
+  background-color: var(--primary-blue);
+  color: var(--primary-white);
+  border-color: var(--primary-blue);
+}
+
+.table-header-primary th {
+  background-color: var(--primary-blue);
+  color: var(--primary-white);
+  border-color: var(--primary-blue);
+  font-weight: 600;
+}
+
+/* 卡片基礎樣式覆寫 */
+.card {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-header {
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary);
+  padding: 1rem 1.25rem;
+}
+
+/* 表單控制項基礎樣式覆寫 */
+.form-control, .form-select {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary-blue);
+  box-shadow: var(--focus-shadow-primary);
+}
+
+.form-label {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* ========================================= */
+/* 跨組件共用樣式 */
+/* ========================================= */
+
+/* 區段標題樣式 - 多個頁面組件使用 */
+.section-header-primary {
+  background-color: var(--primary-blue);
+  color: var(--primary-white);
+  border-bottom: 1px solid var(--primary-blue);
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.section-header-primary .card-title {
+  margin-bottom: 0;
+  font-weight: 600;
+}
+
+.section-header-primary .card-title i {
+  color: var(--primary-white);
+}
+
+/* 區段卡片樣式 - 多個頁面組件使用 */
+.section-card {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.section-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* 自動完成組件樣式 - 多個表單組件使用 */
+.autocomplete-dropdown {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  background-color: var(--bg-primary);
+  padding: 0.5rem 0;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  display: block;
+}
+
+.autocomplete-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  clear: both;
+  font-weight: 400;
+  color: var(--text-primary);
+  text-align: inherit;
+  white-space: nowrap;
+  background-color: transparent;
+  border: 0;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+.autocomplete-item:hover {
+  background-color: var(--table-hover-bg-striped);
+  color: var(--table-hover-text);
+}
+
+.autocomplete-item.highlighted {
+  background-color: var(--table-hover-bg-striped);
+  color: var(--table-hover-text);
+}
+
+.autocomplete-item.highlighted:hover {
+  background-color: var(--table-hover-bg-striped);
+  color: var(--table-hover-text);
+}
+
+.autocomplete-container {
+  position: relative;
+}
+
+/* 按鈕組基礎樣式 - 多個組件使用 */
+.btn-group .btn {
+  margin-right: 2px;
+}
+
+.btn-group .btn:last-child {
+  margin-right: 0;
+}
+
+/* ========================================= */
+/* 工具類別 */
+/* ========================================= */
+
+/* 文字顏色工具類 */
+.text-primary-custom {
+  color: var(--text-primary) !important;
+}
+
+.text-secondary-custom {
+  color: var(--text-secondary) !important;
+}
+
+/* 響應式工具類 */
+@media (max-width: 767.98px) {
+  .border-end:last-child {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding-bottom: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+}
+
+/* Bootstrap 按鈕樣式覆寫 */
+.btn-primary {
+  background-color: var(--primary-blue);
+  border-color: var(--primary-blue);
+  color: var(--primary-white);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-blue-hover);
+  border-color: var(--primary-blue-hover);
+  color: var(--primary-white);
+}
+
+.btn-primary:focus {
+  box-shadow: var(--focus-shadow-primary);
+}
+
+.btn-outline-primary {
+  color: var(--primary-blue);
+  border-color: var(--primary-blue);
+  background-color: transparent;
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--primary-blue);
+  border-color: var(--primary-blue);
+  color: var(--primary-white);
+}
+
+/* 成功狀態按鈕 */
+.btn-success {
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+  color: var(--primary-white);
+}
+
+.btn-success:hover {
+  background-color: var(--success-color-hover);
+  border-color: var(--success-color-hover);
+  color: var(--primary-white);
+}
+
+/* 警告狀態按鈕 */
+.btn-warning {
+  background-color: var(--warning-color);
+  border-color: var(--warning-color);
+  color: var(--primary-white);
+}
+
+.btn-warning:hover {
+  background-color: var(--warning-color-hover);
+  border-color: var(--warning-color-hover);
+  color: var(--primary-white);
+}
+
+/* 危險狀態按鈕 */
+.btn-danger {
+  background-color: var(--danger-color);
+  border-color: var(--danger-color);
+  color: var(--primary-white);
+}
+
+.btn-danger:hover {
+  background-color: var(--danger-color-hover);
+  border-color: var(--danger-color-hover);
+  color: var(--primary-white);
+}
+
+/* 資訊狀態按鈕 */
+.btn-info {
+  background-color: var(--info-color);
+  border-color: var(--info-color);
+  color: var(--primary-white);
+}
+
+.btn-info:hover {
+  background-color: var(--info-color-hover);
+  border-color: var(--info-color-hover);
+  color: var(--primary-white);
+}
+
+/* 次要按鈕 */
+.btn-secondary {
+  background-color: var(--text-secondary);
+  border-color: var(--text-secondary);
+  color: var(--primary-white);
+}
+
+.btn-secondary:hover {
+  background-color: var(--text-secondary-hover);
+  border-color: var(--text-secondary-hover);
+  color: var(--primary-white);
+}
+
+/* Outline 按鈕樣式 */
+.btn-outline-warning {
+  color: var(--warning-color);
+  border-color: var(--warning-color);
+  background-color: transparent;
+}
+
+.btn-outline-warning:hover {
+  background-color: var(--warning-color);
+  border-color: var(--warning-color);
+  color: var(--primary-white);
+}
+
+.btn-outline-danger {
+  color: var(--danger-color);
+  border-color: var(--danger-color);
+  background-color: transparent;
+}
+
+.btn-outline-danger:hover {
+  background-color: var(--danger-color);
+  border-color: var(--danger-color);
+  color: var(--primary-white);
+}
+
+.btn-outline-info {
+  color: var(--info-color);
+  border-color: var(--info-color);
+  background-color: transparent;
+}
+
+.btn-outline-info:hover {
+  background-color: var(--info-color);
+  border-color: var(--info-color);
+  color: var(--primary-white);
+}

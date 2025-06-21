@@ -1,0 +1,182 @@
+/* LoadingComponent 專用樣式 */
+
+/* 載入容器 */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    min-height: 200px;
+}
+
+.loading-container-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.9);
+    z-index: 9999;
+    min-height: 100vh;
+}
+
+.loading-container-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+    z-index: 1000;
+}
+
+/* 載入動畫 */
+.loading-spinner {
+    color: var(--primary-blue);
+    width: 3rem;
+    height: 3rem;
+}
+
+.loading-spinner-sm {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.loading-spinner-lg {
+    width: 4rem;
+    height: 4rem;
+}
+
+/* 載入文字 */
+.loading-text {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.loading-text-sm {
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+.loading-text-lg {
+    font-size: 1.125rem;
+    margin-top: 1.5rem;
+}
+
+/* 載入點動畫 */
+.loading-dots {
+    display: inline-block;
+}
+
+.loading-dots::after {
+    content: '';
+    animation: loading-dots 1.5s infinite;
+}
+
+@keyframes loading-dots {
+    0%, 20% {
+        content: '';
+    }
+    40% {
+        content: '.';
+    }
+    60% {
+        content: '..';
+    }
+    80%, 100% {
+        content: '...';
+    }
+}
+
+/* 載入進度條 */
+.loading-progress {
+    width: 100%;
+    max-width: 300px;
+    margin-top: 1rem;
+}
+
+.loading-progress .progress {
+    height: 0.5rem;
+    background-color: var(--bg-tertiary);
+}
+
+.loading-progress .progress-bar {
+    background-color: var(--primary-blue);
+    transition: width 0.3s ease;
+}
+
+/* 脈衝動畫 */
+.loading-pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* 骨架屏 */
+.loading-skeleton {
+    background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-tertiary) 50%, var(--bg-secondary) 75%);
+    background-size: 200% 100%;
+    animation: loading-skeleton 1.5s infinite;
+}
+
+@keyframes loading-skeleton {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.skeleton-line {
+    height: 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-line:last-child {
+    margin-bottom: 0;
+}
+
+.skeleton-line-sm {
+    height: 0.75rem;
+}
+
+.skeleton-line-lg {
+    height: 1.5rem;
+}
+
+/* 載入卡片 */
+.loading-card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+}
+
+/* 內聯載入 */
+.loading-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.loading-inline .spinner-border {
+    width: 1rem;
+    height: 1rem;
+}

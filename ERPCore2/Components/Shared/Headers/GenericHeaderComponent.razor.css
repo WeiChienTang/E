@@ -1,0 +1,195 @@
+/* GenericHeaderComponent 專用樣式 */
+
+/* 頁面標題容器 */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    padding: 1rem 0;
+}
+
+.page-header-with-breadcrumb {
+    margin-bottom: 1rem;
+}
+
+/* 卡片標題容器 */
+.card-header-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+}
+
+/* 標題包裝器 */
+.title-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.title-wrapper-column {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+}
+
+/* 標題樣式 */
+.page-title {
+    margin-bottom: 0;
+    color: var(--text-primary);
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.card-title-header {
+    margin-bottom: 0;
+    color: inherit;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.page-title-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.card-title-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* 標題圖示 */
+.title-icon {
+    color: var(--primary-blue);
+    font-size: 1.2em;
+}
+
+.card-title-icon {
+    color: inherit;
+    font-size: 1em;
+}
+
+/* 副標題樣式 */
+.page-subtitle {
+    color: var(--text-secondary);
+    margin-bottom: 0;
+    margin-top: 0.25rem;
+    font-size: 0.95em;
+    line-height: 1.4;
+}
+
+/* 動作按鈕容器 */
+.action-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.action-container-column {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+}
+
+/* 載入狀態樣式 */
+.loading-indicator {
+    display: flex;
+    align-items: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.loading-indicator .spinner-border-sm {
+    color: var(--primary-blue);
+}
+
+/* 麵包屑導航 */
+.breadcrumb {
+    background-color: transparent;
+    padding: 0;
+    margin-bottom: 1rem;
+}
+
+.breadcrumb-item {
+    font-size: 0.9rem;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    color: var(--text-light);
+}
+
+.breadcrumb-item a {
+    color: var(--primary-blue);
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    color: var(--primary-blue-hover);
+    text-decoration: underline;
+}
+
+.breadcrumb-item.active {
+    color: var(--text-secondary);
+}
+
+/* 分隔線 */
+hr.header-divider {
+    border-color: var(--border-light);
+    opacity: 1;
+    margin: 1.5rem 0;
+}
+
+/* 響應式設計 */
+@media (max-width: 767.98px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .title-wrapper {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .action-container {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+    
+    .card-header-title {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    
+    .page-title {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .page-header {
+        padding: 0.5rem 0;
+        margin-bottom: 1rem;
+    }
+    
+    .action-container {
+        gap: 0.25rem;
+    }
+    
+    .page-title {
+        font-size: 1.25rem;
+    }
+    
+    .breadcrumb-item {
+        font-size: 0.8rem;
+    }
+}
