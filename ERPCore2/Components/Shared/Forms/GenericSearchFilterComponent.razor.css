@@ -1,7 +1,8 @@
-/* Index 頁面動作按鈕組件樣式 */
+/* 搜尋篩選組件按鈕樣式 */
 
 /* 基礎按鈕樣式 */
-.index-action-btn {
+.search-filter-btn {
+    height: 42px;
     transition: all 0.2s ease-in-out;
     border-radius: 0.375rem;
     font-weight: 500;
@@ -10,14 +11,14 @@
     border-style: solid;
 }
 
-/* 新增按鈕樣式 - 模仿 btn-outline-primary 的 hover 效果 */
-.index-add-btn {
+/* 進階篩選按鈕樣式 - 藍色 */
+.search-advanced-btn {
     background-color: #1E3A8A;
     border-color: #1E3A8A;
     color: #ffffff;
 }
 
-.index-add-btn:hover:not(:disabled) {
+.search-advanced-btn:hover:not(:disabled) {
     background-color: #fde68a;
     border-color: #fde68a;
     color: #92400e;
@@ -25,26 +26,27 @@
     box-shadow: 0 2px 4px rgba(146, 64, 14, 0.2);
 }
 
-.index-add-btn:active:not(:disabled) {
+.search-advanced-btn:active:not(:disabled) {
     background-color: #1E3A8A;
     border-color: #1E3A8A;
     color: #ffffff;
     transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(30, 58, 138, 0.2);
+    box-shadow: none;
 }
 
-.index-add-btn:focus:not(:disabled) {
-    box-shadow: 0 0 0 0.2rem rgba(146, 64, 14, 0.25);
+.search-advanced-btn:focus:not(:disabled) {
+    box-shadow: none;
+    outline: none;
 }
 
-/* 重新整理按鈕樣式 - 模仿 btn-outline-primary 的 hover 效果 */
-.index-refresh-btn {
-    background-color: #198754;
-    border-color: #198754;
+/* 清除篩選按鈕樣式 - 紅色 */
+.search-clear-btn {
+    background-color: #dc3545;
+    border-color: #dc3545;
     color: #ffffff;
 }
 
-.index-refresh-btn:hover:not(:disabled) {
+.search-clear-btn:hover:not(:disabled) {
     background-color: #fde68a;
     border-color: #fde68a;
     color: #92400e;
@@ -52,35 +54,31 @@
     box-shadow: 0 2px 4px rgba(146, 64, 14, 0.2);
 }
 
-.index-refresh-btn:active:not(:disabled) {
-    background-color: #198754;
-    border-color: #198754;
+.search-clear-btn:active:not(:disabled) {
+    background-color: #dc3545;
+    border-color: #dc3545;
     color: #ffffff;
     transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(25, 135, 84, 0.2);
+    box-shadow: none;
 }
 
-.index-refresh-btn:focus:not(:disabled) {
-    box-shadow: 0 0 0 0.2rem rgba(146, 64, 14, 0.25);
+.search-clear-btn:focus:not(:disabled) {
+    box-shadow: none;
+    outline: none;
 }
 
 /* 禁用狀態樣式 */
-.index-action-btn:disabled {
+.search-filter-btn:disabled {
     opacity: 0.65;
     transform: none !important;
     box-shadow: none !important;
     cursor: not-allowed;
 }
 
-/* 載入中動畫 */
-.index-action-btn .spinner-border {
-    width: 1rem;
-    height: 1rem;
-}
-
 /* 響應式設計 */
 @media (max-width: 576px) {
-    .index-action-btn {
+    .search-filter-btn {
+        height: 38px;
         padding: 0.375rem 0.75rem;
         font-size: 0.875rem;
     }

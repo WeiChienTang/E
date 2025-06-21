@@ -35,20 +35,16 @@
 </div>
 
 @code {    
-    
-    // 新增按鈕相關參數
+      // 新增按鈕相關參數
     [Parameter] public bool ShowAddButton { get; set; } = true;
     [Parameter] public string AddButtonText { get; set; } = "新增";
-    [Parameter] public string AddButtonIcon { get; set; } = "bi-plus-circle"; // 保持向後兼容性，但不再使用
     [Parameter] public string AddButtonTitle { get; set; } = "";
     [Parameter] public bool IsAddDisabled { get; set; } = false;
     [Parameter] public bool LoadingOnAdd { get; set; } = false;
     [Parameter] public EventCallback OnAddClick { get; set; }    
-    
-    // 重新整理按鈕相關參數
+      // 重新整理按鈕相關參數
     [Parameter] public bool ShowRefreshButton { get; set; } = true;
     [Parameter] public string RefreshButtonText { get; set; } = "重新整理";
-    [Parameter] public string RefreshButtonIcon { get; set; } = "bi-arrow-clockwise"; // 保持向後兼容性，但不再使用
     [Parameter] public string RefreshButtonTitle { get; set; } = "";
     [Parameter] public bool IsRefreshDisabled { get; set; } = false;
     [Parameter] public bool LoadingOnRefresh { get; set; } = false;

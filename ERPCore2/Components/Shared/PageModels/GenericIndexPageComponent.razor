@@ -15,17 +15,14 @@
 @* 頁面標題 *@
 <GenericHeaderComponent Title="@PageTitle"
                        Subtitle="@PageSubtitle"
-                       TitleIcon="@PageIcon"
                        HeadingLevel="h1"
                        BreadcrumbItems="@BreadcrumbItems"
                        IsLoading="@IsLoading"
                        LoadingText="載入中..."
-                       ShowDivider="true">    
-    <ActionButtons>                        
-        <IndexActionButtonsComponent 
-            AddButtonText="@AddButtonText"
-            AddButtonIcon="@AddButtonIcon"
-            AddButtonTitle="@AddButtonTitle"
+                       ShowDivider="true">
+    <ActionButtons>                          <IndexActionButtonsComponent 
+            AddButtonText="@GetAddButtonText()"
+            AddButtonTitle="@GetAddButtonTitle()"
             OnAddClick="@HandleAddClick"
             OnRefreshClick="@RefreshData"
             IsLoading="@IsLoading"
@@ -37,10 +34,9 @@
 <div class="row">
     <div class="col-12">
         <div class="card section-card">
-            <div class="card-header section-header-primary">
-                <h5 class="card-title mb-0">
+            <div class="card-header section-header-primary">                <h5 class="card-title mb-0">
                     <i class="bi bi-search me-2"></i>
-                    @SearchSectionTitle
+                    @GetSearchSectionTitle()
                 </h5>
             </div>
             <div class="card-body">                
@@ -69,7 +65,7 @@
                                           IsHoverable="@IsHoverable"
                                           IsBordered="@IsBordered"
                                           Size="@TableSize"
-                                          EmptyMessage="@EmptyMessage"
+                                          EmptyMessage="@GetEmptyMessage()"
                                           ActionsHeader="@ActionsHeader"
                                           EnablePagination="@EnablePagination"
                                           CurrentPage="@CurrentPage"
@@ -86,17 +82,13 @@
 </div>
 
 @code {
-    // ===== 參數 =====
-    
-    // 頁面基本設定
+    // ===== 參數 =====    // 頁面基本設定
     [Parameter] public string PageTitle { get; set; } = "資料管理";
     [Parameter] public string PageSubtitle { get; set; } = "管理資料";
-    [Parameter] public string PageIcon { get; set; } = "table";
-    [Parameter] public string AddButtonText { get; set; } = "新增";
-    [Parameter] public string AddButtonIcon { get; set; } = "bi bi-plus-circle";
-    [Parameter] public string AddButtonTitle { get; set; } = "新增資料";
-    [Parameter] public string SearchSectionTitle { get; set; } = "搜尋與管理";
-    [Parameter] public string EmptyMessage { get; set; } = "沒有找到符合條件的資料";
+    [Parameter] public string AddButtonText { get; set; } = "";
+    [Parameter] public string AddButtonTitle { get; set; } = "";
+    [Parameter] public string SearchSectionTitle { get; set; } = "";
+    [Parameter] public string EmptyMessage { get; set; } = "";
     [Parameter] public string ActionsHeader { get; set; } = "操作";
     
     // 麵包屑導航
@@ -203,16 +195,13 @@
     }
     
     // ===== 通用刪除操作 =====
-    
-    /// <summary>
+      /// <summary>
     /// 通用刪除方法
     /// </summary>
     public async Task DeleteEntityAsync(TEntity entity)
     {
         var displayName = GetEntityDisplayName(entity);
-        var confirmMessage = !string.IsNullOrEmpty(DeleteConfirmMessage) 
-            ? string.Format(DeleteConfirmMessage, displayName)
-            : $"確定要刪除{EntityName}「{displayName}」嗎？";
+        var confirmMessage = GetDeleteConfirmMessage(displayName);
         
         var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", confirmMessage);
         
@@ -240,9 +229,7 @@
                             var isSuccess = (bool)isSuccessProperty.GetValue(result)!;
                             if (isSuccess)
                             {
-                                var successMessage = !string.IsNullOrEmpty(DeleteSuccessMessage) 
-                                    ? DeleteSuccessMessage 
-                                    : $"{EntityName}刪除成功";
+                                var successMessage = GetDeleteSuccessMessage();
                                 await JSRuntime.InvokeVoidAsync("alert", successMessage);
                                 await Refresh();
                             }
@@ -262,9 +249,11 @@
             catch (Exception ex)
             {
                 await JSRuntime.InvokeVoidAsync("alert", $"刪除時發生錯誤：{ex.Message}");
-            }        }
+            }
+        }
     }
-      /// <summary>
+    
+    /// <summary>
     /// 取得標準操作按鈕範本
     /// </summary>
     public RenderFragment<TEntity> GetStandardActionsTemplate()
@@ -315,6 +304,61 @@
         }
     }
 
+    // ===== 智能文字產生方法 =====
+    
+    /// <summary>
+    /// 取得新增按鈕文字，優先使用自訂值，否則根據 EntityName 自動產生
+    /// </summary>
+    private string GetAddButtonText()
+    {
+        return !string.IsNullOrWhiteSpace(AddButtonText) ? AddButtonText : $"新增{EntityName}";
+    }
+    
+    /// <summary>
+    /// 取得新增按鈕標題，優先使用自訂值，否則根據 EntityName 自動產生
+    /// </summary>
+    private string GetAddButtonTitle()
+    {
+        return !string.IsNullOrWhiteSpace(AddButtonTitle) ? AddButtonTitle : $"新增{EntityName}資料";
+    }
+    
+    /// <summary>
+    /// 取得搜尋區域標題，優先使用自訂值，否則根據 EntityName 自動產生
+    /// </summary>
+    private string GetSearchSectionTitle()
+    {
+        return !string.IsNullOrWhiteSpace(SearchSectionTitle) ? SearchSectionTitle : $"{EntityName}搜尋與管理";
+    }
+    
+    /// <summary>
+    /// 取得空資料訊息，優先使用自訂值，否則根據 EntityName 自動產生
+    /// </summary>
+    private string GetEmptyMessage()
+    {
+        return !string.IsNullOrWhiteSpace(EmptyMessage) ? EmptyMessage : $"沒有找到符合條件的{EntityName}資料";
+    }
+    
+    /// <summary>
+    /// 取得刪除成功訊息，優先使用自訂值，否則根據 EntityName 自動產生
+    /// </summary>
+    private string GetDeleteSuccessMessage()
+    {
+        return !string.IsNullOrWhiteSpace(DeleteSuccessMessage) ? DeleteSuccessMessage : $"{EntityName}刪除成功";
+    }
+    
+    /// <summary>
+    /// 取得刪除確認訊息，優先使用自訂值，否則根據 EntityName 自動產生
+    /// </summary>
+    private string GetDeleteConfirmMessage(string displayName)
+    {
+        if (!string.IsNullOrWhiteSpace(DeleteConfirmMessage))
+        {
+            return string.Format(DeleteConfirmMessage, displayName);
+        }
+        return $"確定要刪除{EntityName}「{displayName}」嗎？";
+    }
+
+    // ...existing code...
     // ===== 內部狀態 =====
     
     // 資料來源
