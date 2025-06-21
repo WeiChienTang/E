@@ -2,6 +2,7 @@
 
 /* 頁面標題容器 */
 .page-header {
+    
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -15,6 +16,7 @@
 
 /* 卡片標題容器 */
 .card-header-title {
+    
     display: flex;
     justify-content: space-between;
     align-items: center;

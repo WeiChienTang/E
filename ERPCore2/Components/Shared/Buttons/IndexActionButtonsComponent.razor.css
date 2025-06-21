@@ -13,7 +13,6 @@
 /* 新增按鈕樣式 - 模仿 btn-outline-primary 的 hover 效果 */
 .index-add-btn {
     background-color: #1E3A8A;
-    border-color: #1E3A8A;
     color: #ffffff;
 }
 

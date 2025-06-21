@@ -35,14 +35,8 @@
 }
 
 /* 表格標題樣式 - 跨組件使用 */
-.table-header-primary {
-  background-color: var(--primary-blue);
-  color: var(--primary-white);
-  border-color: var(--primary-blue);
-}
-
 .table-header-primary th {
-  background-color: var(--primary-blue);
+  background-color: var(--primary-blue-alt);
   color: var(--primary-white);
   border-color: var(--primary-blue);
   font-weight: 600;
@@ -71,7 +65,7 @@
 }
 
 .form-control:focus, .form-select:focus {
-  border-color: var(--primary-blue);
+  border-color: var(--primary-blue-alt);
   box-shadow: var(--focus-shadow-primary);
 }
 
@@ -86,9 +80,9 @@
 
 /* 區段標題樣式 - 多個頁面組件使用 */
 .section-header-primary {
-  background-color: var(--primary-blue);
+  background-color: var(--primary-blue-alt);
   color: var(--primary-white);
-  border-bottom: 1px solid var(--primary-blue);
+  border-bottom: 1px solid var(--primary-blue-alt);
   padding: 1rem 1.25rem;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
@@ -197,7 +191,7 @@
 
 /* Bootstrap 按鈕樣式覆寫 */
 .btn-primary {
-  background-color: var(--primary-blue);
+  background-color: var(--primary-blue-alt);
   border-color: var(--primary-blue);
   color: var(--primary-white);
 }
