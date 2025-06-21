@@ -6,10 +6,8 @@
 @using Microsoft.JSInterop
 @inject IJSRuntime JSRuntime
 
-<div class="card mb-4">
-    <GenericHeaderComponent Title="@Title"
+<div class="card mb-4">    <GenericHeaderComponent Title="@Title"
                            Subtitle="@GetSubtitle()"
-                           TitleIcon="@Icon"
                            IsCardHeader="true">
         <ActionButtons>
             @if (!IsReadOnly)

@@ -33,7 +33,7 @@
 
     <CustomDetailContent>
         @* 基本資料 - 使用模組化元件 *@
-        <DetailCardComponent Title="基本資料" Icon="tags">
+        <DetailCardComponent Title="基本資料" >
             <div class="row">
                 <DetailFieldComponent Label="類型名稱" Value="@customerType?.TypeName" IsPrimary="true" IsBold="true" />
                 <DetailFieldComponent Label="描述" Value="@customerType?.Description" EmptyText="未設定" ColSize="12" />
@@ -51,7 +51,7 @@
         </DetailCardComponent>
 
         @* 系統資訊 - 使用模組化元件 *@
-        <DetailCardComponent Title="系統資訊" Icon="info-circle">
+        <DetailCardComponent Title="系統資訊" >
             <div class="row">
                 <DetailFieldComponent Label="建立時間" Value="@customerType?.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")" />
                 <DetailFieldComponent Label="建立者" Value="@customerType?.CreatedBy" EmptyText="系統" />
@@ -61,7 +61,7 @@
         </DetailCardComponent>
 
         @* 使用統計 - 使用模組化元件 *@
-        <DetailCardComponent Title="使用統計" Icon="bar-chart">
+        <DetailCardComponent Title="使用統計" >
             <div class="row">
                 <DetailFieldComponent Label="使用此類型的客戶數" Value="@(customerType?.Customers?.Count().ToString() ?? "0")" />
                 @if (customerType?.Customers?.Any() == true)

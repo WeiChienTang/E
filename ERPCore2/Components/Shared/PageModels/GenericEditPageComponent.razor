@@ -55,7 +55,6 @@
                 <div class="card mb-4">
                     <GenericHeaderComponent Title="@FormTitle"
                                            Subtitle="@FormSubtitle"
-                                           TitleIcon="@FormIcon"
                                            IsCardHeader="true" />
                     <div class="card-body">                        
                         <GenericFormComponent TModel="TEntity"
@@ -108,7 +107,6 @@
     // 表單設定
     [Parameter] public string FormTitle { get; set; } = "基本資料";
     [Parameter] public string FormSubtitle { get; set; } = string.Empty;
-    [Parameter] public string FormIcon { get; set; } = "info-circle";
     [Parameter] public bool UseGenericForm { get; set; } = true;
     [Parameter] public List<FormFieldDefinition> FormFields { get; set; } = new();
     [Parameter] public Dictionary<string, string> FormSections { get; set; } = new();

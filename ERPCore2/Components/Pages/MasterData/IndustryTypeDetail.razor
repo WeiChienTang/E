@@ -34,7 +34,7 @@
                            
     <CustomDetailContent>
         @* 基本資料 *@
-        <DetailCardComponent Title="基本資料" Icon="info-circle">
+        <DetailCardComponent Title="基本資料" >
             <div class="row">
                 <DetailFieldComponent Label="行業類型代碼" Value="@industryType?.IndustryTypeCode" IsPrimary="true" EmptyText="未設定" />
                 <DetailFieldComponent Label="行業類型名稱" Value="@industryType?.IndustryTypeName" IsBold="true" />
@@ -51,7 +51,7 @@
         </DetailCardComponent>
 
         @* 使用統計 - 客戶 *@
-        <DetailCardComponent Title="客戶使用統計" Icon="people">
+        <DetailCardComponent Title="客戶使用統計" >
             @if (relatedCustomers.Any())
             {
                 <div class="row">
@@ -83,7 +83,7 @@
         </DetailCardComponent>
 
         @* 使用統計 - 廠商 *@
-        <DetailCardComponent Title="廠商使用統計" Icon="truck">
+        <DetailCardComponent Title="廠商使用統計" >
             @if (relatedSuppliers.Any())
             {
                 <div class="row">

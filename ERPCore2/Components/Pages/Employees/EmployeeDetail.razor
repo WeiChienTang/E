@@ -48,8 +48,7 @@ else
     @* 頁面標題 *@
     <GenericHeaderComponent Title="@GetPageTitle()"
                            Subtitle="@GetSubtitle()"
-                           TitleIcon="person-circle"
-                           HeadingLevel="h1"
+                           TitleHeadingLevel="h1"
                            BreadcrumbItems="@breadcrumbItems"
                            ShowDivider="true">
         <ActionButtons>
@@ -68,7 +67,7 @@ else
     </GenericHeaderComponent>
 
     @* 基本資料 - 使用模組化元件 *@
-    <DetailCardComponent Title="基本資料" Icon="person">
+    <DetailCardComponent Title="基本資料" >
         <div class="row">
             <DetailFieldComponent Label="員工代碼" Value="@employee.EmployeeCode" IsPrimary="true" IsBold="true" />
             <DetailFieldComponent Label="帳號" Value="@employee.Username" IsBold="true" />
@@ -90,7 +89,7 @@ else
     </DetailCardComponent>
 
     @* 帳號資訊 - 使用模組化元件 *@
-    <DetailCardComponent Title="帳號資訊" Icon="shield-lock">
+    <DetailCardComponent Title="帳號資訊" >
         <div class="row">
             <DetailFieldComponent Label="帳號狀態">
                 @if (employee.Status == EntityStatus.Active)
@@ -132,7 +131,7 @@ else
     </DetailCardComponent>
 
     @* 角色權限 - 使用模組化元件 *@
-    <DetailCardComponent Title="角色權限" Icon="key">
+    <DetailCardComponent Title="角色權限" >
         <div class="row">
             @if (employee.Role != null)
             {
@@ -155,7 +154,7 @@ else
     </DetailCardComponent>
 
     @* 系統資訊 - 使用模組化元件 *@
-    <DetailCardComponent Title="系統資訊" Icon="clock-history">
+    <DetailCardComponent Title="系統資訊" >
         <div class="row">
             <DetailFieldComponent Label="建立時間" Value="@employee.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")" />
             <DetailFieldComponent Label="建立者" Value="@employee.CreatedBy" EmptyText="系統" />

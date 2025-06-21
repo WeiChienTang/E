@@ -100,12 +100,9 @@
     <hr class="mt-3 mb-4" />
 }
 
-@code {
-    // 基本屬性
+@code {    // 基本屬性
     [Parameter] public string Title { get; set; } = string.Empty;
     [Parameter] public string Subtitle { get; set; } = string.Empty;
-    [Parameter] public string IconClass { get; set; } = string.Empty;
-    [Parameter] public string TitleIcon { get; set; } = string.Empty;
     
     // 麵包屑
     [Parameter] public List<BreadcrumbItem>? BreadcrumbItems { get; set; }
@@ -232,26 +229,11 @@
     {
         return StackOnMobile ? "flex-wrap" : "";
     }    /// <summary>
-    /// 渲染標題內容（包含圖標）
+    /// 渲染標題內容
     /// </summary>
     private RenderFragment RenderTitleContent() => __builder =>
     {
         int seq = 0;
-        
-        if (!string.IsNullOrEmpty(TitleIcon))
-        {
-            __builder.OpenElement(seq++, "i");
-            __builder.AddAttribute(seq++, "class", $"me-2");
-            __builder.AddAttribute(seq++, "aria-hidden", "true");
-            __builder.CloseElement();
-        }
-        else if (!string.IsNullOrEmpty(IconClass))
-        {
-            __builder.OpenElement(seq++, "i");
-            __builder.AddAttribute(seq++, "class", $"{IconClass} me-2");
-            __builder.AddAttribute(seq++, "aria-hidden", "true");
-            __builder.CloseElement();
-        }
         
         if (!string.IsNullOrEmpty(Title))
         {

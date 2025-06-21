@@ -1,13 +1,9 @@
 @* 通用詳細資料卡片元件 *@
 <div class="row">
     <div class="col-12">
-        <div class="card mb-4">
+        <div class="card mb-4">            
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    @if (!string.IsNullOrEmpty(Icon))
-                    {
-                        <i class="bi bi-@Icon me-2"></i>
-                    }
                     @Title
                 </h5>
             </div>
@@ -20,6 +16,5 @@
 
 @code {
     [Parameter] public string Title { get; set; } = string.Empty;
-    [Parameter] public string? Icon { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
 }

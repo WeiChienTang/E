@@ -33,7 +33,7 @@
 
     <CustomDetailContent>
         @* 基本資料 - 使用模組化元件 *@
-        <DetailCardComponent Title="基本資料" Icon="box-seam">
+        <DetailCardComponent Title="基本資料">
             <div class="row">
                 <DetailFieldComponent Label="商品代碼" Value="@product?.ProductCode" IsPrimary="true" IsBold="true" />
                 <DetailFieldComponent Label="商品名稱" Value="@product?.ProductName" IsBold="true" />
@@ -69,7 +69,7 @@
         </DetailCardComponent>
 
         @* 價格資訊 - 使用模組化元件 *@
-        <DetailCardComponent Title="價格資訊" Icon="currency-dollar">
+        <DetailCardComponent Title="價格資訊">
             <div class="row">
                 <DetailFieldComponent Label="單價" Value="@FormatPrice(product?.UnitPrice)" />
                 <DetailFieldComponent Label="成本價" Value="@FormatPrice(product?.CostPrice)" />
@@ -82,7 +82,7 @@
         </DetailCardComponent>
 
         @* 庫存資訊 - 使用模組化元件 *@
-        <DetailCardComponent Title="庫存資訊" Icon="archive">
+        <DetailCardComponent Title="庫存資訊">
             <div class="row">
                 <DetailFieldComponent Label="現有庫存" Value="@product?.CurrentStock.ToString()" IsBold="true" />
                 <DetailFieldComponent Label="庫存狀態">
@@ -100,7 +100,7 @@
         </DetailCardComponent>
 
         @* 供應商資訊 - 使用模組化元件 *@
-        <DetailCardComponent Title="供應商資訊" Icon="truck">
+        <DetailCardComponent Title="供應商資訊">
             <div class="row">
                 @if (productSuppliers.Any())
                 {

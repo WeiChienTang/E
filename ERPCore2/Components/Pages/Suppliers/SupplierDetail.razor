@@ -32,7 +32,7 @@
                            UseGenericDetails="false">
 
     <CustomDetailContent>        @* 基本資料 - 使用模組化元件 *@
-        <DetailCardComponent Title="基本資訊" Icon="info-circle">
+        <DetailCardComponent Title="基本資訊">
             <div class="row">
                 <DetailFieldComponent Label="廠商代碼" Value="@supplier?.SupplierCode" IsPrimary="true" />
                 <DetailFieldComponent Label="公司名稱" Value="@supplier?.CompanyName" IsBold="true" />
@@ -56,7 +56,7 @@
         </DetailCardComponent>
 
         @* 聯絡方式 - 使用模組化元件 *@
-        <DetailCardComponent Title="聯絡方式" Icon="telephone">
+        <DetailCardComponent Title="聯絡方式">
             @if (supplierContacts.Any())
             {
                 <div class="table-responsive">
@@ -97,7 +97,7 @@
         </DetailCardComponent>
 
         @* 地址資料 - 使用模組化元件 *@
-        <DetailCardComponent Title="地址資料" Icon="geo-alt">
+        <DetailCardComponent Title="地址資料">
             @if (supplierAddresses.Any())
             {
                 <div class="table-responsive">
@@ -138,7 +138,7 @@
         </DetailCardComponent>
 
         @* 系統資訊 - 使用模組化元件 *@
-        <DetailCardComponent Title="系統資訊" Icon="gear">
+        <DetailCardComponent Title="系統資訊">
             <div class="row">
                 <DetailFieldComponent Label="建立日期" Value="@supplier?.CreatedAt.ToString("yyyy/MM/dd HH:mm")" />
                 <DetailFieldComponent Label="建立者" Value="@supplier?.CreatedBy" />

@@ -45,7 +45,6 @@ else
 {
     <GenericHeaderComponent Title="@color.Name" 
                           Subtitle="@($"顏色代碼：{color.Code}")"
-                          Icon="bi bi-palette"
                           BreadcrumbItems="@breadcrumbItems">        
         <ActionButtons>
             <DetailActionButtonsComponent 
@@ -63,7 +62,7 @@ else
     </GenericHeaderComponent>
 
     @* 基本資訊 - 使用模組化元件 *@
-    <DetailCardComponent Title="基本資訊" Icon="info-circle">
+    <DetailCardComponent Title="基本資訊" >
         <div class="row">
             <DetailFieldComponent Label="顏色代碼" Value="@color.Code" IsPrimary="true" />
             <DetailFieldComponent Label="顏色名稱" Value="@color.Name" IsBold="true" />
@@ -89,7 +88,7 @@ else
     </DetailCardComponent>
 
     @* 系統資訊 - 使用模組化元件 *@
-    <DetailCardComponent Title="系統資訊" Icon="gear">
+    <DetailCardComponent Title="系統資訊" >
         <div class="row">
             <DetailFieldComponent Label="建立時間" Value="@color.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")" />
             <DetailFieldComponent Label="建立者" Value="@color.CreatedBy" EmptyText="系統" />

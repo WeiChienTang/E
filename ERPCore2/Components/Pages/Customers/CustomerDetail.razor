@@ -33,9 +33,8 @@
                            OnDataLoaded="@OnCustomerDataLoaded"
                            UseGenericDetails="false">    
                            <CustomDetailContent>
-                            
-        @* 基本資料 - 使用模組化元件 *@
-        <DetailCardComponent Title="基本資料" Icon="building">
+                              @* 基本資料 - 使用模組化元件 *@
+        <DetailCardComponent Title="基本資料">
             <div class="row">
                 <DetailFieldComponent Label="統一編號" Value="@customer?.TaxNumber" IsPrimary="true" EmptyText="未設定" />
                 <DetailFieldComponent Label="公司名稱" Value="@customer?.CompanyName" IsBold="true" />
@@ -54,9 +53,8 @@
                 }
             </div>
         </DetailCardComponent>       
-        
-        @* 聯絡方式 - 使用模組化元件 *@
-        <DetailCardComponent Title="聯絡方式" Icon="telephone">
+          @* 聯絡方式 - 使用模組化元件 *@
+        <DetailCardComponent Title="聯絡方式">
             @if (customerContacts.Any())
             {
                 <div class="row">
@@ -72,9 +70,8 @@
                 <div class="text-muted">尚未設定聯絡方式</div>
             }
         </DetailCardComponent>        
-        
-        @* 地址資料 - 使用模組化元件 *@
-        <DetailCardComponent Title="地址資料" Icon="geo-alt">
+          @* 地址資料 - 使用模組化元件 *@
+        <DetailCardComponent Title="地址資料">
             @if (customerAddresses.Any())
             {
                 <div class="row">
