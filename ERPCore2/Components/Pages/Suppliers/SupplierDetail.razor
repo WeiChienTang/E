@@ -26,128 +26,9 @@
                            DataLoader="@LoadSupplierDataAsync"
                            AdditionalDataLoader="@LoadAdditionalDataAsync"
                            EntityTitleSelector="@(s => s.CompanyName)"
-                           EntitySubtitleSelector="@(s => $"廠商編號：{s.SupplierCode}")"
-                           EntityDisplayNameSelector="@(s => s.CompanyName)"
-                           OnDataLoaded="@OnSupplierDataLoaded"
-                           UseGenericDetails="false">
-
-    <CustomDetailContent>        @* 基本資料 - 使用模組化元件 *@
-        <DetailCardComponent Title="基本資訊">
-            <div class="row">
-                <DetailFieldComponent Label="廠商代碼" Value="@supplier?.SupplierCode" IsPrimary="true" />
-                <DetailFieldComponent Label="公司名稱" Value="@supplier?.CompanyName" IsBold="true" />
-                <DetailFieldComponent Label="聯絡人" Value="@supplier?.ContactPerson" />
-                <DetailFieldComponent Label="統一編號" Value="@supplier?.TaxNumber" />
-                <DetailFieldComponent Label="付款條件" Value="@supplier?.PaymentTerms" />
-                <DetailFieldComponent Label="信用額度" Value="@(supplier?.CreditLimit?.ToString("C"))" />
-                <DetailFieldComponent Label="廠商類型" Value="@supplier?.SupplierType?.TypeName" />
-                <DetailFieldComponent Label="行業類型" Value="@supplier?.IndustryType?.IndustryTypeName" />
-                <DetailFieldComponent Label="狀態">
-                    @if (supplier?.Status != null)
-                    {
-                        <StatusBadgeComponent Status="@supplier.Status" />
-                    }
-                </DetailFieldComponent>
-                @if (!string.IsNullOrEmpty(supplier?.Remarks))
-                {
-                    <DetailFieldComponent Label="備註" Value="@supplier.Remarks" ColSize="12" />
-                }
-            </div>
-        </DetailCardComponent>
-
-        @* 聯絡方式 - 使用模組化元件 *@
-        <DetailCardComponent Title="聯絡方式">
-            @if (supplierContacts.Any())
-            {
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>類型</th>
-                                <th>值</th>
-                                <th>主要</th>
-                                <th>狀態</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var contact in supplierContacts)
-                            {
-                                <tr>
-                                    <td>@(contact.ContactType?.TypeName ?? "-")</td>
-                                    <td>@contact.ContactValue</td>
-                                    <td>
-                                        @if (contact.IsPrimary)
-                                        {
-                                            <span class="badge bg-primary">主要</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        <StatusBadgeComponent Status="@contact.Status" />
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-            else
-            {
-                <div class="text-muted">尚未設定聯絡方式</div>
-            }
-        </DetailCardComponent>
-
-        @* 地址資料 - 使用模組化元件 *@
-        <DetailCardComponent Title="地址資料">
-            @if (supplierAddresses.Any())
-            {
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>類型</th>
-                                <th>地址</th>
-                                <th>主要</th>
-                                <th>狀態</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var address in supplierAddresses)
-                            {
-                                <tr>
-                                    <td>@(address.AddressType?.TypeName ?? "-")</td>
-                                    <td>@GetFullAddress(address)</td>
-                                    <td>
-                                        @if (address.IsPrimary)
-                                        {
-                                            <span class="badge bg-primary">主要</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        <StatusBadgeComponent Status="@address.Status" />
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-            else
-            {
-                <div class="text-muted">尚未設定地址</div>
-            }
-        </DetailCardComponent>
-
-        @* 系統資訊 - 使用模組化元件 *@
-        <DetailCardComponent Title="系統資訊">
-            <div class="row">
-                <DetailFieldComponent Label="建立日期" Value="@supplier?.CreatedAt.ToString("yyyy/MM/dd HH:mm")" />
-                <DetailFieldComponent Label="建立者" Value="@supplier?.CreatedBy" />
-                <DetailFieldComponent Label="最後更新" Value="@(supplier?.UpdatedAt?.ToString("yyyy/MM/dd HH:mm"))" />
-                <DetailFieldComponent Label="更新者" Value="@supplier?.UpdatedBy" />
-            </div>
-        </DetailCardComponent>
-    </CustomDetailContent>
-
+                           EntitySubtitleSelector="@(s => $"廠商編號：{s.SupplierCode}")"                           EntityDisplayNameSelector="@(s => s.CompanyName)"                           OnDataLoaded="@OnSupplierDataLoaded"
+                           UseTabLayout="true"
+                           TabSections="@GetTabSections()">
 </GenericDetailPageComponent>
 
 @code {
@@ -237,5 +118,146 @@
             addressParts.Add(address.Address);
 
         return addressParts.Any() ? string.Join(" ", addressParts) : "地址不完整";
+    }
+
+    // 設定標籤頁結構
+    private List<GenericDetailPageComponent<Supplier, ISupplierService>.TabSection> GetTabSections()
+    {
+        return new List<GenericDetailPageComponent<Supplier, ISupplierService>.TabSection>
+        {
+            new GenericDetailPageComponent<Supplier, ISupplierService>.TabSection
+            {
+                Id = "basic",
+                Title = "基本資料",
+                Content = @<div class="row">
+                    <DetailFieldComponent Label="廠商代碼" Value="@supplier?.SupplierCode" IsPrimary="true" />
+                    <DetailFieldComponent Label="公司名稱" Value="@supplier?.CompanyName" IsBold="true" />
+                    <DetailFieldComponent Label="聯絡人" Value="@supplier?.ContactPerson" />
+                    <DetailFieldComponent Label="統一編號" Value="@supplier?.TaxNumber" />
+                    <DetailFieldComponent Label="付款條件" Value="@supplier?.PaymentTerms" />
+                    <DetailFieldComponent Label="信用額度" Value="@(supplier?.CreditLimit?.ToString("C"))" />
+                    <DetailFieldComponent Label="廠商類型" Value="@supplier?.SupplierType?.TypeName" />
+                    <DetailFieldComponent Label="行業類型" Value="@supplier?.IndustryType?.IndustryTypeName" />
+                    <DetailFieldComponent Label="狀態">
+                        @if (supplier?.Status != null)
+                        {
+                            <StatusBadgeComponent Status="@supplier.Status" />
+                        }
+                    </DetailFieldComponent>
+                    @if (!string.IsNullOrEmpty(supplier?.Remarks))
+                    {
+                        <DetailFieldComponent Label="備註" Value="@supplier.Remarks" ColSize="12" />
+                    }
+                </div>
+            },
+            
+            new GenericDetailPageComponent<Supplier, ISupplierService>.TabSection
+            {
+                Id = "contacts",
+                Title = "聯絡方式",
+                Content = @<div>
+                    @if (supplierContacts.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>類型</th>
+                                        <th>值</th>
+                                        <th>主要</th>
+                                        <th>狀態</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var contact in supplierContacts)
+                                    {
+                                        <tr>
+                                            <td>@(contact.ContactType?.TypeName ?? "-")</td>
+                                            <td>@contact.ContactValue</td>
+                                            <td>
+                                                @if (contact.IsPrimary)
+                                                {
+                                                    <span class="badge bg-primary">主要</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <StatusBadgeComponent Status="@contact.Status" />
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted p-3 text-center">
+                            <i class="fas fa-phone-slash fa-2x mb-2 d-block"></i>
+                            尚未設定聯絡方式
+                        </div>
+                    }
+                </div>
+            },
+            
+            new GenericDetailPageComponent<Supplier, ISupplierService>.TabSection
+            {
+                Id = "addresses",
+                Title = "地址資料",
+                Content = @<div>
+                    @if (supplierAddresses.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>類型</th>
+                                        <th>地址</th>
+                                        <th>主要</th>
+                                        <th>狀態</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var address in supplierAddresses)
+                                    {
+                                        <tr>
+                                            <td>@(address.AddressType?.TypeName ?? "-")</td>
+                                            <td>@GetFullAddress(address)</td>
+                                            <td>
+                                                @if (address.IsPrimary)
+                                                {
+                                                    <span class="badge bg-primary">主要</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <StatusBadgeComponent Status="@address.Status" />
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted p-3 text-center">
+                            <i class="fas fa-map-marker-alt-slash fa-2x mb-2 d-block"></i>
+                            尚未設定地址
+                        </div>
+                    }
+                </div>
+            },
+            
+            new GenericDetailPageComponent<Supplier, ISupplierService>.TabSection
+            {
+                Id = "system",
+                Title = "系統資訊",
+                Content = @<div class="row">
+                    <DetailFieldComponent Label="建立日期" Value="@supplier?.CreatedAt.ToString("yyyy/MM/dd HH:mm")" />
+                    <DetailFieldComponent Label="建立者" Value="@supplier?.CreatedBy" />
+                    <DetailFieldComponent Label="最後更新" Value="@(supplier?.UpdatedAt?.ToString("yyyy/MM/dd HH:mm"))" />
+                    <DetailFieldComponent Label="更新者" Value="@supplier?.UpdatedBy" />
+                </div>
+            }
+        };
     }
 }

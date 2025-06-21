@@ -10,171 +10,164 @@
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-@if (isLoading)
-{
-    <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
-        <div class="text-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">載入中...</span>
-            </div>
-            <div class="mt-2">載入材質資料中...</div>
-        </div>
-    </div>
-}
-else if (material == null)
-{
-    <div class="alert alert-warning">
-        <h4>找不到材質資料</h4>
-        <p>指定的材質不存在或已被刪除。</p>
-        <button class="btn btn-primary" @onclick="BackToMaterialList">
-            返回材質列表
-        </button>
-    </div>
-}
-else
-{
-    <GenericHeaderComponent Title="@material.Name" 
-                          Subtitle="@($"材質代碼：{material.Code}")"
-                          BreadcrumbItems="@breadcrumbItems">        
-        <ActionButtons>
-            <DetailActionButtonsComponent 
-                EntityStatus="@material?.Status"
-                IsLoading="@isLoading"
-                EntityName="材質"
-                EntityId="@MaterialId.ToString()"
-                EntityDisplayName="@material?.Name"
-                EntityService="@MaterialService"
-                ListRoute="/BOMFoundation/materials"
-                EditRoute="/BOMFoundation/materials/edit"
-                OnReloadData="@LoadMaterialData"/>
-        </ActionButtons>
-    </GenericHeaderComponent>
+<PageTitle>材質詳細資料</PageTitle>
 
-    @* 基本資訊 - 使用模組化元件 *@
-    <DetailCardComponent Title="基本資訊" >
-        <div class="row">
-            <DetailFieldComponent Label="材質代碼" Value="@material.Code" IsPrimary="true" />
-            <DetailFieldComponent Label="材質名稱" Value="@material.Name" IsBold="true" />
-            @if (!string.IsNullOrEmpty(material.Category))
-            {
-                <DetailFieldComponent Label="材質類別" Value="@material.Category" />
-            }
-            <DetailFieldComponent Label="環保材質">
-                @if (material.IsEcoFriendly)
-                {
-                    <span class="badge bg-success">是</span>
-                }
-                else
-                {
-                    <span class="badge bg-secondary">否</span>
-                }
-            </DetailFieldComponent>
-            <DetailFieldComponent Label="狀態">
-                @if (material.Status == Data.Enums.EntityStatus.Active)
-                {
-                    <span class="badge bg-success">啟用</span>
-                }
-                else
-                {
-                    <span class="badge bg-danger">停用</span>
-                }
-            </DetailFieldComponent>
-            @if (!string.IsNullOrEmpty(material.Description))
-            {
-                <DetailFieldComponent Label="描述" Value="@material.Description" ColSize="12" />
-            }
-            @if (!string.IsNullOrEmpty(material.Remarks))
-            {
-                <DetailFieldComponent Label="備註" Value="@material.Remarks" ColSize="12" />
-            }
-        </div>
-    </DetailCardComponent>
-
-    @* 物理特性 - 使用模組化元件 *@
-    @if (material.Density.HasValue || material.MeltingPoint.HasValue)
-    {
-        <DetailCardComponent Title="物理特性" >
-            <div class="row">
-                @if (material.Density.HasValue)
-                {
-                    <DetailFieldComponent Label="密度" Value="@($"{material.Density} g/cm³")" />
-                }
-                @if (material.MeltingPoint.HasValue)
-                {
-                    <DetailFieldComponent Label="熔點" Value="@($"{material.MeltingPoint}°C")" />
-                }
-            </div>
-        </DetailCardComponent>
-    }
-
-    @* 系統資訊 - 使用模組化元件 *@
-    <DetailCardComponent Title="系統資訊" >
-        <div class="row">
-            <DetailFieldComponent Label="建立時間" Value="@material.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")" />
-            <DetailFieldComponent Label="建立者" Value="@material.CreatedBy" EmptyText="系統" />
-            @if (material.UpdatedAt.HasValue)
-            {
-                <DetailFieldComponent Label="更新時間" Value="@material.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
-                <DetailFieldComponent Label="更新者" Value="@material.UpdatedBy" EmptyText="無" />
-            }
-        </div>
-    </DetailCardComponent>
-}
+<GenericDetailPageComponent TEntity="Material" 
+                           TService="IMaterialService"
+                           EntityId="@MaterialId"
+                           Entity="@material"
+                           Service="@MaterialService"
+                           EntityName="材質"
+                           EntityNamePlural="材質"
+                           IndexRoute="/BOMFoundation/materials"
+                           EditRoute="/BOMFoundation/materials/edit"
+                           LoadingText="載入材質資料中..."
+                           BreadcrumbItems="@breadcrumbItems"
+                           DataLoader="@LoadMaterialDataAsync"
+                           AdditionalDataLoader="@LoadAdditionalDataAsync"
+                           EntityTitleSelector="@(m => m.Name)"
+                           EntitySubtitleSelector="@(m => $"材質代碼：{m.Code ?? "未設定"}")"
+                           EntityDisplayNameSelector="@(m => m.Name)"
+                           OnDataLoaded="@OnMaterialDataLoaded"
+                           UseTabLayout="true"
+                           TabSections="@GetTabSections()">
+</GenericDetailPageComponent>
 
 @code {
     [Parameter] public int MaterialId { get; set; }
 
     private Material? material;
-    private bool isLoading = true;
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private bool _isLoading = false;
 
-    protected override async Task OnInitializedAsync()
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
     {
-        InitializeBreadcrumb();
-        await LoadMaterialData();
-    }
+        new("首頁", "/"),
+        new("BOM 基礎資料", "/BOMFoundation"),
+        new("材質管理", "/BOMFoundation/materials"),
+        new("材質詳細資料")
+    };
 
-    protected override async Task OnParametersSetAsync()
+    // GenericDetailPageComponent 需要的方法
+    private async Task<Material?> LoadMaterialDataAsync()
     {
-        if (MaterialId > 0)
+        if (_isLoading)
         {
-            await LoadMaterialData();
+            Console.WriteLine("[MaterialDetail] 載入中，跳過重複調用");
+            return material;
         }
-    }
-
-    private void InitializeBreadcrumb()
-    {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
-        {
-            new() { Text = "首頁", Href = "/" },
-            new() { Text = "BOM 基礎資料", Href = "/BOMFoundation" },
-            new() { Text = "材質管理", Href = "/BOMFoundation/materials" },
-            new() { Text = "材質詳情" }
-        };
-    }
-
-    private async Task LoadMaterialData()
-    {
+        
         try
         {
-            isLoading = true;
-            StateHasChanged();
-
-            material = await MaterialService.GetByIdAsync(MaterialId);
+            _isLoading = true;
+            if (MaterialId <= 0) return null;
+            
+            var result = await MaterialService.GetByIdAsync(MaterialId);
+            material = result;
+            return result;
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入材質資料失敗：", ex.Message);
+            Console.Error.WriteLine($"[MaterialDetail] 載入材質資料失敗：{ex.Message}");
+            throw;
         }
         finally
         {
-            isLoading = false;
-            StateHasChanged();
+            _isLoading = false;
         }
     }
 
-    private void BackToMaterialList()
+    private Task LoadAdditionalDataAsync()
     {
-        Navigation.NavigateTo("/BOMFoundation/materials");
+        return Task.CompletedTask;
+    }
+
+    private Task OnMaterialDataLoaded()
+    {
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    // 設定標籤頁結構
+    private List<GenericDetailPageComponent<Material, IMaterialService>.TabSection> GetTabSections()
+    {
+        return new List<GenericDetailPageComponent<Material, IMaterialService>.TabSection>
+        {
+            new GenericDetailPageComponent<Material, IMaterialService>.TabSection
+            {
+                Id = "basic",
+                Title = "基本資料",
+                Content = @<div class="row">
+                    <DetailFieldComponent Label="材質代碼" Value="@material?.Code" IsPrimary="true" EmptyText="未設定" />
+                    <DetailFieldComponent Label="材質名稱" Value="@material?.Name" IsBold="true" />
+                    @if (!string.IsNullOrEmpty(material?.Category))
+                    {
+                        <DetailFieldComponent Label="材質類別" Value="@material.Category" />
+                    }
+                    <DetailFieldComponent Label="環保材質">
+                        @if (material?.IsEcoFriendly == true)
+                        {
+                            <span class="badge bg-success">是</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">否</span>
+                        }
+                    </DetailFieldComponent>
+                    <DetailFieldComponent Label="狀態">
+                        @if (material?.Status != null)
+                        {
+                            <StatusBadgeComponent Status="@material.Status" />
+                        }
+                    </DetailFieldComponent>
+                    @if (!string.IsNullOrEmpty(material?.Description))
+                    {
+                        <DetailFieldComponent Label="描述" Value="@material.Description" ColSize="12" />
+                    }
+                    @if (!string.IsNullOrEmpty(material?.Remarks))
+                    {
+                        <DetailFieldComponent Label="備註" Value="@material.Remarks" ColSize="12" />
+                    }
+                </div>
+            },
+            
+            new GenericDetailPageComponent<Material, IMaterialService>.TabSection
+            {
+                Id = "physical",
+                Title = "物理特性",
+                Content = @<div class="row">
+                    @if (material?.Density.HasValue == true)
+                    {
+                        <DetailFieldComponent Label="密度" Value="@($"{material.Density} g/cm³")" />
+                    }
+                    @if (material?.MeltingPoint.HasValue == true)
+                    {
+                        <DetailFieldComponent Label="熔點" Value="@($"{material.MeltingPoint}°C")" />
+                    }
+                    @if (material?.Density == null && material?.MeltingPoint == null)
+                    {
+                        <div class="text-muted p-3 text-center col-12">
+                            <i class="fas fa-flask fa-2x mb-2 d-block"></i>
+                            尚未設定物理特性
+                        </div>
+                    }
+                </div>
+            },
+            
+            new GenericDetailPageComponent<Material, IMaterialService>.TabSection
+            {
+                Id = "system",
+                Title = "系統資訊",
+                Content = @<div class="row">
+                    <DetailFieldComponent Label="建立時間" Value="@material?.CreatedAt.ToString("yyyy/MM/dd HH:mm")" />
+                    <DetailFieldComponent Label="建立者" Value="@material?.CreatedBy" EmptyText="系統" />
+                    @if (material?.UpdatedAt.HasValue == true)
+                    {
+                        <DetailFieldComponent Label="更新時間" Value="@material.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")" />
+                        <DetailFieldComponent Label="更新者" Value="@material?.UpdatedBy" EmptyText="系統" />
+                    }
+                </div>
+            }
+        };
     }
 }

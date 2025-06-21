@@ -1,7 +1,6 @@
 @* 泛型Detail頁面基底組件 *@
 @using ERPCore2.Data
 @using ERPCore2.Data.Enums
-@using ERPCore2.Components.Shared.Details
 @using ERPCore2.Components.Shared.Alerts
 @using ERPCore2.Components.Shared.Loading
 @using ERPCore2.Components.Shared.Headers
@@ -62,32 +61,88 @@ else
                 OnShowAlert="@HandleShowAlert"
                 OnReloadData="@RefreshData"/>
         </ActionButtons>
-    </GenericHeaderComponent>
-
-    @* 詳細內容區域 *@
-    @if (UseGenericDetails && DetailConfiguration != null)
+    </GenericHeaderComponent>    
+      @* 詳細內容區域 - 現代化標籤頁展示 *@
+    @if (UseTabLayout && (CustomDetailContent != null || TabSections.Any()))
     {
-        @* 使用通用詳細組件 *@
-        <GenericDetailsComponent Configuration="@DetailConfiguration" />
+        @* 使用現代化標籤頁自訂內容 *@
+        <div class="detail-tabs-modern mt-4">
+            <div class="card-header p-0">
+                <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                    @for (int i = 0; i < TabSections.Count; i++)
+                    {
+                        var section = TabSections[i];
+                        var tabId = $"tab-{section.Id}";
+                        var paneId = $"pane-{section.Id}";
+                        var isActive = i == activeTabIndex;
+                        var currentIndex = i;
+                        
+                        <li class="nav-item" role="presentation">                            
+                            <button class="nav-link @(isActive ? "active" : "")" 
+                                    id="@tabId" 
+                                    data-bs-toggle="tab" 
+                                    data-bs-target="#@paneId" 
+                                    type="button"                                    role="tab" 
+                                    aria-controls="@paneId" 
+                                    aria-selected="@(isActive.ToString().ToLower())"
+                                    @onclick="@(() => HandleTabClick(currentIndex))">
+                                @(section.Title)
+                                @if (section.IsLoading)
+                                {
+                                    <div class="spinner-border spinner-border-sm ms-2" role="status">
+                                        <span class="visually-hidden">載入中...</span>
+                                    </div>
+                                }
+                            </button>
+                        </li>
+                    }
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content">
+                    @for (int i = 0; i < TabSections.Count; i++)
+                    {
+                        var section = TabSections[i];
+                        var paneId = $"pane-{section.Id}";
+                        var isActive = i == activeTabIndex;
+                          <div class="tab-pane fade @(isActive ? "show active" : "")" 
+                             id="@paneId" 
+                             role="tabpanel">
+                            @if (section.Content != null)
+                            {
+                                @(section.Content)
+                            }
+                            else if (section.Id == "main" && CustomDetailContent != null)
+                            {
+                                @CustomDetailContent
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    else if (CustomDetailContent != null)
+    {
+        @* 非標籤頁模式的自訂內容 *@
+        @CustomDetailContent
+        
+        @* 額外區塊 *@
+        @if (AdditionalSections != null)
+        {
+            @AdditionalSections
+        }
     }
     else
     {
-        @* 自訂詳細內容 *@
-        @if (CustomDetailContent != null)
+        @* 預設詳細內容布局 *@
+        @DefaultDetailSections
+        
+        @* 額外區塊 *@
+        @if (AdditionalSections != null)
         {
-            @CustomDetailContent
+            @AdditionalSections
         }
-        else
-        {
-            @* 預設詳細內容布局 *@
-            @DefaultDetailSections
-        }
-    }
-
-    @* 額外區塊 *@
-    @if (AdditionalSections != null)
-    {
-        @AdditionalSections
     }
 }
 
@@ -108,14 +163,16 @@ else
     [Parameter] public string LoadingText { get; set; } = "載入中...";
     
     // 麵包屑導航
-    [Parameter] public List<GenericHeaderComponent.BreadcrumbItem> BreadcrumbItems { get; set; } = new();
-    
+    [Parameter] public List<GenericHeaderComponent.BreadcrumbItem> BreadcrumbItems { get; set; } = new();      
+        
     // 詳細內容設定
-    [Parameter] public bool UseGenericDetails { get; set; } = false;
-    [Parameter] public DetailViewConfiguration? DetailConfiguration { get; set; }
+    [Parameter] public bool UseTabLayout { get; set; } = true; 
+    
+    // 預設使用標籤頁模式
     [Parameter] public RenderFragment? CustomDetailContent { get; set; }
     [Parameter] public RenderFragment? DefaultDetailSections { get; set; }
     [Parameter] public RenderFragment? AdditionalSections { get; set; }
+    [Parameter] public List<TabSection> TabSections { get; set; } = new();
     
     // 事件和邏輯
     [Parameter] public Func<Task<TEntity?>> DataLoader { get; set; } = default!;
@@ -124,13 +181,13 @@ else
     [Parameter] public Func<TEntity, string> EntitySubtitleSelector { get; set; } = default!;
     [Parameter] public Func<TEntity, string> EntityDisplayNameSelector { get; set; } = default!;
     [Parameter] public EventCallback OnDataLoaded { get; set; }
-    
-    // ===== 內部狀態 =====
+      // ===== 內部狀態 =====
     
     private bool isLoading = true;
     private bool showAlert = false;
     private string alertMessage = string.Empty;
     private AlertComponent.AlertType alertType = AlertComponent.AlertType.Info;
+    private int activeTabIndex = 0; // 當前活躍的標籤頁索引
       // ===== 公開屬性 =====
     
     public bool IsLoading => isLoading;
@@ -193,6 +250,80 @@ else
         }
     }
       // ===== 初始化方法 =====
+      
+    protected override void OnInitialized()
+    {
+        // 初始化預設標籤頁（如果沒有設定）
+        if (UseTabLayout && !TabSections.Any())
+        {
+            InitializeDefaultTabs();
+        }
+        
+        base.OnInitialized();
+    }
+    
+    private void InitializeDefaultTabs()
+    {        TabSections = new List<TabSection>
+        {
+            new TabSection
+            {
+                Id = "main",
+                Title = "基本資料",
+                Content = CustomDetailContent
+            }
+        };
+        
+        // 如果有額外區塊，添加為新的標籤頁
+        if (AdditionalSections != null)
+        {
+            TabSections.Add(new TabSection
+            {
+                Id = "additional",
+                Title = "其他資訊",
+                Content = AdditionalSections
+            });
+        }
+    }
+    
+    private async Task HandleTabClick(int tabIndex)
+    {
+        if (tabIndex >= 0 && tabIndex < TabSections.Count)
+        {
+            activeTabIndex = tabIndex;
+            var currentSection = TabSections[tabIndex];
+            
+            // 如果標籤頁有延遲載入需求，可以在這裡處理
+            if (currentSection.LazyLoad && !currentSection.IsLoaded && !currentSection.IsLoading)
+            {
+                await LoadTabData(currentSection);
+            }
+            
+            StateHasChanged();
+        }
+    }
+    
+    private async Task LoadTabData(TabSection section)
+    {
+        // 標籤頁延遲載入邏輯（預留給未來擴展）
+        section.IsLoading = true;
+        StateHasChanged();
+        
+        try
+        {
+            // 這裡可以調用特定的資料載入方法
+            await Task.Delay(500); // 模擬載入
+            section.IsLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            ShowAlertMessage($"載入標籤頁資料時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
+        }
+        finally
+        {
+            section.IsLoading = false;
+            StateHasChanged();
+        }
+    }
       private async Task InitializePageAsync()
     {
         try
@@ -314,9 +445,20 @@ else
         Entity = entity;
         StateHasChanged();
     }
-    
-    public TEntity? GetEntity()
+      public TEntity? GetEntity()
     {
         return Entity;
+    }
+    
+    // ===== 標籤頁支援類別 =====
+      public class TabSection
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public RenderFragment? Content { get; set; }
+        public bool LazyLoad { get; set; } = false;
+        public bool IsLoading { get; set; } = false;
+        public bool IsLoaded { get; set; } = true;
+        public string CssClass { get; set; } = string.Empty;
     }
 }

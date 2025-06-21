@@ -26,76 +26,9 @@
                            BreadcrumbItems="@breadcrumbItems"
                            DataLoader="@LoadCustomerTypeDataAsync"
                            EntityTitleSelector="@(ct => ct.TypeName)"
-                           EntitySubtitleSelector="@(ct => $"描述：{ct.Description ?? "未設定"}")"
-                           EntityDisplayNameSelector="@(ct => ct.TypeName)"
-                           OnDataLoaded="@OnCustomerTypeDataLoaded"
-                           UseGenericDetails="false">
-
-    <CustomDetailContent>
-        @* 基本資料 - 使用模組化元件 *@
-        <DetailCardComponent Title="基本資料" >
-            <div class="row">
-                <DetailFieldComponent Label="類型名稱" Value="@customerType?.TypeName" IsPrimary="true" IsBold="true" />
-                <DetailFieldComponent Label="描述" Value="@customerType?.Description" EmptyText="未設定" ColSize="12" />
-                <DetailFieldComponent Label="狀態">
-                    @if (customerType?.Status != null)
-                    {
-                        <StatusBadgeComponent Status="@customerType.Status" />
-                    }
-                </DetailFieldComponent>
-                @if (!string.IsNullOrEmpty(customerType?.Remarks))
-                {
-                    <DetailFieldComponent Label="備註" Value="@customerType.Remarks" ColSize="12" />
-                }
-            </div>
-        </DetailCardComponent>
-
-        @* 系統資訊 - 使用模組化元件 *@
-        <DetailCardComponent Title="系統資訊" >
-            <div class="row">
-                <DetailFieldComponent Label="建立時間" Value="@customerType?.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")" />
-                <DetailFieldComponent Label="建立者" Value="@customerType?.CreatedBy" EmptyText="系統" />
-                <DetailFieldComponent Label="更新時間" Value="@customerType?.UpdatedAt?.ToString("yyyy/MM/dd HH:mm:ss")" EmptyText="未更新" />
-                <DetailFieldComponent Label="更新者" Value="@customerType?.UpdatedBy" EmptyText="無" />
-            </div>
-        </DetailCardComponent>
-
-        @* 使用統計 - 使用模組化元件 *@
-        <DetailCardComponent Title="使用統計" >
-            <div class="row">
-                <DetailFieldComponent Label="使用此類型的客戶數" Value="@(customerType?.Customers?.Count().ToString() ?? "0")" />
-                @if (customerType?.Customers?.Any() == true)
-                {
-                    <div class="col-12 mt-3">
-                        <h6>使用此類型的客戶：</h6>
-                        <div class="row">
-                            @foreach (var customer in customerType.Customers.Take(10))
-                            {
-                                <div class="col-md-6 mb-2">
-                                    <a href="/customers/detail/@customer.Id" class="btn btn-outline-primary btn-sm">
-                                        <i class="bi bi-building"></i> @customer.CompanyName
-                                    </a>
-                                </div>
-                            }
-                            @if (customerType.Customers.Count() > 10)
-                            {
-                                <div class="col-12">
-                                    <small class="text-muted">還有 @(customerType.Customers.Count() - 10) 個客戶使用此類型...</small>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                }
-                else
-                {
-                    <div class="col-12">
-                        <div class="text-muted">目前沒有客戶使用此類型</div>
-                    </div>
-                }
-            </div>
-        </DetailCardComponent>
-    </CustomDetailContent>
-
+                           EntitySubtitleSelector="@(ct => $"描述：{ct.Description ?? "未設定"}")"                           EntityDisplayNameSelector="@(ct => ct.TypeName)"
+                           OnDataLoaded="@OnCustomerTypeDataLoaded"                           UseTabLayout="true"
+                           TabSections="@GetTabSections()">
 </GenericDetailPageComponent>
 
 @code {
@@ -148,5 +81,86 @@
         // 資料載入完成後的處理
         StateHasChanged();
         return Task.CompletedTask;
+    }
+
+    // 設定標籤頁結構
+    private List<GenericDetailPageComponent<CustomerType, ICustomerTypeService>.TabSection> GetTabSections()
+    {
+        return new List<GenericDetailPageComponent<CustomerType, ICustomerTypeService>.TabSection>
+        {
+            new GenericDetailPageComponent<CustomerType, ICustomerTypeService>.TabSection
+            {
+                Id = "basic",
+                Title = "基本資料",
+                Content = @<div class="row">
+                    <DetailFieldComponent Label="類型名稱" Value="@customerType?.TypeName" IsPrimary="true" IsBold="true" />
+                    <DetailFieldComponent Label="描述" Value="@customerType?.Description" EmptyText="未設定" ColSize="12" />
+                    <DetailFieldComponent Label="狀態">
+                        @if (customerType?.Status != null)
+                        {
+                            <StatusBadgeComponent Status="@customerType.Status" />
+                        }
+                    </DetailFieldComponent>
+                    @if (!string.IsNullOrEmpty(customerType?.Remarks))
+                    {
+                        <DetailFieldComponent Label="備註" Value="@customerType.Remarks" ColSize="12" />
+                    }
+                </div>
+            },
+            
+            new GenericDetailPageComponent<CustomerType, ICustomerTypeService>.TabSection
+            {
+                Id = "statistics",
+                Title = "使用統計",
+                Content = @<div>
+                    <div class="row mb-3">
+                        <DetailFieldComponent Label="使用此類型的客戶數" Value="@(customerType?.Customers?.Count().ToString() ?? "0")" IsBold="true" />
+                    </div>
+                    @if (customerType?.Customers?.Any() == true)
+                    {
+                        <div class="row">
+                            @foreach (var customer in customerType.Customers.Take(10))
+                            {
+                                <div class="col-md-6 mb-2">
+                                    <a href="/customers/detail/@customer.Id" class="btn btn-outline-primary btn-sm w-100">
+                                        <i class="fas fa-building me-1"></i> @customer.CompanyName
+                                    </a>
+                                </div>
+                            }
+                            @if (customerType.Customers.Count() > 10)
+                            {
+                                <div class="col-12">
+                                    <div class="text-muted mt-2 text-center">
+                                        還有 @(customerType.Customers.Count() - 10) 個客戶使用此類型...
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted p-3 text-center">
+                            <i class="fas fa-users fa-2x mb-2 d-block"></i>
+                            目前沒有客戶使用此類型
+                        </div>
+                    }
+                </div>
+            },
+            
+            new GenericDetailPageComponent<CustomerType, ICustomerTypeService>.TabSection
+            {
+                Id = "system",
+                Title = "系統資訊",
+                Content = @<div class="row">
+                    <DetailFieldComponent Label="建立時間" Value="@customerType?.CreatedAt.ToString("yyyy/MM/dd HH:mm")" />
+                    <DetailFieldComponent Label="建立者" Value="@customerType?.CreatedBy" EmptyText="系統" />
+                    @if (customerType?.UpdatedAt.HasValue == true)
+                    {
+                        <DetailFieldComponent Label="更新時間" Value="@customerType.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")" />
+                        <DetailFieldComponent Label="更新者" Value="@customerType?.UpdatedBy" EmptyText="系統" />
+                    }
+                </div>
+            }
+        };
     }
 }

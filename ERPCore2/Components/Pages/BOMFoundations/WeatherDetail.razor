@@ -9,173 +9,137 @@
 @inject IWeatherService WeatherService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
-@using ERPCore2.Components.Shared.Alerts
 @rendermode InteractiveServer
 
-@* 顯示警告訊息 *@
-<AlertComponent 
-    Message="@alertMessage" 
-    Type="@alertType" 
-    IsVisible="@showAlert" 
-    IsDismissible="true"
-    OnDismiss="@(() => showAlert = false)" />
+<PageTitle>天氣詳細資料</PageTitle>
 
-@if (isLoading)
-{
-    <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
-        <div class="text-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">載入中...</span>
-            </div>
-            <div class="mt-2">載入天氣資料中...</div>
-        </div>
-    </div>
-}
-else if (weather == null)
-{
-    <div class="alert alert-warning">
-        <h4>找不到天氣資料</h4>
-        <p>指定的天氣不存在或已被刪除。</p>
-        <button class="btn btn-primary" @onclick="BackToWeatherList">
-            返回天氣列表
-        </button>
-    </div>
-}
-else
-{
-    <GenericHeaderComponent Title="@weather.Name" 
-                          Subtitle="@($"天氣代碼：{weather.Code}")"
-                          BreadcrumbItems="@breadcrumbItems">        
-        <ActionButtons>            
-            <DetailActionButtonsComponent 
-                EntityStatus="@weather?.Status"
-                IsLoading="@isLoading"
-                EntityName="天氣"
-                EntityId="@WeatherId.ToString()"
-                EntityDisplayName="@weather?.Name"
-                EntityService="@WeatherService"
-                ListRoute="/BOMFoundation/weather"
-                EditRoute="/BOMFoundation/weather/edit"
-                OnShowAlert="@((tuple) => ShowAlert(tuple.message, Enum.Parse<AlertComponent.AlertType>(tuple.type, true)))"
-                OnReloadData="@LoadWeatherData"/>
-        </ActionButtons>
-    </GenericHeaderComponent>
-
-    @* 基本資訊 - 使用模組化元件 *@
-    <DetailCardComponent Title="基本資訊" >
-        <div class="row">
-            <DetailFieldComponent Label="天氣代碼" Value="@weather.Code" IsPrimary="true" />
-            <DetailFieldComponent Label="天氣名稱" Value="@weather.Name" IsBold="true" />
-            @if (!string.IsNullOrEmpty(weather.Icon))
-            {
-                <DetailFieldComponent Label="圖示" Value="@weather.Icon" />
-            }
-            @if (weather.ReferenceTemperature.HasValue)
-            {
-                <DetailFieldComponent Label="參考溫度" Value="@($"{weather.ReferenceTemperature}°C")" />
-            }
-            <DetailFieldComponent Label="狀態">
-                @if (weather.Status == Data.Enums.EntityStatus.Active)
-                {
-                    <span class="badge bg-success">啟用</span>
-                }
-                else
-                {
-                    <span class="badge bg-danger">停用</span>
-                }
-            </DetailFieldComponent>
-            @if (!string.IsNullOrEmpty(weather.Description))
-            {
-                <DetailFieldComponent Label="描述" Value="@weather.Description" ColSize="12" />
-            }
-            @if (!string.IsNullOrEmpty(weather.Remarks))
-            {
-                <DetailFieldComponent Label="備註" Value="@weather.Remarks" ColSize="12" />
-            }
-        </div>
-    </DetailCardComponent>
-
-    @* 系統資訊 - 使用模組化元件 *@
-    <DetailCardComponent Title="系統資訊" >
-        <div class="row">
-            <DetailFieldComponent Label="建立時間" Value="@weather.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")" />
-            <DetailFieldComponent Label="建立者" Value="@weather.CreatedBy" EmptyText="系統" />
-            @if (weather.UpdatedAt.HasValue)
-            {
-                <DetailFieldComponent Label="更新時間" Value="@weather.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
-                <DetailFieldComponent Label="更新者" Value="@weather.UpdatedBy" EmptyText="無" />
-            }
-        </div>
-    </DetailCardComponent>
-}
+<GenericDetailPageComponent TEntity="Weather" 
+                           TService="IWeatherService"
+                           EntityId="@WeatherId"
+                           Entity="@weather"
+                           Service="@WeatherService"
+                           EntityName="天氣"
+                           EntityNamePlural="天氣"
+                           IndexRoute="/BOMFoundation/weather"
+                           EditRoute="/BOMFoundation/weather/edit"
+                           LoadingText="載入天氣資料中..."
+                           BreadcrumbItems="@breadcrumbItems"
+                           DataLoader="@LoadWeatherDataAsync"
+                           AdditionalDataLoader="@LoadAdditionalDataAsync"
+                           EntityTitleSelector="@(w => w.Name)"
+                           EntitySubtitleSelector="@(w => $"天氣代碼：{w.Code ?? "未設定"}")"
+                           EntityDisplayNameSelector="@(w => w.Name)"
+                           OnDataLoaded="@OnWeatherDataLoaded"
+                           UseTabLayout="true"
+                           TabSections="@GetTabSections()">
+</GenericDetailPageComponent>
 
 @code {
     [Parameter] public int WeatherId { get; set; }
 
     private Weather? weather;
-    private bool isLoading = true;
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private bool _isLoading = false;
 
-    // Alert 相關變數
-    private bool showAlert = false;
-    private string alertMessage = string.Empty;
-    private AlertComponent.AlertType alertType = AlertComponent.AlertType.Info;
-
-    protected override async Task OnInitializedAsync()
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
     {
-        InitializeBreadcrumb();
-        await LoadWeatherData();
-    }
+        new("首頁", "/"),
+        new("BOM 基礎資料", "/BOMFoundation"),
+        new("天氣管理", "/BOMFoundation/weather"),
+        new("天氣詳細資料")
+    };
 
-    protected override async Task OnParametersSetAsync()
+    // GenericDetailPageComponent 需要的方法
+    private async Task<Weather?> LoadWeatherDataAsync()
     {
-        if (WeatherId > 0)
+        if (_isLoading)
         {
-            await LoadWeatherData();
+            Console.WriteLine("[WeatherDetail] 載入中，跳過重複調用");
+            return weather;
         }
-    }
-
-    private void InitializeBreadcrumb()
-    {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
-        {
-            new() { Text = "首頁", Href = "/" },
-            new() { Text = "BOM 基礎資料", Href = "/BOMFoundation" },
-            new() { Text = "天氣管理", Href = "/BOMFoundation/weather" },
-            new() { Text = "天氣詳情" }
-        };
-    }
-
-    private async Task LoadWeatherData()
-    {
+        
         try
         {
-            isLoading = true;
-            StateHasChanged();
-
-            weather = await WeatherService.GetByIdAsync(WeatherId);
+            _isLoading = true;
+            if (WeatherId <= 0) return null;
+            
+            var result = await WeatherService.GetByIdAsync(WeatherId);
+            weather = result;
+            return result;
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入天氣資料失敗：", ex.Message);
+            Console.Error.WriteLine($"[WeatherDetail] 載入天氣資料失敗：{ex.Message}");
+            throw;
         }
         finally
         {
-            isLoading = false;
-            StateHasChanged();
+            _isLoading = false;
         }
     }
 
-    private void BackToWeatherList()
+    private Task LoadAdditionalDataAsync()
     {
-        Navigation.NavigateTo("/BOMFoundation/weather");
+        return Task.CompletedTask;
     }
 
-    private void ShowAlert(string message, AlertComponent.AlertType type)
+    private Task OnWeatherDataLoaded()
     {
-        alertMessage = message;
-        alertType = type;
-        showAlert = true;
         StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    // 設定標籤頁結構
+    private List<GenericDetailPageComponent<Weather, IWeatherService>.TabSection> GetTabSections()
+    {
+        return new List<GenericDetailPageComponent<Weather, IWeatherService>.TabSection>
+        {
+            new GenericDetailPageComponent<Weather, IWeatherService>.TabSection
+            {
+                Id = "basic",
+                Title = "基本資料",
+                Content = @<div class="row">
+                    <DetailFieldComponent Label="天氣代碼" Value="@weather?.Code" IsPrimary="true" EmptyText="未設定" />
+                    <DetailFieldComponent Label="天氣名稱" Value="@weather?.Name" IsBold="true" />
+                    @if (!string.IsNullOrEmpty(weather?.Icon))
+                    {
+                        <DetailFieldComponent Label="圖示" Value="@weather.Icon" />
+                    }
+                    @if (weather?.ReferenceTemperature.HasValue == true)
+                    {
+                        <DetailFieldComponent Label="參考溫度" Value="@($"{weather.ReferenceTemperature}°C")" />
+                    }
+                    <DetailFieldComponent Label="狀態">
+                        @if (weather?.Status != null)
+                        {
+                            <StatusBadgeComponent Status="@weather.Status" />
+                        }
+                    </DetailFieldComponent>
+                    @if (!string.IsNullOrEmpty(weather?.Description))
+                    {
+                        <DetailFieldComponent Label="描述" Value="@weather.Description" ColSize="12" />
+                    }
+                    @if (!string.IsNullOrEmpty(weather?.Remarks))
+                    {
+                        <DetailFieldComponent Label="備註" Value="@weather.Remarks" ColSize="12" />
+                    }
+                </div>
+            },
+            
+            new GenericDetailPageComponent<Weather, IWeatherService>.TabSection
+            {
+                Id = "system",
+                Title = "系統資訊",
+                Content = @<div class="row">
+                    <DetailFieldComponent Label="建立時間" Value="@weather?.CreatedAt.ToString("yyyy/MM/dd HH:mm")" />
+                    <DetailFieldComponent Label="建立者" Value="@weather?.CreatedBy" EmptyText="系統" />
+                    @if (weather?.UpdatedAt.HasValue == true)
+                    {
+                        <DetailFieldComponent Label="更新時間" Value="@weather.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")" />
+                        <DetailFieldComponent Label="更新者" Value="@weather?.UpdatedBy" EmptyText="系統" />
+                    }
+                </div>
+            }
+        };
     }
 }

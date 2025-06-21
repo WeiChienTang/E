@@ -31,66 +31,12 @@
                            EntitySubtitleSelector="@(c => $"統一編號：{c.TaxNumber ?? "未設定"}")"
                            EntityDisplayNameSelector="@(c => c.CompanyName)"
                            OnDataLoaded="@OnCustomerDataLoaded"
-                           UseGenericDetails="false">    
-                           <CustomDetailContent>
-                              @* 基本資料 - 使用模組化元件 *@
-        <DetailCardComponent Title="基本資料">
-            <div class="row">
-                <DetailFieldComponent Label="統一編號" Value="@customer?.TaxNumber" IsPrimary="true" EmptyText="未設定" />
-                <DetailFieldComponent Label="公司名稱" Value="@customer?.CompanyName" IsBold="true" />
-                <DetailFieldComponent Label="聯絡人" Value="@customer?.ContactPerson" />
-                <DetailFieldComponent Label="客戶類型" Value="@customer?.CustomerType?.TypeName" />
-                <DetailFieldComponent Label="行業類型" Value="@customer?.IndustryType?.IndustryTypeName" />
-                <DetailFieldComponent Label="狀態">
-                    @if (customer?.Status != null)
-                    {
-                        <StatusBadgeComponent Status="@customer.Status" />
-                    }
-                </DetailFieldComponent>
-                @if (!string.IsNullOrEmpty(customer?.Remarks))
-                {
-                    <DetailFieldComponent Label="備註" Value="@customer.Remarks" ColSize="12" />
-                }
-            </div>
-        </DetailCardComponent>       
-          @* 聯絡方式 - 使用模組化元件 *@
-        <DetailCardComponent Title="聯絡方式">
-            @if (customerContacts.Any())
-            {
-                <div class="row">
-                    @foreach (var contact in customerContacts)
-                    {
-                        <DetailFieldComponent Label="@(contact.ContactType?.TypeName ?? "聯絡方式")" 
-                                            Value="@contact.ContactValue" />
-                    }
-                </div>
-            }
-            else
-            {
-                <div class="text-muted">尚未設定聯絡方式</div>
-            }
-        </DetailCardComponent>        
-          @* 地址資料 - 使用模組化元件 *@
-        <DetailCardComponent Title="地址資料">
-            @if (customerAddresses.Any())
-            {
-                <div class="row">
-                    @foreach (var address in customerAddresses)
-                    {
-                        <DetailFieldComponent Label="@(address.AddressType?.TypeName ?? "地址")" 
-                                            Value="@BuildAddressText(address)" />
-                    }
-                </div>
-            }
-            else
-            {
-                <div class="text-muted">尚未設定地址</div>
-            }
-        </DetailCardComponent>
-    </CustomDetailContent>
+                           UseTabLayout="true"
+                           TabSections="@GetTabSections()">
 </GenericDetailPageComponent>
 
-@code {    [Parameter] public int CustomerId { get; set; }
+@code {
+    [Parameter] public int CustomerId { get; set; }
 
     private Customer? customer;
     private List<CustomerContact> customerContacts = new();
@@ -117,9 +63,8 @@
         
         try
         {
-            _isLoading = true;
-            if (CustomerId <= 0) return null;
-              var result = await CustomerService.GetByIdAsync(CustomerId);
+            _isLoading = true;            if (CustomerId <= 0) return null;
+            var result = await CustomerService.GetByIdAsync(CustomerId);
             customer = result; // 保持本地變數同步
             
             // 從已載入的關聯資料中取得聯絡方式和地址
@@ -132,14 +77,16 @@
             return result;
         }
         catch (Exception ex)
-        {
-            Console.Error.WriteLine($"[CustomerDetail] 載入客戶資料失敗：{ex.Message}");
-            throw;        }
+        {            Console.Error.WriteLine($"[CustomerDetail] 載入客戶資料失敗：{ex.Message}");
+            throw;
+        }
         finally
         {
             _isLoading = false;
         }
-    }    private Task LoadAdditionalDataAsync()
+    }
+    
+    private Task LoadAdditionalDataAsync()
     {
         // 由於GetByIdAsync已經Include所有關聯資料，這裡不需要額外查詢
         // 所有資料已在LoadCustomerDataAsync中處理完成
@@ -149,10 +96,8 @@
     private Task OnCustomerDataLoaded()
     {
         // 資料載入完成後的處理
-        StateHasChanged();
-        return Task.CompletedTask;
+        StateHasChanged();        return Task.CompletedTask;
     }
-
     private string BuildAddressText(CustomerAddress address)
     {
         var parts = new List<string>();
@@ -170,5 +115,82 @@
             parts.Add(address.Address);
         
         return parts.Any() ? string.Join(" ", parts) : "地址不完整";
+    }
+
+    // 設定標籤頁結構
+    private List<GenericDetailPageComponent<Customer, ICustomerService>.TabSection> GetTabSections()
+    {        return new List<GenericDetailPageComponent<Customer, ICustomerService>.TabSection>
+        {
+            new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
+            {
+                Id = "basic",
+                Title = "基本資料",
+                Content = @<div class="row">
+                    <DetailFieldComponent Label="統一編號" Value="@customer?.TaxNumber" IsPrimary="true" EmptyText="未設定" />
+                    <DetailFieldComponent Label="公司名稱" Value="@customer?.CompanyName" IsBold="true" />
+                    <DetailFieldComponent Label="聯絡人" Value="@customer?.ContactPerson" />
+                    <DetailFieldComponent Label="客戶類型" Value="@customer?.CustomerType?.TypeName" />
+                    <DetailFieldComponent Label="行業類型" Value="@customer?.IndustryType?.IndustryTypeName" />
+                    <DetailFieldComponent Label="狀態">
+                        @if (customer?.Status != null)
+                        {
+                            <StatusBadgeComponent Status="@customer.Status" />
+                        }
+                    </DetailFieldComponent>
+                    @if (!string.IsNullOrEmpty(customer?.Remarks))
+                    {
+                        <DetailFieldComponent Label="備註" Value="@customer.Remarks" ColSize="12" />
+                    }                </div>
+            },
+            
+            new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
+            {
+                Id = "contacts",
+                Title = "聯絡方式",
+                Content = @<div>
+                    @if (customerContacts.Any())
+                    {
+                        <div class="row">
+                            @foreach (var contact in customerContacts)
+                            {
+                                <DetailFieldComponent Label="@(contact.ContactType?.TypeName ?? "聯絡方式")" 
+                                                    Value="@contact.ContactValue" />
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted p-3 text-center">
+                            <i class="fas fa-phone-slash fa-2x mb-2 d-block"></i>
+                            尚未設定聯絡方式
+                        </div>
+                    }                </div>
+            },
+            
+            new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
+            {
+                Id = "addresses",
+                Title = "地址資料",
+                Content = @<div>
+                    @if (customerAddresses.Any())
+                    {
+                        <div class="row">
+                            @foreach (var address in customerAddresses)
+                            {
+                                <DetailFieldComponent Label="@(address.AddressType?.TypeName ?? "地址")" 
+                                                    Value="@BuildAddressText(address)" />
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted p-3 text-center">
+                            <i class="fas fa-map-marker-alt-slash fa-2x mb-2 d-block"></i>
+                            尚未設定地址
+                        </div>
+                    }
+                </div>
+            }
+        };
     }
 }

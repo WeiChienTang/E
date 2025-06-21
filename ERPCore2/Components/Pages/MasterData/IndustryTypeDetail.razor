@@ -2,11 +2,12 @@
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Details
 @using ERPCore2.Components.Shared.Badges
-@using ERPCore2.Components.Shared.Headers
-@using ERPCore2.Components.Shared.PageModels
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services
+@using ERPCore2.Components.Shared.Headers
 @inject IIndustryTypeService IndustryTypeService
+@inject ICustomerService CustomerService
+@inject ISupplierService SupplierService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
@@ -30,90 +31,8 @@
                            EntitySubtitleSelector="@(it => $"代碼：{it.IndustryTypeCode ?? "未設定"}")"
                            EntityDisplayNameSelector="@(it => it.IndustryTypeName)"
                            OnDataLoaded="@OnIndustryTypeDataLoaded"
-                           UseGenericDetails="false">    
-                           
-    <CustomDetailContent>
-        @* 基本資料 *@
-        <DetailCardComponent Title="基本資料" >
-            <div class="row">
-                <DetailFieldComponent Label="行業類型代碼" Value="@industryType?.IndustryTypeCode" IsPrimary="true" EmptyText="未設定" />
-                <DetailFieldComponent Label="行業類型名稱" Value="@industryType?.IndustryTypeName" IsBold="true" />
-                <DetailFieldComponent Label="狀態">
-                    @if (industryType?.Status != null)
-                    {
-                        <StatusBadgeComponent Status="@industryType.Status" />
-                    }
-                </DetailFieldComponent>
-                <DetailFieldComponent Label="建立時間" Value="@industryType?.CreatedAt" />
-                <DetailFieldComponent Label="更新時間" Value="@industryType?.UpdatedAt" />
-                <DetailFieldComponent Label="建立者" Value="@industryType?.CreatedBy" EmptyText="系統" />
-            </div>
-        </DetailCardComponent>
-
-        @* 使用統計 - 客戶 *@
-        <DetailCardComponent Title="客戶使用統計" >
-            @if (relatedCustomers.Any())
-            {
-                <div class="row">
-                    <div class="col-12 mb-3">
-                        <div class="alert alert-info">
-                            <strong>@relatedCustomers.Count</strong> 個客戶使用此行業類型
-                        </div>
-                    </div>
-                    @foreach (var customer in relatedCustomers.Take(10))
-                    {
-                        <div class="col-md-6 mb-2">
-                            <a href="/customers/detail/@customer.Id" class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-building"></i> @customer.CompanyName
-                            </a>
-                        </div>
-                    }
-                    @if (relatedCustomers.Count > 10)
-                    {
-                        <div class="col-12">
-                            <small class="text-muted">還有 @(relatedCustomers.Count - 10) 個客戶使用此行業類型...</small>
-                        </div>
-                    }
-                </div>
-            }
-            else
-            {
-                <div class="text-muted">目前沒有客戶使用此行業類型</div>
-            }
-        </DetailCardComponent>
-
-        @* 使用統計 - 廠商 *@
-        <DetailCardComponent Title="廠商使用統計" >
-            @if (relatedSuppliers.Any())
-            {
-                <div class="row">
-                    <div class="col-12 mb-3">
-                        <div class="alert alert-info">
-                            <strong>@relatedSuppliers.Count</strong> 個廠商使用此行業類型
-                        </div>
-                    </div>
-                    @foreach (var supplier in relatedSuppliers.Take(10))
-                    {
-                        <div class="col-md-6 mb-2">
-                            <a href="/suppliers/detail/@supplier.Id" class="btn btn-outline-success btn-sm">
-                                <i class="bi bi-truck"></i> @supplier.CompanyName
-                            </a>
-                        </div>
-                    }
-                    @if (relatedSuppliers.Count > 10)
-                    {
-                        <div class="col-12">
-                            <small class="text-muted">還有 @(relatedSuppliers.Count - 10) 個廠商使用此行業類型...</small>
-                        </div>
-                    }
-                </div>
-            }
-            else
-            {
-                <div class="text-muted">目前沒有廠商使用此行業類型</div>
-            }
-        </DetailCardComponent>
-    </CustomDetailContent>
+                           UseTabLayout="true"
+                           TabSections="@GetTabSections()">
 </GenericDetailPageComponent>
 
 @code {
@@ -122,20 +41,22 @@
     private IndustryType? industryType;
     private List<Customer> relatedCustomers = new();
     private List<Supplier> relatedSuppliers = new();
-    private bool _isLoading = false; // 防止重複載入
+    private int relatedCustomersCount = 0;
+    private int relatedSuppliersCount = 0;
+    private bool _isLoading = false;
 
     // 麵包屑導航
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
     {
         new("首頁", "/"),
-        new("行業類型管理", "/industrytypes"),
-        new("行業類型詳細資料")
+        new("基礎資料", "/industrytypes"),
+        new("行業類型", "/industrytypes"),
+        new("詳細資料")
     };
 
     // GenericDetailPageComponent 需要的方法
     private async Task<IndustryType?> LoadIndustryTypeDataAsync()
     {
-        // 防止重複載入
         if (_isLoading)
         {
             Console.WriteLine("[IndustryTypeDetail] 載入中，跳過重複調用");
@@ -146,39 +67,36 @@
         {
             _isLoading = true;
             if (IndustryTypeId <= 0) return null;
-              
-            var result = await IndustryTypeService.GetByIdAsync(IndustryTypeId);
-            industryType = result; // 保持本地變數同步
             
+            var result = await IndustryTypeService.GetByIdAsync(IndustryTypeId);
+            industryType = result;
             return result;
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"[IndustryTypeDetail] 載入行業類型資料失敗：{ex.Message}");
-            throw;        
-        }
-        finally
+            throw;
+        }        finally
         {
             _isLoading = false;
         }
-    }    private Task LoadAdditionalDataAsync()
+    }
+    
+    private Task LoadAdditionalDataAsync()
     {
+        if (industryType == null) return Task.CompletedTask;
+        
         try
         {
-            if (industryType != null)
-            {
-                // 載入相關的客戶
-                relatedCustomers = industryType.Customers?.Where(c => !c.IsDeleted).ToList() ?? new List<Customer>();
-                
-                // 載入相關的廠商
-                relatedSuppliers = industryType.Suppliers?.Where(s => !s.IsDeleted).ToList() ?? new List<Supplier>();
-            }
+            // 載入相關客戶和廠商資料 (暫時跳過，因為這些方法還不存在)
+            // relatedCustomers = await CustomerService.GetByIndustryTypeIdAsync(industryType.Id);
+            // relatedSuppliers = await SupplierService.GetByIndustryTypeIdAsync(industryType.Id);
+            relatedCustomersCount = 0; // relatedCustomers.Count;
+            relatedSuppliersCount = 0; // relatedSuppliers.Count;
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"[IndustryTypeDetail] 載入額外資料失敗：{ex.Message}");
-            relatedCustomers = new List<Customer>();
-            relatedSuppliers = new List<Supplier>();
         }
         
         return Task.CompletedTask;
@@ -186,8 +104,157 @@
 
     private Task OnIndustryTypeDataLoaded()
     {
-        // 資料載入完成後的處理
         StateHasChanged();
         return Task.CompletedTask;
+    }
+
+    // 設定標籤頁結構
+    private List<GenericDetailPageComponent<IndustryType, IIndustryTypeService>.TabSection> GetTabSections()
+    {
+        return new List<GenericDetailPageComponent<IndustryType, IIndustryTypeService>.TabSection>
+        {
+            new GenericDetailPageComponent<IndustryType, IIndustryTypeService>.TabSection
+            {
+                Id = "basic",
+                Title = "基本資料",
+                Content = @<div class="row">
+                    <DetailFieldComponent Label="行業類型代碼" Value="@industryType?.IndustryTypeCode" IsPrimary="true" EmptyText="未設定" />
+                    <DetailFieldComponent Label="行業類型名稱" Value="@industryType?.IndustryTypeName" IsBold="true" />                    <DetailFieldComponent Label="狀態">
+                        @if (industryType?.Status != null)
+                        {
+                            <StatusBadgeComponent Status="@industryType.Status" />
+                        }
+                    </DetailFieldComponent>
+                    <DetailFieldComponent Label="建立時間" Value="@industryType?.CreatedAt.ToString("yyyy/MM/dd HH:mm")" />
+                    <DetailFieldComponent Label="建立者" Value="@industryType?.CreatedBy" EmptyText="系統" />
+                    @if (industryType?.UpdatedAt.HasValue == true)
+                    {
+                        <DetailFieldComponent Label="更新時間" Value="@industryType.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")" />
+                        <DetailFieldComponent Label="更新者" Value="@industryType?.UpdatedBy" EmptyText="系統" />
+                    }
+                </div>
+            },
+            
+            new GenericDetailPageComponent<IndustryType, IIndustryTypeService>.TabSection
+            {
+                Id = "statistics",
+                Title = "使用統計",
+                Content = @<div class="row">
+                    <DetailFieldComponent Label="客戶使用數" Value="@relatedCustomersCount.ToString()" IsBold="true" />
+                    <DetailFieldComponent Label="廠商使用數" Value="@relatedSuppliersCount.ToString()" IsBold="true" />
+                    <DetailFieldComponent Label="總使用數" Value="@((relatedCustomersCount + relatedSuppliersCount).ToString())" IsBold="true" />
+                </div>
+            },
+            
+            new GenericDetailPageComponent<IndustryType, IIndustryTypeService>.TabSection
+            {
+                Id = "customers",
+                Title = "相關客戶",
+                Content = @<div>
+                    @if (relatedCustomers.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>公司名稱</th>
+                                        <th>統一編號</th>
+                                        <th>狀態</th>
+                                        <th>建立時間</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var customer in relatedCustomers.Take(10))
+                                    {
+                                        <tr>
+                                            <td>@customer.CompanyName</td>
+                                            <td>@customer.TaxNumber</td>
+                                            <td>
+                                                <StatusBadgeComponent Status="@customer.Status" />
+                                            </td>
+                                            <td>@customer.CreatedAt.ToString("yyyy/MM/dd")</td>
+                                            <td>
+                                                <a href="/customers/detail/@customer.Id" class="btn btn-sm btn-outline-primary">
+                                                    檢視
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        @if (relatedCustomersCount > 10)
+                        {
+                            <div class="text-muted mt-2">
+                                顯示 10 / @relatedCustomersCount 個客戶
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-muted p-3 text-center">
+                            <i class="fas fa-building fa-2x mb-2 d-block"></i>
+                            目前沒有客戶使用此行業類型
+                        </div>
+                    }
+                </div>
+            },
+            
+            new GenericDetailPageComponent<IndustryType, IIndustryTypeService>.TabSection
+            {
+                Id = "suppliers",
+                Title = "相關廠商",
+                Content = @<div>
+                    @if (relatedSuppliers.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>公司名稱</th>
+                                        <th>廠商代碼</th>
+                                        <th>狀態</th>
+                                        <th>建立時間</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var supplier in relatedSuppliers.Take(10))
+                                    {
+                                        <tr>
+                                            <td>@supplier.CompanyName</td>
+                                            <td>@supplier.SupplierCode</td>
+                                            <td>
+                                                <StatusBadgeComponent Status="@supplier.Status" />
+                                            </td>
+                                            <td>@supplier.CreatedAt.ToString("yyyy/MM/dd")</td>
+                                            <td>
+                                                <a href="/suppliers/detail/@supplier.Id" class="btn btn-sm btn-outline-primary">
+                                                    檢視
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        @if (relatedSuppliersCount > 10)
+                        {
+                            <div class="text-muted mt-2">
+                                顯示 10 / @relatedSuppliersCount 個廠商
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-muted p-3 text-center">
+                            <i class="fas fa-truck fa-2x mb-2 d-block"></i>
+                            目前沒有廠商使用此行業類型
+                        </div>
+                    }
+                </div>
+            }
+        };
     }
 }

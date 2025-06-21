@@ -2,8 +2,6 @@
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Details
 @using ERPCore2.Components.Shared.Badges
-@using ERPCore2.Components.Shared.Buttons
-@using ERPCore2.Components.Shared.Alerts
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
@@ -14,238 +12,80 @@
 
 <PageTitle>員工詳細資料</PageTitle>
 
-@* 顯示警告訊息 *@
-<AlertComponent 
-    Message="@alertMessage" 
-    Type="@alertType" 
-    IsVisible="@showAlert" 
-    IsDismissible="true"
-    OnDismiss="@(() => showAlert = false)" />
-
-@if (isLoading)
-{
-    <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
-        <div class="text-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">載入中...</span>
-            </div>
-            <div class="mt-2">載入員工資料中...</div>
-        </div>
-    </div>
-}
-else if (employee == null)
-{
-    <div class="alert alert-warning">
-        <h4>找不到員工資料</h4>
-        <p>指定的員工不存在或已被刪除。</p>
-        <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/employees")'>
-            返回員工列表
-        </button>
-    </div>
-}
-else
-{
-    @* 頁面標題 *@
-    <GenericHeaderComponent Title="@GetPageTitle()"
-                           Subtitle="@GetSubtitle()"
-                           TitleHeadingLevel="h1"
+<GenericDetailPageComponent TEntity="Employee" 
+                           TService="IEmployeeService"
+                           EntityId="@EmployeeId"
+                           Entity="@employee"
+                           Service="@EmployeeService"
+                           EntityName="員工"
+                           EntityNamePlural="員工"
+                           IndexRoute="/employees"
+                           EditRoute="/employees/edit"
+                           LoadingText="載入員工資料中..."
                            BreadcrumbItems="@breadcrumbItems"
-                           ShowDivider="true">
-        <ActionButtons>
-            <DetailActionButtonsComponent 
-                EntityStatus="@employee?.Status"
-                IsLoading="@isLoading"
-                EntityName="員工"
-                EntityId="@EmployeeId.ToString()"
-                EntityDisplayName="@GetFullName()"
-                EntityService="@EmployeeService"
-                ListRoute="/employees"
-                EditRoute="/employees/edit"
-                OnShowAlert="@((tuple) => ShowAlert(tuple.message, Enum.Parse<AlertComponent.AlertType>(tuple.type, true)))"
-                OnReloadData="@LoadEmployeeData"/>
-        </ActionButtons>
-    </GenericHeaderComponent>
-
-    @* 基本資料 - 使用模組化元件 *@
-    <DetailCardComponent Title="基本資料" >
-        <div class="row">
-            <DetailFieldComponent Label="員工代碼" Value="@employee.EmployeeCode" IsPrimary="true" IsBold="true" />
-            <DetailFieldComponent Label="帳號" Value="@employee.Username" IsBold="true" />
-            <DetailFieldComponent Label="姓名" Value="@GetFullName()" />
-            <DetailFieldComponent Label="電子郵件" Value="@GetEmailContact()" />
-            <DetailFieldComponent Label="部門" Value="@employee.Department" EmptyText="-" />
-            <DetailFieldComponent Label="職位" Value="@employee.Position" EmptyText="-" />
-            <DetailFieldComponent Label="狀態">
-                @if (employee?.Status != null)
-                {
-                    <StatusBadgeComponent Status="@employee.Status" />
-                }
-            </DetailFieldComponent>
-            @if (!string.IsNullOrEmpty(employee?.Remarks))
-            {
-                <DetailFieldComponent Label="備註" Value="@employee.Remarks" ColSize="12" />
-            }
-        </div>
-    </DetailCardComponent>
-
-    @* 帳號資訊 - 使用模組化元件 *@
-    <DetailCardComponent Title="帳號資訊" >
-        <div class="row">
-            <DetailFieldComponent Label="帳號狀態">
-                @if (employee.Status == EntityStatus.Active)
-                {
-                    <span class="badge bg-success">啟用</span>
-                }
-                else
-                {
-                    <span class="badge bg-danger">停用</span>
-                }
-            </DetailFieldComponent>
-            <DetailFieldComponent Label="鎖定狀態">
-                @if (employee.IsLocked)
-                {
-                    <span class="badge bg-danger">已鎖定</span>
-                }
-                else
-                {
-                    <span class="badge bg-success">正常</span>
-                }
-            </DetailFieldComponent>
-            @if (employee.FailedLoginAttempts > 0)
-            {
-                <DetailFieldComponent Label="失敗登入次數" Value="@employee.FailedLoginAttempts.ToString()" />
-            }
-            @if (employee.LockedAt.HasValue)
-            {
-                <DetailFieldComponent Label="鎖定時間" Value="@employee.LockedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
-            }
-            @if (employee.LastLoginAt.HasValue)
-            {
-                <DetailFieldComponent Label="最後登入時間" Value="@employee.LastLoginAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
-            }
-            else
-            {
-                <DetailFieldComponent Label="登入記錄" Value='"從未登入"' />
-            }
-        </div>
-    </DetailCardComponent>
-
-    @* 角色權限 - 使用模組化元件 *@
-    <DetailCardComponent Title="角色權限" >
-        <div class="row">
-            @if (employee.Role != null)
-            {
-                <DetailFieldComponent Label="角色名稱" Value="@employee.Role.RoleName" IsBold="true" />
-                @if (!string.IsNullOrWhiteSpace(employee.Role.Description))
-                {
-                    <DetailFieldComponent Label="角色描述" Value="@employee.Role.Description" />
-                }
-            }
-            else
-            {
-                <div class="col-12">
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        未設定角色
-                    </div>
-                </div>
-            }
-        </div>
-    </DetailCardComponent>
-
-    @* 系統資訊 - 使用模組化元件 *@
-    <DetailCardComponent Title="系統資訊" >
-        <div class="row">
-            <DetailFieldComponent Label="建立時間" Value="@employee.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")" />
-            <DetailFieldComponent Label="建立者" Value="@employee.CreatedBy" EmptyText="系統" />
-            @if (employee.UpdatedAt.HasValue)
-            {
-                <DetailFieldComponent Label="最後更新時間" Value="@employee.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
-                <DetailFieldComponent Label="更新者" Value="@employee.UpdatedBy" EmptyText="無" />
-            }
-        </div>
-    </DetailCardComponent>
-}
+                           DataLoader="@LoadEmployeeDataAsync"
+                           AdditionalDataLoader="@LoadAdditionalDataAsync"
+                           EntityTitleSelector="@(e => GetFullName())"
+                           EntitySubtitleSelector="@(e => $"員工代碼：{e.EmployeeCode}")"
+                           EntityDisplayNameSelector="@(e => GetFullName())"
+                           OnDataLoaded="@OnEmployeeDataLoaded"
+                           UseTabLayout="true"
+                           TabSections="@GetTabSections()">
+</GenericDetailPageComponent>
 
 @code {
     [Parameter] public int EmployeeId { get; set; }
 
     private Employee? employee;
-    private bool isLoading = true;
-    
+    private bool _isLoading = false;
+
     // 麵包屑導航
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
-    
-    // Alert 相關變數
-    private bool showAlert = false;
-    private string alertMessage = string.Empty;
-    private AlertComponent.AlertType alertType = AlertComponent.AlertType.Info;
-
-    protected override async Task OnInitializedAsync()
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
     {
-        await LoadEmployeeData();
-        InitializeBreadcrumbs();
-    }
+        new("首頁", "/"),
+        new("員工管理", "/employees"),
+        new("員工詳細資料")
+    };
 
-    protected override async Task OnParametersSetAsync()
+    // GenericDetailPageComponent 需要的方法
+    private async Task<Employee?> LoadEmployeeDataAsync()
     {
-        if (EmployeeId > 0)
+        if (_isLoading)
         {
-            await LoadEmployeeData();
-            InitializeBreadcrumbs();
+            Console.WriteLine("[EmployeeDetail] 載入中，跳過重複調用");
+            return employee;
         }
-    }
-
-    private async Task LoadEmployeeData()
-    {
+        
         try
         {
-            isLoading = true;
-            StateHasChanged();
-
-            // 載入員工基本資料
-            employee = await EmployeeService.GetByIdAsync(EmployeeId);
+            _isLoading = true;
+            if (EmployeeId <= 0) return null;
+            
+            var result = await EmployeeService.GetByIdAsync(EmployeeId);
+            employee = result;
+            return result;
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入員工資料失敗：", ex.Message);
+            Console.Error.WriteLine($"[EmployeeDetail] 載入員工資料失敗：{ex.Message}");
+            throw;
         }
         finally
         {
-            isLoading = false;
-            StateHasChanged();
+            _isLoading = false;
         }
     }
 
-    private void InitializeBreadcrumbs()
+    private Task LoadAdditionalDataAsync()
     {
-        var fullName = GetFullName();
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
-        {
-            new("首頁", "/"),
-            new("員工管理", "/employees"),
-            new($"{fullName}")
-        };
+        // 由於GetByIdAsync已經Include所有關聯資料，這裡不需要額外查詢
+        return Task.CompletedTask;
     }
 
-    private void ShowAlert(string message, AlertComponent.AlertType type)
+    private Task OnEmployeeDataLoaded()
     {
-        alertMessage = message;
-        alertType = type;
-        showAlert = true;
         StateHasChanged();
-    }
-
-    private string GetPageTitle()
-    {
-        if (employee == null) return "員工詳細資料";
-        return $"員工資料 - {GetFullName()}";
-    }
-
-    private string GetSubtitle()
-    {
-        if (employee == null) return "";
-        return $"員工代碼：{employee.EmployeeCode}";
+        return Task.CompletedTask;
     }
 
     private string GetFullName()
@@ -265,65 +105,117 @@ else
         return emailContact?.ContactValue ?? "-";
     }
 
-    private void EditEmployee()
+    // 設定標籤頁結構
+    private List<GenericDetailPageComponent<Employee, IEmployeeService>.TabSection> GetTabSections()
     {
-        Navigation.NavigateTo($"/employees/edit/{EmployeeId}");
-    }
-
-    private async Task LockEmployee()
-    {
-        try
+        return new List<GenericDetailPageComponent<Employee, IEmployeeService>.TabSection>
         {
-            var result = await EmployeeService.SetEmployeeActiveStatusAsync(EmployeeId, false);
-            if (result.IsSuccess)
+            new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
             {
-                await LoadEmployeeData();
-                ShowAlert("員工帳號已鎖定", AlertComponent.AlertType.Success);
-            }
-            else
+                Id = "basic",
+                Title = "基本資料",
+                Content = @<div class="row">
+                    <DetailFieldComponent Label="員工代碼" Value="@employee?.EmployeeCode" IsPrimary="true" IsBold="true" />
+                    <DetailFieldComponent Label="帳號" Value="@employee?.Username" IsBold="true" />
+                    <DetailFieldComponent Label="姓名" Value="@GetFullName()" />
+                    <DetailFieldComponent Label="電子郵件" Value="@GetEmailContact()" />
+                    <DetailFieldComponent Label="部門" Value="@employee?.Department" EmptyText="-" />
+                    <DetailFieldComponent Label="職位" Value="@employee?.Position" EmptyText="-" />
+                    <DetailFieldComponent Label="狀態">
+                        @if (employee?.Status != null)
+                        {
+                            <StatusBadgeComponent Status="@employee.Status" />
+                        }
+                    </DetailFieldComponent>
+                    @if (!string.IsNullOrEmpty(employee?.Remarks))
+                    {
+                        <DetailFieldComponent Label="備註" Value="@employee.Remarks" ColSize="12" />
+                    }
+                </div>
+            },
+            
+            new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
             {
-                ShowAlert(result.ErrorMessage ?? "鎖定失敗", AlertComponent.AlertType.Danger);
-            }
-        }
-        catch (Exception)
-        {
-            ShowAlert("鎖定員工帳號時發生錯誤", AlertComponent.AlertType.Danger);
-        }
-    }
-
-    private async Task UnlockEmployee()
-    {
-        try
-        {
-            var result = await EmployeeService.SetEmployeeActiveStatusAsync(EmployeeId, true);
-            if (result.IsSuccess)
+                Id = "account",
+                Title = "帳號資訊",
+                Content = @<div class="row">
+                    <DetailFieldComponent Label="帳號狀態">
+                        @if (employee?.Status == EntityStatus.Active)
+                        {
+                            <span class="badge bg-success">啟用</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">停用</span>
+                        }
+                    </DetailFieldComponent>
+                    <DetailFieldComponent Label="鎖定狀態">
+                        @if (employee?.IsLocked == true)
+                        {
+                            <span class="badge bg-danger">已鎖定</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">正常</span>
+                        }
+                    </DetailFieldComponent>
+                    @if (employee?.FailedLoginAttempts > 0)
+                    {
+                        <DetailFieldComponent Label="失敗登入次數" Value="@employee.FailedLoginAttempts.ToString()" />
+                    }
+                    @if (employee?.LockedAt.HasValue == true)
+                    {
+                        <DetailFieldComponent Label="鎖定時間" Value="@employee.LockedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
+                    }
+                    @if (employee?.LastLoginAt.HasValue == true)
+                    {
+                        <DetailFieldComponent Label="最後登入時間" Value="@employee.LastLoginAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
+                    }                    else
+                    {
+                        <DetailFieldComponent Label="登入記錄" Value="@("從未登入")" />
+                    }
+                </div>
+            },
+            
+            new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
             {
-                await LoadEmployeeData();
-                ShowAlert("員工帳號已解鎖", AlertComponent.AlertType.Success);
-            }
-            else
+                Id = "role",
+                Title = "角色權限",
+                Content = @<div class="row">
+                    @if (employee?.Role != null)
+                    {
+                        <DetailFieldComponent Label="角色名稱" Value="@employee.Role.RoleName" IsBold="true" />
+                        @if (!string.IsNullOrWhiteSpace(employee.Role.Description))
+                        {
+                            <DetailFieldComponent Label="角色描述" Value="@employee.Role.Description" />
+                        }
+                    }
+                    else
+                    {
+                        <div class="col-12">
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                未設定角色
+                            </div>
+                        </div>
+                    }
+                </div>
+            },
+            
+            new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
             {
-                ShowAlert(result.ErrorMessage ?? "解鎖失敗", AlertComponent.AlertType.Danger);
+                Id = "system",
+                Title = "系統資訊",
+                Content = @<div class="row">
+                    <DetailFieldComponent Label="建立時間" Value="@employee?.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")" />
+                    <DetailFieldComponent Label="建立者" Value="@employee?.CreatedBy" EmptyText="系統" />
+                    @if (employee?.UpdatedAt.HasValue == true)
+                    {
+                        <DetailFieldComponent Label="最後更新時間" Value="@employee.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
+                        <DetailFieldComponent Label="更新者" Value="@employee?.UpdatedBy" EmptyText="無" />
+                    }
+                </div>
             }
-        }
-        catch (Exception)
-        {
-            ShowAlert("解鎖員工帳號時發生錯誤", AlertComponent.AlertType.Danger);
-        }
-    }
-
-    private Task ResetPassword()
-    {
-        try
-        {
-            // 這裡應該調用 IAuthenticationService 的 ResetPasswordAsync 方法
-            // 由於目前的介面設計，我們暫時顯示提示
-            ShowAlert("密碼重設功能需要實作 IAuthenticationService.ResetPasswordAsync 方法", AlertComponent.AlertType.Info);
-        }
-        catch (Exception)
-        {
-            ShowAlert("重設密碼時發生錯誤", AlertComponent.AlertType.Danger);
-        }
-        return Task.CompletedTask;
+        };
     }
 }

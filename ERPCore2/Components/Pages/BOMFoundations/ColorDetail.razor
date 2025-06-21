@@ -9,165 +9,129 @@
 @inject IColorService ColorService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
-@using ERPCore2.Components.Shared.Alerts
 @rendermode InteractiveServer
 
-@* 顯示警告訊息 *@
-<AlertComponent 
-    Message="@alertMessage" 
-    Type="@alertType" 
-    IsVisible="@showAlert" 
-    IsDismissible="true"
-    OnDismiss="@(() => showAlert = false)" />
+<PageTitle>顏色詳細資料</PageTitle>
 
-@if (isLoading)
-{
-    <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
-        <div class="text-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">載入中...</span>
-            </div>
-            <div class="mt-2">載入顏色資料中...</div>
-        </div>
-    </div>
-}
-else if (color == null)
-{
-    <div class="alert alert-warning">
-        <h4>找不到顏色資料</h4>
-        <p>指定的顏色不存在或已被刪除。</p>
-        <button class="btn btn-primary" @onclick="BackToColorList">
-            返回顏色列表
-        </button>
-    </div>
-}
-else
-{
-    <GenericHeaderComponent Title="@color.Name" 
-                          Subtitle="@($"顏色代碼：{color.Code}")"
-                          BreadcrumbItems="@breadcrumbItems">        
-        <ActionButtons>
-            <DetailActionButtonsComponent 
-                EntityStatus="@color?.Status"
-                IsLoading="@isLoading"
-                EntityName="顏色"
-                EntityId="@ColorId.ToString()"
-                EntityDisplayName="@color?.Name"
-                EntityService="@ColorService"
-                ListRoute="/BOMFoundation/colors"
-                EditRoute="/BOMFoundation/colors/edit"
-                OnShowAlert="@((tuple) => ShowAlert(tuple.message, Enum.Parse<AlertComponent.AlertType>(tuple.type, true)))"
-                OnReloadData="@LoadColorData"/>
-        </ActionButtons>
-    </GenericHeaderComponent>
-
-    @* 基本資訊 - 使用模組化元件 *@
-    <DetailCardComponent Title="基本資訊" >
-        <div class="row">
-            <DetailFieldComponent Label="顏色代碼" Value="@color.Code" IsPrimary="true" />
-            <DetailFieldComponent Label="顏色名稱" Value="@color.Name" IsBold="true" />
-            <DetailFieldComponent Label="狀態">
-                @if (color.Status == Data.Enums.EntityStatus.Active)
-                {
-                    <span class="badge bg-success">啟用</span>
-                }
-                else
-                {
-                    <span class="badge bg-danger">停用</span>
-                }
-            </DetailFieldComponent>
-            @if (!string.IsNullOrEmpty(color.Description))
-            {
-                <DetailFieldComponent Label="描述" Value="@color.Description" ColSize="12" />
-            }
-            @if (!string.IsNullOrEmpty(color.Remarks))
-            {
-                <DetailFieldComponent Label="備註" Value="@color.Remarks" ColSize="12" />
-            }
-        </div>
-    </DetailCardComponent>
-
-    @* 系統資訊 - 使用模組化元件 *@
-    <DetailCardComponent Title="系統資訊" >
-        <div class="row">
-            <DetailFieldComponent Label="建立時間" Value="@color.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")" />
-            <DetailFieldComponent Label="建立者" Value="@color.CreatedBy" EmptyText="系統" />
-            @if (color.UpdatedAt.HasValue)
-            {
-                <DetailFieldComponent Label="更新時間" Value="@color.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
-                <DetailFieldComponent Label="更新者" Value="@color.UpdatedBy" EmptyText="無" />
-            }
-        </div>
-    </DetailCardComponent>
-}
+<GenericDetailPageComponent TEntity="Color" 
+                           TService="IColorService"
+                           EntityId="@ColorId"
+                           Entity="@color"
+                           Service="@ColorService"
+                           EntityName="顏色"
+                           EntityNamePlural="顏色"
+                           IndexRoute="/BOMFoundation/colors"
+                           EditRoute="/BOMFoundation/colors/edit"
+                           LoadingText="載入顏色資料中..."
+                           BreadcrumbItems="@breadcrumbItems"
+                           DataLoader="@LoadColorDataAsync"
+                           AdditionalDataLoader="@LoadAdditionalDataAsync"
+                           EntityTitleSelector="@(c => c.Name)"
+                           EntitySubtitleSelector="@(c => $"顏色代碼：{c.Code ?? "未設定"}")"
+                           EntityDisplayNameSelector="@(c => c.Name)"
+                           OnDataLoaded="@OnColorDataLoaded"
+                           UseTabLayout="true"
+                           TabSections="@GetTabSections()">
+</GenericDetailPageComponent>
 
 @code {
     [Parameter] public int ColorId { get; set; }
 
     private Color? color;
-    private bool isLoading = true;
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private bool _isLoading = false;
 
-    // Alert 相關變數
-    private bool showAlert = false;
-    private string alertMessage = string.Empty;
-    private AlertComponent.AlertType alertType = AlertComponent.AlertType.Info;
-
-    protected override async Task OnInitializedAsync()
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
     {
-        InitializeBreadcrumb();
-        await LoadColorData();
-    }
+        new("首頁", "/"),
+        new("BOM 基礎資料", "/BOMFoundation"),
+        new("顏色管理", "/BOMFoundation/colors"),
+        new("顏色詳細資料")
+    };
 
-    protected override async Task OnParametersSetAsync()
+    // GenericDetailPageComponent 需要的方法
+    private async Task<Color?> LoadColorDataAsync()
     {
-        if (ColorId > 0)
+        if (_isLoading)
         {
-            await LoadColorData();
+            Console.WriteLine("[ColorDetail] 載入中，跳過重複調用");
+            return color;
         }
-    }
-
-    private void InitializeBreadcrumb()
-    {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
-        {
-            new() { Text = "首頁", Href = "/" },
-            new() { Text = "BOM 基礎資料", Href = "/BOMFoundation" },
-            new() { Text = "顏色管理", Href = "/BOMFoundation/colors" },
-            new() { Text = "顏色詳情" }
-        };
-    }
-
-    private async Task LoadColorData()
-    {
+        
         try
         {
-            isLoading = true;
-            StateHasChanged();
-
-            color = await ColorService.GetByIdAsync(ColorId);
+            _isLoading = true;
+            if (ColorId <= 0) return null;
+            
+            var result = await ColorService.GetByIdAsync(ColorId);
+            color = result;
+            return result;
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入顏色資料失敗：", ex.Message);
+            Console.Error.WriteLine($"[ColorDetail] 載入顏色資料失敗：{ex.Message}");
+            throw;
         }
         finally
         {
-            isLoading = false;
-            StateHasChanged();
+            _isLoading = false;
         }
     }
 
-    private void BackToColorList()
+    private Task LoadAdditionalDataAsync()
     {
-        Navigation.NavigateTo("/BOMFoundation/colors");
+        return Task.CompletedTask;
     }
 
-    private void ShowAlert(string message, AlertComponent.AlertType type)
+    private Task OnColorDataLoaded()
     {
-        alertMessage = message;
-        alertType = type;
-        showAlert = true;
         StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    // 設定標籤頁結構
+    private List<GenericDetailPageComponent<Color, IColorService>.TabSection> GetTabSections()
+    {
+        return new List<GenericDetailPageComponent<Color, IColorService>.TabSection>
+        {
+            new GenericDetailPageComponent<Color, IColorService>.TabSection
+            {
+                Id = "basic",
+                Title = "基本資料",
+                Content = @<div class="row">
+                    <DetailFieldComponent Label="顏色代碼" Value="@color?.Code" IsPrimary="true" EmptyText="未設定" />
+                    <DetailFieldComponent Label="顏色名稱" Value="@color?.Name" IsBold="true" />
+                    <DetailFieldComponent Label="狀態">
+                        @if (color?.Status != null)
+                        {
+                            <StatusBadgeComponent Status="@color.Status" />
+                        }
+                    </DetailFieldComponent>
+                    @if (!string.IsNullOrEmpty(color?.Description))
+                    {
+                        <DetailFieldComponent Label="描述" Value="@color.Description" ColSize="12" />
+                    }
+                    @if (!string.IsNullOrEmpty(color?.Remarks))
+                    {
+                        <DetailFieldComponent Label="備註" Value="@color.Remarks" ColSize="12" />
+                    }
+                </div>
+            },
+            
+            new GenericDetailPageComponent<Color, IColorService>.TabSection
+            {
+                Id = "system",
+                Title = "系統資訊",
+                Content = @<div class="row">
+                    <DetailFieldComponent Label="建立時間" Value="@color?.CreatedAt.ToString("yyyy/MM/dd HH:mm")" />
+                    <DetailFieldComponent Label="建立者" Value="@color?.CreatedBy" EmptyText="系統" />
+                    @if (color?.UpdatedAt.HasValue == true)
+                    {
+                        <DetailFieldComponent Label="更新時間" Value="@color.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")" />
+                        <DetailFieldComponent Label="更新者" Value="@color?.UpdatedBy" EmptyText="系統" />
+                    }
+                </div>
+            }
+        };
     }
 }
