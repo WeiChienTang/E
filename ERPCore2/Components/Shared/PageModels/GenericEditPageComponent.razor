@@ -13,7 +13,6 @@
 @* 頁面標題 *@
 <GenericHeaderComponent Title="@GetPageTitle()"
                        Subtitle="@GetPageSubtitle()"
-                       TitleIcon="@GetPageIcon()"
                        HeadingLevel="h1"
                        BreadcrumbItems="@BreadcrumbItems"
                        IsLoading="@IsLoading"
@@ -92,13 +91,11 @@
     [Parameter] public int? Id { get; set; }
     [Parameter] public TEntity Entity { get; set; } = new();
     [Parameter] public TService Service { get; set; } = default!;
-    
-    // 頁面基本設定
+      // 頁面基本設定
     [Parameter] public string EntityName { get; set; } = "資料";
     [Parameter] public string EntityNamePlural { get; set; } = "資料";
     [Parameter] public string PageTitle { get; set; } = string.Empty;
     [Parameter] public string PageSubtitle { get; set; } = string.Empty;
-    [Parameter] public string PageIcon { get; set; } = string.Empty;
     [Parameter] public string IndexRoute { get; set; } = "/";
     
     // 導航URL設定
@@ -339,15 +336,7 @@
             
         return Id.HasValue ? $"修改{EntityName}資料" : $"建立新的{EntityName}資料";
     }
-    
-    private string GetPageIcon()
-    {
-        if (!string.IsNullOrEmpty(PageIcon))
-            return PageIcon;
-            
-        return Id.HasValue ? "pencil-square" : "plus-circle";    }
-    
-    // ===== 通知方法 =====
+      // ===== 通知方法 =====
     
     private async Task ShowSuccessMessage(string message)
     {

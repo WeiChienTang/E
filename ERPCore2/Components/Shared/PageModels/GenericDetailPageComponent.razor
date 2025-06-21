@@ -43,14 +43,12 @@ else if (Entity == null && !IsLoading)
     </div>
 }
 else
-{
-    @* 頁面標題 *@
+{    @* 頁面標題 *@
     <GenericHeaderComponent Title="@GetPageTitle()"
                            Subtitle="@GetPageSubtitle()"
-                           TitleIcon="@PageIcon"
                            HeadingLevel="h1"
                            BreadcrumbItems="@BreadcrumbItems"
-                           ShowDivider="true">        
+                           ShowDivider="true">
         <ActionButtons>
             <DetailActionButtonsComponent 
                 EntityStatus="@GetEntityStatus()"
@@ -98,15 +96,13 @@ else
     
     // 核心參數
     [Parameter] public int? EntityId { get; set; }
-    [Parameter] public TEntity? Entity { get; set; }
-    [Parameter] public TService Service { get; set; } = default!;
+    [Parameter] public TEntity? Entity { get; set; }    [Parameter] public TService Service { get; set; } = default!;
     
     // 頁面設定
     [Parameter] public string EntityName { get; set; } = "資料";
     [Parameter] public string EntityNamePlural { get; set; } = "資料";
     [Parameter] public string PageTitle { get; set; } = string.Empty;
     [Parameter] public string PageSubtitle { get; set; } = string.Empty;
-    [Parameter] public string PageIcon { get; set; } = "info-circle";
     [Parameter] public string IndexRoute { get; set; } = "/";
     [Parameter] public string EditRoute { get; set; } = "/edit";
     [Parameter] public string LoadingText { get; set; } = "載入中...";
