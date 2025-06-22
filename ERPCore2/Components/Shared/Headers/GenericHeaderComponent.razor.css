@@ -2,7 +2,6 @@
 
 /* 頁面標題容器 */
 .page-header {
-    
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -16,7 +15,7 @@
 
 /* 卡片標題容器 */
 .card-header-title {
-    
+
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -26,6 +25,7 @@
 
 /* 標題包裝器 */
 .title-wrapper {
+    
     flex: 1;
     display: flex;
     align-items: center;
@@ -41,6 +41,7 @@
 
 /* 標題樣式 */
 .page-title {
+    
     margin-bottom: 0;
     color: var(--text-primary);
     font-weight: 700;
@@ -48,6 +49,7 @@
 }
 
 .card-title-header {
+    
     margin-bottom: 0;
     color: inherit;
     font-weight: 600;
