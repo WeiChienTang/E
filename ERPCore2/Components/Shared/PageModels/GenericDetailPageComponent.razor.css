@@ -10,7 +10,6 @@
 
 /* 標籤頁標題區域 */
 .detail-tabs-modern .card-header {
-    background-color: var(  --primary-blue-alt);
     border-bottom: 1px solid var(--detail-tab-border);
     padding: 0;
 }
