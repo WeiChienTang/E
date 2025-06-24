@@ -125,19 +125,19 @@
                     }
                 </div>
             },
-            
-            new GenericDetailPageComponent<Weather, IWeatherService>.TabSection
+              new GenericDetailPageComponent<Weather, IWeatherService>.TabSection
             {
                 Id = "system",
                 Title = "系統資訊",
-                Content = @<div class="row">
-                    <DetailFieldComponent Label="建立時間" Value="@weather?.CreatedAt.ToString("yyyy/MM/dd HH:mm")" />
-                    <DetailFieldComponent Label="建立者" Value="@weather?.CreatedBy" EmptyText="系統" />
-                    @if (weather?.UpdatedAt.HasValue == true)
-                    {
-                        <DetailFieldComponent Label="更新時間" Value="@weather.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")" />
-                        <DetailFieldComponent Label="更新者" Value="@weather?.UpdatedBy" EmptyText="系統" />
-                    }
+                Content = @<div>
+                    <SystemInfoDisplayComponent 
+                        CreatedAt="@(weather?.CreatedAt ?? DateTime.MinValue)"
+                        UpdatedAt="@weather?.UpdatedAt"
+                        CreatedBy="@weather?.CreatedBy"
+                        UpdatedBy="@weather?.UpdatedBy"
+                        Remarks="@weather?.Remarks"
+                        ShowTimeline="true"
+                        ShowRemarks="true" />
                 </div>
             }
         };

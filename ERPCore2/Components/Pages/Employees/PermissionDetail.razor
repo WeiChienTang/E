@@ -152,20 +152,19 @@
                         </div>
                     }
                 </div>
-            },
-
-            new GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection
+            },            new GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection
             {
                 Id = "system",
                 Title = "系統資訊",
-                Content = @<div class="row">
-                    <DetailFieldComponent Label="建立時間" Value="@permission?.CreatedAt.ToString("yyyy/MM/dd HH:mm")" />
-                    <DetailFieldComponent Label="建立者" Value="@permission?.CreatedBy" EmptyText="系統" />
-                    @if (permission?.UpdatedAt.HasValue == true)
-                    {
-                        <DetailFieldComponent Label="更新時間" Value="@permission.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")" />
-                        <DetailFieldComponent Label="更新者" Value="@permission?.UpdatedBy" EmptyText="系統" />
-                    }
+                Content = @<div>
+                    <SystemInfoDisplayComponent 
+                        CreatedAt="@(permission?.CreatedAt ?? DateTime.MinValue)"
+                        UpdatedAt="@permission?.UpdatedAt"
+                        CreatedBy="@permission?.CreatedBy"
+                        UpdatedBy="@permission?.UpdatedBy"
+                        Remarks="@permission?.Remarks"
+                        ShowTimeline="true"
+                        ShowRemarks="true" />
                 </div>
             }
         };

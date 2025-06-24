@@ -153,19 +153,19 @@
                     }
                 </div>
             },
-            
-            new GenericDetailPageComponent<Material, IMaterialService>.TabSection
+              new GenericDetailPageComponent<Material, IMaterialService>.TabSection
             {
                 Id = "system",
                 Title = "系統資訊",
-                Content = @<div class="row">
-                    <DetailFieldComponent Label="建立時間" Value="@material?.CreatedAt.ToString("yyyy/MM/dd HH:mm")" />
-                    <DetailFieldComponent Label="建立者" Value="@material?.CreatedBy" EmptyText="系統" />
-                    @if (material?.UpdatedAt.HasValue == true)
-                    {
-                        <DetailFieldComponent Label="更新時間" Value="@material.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")" />
-                        <DetailFieldComponent Label="更新者" Value="@material?.UpdatedBy" EmptyText="系統" />
-                    }
+                Content = @<div>
+                    <SystemInfoDisplayComponent 
+                        CreatedAt="@(material?.CreatedAt ?? DateTime.MinValue)"
+                        UpdatedAt="@material?.UpdatedAt"
+                        CreatedBy="@material?.CreatedBy"
+                        UpdatedBy="@material?.UpdatedBy"
+                        Remarks="@material?.Remarks"
+                        ShowTimeline="true"
+                        ShowRemarks="true" />
                 </div>
             }
         };

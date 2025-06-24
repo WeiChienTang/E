@@ -245,16 +245,19 @@
                     }
                 </div>
             },
-            
-            new GenericDetailPageComponent<Supplier, ISupplierService>.TabSection
+              new GenericDetailPageComponent<Supplier, ISupplierService>.TabSection
             {
                 Id = "system",
                 Title = "系統資訊",
-                Content = @<div class="row">
-                    <DetailFieldComponent Label="建立日期" Value="@supplier?.CreatedAt.ToString("yyyy/MM/dd HH:mm")" />
-                    <DetailFieldComponent Label="建立者" Value="@supplier?.CreatedBy" />
-                    <DetailFieldComponent Label="最後更新" Value="@(supplier?.UpdatedAt?.ToString("yyyy/MM/dd HH:mm"))" />
-                    <DetailFieldComponent Label="更新者" Value="@supplier?.UpdatedBy" />
+                Content = @<div>
+                    <SystemInfoDisplayComponent 
+                        CreatedAt="@(supplier?.CreatedAt ?? DateTime.MinValue)"
+                        UpdatedAt="@supplier?.UpdatedAt"
+                        CreatedBy="@supplier?.CreatedBy"
+                        UpdatedBy="@supplier?.UpdatedBy"
+                        Remarks="@supplier?.Remarks"
+                        ShowTimeline="true"
+                        ShowRemarks="true" />
                 </div>
             }
         };

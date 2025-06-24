@@ -201,19 +201,19 @@
                     }
                 </div>
             },
-            
-            new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
+              new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
             {
                 Id = "system",
                 Title = "系統資訊",
-                Content = @<div class="row">
-                    <DetailFieldComponent Label="建立時間" Value="@employee?.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")" />
-                    <DetailFieldComponent Label="建立者" Value="@employee?.CreatedBy" EmptyText="系統" />
-                    @if (employee?.UpdatedAt.HasValue == true)
-                    {
-                        <DetailFieldComponent Label="最後更新時間" Value="@employee.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
-                        <DetailFieldComponent Label="更新者" Value="@employee?.UpdatedBy" EmptyText="無" />
-                    }
+                Content = @<div>
+                    <SystemInfoDisplayComponent 
+                        CreatedAt="@(employee?.CreatedAt ?? DateTime.MinValue)"
+                        UpdatedAt="@employee?.UpdatedAt"
+                        CreatedBy="@employee?.CreatedBy"
+                        UpdatedBy="@employee?.UpdatedBy"
+                        Remarks="@employee?.Remarks"
+                        ShowTimeline="true"
+                        ShowRemarks="true" />
                 </div>
             }
         };

@@ -115,19 +115,19 @@
                     }
                 </div>
             },
-            
-            new GenericDetailPageComponent<Color, IColorService>.TabSection
+              new GenericDetailPageComponent<Color, IColorService>.TabSection
             {
                 Id = "system",
                 Title = "系統資訊",
-                Content = @<div class="row">
-                    <DetailFieldComponent Label="建立時間" Value="@color?.CreatedAt.ToString("yyyy/MM/dd HH:mm")" />
-                    <DetailFieldComponent Label="建立者" Value="@color?.CreatedBy" EmptyText="系統" />
-                    @if (color?.UpdatedAt.HasValue == true)
-                    {
-                        <DetailFieldComponent Label="更新時間" Value="@color.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")" />
-                        <DetailFieldComponent Label="更新者" Value="@color?.UpdatedBy" EmptyText="系統" />
-                    }
+                Content = @<div>
+                    <SystemInfoDisplayComponent 
+                        CreatedAt="@(color?.CreatedAt ?? DateTime.MinValue)"
+                        UpdatedAt="@color?.UpdatedAt"
+                        CreatedBy="@color?.CreatedBy"
+                        UpdatedBy="@color?.UpdatedBy"
+                        Remarks="@color?.Remarks"
+                        ShowTimeline="true"
+                        ShowRemarks="true" />
                 </div>
             }
         };

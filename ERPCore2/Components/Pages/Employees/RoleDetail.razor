@@ -109,7 +109,8 @@
                     </DetailFieldComponent>
                     <DetailFieldComponent Label="員工數量" Value="@(role?.Employees?.Count.ToString() ?? "0")" />
                 </div>
-            },            new GenericDetailPageComponent<Role, IRoleService>.TabSection
+            },            
+            new GenericDetailPageComponent<Role, IRoleService>.TabSection
             {
                 Id = "permissions",
                 Title = "權限設定",
@@ -151,21 +152,21 @@
                         </div>
                     }
                 </div>
-            },
-
-            new GenericDetailPageComponent<Role, IRoleService>.TabSection
+            },            new GenericDetailPageComponent<Role, IRoleService>.TabSection
             {
                 Id = "system",
                 Title = "系統資訊",
-                Content = @<div class="row">
-                    <DetailFieldComponent Label="建立時間" Value="@role?.CreatedAt.ToString("yyyy/MM/dd HH:mm")" />
-                    <DetailFieldComponent Label="建立者" Value="@role?.CreatedBy" EmptyText="系統" />
-                    @if (role?.UpdatedAt.HasValue == true)
-                    {
-                        <DetailFieldComponent Label="更新時間" Value="@role.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")" />
-                        <DetailFieldComponent Label="更新者" Value="@role?.UpdatedBy" EmptyText="系統" />
-                    }
+                Content = @<div>
+                    <SystemInfoDisplayComponent 
+                        CreatedAt="@(role?.CreatedAt ?? DateTime.MinValue)"
+                        UpdatedAt="@role?.UpdatedAt"
+                        CreatedBy="@role?.CreatedBy"
+                        UpdatedBy="@role?.UpdatedBy"
+                        Remarks="@role?.Remarks"
+                        ShowTimeline="true"
+                        ShowRemarks="true" />
                 </div>
-            }        };
+            }
+            };
     }
 }
