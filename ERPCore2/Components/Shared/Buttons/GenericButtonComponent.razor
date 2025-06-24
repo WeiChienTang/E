@@ -1,11 +1,12 @@
-@* 基礎按鈕組件 - 遵循設計原則使用深藍色主色調 *@
+@* 統一按鈕組件 - 取代所有HTML button標籤的主要共享組件 *@
 @using ERPCore2.Components.Shared.Buttons
 
 <button class="btn @GetButtonClass()" 
         type="@(IsSubmit ? "submit" : Type)"
-        title="@Title"
+        title="@(string.IsNullOrEmpty(Title) ? Text : Title)"
         disabled="@IsDisabled"
-        @onclick="HandleClick">
+        @onclick="HandleClick"
+        @attributes="AdditionalAttributes">
     @if (!string.IsNullOrEmpty(IconClass))
     {
         <i class="@IconClass @(string.IsNullOrEmpty(Text) ? "" : "me-2")"></i>
@@ -18,56 +19,99 @@
     @ChildContent
 </button>
 
-@code {    
+@code {
+    /// <summary>
+    /// 按鈕顯示文字 - 主要參數
+    /// </summary>
     [Parameter] public string Text { get; set; } = string.Empty;
-    [Parameter] public string CssClass { get; set; } = string.Empty;
-    [Parameter] public string Title { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 按鈕類型 - 主要參數，決定按鈕的顏色和樣式
+    /// </summary>
     [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Primary;
+    
+    /// <summary>
+    /// 按鈕尺寸
+    /// </summary>
     [Parameter] public ButtonSize Size { get; set; } = ButtonSize.Normal;
-    [Parameter] public string Type { get; set; } = "button";
-    [Parameter] public bool IsDisabled { get; set; } = false;
-    [Parameter] public bool IsLoading { get; set; } = false;
-    [Parameter] public bool IsSubmit { get; set; } = false;
-    [Parameter] public string IconClass { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 點擊事件處理
+    /// </summary>
     [Parameter] public EventCallback OnClick { get; set; }
+    
+    /// <summary>
+    /// 自定義CSS類別
+    /// </summary>
+    [Parameter] public string CssClass { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 按鈕標題提示
+    /// </summary>
+    [Parameter] public string Title { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 按鈕HTML類型
+    /// </summary>
+    [Parameter] public string Type { get; set; } = "button";
+    
+    /// <summary>
+    /// 是否禁用
+    /// </summary>
+    [Parameter] public bool IsDisabled { get; set; } = false;
+    
+    /// <summary>
+    /// 是否顯示載入狀態
+    /// </summary>
+    [Parameter] public bool IsLoading { get; set; } = false;
+    
+    /// <summary>
+    /// 是否為提交按鈕
+    /// </summary>
+    [Parameter] public bool IsSubmit { get; set; } = false;
+    
+    /// <summary>
+    /// 圖示CSS類別
+    /// </summary>
+    [Parameter] public string IconClass { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 子內容
+    /// </summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
-
-    protected override void OnParametersSet()
-    {
-        base.OnParametersSet();
-    }
-
-    private async Task HandleClick()
+    
+    /// <summary>
+    /// 其他HTML屬性
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)] 
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }    private async Task HandleClick()
     {        
+        if (IsDisabled || IsLoading)
+            return;
+            
         try
         {
             if (OnClick.HasDelegate)
             {
                 await OnClick.InvokeAsync();
             }
-            else
-            {
-                Console.WriteLine("警告：OnClick 事件未設定");
-            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"ButtonComponent.HandleClick 發生錯誤: {ex.Message}");
-            Console.WriteLine($"錯誤堆疊: {ex.StackTrace}");
+            Console.WriteLine($"GenericButtonComponent.HandleClick 發生錯誤: {ex.Message}");
+            // 在生產環境中，這裡應該使用適當的日誌記錄
         }
-    }
-
-    private string GetButtonClass()
+    }    private string GetButtonClass()
     {
         var classes = new List<string>();
         
-        // 基礎樣式
+        // 基礎按鈕樣式，根據Variant參數決定顏色
         switch (Variant)
         {
             case ButtonVariant.Primary:
                 classes.Add("btn-primary");
-                break;            
-                case ButtonVariant.Secondary:
+                break;
+            case ButtonVariant.Secondary:
                 classes.Add("btn-secondary");
                 break;
             case ButtonVariant.Success:
@@ -81,12 +125,15 @@
                 break;
             case ButtonVariant.Info:
                 classes.Add("btn-info");
-                break;            
-                case ButtonVariant.OutlinePrimary:
+                break;
+            case ButtonVariant.OutlinePrimary:
                 classes.Add("btn-outline-primary");
                 break;
-                case ButtonVariant.OutlineSecondary:
+            case ButtonVariant.OutlineSecondary:
                 classes.Add("btn-outline-secondary");
+                break;
+            case ButtonVariant.OutlineSuccess:
+                classes.Add("btn-outline-success");
                 break;
             case ButtonVariant.OutlineWarning:
                 classes.Add("btn-outline-warning");
@@ -99,7 +146,7 @@
                 break;
         }
         
-        // 尺寸
+        // 按鈕尺寸
         switch (Size)
         {
             case ButtonSize.Small:
@@ -108,8 +155,10 @@
             case ButtonSize.Large:
                 classes.Add("btn-lg");
                 break;
+            // Normal 尺寸不需要額外的CSS類別
         }
-          // 自定義樣式
+        
+        // 自定義CSS類別
         if (!string.IsNullOrEmpty(CssClass))
         {
             classes.Add(CssClass);

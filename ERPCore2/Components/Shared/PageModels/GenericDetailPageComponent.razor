@@ -31,14 +31,12 @@
     </div>
 }
 else if (Entity == null && !IsLoading)
-{
-    @* 找不到資料 *@
+{    @* 找不到資料 *@
     <div class="alert alert-warning">
         <h4>找不到@(EntityName)資料</h4>
         <p>指定的@(EntityName)不存在或已被刪除。</p>
-        <button class="btn btn-primary" @onclick="() => Navigation.NavigateTo(IndexRoute)">
-            返回@(EntityNamePlural)列表
-        </button>
+        <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@($"返回{EntityNamePlural}列表")" 
+                               OnClick="() => Navigation.NavigateTo(IndexRoute)" />
     </div>
 }
 else

@@ -3,31 +3,19 @@
 
 <div class="d-flex gap-2">
     @if (ShowAddButton)
-    {        <button class="btn btn-primary index-action-btn index-add-btn" 
-                type="button"
-                title="@AddButtonTitle"
-                disabled="@(IsLoading || IsAddDisabled)"
-                @onclick="HandleAddClick">
-            @if (IsLoading && LoadingOnAdd)
-            {
-                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-            }
-            @AddButtonText
-        </button>
+    {
+        <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@AddButtonText" 
+                               OnClick="HandleAddClick" IsDisabled="@(IsLoading || IsAddDisabled)" 
+                               IsLoading="@(IsLoading && LoadingOnAdd)" Title="@AddButtonTitle"
+                               CssClass="index-action-btn index-add-btn" />
     }
 
     @if (ShowRefreshButton)
-    {        <button class="btn btn-success index-action-btn index-refresh-btn" 
-                type="button"
-                title="@RefreshButtonTitle"
-                disabled="@(IsLoading || IsRefreshDisabled)"
-                @onclick="HandleRefreshClick">
-            @if (IsLoading && LoadingOnRefresh)
-            {
-                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-            }
-            @RefreshButtonText
-        </button>
+    {
+        <GenericButtonComponent Variant="ButtonVariant.Success" Text="@RefreshButtonText" 
+                               OnClick="HandleRefreshClick" IsDisabled="@(IsLoading || IsRefreshDisabled)" 
+                               IsLoading="@(IsLoading && LoadingOnRefresh)" Title="@RefreshButtonTitle"
+                               CssClass="index-action-btn index-refresh-btn" />
     }
 
     @* 允許添加自訂按鈕 *@

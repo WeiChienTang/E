@@ -128,6 +128,48 @@
     box-shadow: var(--shadow-md);
 }
 
+.btn-outline-secondary {
+    color: var(--text-secondary);
+    border-color: var(--text-secondary);
+    background-color: transparent;
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--text-secondary);
+    border-color: var(--text-secondary);
+    color: var(--primary-white);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-outline-success {
+    color: var(--success-color);
+    border-color: var(--success-color);
+    background-color: transparent;
+}
+
+.btn-outline-success:hover {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+    color: var(--primary-white);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-outline-warning {
+    color: var(--warning-color);
+    border-color: var(--warning-color);
+    background-color: transparent;
+}
+
+.btn-outline-warning:hover {
+    background-color: var(--warning-color);
+    border-color: var(--warning-color);
+    color: var(--primary-white);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
 .btn-outline-danger {
     color: var(--danger-color);
     border-color: var(--danger-color);
@@ -137,6 +179,20 @@
 .btn-outline-danger:hover {
     background-color: var(--danger-color);
     border-color: var(--danger-color);
+    color: var(--primary-white);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-outline-info {
+    color: var(--info-color);
+    border-color: var(--info-color);
+    background-color: transparent;
+}
+
+.btn-outline-info:hover {
+    background-color: var(--info-color);
+    border-color: var(--info-color);
     color: var(--primary-white);
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);

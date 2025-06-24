@@ -2,6 +2,7 @@
 @using System.ComponentModel.DataAnnotations
 @using System.Reflection
 @using Microsoft.AspNetCore.Components.Rendering
+@using ERPCore2.Components.Shared.Buttons
 @inject IJSRuntime JSRuntime
 @typeparam TModel
 @implements IDisposable
@@ -60,30 +61,23 @@
                     }
                 </div>
             }
-            
-            @if (ShowFormButtons)
+              @if (ShowFormButtons)
             {
                 <div class="mt-4 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary" disabled="@IsSubmitting">
-                        @if (IsSubmitting)
-                        {
-                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                        }
-                        @SubmitButtonText
-                    </button>
+                    <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@SubmitButtonText" 
+                                           OnClick="HandleSubmit" IsDisabled="@IsSubmitting" 
+                                           IsLoading="@IsSubmitting" IsSubmit="true" />
                     
                     @if (ShowCancelButton)
                     {
-                        <button type="button" class="btn btn-secondary" @onclick="HandleCancel" disabled="@IsSubmitting">
-                            @CancelButtonText
-                        </button>
+                        <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="@CancelButtonText" 
+                                               OnClick="HandleCancel" IsDisabled="@IsSubmitting" />
                     }
                     
                     @if (ShowResetButton)
                     {
-                        <button type="reset" class="btn btn-outline-secondary" disabled="@IsSubmitting">
-                            @ResetButtonText
-                        </button>
+                        <GenericButtonComponent Variant="ButtonVariant.OutlineSecondary" Text="@ResetButtonText" 
+                                               Type="reset" IsDisabled="@IsSubmitting" />
                     }
                 </div>
             }

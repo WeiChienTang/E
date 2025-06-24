@@ -1,6 +1,7 @@
 @* 通用搜尋篩選組件 - 基於配置驅動的動態篩選 *@
 @using System.Reflection
 @using Microsoft.AspNetCore.Components.Rendering
+@using ERPCore2.Components.Shared.Buttons
 @inject IJSRuntime JSRuntime
 @typeparam TModel
 @implements IDisposable
@@ -10,19 +11,18 @@
         <h6 class="card-title mb-0">
             <i class="fas fa-filter me-2"></i>
             搜尋篩選
-        </h6>
-        <div class="d-flex gap-2">            
+        </h6>        <div class="d-flex gap-2">            
             @if (ShowAdvancedToggle && HasAdvancedFilters())
             {
-                <button type="button" class="btn btn-primary search-filter-btn search-advanced-btn" @onclick="ToggleAdvancedFilters">
-                    <i class="fas fa-@(showAdvanced ? "chevron-up" : "chevron-down") me-1"></i>
-                    @(showAdvanced ? "隱藏" : "顯示")進階篩選
-                </button>
+                <GenericButtonComponent Variant="ButtonVariant.Primary" 
+                                       Text="@($"{(showAdvanced ? "隱藏" : "顯示")}進階篩選")" 
+                                       IconClass="@($"fas fa-{(showAdvanced ? "chevron-up" : "chevron-down")} me-1")" 
+                                       OnClick="ToggleAdvancedFilters" 
+                                       CssClass="search-filter-btn search-advanced-btn" />
             }
-            <button type="button" class="btn btn-danger search-filter-btn search-clear-btn" @onclick="ClearAllFilters">
-                <i class="fas fa-times me-1"></i>
-                清除篩選
-            </button>
+            <GenericButtonComponent Variant="ButtonVariant.Danger" Text="清除篩選" 
+                                   IconClass="fas fa-times me-1" OnClick="ClearAllFilters" 
+                                   CssClass="search-filter-btn search-clear-btn" />
         </div>
     </div>
     

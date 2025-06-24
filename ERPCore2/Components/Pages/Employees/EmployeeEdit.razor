@@ -10,6 +10,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @using ERPCore2.Components.Shared.SubCollections
+@using ERPCore2.Components.Shared.Buttons
 @rendermode InteractiveServer
 @implements IDisposable
 
@@ -123,20 +124,16 @@
                                     <label class="form-label">失敗登入次數</label>
                                     <div class="fw-bold @(employee.FailedLoginAttempts >= 3 ? "text-danger" : "text-warning")">
                                         @employee.FailedLoginAttempts
-                                    </div>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary mt-1" @onclick="ResetFailedAttempts">
-                                        重設登入失敗次數
-                                    </button>
+                                    </div>                                    <GenericButtonComponent Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small"
+                                                           Text="重設登入失敗次數" OnClick="ResetFailedAttempts" 
+                                                           CssClass="mt-1" />
                                 </div>
                             </div>
                         </div>
-                    }
-
-                    <div class="row">
+                    }                    <div class="row">
                         <div class="col-12">
-                            <button type="button" class="btn btn-warning" @onclick="ShowPasswordResetDialog">
-                                <i class="bi bi-key me-1"></i>重設密碼
-                            </button>
+                            <GenericButtonComponent Variant="ButtonVariant.Warning" Text="重設密碼" 
+                                                   IconClass="bi bi-key me-1" OnClick="ShowPasswordResetDialog" />
                         </div>
                     </div>
                 </div>

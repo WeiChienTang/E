@@ -1,19 +1,16 @@
 @* Edit 頁面動作按鈕組件 - 提供統一的儲存和取消按鈕 *@
+@using ERPCore2.Components.Shared.Buttons
 
-<div class="d-flex gap-2">
-    <button class="btn btn-success edit-action-btn edit-save-btn" @onclick="HandleSaveClick" disabled="@(IsSubmitting || IsLoading || !IsFormValid)">
-        @if (IsSubmitting)
-        {
-            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-        }
-        @SaveButtonText
-    </button>
+<div class="edit-action-buttons-container">
+    <GenericButtonComponent Variant="ButtonVariant.Success" Text="@SaveButtonText" 
+                           OnClick="HandleSaveClick" IsDisabled="@(IsSubmitting || IsLoading || !IsFormValid)" 
+                           IsLoading="@IsSubmitting" CssClass="edit-action-btn edit-save-btn" />
 
     @if (ShowCancelButton)
     {
-        <button class="btn btn-outline-danger edit-action-btn edit-cancel-btn" @onclick="HandleCancelClick" disabled="@IsSubmitting">
-            @CancelButtonText
-        </button>
+        <GenericButtonComponent Variant="ButtonVariant.OutlineDanger" Text="@CancelButtonText" 
+                               OnClick="HandleCancelClick" IsDisabled="@IsSubmitting" 
+                               CssClass="edit-action-btn edit-cancel-btn" />
     }
 
     @if (CustomButtons != null)

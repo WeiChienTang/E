@@ -4,18 +4,16 @@
 @using ERPCore2.Data
 @using ERPCore2.Data.Enums
 @using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Buttons
 @using Microsoft.JSInterop
 
 <div class="card mb-4">    <GenericHeaderComponent Title="@Title"
                            Subtitle="@GetSubtitle()"
-                           IsCardHeader="true">
-        <ActionButtons>
+                           IsCardHeader="true">        <ActionButtons>
             @if (!IsReadOnly)
             {
-                <button class="btn btn-primary" @onclick="ShowAddModal">
-                    <i class="bi bi-plus me-1"></i>
-                    新增@ItemDisplayName
-                </button>
+                <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@($"新增{ItemDisplayName}")" 
+                                       IconClass="bi bi-plus me-1" OnClick="ShowAddModal" />
             }
         </ActionButtons>
     </GenericHeaderComponent>
@@ -63,21 +61,16 @@
                                 </td>
                                 @if (!IsReadOnly)
                                 {
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
+                                    <td>                                        <div class="btn-group btn-group-sm">
                                             @if (!GetIsPrimary(item))
                                             {
-                                                <button class="btn btn-outline-primary" 
-                                                        @onclick="() => SetPrimaryAsync(index)" 
-                                                        title="設為主要">
-                                                    <i class="bi bi-star"></i>
-                                                </button>
+                                                <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" Size="ButtonSize.Small"
+                                                                       IconClass="bi bi-star" OnClick="() => SetPrimaryAsync(index)" 
+                                                                       Title="設為主要" />
                                             }
-                                            <button class="btn btn-outline-danger" 
-                                                    @onclick="() => RemoveItemAsync(index)" 
-                                                    title="移除">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
+                                            <GenericButtonComponent Variant="ButtonVariant.OutlineDanger" Size="ButtonSize.Small"
+                                                                   IconClass="bi bi-trash" OnClick="() => RemoveItemAsync(index)" 
+                                                                   Title="移除" />
                                         </div>
                                     </td>
                                 }
@@ -93,11 +86,8 @@
                 <i class="bi @EmptyIcon fs-1 mb-3 d-block"></i>
                 <p>尚未關聯任何@ItemDisplayName</p>
                 @if (!IsReadOnly)
-                {
-                    <button class="btn btn-outline-primary" @onclick="ShowAddModal">
-                        <i class="bi bi-plus me-1"></i>
-                        新增第一個@ItemDisplayName
-                    </button>
+                {                    <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" Text="@($"新增第一個{ItemDisplayName}")" 
+                                           IconClass="bi bi-plus me-1" OnClick="ShowAddModal" />
                 }
             </div>
         }
@@ -138,11 +128,11 @@
                     @if (AdditionalModalContent != null)
                     {
                         @AdditionalModalContent
-                    }
-                </div>
+                    }                </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CloseAddModal">取消</button>
-                    <button type="button" class="btn btn-primary" @onclick="AddItemAsync" disabled="@string.IsNullOrEmpty(selectedRelatedEntityId)">新增</button>
+                    <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="取消" OnClick="CloseAddModal" />
+                    <GenericButtonComponent Variant="ButtonVariant.Primary" Text="新增" OnClick="AddItemAsync" 
+                                           IsDisabled="@string.IsNullOrEmpty(selectedRelatedEntityId)" />
                 </div>
             </div>
         </div>

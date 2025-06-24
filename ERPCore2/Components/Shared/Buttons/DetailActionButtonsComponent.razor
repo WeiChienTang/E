@@ -1,42 +1,37 @@
 @* Enhanced Detail 頁面動作按鈕組件 - 提供統一的編輯、啟用/停用、刪除和返回按鈕 *@
 @using Microsoft.JSInterop
+@using ERPCore2.Components.Shared.Buttons
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
 <div class="btn-group">    
     @if (ShowEditButton)
     {
-        <button class="btn btn-primary" @onclick="HandleEditClick" disabled="@IsLoading">
-            @EditButtonText
-        </button>
+        <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@EditButtonText" 
+                               OnClick="HandleEditClick" IsDisabled="@IsLoading" />
     }@if (ShowToggleStatusButton && EntityStatus != null)
     {        @if (EntityStatus.ToString() == "Active")
         {
-            <button class="btn btn-warning" @onclick="HandleToggleStatusClick" disabled="@IsLoading">
-                @DeactivateButtonText
-            </button>
+            <GenericButtonComponent Variant="ButtonVariant.Warning" Text="@DeactivateButtonText" 
+                                   OnClick="HandleToggleStatusClick" IsDisabled="@IsLoading" />
         }
         else
         {
-            <button class="btn btn-success" @onclick="HandleToggleStatusClick" disabled="@IsLoading">
-                @ActivateButtonText
-            </button>
+            <GenericButtonComponent Variant="ButtonVariant.Success" Text="@ActivateButtonText" 
+                                   OnClick="HandleToggleStatusClick" IsDisabled="@IsLoading" />
         }
     }    @if (ShowDeleteButton)
     {
-        <button class="btn btn-danger" @onclick="HandleDeleteClick" disabled="@IsLoading">
-            @DeleteButtonText
-        </button>
+        <GenericButtonComponent Variant="ButtonVariant.Danger" Text="@DeleteButtonText" 
+                               OnClick="HandleDeleteClick" IsDisabled="@IsLoading" />
     }    @if (ShowPrintButton)
     {
-        <button class="btn btn-info" @onclick="HandlePrintClick" disabled="@IsLoading">
-            @PrintButtonText
-        </button>
+        <GenericButtonComponent Variant="ButtonVariant.Info" Text="@PrintButtonText" 
+                               OnClick="HandlePrintClick" IsDisabled="@IsLoading" />
     }    @if (ShowBackButton)
     {
-        <button class="btn btn-outline-primary" @onclick="HandleBackClick" disabled="@IsLoading">
-            @BackButtonText
-        </button>
+        <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" Text="@BackButtonText" 
+                               OnClick="HandleBackClick" IsDisabled="@IsLoading" />
     }
 
     @if (CustomButtons != null)
