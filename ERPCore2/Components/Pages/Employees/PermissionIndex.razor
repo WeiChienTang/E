@@ -1,0 +1,135 @@
+@page "/permissions"
+@inject IPermissionManagementService PermissionService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>權限維護</PageTitle>
+
+<GenericIndexPageComponent TEntity="Permission" 
+                          TService="IPermissionManagementService"
+                          Service="@PermissionService"
+                          EntityBasePath="/permissions"
+                          PageTitle="權限維護"
+                          PageSubtitle="管理系統功能權限設定"
+                          EntityName="權限"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadPermissionsAsync"
+                          FilterApplier="@ApplyPermissionFilters"
+                          GetEntityDisplayName="@(permission => permission.PermissionName)"
+                          @ref="indexComponent" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<Permission, IPermissionManagementService> indexComponent = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override void OnInitialized()
+    {
+        InitializeBreadcrumbs();
+        InitializeFilters();
+        InitializeTableColumns();
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("基礎資料", "#"),
+            new("權限維護")
+        };
+    }
+
+    // 載入權限資料
+    private async Task<List<Permission>> LoadPermissionsAsync()
+    {
+        try
+        {
+            return await PermissionService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入權限資料失敗：", ex.Message);
+            return new List<Permission>();
+        }
+    }
+
+    private void InitializeFilters()
+    {
+        // 建立篩選定義
+        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+            .AddText("PermissionName", "權限名稱", "輸入權限名稱搜尋")
+            .AddText("PermissionCode", "權限代碼", "輸入權限代碼搜尋")
+            .AddText("Module", "模組", "輸入模組名稱搜尋", isAdvanced: true)
+            .AddText("Action", "動作", "輸入動作名稱搜尋", isAdvanced: true)
+            .AddText("PermissionGroup", "權限群組", "輸入權限群組搜尋", isAdvanced: true)
+            .Build();
+    }
+
+    private void InitializeTableColumns()
+    {
+        columnDefinitions = new List<TableColumnDefinition>
+        {
+            TableColumnDefinition.Text("權限代碼", nameof(Permission.PermissionCode)),
+            TableColumnDefinition.Text("權限名稱", nameof(Permission.PermissionName)),
+            TableColumnDefinition.Text("模組", nameof(Permission.Module)),
+            TableColumnDefinition.Text("動作", nameof(Permission.Action)),
+            TableColumnDefinition.Text("權限群組", nameof(Permission.PermissionGroup)),
+            TableColumnDefinition.Date("建立日期", nameof(Permission.CreatedAt), "yyyy/MM/dd")
+        };
+    }
+
+    // 自定義篩選邏輯
+    private IQueryable<Permission> ApplyPermissionFilters(SearchFilterModel searchModel, IQueryable<Permission> query)
+    {
+        // 權限名稱篩選
+        var permissionNameFilter = searchModel.GetFilterValue("PermissionName")?.ToString();
+        if (!string.IsNullOrWhiteSpace(permissionNameFilter))
+        {
+            query = query.Where(p => 
+                p.PermissionName.Contains(permissionNameFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 權限代碼篩選
+        var permissionCodeFilter = searchModel.GetFilterValue("PermissionCode")?.ToString();
+        if (!string.IsNullOrWhiteSpace(permissionCodeFilter))
+        {
+            query = query.Where(p => 
+                p.PermissionCode.Contains(permissionCodeFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 模組篩選
+        var moduleFilter = searchModel.GetFilterValue("Module")?.ToString();
+        if (!string.IsNullOrWhiteSpace(moduleFilter))
+        {
+            query = query.Where(p => 
+                p.Module.Contains(moduleFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 動作篩選
+        var actionFilter = searchModel.GetFilterValue("Action")?.ToString();
+        if (!string.IsNullOrWhiteSpace(actionFilter))
+        {
+            query = query.Where(p => 
+                p.Action.Contains(actionFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 權限群組篩選
+        var permissionGroupFilter = searchModel.GetFilterValue("PermissionGroup")?.ToString();
+        if (!string.IsNullOrWhiteSpace(permissionGroupFilter))
+        {
+            query = query.Where(p => 
+                !string.IsNullOrEmpty(p.PermissionGroup) && 
+                p.PermissionGroup.Contains(permissionGroupFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return query.OrderBy(p => p.Module).ThenBy(p => p.Action).ThenBy(p => p.PermissionName);
+    }
+}

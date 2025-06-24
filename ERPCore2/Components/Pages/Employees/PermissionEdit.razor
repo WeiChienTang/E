@@ -1,0 +1,257 @@
+@page "/permissions/edit"
+@page "/permissions/edit/{id:int?}"
+@inject IPermissionManagementService PermissionService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>@(Id.HasValue ? "編輯權限" : "新增權限")</PageTitle>
+
+<GenericEditPageComponent TEntity="Permission" 
+                         TService="IPermissionManagementService"
+                         Id="@Id"
+                         Entity="@permission"
+                         Service="@PermissionService"
+                         EntityName="權限"
+                         EntityNamePlural="權限"
+                         FormTitle="基本資料"
+                         FormSubtitle="權限的基本資訊與設定"
+                         IndexRoute="/permissions"
+                         UseGenericForm="true"
+                         FormFields="@basicFormFields"
+                         FormSections="@basicFormSections"
+                         BreadcrumbItems="@breadcrumbItems"
+                         DataLoader="@LoadPermissionData"
+                         SaveHandler="@SavePermission"
+                         AdditionalDataLoader="@LoadAdditionalData"
+                         @ref="editComponent">
+</GenericEditPageComponent>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    
+    // 組件參考
+    private GenericEditPageComponent<Permission, IPermissionManagementService> editComponent = default!;
+    
+    // 資料模型
+    private Permission permission = new();
+    private List<string> availableModules = new();
+    private List<string> availableActions = new();
+    private List<string> availableGroups = new();
+    
+    // 表單欄位定義
+    private List<FormFieldDefinition> basicFormFields = new();
+    private Dictionary<string, string> basicFormSections = new();
+    
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override void OnInitialized()
+    {
+        InitializeBreadcrumbs();
+        InitializeBasicFormFields();
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("基礎資料", "#"),
+            new("權限維護", "/permissions"),
+            new(Id.HasValue ? "編輯權限" : "新增權限")
+        };
+    }
+
+    private async Task LoadAdditionalData()
+    {
+        try
+        {
+            // 載入可用的模組清單
+            var modulesResult = await PermissionService.GetAllModulesAsync();
+            if (modulesResult.IsSuccess && modulesResult.Data != null)
+            {
+                availableModules = modulesResult.Data;
+            }
+
+            // 預設的動作類型
+            availableActions = new List<string> { "View", "Create", "Update", "Delete", "Export", "Import", "Approve" };
+            
+            // 預設的權限群組
+            availableGroups = new List<string> { "基礎資料", "業務管理", "系統管理", "報表", "設定" };
+
+            // 更新表單欄位的選項
+            UpdateFormFieldOptions();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入額外資料失敗：", ex.Message);
+        }
+    }
+
+    private void UpdateFormFieldOptions()
+    {        // 更新模組選項
+        var moduleField = basicFormFields.FirstOrDefault(f => f.PropertyName == nameof(Permission.Module));
+        if (moduleField != null)
+        {
+            moduleField.Options = availableModules.Select(m => new SelectOption { Text = m, Value = m }).ToList();
+        }
+
+        // 更新動作選項
+        var actionField = basicFormFields.FirstOrDefault(f => f.PropertyName == nameof(Permission.Action));
+        if (actionField != null)
+        {
+            actionField.Options = availableActions.Select(a => new SelectOption { Text = a, Value = a }).ToList();
+        }
+
+        // 更新權限群組選項
+        var groupField = basicFormFields.FirstOrDefault(f => f.PropertyName == nameof(Permission.PermissionGroup));
+        if (groupField != null)
+        {
+            groupField.Options = availableGroups.Select(g => new SelectOption { Text = g, Value = g }).ToList();
+        }
+    }
+
+    private void InitializeBasicFormFields()
+    {
+        basicFormFields = new List<FormFieldDefinition>
+        {
+            new FormFieldDefinition
+            {
+                PropertyName = nameof(Permission.PermissionCode),
+                Label = "權限代碼",
+                IsRequired = true,
+                Placeholder = "例如：Customer.View, Product.Create",
+                FieldType = FormFieldType.Text,
+                MaxLength = 100,
+                HelpText = "格式：模組.動作 (例如：Customer.View)"
+            },
+            new FormFieldDefinition
+            {
+                PropertyName = nameof(Permission.PermissionName),
+                Label = "權限名稱",
+                IsRequired = true,
+                Placeholder = "請輸入權限名稱",
+                FieldType = FormFieldType.Text,
+                MaxLength = 100,
+                HelpText = "使用者友善的權限名稱"
+            },
+            new FormFieldDefinition
+            {
+                PropertyName = nameof(Permission.Module),
+                Label = "模組",
+                IsRequired = true,                Placeholder = "請選擇模組",
+                FieldType = FormFieldType.Select,
+                MaxLength = 50,
+                Options = new List<SelectOption>() // 將在 LoadAdditionalData 中更新
+            },
+            new FormFieldDefinition
+            {
+                PropertyName = nameof(Permission.Action),
+                Label = "動作",
+                IsRequired = true,                Placeholder = "請選擇動作",
+                FieldType = FormFieldType.Select,
+                MaxLength = 50,
+                Options = new List<SelectOption>() // 將在 LoadAdditionalData 中更新
+            },
+            new FormFieldDefinition
+            {
+                PropertyName = nameof(Permission.PermissionGroup),
+                Label = "權限群組",
+                IsRequired = false,                Placeholder = "請選擇權限群組",
+                FieldType = FormFieldType.Select,
+                MaxLength = 50,
+                HelpText = "用於UI分組顯示",
+                Options = new List<SelectOption>() // 將在 LoadAdditionalData 中更新
+            }
+        };
+
+        basicFormSections = new Dictionary<string, string>
+        {
+            { nameof(Permission.PermissionCode), "基本資訊" },
+            { nameof(Permission.PermissionName), "基本資訊" },
+            { nameof(Permission.Module), "分類設定" },
+            { nameof(Permission.Action), "分類設定" },
+            { nameof(Permission.PermissionGroup), "分類設定" }
+        };
+    }
+
+    private async Task<Permission?> LoadPermissionData()
+    {
+        try
+        {
+            if (!Id.HasValue) 
+            {
+                permission = new Permission();
+                return permission;
+            }
+
+            var result = await PermissionService.GetByIdAsync(Id.Value);
+            if (result != null)
+            {
+                permission = result;
+                return result;
+            }
+            
+            return null;
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入權限資料失敗：", ex.Message);
+            return null;
+        }
+    }
+
+    private async Task<bool> SavePermission(Permission entity)
+    {
+        try
+        {
+            // 驗證權限代碼格式
+            var codeValidationResult = PermissionService.ValidatePermissionCode(entity.PermissionCode);
+            if (!codeValidationResult.IsSuccess)
+            {
+                await JSRuntime.InvokeVoidAsync("console.error", "權限代碼格式不正確：", codeValidationResult.ErrorMessage);
+                return false;
+            }
+
+            // 檢查權限代碼是否重複
+            var codeCheckResult = await PermissionService.IsPermissionCodeExistsAsync(entity.PermissionCode, entity.Id);
+            if (!codeCheckResult.IsSuccess)
+            {
+                await JSRuntime.InvokeVoidAsync("console.error", "驗證失敗：", codeCheckResult.ErrorMessage);
+                return false;
+            }
+
+            if (codeCheckResult.Data)
+            {
+                await JSRuntime.InvokeVoidAsync("console.error", "權限代碼已存在");
+                return false;
+            }
+
+            // 儲存權限基本資料
+            ServiceResult result;
+            if (entity.Id == 0)
+            {
+                result = await PermissionService.CreateAsync(entity);
+            }
+            else
+            {
+                result = await PermissionService.UpdateAsync(entity);
+            }
+
+            if (!result.IsSuccess)
+            {
+                await JSRuntime.InvokeVoidAsync("console.error", "儲存失敗：", result.ErrorMessage);
+                return false;
+            }
+
+            await JSRuntime.InvokeVoidAsync("console.log", $"權限「{entity.PermissionName}」已成功儲存");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "儲存權限失敗：", ex.Message);
+            return false;
+        }
+    }
+}
