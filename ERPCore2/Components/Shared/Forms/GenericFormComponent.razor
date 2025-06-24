@@ -60,18 +60,17 @@
                         }
                     }
                 </div>
-            }
-              @if (ShowFormButtons)
+            }              @if (ShowFormButtons)
             {
                 <div class="mt-4 d-flex gap-2">
                     <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@SubmitButtonText" 
-                                           OnClick="HandleSubmit" IsDisabled="@IsSubmitting" 
+                                           OnClick="@(async () => await HandleValidSubmit())" IsDisabled="@IsSubmitting" 
                                            IsLoading="@IsSubmitting" IsSubmit="true" />
                     
                     @if (ShowCancelButton)
                     {
                         <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="@CancelButtonText" 
-                                               OnClick="HandleCancel" IsDisabled="@IsSubmitting" />
+                                               OnClick="@(async () => await HandleCancel())" IsDisabled="@IsSubmitting" />
                     }
                     
                     @if (ShowResetButton)

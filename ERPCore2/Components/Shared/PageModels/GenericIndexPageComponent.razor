@@ -7,6 +7,8 @@
 @using ERPCore2.Components.Shared.Buttons
 @using ERPCore2.Data.Enums
 @using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@using Microsoft.AspNetCore.Components
 @typeparam TEntity where TEntity : BaseEntity
 @typeparam TService
 @inject NavigationManager Navigation
@@ -20,7 +22,8 @@
                        IsLoading="@IsLoading"
                        LoadingText="載入中..."
                        ShowDivider="true">
-    <ActionButtons>                          <IndexActionButtonsComponent 
+    <ActionButtons>                          
+        <IndexActionButtonsComponent 
             AddButtonText="@GetAddButtonText()"
             AddButtonTitle="@GetAddButtonTitle()"
             OnAddClick="@HandleAddClick"
@@ -240,8 +243,7 @@
                                 await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{errorMessage}");
                             }
                         }
-                    }
-                }
+                    }                }
                 else
                 {
                     await JSRuntime.InvokeVoidAsync("alert", "找不到刪除方法");
@@ -256,7 +258,8 @@
     
     /// <summary>
     /// 取得標準操作按鈕範本
-    /// </summary>    public RenderFragment<TEntity> GetStandardActionsTemplate()
+    /// </summary>
+    public RenderFragment<TEntity> GetStandardActionsTemplate()
     {
         return entity => 
             @<div class="btn-group btn-group-sm">

@@ -19,12 +19,14 @@
                          Entity="@customerType"
                          Service="@CustomerTypeService"
                          EntityName="客戶類型"
-                         EntityNamePlural="客戶類型"                         FormTitle="基本資料"
+                         EntityNamePlural="客戶類型"                         
+                         FormTitle="基本資料"
                          FormSubtitle="客戶類型的基本設定資訊"
                          IndexRoute="/customer-types"
                          UseGenericForm="true"
                          FormFields="@formFields"
-                         FormSections="@formSections"                         BreadcrumbItems="@breadcrumbItems"
+                         FormSections="@formSections"                         
+                         BreadcrumbItems="@breadcrumbItems"
                          DataLoader="@LoadCustomerTypeData"
                          UseGenericSave="true"
                          CustomValidator="@ValidateCustomerType"
@@ -188,8 +190,10 @@
             return false;
         }
 
+        // 調試信息
+        await JSRuntime.InvokeVoidAsync("console.log", "驗證通過，準備保存客戶類型");
         return true;
-    }    public void Dispose()
+    }public void Dispose()
     {
         _loadingSemaphore?.Dispose();
     }

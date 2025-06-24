@@ -368,42 +368,33 @@
             if (BeforeSave != null)
             {
                 await BeforeSave(entity);
+            }            // 直接轉型為基礎接口調用方法，避免反射問題
+            var genericService = Service as IGenericManagementService<TEntity>;
+            if (genericService == null)
+            {
+                await ShowErrorMessage("Service 未實作 IGenericManagementService 接口");
+                return false;
             }
             
-            // 使用反射呼叫Service的CreateAsync或UpdateAsync
-            var serviceType = typeof(TService);
-            ServiceResult result;
+            ServiceResult<TEntity> serviceResult;
             
             if (Id.HasValue)
             {
                 // 更新
-                var updateMethod = serviceType.GetMethod("UpdateAsync");
-                if (updateMethod != null)
-                {
-                    var task = (Task<ServiceResult>)updateMethod.Invoke(Service, new object[] { entity })!;
-                    result = await task;
-                }
-                else
-                {
-                    await ShowErrorMessage("Service中找不到UpdateAsync方法");
-                    return false;
-                }
+                serviceResult = await genericService.UpdateAsync(entity);
             }
             else
             {
                 // 新增
-                var createMethod = serviceType.GetMethod("CreateAsync");
-                if (createMethod != null)
-                {
-                    var task = (Task<ServiceResult>)createMethod.Invoke(Service, new object[] { entity })!;
-                    result = await task;
-                }
-                else
-                {
-                    await ShowErrorMessage("Service中找不到CreateAsync方法");
-                    return false;
-                }
+                serviceResult = await genericService.CreateAsync(entity);
             }
+            
+            var result = new ServiceResult
+            {
+                IsSuccess = serviceResult.IsSuccess,
+                ErrorMessage = serviceResult.ErrorMessage,
+                ValidationErrors = serviceResult.ValidationErrors
+            };
             
             if (result.IsSuccess)
             {

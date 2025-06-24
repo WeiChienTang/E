@@ -39,7 +39,7 @@ namespace ERPCore2.Services
                             (c.HexCode != null && c.HexCode.Contains(searchTerm))))
                 .OrderBy(c => c.Name)
                 .ToListAsync();
-        }    /// <summary>
+        }        /// <summary>
         /// 覆寫驗證方法，添加顏色特定的驗證規則
         /// </summary>
         public override async Task<ServiceResult> ValidateAsync(Color entity)
@@ -48,11 +48,8 @@ namespace ERPCore2.Services
             if (string.IsNullOrWhiteSpace(entity.Name))
                 return ServiceResult.Failure("顏色名稱為必填");
 
-            if (string.IsNullOrWhiteSpace(entity.Code))
-                return ServiceResult.Failure("顏色代碼為必填");
-
-            // 檢查代碼是否重複
-            if (await IsCodeExistsAsync(entity.Code, entity.Id))
+            // 檢查代碼是否重複（只有在提供代碼時才檢查）
+            if (!string.IsNullOrWhiteSpace(entity.Code) && await IsCodeExistsAsync(entity.Code, entity.Id))
                 return ServiceResult.Failure("顏色代碼已存在");
 
             // 檢查名稱是否重複
