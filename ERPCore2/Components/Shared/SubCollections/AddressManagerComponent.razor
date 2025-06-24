@@ -10,7 +10,8 @@
 <div class="card mb-4">    <GenericHeaderComponent Title="@Title"
                            Subtitle="@GetSubtitle()"
                            IsCardHeader="true">
-    </GenericHeaderComponent>    <div class="card-body">
+    </GenericHeaderComponent>    
+    <div class="card-body">
         <div class="row g-3">
             @for (int i = 0; i < Items.Count; i++)
             {
@@ -100,10 +101,10 @@
             
             @* 新增按鈕 - 始終顯示在下一個位置 *@
             @if (!IsReadOnly)
-            {
-                <div class="col-lg-3">                    <div class="card border-dashed subcollection-add-card h-100 d-flex align-items-center justify-content-center">
+            {                <div class="col-lg-3">                    
+                    <div class="card border-dashed subcollection-add-card h-100 d-flex align-items-center justify-content-center">
                         <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" Size="ButtonSize.Large"
-                                               Text="新增地址" IconClass="bi-plus me-1" OnClick="AddItemAsync" />
+                                               Text="新增" IconClass="" OnClick="AddItemAsync" />
                     </div>
                 </div>
             }
@@ -114,7 +115,9 @@
 @code {
     // ===== 基本參數 =====
     [Parameter] public List<TAddressEntity> Items { get; set; } = new();
-    [Parameter] public List<ERPCore2.Data.BaseEntity> Options { get; set; } = new(); // 地址類型選項
+    [Parameter] public List<ERPCore2.Data.BaseEntity> Options { get; set; } = new(); 
+        
+    // 地址類型選項
     [Parameter] public int ParentEntityId { get; set; }
     [Parameter] public bool IsReadOnly { get; set; } = false;
     

@@ -13,7 +13,7 @@
             @if (!IsReadOnly)
             {
                 <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@($"新增{ItemDisplayName}")" 
-                                       IconClass="bi bi-plus me-1" OnClick="ShowAddModal" />
+                                       IconClass="bi-plus me-1" OnClick="ShowAddModal" />
             }
         </ActionButtons>
     </GenericHeaderComponent>
@@ -24,7 +24,7 @@
                 <table class="table table-sm table-hover">
                     <thead class="table-light">
                         <tr>
-                            <th>@RelatedEntityDisplayName</th>
+                            <th></th>
                             @if (ShowAdditionalColumns)
                             {
                                 @AdditionalColumnsHeader
@@ -84,7 +84,7 @@
         {
             <div class="text-center py-4 text-muted">
                 <i class="bi @EmptyIcon fs-1 mb-3 d-block"></i>
-                <p>尚未關聯任何@ItemDisplayName</p>
+                <p>尚未關聯任何</p>
                 @if (!IsReadOnly)
                 {                    <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" Text="@($"新增第一個{ItemDisplayName}")" 
                                            IconClass="bi bi-plus me-1" OnClick="ShowAddModal" />
@@ -101,14 +101,14 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">新增@ItemDisplayName</h5>
+                    <h5 class="modal-title">新增</h5>
                     <button type="button" class="btn-close" @onclick="CloseAddModal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">選擇@RelatedEntityDisplayName</label>
+                        <label class="form-label">選擇</label>
                         <select class="form-select" @bind="selectedRelatedEntityId">
-                            <option value="">請選擇@RelatedEntityDisplayName</option>                            @foreach (var option in AvailableRelatedEntities)
+                            <option value="">請選擇</option>                            @foreach (var option in AvailableRelatedEntities)
                             {
                                 <option value="@GetRelatedEntityId(option)">@GetRelatedEntityText(option)</option>
                             }
@@ -120,7 +120,7 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" @bind="newItemIsPrimary" id="isPrimary">
                                 <label class="form-check-label" for="isPrimary">
-                                    設為主要@ItemDisplayName
+                                    設為主要
                                 </label>
                             </div>
                         </div>

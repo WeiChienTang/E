@@ -1,0 +1,145 @@
+@page "/supplier-types"
+@using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Services
+@inject ISupplierTypeService SupplierTypeService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>廠商類型</PageTitle>
+
+<GenericIndexPageComponent TEntity="SupplierType" 
+                          TService="ISupplierTypeService"
+                          Service="@SupplierTypeService"
+                          EntityBasePath="/supplier-types"                          
+                          PageTitle="廠商類型"
+                          PageSubtitle="管理廠商分類類型設定"
+                          AddButtonText="新增廠商類型"
+                          AddButtonTitle="新增廠商類型"
+                          SearchSectionTitle="廠商類型搜尋與管理"
+                          EmptyMessage="沒有找到符合條件的廠商類型資料"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadSupplierTypesAsync"
+                          FilterApplier="@ApplySupplierTypeFilters"
+                          AutoSearch="true"
+                          ShowSearchButton="true"
+                          ShowAdvancedToggle="true"
+                          SearchDelayMs="500"
+                          EntityName="廠商類型"
+                          GetEntityDisplayName="@(supplierType => supplierType.TypeName)"
+                          DeleteSuccessMessage="廠商類型刪除成功"
+                          DeleteConfirmMessage="確定要刪除廠商類型「{0}」嗎？"
+                          EnableStandardActions="true"
+                          ShowViewButton="true"
+                          ShowEditButton="true"
+                          ShowDeleteButton="true"
+                          @ref="indexComponent" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<SupplierType, ISupplierTypeService> indexComponent = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override void OnInitialized()
+    {
+        InitializeBreadcrumbs();
+        InitializeFilters();
+        InitializeTableColumns();
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("基礎資料", "/"),
+            new("廠商類型管理")
+        };
+    }
+
+    // 載入廠商類型資料
+    private async Task<List<SupplierType>> LoadSupplierTypesAsync()
+    {
+        try
+        {
+            return await SupplierTypeService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入廠商類型資料失敗：", ex.Message);
+            return new List<SupplierType>();
+        }
+    }
+
+    private void InitializeFilters()
+    {
+        // 準備狀態選項
+        var statusOptions = new List<SelectOption>
+        {
+            new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
+            new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
+        };
+
+        // 建立篩選定義
+        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+            .AddText("TypeName", "類型名稱", "輸入類型名稱搜尋")
+            .AddText("Description", "描述", "輸入描述搜尋", isAdvanced: true)
+            .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
+            .Build();
+    }
+
+    private void InitializeTableColumns()
+    {
+        columnDefinitions = new List<TableColumnDefinition>
+        {
+            TableColumnDefinition.Text("類型名稱", nameof(SupplierType.TypeName)),
+            TableColumnDefinition.Text("描述", nameof(SupplierType.Description)),
+            TableColumnDefinition.Status("狀態", nameof(SupplierType.Status), new Dictionary<object, string>
+            {
+                { EntityStatus.Active, "bg-success" },
+                { EntityStatus.Inactive, "bg-secondary" }
+            }),
+            TableColumnDefinition.Date("建立日期", nameof(SupplierType.CreatedAt), "yyyy/MM/dd"),
+            TableColumnDefinition.Date("更新日期", nameof(SupplierType.UpdatedAt), "yyyy/MM/dd")
+        };
+    }
+
+    // 自定義篩選邏輯
+    private IQueryable<SupplierType> ApplySupplierTypeFilters(SearchFilterModel searchModel, IQueryable<SupplierType> query)
+    {
+        // 類型名稱篩選
+        var typeNameFilter = searchModel.GetFilterValue("TypeName")?.ToString();
+        if (!string.IsNullOrWhiteSpace(typeNameFilter))
+        {
+            query = query.Where(st => 
+                st.TypeName.Contains(typeNameFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 描述篩選
+        var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
+        if (!string.IsNullOrWhiteSpace(descriptionFilter))
+        {
+            query = query.Where(st => 
+                !string.IsNullOrEmpty(st.Description) && 
+                st.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 狀態篩選
+        var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
+        if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
+        {
+            query = query.Where(st => st.Status == status);
+        }        
+
+        return query.OrderBy(st => st.TypeName);
+    }
+}

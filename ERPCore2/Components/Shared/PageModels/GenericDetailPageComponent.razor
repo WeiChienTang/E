@@ -174,6 +174,10 @@ else
     [Parameter] public RenderFragment? AdditionalSections { get; set; }
     [Parameter] public List<TabSection> TabSections { get; set; } = new();
     
+    // 系統資訊標籤頁設定
+    [Parameter] public bool AutoAddSystemInfoTab { get; set; } = true; // 自動添加系統資訊標籤頁
+    [Parameter] public string SystemInfoTabTitle { get; set; } = "系統資訊"; // 系統資訊標籤頁標題
+    
     // 事件和邏輯
     [Parameter] public Func<Task<TEntity?>> DataLoader { get; set; } = default!;
     [Parameter] public Func<Task> AdditionalDataLoader { get; set; } = default!;
@@ -250,13 +254,18 @@ else
         }
     }
       // ===== 初始化方法 =====
-      
-    protected override void OnInitialized()
+        protected override void OnInitialized()
     {
         // 初始化預設標籤頁（如果沒有設定）
         if (UseTabLayout && !TabSections.Any())
         {
             InitializeDefaultTabs();
+        }
+        
+        // 自動添加系統資訊標籤頁（如果啟用且不存在）
+        if (UseTabLayout && AutoAddSystemInfoTab && !TabSections.Any(t => t.Id == "system"))
+        {
+            AddSystemInfoTab();
         }
         
         base.OnInitialized();
@@ -283,6 +292,32 @@ else
                 Content = AdditionalSections
             });
         }
+    }
+    
+    private void AddSystemInfoTab()
+    {
+        // 在標籤頁列表最後添加系統資訊標籤頁
+        var systemTab = new TabSection
+        {
+            Id = "system",
+            Title = SystemInfoTabTitle,
+            Content = BuildSystemInfoContent()
+        };
+        
+        TabSections.Add(systemTab);
+    }
+    
+    private RenderFragment BuildSystemInfoContent()
+    {
+        return @<div class="row">
+            <DetailFieldComponent Label="建立時間" Value="@GetEntityCreatedAt()" />
+            <DetailFieldComponent Label="建立者" Value="@GetEntityCreatedBy()" EmptyText="系統" />
+            @if (GetEntityUpdatedAt() != null)
+            {
+                <DetailFieldComponent Label="更新時間" Value="@GetEntityUpdatedAt()" />
+                <DetailFieldComponent Label="更新者" Value="@GetEntityUpdatedBy()" EmptyText="系統" />
+            }
+        </div>;
     }
     
     private async Task HandleTabClick(int tabIndex)
@@ -411,6 +446,34 @@ else
             return EntityDisplayNameSelector(Entity);
         
         return Entity?.ToString() ?? EntityName;
+    }
+    
+    private string? GetEntityCreatedAt()
+    {
+        if (Entity is BaseEntity baseEntity)
+            return baseEntity.CreatedAt.ToString("yyyy/MM/dd HH:mm");
+        return null;
+    }
+    
+    private string? GetEntityCreatedBy()
+    {
+        if (Entity is BaseEntity baseEntity)
+            return baseEntity.CreatedBy;
+        return null;
+    }
+    
+    private string? GetEntityUpdatedAt()
+    {
+        if (Entity is BaseEntity baseEntity && baseEntity.UpdatedAt.HasValue)
+            return baseEntity.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm");
+        return null;
+    }
+    
+    private string? GetEntityUpdatedBy()
+    {
+        if (Entity is BaseEntity baseEntity)
+            return baseEntity.UpdatedBy;
+        return null;
     }
     
     private void HandleShowAlert((string message, string type) tuple)

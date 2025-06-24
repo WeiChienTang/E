@@ -140,7 +140,8 @@
                     @if (!string.IsNullOrEmpty(customer?.Remarks))
                     {
                         <DetailFieldComponent Label="備註" Value="@customer.Remarks" ColSize="12" />
-                    }                </div>
+                    }                
+                    </div>
             },
             
             new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
@@ -164,7 +165,8 @@
                             <i class="fas fa-phone-slash fa-2x mb-2 d-block"></i>
                             尚未設定聯絡方式
                         </div>
-                    }                </div>
+                    }                
+                    </div>
             },
             
             new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
@@ -188,6 +190,21 @@
                             <i class="fas fa-map-marker-alt-slash fa-2x mb-2 d-block"></i>
                             尚未設定地址
                         </div>
+                    }
+                </div>
+            },
+
+            new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
+            {
+                Id = "system",
+                Title = "系統資訊",
+                Content = @<div class="row">
+                    <DetailFieldComponent Label="建立時間" Value="@customer?.CreatedAt.ToString("yyyy/MM/dd HH:mm")" />
+                    <DetailFieldComponent Label="建立者" Value="@customer?.CreatedBy" EmptyText="系統" />
+                    @if (customer?.UpdatedAt.HasValue == true)
+                    {
+                        <DetailFieldComponent Label="更新時間" Value="@customer.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")" />
+                        <DetailFieldComponent Label="更新者" Value="@customer?.UpdatedBy" EmptyText="系統" />
                     }
                 </div>
             }

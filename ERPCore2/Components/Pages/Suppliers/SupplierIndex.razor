@@ -9,7 +9,8 @@
 <GenericIndexPageComponent TEntity="Supplier" 
                           TService="ISupplierService"
                           Service="@SupplierService"
-                          EntityBasePath="/suppliers"                          PageTitle="廠商維護"
+                          EntityBasePath="/suppliers"                          
+                          PageTitle="廠商維護"
                           PageSubtitle="管理所有廠商資料與聯絡資訊"
                           EntityName="廠商"
                           BreadcrumbItems="@breadcrumbItems"
@@ -24,10 +25,6 @@
 @code {
     // 組件參考
     private GenericIndexPageComponent<Supplier, ISupplierService> indexComponent = default!;
-    
-    // 選項清單
-    private List<SupplierType> supplierTypes = new();
-    private List<IndustryType> industryTypes = new();
     
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
@@ -48,25 +45,11 @@
             new("首頁", "/"),
             new("廠商管理")
         };
-    }
-
-    // 載入基礎資料（選項清單等）
+    }    // 載入基礎資料（選項清單等）
     private async Task LoadBasicDataAsync()
     {
-        try
-        {
-            supplierTypes = await SupplierService.GetSupplierTypesAsync();
-            industryTypes = await SupplierService.GetIndustryTypesAsync();
-            
-            // 重新初始化篩選器（因為需要選項資料）
-            InitializeFilters();
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入基礎資料失敗：", ex.Message);
-            supplierTypes = new List<SupplierType>();
-            industryTypes = new List<IndustryType>();
-        }
+        // 這個方法現在不需要載入任何資料，因為我們使用文字搜尋而不是下拉選單
+        await Task.CompletedTask;
     }
 
     // 載入廠商資料
@@ -84,22 +67,7 @@
     }
 
     private void InitializeFilters()
-    {
-        // 準備廠商類型選項
-        var supplierTypeOptions = supplierTypes.Select(st => new SelectOption
-        {
-            Text = st.TypeName,
-            Value = st.Id.ToString()
-        }).ToList();
-
-        // 準備行業類型選項
-        var industryTypeOptions = industryTypes.Select(it => new SelectOption
-        {
-            Text = it.IndustryTypeName,
-            Value = it.Id.ToString()
-        }).ToList();
-
-        // 準備狀態選項
+    {        // 準備狀態選項
         var statusOptions = new List<SelectOption>
         {
             new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
@@ -111,8 +79,8 @@
             .AddText("SupplierCode", "廠商代碼", "輸入廠商代碼搜尋")
             .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
             .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
-            .AddSelect("SupplierTypeId", "廠商類型", supplierTypeOptions, isAdvanced: true)
-            .AddSelect("IndustryTypeId", "行業類型", industryTypeOptions, isAdvanced: true)
+            .AddText("SupplierTypeName", "廠商類型", "輸入廠商類型搜尋")
+            .AddText("IndustryTypeName", "行業類型", "輸入行業類型搜尋")
             .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
             .AddText("TaxNumber", "統一編號", "輸入統一編號搜尋", isAdvanced: true)
             .Build();
@@ -162,20 +130,22 @@
             query = query.Where(s => 
                 !string.IsNullOrEmpty(s.ContactPerson) && 
                 s.ContactPerson.Contains(contactPersonFilter, StringComparison.OrdinalIgnoreCase));
-        }
-
-        // 廠商類型篩選
-        var supplierTypeIdFilter = searchModel.GetFilterValue("SupplierTypeId")?.ToString();
-        if (!string.IsNullOrWhiteSpace(supplierTypeIdFilter) && int.TryParse(supplierTypeIdFilter, out var supplierTypeId))
+        }        // 廠商類型篩選
+        var supplierTypeNameFilter = searchModel.GetFilterValue("SupplierTypeName")?.ToString();
+        if (!string.IsNullOrWhiteSpace(supplierTypeNameFilter))
         {
-            query = query.Where(s => s.SupplierTypeId == supplierTypeId);
+            query = query.Where(s => 
+                s.SupplierType != null && 
+                s.SupplierType.TypeName.Contains(supplierTypeNameFilter, StringComparison.OrdinalIgnoreCase));
         }
 
         // 行業類型篩選
-        var industryTypeIdFilter = searchModel.GetFilterValue("IndustryTypeId")?.ToString();
-        if (!string.IsNullOrWhiteSpace(industryTypeIdFilter) && int.TryParse(industryTypeIdFilter, out var industryTypeId))
+        var industryTypeNameFilter = searchModel.GetFilterValue("IndustryTypeName")?.ToString();
+        if (!string.IsNullOrWhiteSpace(industryTypeNameFilter))
         {
-            query = query.Where(s => s.IndustryTypeId == industryTypeId);
+            query = query.Where(s => 
+                s.IndustryType != null && 
+                s.IndustryType.IndustryTypeName.Contains(industryTypeNameFilter, StringComparison.OrdinalIgnoreCase));
         }
 
         // 狀態篩選
