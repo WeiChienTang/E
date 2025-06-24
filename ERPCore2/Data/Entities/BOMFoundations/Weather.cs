@@ -12,7 +12,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "天氣名稱")]
         public string Name { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "天氣代碼為必填")]
         [MaxLength(20, ErrorMessage = "天氣代碼不可超過20個字元")]
         [Display(Name = "天氣代碼")]
         public string Code { get; set; } = string.Empty;

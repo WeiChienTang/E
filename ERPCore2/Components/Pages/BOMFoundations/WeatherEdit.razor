@@ -3,8 +3,10 @@
 @page "/weather/edit"
 @page "/weather/edit/{id:int?}"
 @inject IWeatherService WeatherService
+@inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@using ERPCore2.Services.Notifications
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯天氣" : "新增天氣")</PageTitle>
@@ -16,7 +18,8 @@
                          Service="@WeatherService"
                          EntityName="天氣"
                          EntityNamePlural="天氣"
-                         IndexRoute="/BOMFoundation/weather"                         FormTitle="基本資料"
+                         IndexRoute="/BOMFoundation/weather"                         
+                         FormTitle="基本資料"
                          FormSubtitle="天氣的基本資訊"
                          UseGenericForm="true"
                          FormFields="@GetFormFields()"
@@ -93,9 +96,9 @@
         };        formSections = new Dictionary<string, string>
         {
             { nameof(Weather.Name), "基本資訊" },
-            { nameof(Weather.Status), "基本資訊" },
+            { nameof(Weather.Status), "設定" },
             { nameof(Weather.Description), "詳細資訊" },
-            { nameof(Weather.Remarks), "其他資訊" }
+            { nameof(Weather.Remarks), "額外資訊" }
         };
     }
 
@@ -116,10 +119,9 @@
 
         try
         {
-            var weather = await WeatherService.GetByIdAsync(Id.Value);
-            if (weather == null)
+            var weather = await WeatherService.GetByIdAsync(Id.Value);            if (weather == null)
             {
-                await JSRuntime.InvokeVoidAsync("alert", "找不到指定的天氣資料");
+                await NotificationService.ShowErrorAsync("找不到指定的天氣資料");
                 Navigation.NavigateTo("/BOMFoundation/weather");
                 return null;
             }

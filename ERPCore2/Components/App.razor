@@ -6,7 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />    <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />    <link rel="stylesheet" href="@Assets["css/shared-utilities.css"]" />
-    <link rel="stylesheet" href="@Assets["app.css"]" />    <link rel="stylesheet" href="@Assets["ERPCore2.styles.css"]" /><style>
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["css/toast.css"]" />
+    <link rel="stylesheet" href="@Assets["ERPCore2.styles.css"]" /><style>
         /* 強制覆蓋導航選單樣式 - 最高優先級 - 包含所有可能的 Bootstrap 類別 */
         .sidebar .nav-scrollable .nav-item .nav-link,
         .sidebar .nav-scrollable .nav-item .dropdown-toggle-btn,
@@ -128,6 +130,7 @@
 <body>    
     <Routes/>    <script src="@Assets["lib/bootstrap/dist/js/bootstrap.bundle.min.js"]"></script>
     <script src="@Assets["js/bootstrap-helpers.js"]"></script>
+    <script src="@Assets["js/toast.js"]"></script>
     <script src="_framework/blazor.web.js"></script>
 </body>
 

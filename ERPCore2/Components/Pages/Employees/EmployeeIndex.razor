@@ -1,8 +1,10 @@
 @page "/employees"
 @inject IEmployeeService EmployeeService
 @inject IRoleService RoleService
+@inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@using ERPCore2.Services.Notifications
 @rendermode InteractiveServer
 
 <PageTitle>員工維護</PageTitle>
@@ -261,21 +263,19 @@
     {
         try
         {
-            var result = await EmployeeService.SetEmployeeActiveStatusAsync(employee.Id, false);
-            if (result.IsSuccess)
+            var result = await EmployeeService.SetEmployeeActiveStatusAsync(employee.Id, false);            if (result.IsSuccess)
             {
-                await JSRuntime.InvokeVoidAsync("alert", "員工帳號已鎖定");
+                await NotificationService.ShowSuccessAsync("員工帳號已鎖定");
                 // 觸發基底組件重新載入
                 await indexComponent.Refresh();
             }
             else
             {
-                await JSRuntime.InvokeVoidAsync("alert", result.ErrorMessage ?? "鎖定失敗");
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "鎖定失敗");
             }
-        }
-        catch (Exception)
+        }        catch (Exception)
         {
-            await JSRuntime.InvokeVoidAsync("alert", "鎖定員工帳號時發生錯誤");
+            await NotificationService.ShowErrorAsync("鎖定員工帳號時發生錯誤");
         }
     }
 
@@ -283,22 +283,20 @@
     {
         try
         {
-            var result = await EmployeeService.SetEmployeeActiveStatusAsync(employee.Id, true);
-            if (result.IsSuccess)
+            var result = await EmployeeService.SetEmployeeActiveStatusAsync(employee.Id, true);            if (result.IsSuccess)
             {
-                await JSRuntime.InvokeVoidAsync("alert", "員工帳號已解鎖");
+                await NotificationService.ShowSuccessAsync("員工帳號已解鎖");
                 // 觸發基底組件重新載入
                 await indexComponent.Refresh();
             }
             else
             {
-                await JSRuntime.InvokeVoidAsync("alert", result.ErrorMessage ?? "解鎖失敗");
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "解鎖失敗");
             }
-        }
-        catch (Exception)
+        }        catch (Exception)
         {
-            await JSRuntime.InvokeVoidAsync("alert", "解鎖員工帳號時發生錯誤");
-        }    }
+            await NotificationService.ShowErrorAsync("解鎖員工帳號時發生錯誤");
+        }}
 
     // 員工專用的自定義操作按鈕
     private RenderFragment<Employee> EmployeeCustomActions => employee =>

@@ -3,8 +3,10 @@
 @page "/colors/edit"
 @page "/colors/edit/{id:int?}"
 @inject IColorService ColorService
+@inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@using ERPCore2.Services.Notifications
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯顏色" : "新增顏色")</PageTitle>
@@ -52,11 +54,10 @@
             new("顏色管理", "/BOMFoundation/colors"),
             new(Id.HasValue ? "編輯顏色" : "新增顏色")
         };
-    }
-
-    private void InitializeFormFields()
+    }    private void InitializeFormFields()
     {        formFields = new List<FormFieldDefinition>
         {
+            // 基本資訊區段
             new()
             {
                 PropertyName = nameof(Color.Name),
@@ -87,6 +88,7 @@
                 },
                 ContainerCssClass = "col-md-6"
             },
+            // 詳細資訊區段
             new()
             {
                 PropertyName = nameof(Color.Description),
@@ -96,6 +98,7 @@
                 Rows = 3,
                 ContainerCssClass = "col-12"
             },
+            // 其他資訊區段
             new()
             {
                 PropertyName = nameof(Color.Remarks),
@@ -109,9 +112,9 @@
         {
             { nameof(Color.Name), "基本資訊" },
             { nameof(Color.Code), "基本資訊" },
-            { nameof(Color.Status), "基本資訊" },
+            { nameof(Color.Status), "設定" },
             { nameof(Color.Description), "詳細資訊" },
-            { nameof(Color.Remarks), "其他資訊" }
+            { nameof(Color.Remarks), "額外資訊" }
         };
     }
 
@@ -132,10 +135,11 @@
 
         try
         {
-            var color = await ColorService.GetByIdAsync(Id.Value);
+            var color = await ColorService.GetByIdAsync(Id.Value);            
+            
             if (color == null)
             {
-                await JSRuntime.InvokeVoidAsync("alert", "找不到指定的顏色資料");
+                await NotificationService.ShowErrorAsync("找不到指定的顏色資料");
                 Navigation.NavigateTo("/BOMFoundation/colors");
                 return null;
             }

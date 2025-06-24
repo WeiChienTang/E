@@ -1,5 +1,6 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Services;
+using ERPCore2.Services.Notifications;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERPCore2.Data
@@ -28,6 +29,9 @@ namespace ERPCore2.Data
         /// <param name="services">服務集合</param>
         public static void AddServices(this IServiceCollection services)
         {
+            // 通知服務
+            services.AddScoped<INotificationService, NotificationService>();
+
             // 客戶相關服務
             services.AddScoped<ICustomerService, CustomerService>();
             services.AddScoped<ICustomerContactService, CustomerContactService>();

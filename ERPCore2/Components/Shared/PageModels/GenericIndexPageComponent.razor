@@ -1,6 +1,7 @@
 @* 泛型Index頁面基底組件 *@
 @using ERPCore2.Data
 @using ERPCore2.Data.Entities
+@using ERPCore2.Services.Notifications
 @using ERPCore2.Components.Shared.Forms
 @using ERPCore2.Components.Shared.Tables
 @using ERPCore2.Components.Shared.Headers
@@ -13,6 +14,7 @@
 @typeparam TService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 
 @* 頁面標題 *@
 <GenericHeaderComponent Title="@PageTitle"
@@ -230,28 +232,25 @@
                         
                         if (isSuccessProperty != null)
                         {
-                            var isSuccess = (bool)isSuccessProperty.GetValue(result)!;
-                            if (isSuccess)
+                            var isSuccess = (bool)isSuccessProperty.GetValue(result)!;                            if (isSuccess)
                             {
                                 var successMessage = GetDeleteSuccessMessage();
-                                await JSRuntime.InvokeVoidAsync("alert", successMessage);
+                                await NotificationService.ShowSuccessAsync(successMessage);
                                 await Refresh();
                             }
                             else
                             {
                                 var errorMessage = errorMessageProperty?.GetValue(result)?.ToString() ?? "刪除失敗";
-                                await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{errorMessage}");
+                                await NotificationService.ShowErrorAsync($"刪除失敗：{errorMessage}");
                             }
                         }
-                    }                }
-                else
+                    }                }                else
                 {
-                    await JSRuntime.InvokeVoidAsync("alert", "找不到刪除方法");
+                    await NotificationService.ShowErrorAsync("找不到刪除方法");
                 }
-            }
-            catch (Exception ex)
+            }            catch (Exception ex)
             {
-                await JSRuntime.InvokeVoidAsync("alert", $"刪除時發生錯誤：{ex.Message}");
+                await NotificationService.ShowErrorAsync($"刪除時發生錯誤：{ex.Message}");
             }
         }
     }

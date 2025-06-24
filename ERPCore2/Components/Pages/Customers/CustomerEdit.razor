@@ -3,9 +3,11 @@
 @inject ICustomerService CustomerService
 @inject ICustomerAddressService CustomerAddressService
 @inject ICustomerContactService CustomerContactService
+@inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @using ERPCore2.Components.Shared.SubCollections
+@using ERPCore2.Services.Notifications
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯客戶" : "新增客戶")</PageTitle>
@@ -330,21 +332,27 @@
         {
             return "C0001"; // 如果出錯，回傳預設值
         }    
-    }    
-    private async Task<bool> SaveCustomer(Customer entity)
-        {
+    }    private async Task<bool> SaveCustomer(Customer entity)
+    {
         try
         {
-            // 驗證基本資料
+            // 首先執行必填欄位的客戶端驗證
+            var isRequiredFieldsValid = await NotificationService.ValidateRequiredFieldsAsync();
+            if (!isRequiredFieldsValid)
+            {
+                return false;
+            }
+
+            // 基本驗證 - 使用通知服務
             if (string.IsNullOrWhiteSpace(entity.CustomerCode))
             {
-                await JSRuntime.InvokeVoidAsync("alert", "客戶代碼為必填");
+                await NotificationService.ShowErrorAsync("客戶代碼為必填");
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(entity.CompanyName))
             {
-                await JSRuntime.InvokeVoidAsync("alert", "公司名稱為必填");
+                await NotificationService.ShowErrorAsync("公司名稱為必填");
                 return false;
             }
 
@@ -356,43 +364,33 @@
                 result = await CustomerService.UpdateAsync(entity);
                 if (result.IsSuccess)
                 {
-                    // 更新聯絡方式
+                    // 更新聯絡方式和地址資料
                     await CustomerService.UpdateCustomerContactsAsync(entity.Id, customerContacts);
-                    
-                    // 更新地址資料
                     await CustomerAddressService.UpdateCustomerAddressesAsync(entity.Id, customerAddresses);
                 }
             }
             else
             {
                 // 新增客戶
-                result = await CustomerService.CreateAsync(entity);                if (result.IsSuccess)
+                result = await CustomerService.CreateAsync(entity);
+                if (result.IsSuccess)
                 {
-                    // 更新聯絡方式
+                    // 更新聯絡方式和地址資料
                     await CustomerService.UpdateCustomerContactsAsync(entity.Id, customerContacts);
-                    
-                    // 更新地址資料
                     await CustomerAddressService.UpdateCustomerAddressesAsync(entity.Id, customerAddresses);
                 }
             }
 
-            if (result.IsSuccess)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", "客戶資料儲存成功！");
-                return true;
-            }
-            else
-            {
-                await JSRuntime.InvokeVoidAsync("alert", $"儲存失敗：{result.ErrorMessage}");
-                return false;
-            }
+            // 使用通知服務顯示結果，但不重複顯示
+            // GenericEditPageComponent 會處理通用的成功/失敗訊息
+            return result.IsSuccess;
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "儲存客戶資料時發生錯誤：", ex.Message);
-            await JSRuntime.InvokeVoidAsync("alert", $"儲存時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"儲存時發生錯誤：{ex.Message}");
             return false;
-        }    }
+        }
+    }
 
     // ===== 子集合事件處理 =====
     

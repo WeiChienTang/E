@@ -7,10 +7,12 @@
 @inject IContactTypeService ContactTypeService
 @inject IAddressTypeService AddressTypeService
 @inject IAuthenticationService AuthenticationService
+@inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @using ERPCore2.Components.Shared.SubCollections
 @using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Services.Notifications
 @rendermode InteractiveServer
 @implements IDisposable
 
@@ -124,13 +126,16 @@
                                     <label class="form-label">失敗登入次數</label>
                                     <div class="fw-bold @(employee.FailedLoginAttempts >= 3 ? "text-danger" : "text-warning")">
                                         @employee.FailedLoginAttempts
-                                    </div>                                    <GenericButtonComponent Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small"
+                                    </div>
+                                    <GenericButtonComponent Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small"
                                                            Text="重設登入失敗次數" OnClick="ResetFailedAttempts" 
                                                            CssClass="mt-1" />
                                 </div>
                             </div>
                         </div>
-                    }                    <div class="row">
+                    }
+
+                    <div class="row">
                         <div class="col-12">
                             <GenericButtonComponent Variant="ButtonVariant.Warning" Text="重設密碼" 
                                                    IconClass="bi bi-key me-1" OnClick="ShowPasswordResetDialog" />
@@ -138,7 +143,9 @@
                     </div>
                 </div>
             </div>
-        }        @* 聯絡方式管理 *@
+        }
+
+        @* 聯絡方式管理 *@
         <ContactManagerComponent TContactEntity="EmployeeContact"
                                TParentEntity="Employee"
                                Items="@employeeContacts"
@@ -210,7 +217,9 @@
     {
         InitializeBreadcrumbs();
         await LoadAdditionalData();
-    }    protected override Task OnParametersSetAsync()
+    }
+
+    protected override Task OnParametersSetAsync()
     {
         // 當參數變化時（例如從 Detail 導航到 Edit），重新初始化麵包屑
         InitializeBreadcrumbs();
@@ -430,28 +439,28 @@
     {
         try
         {
-            // 驗證基本資料
+            // 基本驗證 - 使用通知服務
             if (string.IsNullOrWhiteSpace(entity.EmployeeCode))
             {
-                await JSRuntime.InvokeVoidAsync("alert", "員工代碼為必填");
+                await NotificationService.ShowErrorAsync("員工代碼為必填");
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(entity.Username))
             {
-                await JSRuntime.InvokeVoidAsync("alert", "帳號為必填");
+                await NotificationService.ShowErrorAsync("帳號為必填");
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(entity.LastName))
             {
-                await JSRuntime.InvokeVoidAsync("alert", "姓氏為必填");
+                await NotificationService.ShowErrorAsync("姓氏為必填");
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(entity.FirstName))
             {
-                await JSRuntime.InvokeVoidAsync("alert", "名字為必填");
+                await NotificationService.ShowErrorAsync("名字為必填");
                 return false;
             }
 
@@ -472,10 +481,8 @@
                 result = await EmployeeService.UpdateAsync(entity);
                 if (result.IsSuccess)
                 {
-                    // 更新聯絡方式
+                    // 更新聯絡方式和地址資料
                     await EmployeeService.UpdateEmployeeContactsAsync(entity.Id, employeeContacts);
-                    
-                    // 更新地址資料
                     await EmployeeService.UpdateEmployeeAddressesAsync(entity.Id, employeeAddresses);
                 }
             }
@@ -509,21 +516,12 @@
                 }
             }
 
-            if (result.IsSuccess)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", "員工資料儲存成功！");
-                return true;
-            }
-            else
-            {
-                await JSRuntime.InvokeVoidAsync("alert", $"儲存失敗：{result.ErrorMessage}");
-                return false;
-            }
+            // 讓 GenericEditPageComponent 處理通用的成功/失敗訊息
+            return result.IsSuccess;
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "儲存員工資料時發生錯誤：", ex.Message);
-            await JSRuntime.InvokeVoidAsync("alert", $"儲存時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"儲存時發生錯誤：{ex.Message}");
             return false;
         }
     }
@@ -555,7 +553,9 @@
         {
             confirmPasswordValidationMessage = "密碼確認不一致";
             return false;
-        }        return true;
+        }
+        
+        return true;
     }
 
     #region 帳號管理
@@ -567,12 +567,13 @@
             if (employee != null)
             {
                 employee.FailedLoginAttempts = 0;
-                await JSRuntime.InvokeVoidAsync("alert", "登入失敗次數已重設");
+                employee.IsLocked = false;
+                await NotificationService.ShowSuccessAsync("登入失敗次數已重設");
             }
         }
         catch (Exception)
         {
-            await JSRuntime.InvokeVoidAsync("alert", "重設失敗");
+            await NotificationService.ShowErrorAsync("重設失敗");
         }
     }
 
@@ -583,7 +584,7 @@
             if (employee == null) return;
 
             var newPassword = $"Temp{DateTime.Now:yyyyMMdd}!";
-            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            var confirmed = await NotificationService.ShowConfirmAsync(
                 $"確定要重設 {employee.Username} 的密碼嗎？\n新密碼將設為：{newPassword}");
 
             if (confirmed)
@@ -593,22 +594,23 @@
                 {
                     employee.FailedLoginAttempts = 0;
                     employee.IsLocked = false;
-                    await JSRuntime.InvokeVoidAsync("alert", $"密碼已重設為：{newPassword}");
+                    await NotificationService.ShowSuccessAsync($"密碼已重設為：{newPassword}");
                 }
                 else
                 {
-                    await JSRuntime.InvokeVoidAsync("alert", $"重設密碼失敗：{resetResult.ErrorMessage}");
+                    await NotificationService.ShowErrorAsync($"重設密碼失敗：{resetResult.ErrorMessage}");
                 }
             }
         }
         catch (Exception)
         {
-            await JSRuntime.InvokeVoidAsync("alert", "重設密碼失敗");
-        }    }
+            await NotificationService.ShowErrorAsync("重設密碼失敗");
+        }
+    }
 
-#endregion
+    #endregion
 
-#region 事件處理方法
+    #region 事件處理方法
 
     private Task OnEmployeeContactsChanged(List<EmployeeContact> updatedContacts)
     {
@@ -624,7 +626,7 @@
         return Task.CompletedTask;
     }
 
-#endregion
+    #endregion
     
     public void Dispose()
     {

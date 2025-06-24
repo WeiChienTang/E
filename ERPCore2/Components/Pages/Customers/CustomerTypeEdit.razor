@@ -6,8 +6,10 @@
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
 @inject ICustomerTypeService CustomerTypeService
+@inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@using ERPCore2.Services.Notifications
 @rendermode InteractiveServer
 @implements IDisposable
 
@@ -151,10 +153,9 @@
             {
                 customerType = loadedCustomerType;
                 return customerType;
-            }
-            else
+            }            else
             {
-                await JSRuntime.InvokeVoidAsync("alert", "找不到指定的客戶類型資料");
+                await NotificationService.ShowErrorAsync("找不到指定的客戶類型資料");
                 Navigation.NavigateTo("/customer-types");
                 return null;
             }
@@ -174,11 +175,10 @@
     {
         return Id.HasValue ? "編輯客戶類型" : "新增客戶類型";
     }    private async Task<bool> ValidateCustomerType(CustomerType entity)
-    {
-        // 驗證基本資料
+    {        // 驗證基本資料
         if (string.IsNullOrWhiteSpace(entity.TypeName))
         {
-            await JSRuntime.InvokeVoidAsync("alert", "類型名稱為必填欄位");
+            await NotificationService.ShowErrorAsync("類型名稱為必填欄位");
             return false;
         }
 
@@ -186,7 +186,7 @@
         var isNameExists = await CustomerTypeService.IsTypeNameExistsAsync(entity.TypeName, Id);
         if (isNameExists)
         {
-            await JSRuntime.InvokeVoidAsync("alert", "此類型名稱已存在，請使用其他名稱");
+            await NotificationService.ShowErrorAsync("此類型名稱已存在，請使用其他名稱");
             return false;
         }
 

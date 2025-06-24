@@ -5,9 +5,11 @@
 @inject ISupplierContactService SupplierContactService
 @inject IContactTypeService ContactTypeService
 @inject IAddressTypeService AddressTypeService
+@inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @using ERPCore2.Components.Shared.SubCollections
+@using ERPCore2.Services.Notifications
 @rendermode InteractiveServer
 @implements IDisposable
 
@@ -314,22 +316,20 @@
     private string GetPageTitle()
     {
         return Id.HasValue ? "編輯廠商" : "新增廠商";
-    }
-
-    private async Task<bool> SaveSupplier(Supplier entity)
+    }    private async Task<bool> SaveSupplier(Supplier entity)
     {
         try
         {
-            // 驗證基本資料
+            // 基本驗證 - 使用通知服務
             if (string.IsNullOrWhiteSpace(entity.SupplierCode))
             {
-                await JSRuntime.InvokeVoidAsync("alert", "廠商代碼為必填");
+                await NotificationService.ShowErrorAsync("廠商代碼為必填");
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(entity.CompanyName))
             {
-                await JSRuntime.InvokeVoidAsync("alert", "公司名稱為必填");
+                await NotificationService.ShowErrorAsync("公司名稱為必填");
                 return false;
             }
 
@@ -341,10 +341,8 @@
                 result = await SupplierService.UpdateAsync(entity);
                 if (result.IsSuccess)
                 {
-                    // 更新聯絡方式
+                    // 更新聯絡方式和地址資料
                     await SupplierService.UpdateSupplierContactsAsync(entity.Id, supplierContacts);
-                    
-                    // 更新地址資料
                     await SupplierAddressService.UpdateSupplierAddressesAsync(entity.Id, supplierAddresses);
                 }
             }
@@ -372,23 +370,15 @@
                 }
             }
 
-            if (result.IsSuccess)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", "廠商資料儲存成功！");
-                return true;
-            }
-            else
-            {
-                await JSRuntime.InvokeVoidAsync("alert", $"儲存失敗：{result.ErrorMessage}");
-                return false;
-            }
+            // 讓 GenericEditPageComponent 處理通用的成功/失敗訊息
+            return result.IsSuccess;
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "儲存廠商資料時發生錯誤：", ex.Message);
-            await JSRuntime.InvokeVoidAsync("alert", $"儲存時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"儲存時發生錯誤：{ex.Message}");
             return false;
-        }    }
+        }
+    }
 
 #region 事件處理方法
 

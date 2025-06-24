@@ -2,6 +2,8 @@
 @using System.ComponentModel.DataAnnotations
 @using System.Reflection
 @using Microsoft.AspNetCore.Components.Rendering
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Forms
 @using ERPCore2.Components.Shared.Buttons
 @inject IJSRuntime JSRuntime
 @typeparam TModel
@@ -265,9 +267,7 @@
         }
         
         builder.CloseElement(); // container div
-    };
-
-    private void RenderTextInput(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
+    };    private void RenderTextInput(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
     {
         builder.OpenElement(sequence, "input");
         builder.AddAttribute(sequence + 1, "type", GetInputType(field.FieldType));
@@ -275,14 +275,16 @@
         builder.AddAttribute(sequence + 3, "id", field.PropertyName);
         builder.AddAttribute(sequence + 4, "placeholder", field.Placeholder);
         builder.AddAttribute(sequence + 5, "readonly", field.IsReadOnly);
-        builder.AddAttribute(sequence + 6, "value", GetPropertyValue(Model, field.PropertyName)?.ToString());
-        builder.AddAttribute(sequence + 7, "onchange", EventCallback.Factory.CreateBinder(this, 
+        if (field.IsRequired)
+        {
+            builder.AddAttribute(sequence + 6, "required", true);
+        }
+        builder.AddAttribute(sequence + 7, "value", GetPropertyValue(Model, field.PropertyName)?.ToString());
+        builder.AddAttribute(sequence + 8, "onchange", EventCallback.Factory.CreateBinder(this, 
             value => SetPropertyValue(Model, field.PropertyName, value), 
             GetPropertyValue(Model, field.PropertyName)?.ToString() ?? ""));
         builder.CloseElement();
-    }
-
-    private void RenderNumberInput(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
+    }    private void RenderNumberInput(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
     {
         builder.OpenElement(sequence, "input");
         builder.AddAttribute(sequence + 1, "type", "number");
@@ -291,15 +293,20 @@
         builder.AddAttribute(sequence + 4, "placeholder", field.Placeholder);
         builder.AddAttribute(sequence + 5, "readonly", field.IsReadOnly);
         
+        if (field.IsRequired)
+        {
+            builder.AddAttribute(sequence + 6, "required", true);
+        }
+        
         if (field.Min.HasValue)
-            builder.AddAttribute(sequence + 6, "min", field.Min.Value);
+            builder.AddAttribute(sequence + 7, "min", field.Min.Value);
         if (field.Max.HasValue)
-            builder.AddAttribute(sequence + 7, "max", field.Max.Value);
+            builder.AddAttribute(sequence + 8, "max", field.Max.Value);
         if (field.Step.HasValue)
-            builder.AddAttribute(sequence + 8, "step", field.Step.Value);
+            builder.AddAttribute(sequence + 9, "step", field.Step.Value);
             
-        builder.AddAttribute(sequence + 9, "value", GetPropertyValue(Model, field.PropertyName)?.ToString());
-        builder.AddAttribute(sequence + 10, "onchange", EventCallback.Factory.CreateBinder(this, 
+        builder.AddAttribute(sequence + 10, "value", GetPropertyValue(Model, field.PropertyName)?.ToString());
+        builder.AddAttribute(sequence + 11, "onchange", EventCallback.Factory.CreateBinder(this, 
             value => SetPropertyValue(Model, field.PropertyName, value), 
             GetPropertyValue(Model, field.PropertyName)?.ToString() ?? ""));
         builder.CloseElement();

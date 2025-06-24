@@ -2,10 +2,12 @@
 @typeparam TParentEntity where TParentEntity : ERPCore2.Data.BaseEntity
 @using ERPCore2.Data
 @using ERPCore2.Data.Enums
+@using ERPCore2.Services.Notifications
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Components.Shared.Buttons
 @using Microsoft.JSInterop
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 
 <div class="card mb-4">    <GenericHeaderComponent Title="@Title"
                            Subtitle="@GetSubtitle()"
@@ -220,11 +222,10 @@
                 errors.Add($"{ItemDisplayName} #{i + 1} 的{ValueDisplayName}為必填");
             }
         }
-        
-        if (errors.Any())
+          if (errors.Any())
         {
             var errorMessage = string.Join("\n", errors);
-            await JSRuntime.InvokeVoidAsync("alert", errorMessage);
+            await NotificationService.ShowErrorAsync(errorMessage);
             return false;
         }
         

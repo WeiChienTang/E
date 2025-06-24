@@ -46,9 +46,6 @@ namespace ERPCore2.Services
             if (string.IsNullOrWhiteSpace(entity.Name))
                 return ServiceResult.Failure("天氣名稱為必填");
 
-            if (string.IsNullOrWhiteSpace(entity.Code))
-                return ServiceResult.Failure("天氣代碼為必填");
-
             // 檢查代碼是否重複
             if (await IsCodeExistsAsync(entity.Code, entity.Id))
                 return ServiceResult.Failure("天氣代碼已存在");
