@@ -1,0 +1,123 @@
+@page "/roles"
+@inject IRoleService RoleService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>角色維護</PageTitle>
+
+<GenericIndexPageComponent TEntity="Role" 
+                          TService="IRoleService"
+                          Service="@RoleService"
+                          EntityBasePath="/roles"
+                          PageTitle="角色維護"
+                          PageSubtitle="管理系統角色與權限設定"
+                          EntityName="角色"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadRolesAsync"
+                          FilterApplier="@ApplyRoleFilters"
+                          GetEntityDisplayName="@(role => role.RoleName)"
+                          @ref="indexComponent" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<Role, IRoleService> indexComponent = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override void OnInitialized()
+    {
+        InitializeBreadcrumbs();
+        InitializeFilters();
+        InitializeTableColumns();
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("基礎資料", "#"),
+            new("角色維護")
+        };
+    }
+
+    // 載入角色資料
+    private async Task<List<Role>> LoadRolesAsync()
+    {
+        try
+        {
+            return await RoleService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入角色資料失敗：", ex.Message);
+            return new List<Role>();
+        }
+    }
+
+    private void InitializeFilters()
+    {
+        // 準備系統角色選項
+        var systemRoleOptions = new List<SelectOption>
+        {
+            new() { Text = "是", Value = "true" },
+            new() { Text = "否", Value = "false" }
+        };
+
+        // 建立篩選定義
+        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+            .AddText("RoleName", "角色名稱", "輸入角色名稱搜尋")
+            .AddText("Description", "角色描述", "輸入角色描述搜尋", isAdvanced: true)
+            .AddSelect("IsSystemRole", "系統角色", systemRoleOptions, isAdvanced: true)
+            .Build();
+    }    private void InitializeTableColumns()
+    {
+        columnDefinitions = new List<TableColumnDefinition>
+        {
+            TableColumnDefinition.Text("角色名稱", nameof(Role.RoleName)),
+            TableColumnDefinition.Text("角色描述", nameof(Role.Description)),
+            TableColumnDefinition.Status("系統角色", nameof(Role.IsSystemRole), new Dictionary<object, string>
+            {
+                { true, "bg-primary" },
+                { false, "bg-secondary" }
+            }),
+            TableColumnDefinition.Date("建立日期", nameof(Role.CreatedAt), "yyyy/MM/dd")
+        };
+    }
+
+    // 自定義篩選邏輯
+    private IQueryable<Role> ApplyRoleFilters(SearchFilterModel searchModel, IQueryable<Role> query)
+    {
+        // 角色名稱篩選
+        var roleNameFilter = searchModel.GetFilterValue("RoleName")?.ToString();
+        if (!string.IsNullOrWhiteSpace(roleNameFilter))
+        {
+            query = query.Where(r => 
+                r.RoleName.Contains(roleNameFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 角色描述篩選
+        var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
+        if (!string.IsNullOrWhiteSpace(descriptionFilter))
+        {
+            query = query.Where(r => 
+                !string.IsNullOrEmpty(r.Description) && 
+                r.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 系統角色篩選
+        var isSystemRoleFilter = searchModel.GetFilterValue("IsSystemRole")?.ToString();
+        if (!string.IsNullOrWhiteSpace(isSystemRoleFilter) && bool.TryParse(isSystemRoleFilter, out var isSystemRole))
+        {
+            query = query.Where(r => r.IsSystemRole == isSystemRole);
+        }
+
+        return query.OrderBy(r => r.RoleName);
+    }
+}

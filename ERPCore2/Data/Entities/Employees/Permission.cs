@@ -40,7 +40,8 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "動作")]
         [Required(ErrorMessage = "請輸入動作")]
         [MaxLength(50, ErrorMessage = "動作不可超過50個字元")]
-        public string Action { get; set; } = string.Empty;        /// <summary>
+        public string Action { get; set; } = string.Empty;
+        /// <summary>
         /// 權限群組 (用於UI分組顯示)
         /// </summary>
         [Display(Name = "權限群組")]

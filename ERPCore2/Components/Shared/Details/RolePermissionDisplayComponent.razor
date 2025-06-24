@@ -1,0 +1,137 @@
+@* 角色權限顯示組件 *@
+
+@if (RolePermissions?.Any() == true)
+{
+    @foreach (var moduleGroup in GetPermissionsByModule())
+    {
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">
+                    <i class="fas fa-cube text-primary me-2"></i>
+                    @GetModuleDisplayName(moduleGroup.Key) 模組
+                    <span class="badge bg-secondary ms-2">@moduleGroup.Count() 個權限</span>
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 40%">權限名稱</th>
+                                <th style="width: 20%">操作類型</th>
+                                <th style="width: 25%">權限代碼</th>
+                                <th style="width: 15%">權限群組</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var rolePermission in moduleGroup.OrderBy(rp => rp.Permission!.Action))
+                            {
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-key text-muted me-1"></i>
+                                        @rolePermission.Permission!.PermissionName
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetActionBadgeClass(rolePermission.Permission.Action)">
+                                            @GetActionDisplayName(rolePermission.Permission.Action)
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <code class="text-muted small">@rolePermission.Permission.PermissionCode</code>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(rolePermission.Permission.PermissionGroup))
+                                        {
+                                            <span class="badge bg-light text-dark">@rolePermission.Permission.PermissionGroup</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+      <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>權限總計：</strong>共 @RolePermissions.Count 個權限，涵蓋 @GetPermissionsByModule().Count() 個模組
+    </div>
+}
+else
+{
+    <div class="text-muted p-5 text-center">
+        <i class="fas fa-lock fa-3x mb-3 d-block text-secondary"></i>
+        <h5>尚未設定權限</h5>
+        <p class="mb-0">此角色目前沒有任何權限設定</p>
+    </div>
+}
+
+@code {
+    [Parameter] public ICollection<RolePermission>? RolePermissions { get; set; }
+
+    // 取得按模組分組的權限
+    private IEnumerable<IGrouping<string, RolePermission>> GetPermissionsByModule()
+    {
+        if (RolePermissions == null) return Enumerable.Empty<IGrouping<string, RolePermission>>();
+        
+        return RolePermissions
+            .Where(rp => rp.Permission != null)
+            .GroupBy(rp => rp.Permission!.Module)
+            .OrderBy(g => g.Key);
+    }
+
+    // 權限顯示相關輔助方法
+    private string GetModuleDisplayName(string module)
+    {
+        return module switch
+        {
+            "Customer" => "客戶管理",
+            "Supplier" => "廠商管理", 
+            "Employee" => "員工管理",
+            "Product" => "產品管理",
+            "Inventory" => "庫存管理",
+            "Order" => "訂單管理",
+            "BOM" => "BOM管理",
+            "System" => "系統管理",
+            "Report" => "報表管理",
+            _ => module
+        };
+    }
+    
+    private string GetActionDisplayName(string action)
+    {
+        return action switch
+        {
+            "View" => "查看",
+            "Create" => "新增",
+            "Update" => "修改", 
+            "Delete" => "刪除",
+            "Export" => "匯出",
+            "Import" => "匯入",
+            "Approve" => "審核",
+            "Manage" => "管理",
+            _ => action
+        };
+    }
+    
+    private string GetActionBadgeClass(string action)
+    {
+        return action switch
+        {
+            "View" => "bg-info",
+            "Create" => "bg-success",
+            "Update" => "bg-warning", 
+            "Delete" => "bg-danger",
+            "Export" => "bg-primary",
+            "Import" => "bg-primary",
+            "Approve" => "bg-dark",
+            "Manage" => "bg-secondary",
+            _ => "bg-light text-dark"
+        };
+    }
+}
