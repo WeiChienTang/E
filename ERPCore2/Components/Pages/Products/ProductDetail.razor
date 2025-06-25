@@ -151,42 +151,16 @@
     private List<GenericDetailPageComponent<Product, IProductService>.TabSection> GetTabSections()
     {
         return new List<GenericDetailPageComponent<Product, IProductService>.TabSection>
-        {
-            new GenericDetailPageComponent<Product, IProductService>.TabSection
+        {            new GenericDetailPageComponent<Product, IProductService>.TabSection
             {
                 Id = "basic",
                 Title = "基本資料",
-                Content = @<div class="row">
-                    <DetailFieldComponent Label="商品代碼" Value="@product?.ProductCode" IsPrimary="true" IsBold="true" />
-                    <DetailFieldComponent Label="商品名稱" Value="@product?.ProductName" IsBold="true" />
-                    <DetailFieldComponent Label="商品分類" Value="@product?.ProductCategory?.CategoryName" />
-                    <DetailFieldComponent Label="單位" Value="@product?.Unit?.UnitName" />
-                    <DetailFieldComponent Label="狀態">
-                        @if (product?.Status != null)
-                        {
-                            <StatusBadgeComponent Status="@product.Status" />
-                        }
-                    </DetailFieldComponent>
-                    <DetailFieldComponent Label="啟用狀態">
-                        @if (product != null)
-                        {
-                            <span class="badge @(product.IsActive ? "bg-success" : "bg-secondary")">
-                                @(product.IsActive ? "啟用" : "停用")
-                            </span>
-                        }
-                    </DetailFieldComponent>
-                    @if (!string.IsNullOrEmpty(product?.Description))
-                    {
-                        <DetailFieldComponent Label="商品描述" Value="@product.Description" ColSize="12" />
-                    }
-                    @if (!string.IsNullOrEmpty(product?.Specification))
-                    {
-                        <DetailFieldComponent Label="規格說明" Value="@product.Specification" ColSize="12" />
-                    }
-                    @if (!string.IsNullOrEmpty(product?.Remarks))
-                    {
-                        <DetailFieldComponent Label="備註" Value="@product.Remarks" ColSize="12" />
-                    }
+                Content = @<div>
+                    <BasicInfoDisplayComponent 
+                        Title="商品基本資訊"
+                        IconClass="fas fa-box"
+                        IconColor="text-primary"
+                        Fields="@GetProductBasicFields()" />
                 </div>
             },
             
@@ -302,6 +276,115 @@
                         ShowTimeline="true"
                         ShowRemarks="true" />
                 </div>
+            }        };
+    }
+
+    // 取得商品基本資料欄位
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetProductBasicFields()
+    {
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "商品代碼",
+                Value = product?.ProductCode,
+                IsPrimary = true,
+                ValueBold = true,
+                IconClass = "fas fa-barcode",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "商品名稱",
+                Value = product?.ProductName,
+                ValueBold = true,
+                IconClass = "fas fa-box",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "商品分類",
+                Value = product?.ProductCategory?.CategoryName,
+                IconClass = "fas fa-tags",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "單位",
+                Value = product?.Unit?.UnitName,
+                IconClass = "fas fa-weight",
+                IconBgClass = "bg-secondary bg-opacity-10",
+                IconTextClass = "text-secondary",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "狀態",
+                CustomContent = @<div>
+                    @if (product?.Status != null)
+                    {
+                        <StatusBadgeComponent Status="@product.Status" />
+                    }
+                </div>,
+                IconClass = "fas fa-toggle-on",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "啟用狀態",
+                CustomContent = @<div>
+                    @if (product != null)
+                    {
+                        <span class="badge @(product.IsActive ? "bg-success" : "bg-secondary")">
+                            @(product.IsActive ? "啟用" : "停用")
+                        </span>
+                    }
+                </div>,
+                IconClass = "fas fa-power-off",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "商品描述",
+                Value = product?.Description,
+                Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
+                IconClass = "fas fa-align-left",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ColSize = 12,
+                VisibilityCondition = () => !string.IsNullOrEmpty(product?.Description)
+            },
+            new()
+            {
+                Label = "規格說明",
+                Value = product?.Specification,
+                Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
+                IconClass = "fas fa-list-alt",
+                IconBgClass = "bg-secondary bg-opacity-10",
+                IconTextClass = "text-secondary",
+                ColSize = 12,
+                VisibilityCondition = () => !string.IsNullOrEmpty(product?.Specification)
+            },
+            new()
+            {
+                Label = "備註",
+                Value = product?.Remarks,
+                Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
+                IconClass = "fas fa-sticky-note",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning",
+                ColSize = 12,
+                VisibilityCondition = () => !string.IsNullOrEmpty(product?.Remarks)
             }
         };
     }

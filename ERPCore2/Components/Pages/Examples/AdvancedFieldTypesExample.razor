@@ -1,0 +1,424 @@
+@page "/examples/advanced-field-types"
+@using ERPCore2.Components.Shared.Details
+@using Microsoft.AspNetCore.Components.Web
+
+<PageTitle>進階欄位類型範例</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-palette text-primary me-2"></i>
+                進階欄位類型展示
+            </h2>
+            <p class="text-muted mb-4">
+                展示 BasicInfoDisplayComponent 支援的各種進階欄位類型與格式化選項
+            </p>
+        </div>
+    </div>
+
+    <!-- 數值與貨幣格式 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <BasicInfoDisplayComponent 
+                Title="數值與貨幣格式"
+                IconClass="fas fa-calculator"
+                Fields="@GetNumericFields()"
+                DefaultColSize="4"
+                ShowFieldCount="true" />
+        </div>
+    </div>
+
+    <!-- 日期與時間格式 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <BasicInfoDisplayComponent 
+                Title="日期與時間格式"
+                IconClass="fas fa-calendar"
+                Fields="@GetDateTimeFields()"
+                DefaultColSize="4"
+                ShowFieldCount="true" />
+        </div>
+    </div>
+
+    <!-- 特殊單位格式 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <BasicInfoDisplayComponent 
+                Title="特殊單位格式"
+                IconClass="fas fa-ruler"
+                Fields="@GetUnitFields()"
+                DefaultColSize="4"
+                ShowFieldCount="true" />
+        </div>
+    </div>
+
+    <!-- 視覺化元件 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <BasicInfoDisplayComponent 
+                Title="視覺化元件"
+                IconClass="fas fa-chart-bar"
+                Fields="@GetVisualFields()"
+                DefaultColSize="6"
+                ShowFieldCount="true" />
+        </div>
+    </div>
+
+    <!-- 互動式元件 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <BasicInfoDisplayComponent 
+                Title="互動式元件"
+                IconClass="fas fa-mouse-pointer"
+                Fields="@GetInteractiveFields()"
+                DefaultColSize="6"
+                ShowFieldCount="true" />
+        </div>
+    </div>
+
+    <!-- 複雜資料類型 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <BasicInfoDisplayComponent 
+                Title="複雜資料類型"
+                IconClass="fas fa-sitemap"
+                Fields="@GetComplexFields()"
+                DefaultColSize="12"
+                ShowFieldCount="true" />
+        </div>
+    </div>
+</div>
+
+@code {
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetNumericFields()
+    {
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "一般貨幣",
+                Value = 1234567.89m,
+                Format = BasicInfoDisplayComponent.FieldFormat.Currency,
+                IconClass = "fas fa-dollar-sign",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success"
+            },
+            new()
+            {
+                Label = "簡短貨幣",
+                Value = 1234567m,
+                Format = BasicInfoDisplayComponent.FieldFormat.CurrencyShort,
+                IconClass = "fas fa-coins",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning"
+            },
+            new()
+            {
+                Label = "百分比",
+                Value = 0.8573m,
+                Format = BasicInfoDisplayComponent.FieldFormat.Percentage,
+                IconClass = "fas fa-percent",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info"
+            },
+            new()
+            {
+                Label = "一般數字",
+                Value = 1234567.89m,
+                Format = BasicInfoDisplayComponent.FieldFormat.Number,
+                IconClass = "fas fa-hashtag",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary"
+            },
+            new()
+            {
+                Label = "簡短數字",
+                Value = 1234567890m,
+                Format = BasicInfoDisplayComponent.FieldFormat.NumberShort,
+                IconClass = "fas fa-compress-alt",
+                IconBgClass = "bg-secondary bg-opacity-10",
+                IconTextClass = "text-secondary"
+            },
+            new()
+            {
+                Label = "整數",
+                Value = 1234567,
+                Format = BasicInfoDisplayComponent.FieldFormat.Integer,
+                IconClass = "fas fa-sort-numeric-up",
+                IconBgClass = "bg-dark bg-opacity-10",
+                IconTextClass = "text-dark"
+            }
+        };
+    }
+
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetDateTimeFields()
+    {
+        var now = DateTime.Now;
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "完整日期時間",
+                Value = now,
+                Format = BasicInfoDisplayComponent.FieldFormat.DateTime,
+                IconClass = "fas fa-clock",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary"
+            },
+            new()
+            {
+                Label = "簡短日期時間",
+                Value = now,
+                Format = BasicInfoDisplayComponent.FieldFormat.DateTimeShort,
+                IconClass = "fas fa-calendar-alt",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info"
+            },
+            new()
+            {
+                Label = "僅日期",
+                Value = now,
+                Format = BasicInfoDisplayComponent.FieldFormat.Date,
+                IconClass = "fas fa-calendar-day",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success"
+            },
+            new()
+            {
+                Label = "簡短日期",
+                Value = now,
+                Format = BasicInfoDisplayComponent.FieldFormat.DateOnly,
+                IconClass = "fas fa-calendar-check",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning"
+            },
+            new()
+            {
+                Label = "僅時間",
+                Value = now,
+                Format = BasicInfoDisplayComponent.FieldFormat.TimeOnly,
+                IconClass = "fas fa-stopwatch",
+                IconBgClass = "bg-danger bg-opacity-10",
+                IconTextClass = "text-danger"
+            },
+            new()
+            {
+                Label = "布林圖示",
+                Value = true,
+                Format = BasicInfoDisplayComponent.FieldFormat.BooleanIcon,
+                IconClass = "fas fa-check-circle",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success"
+            }
+        };
+    }
+
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetUnitFields()
+    {
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "溫度",
+                Value = 25.5m,
+                Format = BasicInfoDisplayComponent.FieldFormat.Temperature,
+                IconClass = "fas fa-thermometer-half",
+                IconBgClass = "bg-danger bg-opacity-10",
+                IconTextClass = "text-danger"
+            },
+            new()
+            {
+                Label = "重量",
+                Value = 2.5m,
+                Format = BasicInfoDisplayComponent.FieldFormat.Weight,
+                Unit = "kg",
+                IconClass = "fas fa-weight",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary"
+            },
+            new()
+            {
+                Label = "密度",
+                Value = 1.25m,
+                Format = BasicInfoDisplayComponent.FieldFormat.Density,
+                IconClass = "fas fa-cube",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info"
+            },
+            new()
+            {
+                Label = "檔案大小",
+                Value = 1048576L,
+                Format = BasicInfoDisplayComponent.FieldFormat.FileSize,
+                IconClass = "fas fa-file",
+                IconBgClass = "bg-secondary bg-opacity-10",
+                IconTextClass = "text-secondary"
+            },
+            new()
+            {
+                Label = "自訂前綴",
+                Value = "ABC123",
+                Prefix = "代碼: ",
+                IconClass = "fas fa-tag",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success"
+            },
+            new()
+            {
+                Label = "自訂後綴",
+                Value = 100,
+                Suffix = " 件",
+                IconClass = "fas fa-boxes",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning"
+            }
+        };
+    }
+
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetVisualFields()
+    {
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "進度條",
+                Type = BasicInfoDisplayComponent.FieldType.Progress,
+                ProgressValue = 75,
+                ProgressMax = 100,
+                ProgressClass = "bg-success",
+                ShowProgressText = true,
+                IconClass = "fas fa-tasks",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success"
+            },
+            new()
+            {
+                Label = "評分",
+                Type = BasicInfoDisplayComponent.FieldType.Rating,
+                RatingValue = 4,
+                RatingMax = 5,
+                IconClass = "fas fa-star",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning"
+            },
+            new()
+            {
+                Label = "顏色樣本",
+                Type = BasicInfoDisplayComponent.FieldType.ColorSwatch,
+                ColorValue = "#FF6B6B",
+                ShowColorText = true,
+                IconClass = "fas fa-palette",
+                IconBgClass = "bg-danger bg-opacity-10",
+                IconTextClass = "text-danger"
+            },
+            new()
+            {
+                Label = "徽章",
+                Type = BasicInfoDisplayComponent.FieldType.Badge,
+                BadgeText = "重要",
+                BadgeClass = "bg-danger",
+                BadgeIcon = "fas fa-exclamation",
+                IconClass = "fas fa-award",
+                IconBgClass = "bg-danger bg-opacity-10",
+                IconTextClass = "text-danger"
+            }
+        };
+    }
+
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetInteractiveFields()
+    {
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "電子郵件",
+                Value = "test@example.com",
+                Format = BasicInfoDisplayComponent.FieldFormat.Email,
+                IconClass = "fas fa-envelope",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary"
+            },
+            new()
+            {
+                Label = "電話號碼",
+                Value = "0912-345-678",
+                Format = BasicInfoDisplayComponent.FieldFormat.Phone,
+                IconClass = "fas fa-phone",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success"
+            },
+            new()
+            {
+                Label = "網址連結",
+                Value = "https://www.example.com",
+                Format = BasicInfoDisplayComponent.FieldFormat.Url,
+                IconClass = "fas fa-link",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info"
+            },
+            new()
+            {
+                Label = "自訂連結",
+                Type = BasicInfoDisplayComponent.FieldType.Link,
+                Value = "查看詳細資料",
+                LinkUrl = "/products/detail/1",
+                LinkTarget = "_blank",
+                IconClass = "fas fa-external-link-alt",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning"
+            }
+        };
+    }
+
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetComplexFields()
+    {
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "清單項目",
+                Type = BasicInfoDisplayComponent.FieldType.List,
+                ListItems = new[] { "項目 1", "項目 2", "項目 3", "項目 4" },
+                ListClass = "list-unstyled",
+                NumberedList = false,
+                IconClass = "fas fa-list",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "編號清單",
+                Type = BasicInfoDisplayComponent.FieldType.List,
+                ListItems = new[] { "第一步：準備", "第二步：執行", "第三步：驗證" },
+                ListClass = "list-unstyled",
+                NumberedList = true,
+                IconClass = "fas fa-list-ol",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "多行文字",
+                Value = "這是第一行\n這是第二行\n這是第三行",
+                Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
+                IconClass = "fas fa-align-left",
+                IconBgClass = "bg-secondary bg-opacity-10",
+                IconTextClass = "text-secondary",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "程式碼",
+                Value = "function hello() { return 'Hello World!'; }",
+                Format = BasicInfoDisplayComponent.FieldFormat.Code,
+                IconClass = "fas fa-code",
+                IconBgClass = "bg-dark bg-opacity-10",
+                IconTextClass = "text-dark",
+                ColSize = 6
+            }
+        };
+    }
+}

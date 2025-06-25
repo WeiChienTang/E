@@ -90,24 +90,18 @@
     private List<GenericDetailPageComponent<SupplierType, ISupplierTypeService>.TabSection> GetTabSections()
     {
         return new List<GenericDetailPageComponent<SupplierType, ISupplierTypeService>.TabSection>
-        {
-            new GenericDetailPageComponent<SupplierType, ISupplierTypeService>.TabSection
+        {            new GenericDetailPageComponent<SupplierType, ISupplierTypeService>.TabSection
             {
                 Id = "basic",
                 Title = "基本資料",
-                Content = @<div class="row">
-                    <DetailFieldComponent Label="類型名稱" Value="@supplierType?.TypeName" IsPrimary="true" IsBold="true" />
-                    <DetailFieldComponent Label="描述" Value="@supplierType?.Description" EmptyText="未設定" ColSize="12" />
-                    <DetailFieldComponent Label="狀態">
-                        @if (supplierType?.Status != null)
-                        {
-                            <StatusBadgeComponent Status="@supplierType.Status" />
-                        }
-                    </DetailFieldComponent>
-                    @if (!string.IsNullOrEmpty(supplierType?.Remarks))
-                    {
-                        <DetailFieldComponent Label="備註" Value="@supplierType.Remarks" ColSize="12" />
-                    }
+                Content = @<div>
+                    <BasicInfoDisplayComponent 
+                        Title="廠商類型基本資訊"
+                        IconClass="fas fa-industry"
+                        IconColor="text-primary"
+                        Fields="@GetSupplierTypeBasicFields()"
+                        ShowFieldCount="false"
+                        DefaultColSize="6" />
                 </div>
             },
             
@@ -160,6 +154,55 @@
                         ShowTimeline="true"
                         ShowRemarks="true" />
                 </div>
+            }
+        };
+    }
+
+    // 取得廠商類型基本資料欄位
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetSupplierTypeBasicFields()
+    {
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "類型名稱",
+                Value = supplierType?.TypeName,
+                IsPrimary = true,
+                ValueBold = true,
+                IconClass = "fas fa-industry",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "描述",
+                Value = supplierType?.Description,
+                EmptyText = "未設定",
+                IconClass = "fas fa-align-left",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ColSize = 12
+            },
+            new()
+            {
+                Label = "狀態",
+                Type = BasicInfoDisplayComponent.FieldType.Status,
+                Value = supplierType?.Status,
+                IconClass = "fas fa-flag",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "備註",
+                Value = supplierType?.Remarks,
+                VisibilityCondition = () => !string.IsNullOrEmpty(supplierType?.Remarks),
+                IconClass = "fas fa-sticky-note",
+                IconBgClass = "bg-secondary bg-opacity-10",
+                IconTextClass = "text-secondary",
+                ColSize = 12
             }
         };
     }

@@ -87,24 +87,18 @@
     private List<GenericDetailPageComponent<CustomerType, ICustomerTypeService>.TabSection> GetTabSections()
     {
         return new List<GenericDetailPageComponent<CustomerType, ICustomerTypeService>.TabSection>
-        {
-            new GenericDetailPageComponent<CustomerType, ICustomerTypeService>.TabSection
+        {            new GenericDetailPageComponent<CustomerType, ICustomerTypeService>.TabSection
             {
                 Id = "basic",
                 Title = "基本資料",
-                Content = @<div class="row">
-                    <DetailFieldComponent Label="類型名稱" Value="@customerType?.TypeName" IsPrimary="true" IsBold="true" />
-                    <DetailFieldComponent Label="描述" Value="@customerType?.Description" EmptyText="未設定" ColSize="12" />
-                    <DetailFieldComponent Label="狀態">
-                        @if (customerType?.Status != null)
-                        {
-                            <StatusBadgeComponent Status="@customerType.Status" />
-                        }
-                    </DetailFieldComponent>
-                    @if (!string.IsNullOrEmpty(customerType?.Remarks))
-                    {
-                        <DetailFieldComponent Label="備註" Value="@customerType.Remarks" ColSize="12" />
-                    }
+                Content = @<div>
+                    <BasicInfoDisplayComponent 
+                        Title="客戶類型基本資訊"
+                        IconClass="fas fa-users"
+                        IconColor="text-primary"
+                        Fields="@GetCustomerTypeBasicFields()"
+                        ShowFieldCount="false"
+                        DefaultColSize="6" />
                 </div>
             },
             
@@ -160,6 +154,55 @@
                         ShowTimeline="true"
                         ShowRemarks="true" />
                 </div>
+            }
+        };
+    }
+
+    // 取得客戶類型基本資料欄位
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetCustomerTypeBasicFields()
+    {
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "類型名稱",
+                Value = customerType?.TypeName,
+                IsPrimary = true,
+                ValueBold = true,
+                IconClass = "fas fa-users",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "描述",
+                Value = customerType?.Description,
+                EmptyText = "未設定",
+                IconClass = "fas fa-align-left",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ColSize = 12
+            },
+            new()
+            {
+                Label = "狀態",
+                Type = BasicInfoDisplayComponent.FieldType.Status,
+                Value = customerType?.Status,
+                IconClass = "fas fa-flag",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "備註",
+                Value = customerType?.Remarks,
+                VisibilityCondition = () => !string.IsNullOrEmpty(customerType?.Remarks),
+                IconClass = "fas fa-sticky-note",
+                IconBgClass = "bg-secondary bg-opacity-10",
+                IconTextClass = "text-secondary",
+                ColSize = 12
             }
         };
     }

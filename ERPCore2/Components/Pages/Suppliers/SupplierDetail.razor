@@ -124,30 +124,16 @@
     private List<GenericDetailPageComponent<Supplier, ISupplierService>.TabSection> GetTabSections()
     {
         return new List<GenericDetailPageComponent<Supplier, ISupplierService>.TabSection>
-        {
-            new GenericDetailPageComponent<Supplier, ISupplierService>.TabSection
+        {            new GenericDetailPageComponent<Supplier, ISupplierService>.TabSection
             {
                 Id = "basic",
                 Title = "基本資料",
-                Content = @<div class="row">
-                    <DetailFieldComponent Label="廠商代碼" Value="@supplier?.SupplierCode" IsPrimary="true" />
-                    <DetailFieldComponent Label="公司名稱" Value="@supplier?.CompanyName" IsBold="true" />
-                    <DetailFieldComponent Label="聯絡人" Value="@supplier?.ContactPerson" />
-                    <DetailFieldComponent Label="統一編號" Value="@supplier?.TaxNumber" />
-                    <DetailFieldComponent Label="付款條件" Value="@supplier?.PaymentTerms" />
-                    <DetailFieldComponent Label="信用額度" Value="@(supplier?.CreditLimit?.ToString("C"))" />
-                    <DetailFieldComponent Label="廠商類型" Value="@supplier?.SupplierType?.TypeName" />
-                    <DetailFieldComponent Label="行業類型" Value="@supplier?.IndustryType?.IndustryTypeName" />
-                    <DetailFieldComponent Label="狀態">
-                        @if (supplier?.Status != null)
-                        {
-                            <StatusBadgeComponent Status="@supplier.Status" />
-                        }
-                    </DetailFieldComponent>
-                    @if (!string.IsNullOrEmpty(supplier?.Remarks))
-                    {
-                        <DetailFieldComponent Label="備註" Value="@supplier.Remarks" ColSize="12" />
-                    }
+                Content = @<div>
+                    <BasicInfoDisplayComponent 
+                        Title="廠商基本資訊"
+                        IconClass="fas fa-truck"
+                        IconColor="text-primary"
+                        Fields="@GetSupplierBasicFields()" />
                 </div>
             },
             
@@ -259,6 +245,114 @@
                         ShowTimeline="true"
                         ShowRemarks="true" />
                 </div>
+            }        };
+    }
+
+    // 取得廠商基本資料欄位
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetSupplierBasicFields()
+    {
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "廠商代碼",
+                Value = supplier?.SupplierCode,
+                IsPrimary = true,
+                ValueBold = true,
+                IconClass = "fas fa-barcode",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "公司名稱",
+                Value = supplier?.CompanyName,
+                ValueBold = true,
+                IconClass = "fas fa-building",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "聯絡人",
+                Value = supplier?.ContactPerson,
+                IconClass = "fas fa-user",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "統一編號",
+                Value = supplier?.TaxNumber,
+                IconClass = "fas fa-id-card",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "付款條件",
+                Value = supplier?.PaymentTerms,
+                IconClass = "fas fa-credit-card",
+                IconBgClass = "bg-secondary bg-opacity-10",
+                IconTextClass = "text-secondary",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "信用額度",
+                Value = supplier?.CreditLimit,
+                Format = BasicInfoDisplayComponent.FieldFormat.Currency,
+                IconClass = "fas fa-money-check",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "廠商類型",
+                Value = supplier?.SupplierType?.TypeName,
+                IconClass = "fas fa-tags",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "行業類型",
+                Value = supplier?.IndustryType?.IndustryTypeName,
+                IconClass = "fas fa-industry",
+                IconBgClass = "bg-secondary bg-opacity-10",
+                IconTextClass = "text-secondary",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "狀態",
+                CustomContent = @<div>
+                    @if (supplier?.Status != null)
+                    {
+                        <StatusBadgeComponent Status="@supplier.Status" />
+                    }
+                </div>,
+                IconClass = "fas fa-toggle-on",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "備註",
+                Value = supplier?.Remarks,
+                Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
+                IconClass = "fas fa-sticky-note",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning",
+                ColSize = 12,
+                VisibilityCondition = () => !string.IsNullOrEmpty(supplier?.Remarks)
             }
         };
     }

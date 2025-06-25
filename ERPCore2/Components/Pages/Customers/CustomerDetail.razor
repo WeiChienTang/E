@@ -120,28 +120,17 @@
     // 設定標籤頁結構
     private List<GenericDetailPageComponent<Customer, ICustomerService>.TabSection> GetTabSections()
     {        return new List<GenericDetailPageComponent<Customer, ICustomerService>.TabSection>
-        {
-            new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
+        {            new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
             {
                 Id = "basic",
                 Title = "基本資料",
-                Content = @<div class="row">
-                    <DetailFieldComponent Label="統一編號" Value="@customer?.TaxNumber" IsPrimary="true" EmptyText="未設定" />
-                    <DetailFieldComponent Label="公司名稱" Value="@customer?.CompanyName" IsBold="true" />
-                    <DetailFieldComponent Label="聯絡人" Value="@customer?.ContactPerson" />
-                    <DetailFieldComponent Label="客戶類型" Value="@customer?.CustomerType?.TypeName" />
-                    <DetailFieldComponent Label="行業類型" Value="@customer?.IndustryType?.IndustryTypeName" />
-                    <DetailFieldComponent Label="狀態">
-                        @if (customer?.Status != null)
-                        {
-                            <StatusBadgeComponent Status="@customer.Status" />
-                        }
-                    </DetailFieldComponent>
-                    @if (!string.IsNullOrEmpty(customer?.Remarks))
-                    {
-                        <DetailFieldComponent Label="備註" Value="@customer.Remarks" ColSize="12" />
-                    }                
-                    </div>
+                Content = @<div>
+                    <BasicInfoDisplayComponent 
+                        Title="客戶基本資訊"
+                        IconClass="fas fa-building"
+                        IconColor="text-primary"
+                        Fields="@GetCustomerBasicFields()" />
+                </div>
             },
             
             new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
@@ -206,6 +195,87 @@
                         ShowTimeline="true"
                         ShowRemarks="true" />
                 </div>
+            }        };
+    }
+
+    // 取得客戶基本資料欄位
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetCustomerBasicFields()
+    {
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "統一編號",
+                Value = customer?.TaxNumber,
+                IsPrimary = true,
+                ValueBold = true,
+                IconClass = "fas fa-id-card",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary",
+                EmptyText = "未設定",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "公司名稱",
+                Value = customer?.CompanyName,
+                ValueBold = true,
+                IconClass = "fas fa-building",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "聯絡人",
+                Value = customer?.ContactPerson,
+                IconClass = "fas fa-user",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "客戶類型",
+                Value = customer?.CustomerType?.TypeName,
+                IconClass = "fas fa-tags",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "行業類型",
+                Value = customer?.IndustryType?.IndustryTypeName,
+                IconClass = "fas fa-industry",
+                IconBgClass = "bg-secondary bg-opacity-10",
+                IconTextClass = "text-secondary",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "狀態",
+                CustomContent = @<div>
+                    @if (customer?.Status != null)
+                    {
+                        <StatusBadgeComponent Status="@customer.Status" />
+                    }
+                </div>,
+                IconClass = "fas fa-toggle-on",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "備註",
+                Value = customer?.Remarks,
+                Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
+                IconClass = "fas fa-sticky-note",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning",
+                ColSize = 12,
+                VisibilityCondition = () => !string.IsNullOrEmpty(customer?.Remarks)
             }
         };
     }

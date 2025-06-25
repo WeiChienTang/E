@@ -109,28 +109,16 @@
     private List<GenericDetailPageComponent<Employee, IEmployeeService>.TabSection> GetTabSections()
     {
         return new List<GenericDetailPageComponent<Employee, IEmployeeService>.TabSection>
-        {
-            new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
+        {            new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
             {
                 Id = "basic",
                 Title = "基本資料",
-                Content = @<div class="row">
-                    <DetailFieldComponent Label="員工代碼" Value="@employee?.EmployeeCode" IsPrimary="true" IsBold="true" />
-                    <DetailFieldComponent Label="帳號" Value="@employee?.Username" IsBold="true" />
-                    <DetailFieldComponent Label="姓名" Value="@GetFullName()" />
-                    <DetailFieldComponent Label="電子郵件" Value="@GetEmailContact()" />
-                    <DetailFieldComponent Label="部門" Value="@employee?.Department" EmptyText="-" />
-                    <DetailFieldComponent Label="職位" Value="@employee?.Position" EmptyText="-" />
-                    <DetailFieldComponent Label="狀態">
-                        @if (employee?.Status != null)
-                        {
-                            <StatusBadgeComponent Status="@employee.Status" />
-                        }
-                    </DetailFieldComponent>
-                    @if (!string.IsNullOrEmpty(employee?.Remarks))
-                    {
-                        <DetailFieldComponent Label="備註" Value="@employee.Remarks" ColSize="12" />
-                    }
+                Content = @<div>
+                    <BasicInfoDisplayComponent 
+                        Title="員工基本資訊"
+                        IconClass="fas fa-user"
+                        IconColor="text-primary"
+                        Fields="@GetEmployeeBasicFields()" />
                 </div>
             },
             
@@ -215,6 +203,98 @@
                         ShowTimeline="true"
                         ShowRemarks="true" />
                 </div>
+            }        };
+    }
+
+    // 取得員工基本資料欄位
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetEmployeeBasicFields()
+    {
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "員工代碼",
+                Value = employee?.EmployeeCode,
+                IsPrimary = true,
+                ValueBold = true,
+                IconClass = "fas fa-id-badge",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "帳號",
+                Value = employee?.Username,
+                ValueBold = true,
+                IconClass = "fas fa-user-circle",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "姓名",
+                Value = GetFullName(),
+                IconClass = "fas fa-user",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "電子郵件",
+                Value = GetEmailContact(),
+                Format = BasicInfoDisplayComponent.FieldFormat.Email,
+                IconClass = "fas fa-envelope",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "部門",
+                Value = employee?.Department,
+                EmptyText = "-",
+                IconClass = "fas fa-building",
+                IconBgClass = "bg-secondary bg-opacity-10",
+                IconTextClass = "text-secondary",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "職位",
+                Value = employee?.Position,
+                EmptyText = "-",
+                IconClass = "fas fa-briefcase",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "狀態",
+                CustomContent = @<div>
+                    @if (employee?.Status != null)
+                    {
+                        <StatusBadgeComponent Status="@employee.Status" />
+                    }
+                </div>,
+                IconClass = "fas fa-toggle-on",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "備註",
+                Value = employee?.Remarks,
+                Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
+                IconClass = "fas fa-sticky-note",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning",
+                ColSize = 12,
+                VisibilityCondition = () => !string.IsNullOrEmpty(employee?.Remarks)
             }
         };
     }

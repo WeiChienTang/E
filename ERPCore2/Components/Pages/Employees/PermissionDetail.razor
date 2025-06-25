@@ -89,17 +89,18 @@
     private List<GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection> GetTabSections()
     {
         return new List<GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection>
-        {
-            new GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection
+        {            new GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection
             {
                 Id = "basic",
                 Title = "基本資料",
-                Content = @<div class="row">
-                    <DetailFieldComponent Label="權限代碼" Value="@permission?.PermissionCode" IsPrimary="true" IsBold="true" />
-                    <DetailFieldComponent Label="權限名稱" Value="@permission?.PermissionName" IsBold="true" />
-                    <DetailFieldComponent Label="模組" Value="@permission?.Module" />
-                    <DetailFieldComponent Label="動作" Value="@permission?.Action" />
-                    <DetailFieldComponent Label="權限群組" Value="@permission?.PermissionGroup" EmptyText="未分組" ColSize="12" />
+                Content = @<div>
+                    <BasicInfoDisplayComponent 
+                        Title="權限基本資訊"
+                        IconClass="fas fa-key"
+                        IconColor="text-primary"
+                        Fields="@GetPermissionBasicFields()"
+                        ShowFieldCount="false"
+                        DefaultColSize="6" />
                 </div>
             },
 
@@ -166,6 +167,63 @@
                         ShowTimeline="true"
                         ShowRemarks="true" />
                 </div>
+            }
+        };
+    }
+
+    // 取得權限基本資料欄位
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetPermissionBasicFields()
+    {
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "權限代碼",
+                Value = permission?.PermissionCode,
+                IsPrimary = true,
+                ValueBold = true,
+                IconClass = "fas fa-key",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "權限名稱",
+                Value = permission?.PermissionName,
+                ValueBold = true,
+                IconClass = "fas fa-tag",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "模組",
+                Value = permission?.Module,
+                IconClass = "fas fa-cube",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "動作",
+                Value = permission?.Action,
+                IconClass = "fas fa-cog",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "權限群組",
+                Value = permission?.PermissionGroup,
+                EmptyText = "未分組",
+                IconClass = "fas fa-layer-group",
+                IconBgClass = "bg-secondary bg-opacity-10",
+                IconTextClass = "text-secondary",
+                ColSize = 12
             }
         };
     }

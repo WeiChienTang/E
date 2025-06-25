@@ -92,42 +92,16 @@
     private List<GenericDetailPageComponent<Material, IMaterialService>.TabSection> GetTabSections()
     {
         return new List<GenericDetailPageComponent<Material, IMaterialService>.TabSection>
-        {
-            new GenericDetailPageComponent<Material, IMaterialService>.TabSection
+        {            new GenericDetailPageComponent<Material, IMaterialService>.TabSection
             {
                 Id = "basic",
                 Title = "基本資料",
-                Content = @<div class="row">
-                    <DetailFieldComponent Label="材質代碼" Value="@material?.Code" IsPrimary="true" EmptyText="未設定" />
-                    <DetailFieldComponent Label="材質名稱" Value="@material?.Name" IsBold="true" />
-                    @if (!string.IsNullOrEmpty(material?.Category))
-                    {
-                        <DetailFieldComponent Label="材質類別" Value="@material.Category" />
-                    }
-                    <DetailFieldComponent Label="環保材質">
-                        @if (material?.IsEcoFriendly == true)
-                        {
-                            <span class="badge bg-success">是</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-secondary">否</span>
-                        }
-                    </DetailFieldComponent>
-                    <DetailFieldComponent Label="狀態">
-                        @if (material?.Status != null)
-                        {
-                            <StatusBadgeComponent Status="@material.Status" />
-                        }
-                    </DetailFieldComponent>
-                    @if (!string.IsNullOrEmpty(material?.Description))
-                    {
-                        <DetailFieldComponent Label="描述" Value="@material.Description" ColSize="12" />
-                    }
-                    @if (!string.IsNullOrEmpty(material?.Remarks))
-                    {
-                        <DetailFieldComponent Label="備註" Value="@material.Remarks" ColSize="12" />
-                    }
+                Content = @<div>
+                    <BasicInfoDisplayComponent 
+                        Title="材質基本資訊"
+                        IconClass="fas fa-cube"
+                        IconColor="text-primary"
+                        Fields="@GetMaterialBasicFields()" />
                 </div>
             },
             
@@ -167,6 +141,99 @@
                         ShowTimeline="true"
                         ShowRemarks="true" />
                 </div>
+            }        };
+    }
+
+    // 取得材質基本資料欄位
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetMaterialBasicFields()
+    {
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "材質代碼",
+                Value = material?.Code,
+                IsPrimary = true,
+                ValueBold = true,
+                EmptyText = "未設定",
+                IconClass = "fas fa-barcode",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "材質名稱",
+                Value = material?.Name,
+                ValueBold = true,
+                IconClass = "fas fa-cube",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "材質類別",
+                Value = material?.Category,
+                IconClass = "fas fa-tags",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning",
+                ColSize = 6,
+                VisibilityCondition = () => !string.IsNullOrEmpty(material?.Category)
+            },
+            new()
+            {
+                Label = "環保材質",
+                CustomContent = @<div>
+                    @if (material?.IsEcoFriendly == true)
+                    {
+                        <span class="badge bg-success">是</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">否</span>
+                    }
+                </div>,
+                IconClass = "fas fa-leaf",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "狀態",
+                CustomContent = @<div>
+                    @if (material?.Status != null)
+                    {
+                        <StatusBadgeComponent Status="@material.Status" />
+                    }
+                </div>,
+                IconClass = "fas fa-toggle-on",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "描述",
+                Value = material?.Description,
+                Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
+                IconClass = "fas fa-align-left",
+                IconBgClass = "bg-secondary bg-opacity-10",
+                IconTextClass = "text-secondary",
+                ColSize = 12,
+                VisibilityCondition = () => !string.IsNullOrEmpty(material?.Description)
+            },
+            new()
+            {
+                Label = "備註",
+                Value = material?.Remarks,
+                Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
+                IconClass = "fas fa-sticky-note",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning",
+                ColSize = 12,
+                VisibilityCondition = () => !string.IsNullOrEmpty(material?.Remarks)
             }
         };
     }

@@ -112,26 +112,18 @@
     private List<GenericDetailPageComponent<IndustryType, IIndustryTypeService>.TabSection> GetTabSections()
     {
         return new List<GenericDetailPageComponent<IndustryType, IIndustryTypeService>.TabSection>
-        {
-            new GenericDetailPageComponent<IndustryType, IIndustryTypeService>.TabSection
+        {            new GenericDetailPageComponent<IndustryType, IIndustryTypeService>.TabSection
             {
                 Id = "basic",
                 Title = "基本資料",
-                Content = @<div class="row">
-                    <DetailFieldComponent Label="行業類型代碼" Value="@industryType?.IndustryTypeCode" IsPrimary="true" EmptyText="未設定" />
-                    <DetailFieldComponent Label="行業類型名稱" Value="@industryType?.IndustryTypeName" IsBold="true" />                    <DetailFieldComponent Label="狀態">
-                        @if (industryType?.Status != null)
-                        {
-                            <StatusBadgeComponent Status="@industryType.Status" />
-                        }
-                    </DetailFieldComponent>
-                    <DetailFieldComponent Label="建立時間" Value="@industryType?.CreatedAt.ToString("yyyy/MM/dd HH:mm")" />
-                    <DetailFieldComponent Label="建立者" Value="@industryType?.CreatedBy" EmptyText="系統" />
-                    @if (industryType?.UpdatedAt.HasValue == true)
-                    {
-                        <DetailFieldComponent Label="更新時間" Value="@industryType.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")" />
-                        <DetailFieldComponent Label="更新者" Value="@industryType?.UpdatedBy" EmptyText="系統" />
-                    }
+                Content = @<div>
+                    <BasicInfoDisplayComponent 
+                        Title="行業類型基本資訊"
+                        IconClass="fas fa-industry"
+                        IconColor="text-primary"
+                        Fields="@GetIndustryTypeBasicFields()"
+                        ShowFieldCount="false"
+                        DefaultColSize="6" />
                 </div>
             },
             
@@ -269,6 +261,87 @@
                         ShowTimeline="true"
                         ShowRemarks="true" />
                 </div>
+            }
+        };
+    }
+
+    // 取得行業類型基本資料欄位
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetIndustryTypeBasicFields()
+    {
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "行業類型代碼",
+                Value = industryType?.IndustryTypeCode,
+                IsPrimary = true,
+                EmptyText = "未設定",
+                IconClass = "fas fa-barcode",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "行業類型名稱",
+                Value = industryType?.IndustryTypeName,
+                ValueBold = true,
+                IconClass = "fas fa-industry",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "狀態",
+                Type = BasicInfoDisplayComponent.FieldType.Status,
+                Value = industryType?.Status,
+                IconClass = "fas fa-flag",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "建立時間",
+                Value = industryType?.CreatedAt,
+                Format = BasicInfoDisplayComponent.FieldFormat.DateTime,
+                IconClass = "fas fa-calendar-plus",
+                IconBgClass = "bg-secondary bg-opacity-10",
+                IconTextClass = "text-secondary",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "建立者",
+                Value = industryType?.CreatedBy,
+                EmptyText = "系統",
+                IconClass = "fas fa-user",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "更新時間",
+                Value = industryType?.UpdatedAt,
+                Format = BasicInfoDisplayComponent.FieldFormat.DateTime,
+                VisibilityCondition = () => industryType?.UpdatedAt.HasValue == true,
+                IconClass = "fas fa-calendar-edit",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "更新者",
+                Value = industryType?.UpdatedBy,
+                EmptyText = "系統",
+                VisibilityCondition = () => industryType?.UpdatedAt.HasValue == true,
+                IconClass = "fas fa-user-edit",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning",
+                ColSize = 6
             }
         };
     }
