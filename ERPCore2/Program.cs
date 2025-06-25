@@ -75,8 +75,8 @@ builder.Services.AddScoped(sp =>
     }
     else
     {
-        // 🔧 生產環境的預設值 - 使用動態端口檢測
-        var urls = builder.Configuration["urls"] ?? "http://localhost:5000";
+        // 🔧 生產環境的預設值 - 使用設定的端口
+        var urls = builder.Configuration["urls"] ?? builder.Configuration["Kestrel:Endpoints:Http:Url"] ?? "http://localhost:6011";
         var firstUrl = urls.Split(';')[0];
         httpClient.BaseAddress = new Uri(firstUrl);
     }

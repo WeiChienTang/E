@@ -21,8 +21,8 @@ namespace ERPCore2.Data
 
             try
             {
-                // 確保資料庫已建立
-                await context.Database.EnsureCreatedAsync();
+                // 執行資料庫遷移（創建資料表結構）
+                await context.Database.MigrateAsync();
 
                 // 開始交易
                 using var transaction = await context.Database.BeginTransactionAsync();

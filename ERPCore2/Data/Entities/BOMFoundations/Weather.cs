@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ERPCore2.Data.Entities
 {
@@ -26,6 +27,7 @@ namespace ERPCore2.Data.Entities
 
         [Range(-50, 50, ErrorMessage = "溫度範圍應在-50到50度之間")]
         [Display(Name = "參考溫度")]
+        [Column(TypeName = "decimal(5,2)")]
         public decimal? ReferenceTemperature { get; set; }
     }
 }

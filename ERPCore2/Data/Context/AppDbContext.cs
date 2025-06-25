@@ -148,16 +148,14 @@ namespace ERPCore2.Data.Context
                   
                   modelBuilder.Entity<SupplierType>(entity =>
                   {
-                        // 欄位對應
-                        
+                        // 欄位對應                        
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                   });
                   
                   // 員工相關
                   modelBuilder.Entity<Employee>(entity =>
                   {
-                        // 欄位對應
-                        
+                        // 欄位對應                        
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                         
                         // 關聯設定
@@ -168,23 +166,20 @@ namespace ERPCore2.Data.Context
                   
                   modelBuilder.Entity<EmployeeContact>(entity =>
                   {
-                        // 欄位對應
-                        
+                        // 欄位對應                        
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                   });
                   
                   modelBuilder.Entity<EmployeeAddress>(entity =>
                   {
-                        // 欄位對應
-                        
+                        // 欄位對應                        
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                   });
                   
                   // 產品相關
                   modelBuilder.Entity<Product>(entity =>
                   {
-                        // 欄位對應
-                        
+                        // 欄位對應                        
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                         
                         // 關聯設定
@@ -203,8 +198,7 @@ namespace ERPCore2.Data.Context
                   
                   modelBuilder.Entity<ProductSupplier>(entity =>
                   {
-                        // 欄位對應
-                        
+                        // 欄位對應                        
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                         
                         // 關聯設定
@@ -220,22 +214,19 @@ namespace ERPCore2.Data.Context
                   // 共用參考資料
                   modelBuilder.Entity<IndustryType>(entity =>
                   {
-                        // 欄位對應
-                        
+                        // 欄位對應                        
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                   });
                   
                   modelBuilder.Entity<AddressType>(entity =>
                   {
-                        // 欄位對應
-                        
+                        // 欄位對應                        
                         entity.Property(e => e.Id).ValueGeneratedOnAdd(); // 確保 Identity
                   });
                   
                   modelBuilder.Entity<ContactType>(entity =>
                   {
-                        // 欄位對應
-                        
+                        // 欄位對應                        
                         entity.Property(e => e.Id).ValueGeneratedOnAdd(); // 確保 Identity
                   });
 
@@ -279,12 +270,6 @@ namespace ERPCore2.Data.Context
                         .WithMany()
                         .HasForeignKey(m => m.SupplierId)
                         .OnDelete(DeleteBehavior.SetNull);
-
-                        entity.Property(m => m.Density)
-                        .HasPrecision(10, 4);
-
-                        entity.Property(m => m.MeltingPoint)
-                        .HasPrecision(10, 2);
                   });
             }
     }

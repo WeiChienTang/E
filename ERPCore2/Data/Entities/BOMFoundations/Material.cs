@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Data.Entities
@@ -42,12 +43,14 @@ namespace ERPCore2.Data.Entities
         /// 密度 (g/cm³)
         /// </summary>
         [Display(Name = "密度 (g/cm³)")]
+        [Column(TypeName = "decimal(10,4)")]
         public decimal? Density { get; set; }
 
         /// <summary>
         /// 熔點 (°C)
         /// </summary>
         [Display(Name = "熔點 (°C)")]
+        [Column(TypeName = "decimal(10,2)")]
         public decimal? MeltingPoint { get; set; }
 
         /// <summary>
