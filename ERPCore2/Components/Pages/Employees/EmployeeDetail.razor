@@ -5,6 +5,7 @@
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
+@using ERPCore2.Extensions
 @inject IEmployeeService EmployeeService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -37,6 +38,8 @@
     [Parameter] public int EmployeeId { get; set; }
 
     private Employee? employee;
+    private List<EmployeeContact> employeeContacts = new();
+    private List<EmployeeAddress> employeeAddresses = new();
     private bool _isLoading = false;
 
     // 麵包屑導航
@@ -63,6 +66,14 @@
             
             var result = await EmployeeService.GetByIdAsync(EmployeeId);
             employee = result;
+            
+            // 從已載入的關聯資料中取得聯絡方式和地址
+            if (employee != null)
+            {
+                employeeContacts = employee.EmployeeContacts?.ToList() ?? new List<EmployeeContact>();
+                employeeAddresses = employee.EmployeeAddresses?.ToList() ?? new List<EmployeeAddress>();
+            }
+            
             return result;
         }
         catch (Exception ex)
@@ -189,6 +200,40 @@
                     }
                 </div>
             },
+            
+            new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
+            {
+                Id = "contacts",
+                Title = "聯絡方式",
+                Content = @<div>
+                    <ContactDisplayComponent 
+                        Contacts="@GetContactEntities()"
+                        Title="員工聯絡方式"
+                        ShowStatus="true"
+                        ShowStatistics="true"
+                        ShowCreateButton="false"
+                        EmptyTitle="尚未設定聯絡方式"
+                        EmptyMessage="此員工目前沒有任何聯絡方式資料" />
+                </div>
+            },
+            
+            new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
+            {
+                Id = "addresses",
+                Title = "地址資料",
+                Content = @<div>
+                    <AddressDisplayComponent 
+                        Addresses="@GetAddressEntities()"
+                        Title="員工地址資料"
+                        ShowStatus="true"
+                        ShowAddressDetails="true"
+                        ShowMapLink="true"
+                        ShowStatistics="true"
+                        ShowCreateButton="false"
+                        EmptyTitle="尚未設定地址"
+                        EmptyMessage="此員工目前沒有任何地址資料" />
+                </div>
+            },
               new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
             {
                 Id = "system",
@@ -297,5 +342,16 @@
                 VisibilityCondition = () => !string.IsNullOrEmpty(employee?.Remarks)
             }
         };
+    }
+
+    // 轉換方法
+    private IEnumerable<IContactEntity> GetContactEntities()
+    {
+        return employeeContacts.AsContactDisplayEntities();
+    }
+
+    private IEnumerable<IAddressEntity> GetAddressEntities()
+    {
+        return employeeAddresses.AsAddressDisplayEntities();
     }
 }

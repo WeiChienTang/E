@@ -3,8 +3,10 @@
 @using ERPCore2.Components.Shared.Details
 @using ERPCore2.Components.Shared.Badges
 @using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
 @using ERPCore2.Services
 @using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Extensions
 @inject ICustomerService CustomerService
 @inject ICustomerContactService CustomerContactService
 @inject ICustomerAddressService CustomerAddressService
@@ -96,7 +98,8 @@
     private Task OnCustomerDataLoaded()
     {
         // 資料載入完成後的處理
-        StateHasChanged();        return Task.CompletedTask;
+        StateHasChanged();        
+        return Task.CompletedTask;
     }
     private string BuildAddressText(CustomerAddress address)
     {
@@ -119,8 +122,10 @@
 
     // 設定標籤頁結構
     private List<GenericDetailPageComponent<Customer, ICustomerService>.TabSection> GetTabSections()
-    {        return new List<GenericDetailPageComponent<Customer, ICustomerService>.TabSection>
-        {            new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
+    {        
+        return new List<GenericDetailPageComponent<Customer, ICustomerService>.TabSection>
+        {           
+             new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
             {
                 Id = "basic",
                 Title = "基本資料",
@@ -132,56 +137,39 @@
                         Fields="@GetCustomerBasicFields()" />
                 </div>
             },
-            
-            new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
+              new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
             {
                 Id = "contacts",
                 Title = "聯絡方式",
-                Content = @<div>
-                    @if (customerContacts.Any())
-                    {
-                        <div class="row">
-                            @foreach (var contact in customerContacts)
-                            {
-                                <DetailFieldComponent Label="@(contact.ContactType?.TypeName ?? "聯絡方式")" 
-                                                    Value="@contact.ContactValue" />
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-muted p-3 text-center">
-                            <i class="fas fa-phone-slash fa-2x mb-2 d-block"></i>
-                            尚未設定聯絡方式
-                        </div>
-                    }                
-                    </div>
+                Content = @<div>                    <ContactDisplayComponent 
+                        Contacts="@GetContactEntities()"
+                        Title="客戶聯絡方式"
+                        ShowStatus="true"
+                        ShowStatistics="true"
+                        ShowCreateButton="false"
+                        EmptyTitle="尚未設定聯絡方式"
+                        EmptyMessage="此客戶目前沒有任何聯絡方式資料" />
+                </div>
             },
             
             new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
             {
                 Id = "addresses",
                 Title = "地址資料",
-                Content = @<div>
-                    @if (customerAddresses.Any())
-                    {
-                        <div class="row">
-                            @foreach (var address in customerAddresses)
-                            {
-                                <DetailFieldComponent Label="@(address.AddressType?.TypeName ?? "地址")" 
-                                                    Value="@BuildAddressText(address)" />
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-muted p-3 text-center">
-                            <i class="fas fa-map-marker-alt-slash fa-2x mb-2 d-block"></i>
-                            尚未設定地址
-                        </div>
-                    }
+                Content = @<div>                    <AddressDisplayComponent 
+                        Addresses="@GetAddressEntities()"
+                        Title="客戶地址資料"
+                        ShowStatus="true"
+                        ShowAddressDetails="true"
+                        ShowMapLink="true"
+                        ShowStatistics="true"
+                        ShowCreateButton="false"
+                        EmptyTitle="尚未設定地址"
+                        EmptyMessage="此客戶目前沒有任何地址資料" />
                 </div>
-            },            new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
+            },
+            
+            new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
             {
                 Id = "system",
                 Title = "系統資訊",
@@ -251,14 +239,15 @@
                 IconBgClass = "bg-secondary bg-opacity-10",
                 IconTextClass = "text-secondary",
                 ColSize = 6
-            },
-            new()
+            },            new()
             {
                 Label = "狀態",
                 CustomContent = @<div>
                     @if (customer?.Status != null)
                     {
-                        <StatusBadgeComponent Status="@customer.Status" />
+                        <span class="badge @(customer.Status == EntityStatus.Active ? "bg-success" : "bg-secondary")">
+                            @(customer.Status == EntityStatus.Active ? "有效" : "無效")
+                        </span>
                     }
                 </div>,
                 IconClass = "fas fa-toggle-on",
@@ -276,7 +265,15 @@
                 IconTextClass = "text-warning",
                 ColSize = 12,
                 VisibilityCondition = () => !string.IsNullOrEmpty(customer?.Remarks)
-            }
-        };
+            }        };
+    }    // 轉換方法
+    private IEnumerable<IContactEntity> GetContactEntities()
+    {
+        return customerContacts.AsContactDisplayEntities();
+    }
+
+    private IEnumerable<IAddressEntity> GetAddressEntities()
+    {
+        return customerAddresses.AsAddressDisplayEntities();
     }
 }

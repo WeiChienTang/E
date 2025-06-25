@@ -3,6 +3,7 @@
 @using ERPCore2.Components.Shared.Details
 @using ERPCore2.Components.Shared.Badges
 @using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Extensions
 @inject ISupplierService SupplierService
 @inject ISupplierContactService SupplierContactService
 @inject ISupplierAddressService SupplierAddressService
@@ -142,46 +143,14 @@
                 Id = "contacts",
                 Title = "聯絡方式",
                 Content = @<div>
-                    @if (supplierContacts.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>類型</th>
-                                        <th>值</th>
-                                        <th>主要</th>
-                                        <th>狀態</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var contact in supplierContacts)
-                                    {
-                                        <tr>
-                                            <td>@(contact.ContactType?.TypeName ?? "-")</td>
-                                            <td>@contact.ContactValue</td>
-                                            <td>
-                                                @if (contact.IsPrimary)
-                                                {
-                                                    <span class="badge bg-primary">主要</span>
-                                                }
-                                            </td>
-                                            <td>
-                                                <StatusBadgeComponent Status="@contact.Status" />
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-muted p-3 text-center">
-                            <i class="fas fa-phone-slash fa-2x mb-2 d-block"></i>
-                            尚未設定聯絡方式
-                        </div>
-                    }
+                    <ContactDisplayComponent 
+                        Contacts="@GetContactEntities()"
+                        Title="廠商聯絡方式"
+                        ShowStatus="true"
+                        ShowStatistics="true"
+                        ShowCreateButton="false"
+                        EmptyTitle="尚未設定聯絡方式"
+                        EmptyMessage="此廠商目前沒有任何聯絡方式資料" />
                 </div>
             },
             
@@ -190,45 +159,16 @@
                 Id = "addresses",
                 Title = "地址資料",
                 Content = @<div>
-                    @if (supplierAddresses.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>類型</th>
-                                        <th>地址</th>
-                                        <th>主要</th>
-                                        <th>狀態</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var address in supplierAddresses)
-                                    {
-                                        <tr>
-                                            <td>@(address.AddressType?.TypeName ?? "-")</td>
-                                            <td>@GetFullAddress(address)</td>
-                                            <td>
-                                                @if (address.IsPrimary)
-                                                {
-                                                    <span class="badge bg-primary">主要</span>
-                                                }
-                                            </td>
-                                            <td>
-                                                <StatusBadgeComponent Status="@address.Status" />
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }                    else
-                    {
-                        <div class="text-muted p-3 text-center">
-                            <i class="fas fa-map-marker-slash fa-2x mb-2 d-block"></i>
-                            尚未設定地址
-                        </div>
-                    }
+                    <AddressDisplayComponent 
+                        Addresses="@GetAddressEntities()"
+                        Title="廠商地址資料"
+                        ShowStatus="true"
+                        ShowAddressDetails="true"
+                        ShowMapLink="true"
+                        ShowStatistics="true"
+                        ShowCreateButton="false"
+                        EmptyTitle="尚未設定地址"
+                        EmptyMessage="此廠商目前沒有任何地址資料" />
                 </div>
             },
               new GenericDetailPageComponent<Supplier, ISupplierService>.TabSection
@@ -355,5 +295,16 @@
                 VisibilityCondition = () => !string.IsNullOrEmpty(supplier?.Remarks)
             }
         };
+    }
+
+    // 轉換方法
+    private IEnumerable<IContactEntity> GetContactEntities()
+    {
+        return supplierContacts.AsContactDisplayEntities();
+    }
+
+    private IEnumerable<IAddressEntity> GetAddressEntities()
+    {
+        return supplierAddresses.AsAddressDisplayEntities();
     }
 }
