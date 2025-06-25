@@ -1,0 +1,76 @@
+@page "/examples/role-detail-new"
+@using ERPCore2.Components.Shared.Details
+
+<h3>使用 BasicInfoDisplayComponent 的角色詳細頁面範例</h3>
+
+<div class="mb-4">
+    <BasicInfoDisplayComponent 
+        Title="角色基本資訊"
+        IconClass="fas fa-user-tag"
+        IconColor="text-primary"
+        Fields="@GetRoleBasicFields()"
+        ShowFieldCount="true"
+        ShowStatistics="false"
+        DefaultColSize="6" />
+</div>
+
+@code {
+    // 模擬角色資料
+    private object mockRole = new {
+        RoleName = "系統管理員",
+        Description = "擁有系統所有功能的完整存取權限",
+        IsSystemRole = true,
+        EmployeeCount = 3
+    };
+
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetRoleBasicFields()
+    {
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "角色名稱",
+                Value = "系統管理員",
+                IsPrimary = true,
+                ValueBold = true,
+                IconClass = "fas fa-user-tag",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "角色描述",
+                Value = "擁有系統所有功能的完整存取權限",
+                EmptyText = "無描述",
+                IconClass = "fas fa-info-circle",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ColSize = 12
+            },
+            new()
+            {
+                Label = "系統角色",
+                CustomContent = @<span class="badge bg-primary">
+                    <i class="fas fa-crown me-1"></i>系統角色
+                </span>,
+                IconClass = "fas fa-shield-alt",
+                IconBgClass = "bg-warning bg-opacity-10", 
+                IconTextClass = "text-warning",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "員工數量",
+                Value = "3",
+                ValueBold = true,
+                Format = BasicInfoDisplayComponent.FieldFormat.Number,
+                IconClass = "fas fa-users",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success",
+                ColSize = 6,
+                Description = "使用此角色的員工數量"
+            }
+        };
+    }
+}

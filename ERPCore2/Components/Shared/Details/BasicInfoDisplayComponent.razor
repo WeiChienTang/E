@@ -1,0 +1,246 @@
+@* 基本資料顯示組件 - 通用且美觀的基本信息展示 *@
+
+@if (Fields?.Any() == true)
+{
+    <div class="card border-0 shadow-sm">
+        @if (!string.IsNullOrEmpty(Title))
+        {
+            <div class="card-header bg-gradient bg-light border-0">
+                <h6 class="mb-0 d-flex align-items-center">
+                    @if (!string.IsNullOrEmpty(IconClass))
+                    {
+                        <i class="@IconClass @IconColor me-2"></i>
+                    }
+                    @Title
+                    @if (ShowFieldCount)
+                    {
+                        <span class="badge bg-secondary ms-auto">@Fields.Count() 個欄位</span>
+                    }
+                </h6>
+            </div>
+        }
+        <div class="card-body p-4">
+            <div class="row g-4">
+                @foreach (var field in Fields)
+                {
+                    <div class="col-md-@(field.ColSize ?? DefaultColSize)">
+                        <div class="d-flex align-items-start">
+                            @if (!string.IsNullOrEmpty(field.IconClass))
+                            {
+                                <div class="flex-shrink-0">
+                                    <div class="icon-box @(field.IconBgClass ?? "bg-primary bg-opacity-10") @(field.IconTextClass ?? "text-primary") rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        <i class="@field.IconClass"></i>
+                                    </div>
+                                </div>
+                            }
+                            <div class="@(string.IsNullOrEmpty(field.IconClass) ? "" : "flex-grow-1 ms-3")">
+                                <h6 class="@(field.IsPrimary ? "text-primary" : (field.IsSecondary ? "text-secondary" : "text-dark")) mb-1 @(field.LabelBold ? "fw-bold" : "")">
+                                    @field.Label
+                                    @if (field.IsRequired)
+                                    {
+                                        <span class="text-danger">*</span>
+                                    }
+                                </h6>                                <div class="@GetFieldValueClass(field)">
+                                    @if (field.CustomContent != null)
+                                    {
+                                        @field.CustomContent
+                                    }
+                                    else if (field.Format == FieldFormat.Code)
+                                    {
+                                        <code class="text-muted">@field.Value</code>
+                                    }
+                                    else
+                                    {
+                                        @GetFieldDisplayValue(field)
+                                    }
+                                </div>
+                                @if (!string.IsNullOrEmpty(field.Description))
+                                {
+                                    <div class="text-muted small mt-1">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        @field.Description
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @* 額外內容區域 *@
+            @if (AdditionalContent != null)
+            {
+                <hr class="my-4">
+                <div class="row">
+                    <div class="col-12">
+                        @AdditionalContent
+                    </div>
+                </div>
+            }
+
+            @* 統計信息 *@
+            @if (ShowStatistics)
+            {
+                <hr class="my-4">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-chart-bar text-info me-2"></i>
+                                <span class="text-muted">統計信息</span>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted">
+                                    總欄位數：@Fields.Count() |
+                                    已填入：@Fields.Count(f => !IsFieldEmpty(f)) |
+                                    空值：@Fields.Count(f => IsFieldEmpty(f))
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <div class="text-muted p-5 text-center">
+        <i class="fas fa-exclamation-circle fa-3x mb-3 d-block text-secondary"></i>
+        <h5>無資料可顯示</h5>
+        <p class="mb-0">@(EmptyMessage ?? "目前沒有任何資料可以顯示")</p>
+    </div>
+}
+
+@code {
+    // 基本參數
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? IconClass { get; set; }
+    [Parameter] public string IconColor { get; set; } = "text-primary";
+    [Parameter] public IEnumerable<BasicInfoField>? Fields { get; set; }
+    [Parameter] public RenderFragment? AdditionalContent { get; set; }
+
+    // 顯示選項
+    [Parameter] public bool ShowFieldCount { get; set; } = false;
+    [Parameter] public bool ShowStatistics { get; set; } = false;
+    [Parameter] public int DefaultColSize { get; set; } = 6;
+    [Parameter] public string? EmptyMessage { get; set; }
+
+    // 樣式選項
+    [Parameter] public string CardClass { get; set; } = "";
+    [Parameter] public string HeaderClass { get; set; } = "";
+    [Parameter] public string BodyClass { get; set; } = "";
+
+    // 輔助方法
+    private string GetFieldValueClass(BasicInfoField field)
+    {
+        var classes = new List<string>();
+        
+        if (field.IsPrimary)
+            classes.Add("fw-bold text-primary");
+        else if (field.IsSecondary)
+            classes.Add("text-secondary");
+            
+        if (field.ValueBold)
+            classes.Add("fw-bold");
+            
+        if (field.ValueLarge)
+            classes.Add("fs-5");
+        else if (field.ValueSmall)
+            classes.Add("small");
+            
+        if (!string.IsNullOrEmpty(field.ValueClass))
+            classes.Add(field.ValueClass);
+        
+        return string.Join(" ", classes);
+    }    private string GetFieldDisplayValue(BasicInfoField field)
+    {
+        if (field.Value == null || (field.Value is string str && string.IsNullOrEmpty(str)))
+            return field.EmptyText ?? "-";
+        
+        // 處理特殊格式
+        if (field.Format == FieldFormat.Currency && field.Value is decimal currencyValue)
+            return currencyValue.ToString("C");
+        else if (field.Format == FieldFormat.Percentage && field.Value is decimal percentValue)
+            return $"{percentValue:P2}";
+        else if (field.Format == FieldFormat.Date && field.Value is DateTime dateValue)
+            return dateValue.ToString("yyyy/MM/dd");
+        else if (field.Format == FieldFormat.DateTime && field.Value is DateTime dateTimeValue)
+            return dateTimeValue.ToString("yyyy/MM/dd HH:mm:ss");
+        
+        return field.Value.ToString() ?? "-";
+    }
+
+    private bool IsFieldEmpty(BasicInfoField field)
+    {
+        return field.Value == null || (field.Value is string str && string.IsNullOrEmpty(str));
+    }
+
+    // 基本資料欄位類別
+    public class BasicInfoField
+    {
+        public string Label { get; set; } = string.Empty;
+        public object? Value { get; set; }
+        public RenderFragment? CustomContent { get; set; }
+        
+        // 欄位設定
+        public int? ColSize { get; set; }
+        public string? EmptyText { get; set; } = "-";
+        public string? Description { get; set; }
+        public FieldFormat Format { get; set; } = FieldFormat.Text;
+        
+        // 標籤樣式
+        public bool IsPrimary { get; set; } = false;
+        public bool IsSecondary { get; set; } = false;
+        public bool IsRequired { get; set; } = false;
+        public bool LabelBold { get; set; } = false;
+        
+        // 值樣式
+        public bool ValueBold { get; set; } = false;
+        public bool ValueLarge { get; set; } = false;
+        public bool ValueSmall { get; set; } = false;
+        public string? ValueClass { get; set; }
+        
+        // 圖示設定
+        public string? IconClass { get; set; }
+        public string? IconBgClass { get; set; }
+        public string? IconTextClass { get; set; }
+    }
+
+    public enum FieldFormat
+    {
+        Text,
+        Currency,
+        Percentage,
+        Date,
+        DateTime,
+        Code,
+        Number
+    }
+}
+
+<style>
+    .icon-box {
+        min-width: 40px;
+        min-height: 40px;
+    }
+
+    .bg-gradient {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+
+    .card {
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    code {
+        background-color: #f8f9fa;
+        padding: 0.2rem 0.4rem;
+        border-radius: 0.25rem;
+        font-size: 0.875em;
+    }
+</style>

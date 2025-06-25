@@ -1,0 +1,251 @@
+@page "/examples/basic-info"
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+
+<PageTitle>基本資料顯示組件範例</PageTitle>
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="mb-4">
+                <h2 class="text-primary">🎨 基本資料顯示組件範例</h2>
+                <p class="text-muted">BasicInfoDisplayComponent 的使用展示</p>
+                <hr />
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <h4 class="mb-3">📋 角色資料展示</h4>
+            <BasicInfoDisplayComponent 
+                Title="角色基本資訊"
+                IconClass="fas fa-user-tag"
+                IconColor="text-primary"
+                Fields="@GetRoleFields()"
+                ShowFieldCount="true"
+                ShowStatistics="true"
+                DefaultColSize="6" />
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <h4 class="mb-3">👤 員工資料展示</h4>
+            <BasicInfoDisplayComponent 
+                Title="員工基本資訊"
+                IconClass="fas fa-user"
+                IconColor="text-success"
+                Fields="@GetEmployeeFields()"
+                ShowFieldCount="false"
+                ShowStatistics="false"
+                DefaultColSize="4" />
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <h4 class="mb-3">🏢 公司資料展示</h4>
+            <BasicInfoDisplayComponent 
+                Title="公司基本資訊"
+                IconClass="fas fa-building"
+                IconColor="text-info"
+                Fields="@GetCompanyFields()"
+                ShowFieldCount="true"
+                ShowStatistics="true"
+                DefaultColSize="6">
+                <AdditionalContent>
+                    <div class="alert alert-info">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>提示：</strong>這是一個額外內容區域，可以放置任何自訂內容。
+                    </div>
+                </AdditionalContent>
+            </BasicInfoDisplayComponent>
+        </div>
+    </div>
+</div>
+
+@code {
+    // 角色資料示例
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetRoleFields()
+    {
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "角色名稱",
+                Value = "系統管理員",
+                IsPrimary = true,
+                ValueBold = true,
+                IconClass = "fas fa-user-tag",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "角色描述",
+                Value = "擁有系統完整管理權限的角色",
+                IconClass = "fas fa-info-circle",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ColSize = 12
+            },
+            new()
+            {
+                Label = "系統角色",
+                CustomContent = @<span class="badge bg-primary">
+                    <i class="fas fa-crown me-1"></i>系統角色
+                </span>,
+                IconClass = "fas fa-shield-alt",
+                IconBgClass = "bg-warning bg-opacity-10", 
+                IconTextClass = "text-warning",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "員工數量",
+                Value = "5",
+                ValueBold = true,
+                Format = BasicInfoDisplayComponent.FieldFormat.Number,
+                IconClass = "fas fa-users",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success",
+                ColSize = 6,
+                Description = "使用此角色的員工數量"
+            }
+        };
+    }
+
+    // 員工資料示例
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetEmployeeFields()
+    {
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "員工姓名",
+                Value = "張小明",
+                IsPrimary = true,
+                ValueBold = true,
+                IconClass = "fas fa-user",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success"
+            },
+            new()
+            {
+                Label = "員工編號",
+                Value = "EMP001",
+                Format = BasicInfoDisplayComponent.FieldFormat.Code,
+                IconClass = "fas fa-id-badge",
+                IconBgClass = "bg-secondary bg-opacity-10",
+                IconTextClass = "text-secondary"
+            },
+            new()
+            {
+                Label = "部門",
+                Value = "資訊部",
+                IconClass = "fas fa-building",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info"
+            },
+            new()
+            {
+                Label = "職位",
+                Value = "系統分析師",
+                IconClass = "fas fa-briefcase",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning"
+            },
+            new()
+            {
+                Label = "入職日期",
+                Value = new DateTime(2023, 1, 15),
+                Format = BasicInfoDisplayComponent.FieldFormat.Date,
+                IconClass = "fas fa-calendar",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary"
+            },
+            new()
+            {
+                Label = "狀態",
+                CustomContent = @<span class="badge bg-success">
+                    <i class="fas fa-check-circle me-1"></i>在職
+                </span>,
+                IconClass = "fas fa-check-circle",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success"
+            }
+        };
+    }
+
+    // 公司資料示例  
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetCompanyFields()
+    {
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "公司名稱",
+                Value = "範例科技股份有限公司",
+                IsPrimary = true,
+                ValueBold = true,
+                IconClass = "fas fa-building",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary",
+                ColSize = 8
+            },
+            new()
+            {
+                Label = "統一編號",
+                Value = "12345678",
+                Format = BasicInfoDisplayComponent.FieldFormat.Code,
+                IconClass = "fas fa-file-alt",
+                IconBgClass = "bg-secondary bg-opacity-10",
+                IconTextClass = "text-secondary",
+                ColSize = 4
+            },
+            new()
+            {
+                Label = "資本額",
+                Value = 10000000m,
+                Format = BasicInfoDisplayComponent.FieldFormat.Currency,
+                ValueBold = true,
+                IconClass = "fas fa-dollar-sign",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success"
+            },
+            new()
+            {
+                Label = "成立日期",
+                Value = new DateTime(2020, 3, 1),
+                Format = BasicInfoDisplayComponent.FieldFormat.Date,
+                IconClass = "fas fa-calendar-plus",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info"
+            },
+            new()
+            {
+                Label = "營收成長率",
+                Value = 0.15m,
+                Format = BasicInfoDisplayComponent.FieldFormat.Percentage,
+                ValueBold = true,
+                IconClass = "fas fa-chart-line",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning",
+                Description = "年度營收成長率"
+            },
+            new()
+            {
+                Label = "營運狀態",
+                CustomContent = @<span class="badge bg-success">
+                    <i class="fas fa-play-circle me-1"></i>營運中
+                </span>,
+                IconClass = "fas fa-chart-pie",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success"
+            }
+        };
+    }
+}
