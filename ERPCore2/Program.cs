@@ -76,8 +76,10 @@ builder.Services.AddScoped(sp =>
     }
     else
     {
-        // 開發環境的預設值
-        httpClient.BaseAddress = new Uri("https://localhost:7109");
+        // 🔧 生產環境的預設值 - 使用動態端口檢測
+        var urls = builder.Configuration["urls"] ?? "http://localhost:5000";
+        var firstUrl = urls.Split(';')[0];
+        httpClient.BaseAddress = new Uri(firstUrl);
     }
     
     return httpClient;

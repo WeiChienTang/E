@@ -6,18 +6,33 @@ class ToastManager {
     }
 
     initContainer() {
-        // 檢查是否已存在容器
-        this.container = document.getElementById('toast-container');
-        if (!this.container) {
-            this.container = document.createElement('div');
-            this.container.id = 'toast-container';
-            this.container.className = 'toast-container position-fixed top-0 end-0 p-3';
-            this.container.style.zIndex = '9999';
-            document.body.appendChild(this.container);
+        // 等待 DOM 準備好
+        const ensureContainer = () => {
+            // 檢查是否已存在容器
+            this.container = document.getElementById('toast-container');
+            if (!this.container) {
+                this.container = document.createElement('div');
+                this.container.id = 'toast-container';
+                this.container.className = 'toast-container position-fixed top-0 end-0 p-3';
+                this.container.style.zIndex = '9999';
+                document.body.appendChild(this.container);
+                console.log('Toast container created');
+            }
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', ensureContainer);
+        } else {
+            ensureContainer();
         }
     }
 
     show(type, message, title) {
+        // 確保容器存在
+        if (!this.container || !document.body.contains(this.container)) {
+            this.initContainer();
+        }
+
         const toast = this.createToast(type, message, title);
         this.container.appendChild(toast);
 

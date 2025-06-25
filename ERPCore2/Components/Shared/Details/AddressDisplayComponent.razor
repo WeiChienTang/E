@@ -1,7 +1,6 @@
 @* 地址資料顯示組件 *@
-@using Microsoft.JSInterop
-@using ERPCore2.Components.Shared.Details
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 
 @if (Addresses?.Any() == true)
 {
@@ -162,7 +161,8 @@ else
     [Parameter] public bool ShowAddressDetails { get; set; } = true;
     [Parameter] public bool ShowMapLink { get; set; } = true;
     [Parameter] public bool ShowCreateButton { get; set; } = false;
-    [Parameter] public EventCallback OnCreateClick { get; set; }    [Parameter] public EventCallback<IAddressEntity> OnMapClick { get; set; }
+    [Parameter] public EventCallback OnCreateClick { get; set; }
+    [Parameter] public EventCallback<IAddressEntity> OnMapClick { get; set; }
     [Parameter] public EventCallback<IAddressEntity> OnCopyClick { get; set; }
 
     // 建立完整地址文字
@@ -232,7 +232,7 @@ else
             var fullAddress = BuildFullAddress(address);
             var encodedAddress = Uri.EscapeDataString(fullAddress);
             var mapUrl = $"https://www.google.com/maps/search/?api=1&query={encodedAddress}";
-            await JSRuntime.InvokeAsync<object>("open", mapUrl, "_blank");
+            await JSRuntime.InvokeVoidAsync("open", mapUrl, "_blank");
         }
     }
 
@@ -245,10 +245,20 @@ else
         }
         else
         {
-            // 預設行為：複製到剪貼簿
-            var fullAddress = BuildFullAddress(address);            
-            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", fullAddress);
-            // 這裡可以加入通知提示
+            try
+            {
+                // 預設行為：複製到剪貼簿
+                var fullAddress = BuildFullAddress(address);            
+                await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", fullAddress);
+                
+                // 直接調用 JavaScript showToast 函數
+                await JSRuntime.InvokeVoidAsync("showSuccess", "地址已複製到剪貼簿");
+            }
+            catch (Exception ex)
+            {
+                // 如果clipboard API不可用，顯示錯誤提示
+                await JSRuntime.InvokeVoidAsync("showError", $"無法複製地址到剪貼簿: {ex.Message}");
+            }
         }
     }
 }
