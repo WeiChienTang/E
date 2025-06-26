@@ -1,0 +1,270 @@
+@page "/units/detail/{unitId:int}"
+@inject IUnitService UnitService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>單位詳細資料</PageTitle>
+
+<GenericDetailPageComponent TEntity="Unit" 
+                           TService="IUnitService"
+                           EntityId="@UnitId"
+                           Entity="@unit"
+                           Service="@UnitService"
+                           EntityName="單位"
+                           EntityNamePlural="單位"
+                           IndexRoute="/units"
+                           EditRoute="/units/edit"
+                           LoadingText="載入單位資料中..."
+                           BreadcrumbItems="@breadcrumbItems"
+                           DataLoader="@LoadUnitDataAsync"
+                           AdditionalDataLoader="@LoadAdditionalDataAsync"
+                           EntityTitleSelector="@(u => u.UnitName)"
+                           EntitySubtitleSelector="@(u => $"單位代碼：{u.UnitCode}")"
+                           EntityDisplayNameSelector="@(u => u.UnitName)"
+                           OnDataLoaded="@OnUnitDataLoaded"
+                           UseTabLayout="true"
+                           TabSections="@GetTabSections()">
+</GenericDetailPageComponent>
+
+@code {
+    [Parameter] public int UnitId { get; set; }
+
+    private Unit? unit;
+    private bool _isLoading = false; // 防止重複載入
+
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
+    {
+        new("首頁", "/"),
+        new("基礎資料", "#"),
+        new("單位維護", "/units"),
+        new("單位詳細資料")
+    };
+
+    // GenericDetailPageComponent 需要的方法
+    private async Task<Unit?> LoadUnitDataAsync()
+    {
+        // 防止重複載入
+        if (_isLoading)
+        {
+            Console.WriteLine("[UnitDetail] 載入中，跳過重複調用");
+            return unit;
+        }
+        
+        try
+        {
+            _isLoading = true;
+            if (UnitId <= 0) return null;
+            
+            var result = await UnitService.GetUnitWithConversionsAsync(UnitId);
+            unit = result; // 保持本地變數同步
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[UnitDetail] 載入單位資料失敗：{ex.Message}");
+            throw;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+    
+    private Task LoadAdditionalDataAsync()
+    {
+        // 由於GetUnitWithConversionsAsync已經Include所有關聯資料，這裡不需要額外查詢
+        return Task.CompletedTask;
+    }
+
+    private Task OnUnitDataLoaded()
+    {
+        // 資料載入完成後的處理
+        StateHasChanged();        
+        return Task.CompletedTask;
+    }
+
+    // 設定標籤頁結構
+    private List<GenericDetailPageComponent<Unit, IUnitService>.TabSection> GetTabSections()
+    {        
+        return new List<GenericDetailPageComponent<Unit, IUnitService>.TabSection>
+        {           
+             new GenericDetailPageComponent<Unit, IUnitService>.TabSection
+            {
+                Id = "basic",
+                Title = "基本資料",
+                Content = @<div>
+                    <BasicInfoDisplayComponent Fields="@GetUnitBasicFields()" />
+                </div>
+            },
+            new GenericDetailPageComponent<Unit, IUnitService>.TabSection
+            {
+                Id = "conversions",
+                Title = "轉換關係",
+                Content = @<div>
+                    <div class="row">
+                        <!-- 從此單位轉換 -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-arrow-right text-primary me-2"></i>
+                                        從此單位轉換
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    @if (unit?.FromUnitConversions?.Any() == true)
+                                    {
+                                        <div class="list-group list-group-flush">
+                                            @foreach (var conversion in unit.FromUnitConversions)
+                                            {
+                                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <strong>@conversion.ToUnit?.UnitName</strong>
+                                                        <br />
+                                                        <small class="text-muted">@conversion.ToUnit?.UnitCode</small>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <span class="badge bg-primary">1 : @conversion.ConversionRate</span>
+                                                        @if (!conversion.IsActive)
+                                                        {
+                                                            <br />
+                                                            <small class="text-danger">已停用</small>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-center text-muted py-3">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            無轉換關係
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 轉換至此單位 -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-arrow-left text-success me-2"></i>
+                                        轉換至此單位
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    @if (unit?.ToUnitConversions?.Any() == true)
+                                    {
+                                        <div class="list-group list-group-flush">
+                                            @foreach (var conversion in unit.ToUnitConversions)
+                                            {
+                                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <strong>@conversion.FromUnit?.UnitName</strong>
+                                                        <br />
+                                                        <small class="text-muted">@conversion.FromUnit?.UnitCode</small>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <span class="badge bg-success">@conversion.ConversionRate : 1</span>
+                                                        @if (!conversion.IsActive)
+                                                        {
+                                                            <br />
+                                                            <small class="text-danger">已停用</small>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-center text-muted py-3">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            無轉換關係
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            },
+            
+            new GenericDetailPageComponent<Unit, IUnitService>.TabSection
+            {
+                Id = "system",
+                Title = "系統資訊",
+                Content = @<div>
+                    <SystemInfoDisplayComponent 
+                        CreatedAt="@(unit?.CreatedAt ?? DateTime.MinValue)"
+                        CreatedBy="@unit?.CreatedBy"
+                        UpdatedAt="@unit?.UpdatedAt"
+                        UpdatedBy="@unit?.UpdatedBy" />
+                </div>
+            }
+        };
+    }
+
+    // 取得單位基本資料欄位
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetUnitBasicFields()
+    {
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "單位代碼",
+                Value = unit?.UnitCode,
+                IsPrimary = true,
+                ValueBold = true,
+                IconClass = "fas fa-code",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "單位名稱",
+                Value = unit?.UnitName,
+                ValueBold = true,
+                IconClass = "fas fa-tag",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "單位符號",
+                Value = unit?.Symbol,
+                IconClass = "fas fa-font",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning",
+                EmptyText = "未設定",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "基本單位",
+                Value = unit?.IsBaseUnit == true ? "是" : "否",
+                IconClass = "fas fa-star",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "狀態",
+                Value = unit?.IsActive == true ? "啟用" : "停用",
+                IconClass = "fas fa-toggle-on",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success",
+                ColSize = 6
+            }
+        };
+    }
+}

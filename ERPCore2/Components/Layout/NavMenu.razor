@@ -21,7 +21,8 @@
         <NavMenuItem Text="基礎資料" IconClass="bi-sliders nav-menu-bi">
             <DropdownItems>
                 <NavSection Title="通用">
-                    <NavDropdownItem Text="行業" Url="/industrytypes"/>                    
+                    <NavDropdownItem Text="行業" Url="/industrytypes"/>
+                    <NavDropdownItem Text="單位" Url="/units"/>
                 </NavSection>
 
                 <NavSection Title="廠商">
@@ -38,10 +39,7 @@
                     <NavDropdownItem Text="材質" Url="/materials" />
                 </NavSection>     
 
-                <NavSection Title="員工">
-                    <NavDropdownItem Text="角色" Url="/roles"/>
-                    <NavDropdownItem Text="權限" Url="/permissions"/>
-                </NavSection>
+
             </DropdownItems>
         </NavMenuItem>
 
@@ -63,6 +61,10 @@
         <NavMenuItem Text="員工管理" IconClass="bi bi-person-badge-fill">
             <DropdownItems>
                 <NavDropdownItem Text="員工維護" Url="/employees" />
+                <NavSection Title="基礎單位">
+                    <NavDropdownItem Text="角色" Url="/roles"/>
+                    <NavDropdownItem Text="權限" Url="/permissions"/>
+                </NavSection>
             </DropdownItems>
         </NavMenuItem>
 
@@ -80,18 +82,18 @@
         </NavMenuItem>    
 
         <!-- BOM 管理下拉選單 -->
-        <NavMenuItem Text="BOM 管理" IconClass="bi bi-diagram-2-fill">
+        @* <NavMenuItem Text="BOM 管理" IconClass="bi bi-diagram-2-fill">
             <DropdownItems>
 
             </DropdownItems>
-        </NavMenuItem>
+        </NavMenuItem> *@
 
         <!-- UI 設計範例 -->
-        <NavMenuItem Text="UI 設計範例" IconClass="bi bi-palette-fill">
+        @* <NavMenuItem Text="UI 設計範例" IconClass="bi bi-palette-fill">
             <DropdownItems>
                 <NavDropdownItem Text="現代化詳細資料展示" Url="/examples/modern-details" />
             </DropdownItems>
-        </NavMenuItem>
+        </NavMenuItem> *@
 
 
     </nav>
