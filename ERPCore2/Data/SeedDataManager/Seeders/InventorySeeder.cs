@@ -8,14 +8,13 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 {
     public class InventorySeeder : IDataSeeder
     {
-        public int Order => 5;
+        public int Order => 6; // 在倉庫資料之後
         public string Name => "庫存管理";
 
         public async Task SeedAsync(AppDbContext context)
         {
-            // 確保此方法是否已經有資料
-            bool hasData = await context.Warehouses.AnyAsync() ||
-                          await context.Units.AnyAsync() ||
+            // 確保此方法是否已經有資料 (移除倉庫檢查，因為倉庫由 WarehouseSeeder 處理)
+            bool hasData = await context.Units.AnyAsync() ||
                           await context.InventoryTransactionTypes.AnyAsync();
 
             if (hasData)
@@ -126,116 +125,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             await context.UnitConversions.AddRangeAsync(unitConversions);
 
-            // 建立倉庫
-            var warehouses = new List<Warehouse>
-            {
-                new Warehouse
-                {
-                    WarehouseCode = "WH001",
-                    WarehouseName = "主倉庫",
-                    Address = "台中市北屯區文心路四段123號",
-                    ContactPerson = "王倉管",
-                    Phone = "04-2234-5678",
-                    WarehouseType = WarehouseTypeEnum.Main,
-                    IsDefault = true,
-                    IsActive = true,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                },
-                new Warehouse
-                {
-                    WarehouseCode = "WH002",
-                    WarehouseName = "次倉庫",
-                    Address = "台中市西屯區台灣大道三段456號",
-                    ContactPerson = "李倉管",
-                    Phone = "04-2345-6789",
-                    WarehouseType = WarehouseTypeEnum.Branch,
-                    IsDefault = false,
-                    IsActive = true,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                },
-                new Warehouse
-                {
-                    WarehouseCode = "WH003",
-                    WarehouseName = "退貨倉庫",
-                    Address = "台中市南屯區向上路二段789號",
-                    ContactPerson = "張倉管",
-                    Phone = "04-2456-7890",
-                    WarehouseType = WarehouseTypeEnum.Return,
-                    IsDefault = false,
-                    IsActive = true,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                }
-            };
-
-            await context.Warehouses.AddRangeAsync(warehouses);
-            await context.SaveChangesAsync();
-
-            // 建立庫位
-            var warehouseLocations = new List<WarehouseLocation>();
-            var mainWarehouse = warehouses.First(w => w.WarehouseCode == "WH001");
-            var branchWarehouse = warehouses.First(w => w.WarehouseCode == "WH002");
-
-            // 主倉庫庫位
-            for (int zone = 1; zone <= 3; zone++)
-            {
-                for (int aisle = 1; aisle <= 5; aisle++)
-                {
-                    for (int level = 1; level <= 4; level++)
-                    {
-                        warehouseLocations.Add(new WarehouseLocation
-                        {
-                            WarehouseId = mainWarehouse.Id,
-                            LocationCode = $"A{zone:D1}-{aisle:D2}-{level:D2}",
-                            LocationName = $"A區{zone}道{aisle}層{level}",
-                            Zone = $"A{zone}",
-                            Aisle = aisle.ToString("D2"),
-                            Level = level.ToString("D2"),
-                            Position = "01",
-                            MaxCapacity = 100,
-                            IsActive = true,
-                            Status = EntityStatus.Active,
-                            CreatedAt = DateTime.Now,
-                            CreatedBy = "System"
-                        });
-                    }
-                }
-            }
-
-            // 次倉庫庫位
-            for (int zone = 1; zone <= 2; zone++)
-            {
-                for (int aisle = 1; aisle <= 3; aisle++)
-                {
-                    for (int level = 1; level <= 3; level++)
-                    {
-                        warehouseLocations.Add(new WarehouseLocation
-                        {
-                            WarehouseId = branchWarehouse.Id,
-                            LocationCode = $"B{zone:D1}-{aisle:D2}-{level:D2}",
-                            LocationName = $"B區{zone}道{aisle}層{level}",
-                            Zone = $"B{zone}",
-                            Aisle = aisle.ToString("D2"),
-                            Level = level.ToString("D2"),
-                            Position = "01",
-                            MaxCapacity = 50,
-                            IsActive = true,
-                            Status = EntityStatus.Active,
-                            CreatedAt = DateTime.Now,
-                            CreatedBy = "System"
-                        });
-                    }
-                }
-            }
-
-            await context.WarehouseLocations.AddRangeAsync(warehouseLocations);
-
-            // 建立異動類型
+            // 建立異動類型 (倉庫資料移至 WarehouseSeeder)
             var transactionTypes = new List<InventoryTransactionType>
             {
                 new InventoryTransactionType
@@ -344,8 +234,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             Console.WriteLine("✅ 庫存管理種子資料建立完成");
             Console.WriteLine($"   - 建立了 {units.Count} 個計量單位");
             Console.WriteLine($"   - 建立了 {unitConversions.Count} 個單位轉換關係");
-            Console.WriteLine($"   - 建立了 {warehouses.Count} 個倉庫");
-            Console.WriteLine($"   - 建立了 {warehouseLocations.Count} 個庫位");
             Console.WriteLine($"   - 建立了 {transactionTypes.Count} 個異動類型");
         }
     }

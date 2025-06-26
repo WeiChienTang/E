@@ -73,6 +73,7 @@ namespace ERPCore2.Data
                 new BasicDataSeeder(),
                 new ColorSeeder(),
                 new MaterialSeeder(),
+                new WarehouseSeeder(), 
                 new CustomerSeeder(),
                 new SupplierSeeder(),
                 new ProductSeeder(),

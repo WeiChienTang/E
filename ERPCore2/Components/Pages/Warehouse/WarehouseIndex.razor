@@ -1,0 +1,178 @@
+@page "/warehouses"
+@inject IWarehouseService WarehouseService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>倉庫維護</PageTitle>
+
+<GenericIndexPageComponent TEntity="Warehouse" 
+                          TService="IWarehouseService"
+                          Service="@WarehouseService"
+                          EntityBasePath="/warehouses"
+                          PageTitle="倉庫維護"
+                          PageSubtitle="管理所有倉庫資料與基本資訊"
+                          EntityName="倉庫"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadWarehousesAsync"
+                          FilterApplier="@ApplyWarehouseFilters"
+                          GetEntityDisplayName="@(warehouse => warehouse.WarehouseName)"
+                          @ref="indexComponent" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<Warehouse, IWarehouseService> indexComponent = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override void OnInitialized()
+    {
+        InitializeBreadcrumbs();
+        InitializeFilters();
+        InitializeTableColumns();
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("倉庫管理")
+        };
+    }
+
+    // 載入倉庫資料
+    private async Task<List<Warehouse>> LoadWarehousesAsync()
+    {
+        try
+        {
+            return await WarehouseService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "載入倉庫資料失敗：", ex.Message);
+            return new List<Warehouse>();
+        }
+    }
+
+    private void InitializeFilters()
+    {
+        // 準備狀態選項
+        var statusOptions = new List<SelectOption>
+        {
+            new() { Text = "啟用", Value = "True" },
+            new() { Text = "停用", Value = "False" }
+        };
+
+        // 準備倉庫類型選項
+        var warehouseTypeOptions = new List<SelectOption>
+        {
+            new() { Text = "主倉庫", Value = WarehouseTypeEnum.Main.ToString() },
+            new() { Text = "分倉庫", Value = WarehouseTypeEnum.Branch.ToString() },
+            new() { Text = "虛擬倉庫", Value = WarehouseTypeEnum.Virtual.ToString() },
+            new() { Text = "退貨倉庫", Value = WarehouseTypeEnum.Return.ToString() }
+        };
+
+        // 建立篩選定義 - 使用模糊搜尋
+        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+            .AddText("WarehouseCode", "倉庫代碼", "輸入倉庫代碼搜尋")
+            .AddText("WarehouseName", "倉庫名稱", "輸入倉庫名稱搜尋")
+            .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋", isAdvanced: true)
+            .AddText("Address", "地址", "輸入地址搜尋", isAdvanced: true)
+            .AddSelect("WarehouseType", "倉庫類型", warehouseTypeOptions, isAdvanced: true)
+            .AddSelect("IsActive", "狀態", statusOptions, isAdvanced: true)
+            .AddSelect("IsDefault", "預設倉庫", new List<SelectOption>
+            {
+                new() { Text = "是", Value = "True" },
+                new() { Text = "否", Value = "False" }
+            }, isAdvanced: true)
+            .Build();
+    }
+
+    private void InitializeTableColumns()
+    {
+        columnDefinitions = new List<TableColumnDefinition>
+        {
+            TableColumnDefinition.Text("倉庫代碼", nameof(Warehouse.WarehouseCode)),
+            TableColumnDefinition.Text("倉庫名稱", nameof(Warehouse.WarehouseName)),
+            TableColumnDefinition.Text("聯絡人", nameof(Warehouse.ContactPerson)),
+            TableColumnDefinition.Text("聯絡電話", nameof(Warehouse.Phone)),
+            TableColumnDefinition.Status("倉庫類型", nameof(Warehouse.WarehouseType), new Dictionary<object, string>
+            {
+                { WarehouseTypeEnum.Main, "badge bg-primary" },
+                { WarehouseTypeEnum.Branch, "badge bg-info" },
+                { WarehouseTypeEnum.Virtual, "badge bg-warning" },
+                { WarehouseTypeEnum.Return, "badge bg-secondary" }
+            }),
+            TableColumnDefinition.Boolean("預設倉庫", nameof(Warehouse.IsDefault), "是", "否"),
+            TableColumnDefinition.Boolean("狀態", nameof(Warehouse.IsActive), "啟用", "停用"),
+            TableColumnDefinition.Date("建立日期", nameof(Warehouse.CreatedAt), "yyyy/MM/dd")
+        };
+    }
+
+    // 自定義篩選邏輯
+    private IQueryable<Warehouse> ApplyWarehouseFilters(SearchFilterModel searchModel, IQueryable<Warehouse> query)
+    {
+        // 倉庫代碼篩選
+        var warehouseCodeFilter = searchModel.GetFilterValue("WarehouseCode")?.ToString();
+        if (!string.IsNullOrWhiteSpace(warehouseCodeFilter))
+        {
+            query = query.Where(w => 
+                w.WarehouseCode.Contains(warehouseCodeFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 倉庫名稱篩選
+        var warehouseNameFilter = searchModel.GetFilterValue("WarehouseName")?.ToString();
+        if (!string.IsNullOrWhiteSpace(warehouseNameFilter))
+        {
+            query = query.Where(w => 
+                w.WarehouseName.Contains(warehouseNameFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 聯絡人篩選
+        var contactPersonFilter = searchModel.GetFilterValue("ContactPerson")?.ToString();
+        if (!string.IsNullOrWhiteSpace(contactPersonFilter))
+        {
+            query = query.Where(w => 
+                !string.IsNullOrEmpty(w.ContactPerson) && 
+                w.ContactPerson.Contains(contactPersonFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 地址篩選
+        var addressFilter = searchModel.GetFilterValue("Address")?.ToString();
+        if (!string.IsNullOrWhiteSpace(addressFilter))
+        {
+            query = query.Where(w => 
+                !string.IsNullOrEmpty(w.Address) && 
+                w.Address.Contains(addressFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 倉庫類型篩選
+        var warehouseTypeFilter = searchModel.GetFilterValue("WarehouseType")?.ToString();
+        if (!string.IsNullOrWhiteSpace(warehouseTypeFilter) && Enum.TryParse<WarehouseTypeEnum>(warehouseTypeFilter, out var warehouseType))
+        {
+            query = query.Where(w => w.WarehouseType == warehouseType);
+        }
+
+        // 啟用狀態篩選
+        var isActiveFilter = searchModel.GetFilterValue("IsActive")?.ToString();
+        if (!string.IsNullOrWhiteSpace(isActiveFilter) && bool.TryParse(isActiveFilter, out var isActive))
+        {
+            query = query.Where(w => w.IsActive == isActive);
+        }
+
+        // 預設倉庫篩選
+        var isDefaultFilter = searchModel.GetFilterValue("IsDefault")?.ToString();
+        if (!string.IsNullOrWhiteSpace(isDefaultFilter) && bool.TryParse(isDefaultFilter, out var isDefault))
+        {
+            query = query.Where(w => w.IsDefault == isDefault);
+        }
+
+        return query.OrderBy(w => w.WarehouseCode);
+    }
+}

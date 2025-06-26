@@ -20,7 +20,7 @@
         <!-- 通用參數設定 -->
         <NavMenuItem Text="基礎資料" IconClass="bi-sliders nav-menu-bi">
             <DropdownItems>
-                <NavSection Title="客戶廠商">
+                <NavSection Title="通用">
                     <NavDropdownItem Text="行業" Url="/industrytypes"/>                    
                 </NavSection>
 
@@ -37,7 +37,7 @@
                     <NavDropdownItem Text="天氣" Url="/weather" />
                     <NavDropdownItem Text="材質" Url="/materials" />
                 </NavSection>     
-                                    
+
                 <NavSection Title="員工">
                     <NavDropdownItem Text="角色" Url="/roles"/>
                     <NavDropdownItem Text="權限" Url="/permissions"/>
@@ -71,7 +71,15 @@
             <DropdownItems>
                 <NavDropdownItem Text="產品維護" Url="/products" />
             </DropdownItems>
-        </NavMenuItem>        <!-- BOM 管理下拉選單 -->
+        </NavMenuItem>       
+
+        <NavMenuItem Text="倉庫管理" IconClass="bi-boxes nav-menu-bi">
+            <DropdownItems>
+                <NavDropdownItem Text="倉庫維護" Url="/warehouses" />
+            </DropdownItems>
+        </NavMenuItem>    
+
+        <!-- BOM 管理下拉選單 -->
         <NavMenuItem Text="BOM 管理" IconClass="bi bi-diagram-2-fill">
             <DropdownItems>
 
