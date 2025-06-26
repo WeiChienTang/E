@@ -1,6 +1,59 @@
 using ERPCore2.Components;
 using ERPCore2.Data;
+using ERPCore2.Data.Context;
 using Microsoft.EntityFrameworkCore;
+
+// 檢查命令列參數
+var commandLineArgs = Environment.GetCommandLineArgs();
+bool isMigrationMode = commandLineArgs.Contains("--migrate") || Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Migration";
+bool isSeedDataMode = commandLineArgs.Contains("--seed-data");
+bool isSetupMode = commandLineArgs.Contains("--setup"); // 完整設定模式
+
+if (isMigrationMode || isSeedDataMode || isSetupMode)
+{
+    Console.WriteLine("Running Entity Framework database migrations...");
+    
+    var migrationBuilder = WebApplication.CreateBuilder(args);
+    
+    // 設定資料庫連接
+    var connectionString = migrationBuilder.Configuration.GetConnectionString("DefaultConnection");
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        Console.WriteLine("Error: No database connection string found.");
+        Environment.Exit(1);
+    }
+    
+    // 註冊必要的服務進行遷移
+    migrationBuilder.Services.AddDbContext<AppDbContext>(options => 
+        options.UseSqlServer(connectionString));
+    
+    // 建立應用程式但不啟動 Web 服務器
+    var migrationApp = migrationBuilder.Build();
+    
+    try
+    {
+        using var scope = migrationApp.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        
+        Console.WriteLine("Applying database migrations...");
+        await context.Database.MigrateAsync();
+        
+        Console.WriteLine("Database migrations completed successfully.");
+        Console.WriteLine("Initializing seed data...");
+        
+        // 初始化種子資料
+        await SeedData.InitializeAsync(scope.ServiceProvider);
+        
+        Console.WriteLine("Seed data initialization completed.");
+        Environment.Exit(0);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error during migration: {ex.Message}");
+        Console.WriteLine($"Stack trace: {ex.StackTrace}");
+        Environment.Exit(1);
+    }
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -103,7 +156,11 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// 只在開發環境或有 HTTPS 設定時才使用 HTTPS 重新導向
+if (app.Environment.IsDevelopment() || builder.Configuration["urls"]?.Contains("https") == true)
+{
+    app.UseHttpsRedirection();
+}
 
 // 加入認證和授權中介軟體
 app.UseAuthentication();

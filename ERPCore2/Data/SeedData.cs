@@ -21,8 +21,11 @@ namespace ERPCore2.Data
 
             try
             {
-                // 執行資料庫遷移（創建資料表結構）
+                Console.WriteLine("正在檢查並初始化資料庫...");
+                
+                // 確保資料庫存在並執行遷移
                 await context.Database.MigrateAsync();
+                Console.WriteLine("資料庫遷移完成");
 
                 // 開始交易
                 using var transaction = await context.Database.BeginTransactionAsync();
@@ -55,25 +58,26 @@ namespace ERPCore2.Data
             {
                 Console.WriteLine($"種子資料初始化過程中發生錯誤：{ex.Message}");
                 throw;
-            }        }
-        
+            }
+        }
+
         /// <summary>
-        /// 取得所有種子器實例
+        /// 取得所有種子器
         /// </summary>
-        /// <returns>種子器列表</returns>
+        /// <returns>種子器集合</returns>
         private static IEnumerable<IDataSeeder> GetAllSeeders()
         {
             return new List<IDataSeeder>
             {
                 new AuthSeeder(),
                 new BasicDataSeeder(),
+                new ColorSeeder(),
+                new MaterialSeeder(),
                 new CustomerSeeder(),
                 new SupplierSeeder(),
                 new ProductSeeder(),
                 new InventorySeeder(),
-                new WeatherSeeder(),
-                new ColorSeeder(),
-                new MaterialSeeder() // 新增材質 Seeder
+                new WeatherSeeder()
             };
         }
     }
