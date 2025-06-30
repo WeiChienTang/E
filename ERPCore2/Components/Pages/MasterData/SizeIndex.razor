@@ -92,7 +92,6 @@
             .AddText("SizeName", "尺寸名稱", "輸入尺寸名稱搜尋")
             .AddText("Description", "尺寸描述", "輸入描述內容搜尋", isAdvanced: true)
             .AddSelect("IsActive", "啟用狀態", activeStatusOptions, isAdvanced: true)
-            .AddNumber("SortOrder", "排序順序", "輸入排序順序搜尋", isAdvanced: true)
             .Build();
     }
 
@@ -103,7 +102,6 @@
             TableColumnDefinition.Text("尺寸代碼", nameof(Size.SizeCode)),
             TableColumnDefinition.Text("尺寸名稱", nameof(Size.SizeName)),
             TableColumnDefinition.Text("描述", nameof(Size.Description)),
-            TableColumnDefinition.Number("排序順序", nameof(Size.SortOrder)),
             TableColumnDefinition.Status("啟用狀態", nameof(Size.IsActive), new Dictionary<object, string>
             {
                 { true, "bg-success" },
@@ -148,13 +146,6 @@
             query = query.Where(s => s.IsActive == isActive);
         }
 
-        // 排序順序篩選
-        var sortOrderFilter = searchModel.GetFilterValue("SortOrder")?.ToString();
-        if (!string.IsNullOrWhiteSpace(sortOrderFilter) && int.TryParse(sortOrderFilter, out var sortOrder))
-        {
-            query = query.Where(s => s.SortOrder == sortOrder);
-        }
-
-        return query.OrderBy(s => s.SortOrder).ThenBy(s => s.SizeName);
+        return query.OrderBy(s => s.SizeName);
     }
 }

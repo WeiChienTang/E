@@ -26,9 +26,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "尺寸描述")]
         public string? Description { get; set; }
         
-        [Display(Name = "排序順序")]
-        public int SortOrder { get; set; } = 0;
-        
         [Display(Name = "是否啟用")]
         public bool IsActive { get; set; } = true;
         

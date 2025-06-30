@@ -20,7 +20,7 @@ namespace ERPCore2.Services
         Task<bool> IsSizeCodeExistsAsync(string sizeCode, int? excludeId = null);
         
         /// <summary>
-        /// 取得啟用的尺寸列表（依排序順序）
+        /// 取得啟用的尺寸列表
         /// </summary>
         Task<List<Size>> GetActiveSizesAsync();
         
@@ -42,20 +42,6 @@ namespace ERPCore2.Services
         /// 批次更新尺寸的啟用狀態
         /// </summary>
         Task<ServiceResult> BatchUpdateActiveStatusAsync(List<int> sizeIds, bool isActive);
-        
-        #endregion
-
-        #region 排序管理
-        
-        /// <summary>
-        /// 更新尺寸排序順序
-        /// </summary>
-        Task<ServiceResult> UpdateSortOrderAsync(int sizeId, int sortOrder);
-        
-        /// <summary>
-        /// 重新排序尺寸列表
-        /// </summary>
-        Task<ServiceResult> ReorderSizesAsync(List<(int SizeId, int SortOrder)> orders);
         
         #endregion
     }

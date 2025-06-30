@@ -104,15 +104,6 @@
             },
             new()
             {
-                PropertyName = nameof(Size.SortOrder),
-                Label = "排序順序",
-                FieldType = FormFieldType.Number,
-                Placeholder = "請輸入排序順序",
-                ContainerCssClass = "col-md-6",
-                HelpText = "數字越小排序越前面，預設為0"
-            },
-            new()
-            {
                 PropertyName = nameof(Size.IsActive),
                 Label = "啟用狀態",
                 FieldType = FormFieldType.Checkbox,
@@ -135,7 +126,6 @@
         {
             { nameof(Size.SizeCode), "基本資訊" },
             { nameof(Size.SizeName), "基本資訊" },
-            { nameof(Size.SortOrder), "顯示設定" },
             { nameof(Size.IsActive), "顯示設定" },
             { nameof(Size.Description), "額外資訊" }
         };
@@ -151,8 +141,7 @@
                 size = new Size
                 {
                     SizeCode = await GenerateSizeCodeAsync(),
-                    IsActive = true,
-                    SortOrder = 0
+                    IsActive = true
                 };
                 return size;
             }

@@ -26,8 +26,7 @@ namespace ERPCore2.Services
             return await _dbSet
                 .Include(s => s.Products)
                 .Where(s => !s.IsDeleted)
-                .OrderBy(s => s.SortOrder)
-                .ThenBy(s => s.SizeName)
+                .OrderBy(s => s.SizeName)
                 .ToListAsync();
         }
 
@@ -51,8 +50,7 @@ namespace ERPCore2.Services
                     (s.SizeCode.ToLower().Contains(lowerSearchTerm) ||
                      s.SizeName.ToLower().Contains(lowerSearchTerm) ||
                      (s.Description != null && s.Description.ToLower().Contains(lowerSearchTerm))))
-                .OrderBy(s => s.SortOrder)
-                .ThenBy(s => s.SizeName)
+                .OrderBy(s => s.SizeName)
                 .ToListAsync();
         }
 
@@ -78,12 +76,6 @@ namespace ERPCore2.Services
             if (string.IsNullOrWhiteSpace(entity.SizeName))
             {
                 errors.Add("尺寸名稱為必填欄位");
-            }
-
-            // 驗證排序順序
-            if (entity.SortOrder < 0)
-            {
-                errors.Add("排序順序不能為負數");
             }
 
             return errors.Any() 
@@ -124,8 +116,7 @@ namespace ERPCore2.Services
         {
             return await _dbSet
                 .Where(s => !s.IsDeleted && s.IsActive)
-                .OrderBy(s => s.SortOrder)
-                .ThenBy(s => s.SizeName)
+                .OrderBy(s => s.SizeName)
                 .ToListAsync();
         }
 
@@ -137,8 +128,7 @@ namespace ERPCore2.Services
             return await _dbSet
                 .Include(s => s.Products)
                 .Where(s => !s.IsDeleted && s.SizeName.Contains(sizeName))
-                .OrderBy(s => s.SortOrder)
-                .ThenBy(s => s.SizeName)
+                .OrderBy(s => s.SizeName)
                 .ToListAsync();
         }
 
@@ -199,81 +189,6 @@ namespace ERPCore2.Services
             {
                 _logger.LogError(ex, "Error batch updating active status for sizes");
                 return ServiceResult.Failure($"批次更新啟用狀態時發生錯誤: {ex.Message}");
-            }
-        }
-
-        #endregion
-
-        #region 排序管理
-
-        public async Task<ServiceResult> UpdateSortOrderAsync(int sizeId, int sortOrder)
-        {
-            try
-            {
-                var size = await GetByIdAsync(sizeId);
-                if (size == null)
-                {
-                    return ServiceResult.Failure("找不到指定的尺寸");
-                }
-
-                if (sortOrder < 0)
-                {
-                    return ServiceResult.Failure("排序順序不能為負數");
-                }
-
-                size.SortOrder = sortOrder;
-                size.UpdatedAt = DateTime.UtcNow;
-
-                await _context.SaveChangesAsync();
-                
-                _logger.LogInformation("Size {SizeId} sort order updated to {SortOrder}", sizeId, sortOrder);
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating sort order for size {SizeId}", sizeId);
-                return ServiceResult.Failure($"更新排序順序時發生錯誤: {ex.Message}");
-            }
-        }
-
-        public async Task<ServiceResult> ReorderSizesAsync(List<(int SizeId, int SortOrder)> orders)
-        {
-            try
-            {
-                if (!orders.Any())
-                {
-                    return ServiceResult.Failure("排序列表不能為空");
-                }
-
-                var sizeIds = orders.Select(o => o.SizeId).ToList();
-                var sizes = await _dbSet
-                    .Where(s => sizeIds.Contains(s.Id) && !s.IsDeleted)
-                    .ToListAsync();
-
-                if (sizes.Count != orders.Count)
-                {
-                    return ServiceResult.Failure("部分尺寸不存在或已被刪除");
-                }
-
-                foreach (var order in orders)
-                {
-                    var size = sizes.FirstOrDefault(s => s.Id == order.SizeId);
-                    if (size != null)
-                    {
-                        size.SortOrder = order.SortOrder;
-                        size.UpdatedAt = DateTime.UtcNow;
-                    }
-                }
-
-                await _context.SaveChangesAsync();
-                
-                _logger.LogInformation("Reordered {Count} sizes", orders.Count);
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error reordering sizes");
-                return ServiceResult.Failure($"重新排序時發生錯誤: {ex.Message}");
             }
         }
 
