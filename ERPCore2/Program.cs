@@ -154,6 +154,9 @@ if (app.Environment.IsDevelopment() || builder.Configuration["urls"]?.Contains("
 app.UseAuthentication();
 app.UseAuthorization();
 
+// 加入反偽造令牌中間件
+app.UseAntiforgery();
+
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
