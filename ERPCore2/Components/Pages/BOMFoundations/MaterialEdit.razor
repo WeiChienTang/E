@@ -1,5 +1,5 @@
-@page "/BOMFoundation/materials/edit"
-@page "/BOMFoundation/materials/edit/{id:int?}"
+@page "/materials/edit"
+@page "/materials/edit/{id:int?}"
 @inject IMaterialService MaterialService
 @inject ISupplierService SupplierService
 @inject INotificationService NotificationService
@@ -17,7 +17,7 @@
                          Service="@MaterialService"
                          EntityName="材質"
                          EntityNamePlural="材質"
-                         IndexRoute="/BOMFoundation/materials"
+                         IndexRoute="/materials"
                          FormTitle="基本資料"
                          FormSubtitle="材質的基本資訊"
                          UseGenericForm="true"
@@ -49,8 +49,8 @@
         breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
         {
             new("首頁", "/"),
-            new("產品基礎元素", "#"),
-            new("材質管理", "/BOMFoundation/materials"),
+            new("基礎資料", "#"),
+            new("材質管理", "/materials"),
             new(Id.HasValue ? "編輯材質" : "新增材質")
         };
     }
@@ -151,7 +151,7 @@
             if (material == null)
             {
                 await NotificationService.ShowErrorAsync("找不到指定的材質資料");
-                Navigation.NavigateTo("/BOMFoundation/materials");
+                Navigation.NavigateTo("/materials");
                 return null;
             }
             return material;
@@ -159,7 +159,7 @@
         catch (Exception ex)
         {
             await JSRuntime.InvokeVoidAsync("console.error", "載入材質資料時發生錯誤：", ex.Message);
-            Navigation.NavigateTo("/BOMFoundation/materials");
+            Navigation.NavigateTo("/materials");
             return null;
         }
     }

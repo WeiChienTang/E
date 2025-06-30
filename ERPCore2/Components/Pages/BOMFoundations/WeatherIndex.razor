@@ -1,5 +1,4 @@
 @page "/weather"
-@page "/BOMFoundation/weather"
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services
 @using ERPCore2.Components.Shared
@@ -13,7 +12,7 @@
 <GenericIndexPageComponent TEntity="Weather" 
                           TService="IWeatherService"
                           Service="@WeatherService"
-                          EntityBasePath="/BOMFoundation/weather"                          PageTitle="天氣"
+                          EntityBasePath="/weather"                          PageTitle="天氣"
                           PageSubtitle="管理所有天氣類型資料"
                           AddButtonText="新增天氣"
                           AddButtonTitle="新增天氣資料"
@@ -53,7 +52,7 @@
         breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
         {
             new("首頁", "/"),
-            new("產品基礎元素", "/BOMFoundation"),
+            new("基礎資料", "#"),
             new("天氣管理")
         };
     }

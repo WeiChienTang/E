@@ -1,5 +1,5 @@
-@page "/masterdata/sizes/edit"
-@page "/masterdata/sizes/edit/{id:int?}"
+@page "/sizes/edit"
+@page "/sizes/edit/{id:int?}"
 @inject ISizeService SizeService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
@@ -17,7 +17,7 @@
                          EntityNamePlural="尺寸"
                          FormTitle="基本資料"
                          FormSubtitle="尺寸規格的基本設定資訊"
-                         IndexRoute="/masterdata/sizes"
+                         IndexRoute="/sizes"
                          UseGenericForm="true"
                          FormFields="@basicFormFields"
                          FormSections="@basicFormSections"
@@ -55,8 +55,8 @@
         breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
         {
             new("首頁", "/"),
-            new("基礎資料", "/masterdata"),
-            new("尺寸維護", "/masterdata/sizes"),
+            new("基礎資料", "#"),
+            new("尺寸維護", "/sizes"),
             new(Id.HasValue ? "編輯尺寸" : "新增尺寸")
         };
     }
@@ -202,7 +202,7 @@
                 {
                     await NotificationService.ShowSuccessAsync("新增尺寸", "尺寸新增成功！");
                     // 導航到編輯頁面
-                    Navigation.NavigateTo($"/masterdata/sizes/edit/{entity.Id}");
+                    Navigation.NavigateTo($"/sizes/edit/{entity.Id}");
                     return true;
                 }
             }

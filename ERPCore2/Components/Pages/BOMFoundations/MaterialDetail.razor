@@ -1,4 +1,4 @@
-@page "/BOMFoundation/materials/detail/{materialId:int}"
+@page "/materials/detail/{materialId:int}"
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Details
 @using ERPCore2.Components.Shared.Badges
@@ -19,8 +19,8 @@
                            Service="@MaterialService"
                            EntityName="材質"
                            EntityNamePlural="材質"
-                           IndexRoute="/BOMFoundation/materials"
-                           EditRoute="/BOMFoundation/materials/edit"
+                           IndexRoute="/materials"
+                           EditRoute="/materials/edit"
                            LoadingText="載入材質資料中..."
                            BreadcrumbItems="@breadcrumbItems"
                            DataLoader="@LoadMaterialDataAsync"
@@ -43,8 +43,8 @@
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
     {
         new("首頁", "/"),
-        new("BOM 基礎資料", "/BOMFoundation"),
-        new("材質管理", "/BOMFoundation/materials"),
+        new("基礎資料", "#"),
+        new("材質管理", "/materials"),
         new("材質詳細資料")
     };
 

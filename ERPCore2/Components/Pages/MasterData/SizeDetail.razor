@@ -1,4 +1,4 @@
-@page "/masterdata/sizes/detail/{sizeId:int}"
+@page "/sizes/detail/{sizeId:int}"
 @inject ISizeService SizeService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -13,8 +13,8 @@
                            Service="@SizeService"
                            EntityName="尺寸"
                            EntityNamePlural="尺寸"
-                           IndexRoute="/masterdata/sizes"
-                           EditRoute="/masterdata/sizes/edit"
+                           IndexRoute="/sizes"
+                           EditRoute="/sizes/edit"
                            LoadingText="載入尺寸資料中..."
                            BreadcrumbItems="@breadcrumbItems"
                            DataLoader="@LoadSizeDataAsync"
@@ -37,8 +37,8 @@
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
     {
         new("首頁", "/"),
-        new("基礎資料", "/masterdata"),
-        new("尺寸維護", "/masterdata/sizes"),
+        new("基礎資料", "#"),
+        new("尺寸維護", "/sizes"),
         new("尺寸詳細資料")
     };
 

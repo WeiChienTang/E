@@ -1,5 +1,3 @@
-@page "/BOMFoundation/colors/edit"
-@page "/BOMFoundation/colors/edit/{id:int?}"
 @page "/colors/edit"
 @page "/colors/edit/{id:int?}"
 @inject IColorService ColorService
@@ -18,7 +16,7 @@
                          Service="@ColorService"
                          EntityName="顏色"
                          EntityNamePlural="顏色"
-                         IndexRoute="/BOMFoundation/colors"
+                         IndexRoute="/colors"
                          FormTitle="基本資料"
                          FormSubtitle="顏色的基本資訊"
                          UseGenericForm="true"
@@ -50,8 +48,8 @@
         breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
         {
             new("首頁", "/"),
-            new("產品基礎元素", "#"),
-            new("顏色管理", "/BOMFoundation/colors"),
+            new("基礎資料", "#"),
+            new("顏色管理", "/colors"),
             new(Id.HasValue ? "編輯顏色" : "新增顏色")
         };
     }    private void InitializeFormFields()
@@ -140,7 +138,7 @@
             if (color == null)
             {
                 await NotificationService.ShowErrorAsync("找不到指定的顏色資料");
-                Navigation.NavigateTo("/BOMFoundation/colors");
+                Navigation.NavigateTo("/colors");
                 return null;
             }
             return color;
@@ -148,7 +146,7 @@
         catch (Exception ex)
         {
             await JSRuntime.InvokeVoidAsync("console.error", "載入顏色資料時發生錯誤：", ex.Message);
-            Navigation.NavigateTo("/BOMFoundation/colors");
+            Navigation.NavigateTo("/colors");
             return null;
         }
     }

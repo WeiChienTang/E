@@ -1,4 +1,4 @@
-@page "/masterdata/sizes"
+@page "/sizes"
 @inject ISizeService SizeService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -9,7 +9,7 @@
 <GenericIndexPageComponent TEntity="Size" 
                           TService="ISizeService"
                           Service="@SizeService"
-                          EntityBasePath="/masterdata/sizes"
+                          EntityBasePath="/sizes"
                           PageTitle="尺寸維護"
                           PageSubtitle="管理商品尺寸規格資料"
                           EntityName="尺寸"
@@ -43,7 +43,7 @@
         breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
         {
             new("首頁", "/"),
-            new("基礎資料", "/masterdata"),
+            new("基礎資料", "#"),
             new("尺寸維護")
         };
     }

@@ -1,5 +1,4 @@
 @page "/materials"
-@page "/BOMFoundation/materials"
 @using ERPCore2.Components.Shared
 @inject IMaterialService MaterialService
 @inject NavigationManager Navigation
@@ -11,7 +10,7 @@
 <GenericIndexPageComponent TEntity="Material" 
                           TService="IMaterialService"
                           Service="@MaterialService"
-                          EntityBasePath="/BOMFoundation/materials"
+                          EntityBasePath="/materials"
                           PageTitle="材質"
                           PageSubtitle="管理所有材質資料與屬性設定"
                           AddButtonText="新增材質"
@@ -58,7 +57,7 @@
         breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
         {
             new("首頁", "/"),
-            new("產品基礎元素", "/BOMFoundation"),
+            new("基礎資料", "#"),
             new("材質管理")
         };
     }
