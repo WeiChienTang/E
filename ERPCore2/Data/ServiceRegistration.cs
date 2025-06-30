@@ -55,6 +55,7 @@ namespace ERPCore2.Data
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<IProductCategoryService, ProductCategoryService>();
             services.AddScoped<IProductSupplierService, ProductSupplierService>();
+            services.AddScoped<ISizeService, SizeService>();
 
             // 庫存相關服務
             services.AddScoped<IWarehouseService, WarehouseService>();
