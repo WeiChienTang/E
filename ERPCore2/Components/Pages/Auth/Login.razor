@@ -1,0 +1,141 @@
+@page "/auth/login"
+@page "/login"
+@layout AuthLayout
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using System.Security.Claims
+@using System.ComponentModel.DataAnnotations
+@inject NavigationManager Navigation
+@inject IHttpContextAccessor HttpContextAccessor
+
+<PageTitle>登入 - 美莊磚業</PageTitle>
+
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-lg border-0">
+                    <div class="card-body p-5">
+                        <!-- 公司 Logo 和標題 -->
+                        <div class="text-center mb-4">
+                            <h2 class="h3 text-primary fw-bold">美莊磚業</h2>
+                            <p class="text-muted">企業資源管理系統</p>
+                        </div>
+
+                        <!-- 登入表單 -->
+                        <form method="post" action="/auth/signin">
+                            @if (!string.IsNullOrEmpty(errorMessage))
+                            {
+                                <div class="alert alert-danger" role="alert">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    @errorMessage
+                                </div>
+                            }
+                            
+                            <div class="mb-3">
+                                <label for="username" class="form-label">
+                                    <i class="bi bi-person me-1"></i>帳號
+                                </label>
+                                <input type="text" name="username" class="form-control form-control-lg" 
+                                       id="username" placeholder="請輸入帳號" autocomplete="username" required />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="password" class="form-label">
+                                    <i class="bi bi-lock me-1"></i>密碼
+                                </label>
+                                <input type="password" name="password" class="form-control form-control-lg" 
+                                       id="password" placeholder="請輸入密碼" autocomplete="current-password" required />
+                            </div>
+
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" name="rememberMe" class="form-check-input" id="rememberMe" />
+                                <label class="form-check-label" for="rememberMe">
+                                    記住我
+                                </label>
+                            </div>
+
+                            <input type="hidden" name="returnUrl" value="@(ReturnUrl ?? "/")" />
+
+                            <!-- 登入按鈕 -->
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-box-arrow-in-right me-2"></i>
+                                    <span>登入</span>
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- 版權資訊 -->
+                        <div class="text-center mt-4">
+                            <small class="text-muted">
+                                © @DateTime.Now.Year 美莊磚業. All rights reserved.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string errorMessage = string.Empty;
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? Error { get; set; }
+
+    protected override Task OnInitializedAsync()
+    {
+        // 檢查是否已經登入
+        var httpContext = HttpContextAccessor.HttpContext;
+        if (httpContext?.User?.Identity?.IsAuthenticated == true)
+        {
+            Navigation.NavigateTo(ReturnUrl ?? "/", true);
+        }
+
+        // 從查詢參數顯示錯誤訊息
+        if (!string.IsNullOrEmpty(Error))
+        {
+            errorMessage = Error switch
+            {
+                "invalid" => "使用者名稱或密碼錯誤",
+                "locked" => "帳號已被鎖定，請聯絡管理員",
+                "disabled" => "帳號已停用",
+                _ => "登入失敗，請稍後再試"
+            };
+        }
+        
+        return Task.CompletedTask;
+    }
+}
+
+<style>
+    .min-vh-100 {
+        min-height: 100vh;
+    }
+    
+    .card {
+        border-radius: 1rem;
+    }
+    
+    .form-control-lg {
+        border-radius: 0.5rem;
+    }
+    
+    .btn-lg {
+        border-radius: 0.5rem;
+        padding: 0.75rem 1.5rem;
+    }
+    
+    .input-group .btn {
+        border-left: none;
+    }
+    
+    .input-group .form-control:focus + .btn {
+        border-color: #86b7fe;
+    }
+</style>

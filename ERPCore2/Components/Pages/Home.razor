@@ -1,4 +1,6 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @inject INavigationSearchService NavigationSearchService
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer

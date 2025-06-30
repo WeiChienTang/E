@@ -1,0 +1,83 @@
+@page "/access-denied"
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager Navigation
+
+<PageTitle>拒絕存取 - 美莊磚業</PageTitle>
+
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow-lg border-0">
+                    <div class="card-body p-5 text-center">
+                        <!-- 錯誤圖示 -->
+                        <div class="mb-4">
+                            <i class="bi bi-shield-x text-danger" style="font-size: 4rem;"></i>
+                        </div>
+
+                        <!-- 錯誤訊息 -->
+                        <h2 class="h3 text-danger mb-3">拒絕存取</h2>
+                        <p class="text-muted mb-4">
+                            很抱歉，您沒有權限存取此頁面。<br/>
+                            這可能是因為：
+                        </p>
+
+                        <!-- 可能原因 -->
+                        <div class="alert alert-warning text-start mb-4">
+                            <ul class="mb-0">
+                                <li>您的帳號沒有相應的權限</li>
+                                <li>您的帳號已被停用或鎖定</li>
+                                <li>您的登入會話已過期</li>
+                                <li>您嘗試存取受限制的功能</li>
+                            </ul>
+                        </div>
+
+                        <!-- 操作按鈕 -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <button type="button" 
+                                    class="btn btn-primary" 
+                                    @onclick="GoToHome">
+                                <i class="bi bi-house me-2"></i>返回首頁
+                            </button>
+                            <button type="button" 
+                                    class="btn btn-outline-secondary" 
+                                    @onclick="GoToLogin">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>重新登入
+                            </button>
+                        </div>
+
+                        <!-- 聯絡資訊 -->
+                        <div class="mt-4 pt-4 border-top">
+                            <small class="text-muted">
+                                如果您認為這是錯誤，請聯絡系統管理員。<br/>
+                                <strong>美莊磚業 資訊部門</strong>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private void GoToHome()
+    {
+        Navigation.NavigateTo("/", true);
+    }
+
+    private void GoToLogin()
+    {
+        Navigation.NavigateTo("/auth/login", true);
+    }
+}
+
+<style>
+    .min-vh-100 {
+        min-height: 100vh;
+    }
+    
+    .card {
+        border-radius: 1rem;
+    }
+</style>

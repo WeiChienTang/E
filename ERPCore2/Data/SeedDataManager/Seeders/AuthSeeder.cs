@@ -171,7 +171,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             if (await context.Employees.AnyAsync())
                 return;
 
-            var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Administrator");            var admin = new Employee
+            var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Administrator");
+            var admin = new Employee
             {
                 EmployeeCode = "ADMIN001",
                 FirstName = "系統",

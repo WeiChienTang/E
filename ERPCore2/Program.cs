@@ -92,6 +92,9 @@ builder.Services.AddAuthorization();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// 加入控制器支援（僅用於認證）
+builder.Services.AddControllers();
+
 // 加入 Blazor Server 的認證狀態提供者
 builder.Services.AddCascadingAuthenticationState();
 
@@ -100,44 +103,7 @@ builder.Services.AddScoped<ERPCore2.Services.Auth.CustomRevalidatingServerAuthen
 builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider>(provider => 
     provider.GetRequiredService<ERPCore2.Services.Auth.CustomRevalidatingServerAuthenticationStateProvider>());
 
-// 加入控制器服務
-builder.Services.AddControllers();
 
-// 為 Blazor 組件配置具有 BaseAddress 的 HttpClient
-builder.Services.AddScoped(sp =>
-{
-    var httpContext = sp.GetService<IHttpContextAccessor>()?.HttpContext;
-    var request = httpContext?.Request;
-    
-    var httpClientHandler = new HttpClientHandler()
-    {
-        UseCookies = true
-    };
-    
-    var httpClient = new HttpClient(httpClientHandler);
-    
-    if (request != null)
-    {
-        var baseUri = $"{request.Scheme}://{request.Host}";
-        httpClient.BaseAddress = new Uri(baseUri);
-        
-        // 複製當前請求的 Cookie 到 HttpClient
-        if (request.Headers.ContainsKey("Cookie"))
-        {
-            var cookies = request.Headers["Cookie"].ToString();
-            httpClient.DefaultRequestHeaders.Add("Cookie", cookies);
-        }
-    }
-    else
-    {
-        // 🔧 生產環境的預設值 - 使用設定的端口
-        var urls = builder.Configuration["urls"] ?? builder.Configuration["Kestrel:Endpoints:Http:Url"] ?? "http://localhost:6011";
-        var firstUrl = urls.Split(';')[0];
-        httpClient.BaseAddress = new Uri(firstUrl);
-    }
-    
-    return httpClient;
-});
 
 
 var app = builder.Build();
@@ -163,10 +129,13 @@ app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
-app.MapRazorComponents<ERPCore2.Components.App>()
-    .AddInteractiveServerRenderMode();
+
+// 對應控制器
+app.MapControllers();
 
 // 對應 Blazor 組件
+app.MapRazorComponents<ERPCore2.Components.App>()
+    .AddInteractiveServerRenderMode();
 
 // Initialize seed data
 using (var scope = app.Services.CreateScope())
