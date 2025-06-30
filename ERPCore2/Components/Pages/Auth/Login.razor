@@ -52,7 +52,8 @@
                                 <!-- 修復記住我功能：確保 checkbox 值能正確傳送 -->
                                 <input type="hidden" name="rememberMe" value="false" />
                                 <input type="checkbox" name="rememberMe" value="true" class="form-check-input" 
-                                       id="rememberMe" onchange="saveRememberMeState(this.checked)" />
+                                       id="rememberMe" onchange="saveRememberMeState(this.checked)" 
+                                       @(ShouldCheckRememberMe() ? "checked" : "") />
                                 <label class="form-check-label" for="rememberMe">
                                     記住我
                                 </label>
@@ -97,7 +98,25 @@
         var httpContext = HttpContextAccessor.HttpContext;
         if (httpContext?.User?.Identity?.IsAuthenticated == true)
         {
+            // 記錄已登入用戶資訊以便調試
+            var userName = httpContext.User.Identity.Name;
+            var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            Console.WriteLine($"用戶已登入: {userName} (ID: {userId})");
+            
             Navigation.NavigateTo(ReturnUrl ?? "/", true);
+            return;
+        }
+        else
+        {
+            // 記錄未認證狀態以便調試
+            Console.WriteLine($"用戶未登入，Cookie 數量: {httpContext?.Request.Cookies.Count ?? 0}");
+            if (httpContext?.Request.Cookies != null)
+            {
+                foreach (var cookie in httpContext.Request.Cookies)
+                {
+                    Console.WriteLine($"Cookie: {cookie.Key} = {cookie.Value}");
+                }
+            }
         }
 
         // 從查詢參數顯示錯誤訊息
@@ -113,6 +132,13 @@
         }
         
         await Task.CompletedTask;
+    }
+
+    private bool ShouldCheckRememberMe()
+    {
+        // 在 Blazor Server 中，我們需要在伺服器端檢查記住我狀態
+        // 這個方法會在頁面初始化時被調用
+        return false; // JavaScript 會在客戶端處理實際的狀態
     }
 }
 
@@ -147,6 +173,7 @@
     // 記住我功能的 JavaScript 函數
     function saveRememberMeState(isChecked) {
         localStorage.setItem('rememberMe', isChecked.toString());
+        console.log('保存記住我狀態:', isChecked);
     }
 
     function loadRememberMeState() {
@@ -154,11 +181,49 @@
         const checkbox = document.getElementById('rememberMe');
         if (checkbox && rememberMe === 'true') {
             checkbox.checked = true;
+            console.log('載入記住我狀態: true');
+        } else {
+            console.log('載入記住我狀態: false 或不存在');
         }
     }
 
-    // 頁面載入時恢復記住我狀態
-    document.addEventListener('DOMContentLoaded', function() {
+    // 確保表單提交時記住我狀態正確
+    function ensureRememberMeOnSubmit() {
+        const form = document.querySelector('form[action="/auth/signin"]');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const checkbox = document.getElementById('rememberMe');
+                const hiddenInput = document.querySelector('input[name="rememberMe"][type="hidden"]');
+                
+                console.log('表單提交 - Checkbox 狀態:', checkbox ? checkbox.checked : 'checkbox not found');
+                console.log('表單提交 - Hidden input 存在:', !!hiddenInput);
+                
+                // 確保記住我狀態正確傳送
+                if (checkbox && checkbox.checked) {
+                    // 如果 checkbox 被勾選，我們需要確保值正確傳送
+                    console.log('記住我已勾選，確保值正確傳送');
+                    saveRememberMeState(true);
+                } else {
+                    console.log('記住我未勾選');
+                    saveRememberMeState(false);
+                }
+            });
+        }
+    }
+
+    // 使用多種方式確保在正確時機載入狀態
+    function initializeRememberMe() {
         loadRememberMeState();
-    });
+        ensureRememberMeOnSubmit();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeRememberMe);
+    } else {
+        initializeRememberMe();
+    }
+
+    // 額外的備用方案：使用 setTimeout 確保 DOM 元素已準備好
+    setTimeout(initializeRememberMe, 100);
+    setTimeout(initializeRememberMe, 500); // 再次確保
 </script>

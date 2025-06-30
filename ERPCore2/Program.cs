@@ -2,6 +2,7 @@ using ERPCore2.Components;
 using ERPCore2.Data;
 using ERPCore2.Data.Context;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 // 檢查命令列參數
 var commandLineArgs = Environment.GetCommandLineArgs();
@@ -64,16 +65,16 @@ builder.Services.AddApplicationServices(builder.Configuration.GetConnectionStrin
 builder.Services.AddHttpContextAccessor();
 
 // 加入認證和授權服務
-builder.Services.AddAuthentication("Cookies")
-    .AddCookie("Cookies", options =>
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
         options.LoginPath = "/auth/login";
         options.LogoutPath = "/auth/logout";
         options.AccessDeniedPath = "/access-denied";
         
-        // 修復記住我功能：移除全域過期時間限制，讓個別登入決定
-        // options.ExpireTimeSpan = TimeSpan.FromHours(8); // 註解掉避免覆蓋個別設定
-        options.SlidingExpiration = false; // 關閉滑動過期，讓記住我功能正常工作
+        // 修復記住我功能：讓個別登入決定過期時間
+        options.ExpireTimeSpan = TimeSpan.FromHours(8); // 預設 8 小時，但會被個別設定覆蓋
+        options.SlidingExpiration = true; // 啟用滑動過期，延長活躍用戶的 session
         
         // 確保 Cookie 在不同環境下都能正確共享
         options.Cookie.Name = "ERPCore2.Auth";
@@ -90,6 +91,28 @@ builder.Services.AddAuthentication("Cookies")
         {
             options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
         }
+        
+        // 加入事件處理來調試 Cookie 問題
+        options.Events = new CookieAuthenticationEvents
+        {
+            OnValidatePrincipal = context =>
+            {
+                // 只在特定情況下記錄，避免過多日誌
+                if (context.Principal?.Identity?.IsAuthenticated != true)
+                {
+                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                    logger.LogInformation($"Cookie 驗證失敗");
+                }
+                return Task.CompletedTask;
+            },
+            OnRedirectToLogin = context =>
+            {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogInformation($"重新導向到登入頁面: Path={context.Request.Path}");
+                context.Response.Redirect(context.RedirectUri);
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
@@ -108,9 +131,6 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<ERPCore2.Services.Auth.CustomRevalidatingServerAuthenticationStateProvider>();
 builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider>(provider => 
     provider.GetRequiredService<ERPCore2.Services.Auth.CustomRevalidatingServerAuthenticationStateProvider>());
-
-
-
 
 var app = builder.Build();
 
