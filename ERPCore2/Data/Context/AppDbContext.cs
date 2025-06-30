@@ -41,6 +41,7 @@ namespace ERPCore2.Data.Context
       public DbSet<Material> Materials { get; set; }
       public DbSet<Weather> Weathers { get; set; }
       public DbSet<Color> Colors { get; set; }
+      public DbSet<Size> Sizes { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
             {

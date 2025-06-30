@@ -30,10 +30,15 @@ namespace ERPCore2.Data.Entities
         [MaxLength(200, ErrorMessage = "規格說明不可超過200個字元")]
         [Display(Name = "規格說明")]
         public string? Specification { get; set; }
-          // Foreign Keys
+
+        // Foreign Keys
         [Display(Name = "單位")]
         [ForeignKey(nameof(Unit))]
         public int? UnitId { get; set; }
+        
+        [Display(Name = "尺寸")]
+        [ForeignKey(nameof(Size))]
+        public int? SizeId { get; set; }
         
         [Display(Name = "單價")]
         [Column(TypeName = "decimal(18,2)")]
@@ -63,8 +68,10 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "主要供應商")]
         [ForeignKey(nameof(PrimarySupplier))]
         public int? PrimarySupplierId { get; set; }
-          // Navigation Properties
+        
+        // Navigation Properties
         public Unit? Unit { get; set; }
+        public Size? Size { get; set; }
         public ProductCategory? ProductCategory { get; set; }
         public Supplier? PrimarySupplier { get; set; }
         public ICollection<ProductSupplier> ProductSuppliers { get; set; } = new List<ProductSupplier>();
