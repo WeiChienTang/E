@@ -95,6 +95,11 @@ builder.Services.AddRazorComponents()
 // 加入 Blazor Server 的認證狀態提供者
 builder.Services.AddCascadingAuthenticationState();
 
+// 註冊自定義認證狀態提供者
+builder.Services.AddScoped<ERPCore2.Services.Auth.CustomRevalidatingServerAuthenticationStateProvider>();
+builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider>(provider => 
+    provider.GetRequiredService<ERPCore2.Services.Auth.CustomRevalidatingServerAuthenticationStateProvider>());
+
 // 加入控制器服務
 builder.Services.AddControllers();
 
@@ -158,11 +163,10 @@ app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
-app.MapRazorComponents<App>()
+app.MapRazorComponents<ERPCore2.Components.App>()
     .AddInteractiveServerRenderMode();
 
-// 對應控制器
-app.MapControllers();
+// 對應 Blazor 組件
 
 // Initialize seed data
 using (var scope = app.Services.CreateScope())

@@ -40,7 +40,8 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "帳號")]
         [Required(ErrorMessage = "請輸入帳號")]
         [MaxLength(50, ErrorMessage = "帳號不可超過50個字元")]
-        public string Username { get; set; } = string.Empty;        /// <summary>
+        public string Username { get; set; } = string.Empty;
+        /// <summary>
         /// 密碼雜湊
         /// </summary>
         [Display(Name = "密碼雜湊")]
