@@ -98,9 +98,6 @@ builder.Services.AddCascadingAuthenticationState();
 // 加入控制器服務
 builder.Services.AddControllers();
 
-// 註冊 HttpClient 用於 API 調用
-builder.Services.AddHttpClient();
-
 // 為 Blazor 組件配置具有 BaseAddress 的 HttpClient
 builder.Services.AddScoped(sp =>
 {
@@ -137,14 +134,6 @@ builder.Services.AddScoped(sp =>
     return httpClient;
 });
 
-// 配置反偽令牌為寬鬆模式
-builder.Services.AddAntiforgery(options =>
-{
-    // 允許沒有令牌的請求通過（適用於互動式表單）
-    options.Cookie.Name = "__RequestVerificationToken";
-    options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
-});
 
 var app = builder.Build();
 
@@ -162,12 +151,8 @@ if (app.Environment.IsDevelopment() || builder.Configuration["urls"]?.Contains("
     app.UseHttpsRedirection();
 }
 
-// 加入認證和授權中介軟體
 app.UseAuthentication();
 app.UseAuthorization();
-
-// 添加反偽令牌中介軟體但配置為寬鬆模式
-app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
