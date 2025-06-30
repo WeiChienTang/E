@@ -270,6 +270,81 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Status = EntityStatus.Inactive,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
+                },
+                // 新增的財務人員
+                new Employee
+                {
+                    EmployeeCode = "FIN001",
+                    FirstName = "林",
+                    LastName = "財務",
+                    Username = "finance",
+                    PasswordHash = SeedDataHelper.HashPassword("finance123"),
+                    Department = "財務",
+                    Position = "財務專員",
+                    RoleId = employeeRole?.Id ?? 3,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "System"
+                },
+                // 新增的人資人員
+                new Employee
+                {
+                    EmployeeCode = "HR001",
+                    FirstName = "黃",
+                    LastName = "人資",
+                    Username = "hr",
+                    PasswordHash = SeedDataHelper.HashPassword("hr123"),
+                    Department = "人力資源",
+                    Position = "人資專員",
+                    RoleId = employeeRole?.Id ?? 3,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "System"
+                },
+                // 新增的品管人員
+                new Employee
+                {
+                    EmployeeCode = "QC001",
+                    FirstName = "吳",
+                    LastName = "品管",
+                    Username = "qc",
+                    PasswordHash = SeedDataHelper.HashPassword("qc123"),
+                    Department = "品質管制",
+                    Position = "品管工程師",
+                    RoleId = employeeRole?.Id ?? 3,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "System"
+                },
+                // 新增的客服人員
+                new Employee
+                {
+                    EmployeeCode = "CS001",
+                    FirstName = "劉",
+                    LastName = "客服",
+                    Username = "customerservice",
+                    PasswordHash = SeedDataHelper.HashPassword("cs123"),
+                    Department = "客戶服務",
+                    Position = "客服代表",
+                    RoleId = salesRole?.Id ?? 4,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "System"
+                },
+                // 新增的研發人員
+                new Employee
+                {
+                    EmployeeCode = "RD001",
+                    FirstName = "周",
+                    LastName = "研發",
+                    Username = "research",
+                    PasswordHash = SeedDataHelper.HashPassword("rd123"),
+                    Department = "研發",
+                    Position = "研發工程師",
+                    RoleId = employeeRole?.Id ?? 3,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "System"
                 }
             };
 
