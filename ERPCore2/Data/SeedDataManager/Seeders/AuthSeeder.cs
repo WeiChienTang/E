@@ -164,48 +164,143 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
         }
 
         /// <summary>
-        /// 建立預設系統管理員帳號
+        /// 建立預設系統管理員帳號和測試用戶
         /// </summary>
         private static async Task SeedDefaultAdminAsync(AppDbContext context)
         {
             if (await context.Employees.AnyAsync())
                 return;
 
+            // 取得各角色
             var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Administrator");
-            var admin = new Employee
+            var managerRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Manager");
+            var employeeRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Employee");
+            var salesRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Sales");
+            var purchasingRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Purchasing");
+
+            // 建立測試用戶
+            var testEmployees = new[]
             {
-                EmployeeCode = "ADMIN001",
-                FirstName = "系統",
-                LastName = "管理員",
-                Username = "admin",
-                PasswordHash = SeedDataHelper.HashPassword("admin123"),
-                Department = "IT",
-                Position = "系統管理員",
-                RoleId = adminRole?.Id ?? 1,
-                Status = EntityStatus.Active,
-                CreatedAt = DateTime.Now,
-                CreatedBy = "System"
-            };            await context.Employees.AddAsync(admin);
+                // 系統管理員
+                new Employee
+                {
+                    EmployeeCode = "ADMIN001",
+                    FirstName = "系統",
+                    LastName = "管理員",
+                    Username = "admin",
+                    PasswordHash = SeedDataHelper.HashPassword("admin123"),
+                    Department = "IT",
+                    Position = "系統管理員",
+                    RoleId = adminRole?.Id ?? 1,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "System"
+                },
+                // 部門主管
+                new Employee
+                {
+                    EmployeeCode = "MGR001",
+                    FirstName = "王",
+                    LastName = "主管",
+                    Username = "manager",
+                    PasswordHash = SeedDataHelper.HashPassword("manager123"),
+                    Department = "營運",
+                    Position = "營運主管",
+                    RoleId = managerRole?.Id ?? 2,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "System"
+                },
+                // 銷售人員
+                new Employee
+                {
+                    EmployeeCode = "SALES001",
+                    FirstName = "李",
+                    LastName = "業務",
+                    Username = "sales",
+                    PasswordHash = SeedDataHelper.HashPassword("sales123"),
+                    Department = "銷售",
+                    Position = "業務代表",
+                    RoleId = salesRole?.Id ?? 4,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "System"
+                },
+                // 採購人員
+                new Employee
+                {
+                    EmployeeCode = "PUR001",
+                    FirstName = "陳",
+                    LastName = "採購",
+                    Username = "purchasing",
+                    PasswordHash = SeedDataHelper.HashPassword("purchasing123"),
+                    Department = "採購",
+                    Position = "採購專員",
+                    RoleId = purchasingRole?.Id ?? 5,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "System"
+                },
+                // 一般員工
+                new Employee
+                {
+                    EmployeeCode = "EMP001",
+                    FirstName = "張",
+                    LastName = "員工",
+                    Username = "employee",
+                    PasswordHash = SeedDataHelper.HashPassword("employee123"),
+                    Department = "倉庫",
+                    Position = "倉庫管理員",
+                    RoleId = employeeRole?.Id ?? 3,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "System"
+                },
+                // 測試用的停用帳號
+                new Employee
+                {
+                    EmployeeCode = "TEST001",
+                    FirstName = "測試",
+                    LastName = "帳號",
+                    Username = "testuser",
+                    PasswordHash = SeedDataHelper.HashPassword("test123"),
+                    Department = "測試",
+                    Position = "測試人員",
+                    RoleId = employeeRole?.Id ?? 3,
+                    Status = EntityStatus.Inactive,
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "System"
+                }
+            };
+
+            await context.Employees.AddRangeAsync(testEmployees);
             await context.SaveChangesAsync();
 
-            // 為管理員添加Email聯絡資料
+            // 為每個員工添加Email聯絡資料
             var emailContactType = await context.ContactTypes
                 .FirstOrDefaultAsync(ct => ct.TypeName == "Email");
 
             if (emailContactType != null)
             {
-                var adminEmailContact = new EmployeeContact
-                {
-                    EmployeeId = admin.Id,
-                    ContactTypeId = emailContactType.Id,
-                    ContactValue = "admin@erpcore2.com",
-                    IsPrimary = true,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                };
+                var employeeContacts = new List<EmployeeContact>();
+                var employees = await context.Employees.ToListAsync();
 
-                await context.EmployeeContacts.AddAsync(adminEmailContact);
+                foreach (var employee in employees)
+                {
+                    var emailContact = new EmployeeContact
+                    {
+                        EmployeeId = employee.Id,
+                        ContactTypeId = emailContactType.Id,
+                        ContactValue = $"{employee.Username}@erpcore2.com",
+                        IsPrimary = true,
+                        Status = EntityStatus.Active,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = "System"
+                    };
+                    employeeContacts.Add(emailContact);
+                }
+
+                await context.EmployeeContacts.AddRangeAsync(employeeContacts);
                 await context.SaveChangesAsync();
             }
         }
