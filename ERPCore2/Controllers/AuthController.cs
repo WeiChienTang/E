@@ -8,15 +8,20 @@ namespace ERPCore2.Controllers
     public class AuthController : Controller
     {
         private readonly Services.IAuthenticationService _authService;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(Services.IAuthenticationService authService)
+        public AuthController(Services.IAuthenticationService authService, ILogger<AuthController> logger)
         {
             _authService = authService;
+            _logger = logger;
         }
 
         [HttpPost("/auth/signin")]
         public async Task<IActionResult> SignIn(string username, string password, bool rememberMe = false, string? returnUrl = null)
         {
+            // 記錄登入參數以便調試
+            _logger.LogInformation($"用戶登入嘗試: Username={username}, RememberMe={rememberMe}");
+            
             try
             {
                 // 驗證用戶
@@ -59,6 +64,9 @@ namespace ERPCore2.Controllers
                         : DateTimeOffset.UtcNow.AddHours(8),
                     IssuedUtc = DateTimeOffset.UtcNow
                 };
+                
+                // 記錄 Cookie 設定以便調試
+                _logger.LogInformation($"Cookie 設定: IsPersistent={authProperties.IsPersistent}, ExpiresUtc={authProperties.ExpiresUtc}");
 
                 // 執行登入
                 await HttpContext.SignInAsync(

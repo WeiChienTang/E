@@ -49,7 +49,9 @@
                             </div>
 
                             <div class="mb-3 form-check">
-                                <input type="checkbox" name="rememberMe" class="form-check-input" id="rememberMe" />
+                                <!-- 修復記住我功能：確保 checkbox 值能正確傳送 -->
+                                <input type="hidden" name="rememberMe" value="false" />
+                                <input type="checkbox" name="rememberMe" value="true" class="form-check-input" id="rememberMe" />
                                 <label class="form-check-label" for="rememberMe">
                                     記住我
                                 </label>

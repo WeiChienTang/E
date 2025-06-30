@@ -70,19 +70,25 @@ builder.Services.AddAuthentication("Cookies")
         options.LoginPath = "/auth/login";
         options.LogoutPath = "/auth/logout";
         options.AccessDeniedPath = "/access-denied";
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
-        options.SlidingExpiration = true;
+        
+        // 修復記住我功能：移除全域過期時間限制，讓個別登入決定
+        // options.ExpireTimeSpan = TimeSpan.FromHours(8); // 註解掉避免覆蓋個別設定
+        options.SlidingExpiration = false; // 關閉滑動過期，讓記住我功能正常工作
         
         // 確保 Cookie 在不同環境下都能正確共享
         options.Cookie.Name = "ERPCore2.Auth";
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
-        options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
         
-        // 在開發環境中允許跨子域共享 Cookie
+        // 修復記住我功能：針對 HTTP 環境調整安全政策
         if (builder.Environment.IsDevelopment())
         {
+            options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.None; // HTTP 環境允許
             options.Cookie.Domain = null; // 允許在 localhost 的不同端口間共享
+        }
+        else
+        {
+            options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
         }
     });
 
