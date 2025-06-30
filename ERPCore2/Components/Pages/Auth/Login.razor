@@ -51,7 +51,8 @@
                             <div class="mb-3 form-check">
                                 <!-- 修復記住我功能：確保 checkbox 值能正確傳送 -->
                                 <input type="hidden" name="rememberMe" value="false" />
-                                <input type="checkbox" name="rememberMe" value="true" class="form-check-input" id="rememberMe" />
+                                <input type="checkbox" name="rememberMe" value="true" class="form-check-input" 
+                                       id="rememberMe" onchange="saveRememberMeState(this.checked)" />
                                 <label class="form-check-label" for="rememberMe">
                                     記住我
                                 </label>
@@ -90,7 +91,7 @@
     [SupplyParameterFromQuery]
     private string? Error { get; set; }
 
-    protected override Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
         // 檢查是否已經登入
         var httpContext = HttpContextAccessor.HttpContext;
@@ -111,7 +112,7 @@
             };
         }
         
-        return Task.CompletedTask;
+        await Task.CompletedTask;
     }
 }
 
@@ -141,3 +142,23 @@
         border-color: #86b7fe;
     }
 </style>
+
+<script>
+    // 記住我功能的 JavaScript 函數
+    function saveRememberMeState(isChecked) {
+        localStorage.setItem('rememberMe', isChecked.toString());
+    }
+
+    function loadRememberMeState() {
+        const rememberMe = localStorage.getItem('rememberMe');
+        const checkbox = document.getElementById('rememberMe');
+        if (checkbox && rememberMe === 'true') {
+            checkbox.checked = true;
+        }
+    }
+
+    // 頁面載入時恢復記住我狀態
+    document.addEventListener('DOMContentLoaded', function() {
+        loadRememberMeState();
+    });
+</script>
