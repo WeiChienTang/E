@@ -33,15 +33,18 @@
                     <NavDropdownItem Text="客戶類型" Url="/customer-types"/>
                 </NavSection>
 
+                <NavSection Title="員工">
+                    <NavDropdownItem Text="角色" Url="/roles"/>
+                    <NavDropdownItem Text="權限" Url="/permissions"/>
+                </NavSection>
+
                 <NavSection Title="產品">
                     <NavDropdownItem Text="顏色" Url="/colors" />
                     <NavDropdownItem Text="天氣" Url="/weather" />
                     <NavDropdownItem Text="材質" Url="/materials" />
                 </NavSection>     
             </DropdownItems>
-        </NavMenuItem>
-
-        
+        </NavMenuItem>        
 
         <!-- 客戶管理下拉選單 -->
         <NavMenuItem Text="客戶管理" IconClass="bi bi-people-fill">
@@ -61,10 +64,6 @@
         <NavMenuItem Text="員工管理" IconClass="bi bi-person-badge-fill">
             <DropdownItems>
                 <NavDropdownItem Text="員工維護" Url="/employees" />
-                <NavSection Title="基礎單位">
-                    <NavDropdownItem Text="角色" Url="/roles"/>
-                    <NavDropdownItem Text="權限" Url="/permissions"/>
-                </NavSection>
             </DropdownItems>
         </NavMenuItem>
 
@@ -94,7 +93,6 @@
                 <NavDropdownItem Text="現代化詳細資料展示" Url="/examples/modern-details" />
             </DropdownItems>
         </NavMenuItem> *@
-
 
     </nav>
 </div>
