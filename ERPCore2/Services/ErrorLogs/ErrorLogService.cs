@@ -21,7 +21,7 @@ namespace ERPCore2.Services
         {
             try
             {
-                var errorId = Guid.NewGuid().ToString();
+                var errorId = GenerateErrorId();
                 
                 var errorLog = new ErrorLog
                 {
@@ -39,7 +39,10 @@ namespace ERPCore2.Services
                     UserId = ExtractUserId(additionalData),
                     UserAgent = ExtractUserAgent(additionalData),
                     RequestPath = ExtractRequestPath(additionalData),
-                    Status = EntityStatus.Active
+                    IsResolved = false,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 };
 
                 await _dbSet.AddAsync(errorLog);
@@ -47,10 +50,12 @@ namespace ERPCore2.Services
                 
                 return errorId;
             }
-            catch
+            catch (Exception logException)
             {
-                // 如果記錄錯誤本身失敗，避免無限迴圈
-                return Guid.NewGuid().ToString();
+                // 如果記錄錯誤時也發生錯誤，使用檔案記錄作為備援
+                var fallbackErrorId = Guid.NewGuid().ToString("N")[..8].ToUpper();
+                await LogToFileAsFallback(exception, logException, fallbackErrorId);
+                return fallbackErrorId;
             }
         }
 
@@ -59,9 +64,24 @@ namespace ERPCore2.Services
         /// </summary>
         public async Task<ErrorLog?> GetByErrorIdAsync(string errorId)
         {
-            return await _dbSet
-                .Where(x => x.ErrorId == errorId && !x.IsDeleted)
-                .FirstOrDefaultAsync();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(errorId))
+                {
+                    throw new ArgumentException("錯誤ID不能為空", nameof(errorId));
+                }
+
+                return await _dbSet
+                    .Where(x => x.ErrorId == errorId && !x.IsDeleted)
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                // Service 層的錯誤處理：記錄並重新拋出
+                // 注意：這裡不能使用自己的 LogErrorAsync，會造成循環
+                await LogToFileAsFallback(ex, null, $"SERVICE_ERROR_{DateTime.UtcNow.Ticks}");
+                throw; // 重新拋出讓上層處理
+            }
         }
 
         /// <summary>
@@ -383,6 +403,45 @@ namespace ERPCore2.Services
                 return ServiceResult.Failure(string.Join("; ", errors));
 
             return ServiceResult.Success();
+        }
+
+        /// <summary>
+        /// 生成可讀性較高的錯誤ID
+        /// </summary>
+        private string GenerateErrorId()
+        {
+            var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+            var random = Guid.NewGuid().ToString("N")[..4].ToUpper();
+            return $"ERR{timestamp}{random}";
+        }
+
+        /// <summary>
+        /// 記錄錯誤到檔案作為備援
+        /// </summary>
+        private async Task LogToFileAsFallback(Exception originalException, Exception logException, string errorId)
+        {
+            try
+            {
+                var logPath = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "FallbackErrors");
+                Directory.CreateDirectory(logPath);
+                
+                var fileName = $"Error_{DateTime.UtcNow:yyyyMMdd}.log";
+                var filePath = Path.Combine(logPath, fileName);
+                
+                var logEntry = $"""
+                    [{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss UTC}] ERROR_ID: {errorId}
+                    ORIGINAL_EXCEPTION: {originalException}
+                    LOG_EXCEPTION: {logException}
+                    ==========================================
+                    
+                    """;
+                
+                await File.AppendAllTextAsync(filePath, logEntry);
+            }
+            catch
+            {
+                // 如果連檔案也無法寫入，只能放棄記錄
+            }
         }
 
         #endregion
