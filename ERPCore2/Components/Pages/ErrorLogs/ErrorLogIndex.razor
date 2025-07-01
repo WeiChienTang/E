@@ -1,11 +1,12 @@
 @page "/error-logs"
 @using ERPCore2.Data.Entities
-@using ERPCore2.Services
 @using ERPCore2.Data.Enums
-@using ERPCore2.Components.Shared.PageModels
+@using ERPCore2.Services
 @using ERPCore2.Components.Shared.Headers
-@using ERPCore2.Components.Shared.Forms
-@using ERPCore2.Components.Shared.Tables
+@using ERPCore2.Components.Shared.Alerts
+@using ERPCore2.Components.Shared.Loading
+@using ERPCore2.Components.Shared.Buttons
+@using Microsoft.AspNetCore.Components.Web
 @inject IErrorLogService ErrorLogService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -13,226 +14,489 @@
 
 <PageTitle>錯誤記錄管理</PageTitle>
 
-<GenericIndexPageComponent TEntity="ErrorLog" 
-                          TService="IErrorLogService"
-                          Service="@ErrorLogService"
-                          EntityBasePath="/error-logs"
-                          PageTitle="錯誤記錄管理"
-                          PageSubtitle="檢視與管理系統錯誤記錄"
-                          EntityName="錯誤記錄"
-                          BreadcrumbItems="@breadcrumbItems"
-                          FilterDefinitions="@filterDefinitions"
-                          ColumnDefinitions="@columnDefinitions"
-                          DataLoader="@LoadErrorLogsAsync"
-                          FilterApplier="@ApplyErrorLogFilters"
-                          GetEntityDisplayName="@(errorLog => errorLog.Message ?? "未知錯誤")"
-                          EnableStandardActions="true"
-                          ShowViewButton="true"
-                          ShowEditButton="true"
-                          ShowDeleteButton="false"
-                          @ref="indexComponent" />
+@* 警告訊息區域 *@
+<AlertComponent 
+    Message="@alertMessage" 
+    Type="@alertType" 
+    IsVisible="@showAlert" 
+    IsDismissible="true"
+    OnDismiss="@(() => showAlert = false)" />
+
+@* 頁面標題 *@
+<GenericHeaderComponent Title="錯誤記錄管理"
+                       Subtitle="檢視與管理系統錯誤記錄，包含統計儀表板"
+                       HeadingLevel="h1"
+                       BreadcrumbItems="@breadcrumbItems"
+                       ShowDivider="true" />
+
+@if (IsLoading)
+{
+    <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
+        <LoadingComponent IsLoading="true" 
+                        LoadingText="載入錯誤記錄統計中..." 
+                        ShowText="true" 
+                        Size="LoadingComponent.LoadingSize.Large" />
+    </div>
+}
+else
+{
+    @* 統計儀表板 *@
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="stats-card">
+                <div class="card-body text-center">
+                    <div class="stats-icon stats-total mx-auto mb-3">
+                        <i class="fas fa-list"></i>
+                    </div>
+                    <h4 class="mb-1">@statistics.TotalErrors</h4>
+                    <small class="text-muted">總錯誤數</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card">
+                <div class="card-body text-center">
+                    <div class="stats-icon stats-critical mx-auto mb-3">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <h4 class="mb-1">@statistics.CriticalErrors</h4>
+                    <small class="text-muted">嚴重錯誤</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card">
+                <div class="card-body text-center">
+                    <div class="stats-icon stats-error mx-auto mb-3">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <h4 class="mb-1">@(statistics.ErrorsByLevel.TryGetValue(ErrorLevel.Error, out var regularErrors) ? regularErrors : 0)</h4>
+                    <small class="text-muted">一般錯誤</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card">
+                <div class="card-body text-center">
+                    <div class="stats-icon stats-warning mx-auto mb-3">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h4 class="mb-1">@(statistics.ErrorsByLevel.TryGetValue(ErrorLevel.Warning, out var warnings) ? warnings : 0)</h4>
+                    <small class="text-muted">警告</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card">
+                <div class="card-body text-center">
+                    <div class="stats-icon stats-resolved mx-auto mb-3">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h4 class="mb-1">@(statistics.TotalErrors - statistics.UnresolvedErrors)</h4>
+                    <small class="text-muted">已處理</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card">
+                <div class="card-body text-center">
+                    <div class="stats-icon stats-info mx-auto mb-3">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h4 class="mb-1">@statistics.TodayErrors</h4>
+                    <small class="text-muted">今日錯誤</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* 篩選區域 *@
+    <div class="filter-section">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">錯誤訊息</label>
+                <input type="text" class="form-control" placeholder="輸入錯誤訊息關鍵字..." @bind="filterMessage" @onkeypress="HandleKeyPress" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">錯誤等級</label>
+                <select class="form-select" @bind="filterLevel">
+                    <option value="">全部</option>
+                    <option value="Critical">嚴重</option>
+                    <option value="Error">錯誤</option>
+                    <option value="Warning">警告</option>
+                    <option value="Info">資訊</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">錯誤來源</label>
+                <select class="form-select" @bind="filterSource">
+                    <option value="">全部</option>
+                    <option value="Database">資料庫</option>
+                    <option value="BusinessLogic">業務邏輯</option>
+                    <option value="UserInterface">使用者介面</option>
+                    <option value="System">系統層級</option>
+                    <option value="API">API</option>
+                    <option value="Security">安全相關</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">處理狀態</label>
+                <select class="form-select" @bind="filterResolved">
+                    <option value="">全部</option>
+                    <option value="false">未處理</option>
+                    <option value="true">已處理</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <GenericButtonComponent Variant="ButtonVariant.Primary" 
+                                       Text="搜尋" 
+                                       IconClass="fas fa-search"
+                                       OnClick="@ApplyFilters" />
+            </div>
+        </div>
+    </div>
+
+    @* 錯誤記錄表格 *@
+    <div class="error-table">
+        <div class="table-actions">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <small class="text-muted">共 @filteredErrorLogs.Count 筆記錄</small>
+                </div>
+                <div>
+                    <GenericButtonComponent Variant="ButtonVariant.Success" 
+                                           Text="批次標記已處理" 
+                                           IconClass="fas fa-check-double"
+                                           OnClick="@MarkSelectedAsResolved"
+                                           IsDisabled="@(!selectedErrorIds.Any())" />
+                    <GenericButtonComponent Variant="ButtonVariant.Secondary" 
+                                           Text="重新載入" 
+                                           IconClass="fas fa-sync-alt"
+                                           OnClick="@LoadDataAsync" 
+                                           CssClass="ms-2" />
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th width="50">
+                            <input type="checkbox" class="form-check-input" @onchange="ToggleSelectAll" />
+                        </th>
+                        <th>錯誤訊息</th>
+                        <th width="100">等級</th>
+                        <th width="120">來源</th>
+                        <th width="160">發生時間</th>
+                        <th width="80">狀態</th>
+                        <th width="120">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var errorLog in GetPagedErrorLogs())
+                    {
+                        <tr class="@(selectedErrorIds.Contains(errorLog.Id) ? "table-active" : "")">
+                            <td>
+                                <input type="checkbox" class="form-check-input" 
+                                       checked="@selectedErrorIds.Contains(errorLog.Id)"
+                                       @onchange="@((e) => ToggleErrorSelection(errorLog.Id, (bool)e.Value!))" />
+                            </td>
+                            <td>
+                                <div class="error-message" title="@errorLog.Message">
+                                    @errorLog.Message
+                                </div>
+                            </td>
+                            <td>
+                                <span class="level-badge @GetErrorLevelBadgeClass(errorLog.Level)">
+                                    @GetErrorLevelDisplay(errorLog.Level)
+                                </span>
+                            </td>
+                            <td>@GetErrorSourceDisplay(errorLog.Source)</td>
+                            <td class="small">@errorLog.OccurredAt.ToString("MM-dd HH:mm")</td>
+                            <td>
+                                @if (errorLog.IsResolved)
+                                {
+                                    <span class="badge bg-success">已處理</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">未處理</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <GenericButtonComponent Variant="ButtonVariant.Info" 
+                                                           Text="" 
+                                                           IconClass="fas fa-eye"
+                                                           OnClick="@(() => Navigation.NavigateTo($"/error-logs/detail/{errorLog.Id}"))"
+                                                           Size="ButtonSize.Small" />
+                                    @if (!errorLog.IsResolved)
+                                    {
+                                        <GenericButtonComponent Variant="ButtonVariant.Success" 
+                                                               Text="" 
+                                                               IconClass="fas fa-check"
+                                                               OnClick="@(() => MarkSingleAsResolved(errorLog.Id))"
+                                                               Size="ButtonSize.Small" />
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        
+        @* 分頁 *@
+        @if (GetTotalPages() > 1)
+        {
+            <div class="d-flex justify-content-between align-items-center p-3">
+                <div>
+                    <small class="text-muted">
+                        顯示第 @((currentPage - 1) * pageSize + 1) - @Math.Min(currentPage * pageSize, filteredErrorLogs.Count) 筆，共 @filteredErrorLogs.Count 筆
+                    </small>
+                </div>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                            <button class="page-link" @onclick="() => ChangePage(currentPage - 1)" disabled="@(currentPage == 1)">上一頁</button>
+                        </li>
+                        @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(GetTotalPages(), currentPage + 2); i++)
+                        {
+                            <li class="page-item @(i == currentPage ? "active" : "")">
+                                <button class="page-link" @onclick="() => ChangePage(i)">@i</button>
+                            </li>
+                        }
+                        <li class="page-item @(currentPage == GetTotalPages() ? "disabled" : "")">
+                            <button class="page-link" @onclick="() => ChangePage(currentPage + 1)" disabled="@(currentPage == GetTotalPages())">下一頁</button>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+}
 
 @code {
-    // 組件參考
-    private GenericIndexPageComponent<ErrorLog, IErrorLogService> indexComponent = default!;
+    // 資料
+    private List<ErrorLog> allErrorLogs = new();
+    private List<ErrorLog> filteredErrorLogs = new();
+    private ErrorStatistics statistics = new();
     
-    // 配置相關
-    private List<SearchFilterDefinition> filterDefinitions = new();
-    private List<TableColumnDefinition> columnDefinitions = new();
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    // 狀態
+    private bool IsLoading = true;
+    private bool showAlert = false;
+    private string alertMessage = string.Empty;
+    private AlertComponent.AlertType alertType = AlertComponent.AlertType.Info;
+    
+    // 篩選
+    private string filterMessage = string.Empty;
+    private string filterLevel = string.Empty;
+    private string filterSource = string.Empty;
+    private string filterResolved = string.Empty;
+    
+    // 分頁
+    private int currentPage = 1;
+    private readonly int pageSize = 20;
+    
+    // 選擇
+    private HashSet<int> selectedErrorIds = new();
 
-    protected override void OnInitialized()
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
     {
-        InitializeBreadcrumbs();
-        InitializeFilters();
-        InitializeColumns();
+        new("首頁", "/"),
+        new("系統管理", "#"),
+        new("錯誤記錄管理")
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
     }
 
-    private void InitializeBreadcrumbs()
-    {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
-        {
-            new("首頁", "/"),
-            new("系統管理", "#"),
-            new("錯誤記錄管理")
-        };
-    }
-
-    private void InitializeFilters()
-    {
-        filterDefinitions = new List<SearchFilterDefinition>
-        {
-            new()
-            {
-                Name = "Message",
-                Type = SearchFilterType.Text,
-                Label = "錯誤訊息",
-                Placeholder = "輸入錯誤訊息關鍵字...",
-                CssClass = "col-md-4"
-            },
-            new()
-            {
-                Name = "Level",
-                Type = SearchFilterType.Select,
-                Label = "錯誤等級",
-                Options = Enum.GetValues<ErrorLevel>().Select(level => new SelectOption 
-                { 
-                    Value = level.ToString(), 
-                    Text = GetErrorLevelDisplay(level) 
-                }).ToList(),
-                CssClass = "col-md-2"
-            },
-            new()
-            {
-                Name = "Source",
-                Type = SearchFilterType.Select,
-                Label = "錯誤來源",
-                Options = Enum.GetValues<ErrorSource>().Select(source => new SelectOption 
-                { 
-                    Value = source.ToString(), 
-                    Text = GetErrorSourceDisplay(source) 
-                }).ToList(),
-                CssClass = "col-md-2"
-            },
-            new()
-            {
-                Name = "IsResolved",
-                Type = SearchFilterType.Select,
-                Label = "處理狀態",
-                Options = new List<SelectOption>
-                {
-                    new() { Value = "", Text = "全部" },
-                    new() { Value = "false", Text = "未處理" },
-                    new() { Value = "true", Text = "已處理" }
-                },
-                CssClass = "col-md-2"
-            },
-            new()
-            {
-                Name = "OccurredAt",
-                Type = SearchFilterType.DateRange,
-                Label = "發生時間",
-                CssClass = "col-md-4"
-            }
-        };
-    }
-
-    private void InitializeColumns()
-    {
-        columnDefinitions = new List<TableColumnDefinition>
-        {
-            TableColumnDefinition.Text("錯誤訊息", "Message", "text-truncate"),
-            TableColumnDefinition.Text("等級", "Level"),
-            TableColumnDefinition.Text("來源", "Source"),
-            TableColumnDefinition.DateTime("發生時間", "OccurredAt"),
-            TableColumnDefinition.Boolean("狀態", "IsResolved", "已處理", "未處理")
-        };
-    }
-
-    // 資料載入方法
-    private async Task<List<ErrorLog>> LoadErrorLogsAsync()
+    private async Task LoadDataAsync()
     {
         try
         {
+            IsLoading = true;
+            
+            // 載入錯誤記錄
             var result = await ErrorLogService.GetAllAsync();
-            return result?.ToList() ?? new List<ErrorLog>();
+            allErrorLogs = result?.ToList() ?? new List<ErrorLog>();
+            
+            // 載入統計資料
+            statistics = await ErrorLogService.GetStatisticsAsync();
+            
+            // 應用篩選
+            ApplyFilters();
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"載入錯誤記錄時發生錯誤：{ex.Message}");
-            return new List<ErrorLog>();
+            ShowAlert($"載入資料時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
         }
     }
 
-    // 篩選應用方法
-    private IQueryable<ErrorLog> ApplyErrorLogFilters(SearchFilterModel filterModel, IQueryable<ErrorLog> query)
+    private void ApplyFilters()
     {
-        if (filterModel == null) return query;
+        filteredErrorLogs = allErrorLogs.AsQueryable().Where(e =>
+            (string.IsNullOrEmpty(filterMessage) || e.Message.Contains(filterMessage, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(filterLevel) || e.Level.ToString() == filterLevel) &&
+            (string.IsNullOrEmpty(filterSource) || e.Source.ToString() == filterSource) &&
+            (string.IsNullOrEmpty(filterResolved) || e.IsResolved.ToString().ToLower() == filterResolved)
+        ).OrderByDescending(e => e.OccurredAt).ToList();
+        
+        currentPage = 1;
+        selectedErrorIds.Clear();
+        StateHasChanged();
+    }
 
-        // 錯誤訊息篩選
-        if (filterModel.TextFilters.TryGetValue("Message", out var message) && 
-            !string.IsNullOrEmpty(message))
+    private void HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
         {
-            query = query.Where(e => e.Message != null && e.Message.Contains(message));
+            ApplyFilters();
         }
+    }
 
-        // 錯誤等級篩選
-        if (filterModel.SelectFilters.TryGetValue("Level", out var levelFilter) && 
-            !string.IsNullOrEmpty(levelFilter) &&
-            Enum.TryParse<ErrorLevel>(levelFilter, out var level))
+    private List<ErrorLog> GetPagedErrorLogs()
+    {
+        return filteredErrorLogs
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+    }
+
+    private int GetTotalPages()
+    {
+        return (int)Math.Ceiling((double)filteredErrorLogs.Count / pageSize);
+    }
+
+    private void ChangePage(int page)
+    {
+        if (page >= 1 && page <= GetTotalPages())
         {
-            query = query.Where(e => e.Level == level);
+            currentPage = page;
+            StateHasChanged();
         }
+    }
 
-        // 錯誤來源篩選
-        if (filterModel.SelectFilters.TryGetValue("Source", out var sourceFilter) && 
-            !string.IsNullOrEmpty(sourceFilter) &&
-            Enum.TryParse<ErrorSource>(sourceFilter, out var source))
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        var isChecked = (bool)e.Value!;
+        if (isChecked)
         {
-            query = query.Where(e => e.Source == source);
+            selectedErrorIds = GetPagedErrorLogs().Where(el => !el.IsResolved).Select(el => el.Id).ToHashSet();
         }
-
-        // 處理狀態篩選
-        if (filterModel.SelectFilters.TryGetValue("IsResolved", out var resolvedFilter) && 
-            !string.IsNullOrEmpty(resolvedFilter) &&
-            bool.TryParse(resolvedFilter, out var isResolved))
+        else
         {
-            query = query.Where(e => e.IsResolved == isResolved);
+            selectedErrorIds.Clear();
         }
+        StateHasChanged();
+    }
 
-        // 發生時間範圍篩選
-        if (filterModel.DateRangeFilters.TryGetValue("OccurredAt", out var dateRange) && 
-            dateRange != null)
+    private void ToggleErrorSelection(int errorId, bool isSelected)
+    {
+        if (isSelected)
         {
-            if (dateRange.StartDate.HasValue)
+            selectedErrorIds.Add(errorId);
+        }
+        else
+        {
+            selectedErrorIds.Remove(errorId);
+        }
+        StateHasChanged();
+    }
+
+    private async Task MarkSelectedAsResolved()
+    {
+        try
+        {
+            foreach (var errorId in selectedErrorIds)
             {
-                query = query.Where(e => e.OccurredAt >= dateRange.StartDate.Value);
+                var errorLog = allErrorLogs.FirstOrDefault(e => e.Id == errorId);
+                if (errorLog != null && !errorLog.IsResolved)
+                {
+                    errorLog.IsResolved = true;
+                    errorLog.ResolvedAt = DateTime.UtcNow;
+                    errorLog.ResolvedBy = "系統管理員";
+                    await ErrorLogService.UpdateAsync(errorLog);
+                }
             }
-            if (dateRange.EndDate.HasValue)
+            
+            selectedErrorIds.Clear();
+            await LoadDataAsync();
+            ShowAlert($"已成功標記錯誤記錄為已處理", AlertComponent.AlertType.Success);
+        }
+        catch (Exception ex)
+        {
+            ShowAlert($"批次處理時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
+        }
+    }
+
+    private async Task MarkSingleAsResolved(int errorId)
+    {
+        try
+        {
+            var errorLog = allErrorLogs.FirstOrDefault(e => e.Id == errorId);
+            if (errorLog != null && !errorLog.IsResolved)
             {
-                query = query.Where(e => e.OccurredAt <= dateRange.EndDate.Value);
+                errorLog.IsResolved = true;
+                errorLog.ResolvedAt = DateTime.UtcNow;
+                errorLog.ResolvedBy = "系統管理員";
+                await ErrorLogService.UpdateAsync(errorLog);
+                
+                await LoadDataAsync();
+                ShowAlert("錯誤記錄已標記為已處理", AlertComponent.AlertType.Success);
             }
         }
+        catch (Exception ex)
+        {
+            ShowAlert($"處理錯誤記錄時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
+        }
+    }
 
-        return query;
+    private void ShowAlert(string message, AlertComponent.AlertType type)
+    {
+        alertMessage = message;
+        alertType = type;
+        showAlert = true;
+        StateHasChanged();
     }
 
     // 輔助方法
-    private string GetErrorLevelDisplay(ErrorLevel level)
+    private string GetErrorLevelDisplay(ErrorLevel level) => level switch
     {
-        return level switch
-        {
-            ErrorLevel.Info => "資訊",
-            ErrorLevel.Warning => "警告",
-            ErrorLevel.Error => "錯誤",
-            ErrorLevel.Critical => "嚴重錯誤",
-            _ => level.ToString()
-        };
-    }
+        ErrorLevel.Info => "資訊",
+        ErrorLevel.Warning => "警告",
+        ErrorLevel.Error => "錯誤",
+        ErrorLevel.Critical => "嚴重",
+        _ => level.ToString()
+    };
 
-    private string GetErrorSourceDisplay(ErrorSource source)
+    private string GetErrorSourceDisplay(ErrorSource source) => source switch
     {
-        return source switch
-        {
-            ErrorSource.Database => "資料庫",
-            ErrorSource.BusinessLogic => "業務邏輯",
-            ErrorSource.UserInterface => "使用者介面",
-            ErrorSource.System => "系統",
-            ErrorSource.API => "API",
-            ErrorSource.Security => "安全性",
-            _ => source.ToString()
-        };
-    }
+        ErrorSource.Database => "資料庫",
+        ErrorSource.BusinessLogic => "業務邏輯",
+        ErrorSource.UserInterface => "介面",
+        ErrorSource.System => "系統",
+        ErrorSource.API => "API",
+        ErrorSource.Security => "安全",
+        _ => source.ToString()
+    };
 
-    private string GetErrorLevelBadgeClass(ErrorLevel level)
+    private string GetErrorLevelBadgeClass(ErrorLevel level) => level switch
     {
-        return level switch
-        {
-            ErrorLevel.Info => "bg-info",
-            ErrorLevel.Warning => "bg-warning",
-            ErrorLevel.Error => "bg-danger",
-            ErrorLevel.Critical => "bg-dark",
-            _ => "bg-secondary"
-        };
-    }
+        ErrorLevel.Critical => "level-critical",
+        ErrorLevel.Error => "level-error",
+        ErrorLevel.Warning => "level-warning",
+        ErrorLevel.Info => "level-info",
+        _ => "bg-secondary"
+    };
+
 }
