@@ -1,16 +1,7 @@
 # 錯誤處理架構變更記錄
 
-## � 已完成的修改
-
-### 🗑️ 移除檔案
-- `Components/Shared/GlobalErrorBoundary.razor`
-- `Components/Shared/GlobalErrorBoundary.razor.css`  
-- `Services/ErrorLogs/ErrorLoggingCircuitHandler.cs`
-
 ### 🔧 修改檔案
-- `Components/App.razor` → 移除 GlobalErrorBoundary 包覆
 - `Components/Pages/ErrorHandling/TestErrorPage.razor` → 重新設計為簡化版
-- `Data/ServiceRegistration.cs` → 移除 CircuitHandler 註冊
 
 ### ✅ 新增檔案
 - 無新增，只有重寫 TestErrorPage.razor
