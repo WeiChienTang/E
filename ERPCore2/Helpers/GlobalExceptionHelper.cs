@@ -2,21 +2,21 @@ using ERPCore2.Services;
 using System.Net;
 using System.Text.Json;
 
-namespace ERPCore2.Middleware
+namespace ERPCore2.Helpers
 {
     /// <summary>
     /// 全域例外處理中間件
     /// 捕獲所有未處理的例外，記錄到錯誤日誌，並提供適當的回應
     /// </summary>
-    public class GlobalExceptionMiddleware
+    public class GlobalExceptionHelper
     {
         private readonly RequestDelegate _next;
-        private readonly ILogger<GlobalExceptionMiddleware> _logger;
+        private readonly ILogger<GlobalExceptionHelper> _logger;
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public GlobalExceptionMiddleware(
+        public GlobalExceptionHelper(
             RequestDelegate next,
-            ILogger<GlobalExceptionMiddleware> logger,
+            ILogger<GlobalExceptionHelper> logger,
             IServiceScopeFactory serviceScopeFactory)
         {
             _next = next;

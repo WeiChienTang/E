@@ -1,7 +1,7 @@
 using ERPCore2.Components;
 using ERPCore2.Data;
 using ERPCore2.Data.Context;
-using ERPCore2.Middleware;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
@@ -140,7 +140,7 @@ builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.Authent
 var app = builder.Build();
 
 // 註冊全域例外處理中間件 (必須在其他中間件之前)
-app.UseMiddleware<GlobalExceptionMiddleware>();
+app.UseMiddleware<GlobalExceptionHelper>();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
