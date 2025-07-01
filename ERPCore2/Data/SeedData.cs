@@ -80,7 +80,8 @@ namespace ERPCore2.Data
                 new SupplierSeeder(),
                 new ProductSeeder(),
                 new InventorySeeder(),
-                new WeatherSeeder()
+                new WeatherSeeder(),
+                new ErrorLogSeeder()
             };
         }
     }

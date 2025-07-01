@@ -1,0 +1,166 @@
+.error-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.error-container {
+    max-width: 600px;
+    width: 100%;
+}
+
+.error-content {
+    background: white;
+    border-radius: 1rem;
+    padding: 3rem;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e3e6f0;
+}
+
+.error-icon {
+    margin-bottom: 2rem;
+}
+
+.error-icon i {
+    font-size: 4rem;
+    color: #f6c23e;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.error-title {
+    color: #5a5c69;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+    font-size: 1.75rem;
+}
+
+.error-message {
+    margin-bottom: 2rem;
+}
+
+.error-message .lead {
+    color: #6c757d;
+    font-size: 1.1rem;
+}
+
+.error-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.error-actions .btn {
+    min-width: 140px;
+}
+
+.technical-details .card {
+    text-align: left;
+    border: 1px solid #d1ecf1;
+    background-color: #d1ecf1;
+}
+
+.technical-details .card-header {
+    background-color: #bee5eb;
+    border-bottom: 1px solid #b8d4da;
+}
+
+.technical-details .card-title {
+    color: #0c5460;
+    font-weight: 600;
+}
+
+.technical-details .card-body {
+    background-color: white;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .error-content {
+        padding: 2rem 1.5rem;
+    }
+    
+    .error-icon i {
+        font-size: 3rem;
+    }
+    
+    .error-title {
+        font-size: 1.5rem;
+    }
+    
+    .error-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .error-actions .btn {
+        min-width: auto;
+        width: 100%;
+    }
+}
+
+/* 動畫效果 */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.error-content {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.error-icon i {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* 按鈕 hover 效果 */
+.error-actions .btn {
+    transition: all 0.3s ease;
+}
+
+.error-actions .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* 警告框樣式 */
+.error-message .alert {
+    border-radius: 0.5rem;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.error-message .alert-info {
+    background-color: #e7f3ff;
+    color: #004085;
+}
+
+.error-message .alert-secondary {
+    background-color: #f8f9fa;
+    color: #6c757d;
+}

@@ -1,0 +1,431 @@
+@page "/error-logs/detail/{errorLogId:int}"
+@using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Badges
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Services
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.PageModels
+@inject IErrorLogService ErrorLogService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>錯誤記錄詳細資料</PageTitle>
+
+<GenericDetailPageComponent TEntity="ErrorLog" 
+                           TService="IErrorLogService"
+                           EntityId="@ErrorLogId"
+                           Entity="@errorLog"
+                           Service="@ErrorLogService"
+                           EntityName="錯誤記錄"
+                           EntityNamePlural="錯誤記錄"
+                           IndexRoute="/error-logs"
+                           EditRoute="/error-logs/edit"
+                           LoadingText="載入錯誤記錄中..."
+                           BreadcrumbItems="@breadcrumbItems"
+                           DataLoader="@LoadErrorLogDataAsync"
+                           AdditionalDataLoader="@LoadAdditionalDataAsync"
+                           EntityTitleSelector="@(e => e.Message ?? "未知錯誤")"
+                           EntitySubtitleSelector="@(e => $"{GetErrorLevelDisplay(e.Level)} | {GetErrorSourceDisplay(e.Source)} | {e.OccurredAt:yyyy-MM-dd HH:mm:ss}")"
+                           EntityDisplayNameSelector="@(e => e.ErrorId)"
+                           OnDataLoaded="@OnErrorLogDataLoaded"
+                           UseTabLayout="true"
+                           TabSections="@GetTabSections()">
+</GenericDetailPageComponent>
+
+@code {
+    [Parameter] public int ErrorLogId { get; set; }
+
+    private ErrorLog? errorLog;
+    private bool _isLoading = false; // 防止重複載入
+
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
+    {
+        new("首頁", "/"),
+        new("系統管理", "#"),
+        new("錯誤記錄管理", "/error-logs"),
+        new("錯誤記錄詳細資料")
+    };
+
+    // GenericDetailPageComponent 需要的方法
+    private async Task<ErrorLog?> LoadErrorLogDataAsync()
+    {
+        // 防止重複載入
+        if (_isLoading)
+        {
+            Console.WriteLine("[ErrorLogDetail] 載入中，跳過重複調用");
+            return errorLog;
+        }
+        
+        try
+        {
+            _isLoading = true;
+            if (ErrorLogId <= 0) return null;
+            
+            var result = await ErrorLogService.GetByIdAsync(ErrorLogId);
+            errorLog = result; // 保持本地變數同步
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[ErrorLogDetail] 載入錯誤記錄失敗：{ex.Message}");
+            throw;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+    
+    private Task LoadAdditionalDataAsync()
+    {
+        // 由於GetByIdAsync已經載入完整資料，這裡不需要額外查詢
+        return Task.CompletedTask;
+    }
+
+    private Task OnErrorLogDataLoaded()
+    {
+        // 資料載入完成後的處理
+        StateHasChanged();        
+        return Task.CompletedTask;
+    }
+
+    // 設定標籤頁結構
+    private List<GenericDetailPageComponent<ErrorLog, IErrorLogService>.TabSection> GetTabSections()
+    {        
+        return new List<GenericDetailPageComponent<ErrorLog, IErrorLogService>.TabSection>
+        {           
+            new GenericDetailPageComponent<ErrorLog, IErrorLogService>.TabSection
+            {
+                Id = "basic",
+                Title = "基本資訊",
+                Content = @<div>
+                    <BasicInfoDisplayComponent 
+                        Title="錯誤基本資訊"
+                        IconClass="fas fa-exclamation-triangle"
+                        IconColor="text-danger"
+                        Fields="@GetErrorBasicFields()" />
+                </div>
+            },
+            new GenericDetailPageComponent<ErrorLog, IErrorLogService>.TabSection
+            {
+                Id = "technical",
+                Title = "技術詳情",
+                Content = @<div>
+                    <DetailCardComponent Title="技術詳情">
+                        @if (errorLog != null)
+                        {
+                            <div class="row g-3">
+                                @if (!string.IsNullOrEmpty(errorLog.ExceptionType))
+                                {
+                                    <div class="col-12">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">
+                                                <i class="fas fa-bug text-danger me-2"></i>例外類型
+                                            </label>
+                                            <div class="fw-bold">@errorLog.ExceptionType</div>
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(errorLog.StackTrace))
+                                {
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">
+                                            <i class="fas fa-list-ul text-secondary me-2"></i>堆疊追蹤
+                                        </label>
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <pre class="mb-0 small text-muted" style="white-space: pre-wrap; max-height: 300px; overflow-y: auto;">@errorLog.StackTrace</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(errorLog.InnerException))
+                                {
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">
+                                            <i class="fas fa-layer-group text-warning me-2"></i>內部例外
+                                        </label>
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <pre class="mb-0 small text-muted" style="white-space: pre-wrap;">@errorLog.InnerException</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </DetailCardComponent>
+                </div>
+            },
+            new GenericDetailPageComponent<ErrorLog, IErrorLogService>.TabSection
+            {
+                Id = "context",
+                Title = "環境資訊",
+                Content = @<div>
+                    <DetailCardComponent Title="環境與上下文資訊">
+                        @if (errorLog != null)
+                        {
+                            <div class="row g-3">
+                                @if (!string.IsNullOrEmpty(errorLog.RequestPath))
+                                {
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">
+                                                <i class="fas fa-route text-primary me-2"></i>請求路徑
+                                            </label>
+                                            <div class="fw-bold">@errorLog.RequestPath</div>
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(errorLog.Module))
+                                {
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">
+                                                <i class="fas fa-cube text-info me-2"></i>所屬模組
+                                            </label>
+                                            <div class="fw-bold">@errorLog.Module</div>
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(errorLog.UserId))
+                                {
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">
+                                                <i class="fas fa-user text-success me-2"></i>使用者ID
+                                            </label>
+                                            <div class="fw-bold">@errorLog.UserId</div>
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(errorLog.UserAgent))
+                                {
+                                    <div class="col-12">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">
+                                                <i class="fas fa-desktop text-secondary me-2"></i>使用者代理
+                                            </label>
+                                            <div class="small text-muted">@errorLog.UserAgent</div>
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(errorLog.AdditionalData))
+                                {
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">
+                                            <i class="fas fa-database text-info me-2"></i>額外資料
+                                        </label>
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <pre class="mb-0 small text-muted" style="white-space: pre-wrap; max-height: 200px; overflow-y: auto;">@errorLog.AdditionalData</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </DetailCardComponent>
+                </div>
+            },
+            new GenericDetailPageComponent<ErrorLog, IErrorLogService>.TabSection
+            {
+                Id = "resolution",
+                Title = "處理記錄",
+                Content = @<div>
+                    <DetailCardComponent Title="錯誤處理與解決記錄">
+                        @if (errorLog != null)
+                        {
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">
+                                            <i class="@(errorLog.IsResolved ? "fas fa-check-circle text-success" : "fas fa-clock text-warning") me-2"></i>處理狀態
+                                        </label>
+                                        <span class="badge @(errorLog.IsResolved ? "bg-success" : "bg-warning")">
+                                            @(errorLog.IsResolved ? "已處理" : "未處理")
+                                        </span>
+                                    </div>
+                                </div>
+
+                                @if (errorLog.IsResolved && errorLog.ResolvedAt.HasValue)
+                                {
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">
+                                                <i class="fas fa-calendar-check text-success me-2"></i>解決時間
+                                            </label>
+                                            <div class="fw-bold">@errorLog.ResolvedAt.Value.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(errorLog.ResolvedBy))
+                                {
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">
+                                                <i class="fas fa-user-check text-success me-2"></i>解決者
+                                            </label>
+                                            <div class="fw-bold">@errorLog.ResolvedBy</div>
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(errorLog.Resolution))
+                                {
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">
+                                            <i class="fas fa-lightbulb text-success me-2"></i>解決方案
+                                        </label>
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <p class="mb-0">@errorLog.Resolution</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (!errorLog.IsResolved)
+                                {
+                                    <div class="col-12">
+                                        <div class="alert alert-warning d-flex align-items-center" role="alert">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            <div>
+                                                此錯誤尚未處理完成，請相關人員盡快處理。
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </DetailCardComponent>
+                </div>
+            }
+        };
+    }
+
+    // 取得錯誤基本資訊欄位
+    private List<BasicInfoDisplayComponent.BasicInfoField> GetErrorBasicFields()
+    {
+        if (errorLog == null) return new List<BasicInfoDisplayComponent.BasicInfoField>();
+
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "錯誤ID",
+                Value = errorLog.ErrorId,
+                IconClass = "fas fa-hashtag",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary",
+                ValueBold = true,
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "錯誤訊息",
+                Value = errorLog.Message,
+                IconClass = "fas fa-comment-alt",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info",
+                ValueBold = true,
+                ColSize = 12
+            },
+            new()
+            {
+                Label = "錯誤等級",
+                Value = GetErrorLevelDisplay(errorLog.Level),
+                IconClass = "fas fa-exclamation-circle",
+                IconBgClass = "bg-danger bg-opacity-10",
+                IconTextClass = "text-danger",
+                Type = BasicInfoDisplayComponent.FieldType.Badge,
+                BadgeClass = GetErrorLevelBadgeClass(errorLog.Level),
+                BadgeText = GetErrorLevelDisplay(errorLog.Level),
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "錯誤來源",
+                Value = GetErrorSourceDisplay(errorLog.Source),
+                IconClass = "fas fa-map-marker-alt",
+                IconBgClass = "bg-secondary bg-opacity-10",
+                IconTextClass = "text-secondary",
+                Type = BasicInfoDisplayComponent.FieldType.Badge,
+                BadgeClass = "bg-secondary",
+                BadgeText = GetErrorSourceDisplay(errorLog.Source),
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "錯誤分類",
+                Value = errorLog.Category,
+                IconClass = "fas fa-tag",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning",
+                ColSize = 6
+            },
+            new()
+            {
+                Label = "發生時間",
+                Value = errorLog.OccurredAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                IconClass = "fas fa-clock",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success",
+                ColSize = 6
+            }
+        };
+    }
+
+    // 輔助方法：取得錯誤等級顯示文字
+    private string GetErrorLevelDisplay(ErrorLevel level)
+    {
+        return level switch
+        {
+            ErrorLevel.Critical => "嚴重錯誤",
+            ErrorLevel.Error => "錯誤", 
+            ErrorLevel.Warning => "警告",
+            ErrorLevel.Info => "資訊",
+            _ => level.ToString()
+        };
+    }
+
+    // 輔助方法：取得錯誤來源顯示文字
+    private string GetErrorSourceDisplay(ErrorSource source)
+    {
+        return source switch
+        {
+            ErrorSource.Database => "資料庫",
+            ErrorSource.API => "API",
+            ErrorSource.BusinessLogic => "業務邏輯",
+            ErrorSource.UserInterface => "使用者介面",
+            ErrorSource.Security => "安全性",
+            ErrorSource.System => "系統",
+            _ => source.ToString()
+        };
+    }
+
+    // 輔助方法：取得錯誤等級Badge樣式
+    private string GetErrorLevelBadgeClass(ErrorLevel level)
+    {
+        return level switch
+        {
+            ErrorLevel.Critical => "bg-danger",
+            ErrorLevel.Error => "bg-danger",
+            ErrorLevel.Warning => "bg-warning",
+            ErrorLevel.Info => "bg-info",
+            _ => "bg-secondary"
+        };
+    }
+}
