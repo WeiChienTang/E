@@ -498,6 +498,39 @@ public class NavigationSearchService : INavigationSearchService
                         SearchKeywords = new List<string> { "navigation search", "導航搜尋", "功能搜尋" }
                     }
                 }
+            },
+
+            // 系統管理（父級選單）
+            new NavigationItem
+            {
+                Name = "系統管理",
+                Description = "系統管理和維護功能",
+                Route = "#",
+                IconClass = "bi bi-gear-fill",
+                Category = "系統管理",
+                IsParent = true,
+                SearchKeywords = new List<string> { "系統管理", "管理", "system", "admin", "administration" },
+                Children = new List<NavigationItem>
+                {
+                    new NavigationItem
+                    {
+                        Name = "錯誤記錄",
+                        Description = "檢視和管理系統錯誤記錄",
+                        Route = "/error-logs",
+                        IconClass = "bi bi-exclamation-circle",
+                        Category = "系統管理",
+                        SearchKeywords = new List<string> { "錯誤記錄", "錯誤", "log", "error", "system error" }
+                    },
+                    new NavigationItem
+                    {
+                        Name = "錯誤處理範例",
+                        Description = "展示 ErrorHandlingHelper 的使用方法",
+                        Route = "/error-helper-demo",
+                        IconClass = "bi bi-tools",
+                        Category = "系統管理",
+                        SearchKeywords = new List<string> { "錯誤處理", "範例", "demo", "error handling", "helper", "ErrorHandlingHelper" }
+                    }
+                }
             }
         };
     }

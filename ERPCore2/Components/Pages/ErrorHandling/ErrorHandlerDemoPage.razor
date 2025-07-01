@@ -1,0 +1,241 @@
+@page "/error-helper-demo"
+@using ERPCore2.Helpers
+@using ERPCore2.Services
+@using ERPCore2.Services.Notifications
+@using Microsoft.AspNetCore.Components
+@inject IErrorLogService ErrorLogService
+@inject INotificationService NotificationService
+@inject ILogger<ErrorHandlerDemoPage> Logger
+@rendermode InteractiveServer
+
+<PageTitle>ErrorHandlingHelper 使用範例</PageTitle>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="fas fa-tools me-2"></i>ErrorHandlingHelper 使用範例</h4>
+                    <small>展示如何在 Razor 頁面中使用統一的錯誤處理</small>
+                </div>
+                <div class="card-body">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="text-success">✅ 使用 ErrorHandlingHelper</h5>
+                            <p class="text-muted">統一的錯誤處理，自動記錄和顯示友善訊息</p>
+                            
+                            <button class="btn btn-primary mb-2 d-block" @onclick="HandleErrorWithHelper">
+                                <i class="fas fa-shield-alt me-1"></i>測試完整錯誤處理
+                            </button>
+                            
+                            <button class="btn btn-info mb-2 d-block" @onclick="HandleErrorSimply">
+                                <i class="fas fa-info me-1"></i>測試簡化錯誤處理
+                            </button>
+                            
+                            <button class="btn btn-warning mb-2 d-block" @onclick="HandleServiceError">
+                                <i class="fas fa-cogs me-1"></i>測試 Service 錯誤處理
+                            </button>
+                            
+                            @if (!string.IsNullOrEmpty(lastErrorId))
+                            {
+                                <div class="alert alert-info mt-3">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>最後錯誤ID:</strong> @lastErrorId
+                                </div>
+                            }
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5 class="text-danger">❌ 傳統錯誤處理（對比）</h5>
+                            <p class="text-muted">每次都要寫重複的錯誤處理程式碼</p>
+                            
+                            <button class="btn btn-outline-secondary mb-2 d-block" @onclick="TraditionalErrorHandling">
+                                <i class="fas fa-code me-1"></i>傳統錯誤處理方式
+                            </button>
+                            
+                            <div class="mt-3">
+                                <h6>傳統方式的問題：</h6>
+                                <ul class="small text-muted">
+                                    <li>每個方法都要寫相同的 try-catch</li>
+                                    <li>容易忘記記錄錯誤</li>
+                                    <li>錯誤訊息不一致</li>
+                                    <li>難以維護</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <h5>💡 程式碼範例</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-success">使用 ErrorHandlingHelper：</h6>
+                                    <pre class="bg-light p-3 rounded"><code>private async Task OnClick()
+{
+    try 
+    { 
+        await SomeService.DoSomething(); 
+    }
+    catch (Exception ex) 
+    { 
+        await ErrorHandlingHelper.HandleErrorSafelyAsync(
+            ex, "OnClick", GetType(),
+            ErrorLogService, NotificationService);
+        StateHasChanged();
+    }
+}</code></pre>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-danger">傳統方式：</h6>
+                                    <pre class="bg-light p-3 rounded"><code>private async Task OnClick()
+{
+    try 
+    { 
+        await SomeService.DoSomething(); 
+    }
+    catch (Exception ex) 
+    { 
+        var errorId = await ErrorLogService.LogErrorAsync(ex, /*...*/);
+        await NotificationService.ShowErrorAsync(
+            "操作失敗：" + ex.Message);
+        Logger.LogError(ex, "錯誤發生在 OnClick");
+        StateHasChanged();
+    }
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string lastErrorId = string.Empty;
+
+    /// <summary>
+    /// 示範使用 ErrorHandlingHelper 進行完整錯誤處理
+    /// </summary>
+    private async Task HandleErrorWithHelper()
+    {
+        try
+        {
+            // 故意拋出例外來測試錯誤處理
+            throw new InvalidOperationException("這是一個測試例外，用來展示 ErrorHandlingHelper 的功能");
+        }
+        catch (Exception ex)
+        {
+            // 使用 ErrorHandlingHelper 統一處理錯誤
+            lastErrorId = await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(HandleErrorWithHelper), 
+                GetType(),
+                ErrorLogService, 
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { TestType = "ErrorHelper Demo", ButtonAction = "完整錯誤處理" });
+            
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 示範使用簡化的錯誤處理
+    /// </summary>
+    private async Task HandleErrorSimply()
+    {
+        try
+        {
+            throw new ArgumentNullException("testParameter", "測試參數不能為空");
+        }
+        catch (Exception ex)
+        {
+            // 使用簡化版錯誤處理
+            await ErrorHandlingHelper.HandleErrorSimplyAsync(
+                ex, 
+                nameof(HandleErrorSimply), 
+                NotificationService,
+                customMessage: "簡化錯誤處理測試：參數驗證失敗");
+            
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 示範處理 Service 錯誤結果
+    /// </summary>
+    private async Task HandleServiceError()
+    {
+        try
+        {
+            // 模擬一個失敗的 Service 結果
+            var serviceResult = ServiceResult.ValidationFailure(
+                new List<string> { "驗證錯誤1", "驗證錯誤2" });
+
+            if (!serviceResult.IsSuccess)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    serviceResult,
+                    nameof(HandleServiceError),
+                    NotificationService,
+                    customErrorMessage: "自訂的 Service 錯誤訊息");
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            // 如果連處理 Service 錯誤都失敗，使用基本錯誤處理
+            await ErrorHandlingHelper.HandleErrorSimplyAsync(
+                ex, 
+                nameof(HandleServiceError), 
+                NotificationService);
+            
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 示範傳統的錯誤處理方式（對比用）
+    /// </summary>
+    private async Task TraditionalErrorHandling()
+    {
+        try
+        {
+            throw new TimeoutException("網路連線逾時");
+        }
+        catch (Exception ex)
+        {
+            // 傳統方式：每次都要寫這些重複的程式碼
+            try
+            {
+                var errorData = new
+                {
+                    ComponentType = GetType().Name,
+                    MethodName = nameof(TraditionalErrorHandling),
+                    ComponentFullName = GetType().FullName,
+                    Timestamp = DateTime.UtcNow,
+                    IsRazorComponent = true,
+                    TestType = "Traditional Error Handling"
+                };
+
+                lastErrorId = await ErrorLogService.LogErrorAsync(ex, errorData);
+                await NotificationService.ShowErrorAsync("傳統錯誤處理：" + ex.Message, "操作失敗");
+                Logger.LogError(ex, "傳統錯誤處理測試");
+            }
+            catch (Exception logEx)
+            {
+                await NotificationService.ShowErrorAsync("記錄錯誤時發生問題", "系統錯誤");
+                Logger.LogError(logEx, "記錄錯誤失敗");
+            }
+            
+            StateHasChanged();
+        }
+    }
+}
