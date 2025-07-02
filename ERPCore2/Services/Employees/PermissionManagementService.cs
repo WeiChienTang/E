@@ -13,8 +13,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class PermissionManagementService : GenericManagementService<Permission>, IPermissionManagementService
     {
-        public PermissionManagementService(AppDbContext context) : base(context)
+        private readonly IErrorLogService _errorLogService;
+
+        public PermissionManagementService(AppDbContext context, IErrorLogService errorLogService) : base(context)
         {
+            _errorLogService = errorLogService;
         }
 
         // 覆寫 GetAllAsync 以提供排序

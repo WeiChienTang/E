@@ -418,7 +418,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 記錄錯誤到檔案作為備援
         /// </summary>
-        private async Task LogToFileAsFallback(Exception originalException, Exception logException, string errorId)
+        private async Task LogToFileAsFallback(Exception originalException, Exception? logException, string errorId)
         {
             try
             {

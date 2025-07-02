@@ -2,6 +2,7 @@
 @inject IWarehouseService WarehouseService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 @rendermode InteractiveServer
 
 <PageTitle>倉庫維護</PageTitle>
@@ -55,7 +56,13 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入倉庫資料失敗：", ex.Message);
+            await ErrorHandlingHelper.HandleErrorSimplyAsync(
+                ex, 
+                nameof(LoadWarehousesAsync), 
+                NotificationService,
+                customMessage: "載入倉庫資料失敗");
+            
+            StateHasChanged();
             return new List<Warehouse>();
         }
     }

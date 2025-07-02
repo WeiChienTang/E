@@ -11,8 +11,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class MaterialService : GenericManagementService<Material>, IMaterialService
     {
-        public MaterialService(AppDbContext context) : base(context)
+        private readonly IErrorLogService _errorLogService;
+
+        public MaterialService(AppDbContext context, IErrorLogService errorLogService) : base(context)
         {
+            _errorLogService = errorLogService;
         }
 
         /// <summary>

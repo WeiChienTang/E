@@ -13,8 +13,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class EmployeeService : GenericManagementService<Employee>, IEmployeeService
     {
-        public EmployeeService(AppDbContext context) : base(context)
+        private readonly IErrorLogService? _errorLogService;
+
+        public EmployeeService(AppDbContext context, IErrorLogService? errorLogService = null) : base(context)
         {
+            _errorLogService = errorLogService;
         }        // 覆寫 GetAllAsync 以載入相關資料
         public override async Task<List<Employee>> GetAllAsync()
         {

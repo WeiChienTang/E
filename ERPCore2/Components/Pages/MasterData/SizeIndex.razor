@@ -2,6 +2,8 @@
 @inject ISizeService SizeService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
+@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>尺寸維護</PageTitle>
@@ -58,7 +60,11 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入基礎資料失敗：", ex.Message);
+            await ErrorHandlingHelper.HandleErrorSimplyAsync(
+                ex, 
+                nameof(LoadBasicDataAsync), 
+                NotificationService,
+                customMessage: "載入基礎資料失敗");
             StateHasChanged();
         }
     }
@@ -72,7 +78,13 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入尺寸資料失敗：", ex.Message);
+            await ErrorHandlingHelper.HandleErrorSimplyAsync(
+                ex, 
+                nameof(LoadSizesAsync), 
+                NotificationService,
+                customMessage: "載入尺寸資料失敗");
+            
+            StateHasChanged();
             return new List<Size>();
         }
     }

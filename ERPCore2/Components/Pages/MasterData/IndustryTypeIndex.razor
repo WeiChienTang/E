@@ -6,9 +6,11 @@
 @using ERPCore2.Components.Shared.Tables
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Components.Shared.PageModels
+@using ERPCore2.Helpers
 @inject IIndustryTypeService IndustryTypeService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 @rendermode InteractiveServer
 
 <PageTitle>行業類型維護</PageTitle>
@@ -69,15 +71,12 @@
     // 載入行業類型資料
     private async Task<List<IndustryType>> LoadIndustryTypesAsync()
     {
-        try
-        {
-            return await IndustryTypeService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入行業類型資料失敗：", ex.Message);
-            return new List<IndustryType>();
-        }
+        return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
+            async () => await IndustryTypeService.GetAllAsync(),
+            new List<IndustryType>(),
+            NotificationService,
+            "載入行業類型資料失敗"
+        );
     }
 
     private void InitializeFilters()

@@ -2,6 +2,7 @@
 @inject IEmployeeService EmployeeService
 @inject IRoleService RoleService
 @inject INotificationService NotificationService
+@inject IErrorLogService ErrorLogService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @using ERPCore2.Services.Notifications
@@ -76,8 +77,14 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入基礎資料失敗：", ex.Message);
+            await ErrorHandlingHelper.HandleErrorSimplyAsync(
+                ex, 
+                nameof(LoadBasicDataAsync), 
+                NotificationService,
+                customMessage: "載入基礎資料失敗，將使用預設設定");
+            
             roles = new List<Role>();
+            StateHasChanged();
         }
     }
 
@@ -90,7 +97,13 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入員工資料失敗：", ex.Message);
+            await ErrorHandlingHelper.HandleErrorSimplyAsync(
+                ex, 
+                nameof(LoadEmployeesAsync), 
+                NotificationService,
+                customMessage: "載入員工資料失敗");
+            
+            StateHasChanged();
             return new List<Employee>();
         }
     }

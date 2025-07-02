@@ -8,6 +8,8 @@
 @inject IProductCategoryService ProductCategoryService
 @inject ISupplierService SupplierService
 @inject NavigationManager Navigation
+@inject INotificationService NotificationService
+@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>@GetPageTitle()</PageTitle>
@@ -18,7 +20,8 @@
                          Entity="@product"
                          Service="@ProductService"
                          EntityName="產品"
-                         EntityNamePlural="產品"                         FormTitle="基本資料"
+                         EntityNamePlural="產品"                         
+                         FormTitle="基本資料"
                          FormSubtitle="產品的基本資訊"
                          IndexRoute="/products"
                          BreadcrumbItems="@breadcrumbItems"
@@ -259,7 +262,16 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"載入產品資料失敗：{ex.Message}");
+            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(LoadProductData),
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { ProductId = Id });
+            
+            StateHasChanged();
             return new Product();
         }
     }
@@ -279,7 +291,17 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"載入參考資料失敗：{ex.Message}");
+            await ErrorHandlingHelper.HandleErrorSimplyAsync(
+                ex,
+                nameof(LoadReferenceData),
+                NotificationService,
+                customMessage: "載入參考資料失敗，部分選項可能不可用");
+            
+            // 設定預設值
+            productCategories = new List<ProductCategory>();
+            suppliers = new List<Supplier>();
+            units = new List<Unit>();
+            StateHasChanged();
         }
     }
     
@@ -304,13 +326,26 @@
             }
             else
             {
-                Console.WriteLine($"儲存失敗：{result.ErrorMessage}");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    result,
+                    nameof(SaveProduct),
+                    NotificationService,
+                    customErrorMessage: "儲存產品失敗");
                 return false;
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"儲存產品資料失敗：{ex.Message}");
+            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(SaveProduct),
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { ProductId = entity.Id, ProductName = entity.ProductName });
+            
+            StateHasChanged();
             return false;
         }    }
 

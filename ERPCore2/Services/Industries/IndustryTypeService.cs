@@ -14,10 +14,12 @@ namespace ERPCore2.Services
     public class IndustryTypeService : GenericManagementService<IndustryType>, IIndustryTypeService
     {
         private readonly ILogger<IndustryTypeService> _logger;
+        private readonly IErrorLogService _errorLogService;
 
-        public IndustryTypeService(AppDbContext context, ILogger<IndustryTypeService> logger) : base(context)
+        public IndustryTypeService(AppDbContext context, ILogger<IndustryTypeService> logger, IErrorLogService errorLogService) : base(context)
         {
             _logger = logger;
+            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底方法

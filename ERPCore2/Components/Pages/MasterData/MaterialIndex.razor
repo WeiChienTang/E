@@ -1,8 +1,10 @@
 @page "/materials"
 @using ERPCore2.Components.Shared
+@using ERPCore2.Helpers
 @inject IMaterialService MaterialService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 @rendermode InteractiveServer
 
 <PageTitle>材質</PageTitle>
@@ -65,15 +67,12 @@
     // 載入材質資料
     private async Task<List<Material>> LoadMaterialsAsync()
     {
-        try
-        {
-            return await MaterialService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入材質資料失敗：", ex.Message);
-            return new List<Material>();
-        }
+        return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
+            async () => await MaterialService.GetAllAsync(),
+            new List<Material>(),
+            NotificationService,
+            "載入材質資料失敗"
+        );
     }
 
     private void InitializeFilters()

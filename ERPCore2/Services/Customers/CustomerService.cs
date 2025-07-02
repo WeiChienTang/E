@@ -14,10 +14,12 @@ namespace ERPCore2.Services
     public class CustomerService : GenericManagementService<Customer>, ICustomerService
     {
         private readonly ILogger<CustomerService> _logger;
+        private readonly IErrorLogService? _errorLogService;
 
-        public CustomerService(AppDbContext context, ILogger<CustomerService> logger) : base(context)
+        public CustomerService(AppDbContext context, ILogger<CustomerService> logger, IErrorLogService? errorLogService = null) : base(context)
         {
             _logger = logger;
+            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底方法

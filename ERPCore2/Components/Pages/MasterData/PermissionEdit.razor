@@ -3,6 +3,7 @@
 @inject IPermissionManagementService PermissionService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯權限" : "新增權限")</PageTitle>

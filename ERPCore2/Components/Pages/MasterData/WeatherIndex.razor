@@ -2,9 +2,11 @@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services
 @using ERPCore2.Components.Shared
+@using ERPCore2.Helpers
 @inject IWeatherService WeatherService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 @rendermode InteractiveServer
 
 <PageTitle>天氣</PageTitle>
@@ -90,7 +92,12 @@
     }    // 資料載入委派
     private async Task<List<Weather>> LoadDataAsync()
     {
-        return await WeatherService.GetAllAsync();
+        return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
+            async () => await WeatherService.GetAllAsync(),
+            new List<Weather>(),
+            NotificationService,
+            "載入天氣資料失敗"
+        );
     }
 
     // 篩選邏輯委派

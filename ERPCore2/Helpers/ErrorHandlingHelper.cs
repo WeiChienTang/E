@@ -156,6 +156,32 @@ namespace ERPCore2.Helpers
         }
 
         /// <summary>
+        /// 執行異步操作並處理錯誤 - 通用版本
+        /// </summary>
+        /// <typeparam name="T">返回值類型</typeparam>
+        /// <param name="operation">要執行的異步操作</param>
+        /// <param name="defaultValue">錯誤時的預設值</param>
+        /// <param name="notificationService">通知服務</param>
+        /// <param name="customMessage">自訂錯誤訊息</param>
+        /// <returns>操作結果或預設值</returns>
+        public static async Task<T> ExecuteWithErrorHandlingAsync<T>(
+            Func<Task<T>> operation,
+            T defaultValue,
+            INotificationService notificationService,
+            string? customMessage = null)
+        {
+            try
+            {
+                return await operation();
+            }
+            catch (Exception ex)
+            {
+                await HandleErrorSimplyAsync(ex, "ExecuteOperation", notificationService, customMessage);
+                return defaultValue;
+            }
+        }
+
+        /// <summary>
         /// 將技術性錯誤訊息轉換為使用者友善的訊息
         /// </summary>
         /// <param name="exception">例外物件</param>

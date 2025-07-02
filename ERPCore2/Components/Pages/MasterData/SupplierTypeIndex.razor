@@ -4,9 +4,11 @@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
+@using ERPCore2.Helpers
 @inject ISupplierTypeService SupplierTypeService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 @rendermode InteractiveServer
 
 <PageTitle>廠商類型</PageTitle>
@@ -69,15 +71,12 @@
     // 載入廠商類型資料
     private async Task<List<SupplierType>> LoadSupplierTypesAsync()
     {
-        try
-        {
-            return await SupplierTypeService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入廠商類型資料失敗：", ex.Message);
-            return new List<SupplierType>();
-        }
+        return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
+            async () => await SupplierTypeService.GetAllAsync(),
+            new List<SupplierType>(),
+            NotificationService,
+            "載入廠商類型資料失敗"
+        );
     }
 
     private void InitializeFilters()

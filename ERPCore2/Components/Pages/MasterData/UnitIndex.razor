@@ -4,9 +4,11 @@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
+@using ERPCore2.Helpers
 @inject IUnitService UnitService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 @rendermode InteractiveServer
 
 <PageTitle>單位維護</PageTitle>
@@ -55,15 +57,12 @@
     // 載入單位資料
     private async Task<List<Unit>> LoadUnitsAsync()
     {
-        try
-        {
-            return await UnitService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入單位資料失敗：", ex.Message);
-            return new List<Unit>();
-        }
+        return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
+            async () => await UnitService.GetAllAsync(),
+            new List<Unit>(),
+            NotificationService,
+            "載入單位資料失敗"
+        );
     }
 
     private void InitializeFilters()

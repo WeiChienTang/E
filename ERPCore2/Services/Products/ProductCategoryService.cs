@@ -13,10 +13,12 @@ namespace ERPCore2.Services
     public class ProductCategoryService : GenericManagementService<ProductCategory>, IProductCategoryService
     {
         private readonly ILogger<ProductCategoryService> _logger;
+        private readonly IErrorLogService _errorLogService;
 
-        public ProductCategoryService(AppDbContext context, ILogger<ProductCategoryService> logger) : base(context)
+        public ProductCategoryService(AppDbContext context, ILogger<ProductCategoryService> logger, IErrorLogService errorLogService) : base(context)
         {
             _logger = logger;
+            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底方法

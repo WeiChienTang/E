@@ -7,8 +7,11 @@ namespace ERPCore2.Services
 {
     public class WeatherService : GenericManagementService<Weather>, IWeatherService
     {
-        public WeatherService(AppDbContext context) : base(context)
+        private readonly IErrorLogService _errorLogService;
+
+        public WeatherService(AppDbContext context, IErrorLogService errorLogService) : base(context)
         {
+            _errorLogService = errorLogService;
         }
 
         /// <summary>

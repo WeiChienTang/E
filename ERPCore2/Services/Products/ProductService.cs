@@ -2,6 +2,7 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -13,10 +14,13 @@ namespace ERPCore2.Services
     public class ProductService : GenericManagementService<Product>, IProductService
     {
         private readonly ILogger<ProductService> _logger;
+        private readonly IErrorLogService? _errorLogService;
 
-        public ProductService(AppDbContext context, ILogger<ProductService> logger) : base(context)
+        public ProductService(AppDbContext context, ILogger<ProductService> logger, IErrorLogService? errorLogService = null) 
+            : base(context)
         {
             _logger = logger;
+            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底方法
@@ -141,6 +145,14 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                if (_errorLogService != null)
+                {
+                    await _errorLogService.LogErrorAsync(ex, new { 
+                        Method = nameof(GetByProductCodeAsync),
+                        ProductCode = productCode,
+                        ServiceType = GetType().Name 
+                    });
+                }
                 _logger.LogError(ex, "Error getting product by code {ProductCode}", productCode);
                 throw;
             }

@@ -2,6 +2,7 @@
 @page "/warehouses/edit/{id:int?}"
 @inject IWarehouseService WarehouseService
 @inject INotificationService NotificationService
+@inject IErrorLogService ErrorLogService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @using ERPCore2.Services.Notifications
@@ -183,7 +184,16 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入倉庫資料失敗：{ex.Message}");
+            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                "LoadData",
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { WarehouseId = Id });
+            
+            StateHasChanged();
             return null;
         }
     }
@@ -239,13 +249,26 @@
             }
             else
             {
-                await NotificationService.ShowErrorAsync($"倉庫{(entity.Id == 0 ? "新增" : "更新")}失敗：{result.ErrorMessage}");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    result,
+                    "SaveData",
+                    NotificationService,
+                    customErrorMessage: $"倉庫{(entity.Id == 0 ? "新增" : "更新")}失敗");
                 return false;
             }
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"倉庫{(entity.Id == 0 ? "新增" : "更新")}失敗：{ex.Message}");
+            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                "SaveData",
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { WarehouseId = entity.Id, WarehouseName = entity.WarehouseName });
+            
+            StateHasChanged();
             return false;
         }
     }

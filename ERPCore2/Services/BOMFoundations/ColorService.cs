@@ -8,8 +8,11 @@ namespace ERPCore2.Services
 {
     public class ColorService : GenericManagementService<Color>, IColorService
     {
-        public ColorService(AppDbContext context) : base(context)
+        private readonly IErrorLogService _errorLogService;
+
+        public ColorService(AppDbContext context, IErrorLogService errorLogService) : base(context)
         {
+            _errorLogService = errorLogService;
         }
 
         /// <summary>

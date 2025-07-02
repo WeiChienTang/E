@@ -14,10 +14,13 @@ namespace ERPCore2.Services
     public class CustomerTypeService : GenericManagementService<CustomerType>, ICustomerTypeService
     {
         private readonly ILogger<CustomerTypeService> _logger;
+        private readonly IErrorLogService _errorLogService;
 
-        public CustomerTypeService(AppDbContext context, ILogger<CustomerTypeService> logger)
+        public CustomerTypeService(AppDbContext context, ILogger<CustomerTypeService> logger, IErrorLogService errorLogService)
             : base(context)
         {
+            _logger = logger;
+            _errorLogService = errorLogService;
             _logger = logger;
         }
 

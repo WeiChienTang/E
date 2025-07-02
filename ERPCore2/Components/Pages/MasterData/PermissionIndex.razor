@@ -1,7 +1,9 @@
 @page "/permissions"
+@using ERPCore2.Helpers
 @inject IPermissionManagementService PermissionService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 @rendermode InteractiveServer
 
 <PageTitle>權限維護</PageTitle>
@@ -50,15 +52,12 @@
     // 載入權限資料
     private async Task<List<Permission>> LoadPermissionsAsync()
     {
-        try
-        {
-            return await PermissionService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入權限資料失敗：", ex.Message);
-            return new List<Permission>();
-        }
+        return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
+            async () => await PermissionService.GetAllAsync(),
+            new List<Permission>(),
+            NotificationService,
+            "載入權限資料失敗"
+        );
     }
 
     private void InitializeFilters()

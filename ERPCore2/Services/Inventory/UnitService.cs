@@ -10,8 +10,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class UnitService : GenericManagementService<Unit>, IUnitService
     {
-        public UnitService(AppDbContext context) : base(context)
+        private readonly IErrorLogService _errorLogService;
+
+        public UnitService(AppDbContext context, IErrorLogService errorLogService) : base(context)
         {
+            _errorLogService = errorLogService;
         }
 
         /// <summary>

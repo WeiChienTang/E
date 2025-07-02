@@ -12,8 +12,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class RoleService : GenericManagementService<Role>, IRoleService
     {
-        public RoleService(AppDbContext context) : base(context)
+        private readonly IErrorLogService _errorLogService;
+
+        public RoleService(AppDbContext context, IErrorLogService errorLogService) : base(context)
         {
+            _errorLogService = errorLogService;
         }
 
         // 覆寫 GetAllAsync 以載入相關資料

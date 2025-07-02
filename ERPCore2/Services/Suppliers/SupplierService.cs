@@ -13,10 +13,12 @@ namespace ERPCore2.Services
     public class SupplierService : GenericManagementService<Supplier>, ISupplierService
     {
         private readonly ILogger<SupplierService> _logger;
+        private readonly IErrorLogService? _errorLogService;
 
-        public SupplierService(AppDbContext context, ILogger<SupplierService> logger) : base(context)
+        public SupplierService(AppDbContext context, ILogger<SupplierService> logger, IErrorLogService? errorLogService = null) : base(context)
         {
             _logger = logger;
+            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底方法

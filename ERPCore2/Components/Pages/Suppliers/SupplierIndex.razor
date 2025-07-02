@@ -2,6 +2,7 @@
 @inject ISupplierService SupplierService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 @rendermode InteractiveServer
 
 <PageTitle>廠商維護</PageTitle>
@@ -61,7 +62,13 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入廠商資料失敗：", ex.Message);
+            await ErrorHandlingHelper.HandleErrorSimplyAsync(
+                ex, 
+                nameof(LoadSuppliersAsync), 
+                NotificationService,
+                customMessage: "載入廠商資料失敗");
+            
+            StateHasChanged();
             return new List<Supplier>();
         }
     }

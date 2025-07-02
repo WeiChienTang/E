@@ -2,6 +2,8 @@
 @inject ICustomerService CustomerService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
+@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>客戶維護</PageTitle>
@@ -67,7 +69,12 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入基礎資料失敗：", ex.Message);
+            await ErrorHandlingHelper.HandleErrorSimplyAsync(
+                ex, 
+                nameof(LoadBasicDataAsync), 
+                NotificationService,
+                customMessage: "載入基礎資料失敗，將使用預設設定");
+            
             customerTypes = new List<CustomerType>();
             industryTypes = new List<IndustryType>();
             
@@ -86,7 +93,13 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入客戶資料失敗：", ex.Message);
+            await ErrorHandlingHelper.HandleErrorSimplyAsync(
+                ex, 
+                nameof(LoadCustomersAsync), 
+                NotificationService,
+                customMessage: "載入客戶資料失敗");
+            
+            StateHasChanged();
             return new List<Customer>();
         }
     }

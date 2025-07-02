@@ -3,6 +3,8 @@
 @inject IProductService ProductService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
+@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>產品維護</PageTitle>
@@ -61,9 +63,16 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入基礎資料失敗：", ex.Message);
+            await ErrorHandlingHelper.HandleErrorSimplyAsync(
+                ex, 
+                nameof(LoadBasicDataAsync), 
+                NotificationService,
+                customMessage: "載入基礎資料失敗，將使用預設設定");
+            
+            // 設定預設值以防頁面無法正常運作
             productCategories = new List<ProductCategory>();
             suppliers = new List<Supplier>();
+            StateHasChanged();
         }
     }
 
@@ -76,7 +85,13 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入產品資料失敗：", ex.Message);
+            await ErrorHandlingHelper.HandleErrorSimplyAsync(
+                ex, 
+                nameof(LoadProductsAsync), 
+                NotificationService,
+                customMessage: "載入產品資料失敗");
+            
+            StateHasChanged();
             return new List<Product>();
         }
     }

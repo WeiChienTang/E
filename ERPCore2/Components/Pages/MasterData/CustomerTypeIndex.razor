@@ -4,9 +4,11 @@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
+@using ERPCore2.Helpers
 @inject ICustomerTypeService CustomerTypeService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 @rendermode InteractiveServer
 
 <PageTitle>客戶類型</PageTitle>
@@ -68,15 +70,12 @@
     // 載入客戶類型資料
     private async Task<List<CustomerType>> LoadCustomerTypesAsync()
     {
-        try
-        {
-            return await CustomerTypeService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入客戶類型資料失敗：", ex.Message);
-            return new List<CustomerType>();
-        }
+        return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
+            async () => await CustomerTypeService.GetAllAsync(),
+            new List<CustomerType>(),
+            NotificationService,
+            "載入客戶類型資料失敗"
+        );
     }
 
     private void InitializeFilters()
