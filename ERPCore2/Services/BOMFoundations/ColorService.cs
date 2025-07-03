@@ -42,7 +42,9 @@ namespace ERPCore2.Services
                             (c.HexCode != null && c.HexCode.Contains(searchTerm))))
                 .OrderBy(c => c.Name)
                 .ToListAsync();
-        }        /// <summary>
+        }
+
+        /// <summary>
         /// 覆寫驗證方法，添加顏色特定的驗證規則
         /// </summary>
         public override async Task<ServiceResult> ValidateAsync(Color entity)
@@ -60,7 +62,7 @@ namespace ERPCore2.Services
                 return ServiceResult.Failure("顏色名稱已存在");
 
             // 檢查十六進位色碼是否重複（如果有提供）
-            if (!string.IsNullOrWhiteSpace(entity.HexCode) && 
+            if (!string.IsNullOrWhiteSpace(entity.HexCode) &&
                 await IsHexCodeExistsAsync(entity.HexCode, entity.Id))
                 return ServiceResult.Failure("十六進位色碼已存在");
 

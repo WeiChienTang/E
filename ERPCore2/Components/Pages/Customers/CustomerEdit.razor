@@ -132,7 +132,8 @@
               InitializeFormFields();
             
             // 不需要手動調用 StateHasChanged()，GenericEditPageComponent 會處理
-        }        catch (Exception ex)
+        }        
+        catch (Exception ex)
         {
             Console.Error.WriteLine($"載入額外資料時發生錯誤：{ex.Message}");
         }
