@@ -8,13 +8,11 @@ namespace ERPCore2.Services
 {
     public class WarehouseLocationService : GenericManagementService<WarehouseLocation>, IWarehouseLocationService
     {
-        private readonly ILogger<WarehouseLocationService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public WarehouseLocationService(AppDbContext context, ILogger<WarehouseLocationService> logger, IErrorLogService errorLogService) : base(context)
+        public WarehouseLocationService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<WarehouseLocation>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }
 
         public override async Task<List<WarehouseLocation>> GetAllAsync()

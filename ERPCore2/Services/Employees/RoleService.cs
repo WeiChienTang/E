@@ -13,13 +13,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class RoleService : GenericManagementService<Role>, IRoleService
     {
-        private readonly ILogger<RoleService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public RoleService(AppDbContext context, ILogger<RoleService> logger, IErrorLogService errorLogService) : base(context)
+        public RoleService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<Role>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }
 
         // 覆寫 GetAllAsync 以載入相關資料
@@ -48,10 +46,23 @@ namespace ERPCore2.Services
         // 覆寫 GetByIdAsync 以載入相關資料
         public override async Task<Role?> GetByIdAsync(int id)
         {
-            return await _dbSet
-                .Include(r => r.RolePermissions)
-                .ThenInclude(rp => rp.Permission)
-                .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
+            try
+            {
+                return await _dbSet
+                    .Include(r => r.RolePermissions)
+                    .ThenInclude(rp => rp.Permission)
+                    .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByIdAsync),
+                    ServiceType = GetType().Name,
+                    RoleId = id 
+                });
+                _logger.LogError(ex, "Error getting role by ID {RoleId}", id);
+                throw;
+            }
         }
 
         /// <summary>
@@ -76,6 +87,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByNameAsync),
+                    ServiceType = GetType().Name,
+                    RoleName = roleName 
+                });
+                _logger.LogError(ex, "Error getting role by name {RoleName}", roleName);
                 return ServiceResult<Role>.Failure($"取得角色資料時發生錯誤：{ex.Message}");
             }
         }
@@ -98,6 +115,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetSystemRolesAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting system roles");
                 return ServiceResult<List<Role>>.Failure($"取得系統角色時發生錯誤：{ex.Message}");
             }
         }
@@ -120,6 +142,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetCustomRolesAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting custom roles");
                 return ServiceResult<List<Role>>.Failure($"取得自訂角色時發生錯誤：{ex.Message}");
             }
         }
@@ -144,6 +171,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(IsRoleNameExistsAsync),
+                    ServiceType = GetType().Name,
+                    RoleName = roleName,
+                    ExcludeRoleId = excludeRoleId 
+                });
+                _logger.LogError(ex, "Error checking if role name exists {RoleName}", roleName);
                 return ServiceResult<bool>.Failure($"檢查角色名稱時發生錯誤：{ex.Message}");
             }
         }
@@ -195,6 +229,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(AssignPermissionsToRoleAsync),
+                    ServiceType = GetType().Name,
+                    RoleId = roleId,
+                    PermissionIds = permissionIds 
+                });
+                _logger.LogError(ex, "Error assigning permissions to role {RoleId}", roleId);
                 return ServiceResult.Failure($"指派權限時發生錯誤：{ex.Message}");
             }
         }
@@ -224,6 +265,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(RemovePermissionsFromRoleAsync),
+                    ServiceType = GetType().Name,
+                    RoleId = roleId,
+                    PermissionIds = permissionIds 
+                });
+                _logger.LogError(ex, "Error removing permissions from role {RoleId}", roleId);
                 return ServiceResult.Failure($"移除權限時發生錯誤：{ex.Message}");
             }
         }
@@ -253,6 +301,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(ClearRolePermissionsAsync),
+                    ServiceType = GetType().Name,
+                    RoleId = roleId 
+                });
+                _logger.LogError(ex, "Error clearing role permissions for role {RoleId}", roleId);
                 return ServiceResult.Failure($"清除角色權限時發生錯誤：{ex.Message}");
             }
         }
@@ -289,6 +343,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(CopyRolePermissionsAsync),
+                    ServiceType = GetType().Name,
+                    SourceRoleId = sourceRoleId,
+                    TargetRoleId = targetRoleId 
+                });
+                _logger.LogError(ex, "Error copying role permissions from {SourceRoleId} to {TargetRoleId}", sourceRoleId, targetRoleId);
                 return ServiceResult.Failure($"複製角色權限時發生錯誤：{ex.Message}");
             }
         }
@@ -308,6 +369,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetEmployeeCountByRoleAsync),
+                    ServiceType = GetType().Name,
+                    RoleId = roleId 
+                });
+                _logger.LogError(ex, "Error getting employee count for role {RoleId}", roleId);
                 return ServiceResult<int>.Failure($"取得角色員工數量時發生錯誤：{ex.Message}");
             }
         }
@@ -335,6 +402,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(CanDeleteRoleAsync),
+                    ServiceType = GetType().Name,
+                    RoleId = roleId 
+                });
+                _logger.LogError(ex, "Error checking if role can be deleted {RoleId}", roleId);
                 return ServiceResult<bool>.Failure($"檢查角色刪除權限時發生錯誤：{ex.Message}");
             }
         }
@@ -362,6 +435,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SearchRolesAsync),
+                    ServiceType = GetType().Name,
+                    SearchTerm = searchTerm 
+                });
+                _logger.LogError(ex, "Error searching roles with term {SearchTerm}", searchTerm);
                 return ServiceResult<List<Role>>.Failure($"搜尋角色時發生錯誤：{ex.Message}");
             }
         }
@@ -382,6 +461,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAssignableRolesAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting assignable roles");
                 return ServiceResult<List<Role>>.Failure($"取得可指派角色時發生錯誤：{ex.Message}");
             }
         }
@@ -391,56 +475,104 @@ namespace ERPCore2.Services
         /// </summary>
         public ServiceResult<bool> ValidateRoleData(Role role)
         {
-            if (role == null)
-                return ServiceResult<bool>.Failure("角色資料不能為空");
+            try
+            {
+                if (role == null)
+                    return ServiceResult<bool>.Failure("角色資料不能為空");
 
-            if (string.IsNullOrWhiteSpace(role.RoleName))
-                return ServiceResult<bool>.Failure("角色名稱不能為空");
+                if (string.IsNullOrWhiteSpace(role.RoleName))
+                    return ServiceResult<bool>.Failure("角色名稱不能為空");
 
-            if (role.RoleName.Length > 100)
-                return ServiceResult<bool>.Failure("角色名稱長度不能超過100個字元");
+                if (role.RoleName.Length > 100)
+                    return ServiceResult<bool>.Failure("角色名稱長度不能超過100個字元");
 
-            if (!string.IsNullOrEmpty(role.Description) && role.Description.Length > 500)
-                return ServiceResult<bool>.Failure("角色描述長度不能超過500個字元");
+                if (!string.IsNullOrEmpty(role.Description) && role.Description.Length > 500)
+                    return ServiceResult<bool>.Failure("角色描述長度不能超過500個字元");
 
-            return ServiceResult<bool>.Success(true);
+                return ServiceResult<bool>.Success(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating role data");
+                return ServiceResult<bool>.Failure($"驗證角色資料時發生錯誤：{ex.Message}");
+            }
         }        // 覆寫 ValidateAsync 以加入業務驗證
         public override async Task<ServiceResult> ValidateAsync(Role entity)
         {
-            // 執行業務特定驗證
-            var businessValidation = ValidateRoleData(entity);
-            if (!businessValidation.IsSuccess)
-                return ServiceResult.Failure(businessValidation.ErrorMessage);
+            try
+            {
+                // 執行業務特定驗證
+                var businessValidation = ValidateRoleData(entity);
+                if (!businessValidation.IsSuccess)
+                    return ServiceResult.Failure(businessValidation.ErrorMessage);
 
-            // 檢查角色名稱是否已存在
-            var nameCheck = await IsRoleNameExistsAsync(entity.RoleName, entity.Id);
-            if (!nameCheck.IsSuccess)
-                return ServiceResult.Failure(nameCheck.ErrorMessage);
+                // 檢查角色名稱是否已存在
+                var nameCheck = await IsRoleNameExistsAsync(entity.RoleName, entity.Id);
+                if (!nameCheck.IsSuccess)
+                    return ServiceResult.Failure(nameCheck.ErrorMessage);
 
-            if (nameCheck.Data)
-                return ServiceResult.Failure("角色名稱已存在");
+                if (nameCheck.Data)
+                    return ServiceResult.Failure("角色名稱已存在");
 
-            return ServiceResult.Success();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(ValidateAsync),
+                    ServiceType = GetType().Name,
+                    EntityId = entity?.Id,
+                    EntityName = entity?.RoleName 
+                });
+                _logger.LogError(ex, "Error validating role {RoleName}", entity?.RoleName);
+                return ServiceResult.Failure($"驗證角色時發生錯誤：{ex.Message}");
+            }
         }
 
         // 覆寫 SearchAsync 實作搜尋邏輯
         public override async Task<List<Role>> SearchAsync(string searchTerm)
         {
-            var result = await SearchRolesAsync(searchTerm);
-            return result.IsSuccess ? result.Data ?? new List<Role>() : new List<Role>();
+            try
+            {
+                var result = await SearchRolesAsync(searchTerm);
+                return result.IsSuccess ? result.Data ?? new List<Role>() : new List<Role>();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SearchAsync),
+                    ServiceType = GetType().Name,
+                    SearchTerm = searchTerm 
+                });
+                _logger.LogError(ex, "Error in SearchAsync with term {SearchTerm}", searchTerm);
+                return new List<Role>();
+            }
         }
 
         // 覆寫 DeleteAsync 以加入額外檢查
         public override async Task<ServiceResult> DeleteAsync(int id)
         {
-            var canDeleteResult = await CanDeleteRoleAsync(id);
-            if (!canDeleteResult.IsSuccess)
-                return ServiceResult.Failure(canDeleteResult.ErrorMessage);
+            try
+            {
+                var canDeleteResult = await CanDeleteRoleAsync(id);
+                if (!canDeleteResult.IsSuccess)
+                    return ServiceResult.Failure(canDeleteResult.ErrorMessage);
 
-            if (!canDeleteResult.Data)
-                return ServiceResult.Failure("此角色無法刪除，因為仍有員工使用此角色或為系統角色");
+                if (!canDeleteResult.Data)
+                    return ServiceResult.Failure("此角色無法刪除，因為仍有員工使用此角色或為系統角色");
 
-            return await base.DeleteAsync(id);
+                return await base.DeleteAsync(id);
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(DeleteAsync),
+                    ServiceType = GetType().Name,
+                    RoleId = id 
+                });
+                _logger.LogError(ex, "Error deleting role {RoleId}", id);
+                return ServiceResult.Failure($"刪除角色時發生錯誤：{ex.Message}");
+            }
         }
     }
 }

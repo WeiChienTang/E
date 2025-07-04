@@ -8,13 +8,11 @@ namespace ERPCore2.Services
 {
     public class UnitConversionService : GenericManagementService<UnitConversion>, IUnitConversionService
     {
-        private readonly ILogger<UnitConversionService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public UnitConversionService(AppDbContext context, ILogger<UnitConversionService> logger, IErrorLogService errorLogService) : base(context)
+        public UnitConversionService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<UnitConversion>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }
 
         public override async Task<List<UnitConversion>> GetAllAsync()

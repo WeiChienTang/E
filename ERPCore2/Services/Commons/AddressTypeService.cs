@@ -13,13 +13,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class AddressTypeService : GenericManagementService<AddressType>, IAddressTypeService
     {
-        private readonly ILogger<AddressTypeService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public AddressTypeService(AppDbContext context, ILogger<AddressTypeService> logger, IErrorLogService errorLogService) : base(context)
+        public AddressTypeService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<AddressType>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }
 
         // 覆寫 GetAllAsync 以提供自訂排序

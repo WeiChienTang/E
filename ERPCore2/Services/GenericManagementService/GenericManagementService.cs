@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using ERPCore2.Data;
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Enums;
@@ -15,11 +16,23 @@ namespace ERPCore2.Services.GenericManagementService
     {
         protected readonly AppDbContext _context;
         protected readonly DbSet<T> _dbSet;
+        protected readonly ILogger<GenericManagementService<T>> _logger;
+        protected readonly IErrorLogService _errorLogService;
+
+        protected GenericManagementService(
+            AppDbContext context,
+            ILogger<GenericManagementService<T>> logger,
+            IErrorLogService errorLogService)
+        {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _errorLogService = errorLogService ?? throw new ArgumentNullException(nameof(errorLogService));
+            _dbSet = _context.Set<T>();
+        }
 
         protected GenericManagementService(AppDbContext context)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            _dbSet = _context.Set<T>();
+            _context = context;
         }
 
         #region 基本 CRUD 操作
@@ -29,10 +42,19 @@ namespace ERPCore2.Services.GenericManagementService
         /// </summary>
         public virtual async Task<List<T>> GetAllAsync()
         {
-            return await _dbSet
-                .Where(x => !x.IsDeleted)
-                .OrderByDescending(x => x.CreatedAt)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Where(x => !x.IsDeleted)
+                    .OrderByDescending(x => x.CreatedAt)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in GetAllAsync");
+                return new List<T>();
+            }
         }
 
         /// <summary>
@@ -40,10 +62,19 @@ namespace ERPCore2.Services.GenericManagementService
         /// </summary>
         public virtual async Task<List<T>> GetActiveAsync()
         {
-            return await _dbSet
-                .Where(x => !x.IsDeleted && x.Status == EntityStatus.Active)
-                .OrderByDescending(x => x.CreatedAt)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Where(x => !x.IsDeleted && x.Status == EntityStatus.Active)
+                    .OrderByDescending(x => x.CreatedAt)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in GetActiveAsync");
+                return new List<T>();
+            }
         }
 
         /// <summary>
@@ -51,8 +82,17 @@ namespace ERPCore2.Services.GenericManagementService
         /// </summary>
         public virtual async Task<T?> GetByIdAsync(int id)
         {
-            return await _dbSet
-                .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+            try
+            {
+                return await _dbSet
+                    .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in GetByIdAsync");
+                return null;
+            }
         }
 
         /// <summary>
@@ -86,6 +126,8 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in CreateAsync");
                 return ServiceResult<T>.Failure($"建立資料時發生錯誤: {ex.Message}");
             }
         }
@@ -123,6 +165,8 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in UpdateAsync");
                 return ServiceResult<T>.Failure($"更新資料時發生錯誤: {ex.Message}");
             }
         }
@@ -148,6 +192,8 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in DeleteAsync");
                 return ServiceResult.Failure($"刪除資料時發生錯誤: {ex.Message}");
             }
         }
@@ -188,6 +234,8 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in CreateBatchAsync");
                 return ServiceResult<List<T>>.Failure($"批次建立時發生錯誤: {ex.Message}");
             }
         }
@@ -224,6 +272,8 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in UpdateBatchAsync");
                 return ServiceResult<List<T>>.Failure($"批次更新時發生錯誤: {ex.Message}");
             }
         }
@@ -255,6 +305,8 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in DeleteBatchAsync");
                 return ServiceResult.Failure($"批次刪除時發生錯誤: {ex.Message}");
             }
         }
@@ -268,25 +320,34 @@ namespace ERPCore2.Services.GenericManagementService
         /// </summary>
         public virtual async Task<(List<T> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, string? searchTerm = null)
         {
-            var query = _dbSet.Where(x => !x.IsDeleted);
-
-            // 如果有搜尋條件，使用子類別的搜尋邏輯
-            if (!string.IsNullOrEmpty(searchTerm))
+            try
             {
-                var searchResults = await SearchAsync(searchTerm);
-                var searchIds = searchResults.Select(x => x.Id).ToList();
-                query = query.Where(x => searchIds.Contains(x.Id));
+                var query = _dbSet.Where(x => !x.IsDeleted);
+
+                // 如果有搜尋條件，使用子類別的搜尋邏輯
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    var searchResults = await SearchAsync(searchTerm);
+                    var searchIds = searchResults.Select(x => x.Id).ToList();
+                    query = query.Where(x => searchIds.Contains(x.Id));
+                }
+
+                var totalCount = await query.CountAsync();
+                
+                var items = await query
+                    .OrderByDescending(x => x.CreatedAt)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
             }
-
-            var totalCount = await query.CountAsync();
-            
-            var items = await query
-                .OrderByDescending(x => x.CreatedAt)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            return (items, totalCount);
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in GetPagedAsync");
+                return (new List<T>(), 0);
+            }
         }
 
         /// <summary>
@@ -299,7 +360,16 @@ namespace ERPCore2.Services.GenericManagementService
         /// </summary>
         public virtual async Task<bool> ExistsAsync(int id)
         {
-            return await _dbSet.AnyAsync(x => x.Id == id && !x.IsDeleted);
+            try
+            {
+                return await _dbSet.AnyAsync(x => x.Id == id && !x.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in ExistsAsync");
+                return false;
+            }
         }
 
         /// <summary>
@@ -307,7 +377,16 @@ namespace ERPCore2.Services.GenericManagementService
         /// </summary>
         public virtual async Task<int> GetCountAsync()
         {
-            return await _dbSet.CountAsync(x => !x.IsDeleted);
+            try
+            {
+                return await _dbSet.CountAsync(x => !x.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in GetCountAsync");
+                return 0;
+            }
         }
 
         #endregion
@@ -335,6 +414,8 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in SetStatusAsync");
                 return ServiceResult.Failure($"設定狀態時發生錯誤: {ex.Message}");
             }
         }
@@ -363,6 +444,8 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in ToggleStatusAsync");
                 return ServiceResult.Failure($"切換狀態時發生錯誤: {ex.Message}");
             }
         }
@@ -394,6 +477,8 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in SetStatusBatchAsync");
                 return ServiceResult.Failure($"批次設定狀態時發生錯誤: {ex.Message}");
             }
         }
@@ -413,9 +498,18 @@ namespace ERPCore2.Services.GenericManagementService
         /// </summary>
         public virtual async Task<bool> IsNameExistsAsync(string name, int? excludeId = null)
         {
-            // 預設實作：如果實體沒有 Name 屬性，直接回傳 false
-            // 子類別應該覆寫此方法來實作實際的名稱檢查邏輯
-            return await Task.FromResult(false);
+            try
+            {
+                // 預設實作：如果實體沒有 Name 屬性，直接回傳 false
+                // 子類別應該覆寫此方法來實作實際的名稱檢查邏輯
+                return await Task.FromResult(false);
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in IsNameExistsAsync");
+                return false;
+            }
         }
 
         #endregion

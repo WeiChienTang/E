@@ -13,120 +13,169 @@ namespace ERPCore2.Services
     /// </summary>
     public class ProductService : GenericManagementService<Product>, IProductService
     {
-        private readonly ILogger<ProductService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public ProductService(AppDbContext context, ILogger<ProductService> logger, IErrorLogService errorLogService) 
-            : base(context)
+        public ProductService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<Product>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底方法
 
         public override async Task<List<Product>> GetAllAsync()
         {
-            return await _dbSet
-                .Include(p => p.ProductCategory)
-                .Include(p => p.PrimarySupplier)
-                .Include(p => p.Unit)
-                .Where(p => !p.IsDeleted)
-                .OrderBy(p => p.ProductName)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Include(p => p.ProductCategory)
+                    .Include(p => p.PrimarySupplier)
+                    .Include(p => p.Unit)
+                    .Where(p => !p.IsDeleted)
+                    .OrderBy(p => p.ProductName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAllAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting all products");
+                throw;
+            }
         }
 
         public override async Task<Product?> GetByIdAsync(int id)
         {
-            return await _dbSet
-                .Include(p => p.ProductCategory)
-                .Include(p => p.PrimarySupplier)
-                .Include(p => p.Unit)
-                .Include(p => p.ProductSuppliers)
-                    .ThenInclude(ps => ps.Supplier)
-                .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+            try
+            {
+                return await _dbSet
+                    .Include(p => p.ProductCategory)
+                    .Include(p => p.PrimarySupplier)
+                    .Include(p => p.Unit)
+                    .Include(p => p.ProductSuppliers)
+                        .ThenInclude(ps => ps.Supplier)
+                    .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByIdAsync),
+                    Id = id,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting product by ID {Id}", id);
+                throw;
+            }
         }
 
         public override async Task<List<Product>> SearchAsync(string searchTerm)
         {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return await GetAllAsync();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    return await GetAllAsync();
 
-            return await _dbSet
-                .Include(p => p.ProductCategory)
-                .Include(p => p.PrimarySupplier)
-                .Include(p => p.Unit)
-                .Where(p => !p.IsDeleted &&
-                           (p.ProductName.Contains(searchTerm) ||
-                            p.ProductCode.Contains(searchTerm) ||
-                            (p.Description != null && p.Description.Contains(searchTerm)) ||
-                            (p.Specification != null && p.Specification.Contains(searchTerm))))
-                .OrderBy(p => p.ProductName)
-                .ToListAsync();
+                return await _dbSet
+                    .Include(p => p.ProductCategory)
+                    .Include(p => p.PrimarySupplier)
+                    .Include(p => p.Unit)
+                    .Where(p => !p.IsDeleted &&
+                               (p.ProductName.Contains(searchTerm) ||
+                                p.ProductCode.Contains(searchTerm) ||
+                                (p.Description != null && p.Description.Contains(searchTerm)) ||
+                                (p.Specification != null && p.Specification.Contains(searchTerm))))
+                    .OrderBy(p => p.ProductName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SearchAsync),
+                    SearchTerm = searchTerm,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error searching products with term {SearchTerm}", searchTerm);
+                throw;
+            }
         }
 
         public override async Task<ServiceResult> ValidateAsync(Product entity)
         {
-            var errors = new List<string>();
+            try
+            {
+                var errors = new List<string>();
 
-            // 驗證必填欄位
-            if (string.IsNullOrWhiteSpace(entity.ProductCode))
-            {
-                errors.Add("商品代碼為必填欄位");
-            }
-            else
-            {
-                // 檢查商品代碼唯一性
-                var isDuplicate = await IsProductCodeExistsAsync(entity.ProductCode, entity.Id);
-                if (isDuplicate)
+                // 驗證必填欄位
+                if (string.IsNullOrWhiteSpace(entity.ProductCode))
                 {
-                    errors.Add("商品代碼已存在");
+                    errors.Add("商品代碼為必填欄位");
                 }
-            }
-
-            if (string.IsNullOrWhiteSpace(entity.ProductName))
-            {
-                errors.Add("商品名稱為必填欄位");
-            }
-
-            // 驗證價格
-            if (entity.UnitPrice.HasValue && entity.UnitPrice.Value < 0)
-            {
-                errors.Add("單價不能為負數");
-            }
-
-            if (entity.CostPrice.HasValue && entity.CostPrice.Value < 0)
-            {
-                errors.Add("成本價不能為負數");
-            }
-
-            // 驗證庫存警戒值
-            if (entity.MinStockLevel.HasValue && entity.MaxStockLevel.HasValue)
-            {
-                if (entity.MinStockLevel.Value > entity.MaxStockLevel.Value)
+                else
                 {
-                    errors.Add("最低庫存量不能大於最高庫存量");
+                    // 檢查商品代碼唯一性
+                    var isDuplicate = await IsProductCodeExistsAsync(entity.ProductCode, entity.Id);
+                    if (isDuplicate)
+                    {
+                        errors.Add("商品代碼已存在");
+                    }
                 }
-            }
 
-            if (entity.MinStockLevel.HasValue && entity.MinStockLevel.Value < 0)
+                if (string.IsNullOrWhiteSpace(entity.ProductName))
+                {
+                    errors.Add("商品名稱為必填欄位");
+                }
+
+                // 驗證價格
+                if (entity.UnitPrice.HasValue && entity.UnitPrice.Value < 0)
+                {
+                    errors.Add("單價不能為負數");
+                }
+
+                if (entity.CostPrice.HasValue && entity.CostPrice.Value < 0)
+                {
+                    errors.Add("成本價不能為負數");
+                }
+
+                // 驗證庫存警戒值
+                if (entity.MinStockLevel.HasValue && entity.MaxStockLevel.HasValue)
+                {
+                    if (entity.MinStockLevel.Value > entity.MaxStockLevel.Value)
+                    {
+                        errors.Add("最低庫存量不能大於最高庫存量");
+                    }
+                }
+
+                if (entity.MinStockLevel.HasValue && entity.MinStockLevel.Value < 0)
+                {
+                    errors.Add("最低庫存量不能為負數");
+                }
+
+                if (entity.MaxStockLevel.HasValue && entity.MaxStockLevel.Value < 0)
+                {
+                    errors.Add("最高庫存量不能為負數");
+                }
+
+                if (entity.CurrentStock < 0)
+                {
+                    errors.Add("現有庫存不能為負數");
+                }
+
+                return errors.Any() 
+                    ? ServiceResult.Failure(string.Join("; ", errors))
+                    : ServiceResult.Success();
+            }
+            catch (Exception ex)
             {
-                errors.Add("最低庫存量不能為負數");
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(ValidateAsync),
+                    EntityId = entity.Id,
+                    ProductCode = entity.ProductCode,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error validating product {EntityId}", entity.Id);
+                return ServiceResult.Failure($"驗證商品時發生錯誤: {ex.Message}");
             }
-
-            if (entity.MaxStockLevel.HasValue && entity.MaxStockLevel.Value < 0)
-            {
-                errors.Add("最高庫存量不能為負數");
-            }
-
-            if (entity.CurrentStock < 0)
-            {
-                errors.Add("現有庫存不能為負數");
-            }
-
-            return errors.Any() 
-                ? ServiceResult.Failure(string.Join("; ", errors))
-                : ServiceResult.Success();
         }
 
         #endregion
@@ -145,14 +194,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                if (_errorLogService != null)
-                {
-                    await _errorLogService.LogErrorAsync(ex, new { 
-                        Method = nameof(GetByProductCodeAsync),
-                        ProductCode = productCode,
-                        ServiceType = GetType().Name 
-                    });
-                }
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByProductCodeAsync),
+                    ProductCode = productCode,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting product by code {ProductCode}", productCode);
                 throw;
             }
@@ -171,6 +217,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(IsProductCodeExistsAsync),
+                    ProductCode = productCode,
+                    ExcludeId = excludeId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error checking product code exists {ProductCode}", productCode);
                 throw;
             }
@@ -190,6 +242,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByProductCategoryAsync),
+                    ProductCategoryId = productCategoryId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting products by category {ProductCategoryId}", productCategoryId);
                 throw;
             }
@@ -209,6 +266,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByPrimarySupplierAsync),
+                    SupplierId = supplierId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting products by primary supplier {SupplierId}", supplierId);
                 throw;
             }
@@ -228,6 +290,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetActiveProductsAsync),
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting active products");
                 throw;
             }
@@ -249,6 +315,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetLowStockProductsAsync),
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting low stock products");
                 throw;
             }
@@ -270,6 +340,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetOverStockProductsAsync),
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting over stock products");
                 throw;
             }
@@ -287,9 +361,12 @@ namespace ERPCore2.Services
                     .Where(pc => pc.Status == EntityStatus.Active && !pc.IsDeleted)
                     .OrderBy(pc => pc.CategoryName)
                     .ToListAsync();
-            }
-            catch (Exception ex)
+            }            catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetProductCategoriesAsync),
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting product categories");
                 throw;
             }
@@ -306,6 +383,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetSuppliersAsync),
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting suppliers");
                 throw;
             }
@@ -322,6 +403,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetUnitsAsync),
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting units");
                 throw;
             }
@@ -343,6 +428,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetProductSuppliersAsync),
+                    ProductId = productId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting product suppliers for product {ProductId}", productId);
                 throw;
             }
@@ -414,6 +504,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(UpdateProductSuppliersAsync),
+                    ProductId = productId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error updating product suppliers for product {ProductId}", productId);
                 return ServiceResult.Failure($"更新商品供應商關聯時發生錯誤: {ex.Message}");
             }
@@ -437,6 +532,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SetPrimarySupplierAsync),
+                    ProductId = productId,
+                    SupplierId = supplierId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error setting primary supplier for product {ProductId}", productId);
                 return ServiceResult.Failure($"設定主要供應商時發生錯誤: {ex.Message}");
             }
@@ -469,6 +570,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(UpdateStockAsync),
+                    ProductId = productId,
+                    NewStock = newStock,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error updating stock for product {ProductId}", productId);
                 return ServiceResult.Failure($"更新庫存時發生錯誤: {ex.Message}");
             }
@@ -502,6 +609,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(AdjustStockAsync),
+                    ProductId = productId,
+                    Adjustment = adjustment,
+                    Reason = reason,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error adjusting stock for product {ProductId}", productId);
                 return ServiceResult.Failure($"調整庫存時發生錯誤: {ex.Message}");
             }
@@ -541,6 +655,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SetStockLevelsAsync),
+                    ProductId = productId,
+                    MinLevel = minLevel,
+                    MaxLevel = maxLevel,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error setting stock levels for product {ProductId}", productId);
                 return ServiceResult.Failure($"設定庫存警戒值時發生錯誤: {ex.Message}");
             }
@@ -579,6 +700,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(UpdatePricesAsync),
+                    ProductId = productId,
+                    UnitPrice = unitPrice,
+                    CostPrice = costPrice,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error updating prices for product {ProductId}", productId);
                 return ServiceResult.Failure($"更新價格時發生錯誤: {ex.Message}");
             }
@@ -629,6 +757,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(BatchUpdatePricesAsync),
+                    ProductIds = productIds,
+                    PriceAdjustment = priceAdjustment,
+                    IsPercentage = isPercentage,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error batch updating prices");
                 return ServiceResult.Failure($"批次更新價格時發生錯誤: {ex.Message}");
             }
@@ -656,6 +791,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(ToggleActiveStatusAsync),
+                    ProductId = productId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error toggling active status for product {ProductId}", productId);
                 return ServiceResult.Failure($"切換啟用狀態時發生錯誤: {ex.Message}");
             }
@@ -685,6 +825,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(BatchSetActiveStatusAsync),
+                    ProductIds = productIds,
+                    IsActive = isActive,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error batch setting active status");
                 return ServiceResult.Failure($"批次設定啟用狀態時發生錯誤: {ex.Message}");
             }

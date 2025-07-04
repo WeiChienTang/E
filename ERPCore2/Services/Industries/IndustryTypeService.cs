@@ -13,13 +13,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class IndustryTypeService : GenericManagementService<IndustryType>, IIndustryTypeService
     {
-        private readonly ILogger<IndustryTypeService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public IndustryTypeService(AppDbContext context, ILogger<IndustryTypeService> logger, IErrorLogService errorLogService) : base(context)
+        public IndustryTypeService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<IndustryType>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底方法
@@ -46,75 +44,118 @@ namespace ERPCore2.Services
 
         public override async Task<List<IndustryType>> SearchAsync(string searchTerm)
         {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return await GetAllAsync();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    return await GetAllAsync();
 
-            var lowerSearchTerm = searchTerm.ToLower();
-            return await _dbSet
-                .Where(it => !it.IsDeleted &&
-                           (it.IndustryTypeName.ToLower().Contains(lowerSearchTerm) ||
-                            (it.IndustryTypeCode != null && it.IndustryTypeCode.ToLower().Contains(lowerSearchTerm))))
-                .OrderBy(it => it.IndustryTypeName)
-                .ToListAsync();
+                var lowerSearchTerm = searchTerm.ToLower();
+                return await _dbSet
+                    .Where(it => !it.IsDeleted &&
+                               (it.IndustryTypeName.ToLower().Contains(lowerSearchTerm) ||
+                                (it.IndustryTypeCode != null && it.IndustryTypeCode.ToLower().Contains(lowerSearchTerm))))
+                    .OrderBy(it => it.IndustryTypeName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SearchAsync),
+                    ServiceType = GetType().Name,
+                    SearchTerm = searchTerm 
+                });
+                _logger.LogError(ex, "Error searching industry types with term {SearchTerm}", searchTerm);
+                throw;
+            }
         }
 
         public override async Task<ServiceResult> ValidateAsync(IndustryType entity)
         {
-            var errors = new List<string>();
-
-            // 檢查必要欄位
-            if (string.IsNullOrWhiteSpace(entity.IndustryTypeName))
-                errors.Add("行業類型名稱為必填");
-
-            // 檢查長度限制
-            if (entity.IndustryTypeName?.Length > 100)
-                errors.Add("行業類型名稱不可超過100個字元");
-
-            if (!string.IsNullOrEmpty(entity.IndustryTypeCode) && entity.IndustryTypeCode.Length > 10)
-                errors.Add("行業類型代碼不可超過10個字元");
-
-            // 檢查名稱重複
-            if (!string.IsNullOrWhiteSpace(entity.IndustryTypeName))
+            try
             {
-                var isDuplicate = await _dbSet
-                    .Where(it => it.IndustryTypeName == entity.IndustryTypeName && !it.IsDeleted)
-                    .Where(it => it.Id != entity.Id) // 排除自己
-                    .AnyAsync();
+                var errors = new List<string>();
 
-                if (isDuplicate)
-                    errors.Add("行業類型名稱已存在");
+                // 檢查必要欄位
+                if (string.IsNullOrWhiteSpace(entity.IndustryTypeName))
+                    errors.Add("行業類型名稱為必填");
+
+                // 檢查長度限制
+                if (entity.IndustryTypeName?.Length > 100)
+                    errors.Add("行業類型名稱不可超過100個字元");
+
+                if (!string.IsNullOrEmpty(entity.IndustryTypeCode) && entity.IndustryTypeCode.Length > 10)
+                    errors.Add("行業類型代碼不可超過10個字元");
+
+                // 檢查名稱重複
+                if (!string.IsNullOrWhiteSpace(entity.IndustryTypeName))
+                {
+                    var isDuplicate = await _dbSet
+                        .Where(it => it.IndustryTypeName == entity.IndustryTypeName && !it.IsDeleted)
+                        .Where(it => it.Id != entity.Id) // 排除自己
+                        .AnyAsync();
+
+                    if (isDuplicate)
+                        errors.Add("行業類型名稱已存在");
+                }
+
+                // 檢查代碼重複
+                if (!string.IsNullOrWhiteSpace(entity.IndustryTypeCode))
+                {
+                    var isCodeDuplicate = await _dbSet
+                        .Where(it => it.IndustryTypeCode == entity.IndustryTypeCode && !it.IsDeleted)
+                        .Where(it => it.Id != entity.Id) // 排除自己
+                        .AnyAsync();
+
+                    if (isCodeDuplicate)
+                        errors.Add("行業類型代碼已存在");
+                }
+
+                if (errors.Any())
+                    return ServiceResult.Failure(string.Join("; ", errors));
+
+                return ServiceResult.Success();
             }
-
-            // 檢查代碼重複
-            if (!string.IsNullOrWhiteSpace(entity.IndustryTypeCode))
+            catch (Exception ex)
             {
-                var isCodeDuplicate = await _dbSet
-                    .Where(it => it.IndustryTypeCode == entity.IndustryTypeCode && !it.IsDeleted)
-                    .Where(it => it.Id != entity.Id) // 排除自己
-                    .AnyAsync();
-
-                if (isCodeDuplicate)
-                    errors.Add("行業類型代碼已存在");
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(ValidateAsync),
+                    ServiceType = GetType().Name,
+                    EntityId = entity.Id,
+                    EntityName = entity.IndustryTypeName 
+                });
+                _logger.LogError(ex, "Error validating industry type {EntityName} with ID {EntityId}", 
+                    entity.IndustryTypeName, entity.Id);
+                throw;
             }
-
-            if (errors.Any())
-                return ServiceResult.Failure(string.Join("; ", errors));
-
-            return ServiceResult.Success();
         }
 
         protected override async Task<ServiceResult> CanDeleteAsync(IndustryType entity)
         {
-            // 檢查是否有關聯的客戶
-            var hasRelatedCustomers = await _context.Customers
-                .AnyAsync(c => c.IndustryTypeId == entity.Id && !c.IsDeleted);
+            try
+            {
+                // 檢查是否有關聯的客戶
+                var hasRelatedCustomers = await _context.Customers
+                    .AnyAsync(c => c.IndustryTypeId == entity.Id && !c.IsDeleted);
 
-            if (hasRelatedCustomers)
-                return ServiceResult.Failure("無法刪除，此行業類型已被客戶使用");
+                if (hasRelatedCustomers)
+                    return ServiceResult.Failure("無法刪除，此行業類型已被客戶使用");
 
-            return ServiceResult.Success();
-        }        // 移除重複的 DeleteAsync 覆寫，使用基底類別的實作
-        // 基底類別已提供完整的刪除功能，包含 CanDeleteAsync 的檢查
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(CanDeleteAsync),
+                    ServiceType = GetType().Name,
+                    EntityId = entity.Id,
+                    EntityName = entity.IndustryTypeName 
+                });
+                _logger.LogError(ex, "Error checking if industry type can be deleted {EntityName} with ID {EntityId}", 
+                    entity.IndustryTypeName, entity.Id);
+                throw;
+            }
+        }        
+        
 
         #endregion
 
@@ -134,12 +175,32 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(IsNameExistsAsync),
+                    ServiceType = GetType().Name,
+                    Name = name,
+                    ExcludeId = excludeId 
+                });
                 _logger.LogError(ex, "Error checking if industry type name exists {IndustryTypeName}", name);
                 throw;
             }
         }        public async Task<bool> IsIndustryTypeNameExistsAsync(string industryTypeName, int? excludeId = null)
         {
-            return await IsNameExistsAsync(industryTypeName, excludeId);
+            try
+            {
+                return await IsNameExistsAsync(industryTypeName, excludeId);
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(IsIndustryTypeNameExistsAsync),
+                    ServiceType = GetType().Name,
+                    IndustryTypeName = industryTypeName,
+                    ExcludeId = excludeId 
+                });
+                _logger.LogError(ex, "Error checking if industry type name exists {IndustryTypeName}", industryTypeName);
+                throw;
+            }
         }
 
         public async Task<bool> IsIndustryTypeCodeExistsAsync(string industryTypeCode, int? excludeId = null)
@@ -159,12 +220,33 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(IsIndustryTypeCodeExistsAsync),
+                    ServiceType = GetType().Name,
+                    IndustryTypeCode = industryTypeCode,
+                    ExcludeId = excludeId 
+                });
                 _logger.LogError(ex, "Error checking if industry type code exists {IndustryTypeCode}", industryTypeCode);
                 throw;
             }
         }        public async Task<(List<IndustryType> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize)
         {
-            return await GetPagedAsync(pageNumber, pageSize, null);
+            try
+            {
+                return await GetPagedAsync(pageNumber, pageSize, null);
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetPagedAsync),
+                    ServiceType = GetType().Name,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize 
+                });
+                _logger.LogError(ex, "Error getting paged industry types with page {PageNumber} and size {PageSize}", 
+                    pageNumber, pageSize);
+                throw;
+            }
         }
 
         #endregion

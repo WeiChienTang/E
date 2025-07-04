@@ -13,14 +13,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class CustomerContactService : GenericManagementService<CustomerContact>, ICustomerContactService
     {
-        private readonly ILogger<CustomerContactService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public CustomerContactService(AppDbContext context, ILogger<CustomerContactService> logger, IErrorLogService errorLogService)
-            : base(context)
+        public CustomerContactService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<CustomerContact>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底抽象方法
@@ -30,7 +27,9 @@ namespace ERPCore2.Services
             try
             {
                 if (string.IsNullOrWhiteSpace(searchTerm))
-                    return await GetAllAsync();            return await _dbSet
+                    return await GetAllAsync();
+
+                return await _dbSet
                     .Include(cc => cc.Customer)
                     .Include(cc => cc.ContactType)
                     .Where(cc => !cc.IsDeleted &&

@@ -4,6 +4,7 @@ using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace ERPCore2.Services
 {
@@ -14,12 +15,16 @@ namespace ERPCore2.Services
     {
         private readonly AppDbContext _context;
         private readonly IMemoryCache _cache;
+        private readonly ILogger<PermissionService> _logger;
+        private readonly IErrorLogService _errorLogService;
         private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(30);
 
-        public PermissionService(AppDbContext context, IMemoryCache cache)
+        public PermissionService(AppDbContext context, IMemoryCache cache, ILogger<PermissionService> logger, IErrorLogService errorLogService)
         {
             _context = context;
             _cache = cache;
+            _logger = logger;
+            _errorLogService = errorLogService;
         }        /// <summary>
         /// 檢查員工是否具有特定權限
         /// </summary>
@@ -54,6 +59,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(HasPermissionAsync),
+                    ServiceType = GetType().Name,
+                    EmployeeId = employeeId,
+                    PermissionCode = permissionCode 
+                });
+                _logger.LogError(ex, "Error checking permission for employee {EmployeeId} with code {PermissionCode}", employeeId, permissionCode);
                 Console.WriteLine($"💥 PermissionService.HasPermissionAsync 例外: {ex.Message}");
                 return ServiceResult<bool>.Failure($"檢查權限時發生錯誤：{ex.Message}");
             }
@@ -76,6 +88,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(HasAllPermissionsAsync),
+                    ServiceType = GetType().Name,
+                    EmployeeId = employeeId,
+                    PermissionCodes = permissionCodes 
+                });
+                _logger.LogError(ex, "Error checking all permissions for employee {EmployeeId}", employeeId);
                 return ServiceResult<bool>.Failure($"檢查權限時發生錯誤：{ex.Message}");
             }
         }
@@ -97,6 +116,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(HasAnyPermissionAsync),
+                    ServiceType = GetType().Name,
+                    EmployeeId = employeeId,
+                    PermissionCodes = permissionCodes 
+                });
+                _logger.LogError(ex, "Error checking any permission for employee {EmployeeId}", employeeId);
                 return ServiceResult<bool>.Failure($"檢查權限時發生錯誤：{ex.Message}");
             }
         }
@@ -139,6 +165,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetEmployeePermissionsAsync),
+                    ServiceType = GetType().Name,
+                    EmployeeId = employeeId 
+                });
+                _logger.LogError(ex, "Error getting employee permissions for employee {EmployeeId}", employeeId);
                 return ServiceResult<List<Permission>>.Failure($"取得員工權限時發生錯誤：{ex.Message}");
             }
         }
@@ -161,6 +193,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetEmployeePermissionCodesAsync),
+                    ServiceType = GetType().Name,
+                    EmployeeId = employeeId 
+                });
+                _logger.LogError(ex, "Error getting employee permission codes for employee {EmployeeId}", employeeId);
                 return ServiceResult<List<string>>.Failure($"取得員工權限代碼時發生錯誤：{ex.Message}");
             }
         }
@@ -196,6 +234,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetRolePermissionsAsync),
+                    ServiceType = GetType().Name,
+                    RoleId = roleId 
+                });
+                _logger.LogError(ex, "Error getting role permissions for role {RoleId}", roleId);
                 return ServiceResult<List<Permission>>.Failure($"取得角色權限時發生錯誤：{ex.Message}");
             }
         }
@@ -220,6 +264,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(PermissionExistsAsync),
+                    ServiceType = GetType().Name,
+                    PermissionCode = permissionCode 
+                });
+                _logger.LogError(ex, "Error checking if permission exists: {PermissionCode}", permissionCode);
                 return ServiceResult<bool>.Failure($"檢查權限代碼時發生錯誤：{ex.Message}");
             }
         }
@@ -241,6 +291,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(RefreshEmployeePermissionCacheAsync),
+                    ServiceType = GetType().Name,
+                    EmployeeId = employeeId 
+                });
+                _logger.LogError(ex, "Error refreshing employee permission cache for employee {EmployeeId}", employeeId);
                 return ServiceResult.Failure($"刷新員工權限快取時發生錯誤：{ex.Message}");
             }
         }        /// <summary>
@@ -258,6 +314,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error clearing all permission cache");
                 return Task.FromResult(ServiceResult.Failure($"清除權限快取時發生錯誤：{ex.Message}"));
             }
         }        /// <summary>
@@ -279,6 +336,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetModulePermissionsAsync),
+                    ServiceType = GetType().Name,
+                    ModulePrefix = modulePrefix 
+                });
+                _logger.LogError(ex, "Error getting module permissions for prefix {ModulePrefix}", modulePrefix);
                 return ServiceResult<List<Permission>>.Failure($"取得模組權限時發生錯誤：{ex.Message}");
             }
         }
@@ -303,6 +366,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(CanAccessModuleAsync),
+                    ServiceType = GetType().Name,
+                    EmployeeId = employeeId,
+                    ModulePrefix = modulePrefix 
+                });
+                _logger.LogError(ex, "Error checking module access for employee {EmployeeId} and module {ModulePrefix}", employeeId, modulePrefix);
                 return ServiceResult<bool>.Failure($"檢查模組存取權限時發生錯誤：{ex.Message}");
             }
         }

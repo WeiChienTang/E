@@ -13,13 +13,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class CustomerService : GenericManagementService<Customer>, ICustomerService
     {
-        private readonly ILogger<CustomerService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public CustomerService(AppDbContext context, ILogger<CustomerService> logger, IErrorLogService errorLogService) : base(context)
+        public CustomerService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<Customer>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底方法
@@ -273,6 +271,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetCustomerTypesAsync),
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting customer types");
                 throw;
             }
@@ -289,6 +291,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetIndustryTypesAsync),
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting industry types");
                 throw;
             }
@@ -305,6 +311,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetContactTypesAsync),
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting contact types");
                 throw;
             }
@@ -319,6 +329,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAddressTypesAsync),
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting address types");
                 throw;
             }
@@ -340,6 +354,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SearchCustomerTypesAsync),
+                    Keyword = keyword,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error searching customer types with keyword: {Keyword}", keyword);
                 throw;
             }
@@ -361,6 +380,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SearchIndustryTypesAsync),
+                    Keyword = keyword,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error searching industry types with keyword: {Keyword}", keyword);
                 throw;
             }
@@ -382,6 +406,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetCustomerContactsAsync),
+                    CustomerId = customerId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting customer contacts for customer {CustomerId}", customerId);
                 throw;
             }
@@ -428,6 +457,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(UpdateCustomerContactsAsync),
+                    CustomerId = customerId,
+                    ContactsCount = contacts?.Count ?? 0,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error updating customer contacts for customer {CustomerId}", customerId);
                 return ServiceResult.Failure("更新客戶聯絡資料時發生錯誤");
             }
@@ -439,31 +474,55 @@ namespace ERPCore2.Services
 
         public void InitializeNewCustomer(Customer customer)
         {
-            customer.CustomerCode = string.Empty;
-            customer.CompanyName = string.Empty;
-            customer.ContactPerson = string.Empty;
-            customer.TaxNumber = string.Empty;
-            customer.CustomerTypeId = null;
-            customer.IndustryTypeId = null;
-            customer.Status = EntityStatus.Active;
+            try
+            {
+                customer.CustomerCode = string.Empty;
+                customer.CompanyName = string.Empty;
+                customer.ContactPerson = string.Empty;
+                customer.TaxNumber = string.Empty;
+                customer.CustomerTypeId = null;
+                customer.IndustryTypeId = null;
+                customer.Status = EntityStatus.Active;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error initializing new customer");
+                throw;
+            }
         }
 
         public int GetBasicRequiredFieldsCount()
         {
-            return 2; // CustomerCode, CompanyName
+            try
+            {
+                return 2; // CustomerCode, CompanyName
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting basic required fields count");
+                throw;
+            }
         }
 
         public int GetBasicCompletedFieldsCount(Customer customer)
         {
-            int count = 0;
+            try
+            {
+                int count = 0;
 
-            if (!string.IsNullOrWhiteSpace(customer.CustomerCode))
-                count++;
+                if (!string.IsNullOrWhiteSpace(customer.CustomerCode))
+                    count++;
 
-            if (!string.IsNullOrWhiteSpace(customer.CompanyName))
-                count++;
+                if (!string.IsNullOrWhiteSpace(customer.CompanyName))
+                    count++;
 
-            return count;
+                return count;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting basic completed fields count for customer {CustomerId}", customer?.Id ?? 0);
+                throw;
+            }
         }
 
         #endregion

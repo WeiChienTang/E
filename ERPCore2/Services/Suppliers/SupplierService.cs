@@ -12,13 +12,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class SupplierService : GenericManagementService<Supplier>, ISupplierService
     {
-        private readonly ILogger<SupplierService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public SupplierService(AppDbContext context, ILogger<SupplierService> logger, IErrorLogService errorLogService) : base(context)
+        public SupplierService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<Supplier>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底方法
@@ -72,59 +70,86 @@ namespace ERPCore2.Services
 
         public override async Task<List<Supplier>> SearchAsync(string searchTerm)
         {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return await GetAllAsync();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    return await GetAllAsync();
 
-            return await _dbSet
-                .Include(s => s.SupplierType)
-                .Include(s => s.IndustryType)
-                .Where(s => !s.IsDeleted &&
-                           (s.CompanyName.Contains(searchTerm) ||
-                            s.SupplierCode.Contains(searchTerm) ||
-                            (s.ContactPerson != null && s.ContactPerson.Contains(searchTerm)) ||
-                            (s.TaxNumber != null && s.TaxNumber.Contains(searchTerm))))
-                .OrderBy(s => s.CompanyName)
-                .ToListAsync();
+                return await _dbSet
+                    .Include(s => s.SupplierType)
+                    .Include(s => s.IndustryType)
+                    .Where(s => !s.IsDeleted &&
+                               (s.CompanyName.Contains(searchTerm) ||
+                                s.SupplierCode.Contains(searchTerm) ||
+                                (s.ContactPerson != null && s.ContactPerson.Contains(searchTerm)) ||
+                                (s.TaxNumber != null && s.TaxNumber.Contains(searchTerm))))
+                    .OrderBy(s => s.CompanyName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SearchAsync),
+                    SearchTerm = searchTerm,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error searching suppliers with term {SearchTerm}", searchTerm);
+                throw;
+            }
         }        public override async Task<ServiceResult> ValidateAsync(Supplier entity)
         {
-            var errors = new List<string>();
-
-            // 驗證必填欄位
-            if (string.IsNullOrWhiteSpace(entity.SupplierCode))
+            try
             {
-                errors.Add("廠商代碼為必填欄位");
-            }
+                var errors = new List<string>();
 
-            if (string.IsNullOrWhiteSpace(entity.CompanyName))
-            {
-                errors.Add("公司名稱為必填欄位");
-            }
-
-            // 驗證廠商代碼唯一性
-            if (!string.IsNullOrWhiteSpace(entity.SupplierCode))
-            {
-                var isDuplicate = await IsSupplierCodeExistsAsync(entity.SupplierCode, entity.Id);
-                if (isDuplicate)
+                // 驗證必填欄位
+                if (string.IsNullOrWhiteSpace(entity.SupplierCode))
                 {
-                    errors.Add("廠商代碼已存在");
+                    errors.Add("廠商代碼為必填欄位");
                 }
-            }
 
-            // 驗證統一編號格式（如果有提供）
-            if (!string.IsNullOrWhiteSpace(entity.TaxNumber) && entity.TaxNumber.Length != 8)
+                if (string.IsNullOrWhiteSpace(entity.CompanyName))
+                {
+                    errors.Add("公司名稱為必填欄位");
+                }
+
+                // 驗證廠商代碼唯一性
+                if (!string.IsNullOrWhiteSpace(entity.SupplierCode))
+                {
+                    var isDuplicate = await IsSupplierCodeExistsAsync(entity.SupplierCode, entity.Id);
+                    if (isDuplicate)
+                    {
+                        errors.Add("廠商代碼已存在");
+                    }
+                }
+
+                // 驗證統一編號格式（如果有提供）
+                if (!string.IsNullOrWhiteSpace(entity.TaxNumber) && entity.TaxNumber.Length != 8)
+                {
+                    errors.Add("統一編號必須為8位數字");
+                }
+
+                // 驗證信用額度
+                if (entity.CreditLimit.HasValue && entity.CreditLimit.Value < 0)
+                {
+                    errors.Add("信用額度不能為負數");
+                }
+
+                return errors.Any() 
+                    ? ServiceResult.Failure(string.Join("; ", errors))
+                    : ServiceResult.Success();
+            }
+            catch (Exception ex)
             {
-                errors.Add("統一編號必須為8位數字");
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(ValidateAsync),
+                    EntityId = entity.Id,
+                    SupplierCode = entity.SupplierCode,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error validating supplier {SupplierCode}", entity.SupplierCode);
+                throw;
             }
-
-            // 驗證信用額度
-            if (entity.CreditLimit.HasValue && entity.CreditLimit.Value < 0)
-            {
-                errors.Add("信用額度不能為負數");
-            }
-
-            return errors.Any() 
-                ? ServiceResult.Failure(string.Join("; ", errors))
-                : ServiceResult.Success();
         }
 
         #endregion
@@ -142,6 +167,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetBySupplierCodeAsync),
+                    SupplierCode = supplierCode,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting supplier by code {SupplierCode}", supplierCode);
                 throw;
             }
@@ -160,6 +190,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(IsSupplierCodeExistsAsync),
+                    SupplierCode = supplierCode,
+                    ExcludeId = excludeId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error checking supplier code exists {SupplierCode}", supplierCode);
                 throw;
             }
@@ -178,6 +214,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetBySupplierTypeAsync),
+                    SupplierTypeId = supplierTypeId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting suppliers by type {SupplierTypeId}", supplierTypeId);
                 throw;
             }
@@ -196,6 +237,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByIndustryTypeAsync),
+                    IndustryTypeId = industryTypeId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting suppliers by industry type {IndustryTypeId}", industryTypeId);
                 throw;
             }
@@ -216,6 +262,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetSupplierTypesAsync),
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting supplier types");
                 throw;
             }
@@ -232,6 +282,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetIndustryTypesAsync),
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting industry types");
                 throw;
             }
@@ -253,6 +307,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetSupplierContactsAsync),
+                    SupplierId = supplierId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting supplier contacts for supplier {SupplierId}", supplierId);
                 throw;
             }
@@ -316,6 +375,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(UpdateSupplierContactsAsync),
+                    SupplierId = supplierId,
+                    ContactsCount = contacts.Count,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error updating supplier contacts for supplier {SupplierId}", supplierId);
                 return ServiceResult.Failure($"更新廠商聯絡資料時發生錯誤: {ex.Message}");
             }
@@ -337,6 +402,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetSupplierAddressesAsync),
+                    SupplierId = supplierId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting supplier addresses for supplier {SupplierId}", supplierId);
                 throw;
             }
@@ -396,6 +466,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(UpdateSupplierAddressesAsync),
+                    SupplierId = supplierId,
+                    AddressesCount = addresses.Count,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error updating supplier addresses for supplier {SupplierId}", supplierId);
                 return ServiceResult.Failure($"更新廠商地址資料時發生錯誤: {ex.Message}");
             }
@@ -423,6 +499,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(UpdateSupplierStatusAsync),
+                    SupplierId = supplierId,
+                    Status = status,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error updating supplier status for supplier {SupplierId}", supplierId);
                 return ServiceResult.Failure($"更新廠商狀態時發生錯誤: {ex.Message}");
             }

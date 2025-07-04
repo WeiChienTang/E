@@ -14,13 +14,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class EmployeeService : GenericManagementService<Employee>, IEmployeeService
     {
-        private readonly ILogger<EmployeeService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public EmployeeService(AppDbContext context, ILogger<EmployeeService> logger, IErrorLogService errorLogService) : base(context)
+        public EmployeeService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<Employee>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }        // 覆寫 GetAllAsync 以載入相關資料
         public override async Task<List<Employee>> GetAllAsync()
         {
@@ -48,13 +46,26 @@ namespace ERPCore2.Services
         }        // 覆寫 GetByIdAsync 以載入相關資料
         public override async Task<Employee?> GetByIdAsync(int id)
         {
-            return await _dbSet
-                .Include(e => e.Role)
-                .Include(e => e.EmployeeContacts)
-                    .ThenInclude(ec => ec.ContactType)
-                .Include(e => e.EmployeeAddresses)
-                    .ThenInclude(ea => ea.AddressType)
-                .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
+            try
+            {
+                return await _dbSet
+                    .Include(e => e.Role)
+                    .Include(e => e.EmployeeContacts)
+                        .ThenInclude(ec => ec.ContactType)
+                    .Include(e => e.EmployeeAddresses)
+                        .ThenInclude(ea => ea.AddressType)
+                    .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByIdAsync),
+                    ServiceType = GetType().Name,
+                    EmployeeId = id
+                });
+                _logger.LogError(ex, "Error getting employee by ID: {EmployeeId}", id);
+                throw;
+            }
         }
 
         /// <summary>
@@ -78,6 +89,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByUsernameAsync),
+                    ServiceType = GetType().Name,
+                    Username = username
+                });
+                _logger.LogError(ex, "Error getting employee by username: {Username}", username);
                 return ServiceResult<Employee>.Failure($"取得員工資料時發生錯誤：{ex.Message}");
             }
         }
@@ -103,6 +120,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByEmployeeCodeAsync),
+                    ServiceType = GetType().Name,
+                    EmployeeCode = employeeCode
+                });
+                _logger.LogError(ex, "Error getting employee by employee code: {EmployeeCode}", employeeCode);
                 return ServiceResult<Employee>.Failure($"取得員工資料時發生錯誤：{ex.Message}");
             }
         }
@@ -127,6 +150,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(IsUsernameExistsAsync),
+                    ServiceType = GetType().Name,
+                    Username = username,
+                    ExcludeEmployeeId = excludeEmployeeId
+                });
+                _logger.LogError(ex, "Error checking username exists: {Username}", username);
                 return ServiceResult<bool>.Failure($"檢查使用者名稱時發生錯誤：{ex.Message}");
             }
         }
@@ -151,6 +181,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(IsEmployeeCodeExistsAsync),
+                    ServiceType = GetType().Name,
+                    EmployeeCode = employeeCode,
+                    ExcludeEmployeeId = excludeEmployeeId
+                });
+                _logger.LogError(ex, "Error checking employee code exists: {EmployeeCode}", employeeCode);
                 return ServiceResult<bool>.Failure($"檢查員工編號時發生錯誤：{ex.Message}");
             }
         }
@@ -178,6 +215,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SearchEmployeesAsync),
+                    ServiceType = GetType().Name,
+                    SearchTerm = searchTerm
+                });
+                _logger.LogError(ex, "Error searching employees: {SearchTerm}", searchTerm);
                 return ServiceResult<List<Employee>>.Failure($"搜尋員工時發生錯誤：{ex.Message}");
             }
         }
@@ -199,6 +242,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetEmployeesByRoleAsync),
+                    ServiceType = GetType().Name,
+                    RoleId = roleId
+                });
+                _logger.LogError(ex, "Error getting employees by role: {RoleId}", roleId);
                 return ServiceResult<List<Employee>>.Failure($"取得角色員工時發生錯誤：{ex.Message}");
             }
         }
@@ -223,6 +272,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetEmployeesByDepartmentAsync),
+                    ServiceType = GetType().Name,
+                    Department = department
+                });
+                _logger.LogError(ex, "Error getting employees by department: {Department}", department);
                 return ServiceResult<List<Employee>>.Failure($"取得部門員工時發生錯誤：{ex.Message}");
             }
         }
@@ -252,6 +307,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(ChangeEmployeeRoleAsync),
+                    ServiceType = GetType().Name,
+                    EmployeeId = employeeId,
+                    NewRoleId = newRoleId
+                });
+                _logger.LogError(ex, "Error changing employee role: {EmployeeId}, {NewRoleId}", employeeId, newRoleId);
                 return ServiceResult.Failure($"變更員工角色時發生錯誤：{ex.Message}");
             }
         }
@@ -268,6 +330,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SetEmployeeActiveStatusAsync),
+                    ServiceType = GetType().Name,
+                    EmployeeId = employeeId,
+                    IsActive = isActive
+                });
+                _logger.LogError(ex, "Error setting employee active status: {EmployeeId}, {IsActive}", employeeId, isActive);
                 return ServiceResult.Failure($"設定員工狀態時發生錯誤：{ex.Message}");
             }
         }
@@ -289,6 +358,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetActiveEmployeesAsync),
+                    ServiceType = GetType().Name
+                });
+                _logger.LogError(ex, "Error getting active employees");
                 return ServiceResult<List<Employee>>.Failure($"取得啟用員工清單時發生錯誤：{ex.Message}");
             }
         }
@@ -298,33 +372,43 @@ namespace ERPCore2.Services
         /// </summary>
         public ServiceResult<bool> ValidateEmployeeData(Employee employee)
         {
-            if (employee == null)
-                return ServiceResult<bool>.Failure("員工資料不能為空");
+            try
+            {
+                if (employee == null)
+                    return ServiceResult<bool>.Failure("員工資料不能為空");
 
-            // 驗證必要欄位
-            if (string.IsNullOrWhiteSpace(employee.FirstName))
-                return ServiceResult<bool>.Failure("名字不能為空");
+                // 驗證必要欄位
+                if (string.IsNullOrWhiteSpace(employee.FirstName))
+                    return ServiceResult<bool>.Failure("名字不能為空");
 
-            if (string.IsNullOrWhiteSpace(employee.LastName))
-                return ServiceResult<bool>.Failure("姓氏不能為空");
+                if (string.IsNullOrWhiteSpace(employee.LastName))
+                    return ServiceResult<bool>.Failure("姓氏不能為空");
 
-            if (string.IsNullOrWhiteSpace(employee.EmployeeCode))
-                return ServiceResult<bool>.Failure("員工編號不能為空");
+                if (string.IsNullOrWhiteSpace(employee.EmployeeCode))
+                    return ServiceResult<bool>.Failure("員工編號不能為空");
 
-            if (string.IsNullOrWhiteSpace(employee.Username))
-                return ServiceResult<bool>.Failure("使用者名稱不能為空");
+                if (string.IsNullOrWhiteSpace(employee.Username))
+                    return ServiceResult<bool>.Failure("使用者名稱不能為空");
 
-            // 驗證員工編號格式
-            if (!Regex.IsMatch(employee.EmployeeCode, @"^[A-Z0-9]+$"))
-                return ServiceResult<bool>.Failure("員工編號只能包含大寫字母和數字");            // 驗證使用者名稱格式
-            if (!Regex.IsMatch(employee.Username, @"^[a-zA-Z0-9_]+$"))
-                return ServiceResult<bool>.Failure("使用者名稱只能包含英文字母、數字和底線");
+                // 驗證員工編號格式
+                if (!Regex.IsMatch(employee.EmployeeCode, @"^[A-Z0-9]+$"))
+                    return ServiceResult<bool>.Failure("員工編號只能包含大寫字母和數字");
 
-            // 驗證角色ID
-            if (employee.RoleId <= 0)
-                return ServiceResult<bool>.Failure("必須指定有效的角色");
+                // 驗證使用者名稱格式
+                if (!Regex.IsMatch(employee.Username, @"^[a-zA-Z0-9_]+$"))
+                    return ServiceResult<bool>.Failure("使用者名稱只能包含英文字母、數字和底線");
 
-            return ServiceResult<bool>.Success(true);
+                // 驗證角色ID
+                if (employee.RoleId <= 0)
+                    return ServiceResult<bool>.Failure("必須指定有效的角色");
+
+                return ServiceResult<bool>.Success(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating employee data");
+                return ServiceResult<bool>.Failure($"驗證員工資料時發生錯誤：{ex.Message}");
+            }
         }
 
         /// <summary>
@@ -356,80 +440,117 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GenerateNextEmployeeCodeAsync),
+                    ServiceType = GetType().Name,
+                    Prefix = prefix
+                });
+                _logger.LogError(ex, "Error generating next employee code: {Prefix}", prefix);
                 return ServiceResult<string>.Failure($"產生員工編號時發生錯誤：{ex.Message}");
             }
         }        /// <summary>
         /// 驗證員工資料
         /// </summary>
-        public override async Task<ServiceResult> ValidateAsync(Employee entity)        {
-            var errors = new List<string>();
-
-            // 檢查必要欄位
-            if (string.IsNullOrWhiteSpace(entity.Username))
-                errors.Add("使用者名稱為必填");
-
-            if (string.IsNullOrWhiteSpace(entity.FirstName))
-                errors.Add("名字為必填");
-
-            if (string.IsNullOrWhiteSpace(entity.LastName))
-                errors.Add("姓氏為必填");
-
-            // 檢查長度限制
-            if (entity.Username?.Length > 50)
-                errors.Add("使用者名稱不可超過50個字元");            if (entity.FirstName?.Length > 50)
-                errors.Add("名字不可超過50個字元");
-
-            if (entity.LastName?.Length > 50)
-                errors.Add("姓氏不可超過50個字元");
-
-            if (!string.IsNullOrEmpty(entity.EmployeeCode) && entity.EmployeeCode.Length > 20)
-                errors.Add("員工代碼不可超過20個字元");
-
-            // 檢查使用者名稱是否重複
-            if (!string.IsNullOrWhiteSpace(entity.Username))
+        public override async Task<ServiceResult> ValidateAsync(Employee entity)
+        {
+            try
             {
-                var isDuplicate = await _dbSet
-                    .Where(e => e.Username == entity.Username && !e.IsDeleted)
-                    .Where(e => e.Id != entity.Id) // 排除自己
-                    .AnyAsync();
+                var errors = new List<string>();
 
-                if (isDuplicate)
-                    errors.Add("使用者名稱已存在");
+                // 檢查必要欄位
+                if (string.IsNullOrWhiteSpace(entity.Username))
+                    errors.Add("使用者名稱為必填");
+
+                if (string.IsNullOrWhiteSpace(entity.FirstName))
+                    errors.Add("名字為必填");
+
+                if (string.IsNullOrWhiteSpace(entity.LastName))
+                    errors.Add("姓氏為必填");
+
+                // 檢查長度限制
+                if (entity.Username?.Length > 50)
+                    errors.Add("使用者名稱不可超過50個字元");
+
+                if (entity.FirstName?.Length > 50)
+                    errors.Add("名字不可超過50個字元");
+
+                if (entity.LastName?.Length > 50)
+                    errors.Add("姓氏不可超過50個字元");
+
+                if (!string.IsNullOrEmpty(entity.EmployeeCode) && entity.EmployeeCode.Length > 20)
+                    errors.Add("員工代碼不可超過20個字元");
+
+                // 檢查使用者名稱是否重複
+                if (!string.IsNullOrWhiteSpace(entity.Username))
+                {
+                    var isDuplicate = await _dbSet
+                        .Where(e => e.Username == entity.Username && !e.IsDeleted)
+                        .Where(e => e.Id != entity.Id) // 排除自己
+                        .AnyAsync();
+
+                    if (isDuplicate)
+                        errors.Add("使用者名稱已存在");
+                }
+
+                // 檢查員工代碼是否重複
+                if (!string.IsNullOrWhiteSpace(entity.EmployeeCode))
+                {
+                    var isCodeDuplicate = await _dbSet
+                        .Where(e => e.EmployeeCode == entity.EmployeeCode && !e.IsDeleted)
+                        .Where(e => e.Id != entity.Id) // 排除自己
+                        .AnyAsync();
+
+                    if (isCodeDuplicate)
+                        errors.Add("員工代碼已存在");
+                }
+
+                // 檢查角色是否存在
+                if (entity.RoleId > 0)
+                {
+                    var roleExists = await _context.Roles
+                        .AnyAsync(r => r.Id == entity.RoleId && !r.IsDeleted && r.Status == EntityStatus.Active);
+
+                    if (!roleExists)
+                        errors.Add("指定的角色不存在或已停用");
+                }
+                else
+                {
+                    errors.Add("必須指定有效的角色");
+                }
+
+                if (errors.Any())
+                    return ServiceResult.Failure(string.Join("; ", errors));
+
+                return ServiceResult.Success();
             }
-
-            // 檢查員工代碼是否重複
-            if (!string.IsNullOrWhiteSpace(entity.EmployeeCode))
+            catch (Exception ex)
             {
-                var isCodeDuplicate = await _dbSet
-                    .Where(e => e.EmployeeCode == entity.EmployeeCode && !e.IsDeleted)
-                    .Where(e => e.Id != entity.Id) // 排除自己
-                    .AnyAsync();
-
-                if (isCodeDuplicate)
-                    errors.Add("員工代碼已存在");
-            }            // 檢查角色是否存在
-            if (entity.RoleId > 0)
-            {
-                var roleExists = await _context.Roles
-                    .AnyAsync(r => r.Id == entity.RoleId && !r.IsDeleted && r.Status == EntityStatus.Active);
-
-                if (!roleExists)
-                    errors.Add("指定的角色不存在或已停用");
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(ValidateAsync),
+                    ServiceType = GetType().Name,
+                    EntityId = entity?.Id
+                });
+                _logger.LogError(ex, "Error validating employee: {EntityId}", entity?.Id);
+                return ServiceResult.Failure($"驗證員工資料時發生錯誤：{ex.Message}");
             }
-            else
-            {
-                errors.Add("必須指定有效的角色");
-            }
-
-            if (errors.Any())
-                return ServiceResult.Failure(string.Join("; ", errors));
-
-            return ServiceResult.Success();
         }        // 覆寫 SearchAsync 實作搜尋邏輯
         public override async Task<List<Employee>> SearchAsync(string searchTerm)
         {
-            var result = await SearchEmployeesAsync(searchTerm);
-            return result.IsSuccess ? result.Data ?? new List<Employee>() : new List<Employee>();
+            try
+            {
+                var result = await SearchEmployeesAsync(searchTerm);
+                return result.IsSuccess ? result.Data ?? new List<Employee>() : new List<Employee>();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SearchAsync),
+                    ServiceType = GetType().Name,
+                    SearchTerm = searchTerm
+                });
+                _logger.LogError(ex, "Error in SearchAsync: {SearchTerm}", searchTerm);
+                return new List<Employee>();
+            }
         }
 
         #region 聯絡資料與地址管理        /// <summary>
@@ -469,6 +590,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(UpdateEmployeeContactsAsync),
+                    ServiceType = GetType().Name,
+                    EmployeeId = employeeId
+                });
+                _logger.LogError(ex, "Error updating employee contacts: {EmployeeId}", employeeId);
                 return ServiceResult.Failure($"更新員工聯絡資料失敗：{ex.Message}");
             }
         }
@@ -513,6 +640,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(UpdateEmployeeAddressesAsync),
+                    ServiceType = GetType().Name,
+                    EmployeeId = employeeId
+                });
+                _logger.LogError(ex, "Error updating employee addresses: {EmployeeId}", employeeId);
                 return ServiceResult.Failure($"更新員工地址資料失敗：{ex.Message}");
             }
         }

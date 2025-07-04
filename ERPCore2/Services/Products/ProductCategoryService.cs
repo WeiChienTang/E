@@ -12,13 +12,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class ProductCategoryService : GenericManagementService<ProductCategory>, IProductCategoryService
     {
-        private readonly ILogger<ProductCategoryService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public ProductCategoryService(AppDbContext context, ILogger<ProductCategoryService> logger, IErrorLogService errorLogService) : base(context)
+        public ProductCategoryService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<ProductCategory>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底方法
@@ -68,81 +66,135 @@ namespace ERPCore2.Services
 
         public override async Task<List<ProductCategory>> SearchAsync(string searchTerm)
         {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return await GetAllAsync();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    return await GetAllAsync();
 
-            return await _dbSet
-                .Include(pc => pc.ParentCategory)
-                .Where(pc => !pc.IsDeleted &&
-                           (pc.CategoryName.Contains(searchTerm) ||
-                            (pc.CategoryCode != null && pc.CategoryCode.Contains(searchTerm)) ||
-                            (pc.Description != null && pc.Description.Contains(searchTerm))))
-                .OrderBy(pc => pc.CategoryName)
-                .ToListAsync();
+                return await _dbSet
+                    .Include(pc => pc.ParentCategory)
+                    .Where(pc => !pc.IsDeleted &&
+                               (pc.CategoryName.Contains(searchTerm) ||
+                                (pc.CategoryCode != null && pc.CategoryCode.Contains(searchTerm)) ||
+                                (pc.Description != null && pc.Description.Contains(searchTerm))))
+                    .OrderBy(pc => pc.CategoryName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SearchAsync),
+                    SearchTerm = searchTerm,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error searching product categories with term {SearchTerm}", searchTerm);
+                throw;
+            }
         }
 
         public override async Task<ServiceResult> ValidateAsync(ProductCategory entity)
         {
-            var errors = new List<string>();
+            try
+            {
+                var errors = new List<string>();
 
-            // 驗證必填欄位
-            if (string.IsNullOrWhiteSpace(entity.CategoryName))
-            {
-                errors.Add("分類名稱為必填欄位");
-            }
-            else
-            {
-                // 檢查名稱是否重複
-                var isDuplicate = await IsCategoryNameExistsAsync(entity.CategoryName, entity.Id);
-                if (isDuplicate)
+                // 驗證必填欄位
+                if (string.IsNullOrWhiteSpace(entity.CategoryName))
                 {
-                    errors.Add("分類名稱已存在");
+                    errors.Add("分類名稱為必填欄位");
                 }
-            }
-
-            // 驗證分類代碼唯一性（如果有提供）
-            if (!string.IsNullOrWhiteSpace(entity.CategoryCode))
-            {
-                var isDuplicate = await IsCategoryCodeExistsAsync(entity.CategoryCode, entity.Id);
-                if (isDuplicate)
+                else
                 {
-                    errors.Add("分類代碼已存在");
-                }
-            }
-
-            // 驗證父分類設定（避免循環參考）
-            if (entity.ParentCategoryId.HasValue)
-            {
-                if (entity.ParentCategoryId.Value == entity.Id)
-                {
-                    errors.Add("不能設定自己為父分類");
-                }
-                else if (entity.Id != 0) // 只有更新時才檢查
-                {
-                    var canSetAsParent = await CanSetAsParentAsync(entity.Id, entity.ParentCategoryId.Value);
-                    if (!canSetAsParent)
+                    // 檢查名稱是否重複
+                    var isDuplicate = await IsCategoryNameExistsAsync(entity.CategoryName, entity.Id);
+                    if (isDuplicate)
                     {
-                        errors.Add("不能設定此分類為父分類，會造成循環參考");
+                        errors.Add("分類名稱已存在");
                     }
                 }
-            }
 
-            return errors.Any() 
-                ? ServiceResult.Failure(string.Join("; ", errors))
-                : ServiceResult.Success();
+                // 驗證分類代碼唯一性（如果有提供）
+                if (!string.IsNullOrWhiteSpace(entity.CategoryCode))
+                {
+                    var isDuplicate = await IsCategoryCodeExistsAsync(entity.CategoryCode, entity.Id);
+                    if (isDuplicate)
+                    {
+                        errors.Add("分類代碼已存在");
+                    }
+                }
+
+                // 驗證父分類設定（避免循環參考）
+                if (entity.ParentCategoryId.HasValue)
+                {
+                    if (entity.ParentCategoryId.Value == entity.Id)
+                    {
+                        errors.Add("不能設定自己為父分類");
+                    }
+                    else if (entity.Id != 0) // 只有更新時才檢查
+                    {
+                        var canSetAsParent = await CanSetAsParentAsync(entity.Id, entity.ParentCategoryId.Value);
+                        if (!canSetAsParent)
+                        {
+                            errors.Add("不能設定此分類為父分類，會造成循環參考");
+                        }
+                    }
+                }
+
+                return errors.Any() 
+                    ? ServiceResult.Failure(string.Join("; ", errors))
+                    : ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(ValidateAsync),
+                    EntityId = entity.Id,
+                    CategoryName = entity.CategoryName,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error validating product category {CategoryName}", entity.CategoryName);
+                throw;
+            }
         }
 
         public override async Task<bool> IsNameExistsAsync(string name, int? excludeId = null)
         {
-            return await IsCategoryNameExistsAsync(name, excludeId);
+            try
+            {
+                return await IsCategoryNameExistsAsync(name, excludeId);
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(IsNameExistsAsync),
+                    Name = name,
+                    ExcludeId = excludeId,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error checking if name exists {Name}", name);
+                throw;
+            }
         }
 
         protected override async Task<ServiceResult> CanDeleteAsync(ProductCategory entity)
         {
-            var canDelete = await CanDeleteCategoryAsync(entity.Id);
-            return canDelete 
-                ? ServiceResult.Success() 
-                : ServiceResult.Failure("無法刪除此商品分類，因為有商品或子分類正在使用此分類");
+            try
+            {
+                var canDelete = await CanDeleteCategoryAsync(entity.Id);
+                return canDelete 
+                    ? ServiceResult.Success() 
+                    : ServiceResult.Failure("無法刪除此商品分類，因為有商品或子分類正在使用此分類");
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(CanDeleteAsync),
+                    EntityId = entity.Id,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error checking if category can be deleted {CategoryId}", entity.Id);
+                throw;
+            }
         }
 
         #endregion
@@ -162,6 +214,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(IsCategoryNameExistsAsync),
+                    CategoryName = categoryName,
+                    ExcludeId = excludeId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error checking category name exists {CategoryName}", categoryName);
                 throw;
             }
@@ -180,6 +238,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(IsCategoryCodeExistsAsync),
+                    CategoryCode = categoryCode,
+                    ExcludeId = excludeId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error checking category code exists {CategoryCode}", categoryCode);
                 throw;
             }
@@ -195,6 +259,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByCategoryNameAsync),
+                    CategoryName = categoryName,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting category by name {CategoryName}", categoryName);
                 throw;
             }
@@ -210,6 +279,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByCategoryCodeAsync),
+                    CategoryCode = categoryCode,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting category by code {CategoryCode}", categoryCode);
                 throw;
             }
@@ -226,6 +300,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetTopLevelCategoriesAsync),
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting top level categories");
                 throw;
             }
@@ -242,6 +320,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetChildCategoriesAsync),
+                    ParentCategoryId = parentCategoryId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting child categories for parent {ParentCategoryId}", parentCategoryId);
                 throw;
             }
@@ -260,6 +343,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetCategoryTreeAsync),
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting category tree");
                 throw;
             }
@@ -284,6 +371,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(CanDeleteCategoryAsync),
+                    CategoryId = categoryId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error checking if category can be deleted {CategoryId}", categoryId);
                 throw;
             }
@@ -310,6 +402,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(CanSetAsParentAsync),
+                    CategoryId = categoryId,
+                    ParentCategoryId = parentCategoryId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error checking if can set as parent {CategoryId} -> {ParentCategoryId}", 
                     categoryId, parentCategoryId);
                 throw;

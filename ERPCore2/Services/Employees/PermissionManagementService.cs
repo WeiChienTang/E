@@ -14,13 +14,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class PermissionManagementService : GenericManagementService<Permission>, IPermissionManagementService
     {
-        private readonly ILogger<PermissionManagementService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public PermissionManagementService(AppDbContext context, ILogger<PermissionManagementService> logger, IErrorLogService errorLogService) : base(context)
+        public PermissionManagementService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<Permission>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }
 
         // 覆寫 GetAllAsync 以提供排序
@@ -123,6 +121,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(IsPermissionCodeExistsAsync),
+                    PermissionCode = permissionCode,
+                    ExcludePermissionId = excludePermissionId,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error checking permission code exists {PermissionCode}", permissionCode);
                 return ServiceResult<bool>.Failure($"檢查權限代碼時發生錯誤：{ex.Message}");
             }
         }
@@ -145,6 +150,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAllModulesAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting all modules");
                 return ServiceResult<List<string>>.Failure($"取得模組清單時發生錯誤：{ex.Message}");
             }
         }
@@ -189,6 +199,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(CreatePermissionsBatchAsync),
+                    PermissionCount = permissions?.Count,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error creating permissions batch with {PermissionCount} permissions", permissions?.Count);
                 return ServiceResult.Failure($"批次建立權限時發生錯誤：{ex.Message}");
             }
         }
@@ -266,6 +282,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(InitializeDefaultPermissionsAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error initializing default permissions");
                 return ServiceResult.Failure($"初始化預設權限時發生錯誤：{ex.Message}");
             }
         }
@@ -280,7 +301,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return ServiceResult<List<Permission>>.Success(await GetAllAsync());
 
-                var permissions = await _dbSet                    .Where(p => !p.IsDeleted && 
+                var permissions = await _dbSet
+                    .Where(p => !p.IsDeleted && 
                                (p.PermissionCode.Contains(searchTerm) ||
                                 p.PermissionName.Contains(searchTerm) ||
                                 (p.Remarks != null && p.Remarks.Contains(searchTerm))))
@@ -291,6 +313,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SearchPermissionsAsync),
+                    SearchTerm = searchTerm,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error searching permissions with term {SearchTerm}", searchTerm);
                 return ServiceResult<List<Permission>>.Failure($"搜尋權限時發生錯誤：{ex.Message}");
             }
         }
@@ -328,38 +356,65 @@ namespace ERPCore2.Services
         }        // 覆寫 ValidateAsync 以加入業務驗證
         public override async Task<ServiceResult> ValidateAsync(Permission entity)
         {
-            // 驗證權限代碼格式
-            var codeValidation = ValidatePermissionCode(entity.PermissionCode);
-            if (!codeValidation.IsSuccess)
-                return ServiceResult.Failure(codeValidation.ErrorMessage);
+            try
+            {
+                // 驗證權限代碼格式
+                var codeValidation = ValidatePermissionCode(entity.PermissionCode);
+                if (!codeValidation.IsSuccess)
+                    return ServiceResult.Failure(codeValidation.ErrorMessage);
 
-            // 檢查權限代碼是否已存在
-            var existsResult = await IsPermissionCodeExistsAsync(entity.PermissionCode, entity.Id);
-            if (!existsResult.IsSuccess)
-                return ServiceResult.Failure(existsResult.ErrorMessage);
+                // 檢查權限代碼是否已存在
+                var existsResult = await IsPermissionCodeExistsAsync(entity.PermissionCode, entity.Id);
+                if (!existsResult.IsSuccess)
+                    return ServiceResult.Failure(existsResult.ErrorMessage);
 
-            if (existsResult.Data)
-                return ServiceResult.Failure("權限代碼已存在");
+                if (existsResult.Data)
+                    return ServiceResult.Failure("權限代碼已存在");
 
-            // 檢查權限名稱
-            if (string.IsNullOrWhiteSpace(entity.PermissionName))
-                return ServiceResult.Failure("權限名稱不能為空");
+                // 檢查權限名稱
+                if (string.IsNullOrWhiteSpace(entity.PermissionName))
+                    return ServiceResult.Failure("權限名稱不能為空");
 
-            if (entity.PermissionName.Length > 100)
-                return ServiceResult.Failure("權限名稱長度不能超過100個字元");
+                if (entity.PermissionName.Length > 100)
+                    return ServiceResult.Failure("權限名稱長度不能超過100個字元");
 
-            // 檢查備註長度
-            if (!string.IsNullOrEmpty(entity.Remarks) && entity.Remarks.Length > 500)
-                return ServiceResult.Failure("權限備註長度不能超過500個字元");
+                // 檢查備註長度
+                if (!string.IsNullOrEmpty(entity.Remarks) && entity.Remarks.Length > 500)
+                    return ServiceResult.Failure("權限備註長度不能超過500個字元");
 
-            return ServiceResult.Success();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(ValidateAsync),
+                    EntityId = entity?.Id,
+                    PermissionCode = entity?.PermissionCode,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error validating permission {PermissionCode}", entity?.PermissionCode);
+                return ServiceResult.Failure($"驗證權限時發生錯誤：{ex.Message}");
+            }
         }
 
         // 覆寫 SearchAsync 實作搜尋邏輯
         public override async Task<List<Permission>> SearchAsync(string searchTerm)
         {
-            var result = await SearchPermissionsAsync(searchTerm);
-            return result.IsSuccess ? result.Data ?? new List<Permission>() : new List<Permission>();
+            try
+            {
+                var result = await SearchPermissionsAsync(searchTerm);
+                return result.IsSuccess ? result.Data ?? new List<Permission>() : new List<Permission>();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SearchAsync),
+                    SearchTerm = searchTerm,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in SearchAsync with term {SearchTerm}", searchTerm);
+                return new List<Permission>();
+            }
         }
 
         // 覆寫 DeleteAsync 以檢查是否有角色使用該權限
@@ -378,6 +433,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(DeleteAsync),
+                    PermissionId = id,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error deleting permission {PermissionId}", id);
                 return ServiceResult.Failure($"刪除權限時發生錯誤：{ex.Message}");
             }
         }

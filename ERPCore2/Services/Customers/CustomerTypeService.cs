@@ -13,14 +13,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class CustomerTypeService : GenericManagementService<CustomerType>, ICustomerTypeService
     {
-        private readonly ILogger<CustomerTypeService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public CustomerTypeService(AppDbContext context, ILogger<CustomerTypeService> logger, IErrorLogService errorLogService)
-            : base(context)
+        public CustomerTypeService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<CustomerType>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底抽象方法
@@ -53,48 +50,76 @@ namespace ERPCore2.Services
 
         public override async Task<ServiceResult> ValidateAsync(CustomerType entity)
         {
-            var errors = new List<string>();
+            try
+            {
+                var errors = new List<string>();
 
-            // 驗證名稱
-            if (string.IsNullOrWhiteSpace(entity.TypeName))
-            {
-                errors.Add("客戶類型名稱不能為空");
-            }
-            else if (entity.TypeName.Length > 100)
-            {
-                errors.Add("客戶類型名稱長度不能超過100個字元");
-            }
-            else
-            {
-                // 檢查名稱是否重複
-                var isDuplicate = await IsNameExistsAsync(entity.TypeName, entity.Id > 0 ? entity.Id : null);
-                if (isDuplicate)
+                // 驗證名稱
+                if (string.IsNullOrWhiteSpace(entity.TypeName))
                 {
-                    errors.Add("客戶類型名稱已存在");
+                    errors.Add("客戶類型名稱不能為空");
                 }
-            }
+                else if (entity.TypeName.Length > 100)
+                {
+                    errors.Add("客戶類型名稱長度不能超過100個字元");
+                }
+                else
+                {
+                    // 檢查名稱是否重複
+                    var isDuplicate = await IsNameExistsAsync(entity.TypeName, entity.Id > 0 ? entity.Id : null);
+                    if (isDuplicate)
+                    {
+                        errors.Add("客戶類型名稱已存在");
+                    }
+                }
 
-            // 驗證描述
-            if (!string.IsNullOrWhiteSpace(entity.Description) && entity.Description.Length > 500)
+                // 驗證描述
+                if (!string.IsNullOrWhiteSpace(entity.Description) && entity.Description.Length > 500)
+                {
+                    errors.Add("描述長度不能超過500個字元");
+                }
+
+                return errors.Any() 
+                    ? ServiceResult.Failure(string.Join("; ", errors))
+                    : ServiceResult.Success();
+            }
+            catch (Exception ex)
             {
-                errors.Add("描述長度不能超過500個字元");
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(ValidateAsync),
+                    EntityId = entity.Id,
+                    EntityTypeName = entity.TypeName,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error validating customer type with ID {EntityId}", entity.Id);
+                return ServiceResult.Failure("驗證客戶類型時發生錯誤");
             }
-
-            return errors.Any() 
-                ? ServiceResult.Failure(string.Join("; ", errors))
-                : ServiceResult.Success();
         }
 
         public override async Task<bool> IsNameExistsAsync(string name, int? excludeId = null)
         {
-            var query = _dbSet.Where(ct => ct.TypeName == name && !ct.IsDeleted);
-            
-            if (excludeId.HasValue)
+            try
             {
-                query = query.Where(ct => ct.Id != excludeId.Value);
-            }
+                var query = _dbSet.Where(ct => ct.TypeName == name && !ct.IsDeleted);
+                
+                if (excludeId.HasValue)
+                {
+                    query = query.Where(ct => ct.Id != excludeId.Value);
+                }
 
-            return await query.AnyAsync();
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(IsNameExistsAsync),
+                    Name = name,
+                    ExcludeId = excludeId,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error checking if customer type name exists: {Name}", name);
+                return false;
+            }
         }
 
         #endregion
@@ -103,10 +128,22 @@ namespace ERPCore2.Services
 
         public override async Task<List<CustomerType>> GetAllAsync()
         {
-            return await _dbSet
-                .Where(ct => !ct.IsDeleted)
-                .OrderBy(ct => ct.TypeName)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Where(ct => !ct.IsDeleted)
+                    .OrderBy(ct => ct.TypeName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAllAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting all customer types");
+                throw;
+            }
         }
 
         public override async Task<ServiceResult> DeleteAsync(int id)
@@ -134,6 +171,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(DeleteAsync),
+                    Id = id,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error deleting customer type with ID {Id}", id);
                 return ServiceResult.Failure("刪除客戶類型時發生錯誤");
             }
@@ -161,6 +203,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(IsTypeNameExistsAsync),
+                    TypeName = typeName,
+                    ExcludeId = excludeId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error checking if customer type name exists: {TypeName}", typeName);
                 return false;
             }
@@ -185,6 +233,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetPagedAsync),
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting paged customer types. Page: {PageNumber}, Size: {PageSize}", 
                     pageNumber, pageSize);
                 return (new List<CustomerType>(), 0);
@@ -223,6 +277,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(DeleteBatchWithValidationAsync),
+                    IdsCount = ids?.Count,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error batch deleting customer types");
                 return ServiceResult.Failure("批次刪除客戶類型時發生錯誤");
             }

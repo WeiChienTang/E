@@ -12,13 +12,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class SupplierContactService : GenericManagementService<SupplierContact>, ISupplierContactService
     {
-        private readonly ILogger<SupplierContactService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public SupplierContactService(AppDbContext context, ILogger<SupplierContactService> logger, IErrorLogService errorLogService) : base(context)
+        public SupplierContactService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<SupplierContact>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底方法
@@ -71,42 +69,51 @@ namespace ERPCore2.Services
 
         public override async Task<ServiceResult> ValidateAsync(SupplierContact entity)
         {
-            var errors = new List<string>();
-
-            // 驗證必填欄位
-            if (entity.SupplierId <= 0)
+            try
             {
-                errors.Add("廠商為必填欄位");
-            }
+                var errors = new List<string>();
 
-            if (string.IsNullOrWhiteSpace(entity.ContactValue))
-            {
-                errors.Add("聯絡內容為必填欄位");
-            }
-
-            // 驗證聯絡內容格式（基本驗證）
-            if (!string.IsNullOrWhiteSpace(entity.ContactValue))
-            {
-                if (entity.ContactValue.Length > 100)
+                // 驗證必填欄位
+                if (entity.SupplierId <= 0)
                 {
-                    errors.Add("聯絡內容不可超過100個字元");
+                    errors.Add("廠商為必填欄位");
                 }
 
-                // 如果有聯絡類型，可以根據類型進行格式驗證
-                if (entity.ContactTypeId.HasValue)
+                if (string.IsNullOrWhiteSpace(entity.ContactValue))
                 {
-                    var contactType = await _context.ContactTypes.FindAsync(entity.ContactTypeId.Value);
-                    if (contactType != null)
+                    errors.Add("聯絡內容為必填欄位");
+                }
+
+                // 驗證聯絡內容格式（基本驗證）
+                if (!string.IsNullOrWhiteSpace(entity.ContactValue))
+                {
+                    if (entity.ContactValue.Length > 100)
                     {
-                        // 可以在這裡添加特定聯絡類型的格式驗證
-                        // 例如：Email 格式、電話號碼格式等
+                        errors.Add("聯絡內容不可超過100個字元");
+                    }
+
+                    // 如果有聯絡類型，可以根據類型進行格式驗證
+                    if (entity.ContactTypeId.HasValue)
+                    {
+                        var contactType = await _context.ContactTypes.FindAsync(entity.ContactTypeId.Value);
+                        if (contactType != null)
+                        {
+                            // 可以在這裡添加特定聯絡類型的格式驗證
+                            // 例如：Email 格式、電話號碼格式等
+                        }
                     }
                 }
-            }
 
-            return errors.Any() 
-                ? ServiceResult.Failure(string.Join("; ", errors))
-                : ServiceResult.Success();
+                return errors.Any() 
+                    ? ServiceResult.Failure(string.Join("; ", errors))
+                    : ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in ValidateAsync for supplier contact");
+                return ServiceResult.Failure($"驗證時發生錯誤: {ex.Message}");
+            }
         }
 
         #endregion
@@ -125,6 +132,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error getting supplier contacts for supplier {SupplierId}", supplierId);
                 throw;
             }
@@ -143,6 +151,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error getting supplier contacts by type {ContactTypeId}", contactTypeId);
                 throw;
             }
@@ -158,6 +167,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error getting primary contact for supplier {SupplierId}", supplierId);
                 throw;
             }
@@ -175,6 +185,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error getting contact by type for supplier {SupplierId}, type {ContactTypeId}", 
                     supplierId, contactTypeId);
                 throw;
@@ -218,6 +229,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error setting primary contact {ContactId}", contactId);
                 return ServiceResult.Failure($"設定主要聯絡方式時發生錯誤: {ex.Message}");
             }
@@ -243,6 +255,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error copying contact to supplier {TargetSupplierId}", targetSupplierId);
                 return ServiceResult<SupplierContact>.Failure($"複製聯絡方式時發生錯誤: {ex.Message}");
             }
@@ -275,6 +288,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error ensuring supplier has primary contact {SupplierId}", supplierId);
                 return ServiceResult.Failure($"確保主要聯絡方式時發生錯誤: {ex.Message}");
             }
@@ -296,6 +310,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error getting contacts with default for supplier {SupplierId}", supplierId);
                 throw;
             }
@@ -352,6 +367,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error updating supplier contacts for supplier {SupplierId}", supplierId);
                 return ServiceResult.Failure($"更新廠商聯絡方式時發生錯誤: {ex.Message}");
             }

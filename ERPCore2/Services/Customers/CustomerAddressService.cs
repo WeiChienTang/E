@@ -14,13 +14,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class CustomerAddressService : GenericManagementService<CustomerAddress>, ICustomerAddressService
     {
-        private readonly ILogger<CustomerAddressService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public CustomerAddressService(AppDbContext context, ILogger<CustomerAddressService> logger, IErrorLogService errorLogService) : base(context)
+        public CustomerAddressService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<CustomerAddress>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底方法
@@ -406,58 +404,96 @@ namespace ERPCore2.Services
 
         public CustomerAddress CreateNewAddress(int customerId, int addressCount)
         {
-            return new CustomerAddress
+            try
             {
-                CustomerId = customerId,
-                AddressTypeId = null,
-                PostalCode = string.Empty,
-                City = string.Empty,
-                District = string.Empty,
-                Address = string.Empty,
-                IsPrimary = addressCount == 0, // 第一個地址預設為主要
-                Status = EntityStatus.Active
-            };
+                return new CustomerAddress
+                {
+                    CustomerId = customerId,
+                    AddressTypeId = null,
+                    PostalCode = string.Empty,
+                    City = string.Empty,
+                    District = string.Empty,
+                    Address = string.Empty,
+                    IsPrimary = addressCount == 0, // 第一個地址預設為主要
+                    Status = EntityStatus.Active
+                };
+            }
+            catch (Exception ex)
+            {
+                _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error creating new address for customer {CustomerId}", customerId);
+                
+                // 返回預設地址
+                return new CustomerAddress
+                {
+                    CustomerId = customerId,
+                    AddressTypeId = null,
+                    PostalCode = string.Empty,
+                    City = string.Empty,
+                    District = string.Empty,
+                    Address = string.Empty,
+                    IsPrimary = true,
+                    Status = EntityStatus.Active
+                };
+            }
         }
 
         public void InitializeDefaultAddresses(List<CustomerAddress> addressList, List<AddressType> addressTypes)
         {
-            // 確保有基本的地址類型
-            var defaultTypes = new[] { "營業地址", "聯絡地址", "發票地址" };
-
-            foreach (var typeName in defaultTypes)
+            try
             {
-                var addressType = addressTypes.FirstOrDefault(at => at.TypeName == typeName);
-                if (addressType != null && !addressList.Any(a => a.AddressTypeId == addressType.Id))
+                // 確保有基本的地址類型
+                var defaultTypes = new[] { "營業地址", "聯絡地址", "發票地址" };
+
+                foreach (var typeName in defaultTypes)
                 {
-                    var newAddress = new CustomerAddress
+                    var addressType = addressTypes.FirstOrDefault(at => at.TypeName == typeName);
+                    if (addressType != null && !addressList.Any(a => a.AddressTypeId == addressType.Id))
                     {
-                        AddressTypeId = addressType.Id,
-                        PostalCode = string.Empty,
-                        City = string.Empty,
-                        District = string.Empty,
-                        Address = string.Empty,
-                        IsPrimary = addressList.Count == 0,
-                        Status = EntityStatus.Active
-                    };
-                    addressList.Add(newAddress);
+                        var newAddress = new CustomerAddress
+                        {
+                            AddressTypeId = addressType.Id,
+                            PostalCode = string.Empty,
+                            City = string.Empty,
+                            District = string.Empty,
+                            Address = string.Empty,
+                            IsPrimary = addressList.Count == 0,
+                            Status = EntityStatus.Active
+                        };
+                        addressList.Add(newAddress);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error initializing default addresses");
             }
         }
 
         public int? GetDefaultAddressTypeId(int addressCount, List<AddressType> addressTypes)
         {
-            // 根據地址數量決定預設的地址類型
-            var defaultTypes = new[] { "營業地址", "聯絡地址", "發票地址" };
-            
-            if (addressCount < defaultTypes.Length)
+            try
             {
-                var typeName = defaultTypes[addressCount];
-                var addressType = addressTypes.FirstOrDefault(at => at.TypeName == typeName);
-                return addressType?.Id;
+                // 根據地址數量決定預設的地址類型
+                var defaultTypes = new[] { "營業地址", "聯絡地址", "發票地址" };
+                
+                if (addressCount < defaultTypes.Length)
+                {
+                    var typeName = defaultTypes[addressCount];
+                    var addressType = addressTypes.FirstOrDefault(at => at.TypeName == typeName);
+                    return addressType?.Id;
+                }
+                
+                // 如果超出預設類型，返回第一個可用的類型
+                return addressTypes.FirstOrDefault()?.Id;
             }
-            
-            // 如果超出預設類型，返回第一個可用的類型
-            return addressTypes.FirstOrDefault()?.Id;
+            catch (Exception ex)
+            {
+                _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error getting default address type id for address count {AddressCount}", addressCount);
+                return null;
+            }
         }
 
         public ServiceResult AddAddress(List<CustomerAddress> addressList, CustomerAddress newAddress)
@@ -473,6 +509,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error adding address to list");
                 return ServiceResult.Failure("新增地址時發生錯誤");
             }
@@ -498,6 +535,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error removing address at index {Index}", index);
                 return ServiceResult.Failure("移除地址時發生錯誤");
             }
@@ -523,6 +561,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error setting primary address at index {Index}", index);
                 return ServiceResult.Failure("設定主要地址時發生錯誤");
             }
@@ -551,6 +590,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error copying address from first to index {TargetIndex}", targetIndex);
                 return ServiceResult.Failure("複製地址時發生錯誤");
             }
@@ -572,6 +612,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error updating address type at index {Index}", index);
                 return ServiceResult.Failure("更新地址類型時發生錯誤");
             }
@@ -592,6 +633,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error updating postal code at index {Index}", index);
                 return ServiceResult.Failure("更新郵遞區號時發生錯誤");
             }
@@ -612,6 +654,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error updating city at index {Index}", index);
                 return ServiceResult.Failure("更新城市時發生錯誤");
             }
@@ -632,6 +675,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error updating district at index {Index}", index);
                 return ServiceResult.Failure("更新行政區時發生錯誤");
             }
@@ -652,6 +696,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error updating address at index {Index}", index);
                 return ServiceResult.Failure("更新地址時發生錯誤");
             }
@@ -663,107 +708,143 @@ namespace ERPCore2.Services
 
         public ServiceResult ValidateAddressList(List<CustomerAddress> addresses)
         {
-            var errors = new List<string>();
-
-            if (addresses == null || addresses.Count == 0)
+            try
             {
-                errors.Add("至少需要一個地址");
-                return ServiceResult.Failure(string.Join("; ", errors));
+                var errors = new List<string>();
+
+                if (addresses == null || addresses.Count == 0)
+                {
+                    errors.Add("至少需要一個地址");
+                    return ServiceResult.Failure(string.Join("; ", errors));
+                }
+
+                // 檢查是否有主要地址
+                var primaryCount = addresses.Count(a => a.IsPrimary);
+                if (primaryCount == 0)
+                    errors.Add("必須指定一個主要地址");
+                else if (primaryCount > 1)
+                    errors.Add("只能有一個主要地址");
+
+                // 驗證每個地址
+                for (int i = 0; i < addresses.Count; i++)
+                {
+                    var address = addresses[i];
+
+                    if (!string.IsNullOrEmpty(address.PostalCode) && address.PostalCode.Length > 10)
+                        errors.Add($"第{i + 1}個地址的郵遞區號不可超過10個字元");
+
+                    if (!string.IsNullOrEmpty(address.City) && address.City.Length > 50)
+                        errors.Add($"第{i + 1}個地址的城市不可超過50個字元");
+
+                    if (!string.IsNullOrEmpty(address.District) && address.District.Length > 50)
+                        errors.Add($"第{i + 1}個地址的行政區不可超過50個字元");
+
+                    if (!string.IsNullOrEmpty(address.Address) && address.Address.Length > 200)
+                        errors.Add($"第{i + 1}個地址的地址不可超過200個字元");
+                }
+
+                if (errors.Any())
+                    return ServiceResult.Failure(string.Join("; ", errors));
+
+                return ServiceResult.Success();
             }
-
-            // 檢查是否有主要地址
-            var primaryCount = addresses.Count(a => a.IsPrimary);
-            if (primaryCount == 0)
-                errors.Add("必須指定一個主要地址");
-            else if (primaryCount > 1)
-                errors.Add("只能有一個主要地址");
-
-            // 驗證每個地址
-            for (int i = 0; i < addresses.Count; i++)
+            catch (Exception ex)
             {
-                var address = addresses[i];
-
-                if (!string.IsNullOrEmpty(address.PostalCode) && address.PostalCode.Length > 10)
-                    errors.Add($"第{i + 1}個地址的郵遞區號不可超過10個字元");
-
-                if (!string.IsNullOrEmpty(address.City) && address.City.Length > 50)
-                    errors.Add($"第{i + 1}個地址的城市不可超過50個字元");
-
-                if (!string.IsNullOrEmpty(address.District) && address.District.Length > 50)
-                    errors.Add($"第{i + 1}個地址的行政區不可超過50個字元");
-
-                if (!string.IsNullOrEmpty(address.Address) && address.Address.Length > 200)
-                    errors.Add($"第{i + 1}個地址的地址不可超過200個字元");
+                _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error validating address list");
+                return ServiceResult.Failure("驗證地址清單時發生錯誤");
             }
-
-            if (errors.Any())
-                return ServiceResult.Failure(string.Join("; ", errors));
-
-            return ServiceResult.Success();
         }
 
         public ServiceResult EnsurePrimaryAddressExists(List<CustomerAddress> addresses)
         {
-            if (addresses == null || addresses.Count == 0)
-                return ServiceResult.Failure("沒有地址資料");
+            try
+            {
+                if (addresses == null || addresses.Count == 0)
+                    return ServiceResult.Failure("沒有地址資料");
 
-            // 檢查是否有主要地址
-            var primaryCount = addresses.Count(a => a.IsPrimary);
-              if (primaryCount == 0)
-            {
-                // 如果沒有主要地址，將第一個設為主要
-                addresses[0].IsPrimary = true;
-                return ServiceResult.Success();
-            }
-            else if (primaryCount > 1)
-            {
-                // 如果有多個主要地址，只保留第一個
-                bool firstPrimaryFound = false;
-                foreach (var address in addresses)
+                // 檢查是否有主要地址
+                var primaryCount = addresses.Count(a => a.IsPrimary);
+                if (primaryCount == 0)
                 {
-                    if (address.IsPrimary)
+                    // 如果沒有主要地址，將第一個設為主要
+                    addresses[0].IsPrimary = true;
+                    return ServiceResult.Success();
+                }
+                else if (primaryCount > 1)
+                {
+                    // 如果有多個主要地址，只保留第一個
+                    bool firstPrimaryFound = false;
+                    foreach (var address in addresses)
                     {
-                        if (firstPrimaryFound)
+                        if (address.IsPrimary)
                         {
-                            address.IsPrimary = false;
-                        }
-                        else
-                        {
-                            firstPrimaryFound = true;
+                            if (firstPrimaryFound)
+                            {
+                                address.IsPrimary = false;
+                            }
+                            else
+                            {
+                                firstPrimaryFound = true;
+                            }
                         }
                     }
+                    return ServiceResult.Success();
                 }
+
                 return ServiceResult.Success();
             }
-
-            return ServiceResult.Success();
+            catch (Exception ex)
+            {
+                _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error ensuring primary address exists");
+                return ServiceResult.Failure("確保主要地址存在時發生錯誤");
+            }
         }        public int GetCompletedAddressCount(List<CustomerAddress> addresses)
         {
-            if (addresses == null)
-                return 0;
+            try
+            {
+                if (addresses == null)
+                    return 0;
 
-            return addresses.Count(a =>
-                !string.IsNullOrWhiteSpace(a.Address) &&
-                !string.IsNullOrWhiteSpace(a.City));
+                return addresses.Count(a =>
+                    !string.IsNullOrWhiteSpace(a.Address) &&
+                    !string.IsNullOrWhiteSpace(a.City));
+            }
+            catch (Exception ex)
+            {
+                _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error getting completed address count");
+                return 0;
+            }
         }
 
         public int GetAddressCompletedFieldsCount(List<CustomerAddress> addresses)
         {
-            if (addresses == null || !addresses.Any())
-                return 0;
-
-            int completedFields = 0;
-            
-            foreach (var address in addresses)
+            try
             {
-                if (address.AddressTypeId > 0) completedFields++;
-                if (!string.IsNullOrWhiteSpace(address.PostalCode)) completedFields++;
-                if (!string.IsNullOrWhiteSpace(address.City)) completedFields++;
-                if (!string.IsNullOrWhiteSpace(address.District)) completedFields++;
-                if (!string.IsNullOrWhiteSpace(address.Address)) completedFields++;
-            }
+                if (addresses == null || !addresses.Any())
+                    return 0;
 
-            return completedFields;
+                int completedFields = 0;
+                
+                foreach (var address in addresses)
+                {
+                    if (address.AddressTypeId > 0) completedFields++;
+                    if (!string.IsNullOrWhiteSpace(address.PostalCode)) completedFields++;
+                    if (!string.IsNullOrWhiteSpace(address.City)) completedFields++;
+                    if (!string.IsNullOrWhiteSpace(address.District)) completedFields++;
+                    if (!string.IsNullOrWhiteSpace(address.Address)) completedFields++;
+                }
+
+                return completedFields;
+            }
+            catch (Exception ex)
+            {
+                _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error getting address completed fields count");
+                return 0;
+            }
         }
 
         #endregion

@@ -12,13 +12,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class SizeService : GenericManagementService<Size>, ISizeService
     {
-        private readonly ILogger<SizeService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public SizeService(AppDbContext context, ILogger<SizeService> logger, IErrorLogService errorLogService) : base(context)
+        public SizeService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<Size>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底方法

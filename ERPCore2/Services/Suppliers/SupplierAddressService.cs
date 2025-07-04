@@ -12,45 +12,68 @@ namespace ERPCore2.Services
     /// </summary>
     public class SupplierAddressService : GenericManagementService<SupplierAddress>, ISupplierAddressService
     {
-        private readonly ILogger<SupplierAddressService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public SupplierAddressService(AppDbContext context, ILogger<SupplierAddressService> logger, IErrorLogService errorLogService) : base(context)
+        public SupplierAddressService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<SupplierAddress>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底方法
 
         public override async Task<List<SupplierAddress>> GetAllAsync()
         {
-            return await _dbSet
-                .Include(sa => sa.Supplier)
-                .Include(sa => sa.AddressType)
-                .Where(sa => !sa.IsDeleted)
-                .OrderBy(sa => sa.Supplier.CompanyName)
-                .ThenBy(sa => sa.AddressType!.TypeName)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Include(sa => sa.Supplier)
+                    .Include(sa => sa.AddressType)
+                    .Where(sa => !sa.IsDeleted)
+                    .OrderBy(sa => sa.Supplier.CompanyName)
+                    .ThenBy(sa => sa.AddressType!.TypeName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAllAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in GetAllAsync");
+                throw;
+            }
         }
 
         public override async Task<List<SupplierAddress>> SearchAsync(string searchTerm)
         {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return await GetAllAsync();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    return await GetAllAsync();
 
-            return await _dbSet
-                .Include(sa => sa.Supplier)
-                .Include(sa => sa.AddressType)
-                .Where(sa => !sa.IsDeleted &&
-                           ((sa.Address != null && sa.Address.Contains(searchTerm)) ||
-                            (sa.City != null && sa.City.Contains(searchTerm)) ||
-                            (sa.District != null && sa.District.Contains(searchTerm)) ||
-                            (sa.PostalCode != null && sa.PostalCode.Contains(searchTerm)) ||
-                            sa.Supplier.CompanyName.Contains(searchTerm)))
-                .OrderBy(sa => sa.Supplier.CompanyName)
-                .ThenBy(sa => sa.AddressType!.TypeName)
-                .ToListAsync();
+                return await _dbSet
+                    .Include(sa => sa.Supplier)
+                    .Include(sa => sa.AddressType)
+                    .Where(sa => !sa.IsDeleted &&
+                               ((sa.Address != null && sa.Address.Contains(searchTerm)) ||
+                                (sa.City != null && sa.City.Contains(searchTerm)) ||
+                                (sa.District != null && sa.District.Contains(searchTerm)) ||
+                                (sa.PostalCode != null && sa.PostalCode.Contains(searchTerm)) ||
+                                sa.Supplier.CompanyName.Contains(searchTerm)))
+                    .OrderBy(sa => sa.Supplier.CompanyName)
+                    .ThenBy(sa => sa.AddressType!.TypeName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SearchAsync),
+                    ServiceType = GetType().Name,
+                    SearchTerm = searchTerm
+                });
+                _logger.LogError(ex, "Error in SearchAsync with term: {SearchTerm}", searchTerm);
+                throw;
+            }
         }
 
         public override Task<ServiceResult> ValidateAsync(SupplierAddress entity)
@@ -103,6 +126,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetBySupplierIdAsync),
+                    ServiceType = GetType().Name,
+                    SupplierId = supplierId
+                });
                 _logger.LogError(ex, "Error getting supplier addresses for supplier {SupplierId}", supplierId);
                 throw;
             }
@@ -121,6 +149,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByAddressTypeAsync),
+                    ServiceType = GetType().Name,
+                    AddressTypeId = addressTypeId
+                });
                 _logger.LogError(ex, "Error getting supplier addresses by type {AddressTypeId}", addressTypeId);
                 throw;
             }
@@ -136,12 +169,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                                await _errorLogService.LogErrorAsync(ex, new { 
+                await _errorLogService.LogErrorAsync(ex, new { 
                     Method = nameof(GetPrimaryAddressAsync),
-                    ServiceType = GetType().Name 
+                    ServiceType = GetType().Name,
+                    SupplierId = supplierId
                 });
-                _logger.LogError(ex, "Error in GetPrimaryAddressAsync");
-
                 _logger.LogError(ex, "Error getting primary address for supplier {SupplierId}", supplierId);
                 throw;
             }
@@ -159,12 +191,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                                await _errorLogService.LogErrorAsync(ex, new { 
+                await _errorLogService.LogErrorAsync(ex, new { 
                     Method = nameof(GetAddressByTypeAsync),
-                    ServiceType = GetType().Name 
+                    ServiceType = GetType().Name,
+                    SupplierId = supplierId,
+                    AddressTypeId = addressTypeId
                 });
-                _logger.LogError(ex, "Error in GetAddressByTypeAsync");
-
                 _logger.LogError(ex, "Error getting address by type for supplier {SupplierId}, type {AddressTypeId}", 
                     supplierId, addressTypeId);
                 throw;
@@ -208,12 +240,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                                await _errorLogService.LogErrorAsync(ex, new { 
+                await _errorLogService.LogErrorAsync(ex, new { 
                     Method = nameof(SetPrimaryAddressAsync),
-                    ServiceType = GetType().Name 
+                    ServiceType = GetType().Name,
+                    AddressId = addressId
                 });
-                _logger.LogError(ex, "Error in SetPrimaryAddressAsync");
-
                 _logger.LogError(ex, "Error setting primary address {AddressId}", addressId);
                 return ServiceResult.Failure($"設定主要地址時發生錯誤: {ex.Message}");
             }
@@ -242,12 +273,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SetPrimaryAddressAsync),
-                    ServiceType = GetType().Name 
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(CopyAddressToSupplierAsync),
+                    ServiceType = GetType().Name,
+                    TargetSupplierId = targetSupplierId,
+                    TargetAddressTypeId = targetAddressTypeId
                 });
-                _logger.LogError(ex, "Error in SetPrimaryAddressAsync");
-
                 _logger.LogError(ex, "Error copying address to supplier {TargetSupplierId}", targetSupplierId);
                 return ServiceResult<SupplierAddress>.Failure($"複製地址時發生錯誤: {ex.Message}");
             }
@@ -280,12 +311,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SetPrimaryAddressAsync),
-                    ServiceType = GetType().Name 
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(EnsureSupplierHasPrimaryAddressAsync),
+                    ServiceType = GetType().Name,
+                    SupplierId = supplierId
                 });
-                _logger.LogError(ex, "Error in SetPrimaryAddressAsync");
-
                 _logger.LogError(ex, "Error ensuring supplier has primary address {SupplierId}", supplierId);
                 return ServiceResult.Failure($"確保主要地址時發生錯誤: {ex.Message}");
             }
@@ -307,12 +337,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(EnsureSupplierHasPrimaryAddressAsync),
-                    ServiceType = GetType().Name 
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAddressesWithDefaultAsync),
+                    ServiceType = GetType().Name,
+                    SupplierId = supplierId
                 });
-                _logger.LogError(ex, "Error in EnsureSupplierHasPrimaryAddressAsync");
-
                 _logger.LogError(ex, "Error getting addresses with default for supplier {SupplierId}", supplierId);
                 throw;
             }
@@ -382,12 +411,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                                await _errorLogService.LogErrorAsync(ex, new { 
+                await _errorLogService.LogErrorAsync(ex, new { 
                     Method = nameof(UpdateSupplierAddressesAsync),
-                    ServiceType = GetType().Name 
+                    ServiceType = GetType().Name,
+                    SupplierId = supplierId
                 });
-                _logger.LogError(ex, "Error in UpdateSupplierAddressesAsync");
-
                 _logger.LogError(ex, "Error updating supplier addresses for supplier {SupplierId}", supplierId);
                 return ServiceResult.Failure($"更新廠商地址時發生錯誤: {ex.Message}");
             }

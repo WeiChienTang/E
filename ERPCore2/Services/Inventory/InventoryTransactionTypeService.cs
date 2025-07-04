@@ -12,13 +12,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class InventoryTransactionTypeService : GenericManagementService<InventoryTransactionType>, IInventoryTransactionTypeService
     {
-        private readonly ILogger<InventoryTransactionTypeService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public InventoryTransactionTypeService(AppDbContext context, ILogger<InventoryTransactionTypeService> logger, IErrorLogService errorLogService) : base(context)
+        public InventoryTransactionTypeService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<InventoryTransactionType>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }
 
         /// <summary>

@@ -13,13 +13,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class ContactTypeService : GenericManagementService<ContactType>, IContactTypeService
     {
-        private readonly ILogger<ContactTypeService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public ContactTypeService(AppDbContext context, ILogger<ContactTypeService> logger, IErrorLogService errorLogService) : base(context)
+        public ContactTypeService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<ContactType>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }
 
         // 覆寫 GetAllAsync 以提供自訂排序

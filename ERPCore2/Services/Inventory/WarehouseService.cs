@@ -12,13 +12,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class WarehouseService : GenericManagementService<Warehouse>, IWarehouseService
     {
-        private readonly ILogger<WarehouseService> _logger;
-        private readonly IErrorLogService _errorLogService;
-
-        public WarehouseService(AppDbContext context, ILogger<WarehouseService> logger, IErrorLogService errorLogService) : base(context)
+        public WarehouseService(
+            AppDbContext context, 
+            ILogger<GenericManagementService<Warehouse>> logger, 
+            IErrorLogService errorLogService) : base(context, logger, errorLogService)
         {
-            _logger = logger;
-            _errorLogService = errorLogService;
         }
 
         /// <summary>
