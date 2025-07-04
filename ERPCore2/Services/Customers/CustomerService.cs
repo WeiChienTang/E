@@ -14,9 +14,9 @@ namespace ERPCore2.Services
     public class CustomerService : GenericManagementService<Customer>, ICustomerService
     {
         private readonly ILogger<CustomerService> _logger;
-        private readonly IErrorLogService? _errorLogService;
+        private readonly IErrorLogService _errorLogService;
 
-        public CustomerService(AppDbContext context, ILogger<CustomerService> logger, IErrorLogService? errorLogService = null) : base(context)
+        public CustomerService(AppDbContext context, ILogger<CustomerService> logger, IErrorLogService errorLogService) : base(context)
         {
             _logger = logger;
             _errorLogService = errorLogService;
@@ -26,103 +26,155 @@ namespace ERPCore2.Services
 
         public override async Task<List<Customer>> GetAllAsync()
         {
-            return await _dbSet
-                .Include(c => c.CustomerType)
-                .Include(c => c.IndustryType)
-                .Where(c => !c.IsDeleted)
-                .OrderBy(c => c.CompanyName)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Include(c => c.CustomerType)
+                    .Include(c => c.IndustryType)
+                    .Where(c => !c.IsDeleted)
+                    .OrderBy(c => c.CompanyName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAllAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting all customers");
+                throw;
+            }
         }
 
         public override async Task<Customer?> GetByIdAsync(int id)
         {
-            return await _dbSet
-                .Include(c => c.CustomerType)
-                .Include(c => c.IndustryType)
-                .Include(c => c.CustomerContacts)
-                    .ThenInclude(cc => cc.ContactType)
-                .Include(c => c.CustomerAddresses)
-                    .ThenInclude(ca => ca.AddressType)
-                .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+            try
+            {
+                return await _dbSet
+                    .Include(c => c.CustomerType)
+                    .Include(c => c.IndustryType)
+                    .Include(c => c.CustomerContacts)
+                        .ThenInclude(cc => cc.ContactType)
+                    .Include(c => c.CustomerAddresses)
+                        .ThenInclude(ca => ca.AddressType)
+                    .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByIdAsync),
+                    Id = id,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting customer by id {Id}", id);
+                throw;
+            }
         }
 
         public override async Task<List<Customer>> SearchAsync(string searchTerm)
         {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return await GetAllAsync();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    return await GetAllAsync();
 
-            return await _dbSet
-                .Include(c => c.CustomerType)
-                .Include(c => c.IndustryType)
-                .Where(c => !c.IsDeleted && 
-                           (c.CustomerCode.Contains(searchTerm) ||
-                            c.CompanyName.Contains(searchTerm) ||
-                            (c.ContactPerson != null && c.ContactPerson.Contains(searchTerm)) ||
-                            (c.TaxNumber != null && c.TaxNumber.Contains(searchTerm))))
-                .OrderBy(c => c.CompanyName)
-                .ToListAsync();
+                return await _dbSet
+                    .Include(c => c.CustomerType)
+                    .Include(c => c.IndustryType)
+                    .Where(c => !c.IsDeleted && 
+                               (c.CustomerCode.Contains(searchTerm) ||
+                                c.CompanyName.Contains(searchTerm) ||
+                                (c.ContactPerson != null && c.ContactPerson.Contains(searchTerm)) ||
+                                (c.TaxNumber != null && c.TaxNumber.Contains(searchTerm))))
+                    .OrderBy(c => c.CompanyName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SearchAsync),
+                    SearchTerm = searchTerm,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error searching customers with term {SearchTerm}", searchTerm);
+                throw;
+            }
         }
 
         public override async Task<ServiceResult> ValidateAsync(Customer entity)
         {
-            var errors = new List<string>();
-
-            // 檢查必要欄位
-            if (string.IsNullOrWhiteSpace(entity.CustomerCode))
-                errors.Add("客戶代碼為必填");
-            
-            if (string.IsNullOrWhiteSpace(entity.CompanyName))
-                errors.Add("公司名稱為必填");
-
-            // 檢查長度限制
-            if (entity.CustomerCode?.Length > 20)
-                errors.Add("客戶代碼不可超過20個字元");
-            
-            if (entity.CompanyName?.Length > 100)
-                errors.Add("公司名稱不可超過100個字元");
-
-            if (!string.IsNullOrEmpty(entity.ContactPerson) && entity.ContactPerson.Length > 50)
-                errors.Add("聯絡人不可超過50個字元");
-
-            if (!string.IsNullOrEmpty(entity.TaxNumber) && entity.TaxNumber.Length > 20)
-                errors.Add("統一編號不可超過20個字元");
-
-            // 檢查客戶代碼是否重複
-            if (!string.IsNullOrWhiteSpace(entity.CustomerCode))
+            try
             {
-                var isDuplicate = await _dbSet
-                    .Where(c => c.CustomerCode == entity.CustomerCode && !c.IsDeleted)
-                    .Where(c => c.Id != entity.Id) // 排除自己
-                    .AnyAsync();
+                var errors = new List<string>();
 
-                if (isDuplicate)
-                    errors.Add("客戶代碼已存在");
+                // 檢查必要欄位
+                if (string.IsNullOrWhiteSpace(entity.CustomerCode))
+                    errors.Add("客戶代碼為必填");
+                
+                if (string.IsNullOrWhiteSpace(entity.CompanyName))
+                    errors.Add("公司名稱為必填");
+
+                // 檢查長度限制
+                if (entity.CustomerCode?.Length > 20)
+                    errors.Add("客戶代碼不可超過20個字元");
+                
+                if (entity.CompanyName?.Length > 100)
+                    errors.Add("公司名稱不可超過100個字元");
+
+                if (!string.IsNullOrEmpty(entity.ContactPerson) && entity.ContactPerson.Length > 50)
+                    errors.Add("聯絡人不可超過50個字元");
+
+                if (!string.IsNullOrEmpty(entity.TaxNumber) && entity.TaxNumber.Length > 20)
+                    errors.Add("統一編號不可超過20個字元");
+
+                // 檢查客戶代碼是否重複
+                if (!string.IsNullOrWhiteSpace(entity.CustomerCode))
+                {
+                    var isDuplicate = await _dbSet
+                        .Where(c => c.CustomerCode == entity.CustomerCode && !c.IsDeleted)
+                        .Where(c => c.Id != entity.Id) // 排除自己
+                        .AnyAsync();
+
+                    if (isDuplicate)
+                        errors.Add("客戶代碼已存在");
+                }
+
+                // 檢查客戶類型是否存在
+                if (entity.CustomerTypeId.HasValue)
+                {
+                    var customerTypeExists = await _context.CustomerTypes
+                        .AnyAsync(ct => ct.Id == entity.CustomerTypeId.Value && ct.Status == EntityStatus.Active);
+
+                    if (!customerTypeExists)
+                        errors.Add("指定的客戶類型不存在或已停用");
+                }
+
+                // 檢查行業類型是否存在
+                if (entity.IndustryTypeId.HasValue)
+                {
+                    var industryTypeExists = await _context.IndustryTypes
+                        .AnyAsync(it => it.Id == entity.IndustryTypeId.Value && it.Status == EntityStatus.Active);
+
+                    if (!industryTypeExists)
+                        errors.Add("指定的行業類型不存在或已停用");
+                }
+
+                if (errors.Any())
+                    return ServiceResult.Failure(string.Join("; ", errors));
+
+                return ServiceResult.Success();
             }
-
-            // 檢查客戶類型是否存在
-            if (entity.CustomerTypeId.HasValue)
+            catch (Exception ex)
             {
-                var customerTypeExists = await _context.CustomerTypes
-                    .AnyAsync(ct => ct.Id == entity.CustomerTypeId.Value && ct.Status == EntityStatus.Active);
-
-                if (!customerTypeExists)
-                    errors.Add("指定的客戶類型不存在或已停用");
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(ValidateAsync),
+                    EntityId = entity.Id,
+                    CustomerCode = entity.CustomerCode,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error validating customer entity {EntityId}", entity.Id);
+                return ServiceResult.Failure("驗證過程發生錯誤");
             }
-
-            // 檢查行業類型是否存在
-            if (entity.IndustryTypeId.HasValue)
-            {
-                var industryTypeExists = await _context.IndustryTypes
-                    .AnyAsync(it => it.Id == entity.IndustryTypeId.Value && it.Status == EntityStatus.Active);
-
-                if (!industryTypeExists)
-                    errors.Add("指定的行業類型不存在或已停用");
-            }
-
-            if (errors.Any())
-                return ServiceResult.Failure(string.Join("; ", errors));
-
-            return ServiceResult.Success();
         }
 
         #endregion
@@ -131,11 +183,11 @@ namespace ERPCore2.Services
 
         public async Task<Customer?> GetByCustomerCodeAsync(string customerCode)
         {
-            if (string.IsNullOrWhiteSpace(customerCode))
-                return null;
-
             try
             {
+                if (string.IsNullOrWhiteSpace(customerCode))
+                    return null;
+
                 return await _dbSet
                     .Include(c => c.CustomerType)
                     .Include(c => c.IndustryType)
@@ -143,6 +195,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByCustomerCodeAsync),
+                    CustomerCode = customerCode,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting customer by code {CustomerCode}", customerCode);
                 throw;
             }
@@ -150,11 +207,11 @@ namespace ERPCore2.Services
 
         public async Task<List<Customer>> GetByCompanyNameAsync(string companyName)
         {
-            if (string.IsNullOrWhiteSpace(companyName))
-                return new List<Customer>();
-
             try
             {
+                if (string.IsNullOrWhiteSpace(companyName))
+                    return new List<Customer>();
+
                 return await _dbSet
                     .Include(c => c.CustomerType)
                     .Include(c => c.IndustryType)
@@ -164,6 +221,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByCompanyNameAsync),
+                    CompanyName = companyName,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error getting customers by company name {CompanyName}", companyName);
                 throw;
             }
@@ -171,11 +233,11 @@ namespace ERPCore2.Services
 
         public async Task<bool> IsCustomerCodeExistsAsync(string customerCode, int? excludeId = null)
         {
-            if (string.IsNullOrWhiteSpace(customerCode))
-                return false;
-
             try
             {
+                if (string.IsNullOrWhiteSpace(customerCode))
+                    return false;
+
                 var query = _dbSet.Where(c => c.CustomerCode == customerCode && !c.IsDeleted);
 
                 if (excludeId.HasValue)
@@ -185,8 +247,14 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(IsCustomerCodeExistsAsync),
+                    CustomerCode = customerCode,
+                    ExcludeId = excludeId,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error checking if customer code exists {CustomerCode}", customerCode);
-                throw;
+                return false; // 安全預設值
             }
         }
 

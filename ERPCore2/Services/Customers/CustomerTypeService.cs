@@ -21,22 +21,34 @@ namespace ERPCore2.Services
         {
             _logger = logger;
             _errorLogService = errorLogService;
-            _logger = logger;
         }
 
         #region 覆寫基底抽象方法
 
         public override async Task<List<CustomerType>> SearchAsync(string searchTerm)
         {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return await GetAllAsync();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    return await GetAllAsync();
 
-            return await _dbSet
-                .Where(ct => !ct.IsDeleted &&
-                           (ct.TypeName.Contains(searchTerm) ||
-                            (ct.Description != null && ct.Description.Contains(searchTerm))))
-                .OrderBy(ct => ct.TypeName)
-                .ToListAsync();
+                return await _dbSet
+                    .Where(ct => !ct.IsDeleted &&
+                               (ct.TypeName.Contains(searchTerm) ||
+                                (ct.Description != null && ct.Description.Contains(searchTerm))))
+                    .OrderBy(ct => ct.TypeName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SearchAsync),
+                    SearchTerm = searchTerm,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error searching customer types with term {SearchTerm}", searchTerm);
+                throw;
+            }
         }
 
         public override async Task<ServiceResult> ValidateAsync(CustomerType entity)

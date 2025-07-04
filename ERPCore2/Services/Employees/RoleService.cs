@@ -4,6 +4,7 @@ using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using ERPCore2.Services.GenericManagementService;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace ERPCore2.Services
 {
@@ -12,22 +13,36 @@ namespace ERPCore2.Services
     /// </summary>
     public class RoleService : GenericManagementService<Role>, IRoleService
     {
+        private readonly ILogger<RoleService> _logger;
         private readonly IErrorLogService _errorLogService;
 
-        public RoleService(AppDbContext context, IErrorLogService errorLogService) : base(context)
+        public RoleService(AppDbContext context, ILogger<RoleService> logger, IErrorLogService errorLogService) : base(context)
         {
+            _logger = logger;
             _errorLogService = errorLogService;
         }
 
         // 覆寫 GetAllAsync 以載入相關資料
         public override async Task<List<Role>> GetAllAsync()
         {
-            return await _dbSet
-                .Include(r => r.RolePermissions)
-                .ThenInclude(rp => rp.Permission)
-                .Where(r => !r.IsDeleted)
-                .OrderBy(r => r.RoleName)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Include(r => r.RolePermissions)
+                    .ThenInclude(rp => rp.Permission)
+                    .Where(r => !r.IsDeleted)
+                    .OrderBy(r => r.RoleName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAllAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting all roles");
+                throw;
+            }
         }
 
         // 覆寫 GetByIdAsync 以載入相關資料

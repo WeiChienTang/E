@@ -2,15 +2,18 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services.GenericManagementService;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace ERPCore2.Services
 {
     public class WeatherService : GenericManagementService<Weather>, IWeatherService
     {
+        private readonly ILogger<WeatherService> _logger;
         private readonly IErrorLogService _errorLogService;
 
-        public WeatherService(AppDbContext context, IErrorLogService errorLogService) : base(context)
+        public WeatherService(AppDbContext context, ILogger<WeatherService> logger, IErrorLogService errorLogService) : base(context)
         {
+            _logger = logger;
             _errorLogService = errorLogService;
         }
 
@@ -19,10 +22,22 @@ namespace ERPCore2.Services
         /// </summary>
         public override async Task<List<Weather>> GetAllAsync()
         {
-            return await _dbSet
-                .Where(w => !w.IsDeleted)
-                .OrderBy(w => w.Name)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Where(w => !w.IsDeleted)
+                    .OrderBy(w => w.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAllAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting all weather data");
+                throw;
+            }
         }
 
         /// <summary>
@@ -30,16 +45,29 @@ namespace ERPCore2.Services
         /// </summary>
         public override async Task<List<Weather>> SearchAsync(string searchTerm)
         {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return await GetAllAsync();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    return await GetAllAsync();
 
-            return await _dbSet
-                .Where(w => !w.IsDeleted &&
-                           (w.Name.Contains(searchTerm) ||
-                            w.Code.Contains(searchTerm) ||
-                            (w.Description != null && w.Description.Contains(searchTerm))))
-                .OrderBy(w => w.Name)
-                .ToListAsync();
+                return await _dbSet
+                    .Where(w => !w.IsDeleted &&
+                               (w.Name.Contains(searchTerm) ||
+                                w.Code.Contains(searchTerm) ||
+                                (w.Description != null && w.Description.Contains(searchTerm))))
+                    .OrderBy(w => w.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SearchAsync),
+                    SearchTerm = searchTerm,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error searching weather data with term {SearchTerm}", searchTerm);
+                throw;
+            }
         }    /// <summary>
         /// 覆寫驗證方法，添加天氣特定的驗證規則
         /// </summary>

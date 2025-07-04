@@ -4,6 +4,7 @@ using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using ERPCore2.Services.GenericManagementService;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
 
 namespace ERPCore2.Services
@@ -13,23 +14,37 @@ namespace ERPCore2.Services
     /// </summary>
     public class EmployeeService : GenericManagementService<Employee>, IEmployeeService
     {
-        private readonly IErrorLogService? _errorLogService;
+        private readonly ILogger<EmployeeService> _logger;
+        private readonly IErrorLogService _errorLogService;
 
-        public EmployeeService(AppDbContext context, IErrorLogService? errorLogService = null) : base(context)
+        public EmployeeService(AppDbContext context, ILogger<EmployeeService> logger, IErrorLogService errorLogService) : base(context)
         {
+            _logger = logger;
             _errorLogService = errorLogService;
         }        // 覆寫 GetAllAsync 以載入相關資料
         public override async Task<List<Employee>> GetAllAsync()
         {
-            return await _dbSet
-                .Include(e => e.Role)
-                .Include(e => e.EmployeeContacts)
-                    .ThenInclude(ec => ec.ContactType)
-                .Include(e => e.EmployeeAddresses)
-                    .ThenInclude(ea => ea.AddressType)
-                .Where(e => !e.IsDeleted)
-                .OrderBy(e => e.EmployeeCode)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Include(e => e.Role)
+                    .Include(e => e.EmployeeContacts)
+                        .ThenInclude(ec => ec.ContactType)
+                    .Include(e => e.EmployeeAddresses)
+                        .ThenInclude(ea => ea.AddressType)
+                    .Where(e => !e.IsDeleted)
+                    .OrderBy(e => e.EmployeeCode)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAllAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting all employees");
+                throw;
+            }
         }        // 覆寫 GetByIdAsync 以載入相關資料
         public override async Task<Employee?> GetByIdAsync(int id)
         {

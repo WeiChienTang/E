@@ -25,20 +25,45 @@ namespace ERPCore2.Services
 
         public override async Task<List<ProductCategory>> GetAllAsync()
         {
-            return await _dbSet
-                .Include(pc => pc.ParentCategory)
-                .Where(pc => !pc.IsDeleted)
-                .OrderBy(pc => pc.CategoryName)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Include(pc => pc.ParentCategory)
+                    .Where(pc => !pc.IsDeleted)
+                    .OrderBy(pc => pc.CategoryName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAllAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting all product categories");
+                throw;
+            }
         }
 
         public override async Task<ProductCategory?> GetByIdAsync(int id)
         {
-            return await _dbSet
-                .Include(pc => pc.ParentCategory)
-                .Include(pc => pc.ChildCategories.Where(cc => !cc.IsDeleted))
-                .Include(pc => pc.Products.Where(p => !p.IsDeleted))
-                .FirstOrDefaultAsync(pc => pc.Id == id && !pc.IsDeleted);
+            try
+            {
+                return await _dbSet
+                    .Include(pc => pc.ParentCategory)
+                    .Include(pc => pc.ChildCategories.Where(cc => !cc.IsDeleted))
+                    .Include(pc => pc.Products.Where(p => !p.IsDeleted))
+                    .FirstOrDefaultAsync(pc => pc.Id == id && !pc.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByIdAsync),
+                    Id = id,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting product category by id {Id}", id);
+                throw;
+            }
         }
 
         public override async Task<List<ProductCategory>> SearchAsync(string searchTerm)

@@ -14,96 +14,116 @@ namespace ERPCore2.Services
     public class CustomerContactService : GenericManagementService<CustomerContact>, ICustomerContactService
     {
         private readonly ILogger<CustomerContactService> _logger;
+        private readonly IErrorLogService _errorLogService;
 
-        public CustomerContactService(AppDbContext context, ILogger<CustomerContactService> logger)
+        public CustomerContactService(AppDbContext context, ILogger<CustomerContactService> logger, IErrorLogService errorLogService)
             : base(context)
         {
             _logger = logger;
+            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底抽象方法
 
         public override async Task<List<CustomerContact>> SearchAsync(string searchTerm)
         {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return await GetAllAsync();            return await _dbSet
-                .Include(cc => cc.Customer)
-                .Include(cc => cc.ContactType)
-                .Where(cc => !cc.IsDeleted &&
-                           (cc.ContactValue.Contains(searchTerm) ||
-                            (cc.Customer != null && cc.Customer.CompanyName.Contains(searchTerm)) ||
-                            (cc.ContactType != null && cc.ContactType.TypeName.Contains(searchTerm))))
-                .OrderBy(cc => cc.Customer != null ? cc.Customer.CompanyName : string.Empty)
-                .ThenBy(cc => cc.ContactType != null ? cc.ContactType.TypeName : string.Empty)
-                .ToListAsync();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    return await GetAllAsync();            return await _dbSet
+                    .Include(cc => cc.Customer)
+                    .Include(cc => cc.ContactType)
+                    .Where(cc => !cc.IsDeleted &&
+                               (cc.ContactValue.Contains(searchTerm) ||
+                                (cc.Customer != null && cc.Customer.CompanyName.Contains(searchTerm)) ||
+                                (cc.ContactType != null && cc.ContactType.TypeName.Contains(searchTerm))))
+                    .OrderBy(cc => cc.Customer != null ? cc.Customer.CompanyName : string.Empty)
+                    .ThenBy(cc => cc.ContactType != null ? cc.ContactType.TypeName : string.Empty)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in SearchAsync");
+                return new List<CustomerContact>();
+            }
         }
 
         public override async Task<ServiceResult> ValidateAsync(CustomerContact entity)
         {
-            var errors = new List<string>();
+            try
+            {
+                var errors = new List<string>();
 
-            // 基本驗證 - 客戶ID
-            if (entity.CustomerId <= 0)
-            {
-                errors.Add("客戶ID無效");
-            }
-            else
-            {
-                // 驗證客戶是否存在
-                var customerExists = await _context.Customers
-                    .AnyAsync(c => c.Id == entity.CustomerId && !c.IsDeleted);
-                if (!customerExists)
+                // 基本驗證 - 客戶ID
+                if (entity.CustomerId <= 0)
                 {
-                    errors.Add("指定的客戶不存在");
+                    errors.Add("客戶ID無效");
                 }
-            }
-
-            // 基本驗證 - 聯絡類型ID
-            if (entity.ContactTypeId <= 0)
-            {
-                errors.Add("聯絡類型ID無效");
-            }
-            else
-            {
-                // 驗證聯絡類型是否存在
-                var contactTypeExists = await _context.ContactTypes
-                    .AnyAsync(ct => ct.Id == entity.ContactTypeId && !ct.IsDeleted);
-                if (!contactTypeExists)
+                else
                 {
-                    errors.Add("指定的聯絡類型不存在");
+                    // 驗證客戶是否存在
+                    var customerExists = await _context.Customers
+                        .AnyAsync(c => c.Id == entity.CustomerId && !c.IsDeleted);
+                    if (!customerExists)
+                    {
+                        errors.Add("指定的客戶不存在");
+                    }
                 }
-            }
 
-            // 驗證聯絡資料值
-            if (string.IsNullOrWhiteSpace(entity.ContactValue))
+                // 基本驗證 - 聯絡類型ID
+                if (entity.ContactTypeId <= 0)
+                {
+                    errors.Add("聯絡類型ID無效");
+                }
+                else
+                {
+                    // 驗證聯絡類型是否存在
+                    var contactTypeExists = await _context.ContactTypes
+                        .AnyAsync(ct => ct.Id == entity.ContactTypeId && !ct.IsDeleted);
+                    if (!contactTypeExists)
+                    {
+                        errors.Add("指定的聯絡類型不存在");
+                    }
+                }
+
+                // 驗證聯絡資料值
+                if (string.IsNullOrWhiteSpace(entity.ContactValue))
+                {
+                    errors.Add("聯絡資料值不能為空");
+                }
+                else if (entity.ContactValue.Length > 500)
+                {
+                    errors.Add("聯絡資料值長度不能超過500個字元");
+                }
+
+                // 檢查是否有重複的聯絡資料（同一客戶、同一聯絡類型）
+                var duplicateQuery = _context.CustomerContacts
+                    .Where(cc => cc.CustomerId == entity.CustomerId && 
+                               cc.ContactTypeId == entity.ContactTypeId && 
+                               !cc.IsDeleted);
+
+                if (entity.Id > 0)
+                {
+                    duplicateQuery = duplicateQuery.Where(cc => cc.Id != entity.Id);
+                }
+
+                var hasDuplicate = await duplicateQuery.AnyAsync();
+                if (hasDuplicate)
+                {
+                    errors.Add("該客戶已有相同類型的聯絡資料");
+                }
+
+                return errors.Any() 
+                    ? ServiceResult.Failure(string.Join("; ", errors))
+                    : ServiceResult.Success();
+            }
+            catch (Exception ex)
             {
-                errors.Add("聯絡資料值不能為空");
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in ValidateAsync");
+                return ServiceResult.Failure("驗證客戶聯絡資料時發生錯誤");
             }
-            else if (entity.ContactValue.Length > 500)
-            {
-                errors.Add("聯絡資料值長度不能超過500個字元");
-            }
-
-            // 檢查是否有重複的聯絡資料（同一客戶、同一聯絡類型）
-            var duplicateQuery = _context.CustomerContacts
-                .Where(cc => cc.CustomerId == entity.CustomerId && 
-                           cc.ContactTypeId == entity.ContactTypeId && 
-                           !cc.IsDeleted);
-
-            if (entity.Id > 0)
-            {
-                duplicateQuery = duplicateQuery.Where(cc => cc.Id != entity.Id);
-            }
-
-            var hasDuplicate = await duplicateQuery.AnyAsync();
-            if (hasDuplicate)
-            {
-                errors.Add("該客戶已有相同類型的聯絡資料");
-            }
-
-            return errors.Any() 
-                ? ServiceResult.Failure(string.Join("; ", errors))
-                : ServiceResult.Success();
         }
 
         #endregion
@@ -111,21 +131,40 @@ namespace ERPCore2.Services
         #region 覆寫基底方法以包含關聯資料
 
         public override async Task<List<CustomerContact>> GetAllAsync()
-        {            return await _dbSet
-                .Include(cc => cc.Customer)
-                .Include(cc => cc.ContactType)
-                .Where(cc => !cc.IsDeleted)
-                .OrderBy(cc => cc.Customer != null ? cc.Customer.CompanyName : string.Empty)
-                .ThenBy(cc => cc.ContactType != null ? cc.ContactType.TypeName : string.Empty)
-                .ToListAsync();
+        {
+            try
+            {
+                return await _dbSet
+                    .Include(cc => cc.Customer)
+                    .Include(cc => cc.ContactType)
+                    .Where(cc => !cc.IsDeleted)
+                    .OrderBy(cc => cc.Customer != null ? cc.Customer.CompanyName : string.Empty)
+                    .ThenBy(cc => cc.ContactType != null ? cc.ContactType.TypeName : string.Empty)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in GetAllAsync");
+                return new List<CustomerContact>();
+            }
         }
 
         public override async Task<CustomerContact?> GetByIdAsync(int id)
         {
-            return await _dbSet
-                .Include(cc => cc.Customer)
-                .Include(cc => cc.ContactType)
-                .FirstOrDefaultAsync(cc => cc.Id == id && !cc.IsDeleted);
+            try
+            {
+                return await _dbSet
+                    .Include(cc => cc.Customer)
+                    .Include(cc => cc.ContactType)
+                    .FirstOrDefaultAsync(cc => cc.Id == id && !cc.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in GetByIdAsync");
+                return null;
+            }
         }
 
         #endregion
@@ -153,6 +192,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                _errorLogService.LogErrorAsync(ex).Wait();
                 _logger.LogError(ex, "Error getting contact value for customer {CustomerId}, type {ContactTypeName}", 
                     customerId, contactTypeName);
                 return string.Empty;
@@ -213,6 +253,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                _errorLogService.LogErrorAsync(ex).Wait();
                 _logger.LogError(ex, "Error updating contact value for customer {CustomerId}, type {ContactTypeName}", 
                     customerId, contactTypeName);
                 return ServiceResult.Failure("更新聯絡資料時發生錯誤");
@@ -232,6 +273,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                _errorLogService.LogErrorAsync(ex).Wait();
                 _logger.LogError(ex, "Error counting completed contact fields");
                 return 0;
             }
@@ -292,6 +334,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                _errorLogService.LogErrorAsync(ex).Wait();
                 _logger.LogError(ex, "Error validating customer contacts");
                 return ServiceResult.Failure("驗證客戶聯絡資料時發生錯誤");
             }
@@ -344,6 +387,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                _errorLogService.LogErrorAsync(ex).Wait();
                 _logger.LogError(ex, "Error ensuring unique primary contacts");
                 return ServiceResult.Failure("確保唯一主要聯絡方式時發生錯誤");
             }

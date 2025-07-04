@@ -13,10 +13,12 @@ namespace ERPCore2.Services
     public class ProductSupplierService : GenericManagementService<ProductSupplier>, IProductSupplierService
     {
         private readonly ILogger<ProductSupplierService> _logger;
+        private readonly IErrorLogService _errorLogService;
 
-        public ProductSupplierService(AppDbContext context, ILogger<ProductSupplierService> logger) : base(context)
+        public ProductSupplierService(AppDbContext context, ILogger<ProductSupplierService> logger, IErrorLogService errorLogService) : base(context)
         {
             _logger = logger;
+            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底方法
@@ -120,6 +122,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(ValidateAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in ValidateAsync");
+
                 _logger.LogError(ex, "Error getting suppliers for product {ProductId}", productId);
                 throw;
             }
@@ -137,6 +145,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(ValidateAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in ValidateAsync");
+
                 _logger.LogError(ex, "Error getting products for supplier {SupplierId}", supplierId);
                 throw;
             }
@@ -152,6 +166,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(ValidateAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in ValidateAsync");
+
                 _logger.LogError(ex, "Error getting primary supplier for product {ProductId}", productId);
                 throw;
             }
@@ -170,6 +190,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetPrimarySupplierAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in GetPrimarySupplierAsync");
+
                 _logger.LogError(ex, "Error getting product supplier relation {ProductId}-{SupplierId}", productId, supplierId);
                 throw;
             }
@@ -188,6 +214,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByProductAndSupplierAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in GetByProductAndSupplierAsync");
+
                 _logger.LogError(ex, "Error getting primary suppliers");
                 throw;
             }
@@ -238,6 +270,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SetPrimarySupplierAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in SetPrimarySupplierAsync");
+
                 _logger.LogError(ex, "Error setting primary supplier {ProductSupplierId}", productSupplierId);
                 return ServiceResult.Failure($"設定主要供應商時發生錯誤: {ex.Message}");
             }
@@ -286,6 +324,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SetPrimarySupplierAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in SetPrimarySupplierAsync");
+
                 _logger.LogError(ex, "Error batch setting product suppliers for product {ProductId}", productId);
                 return ServiceResult.Failure($"批次設定商品供應商時發生錯誤: {ex.Message}");
             }
@@ -334,6 +378,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(BatchSetProductSuppliersAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in BatchSetProductSuppliersAsync");
+
                 _logger.LogError(ex, "Error batch setting supplier products for supplier {SupplierId}", supplierId);
                 return ServiceResult.Failure($"批次設定供應商商品時發生錯誤: {ex.Message}");
             }
@@ -366,6 +416,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(BatchSetSupplierProductsAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in BatchSetSupplierProductsAsync");
+
                 _logger.LogError(ex, "Error updating supplier price {ProductSupplierId}", productSupplierId);
                 return ServiceResult.Failure($"更新供應商價格時發生錯誤: {ex.Message}");
             }
@@ -400,6 +456,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(BatchSetSupplierProductsAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in BatchSetSupplierProductsAsync");
+
                 _logger.LogError(ex, "Error updating delivery info {ProductSupplierId}", productSupplierId);
                 return ServiceResult.Failure($"更新交期資訊時發生錯誤: {ex.Message}");
             }
@@ -413,6 +475,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(UpdateSupplierPriceAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in UpdateSupplierPriceAsync");
+
                 _logger.LogError(ex, "Error checking if product has suppliers {ProductId}", productId);
                 throw;
             }
@@ -426,6 +494,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(UpdateSupplierPriceAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in UpdateSupplierPriceAsync");
+
                 _logger.LogError(ex, "Error checking if supplier has products {SupplierId}", supplierId);
                 throw;
             }
@@ -445,6 +519,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(UpdateSupplierPriceAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in UpdateSupplierPriceAsync");
+
                 _logger.LogError(ex, "Error getting best price products for supplier {SupplierId}", supplierId);
                 throw;
             }
@@ -464,6 +544,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(UpdateDeliveryInfoAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in UpdateDeliveryInfoAsync");
+
                 _logger.LogError(ex, "Error getting best price suppliers for product {ProductId}", productId);
                 throw;
             }
@@ -481,6 +567,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(UpdateDeliveryInfoAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in UpdateDeliveryInfoAsync");
+
                 _logger.LogError(ex, "Error getting supplier count for product {ProductId}", productId);
                 throw;
             }
@@ -494,6 +586,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(HasSuppliersAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in HasSuppliersAsync");
+
                 _logger.LogError(ex, "Error getting product count for supplier {SupplierId}", supplierId);
                 throw;
             }
@@ -514,6 +612,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(HasProductsAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in HasProductsAsync");
+
                 _logger.LogError(ex, "Error getting average lead time for product {ProductId}", productId);
                 throw;
             }
@@ -537,6 +641,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(HasProductsAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in HasProductsAsync");
+
                 _logger.LogError(ex, "Error getting price range for product {ProductId}", productId);
                 throw;
             }
@@ -545,3 +655,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

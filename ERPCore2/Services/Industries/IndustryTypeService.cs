@@ -26,10 +26,22 @@ namespace ERPCore2.Services
 
         public override async Task<List<IndustryType>> GetAllAsync()
         {
-            return await _dbSet
-                .Where(it => !it.IsDeleted)
-                .OrderBy(it => it.IndustryTypeName)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Where(it => !it.IsDeleted)
+                    .OrderBy(it => it.IndustryTypeName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAllAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting all industry types");
+                throw;
+            }
         }
 
         public override async Task<List<IndustryType>> SearchAsync(string searchTerm)

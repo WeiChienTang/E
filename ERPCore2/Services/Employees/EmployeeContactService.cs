@@ -14,11 +14,13 @@ namespace ERPCore2.Services
     public class EmployeeContactService : GenericManagementService<EmployeeContact>, IEmployeeContactService
     {
         private readonly ILogger<EmployeeContactService> _logger;
+        private readonly IErrorLogService _errorLogService;
 
-        public EmployeeContactService(AppDbContext context, ILogger<EmployeeContactService> logger)
+        public EmployeeContactService(AppDbContext context, ILogger<EmployeeContactService> logger, IErrorLogService errorLogService)
             : base(context)
         {
             _logger = logger;
+            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底抽象方法
@@ -134,6 +136,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetContactValue),
+                    ServiceType = GetType().Name 
+                }).Wait();
+                _logger.LogError(ex, "Error in GetContactValue");
+
                 _logger.LogError(ex, "取得員工聯絡資料值時發生錯誤: EmployeeId={EmployeeId}, ContactTypeName={ContactTypeName}",
                     employeeId, contactTypeName);
                 return string.Empty;
@@ -192,6 +200,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(UpdateContactValue),
+                    ServiceType = GetType().Name 
+                }).Wait();
+                _logger.LogError(ex, "Error in UpdateContactValue");
+
                 _logger.LogError(ex, "更新員工聯絡資料值時發生錯誤: EmployeeId={EmployeeId}, ContactTypeName={ContactTypeName}",
                     employeeId, contactTypeName);
                 return ServiceResult.Failure("更新聯絡資料時發生錯誤");
@@ -270,6 +284,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(EnsureUniquePrimaryContacts),
+                    ServiceType = GetType().Name 
+                }).Wait();
+                _logger.LogError(ex, "Error in EnsureUniquePrimaryContacts");
+
                 _logger.LogError(ex, "確保主要聯絡方式唯一性時發生錯誤");
                 return ServiceResult.Failure("處理主要聯絡方式時發生錯誤");
             }
@@ -295,6 +315,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByEmployeeIdAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in GetEmployeeContactsAsync");
+
                 _logger.LogError(ex, "根據員工ID取得聯絡資料時發生錯誤: EmployeeId={EmployeeId}", employeeId);
                 return ServiceResult<List<EmployeeContact>>.Failure("取得員工聯絡資料時發生錯誤");
             }
@@ -320,6 +346,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByIdAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in GetByIdAsync");
+
                 _logger.LogError(ex, "根據聯絡類型取得員工聯絡資料時發生錯誤: ContactTypeId={ContactTypeId}", contactTypeId);
                 return ServiceResult<List<EmployeeContact>>.Failure("取得員工聯絡資料時發生錯誤");
             }
@@ -362,6 +394,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SetAsPrimaryAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in SetAsPrimaryAsync");
+
                 _logger.LogError(ex, "設定主要聯絡方式時發生錯誤: EmployeeContactId={EmployeeContactId}", employeeContactId);
                 return ServiceResult.Failure("設定主要聯絡方式時發生錯誤");
             }
@@ -370,3 +408,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

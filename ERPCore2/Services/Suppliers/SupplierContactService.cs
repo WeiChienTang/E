@@ -13,40 +13,60 @@ namespace ERPCore2.Services
     public class SupplierContactService : GenericManagementService<SupplierContact>, ISupplierContactService
     {
         private readonly ILogger<SupplierContactService> _logger;
+        private readonly IErrorLogService _errorLogService;
 
-        public SupplierContactService(AppDbContext context, ILogger<SupplierContactService> logger) : base(context)
+        public SupplierContactService(AppDbContext context, ILogger<SupplierContactService> logger, IErrorLogService errorLogService) : base(context)
         {
             _logger = logger;
+            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底方法
 
         public override async Task<List<SupplierContact>> GetAllAsync()
         {
-            return await _dbSet
-                .Include(sc => sc.Supplier)
-                .Include(sc => sc.ContactType)
-                .Where(sc => !sc.IsDeleted)
-                .OrderBy(sc => sc.Supplier.CompanyName)
-                .ThenBy(sc => sc.ContactType!.TypeName)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Include(sc => sc.Supplier)
+                    .Include(sc => sc.ContactType)
+                    .Where(sc => !sc.IsDeleted)
+                    .OrderBy(sc => sc.Supplier.CompanyName)
+                    .ThenBy(sc => sc.ContactType!.TypeName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in GetAllAsync");
+                return new List<SupplierContact>();
+            }
         }
 
         public override async Task<List<SupplierContact>> SearchAsync(string searchTerm)
         {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return await GetAllAsync();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    return await GetAllAsync();
 
-            return await _dbSet
-                .Include(sc => sc.Supplier)
-                .Include(sc => sc.ContactType)
-                .Where(sc => !sc.IsDeleted &&
-                           (sc.ContactValue.Contains(searchTerm) ||
-                            sc.Supplier.CompanyName.Contains(searchTerm) ||
-                            (sc.ContactType != null && sc.ContactType.TypeName.Contains(searchTerm))))
-                .OrderBy(sc => sc.Supplier.CompanyName)
-                .ThenBy(sc => sc.ContactType!.TypeName)
-                .ToListAsync();
+                return await _dbSet
+                    .Include(sc => sc.Supplier)
+                    .Include(sc => sc.ContactType)
+                    .Where(sc => !sc.IsDeleted &&
+                               (sc.ContactValue.Contains(searchTerm) ||
+                                sc.Supplier.CompanyName.Contains(searchTerm) ||
+                                (sc.ContactType != null && sc.ContactType.TypeName.Contains(searchTerm))))
+                    .OrderBy(sc => sc.Supplier.CompanyName)
+                    .ThenBy(sc => sc.ContactType!.TypeName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in SearchAsync");
+                return new List<SupplierContact>();
+            }
         }
 
         public override async Task<ServiceResult> ValidateAsync(SupplierContact entity)

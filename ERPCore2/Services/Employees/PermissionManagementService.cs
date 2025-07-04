@@ -4,6 +4,7 @@ using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using ERPCore2.Services.GenericManagementService;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
 
 namespace ERPCore2.Services
@@ -13,20 +14,34 @@ namespace ERPCore2.Services
     /// </summary>
     public class PermissionManagementService : GenericManagementService<Permission>, IPermissionManagementService
     {
+        private readonly ILogger<PermissionManagementService> _logger;
         private readonly IErrorLogService _errorLogService;
 
-        public PermissionManagementService(AppDbContext context, IErrorLogService errorLogService) : base(context)
+        public PermissionManagementService(AppDbContext context, ILogger<PermissionManagementService> logger, IErrorLogService errorLogService) : base(context)
         {
+            _logger = logger;
             _errorLogService = errorLogService;
         }
 
         // 覆寫 GetAllAsync 以提供排序
         public override async Task<List<Permission>> GetAllAsync()
         {
-            return await _dbSet
-                .Where(p => !p.IsDeleted)
-                .OrderBy(p => p.PermissionCode)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Where(p => !p.IsDeleted)
+                    .OrderBy(p => p.PermissionCode)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAllAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting all permissions");
+                throw;
+            }
         }
 
         /// <summary>
@@ -49,7 +64,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                return ServiceResult<Permission>.Failure($"取得權限資料時發生錯誤：{ex.Message}");
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByCodeAsync),
+                    PermissionCode = permissionCode,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting permission by code {PermissionCode}", permissionCode);
+                return ServiceResult<Permission>.Failure("取得權限資料時發生錯誤");
             }
         }
 
@@ -72,7 +93,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                return ServiceResult<List<Permission>>.Failure($"取得模組權限時發生錯誤：{ex.Message}");
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetPermissionsByModuleAsync),
+                    ModulePrefix = modulePrefix,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting permissions by module {ModulePrefix}", modulePrefix);
+                return ServiceResult<List<Permission>>.Failure("取得模組權限時發生錯誤");
             }
         }
 

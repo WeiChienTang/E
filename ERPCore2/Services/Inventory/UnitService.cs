@@ -2,6 +2,7 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services.GenericManagementService;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace ERPCore2.Services
 {
@@ -10,10 +11,12 @@ namespace ERPCore2.Services
     /// </summary>
     public class UnitService : GenericManagementService<Unit>, IUnitService
     {
+        private readonly ILogger<UnitService> _logger;
         private readonly IErrorLogService _errorLogService;
 
-        public UnitService(AppDbContext context, IErrorLogService errorLogService) : base(context)
+        public UnitService(AppDbContext context, ILogger<UnitService> logger, IErrorLogService errorLogService) : base(context)
         {
+            _logger = logger;
             _errorLogService = errorLogService;
         }
 
@@ -22,12 +25,24 @@ namespace ERPCore2.Services
         /// </summary>
         public override async Task<List<Unit>> GetAllAsync()
         {
-            return await _dbSet
-                .Include(u => u.FromUnitConversions)
-                .Include(u => u.ToUnitConversions)
-                .Where(u => !u.IsDeleted)
-                .OrderBy(u => u.UnitCode)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Include(u => u.FromUnitConversions)
+                    .Include(u => u.ToUnitConversions)
+                    .Where(u => !u.IsDeleted)
+                    .OrderBy(u => u.UnitCode)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAllAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting all units");
+                throw;
+            }
         }
 
         /// <summary>
@@ -35,18 +50,31 @@ namespace ERPCore2.Services
         /// </summary>
         public override async Task<List<Unit>> SearchAsync(string searchTerm)
         {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return await GetAllAsync();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    return await GetAllAsync();
 
-            return await _dbSet
-                .Include(u => u.FromUnitConversions)
-                .Include(u => u.ToUnitConversions)
-                .Where(u => !u.IsDeleted &&
-                           (u.UnitName.Contains(searchTerm) ||
-                            u.UnitCode.Contains(searchTerm) ||
-                            (u.Symbol != null && u.Symbol.Contains(searchTerm))))
-                .OrderBy(u => u.UnitCode)
-                .ToListAsync();
+                return await _dbSet
+                    .Include(u => u.FromUnitConversions)
+                    .Include(u => u.ToUnitConversions)
+                    .Where(u => !u.IsDeleted &&
+                               (u.UnitName.Contains(searchTerm) ||
+                                u.UnitCode.Contains(searchTerm) ||
+                                (u.Symbol != null && u.Symbol.Contains(searchTerm))))
+                    .OrderBy(u => u.UnitCode)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SearchAsync),
+                    SearchTerm = searchTerm,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error searching units with term {SearchTerm}", searchTerm);
+                throw;
+            }
         }
 
         /// <summary>

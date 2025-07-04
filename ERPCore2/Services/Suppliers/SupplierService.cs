@@ -13,9 +13,9 @@ namespace ERPCore2.Services
     public class SupplierService : GenericManagementService<Supplier>, ISupplierService
     {
         private readonly ILogger<SupplierService> _logger;
-        private readonly IErrorLogService? _errorLogService;
+        private readonly IErrorLogService _errorLogService;
 
-        public SupplierService(AppDbContext context, ILogger<SupplierService> logger, IErrorLogService? errorLogService = null) : base(context)
+        public SupplierService(AppDbContext context, ILogger<SupplierService> logger, IErrorLogService errorLogService) : base(context)
         {
             _logger = logger;
             _errorLogService = errorLogService;
@@ -25,24 +25,49 @@ namespace ERPCore2.Services
 
         public override async Task<List<Supplier>> GetAllAsync()
         {
-            return await _dbSet
-                .Include(s => s.SupplierType)
-                .Include(s => s.IndustryType)
-                .Where(s => !s.IsDeleted)
-                .OrderBy(s => s.CompanyName)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Include(s => s.SupplierType)
+                    .Include(s => s.IndustryType)
+                    .Where(s => !s.IsDeleted)
+                    .OrderBy(s => s.CompanyName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAllAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting all suppliers");
+                throw;
+            }
         }
 
         public override async Task<Supplier?> GetByIdAsync(int id)
         {
-            return await _dbSet
-                .Include(s => s.SupplierType)
-                .Include(s => s.IndustryType)
-                .Include(s => s.SupplierContacts)
-                    .ThenInclude(sc => sc.ContactType)
-                .Include(s => s.SupplierAddresses)
-                    .ThenInclude(sa => sa.AddressType)
-                .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
+            try
+            {
+                return await _dbSet
+                    .Include(s => s.SupplierType)
+                    .Include(s => s.IndustryType)
+                    .Include(s => s.SupplierContacts)
+                        .ThenInclude(sc => sc.ContactType)
+                    .Include(s => s.SupplierAddresses)
+                        .ThenInclude(sa => sa.AddressType)
+                    .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByIdAsync),
+                    Id = id,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting supplier by id {Id}", id);
+                throw;
+            }
         }
 
         public override async Task<List<Supplier>> SearchAsync(string searchTerm)

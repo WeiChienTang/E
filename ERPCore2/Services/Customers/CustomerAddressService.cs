@@ -15,86 +15,115 @@ namespace ERPCore2.Services
     public class CustomerAddressService : GenericManagementService<CustomerAddress>, ICustomerAddressService
     {
         private readonly ILogger<CustomerAddressService> _logger;
+        private readonly IErrorLogService _errorLogService;
 
-        public CustomerAddressService(AppDbContext context, ILogger<CustomerAddressService> logger) : base(context)
+        public CustomerAddressService(AppDbContext context, ILogger<CustomerAddressService> logger, IErrorLogService errorLogService) : base(context)
         {
             _logger = logger;
+            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底方法
 
         public override async Task<List<CustomerAddress>> GetAllAsync()
         {
-            return await _dbSet
-                .Include(ca => ca.Customer)
-                .Include(ca => ca.AddressType)
-                .Where(ca => !ca.IsDeleted)
-                .OrderBy(ca => ca.Customer.CompanyName)
-                .ThenBy(ca => ca.AddressType!.TypeName)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Include(ca => ca.Customer)
+                    .Include(ca => ca.AddressType)
+                    .Where(ca => !ca.IsDeleted)
+                    .OrderBy(ca => ca.Customer.CompanyName)
+                    .ThenBy(ca => ca.AddressType!.TypeName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, "Error in GetAllAsync");
+                _logger.LogError(ex, "Error in GetAllAsync");
+                return new List<CustomerAddress>();
+            }
         }
 
         public override async Task<List<CustomerAddress>> SearchAsync(string searchTerm)
         {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return await GetAllAsync();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    return await GetAllAsync();
 
-            return await _dbSet
-                .Include(ca => ca.Customer)
-                .Include(ca => ca.AddressType)
-                .Where(ca => !ca.IsDeleted &&
-                           ((ca.Address != null && ca.Address.Contains(searchTerm)) ||
-                            (ca.City != null && ca.City.Contains(searchTerm)) ||
-                            (ca.District != null && ca.District.Contains(searchTerm)) ||
-                            (ca.PostalCode != null && ca.PostalCode.Contains(searchTerm)) ||
-                            ca.Customer.CompanyName.Contains(searchTerm)))
-                .OrderBy(ca => ca.Customer.CompanyName)
-                .ThenBy(ca => ca.AddressType!.TypeName)
-                .ToListAsync();
+                return await _dbSet
+                    .Include(ca => ca.Customer)
+                    .Include(ca => ca.AddressType)
+                    .Where(ca => !ca.IsDeleted &&
+                               ((ca.Address != null && ca.Address.Contains(searchTerm)) ||
+                                (ca.City != null && ca.City.Contains(searchTerm)) ||
+                                (ca.District != null && ca.District.Contains(searchTerm)) ||
+                                (ca.PostalCode != null && ca.PostalCode.Contains(searchTerm)) ||
+                                ca.Customer.CompanyName.Contains(searchTerm)))
+                    .OrderBy(ca => ca.Customer.CompanyName)
+                    .ThenBy(ca => ca.AddressType!.TypeName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in SearchAsync");
+                return new List<CustomerAddress>();
+            }
         }
 
         public override async Task<ServiceResult> ValidateAsync(CustomerAddress entity)
         {
-            var errors = new List<string>();
-
-            // 檢查必要欄位
-            if (entity.CustomerId <= 0)
-                errors.Add("客戶ID必須大於0");
-
-            // 檢查地址長度限制
-            if (!string.IsNullOrEmpty(entity.PostalCode) && entity.PostalCode.Length > 10)
-                errors.Add("郵遞區號不可超過10個字元");
-
-            if (!string.IsNullOrEmpty(entity.City) && entity.City.Length > 50)
-                errors.Add("城市不可超過50個字元");
-
-            if (!string.IsNullOrEmpty(entity.District) && entity.District.Length > 50)
-                errors.Add("行政區不可超過50個字元");
-
-            if (!string.IsNullOrEmpty(entity.Address) && entity.Address.Length > 200)
-                errors.Add("地址不可超過200個字元");
-
-            // 檢查地址類型是否存在
-            if (entity.AddressTypeId.HasValue)
+            try
             {
-                var addressTypeExists = await _context.AddressTypes
-                    .AnyAsync(at => at.Id == entity.AddressTypeId.Value && at.Status == EntityStatus.Active);
+                var errors = new List<string>();
 
-                if (!addressTypeExists)
-                    errors.Add("指定的地址類型不存在或已停用");
+                // 檢查必要欄位
+                if (entity.CustomerId <= 0)
+                    errors.Add("客戶ID必須大於0");
+
+                // 檢查地址長度限制
+                if (!string.IsNullOrEmpty(entity.PostalCode) && entity.PostalCode.Length > 10)
+                    errors.Add("郵遞區號不可超過10個字元");
+
+                if (!string.IsNullOrEmpty(entity.City) && entity.City.Length > 50)
+                    errors.Add("城市不可超過50個字元");
+
+                if (!string.IsNullOrEmpty(entity.District) && entity.District.Length > 50)
+                    errors.Add("行政區不可超過50個字元");
+
+                if (!string.IsNullOrEmpty(entity.Address) && entity.Address.Length > 200)
+                    errors.Add("地址不可超過200個字元");
+
+                // 檢查地址類型是否存在
+                if (entity.AddressTypeId.HasValue)
+                {
+                    var addressTypeExists = await _context.AddressTypes
+                        .AnyAsync(at => at.Id == entity.AddressTypeId.Value && at.Status == EntityStatus.Active);
+
+                    if (!addressTypeExists)
+                        errors.Add("指定的地址類型不存在或已停用");
+                }
+
+                // 檢查客戶是否存在
+                var customerExists = await _context.Customers
+                    .AnyAsync(c => c.Id == entity.CustomerId && !c.IsDeleted);
+
+                if (!customerExists)
+                    errors.Add("指定的客戶不存在");
+
+                if (errors.Any())
+                    return ServiceResult.Failure(string.Join("; ", errors));
+
+                return ServiceResult.Success();
             }
-
-            // 檢查客戶是否存在
-            var customerExists = await _context.Customers
-                .AnyAsync(c => c.Id == entity.CustomerId && !c.IsDeleted);
-
-            if (!customerExists)
-                errors.Add("指定的客戶不存在");
-
-            if (errors.Any())
-                return ServiceResult.Failure(string.Join("; ", errors));
-
-            return ServiceResult.Success();
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in ValidateAsync");
+                return ServiceResult.Failure("驗證客戶地址時發生錯誤");
+            }
         }
 
         #endregion
@@ -113,8 +142,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error getting addresses for customer {CustomerId}", customerId);
-                throw;
+                return new List<CustomerAddress>();
             }
         }
 
@@ -128,8 +158,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error getting primary address for customer {CustomerId}", customerId);
-                throw;
+                return null;
             }
         }
 
@@ -146,8 +177,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error getting addresses by type {AddressTypeId}", addressTypeId);
-                throw;
+                return new List<CustomerAddress>();
             }
         }
 
@@ -191,6 +223,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error setting primary address {AddressId}", addressId);
                 return ServiceResult.Failure("設定主要地址時發生錯誤");
             }
@@ -237,6 +270,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error copying address to customer {TargetCustomerId}", targetCustomerId);
                 return ServiceResult<CustomerAddress>.Failure("複製地址時發生錯誤");
             }
@@ -275,6 +309,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error ensuring customer {CustomerId} has primary address", customerId);
                 return ServiceResult.Failure("確保客戶有主要地址時發生錯誤");
             }
@@ -306,8 +341,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error getting addresses with default for customer {CustomerId}", customerId);
-                throw;
+                return new List<CustomerAddress>();
             }
         }
 
@@ -358,6 +394,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex);
                 _logger.LogError(ex, "Error updating customer addresses for customer {CustomerId}", customerId);
                 return ServiceResult.Failure("更新客戶地址時發生錯誤");
             }

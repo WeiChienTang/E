@@ -14,9 +14,9 @@ namespace ERPCore2.Services
     public class ProductService : GenericManagementService<Product>, IProductService
     {
         private readonly ILogger<ProductService> _logger;
-        private readonly IErrorLogService? _errorLogService;
+        private readonly IErrorLogService _errorLogService;
 
-        public ProductService(AppDbContext context, ILogger<ProductService> logger, IErrorLogService? errorLogService = null) 
+        public ProductService(AppDbContext context, ILogger<ProductService> logger, IErrorLogService errorLogService) 
             : base(context)
         {
             _logger = logger;

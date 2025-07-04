@@ -3,6 +3,7 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services.GenericManagementService;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace ERPCore2.Services
 {
@@ -11,10 +12,12 @@ namespace ERPCore2.Services
     /// </summary>
     public class WarehouseService : GenericManagementService<Warehouse>, IWarehouseService
     {
-        private readonly IErrorLogService? _errorLogService;
+        private readonly ILogger<WarehouseService> _logger;
+        private readonly IErrorLogService _errorLogService;
 
-        public WarehouseService(AppDbContext context, IErrorLogService? errorLogService = null) : base(context)
+        public WarehouseService(AppDbContext context, ILogger<WarehouseService> logger, IErrorLogService errorLogService) : base(context)
         {
+            _logger = logger;
             _errorLogService = errorLogService;
         }
 
@@ -23,11 +26,23 @@ namespace ERPCore2.Services
         /// </summary>
         public override async Task<List<Warehouse>> GetAllAsync()
         {
-            return await _dbSet
-                .Include(w => w.WarehouseLocations)
-                .Where(w => !w.IsDeleted)
-                .OrderBy(w => w.WarehouseCode)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Include(w => w.WarehouseLocations)
+                    .Where(w => !w.IsDeleted)
+                    .OrderBy(w => w.WarehouseCode)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAllAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting all warehouses");
+                throw;
+            }
         }
 
         /// <summary>
@@ -35,16 +50,29 @@ namespace ERPCore2.Services
         /// </summary>
         public override async Task<List<Warehouse>> SearchAsync(string searchTerm)
         {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return await GetAllAsync();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    return await GetAllAsync();
 
-            return await _dbSet
-                .Include(w => w.WarehouseLocations)
-                .Where(w => !w.IsDeleted &&
-                           (w.WarehouseName.Contains(searchTerm) ||
-                            w.WarehouseCode.Contains(searchTerm)))
-                .OrderBy(w => w.WarehouseCode)
-                .ToListAsync();
+                return await _dbSet
+                    .Include(w => w.WarehouseLocations)
+                    .Where(w => !w.IsDeleted &&
+                               (w.WarehouseName.Contains(searchTerm) ||
+                                w.WarehouseCode.Contains(searchTerm)))
+                    .OrderBy(w => w.WarehouseCode)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SearchAsync),
+                    SearchTerm = searchTerm,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error searching warehouses with term {SearchTerm}", searchTerm);
+                throw;
+            }
         }
 
         /// <summary>

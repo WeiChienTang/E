@@ -13,10 +13,12 @@ namespace ERPCore2.Services
     public class SupplierAddressService : GenericManagementService<SupplierAddress>, ISupplierAddressService
     {
         private readonly ILogger<SupplierAddressService> _logger;
+        private readonly IErrorLogService _errorLogService;
 
-        public SupplierAddressService(AppDbContext context, ILogger<SupplierAddressService> logger) : base(context)
+        public SupplierAddressService(AppDbContext context, ILogger<SupplierAddressService> logger, IErrorLogService errorLogService) : base(context)
         {
             _logger = logger;
+            _errorLogService = errorLogService;
         }
 
         #region 覆寫基底方法
@@ -134,6 +136,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetPrimaryAddressAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in GetPrimaryAddressAsync");
+
                 _logger.LogError(ex, "Error getting primary address for supplier {SupplierId}", supplierId);
                 throw;
             }
@@ -151,6 +159,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAddressByTypeAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in GetAddressByTypeAsync");
+
                 _logger.LogError(ex, "Error getting address by type for supplier {SupplierId}, type {AddressTypeId}", 
                     supplierId, addressTypeId);
                 throw;
@@ -194,6 +208,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SetPrimaryAddressAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in SetPrimaryAddressAsync");
+
                 _logger.LogError(ex, "Error setting primary address {AddressId}", addressId);
                 return ServiceResult.Failure($"設定主要地址時發生錯誤: {ex.Message}");
             }
@@ -222,6 +242,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SetPrimaryAddressAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in SetPrimaryAddressAsync");
+
                 _logger.LogError(ex, "Error copying address to supplier {TargetSupplierId}", targetSupplierId);
                 return ServiceResult<SupplierAddress>.Failure($"複製地址時發生錯誤: {ex.Message}");
             }
@@ -254,6 +280,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SetPrimaryAddressAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in SetPrimaryAddressAsync");
+
                 _logger.LogError(ex, "Error ensuring supplier has primary address {SupplierId}", supplierId);
                 return ServiceResult.Failure($"確保主要地址時發生錯誤: {ex.Message}");
             }
@@ -275,6 +307,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(EnsureSupplierHasPrimaryAddressAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in EnsureSupplierHasPrimaryAddressAsync");
+
                 _logger.LogError(ex, "Error getting addresses with default for supplier {SupplierId}", supplierId);
                 throw;
             }
@@ -344,6 +382,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(UpdateSupplierAddressesAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error in UpdateSupplierAddressesAsync");
+
                 _logger.LogError(ex, "Error updating supplier addresses for supplier {SupplierId}", supplierId);
                 return ServiceResult.Failure($"更新廠商地址時發生錯誤: {ex.Message}");
             }
@@ -464,3 +508,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

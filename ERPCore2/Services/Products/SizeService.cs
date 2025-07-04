@@ -25,64 +25,115 @@ namespace ERPCore2.Services
 
         public override async Task<List<Size>> GetAllAsync()
         {
-            return await _dbSet
-                .Include(s => s.Products)
-                .Where(s => !s.IsDeleted)
-                .OrderBy(s => s.SizeName)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Include(s => s.Products)
+                    .Where(s => !s.IsDeleted)
+                    .OrderBy(s => s.SizeName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAllAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting all sizes");
+                throw;
+            }
         }
 
         public override async Task<Size?> GetByIdAsync(int id)
         {
-            return await _dbSet
-                .Include(s => s.Products)
-                .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
+            try
+            {
+                return await _dbSet
+                    .Include(s => s.Products)
+                    .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetByIdAsync),
+                    Id = id,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting size by id {Id}", id);
+                throw;
+            }
         }
 
         public override async Task<List<Size>> SearchAsync(string searchTerm)
         {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return await GetAllAsync();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    return await GetAllAsync();
 
-            var lowerSearchTerm = searchTerm.ToLower();
-            
-            return await _dbSet
-                .Include(s => s.Products)
-                .Where(s => !s.IsDeleted && 
-                    (s.SizeCode.ToLower().Contains(lowerSearchTerm) ||
-                     s.SizeName.ToLower().Contains(lowerSearchTerm) ||
-                     (s.Description != null && s.Description.ToLower().Contains(lowerSearchTerm))))
-                .OrderBy(s => s.SizeName)
-                .ToListAsync();
+                var lowerSearchTerm = searchTerm.ToLower();
+                
+                return await _dbSet
+                    .Include(s => s.Products)
+                    .Where(s => !s.IsDeleted && 
+                        (s.SizeCode.ToLower().Contains(lowerSearchTerm) ||
+                         s.SizeName.ToLower().Contains(lowerSearchTerm) ||
+                         (s.Description != null && s.Description.ToLower().Contains(lowerSearchTerm))))
+                    .OrderBy(s => s.SizeName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(SearchAsync),
+                    SearchTerm = searchTerm,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error searching sizes with term {SearchTerm}", searchTerm);
+                throw;
+            }
         }
 
         public override async Task<ServiceResult> ValidateAsync(Size entity)
         {
-            var errors = new List<string>();
+            try
+            {
+                var errors = new List<string>();
 
-            // 驗證必填欄位
-            if (string.IsNullOrWhiteSpace(entity.SizeCode))
-            {
-                errors.Add("尺寸代碼為必填欄位");
-            }
-            else
-            {
-                // 檢查尺寸代碼唯一性
-                var isDuplicate = await IsSizeCodeExistsAsync(entity.SizeCode, entity.Id);
-                if (isDuplicate)
+                // 驗證必填欄位
+                if (string.IsNullOrWhiteSpace(entity.SizeCode))
                 {
-                    errors.Add("尺寸代碼已存在");
+                    errors.Add("尺寸代碼為必填欄位");
                 }
-            }
+                else
+                {
+                    // 檢查尺寸代碼唯一性
+                    var isDuplicate = await IsSizeCodeExistsAsync(entity.SizeCode, entity.Id);
+                    if (isDuplicate)
+                    {
+                        errors.Add("尺寸代碼已存在");
+                    }
+                }
 
-            if (string.IsNullOrWhiteSpace(entity.SizeName))
+                if (string.IsNullOrWhiteSpace(entity.SizeName))
+                {
+                    errors.Add("尺寸名稱為必填欄位");
+                }
+
+                return errors.Any() 
+                    ? ServiceResult.Failure(string.Join("; ", errors))
+                    : ServiceResult.Success();
+            }
+            catch (Exception ex)
             {
-                errors.Add("尺寸名稱為必填欄位");
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(ValidateAsync),
+                    EntityId = entity.Id,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error validating size entity {EntityId}", entity.Id);
+                return ServiceResult.Failure("驗證過程發生錯誤");
             }
-
-            return errors.Any() 
-                ? ServiceResult.Failure(string.Join("; ", errors))
-                : ServiceResult.Success();
         }
 
         #endregion
@@ -91,47 +142,99 @@ namespace ERPCore2.Services
 
         public async Task<Size?> GetBySizeCodeAsync(string sizeCode)
         {
-            if (string.IsNullOrWhiteSpace(sizeCode))
-                return null;
+            try
+            {
+                if (string.IsNullOrWhiteSpace(sizeCode))
+                    return null;
 
-            return await _dbSet
-                .Include(s => s.Products)
-                .FirstOrDefaultAsync(s => s.SizeCode == sizeCode && !s.IsDeleted);
+                return await _dbSet
+                    .Include(s => s.Products)
+                    .FirstOrDefaultAsync(s => s.SizeCode == sizeCode && !s.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetBySizeCodeAsync),
+                    SizeCode = sizeCode,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting size by code {SizeCode}", sizeCode);
+                throw;
+            }
         }
 
         public async Task<bool> IsSizeCodeExistsAsync(string sizeCode, int? excludeId = null)
         {
-            if (string.IsNullOrWhiteSpace(sizeCode))
-                return false;
-
-            var query = _dbSet.Where(s => s.SizeCode == sizeCode && !s.IsDeleted);
-            
-            if (excludeId.HasValue)
+            try
             {
-                query = query.Where(s => s.Id != excludeId.Value);
-            }
+                if (string.IsNullOrWhiteSpace(sizeCode))
+                    return false;
 
-            return await query.AnyAsync();
+                var query = _dbSet.Where(s => s.SizeCode == sizeCode && !s.IsDeleted);
+                
+                if (excludeId.HasValue)
+                {
+                    query = query.Where(s => s.Id != excludeId.Value);
+                }
+
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(IsSizeCodeExistsAsync),
+                    SizeCode = sizeCode,
+                    ExcludeId = excludeId,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error checking size code exists {SizeCode}", sizeCode);
+                return false; // 安全預設值
+            }
         }
 
         public async Task<List<Size>> GetActiveSizesAsync()
         {
-            return await _dbSet
-                .Where(s => !s.IsDeleted && s.IsActive)
-                .OrderBy(s => s.SizeName)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Where(s => !s.IsDeleted && s.IsActive)
+                    .OrderBy(s => s.SizeName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetActiveSizesAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting active sizes");
+                throw;
+            }
         }
 
         public async Task<List<Size>> GetBySizeNameAsync(string sizeName)
         {
-            if (string.IsNullOrWhiteSpace(sizeName))
-                return new List<Size>();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(sizeName))
+                    return new List<Size>();
 
-            return await _dbSet
-                .Include(s => s.Products)
-                .Where(s => !s.IsDeleted && s.SizeName.Contains(sizeName))
-                .OrderBy(s => s.SizeName)
-                .ToListAsync();
+                return await _dbSet
+                    .Include(s => s.Products)
+                    .Where(s => !s.IsDeleted && s.SizeName.Contains(sizeName))
+                    .OrderBy(s => s.SizeName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetBySizeNameAsync),
+                    SizeName = sizeName,
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting sizes by name {SizeName}", sizeName);
+                throw;
+            }
         }
 
         #endregion
@@ -158,8 +261,14 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(UpdateActiveStatusAsync),
+                    SizeId = sizeId,
+                    IsActive = isActive,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error updating active status for size {SizeId}", sizeId);
-                return ServiceResult.Failure($"更新啟用狀態時發生錯誤: {ex.Message}");
+                return ServiceResult.Failure("更新啟用狀態時發生錯誤");
             }
         }
 
@@ -189,8 +298,14 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(BatchUpdateActiveStatusAsync),
+                    SizeIds = sizeIds,
+                    IsActive = isActive,
+                    ServiceType = GetType().Name 
+                });
                 _logger.LogError(ex, "Error batch updating active status for sizes");
-                return ServiceResult.Failure($"批次更新啟用狀態時發生錯誤: {ex.Message}");
+                return ServiceResult.Failure("批次更新啟用狀態時發生錯誤");
             }
         }
 

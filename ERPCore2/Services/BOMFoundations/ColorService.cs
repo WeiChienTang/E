@@ -3,15 +3,18 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services.GenericManagementService;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace ERPCore2.Services
 {
     public class ColorService : GenericManagementService<Color>, IColorService
     {
+        private readonly ILogger<ColorService> _logger;
         private readonly IErrorLogService _errorLogService;
 
-        public ColorService(AppDbContext context, IErrorLogService errorLogService) : base(context)
+        public ColorService(AppDbContext context, ILogger<ColorService> logger, IErrorLogService errorLogService) : base(context)
         {
+            _logger = logger;
             _errorLogService = errorLogService;
         }
 
@@ -20,10 +23,22 @@ namespace ERPCore2.Services
         /// </summary>
         public override async Task<List<Color>> GetAllAsync()
         {
-            return await _dbSet
-                .Where(c => !c.IsDeleted)
-                .OrderBy(c => c.Name)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Where(c => !c.IsDeleted)
+                    .OrderBy(c => c.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex, new { 
+                    Method = nameof(GetAllAsync),
+                    ServiceType = GetType().Name 
+                });
+                _logger.LogError(ex, "Error getting all colors");
+                throw;
+            }
         }
 
         /// <summary>
