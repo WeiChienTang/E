@@ -5,6 +5,203 @@ GenericManagementService<T>：提供標準 CRUD 操作，所有服務都應繼�
 檔案位置：`Service/[類型名稱]/` 底下放 `I[功能]Service` 和 `[功能]Service`
 實體屬性：使用 Entity 中定義的屬性名稱，外鍵格式為 `[表名稱]Id`
 
+## 統一的 Service 架構模式
+
+### 建構子注入標準模式
+
+所有 Service 必須遵循統一的建構子注入模式，包含以下必要依賴：
+
+```csharp
+public class [業務領域]Service : GenericManagementService<[實體]>, I[業務領域]Service
+{
+    private readonly ILogger<[業務領域]Service> _logger;
+    private readonly IErrorLogService _errorLogService;
+
+    public [業務領域]Service(AppDbContext context, ILogger<[業務領域]Service> logger, IErrorLogService errorLogService) 
+        : base(context)
+    {
+        _logger = logger;
+        _errorLogService = errorLogService;
+    }
+}
+```
+
+**必要依賴說明：**
+- `AppDbContext context`：資料庫上下文，透過基底類別處理
+- `ILogger<T> logger`：日誌記錄服務，用於記錄操作日誌
+- `IErrorLogService errorLogService`：錯誤記錄服務，用於記錄錯誤至 ErrorLog 資料表
+
+### 完整的錯誤處理機制
+
+所有 Service 的公開方法都必須實作統一的錯誤處理模式：
+
+#### 1. 異步方法錯誤處理
+```csharp
+public async Task<List<[實體]>> GetAllAsync()
+{
+    try
+    {
+        return await _dbSet
+            .Where(e => !e.IsDeleted)
+            .OrderBy(e => e.Name)
+            .ToListAsync();
+    }
+    catch (Exception ex)
+    {
+        await _errorLogService.LogErrorAsync(ex);
+        _logger.LogError(ex, "Error in GetAllAsync");
+        return new List<[實體]>();
+    }
+}
+```
+
+#### 2. 同步方法錯誤處理
+```csharp
+public bool IsValidMethod(string parameter)
+{
+    try
+    {
+        // 業務邏輯
+        return true;
+    }
+    catch (Exception ex)
+    {
+        _errorLogService.LogErrorAsync(ex).Wait();
+        _logger.LogError(ex, "Error in IsValidMethod");
+        return false;
+    }
+}
+```
+
+#### 3. 回傳 ServiceResult 的方法
+```csharp
+public async Task<ServiceResult> ValidateAsync([實體] entity)
+{
+    try
+    {
+        var errors = new List<string>();
+        
+        // 驗證邏輯
+        if (string.IsNullOrWhiteSpace(entity.Name))
+            errors.Add("名稱為必填欄位");
+            
+        if (errors.Any())
+            return ServiceResult.Failure(string.Join("; ", errors));
+            
+        return ServiceResult.Success();
+    }
+    catch (Exception ex)
+    {
+        await _errorLogService.LogErrorAsync(ex);
+        _logger.LogError(ex, "Error in ValidateAsync");
+        return ServiceResult.Failure("驗證過程發生錯誤");
+    }
+}
+```
+
+### 標準範例：SizeService
+
+以下是完全符合標準的 SizeService 實作範例：
+
+```csharp
+using ERPCore2.Data.Context;
+using ERPCore2.Data.Entities;
+using ERPCore2.Services.GenericManagementService;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+namespace ERPCore2.Services
+{
+    public class SizeService : GenericManagementService<Size>, ISizeService
+    {
+        private readonly ILogger<SizeService> _logger;
+        private readonly IErrorLogService _errorLogService;
+
+        public SizeService(AppDbContext context, ILogger<SizeService> logger, IErrorLogService errorLogService) 
+            : base(context)
+        {
+            _logger = logger;
+            _errorLogService = errorLogService;
+        }
+
+        public override async Task<List<Size>> GetAllAsync()
+        {
+            try
+            {
+                return await _dbSet
+                    .Where(s => !s.IsDeleted)
+                    .OrderBy(s => s.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in GetAllAsync");
+                return new List<Size>();
+            }
+        }
+
+        public override async Task<ServiceResult> ValidateAsync(Size entity)
+        {
+            try
+            {
+                var errors = new List<string>();
+
+                if (string.IsNullOrWhiteSpace(entity.Name))
+                    errors.Add("尺寸名稱為必填欄位");
+
+                if (!string.IsNullOrWhiteSpace(entity.Code) && await IsCodeExistsAsync(entity.Code, entity.Id))
+                    errors.Add("尺寸代碼已存在");
+
+                if (await IsNameExistsAsync(entity.Name, entity.Id))
+                    errors.Add("尺寸名稱已存在");
+
+                if (errors.Any())
+                    return ServiceResult.Failure(string.Join("; ", errors));
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in ValidateAsync");
+                return ServiceResult.Failure("驗證尺寸時發生錯誤");
+            }
+        }
+
+        public async Task<bool> IsCodeExistsAsync(string code, int? excludeId = null)
+        {
+            try
+            {
+                var query = _dbSet.Where(s => s.Code == code && !s.IsDeleted);
+                if (excludeId.HasValue)
+                    query = query.Where(s => s.Id != excludeId.Value);
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(ex);
+                _logger.LogError(ex, "Error in IsCodeExistsAsync");
+                return false;
+            }
+        }
+    }
+}
+```
+
+### 錯誤處理要點
+
+1. **必須包裝所有公開方法**：每個 public 方法都要有 try-catch
+2. **雙重錯誤記錄**：
+   - `_errorLogService.LogErrorAsync(ex)` - 記錄至 ErrorLog 資料表
+   - `_logger.LogError(ex, "錯誤描述")` - 記錄至應用程式日誌
+3. **安全回傳值**：
+   - List 回傳空列表
+   - 單一實體回傳 null
+   - bool 回傳 false
+   - ServiceResult 回傳包含錯誤訊息的 Failure
+4. **同步方法處理**：使用 `.Wait()` 調用異步錯誤記錄方法
+
 1. 建立服務介面
 ```csharp
 // Services/Customers/ICustomerService.cs
@@ -17,7 +214,8 @@ public interface ICustomerService : IGenericManagementService<Customer>
     Task<ServiceResult> UpdateCustomerStatusAsync(int customerId, EntityStatus status);
 }
 ```
-2. 實作服務類別
+
+2. 實作服務類別（遵循統一模式）
 ```csharp
 // Services/Customers/CustomerService.cs
 using ERPCore2.Helpers;
@@ -50,9 +248,9 @@ public class CustomerService : GenericManagementService<Customer>, ICustomerServ
         }
         catch (Exception ex)
         {
-            // 記錄錯誤但不拋出，讓 GenericIndexPageComponent 處理
-            await _errorLogService.LogErrorAsync(ex, new { Method = nameof(GetAllAsync) });
-            throw; // 重新拋出讓上層統一處理
+            await _errorLogService.LogErrorAsync(ex);
+            _logger.LogError(ex, "Error in GetAllAsync");
+            return new List<Customer>();
         }
     }
     
@@ -69,11 +267,8 @@ public class CustomerService : GenericManagementService<Customer>, ICustomerServ
         }
         catch (Exception ex)
         {
-            await _errorLogService.LogErrorAsync(ex, new { 
-                Method = nameof(IsCustomerCodeExistsAsync),
-                CustomerCode = customerCode,
-                ExcludeId = excludeId 
-            });
+            await _errorLogService.LogErrorAsync(ex);
+            _logger.LogError(ex, "Error in IsCustomerCodeExistsAsync");
             return false; // 安全回傳預設值
         }
     }
@@ -81,35 +276,35 @@ public class CustomerService : GenericManagementService<Customer>, ICustomerServ
     // 覆寫驗證方法
     public override async Task<ServiceResult> ValidateAsync(Customer entity)
     {
-        var result = new ServiceResult();
-        
         try
         {
+            var errors = new List<string>();
+            
             // 基本驗證
             if (string.IsNullOrWhiteSpace(entity.CustomerCode))
-                result.AddError("客戶代碼不能為空");
+                errors.Add("客戶代碼不能為空");
             
             if (string.IsNullOrWhiteSpace(entity.CompanyName))
-                result.AddError("公司名稱不能為空");
+                errors.Add("公司名稱不能為空");
             
             // 業務邏輯驗證
             if (!string.IsNullOrWhiteSpace(entity.CustomerCode))
             {
                 bool codeExists = await IsCustomerCodeExistsAsync(entity.CustomerCode, entity.Id == 0 ? null : entity.Id);
                 if (codeExists)
-                    result.AddError("客戶代碼已存在");
+                    errors.Add("客戶代碼已存在");
             }
             
-            return result;
+            if (errors.Any())
+                return ServiceResult.Failure(string.Join("; ", errors));
+                
+            return ServiceResult.Success();
         }
         catch (Exception ex)
         {
-            await _errorLogService.LogErrorAsync(ex, new { 
-                Method = nameof(ValidateAsync),
-                EntityId = entity.Id 
-            });
-            result.AddError("驗證過程發生錯誤");
-            return result;
+            await _errorLogService.LogErrorAsync(ex);
+            _logger.LogError(ex, "Error in ValidateAsync");
+            return ServiceResult.Failure("驗證過程發生錯誤");
         }
     }
 }
@@ -293,3 +488,31 @@ public static void AddApplicationServices(this IServiceCollection services, stri
     // ... 其他服務
 }
 ```
+
+## Service 實作檢查清單
+
+在實作或更新 Service 時，請確認以下項目：
+
+### ✅ 建構子檢查
+- [ ] 包含 `ILogger<T> logger` 參數
+- [ ] 包含 `IErrorLogService errorLogService` 參數
+- [ ] 正確儲存到私有欄位
+
+### ✅ 錯誤處理檢查
+- [ ] 所有公開方法都有 try-catch 包裝
+- [ ] catch 區塊中調用 `_errorLogService.LogErrorAsync(ex)`
+- [ ] catch 區塊中調用 `_logger.LogError(ex, "錯誤描述")`
+- [ ] 所有方法都回傳安全的預設值
+
+### ✅ 回傳值檢查
+- [ ] `Task<List<T>>` 方法：回傳空列表 `new List<T>()`
+- [ ] `Task<T?>` 方法：回傳 `null`
+- [ ] `Task<bool>` 方法：回傳 `false`
+- [ ] `Task<ServiceResult>` 方法：回傳 `ServiceResult.Failure("錯誤訊息")`
+- [ ] 同步方法：使用 `.Wait()` 調用錯誤記錄
+
+### ✅ 程式碼品質檢查
+- [ ] 遵循命名規範
+- [ ] 添加適當的 XML 註解
+- [ ] 通過編譯檢查
+- [ ] 符合專案的程式碼風格
