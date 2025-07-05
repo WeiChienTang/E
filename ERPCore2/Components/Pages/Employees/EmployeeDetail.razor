@@ -80,7 +80,23 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[EmployeeDetail] 載入員工資料失敗：{ex.Message}");
+            // 統一錯誤處理
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(LoadEmployeeDataAsync),
+                GetType(),
+                ErrorLogService, 
+                NotificationService, 
+                showUserFriendlyMessage: true,
+                additionalData: new { EmployeeId = EmployeeId }
+            );
+            
+            // 設置預設值避免頁面崩潰
+            employee = null;
+            employeeContacts = new List<EmployeeContact>();
+            employeeAddresses = new List<EmployeeAddress>();
+            
+            // 重新拋出異常讓 GenericDetailPageComponent 處理
             throw;
         }
         finally
@@ -89,271 +105,428 @@
         }
     }
 
-    private Task LoadAdditionalDataAsync()
+    private async Task LoadAdditionalDataAsync()
     {
-        // 由於GetByIdAsync已經Include所有關聯資料，這裡不需要額外查詢
-        return Task.CompletedTask;
+        try
+        {
+            // 由於GetByIdAsync已經Include所有關聯資料，這裡不需要額外查詢
+            // 所有資料已在LoadEmployeeDataAsync中處理完成
+            
+            // 如果有額外的資料載入需求，可以在此處理
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            // 額外資料載入失敗不應該影響主要功能
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(LoadAdditionalDataAsync),
+                GetType(),
+                ErrorLogService, 
+                NotificationService, 
+                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
+                additionalData: new { EmployeeId = EmployeeId }
+            );
+        }
     }
 
-    private Task OnEmployeeDataLoaded()
+    private async Task OnEmployeeDataLoaded()
     {
-        StateHasChanged();
-        return Task.CompletedTask;
+        try
+        {
+            // 資料載入完成後的處理
+            await Task.Run(() => StateHasChanged());
+        }
+        catch (Exception ex)
+        {
+            // 資料載入後處理失敗不應該影響主要功能
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(OnEmployeeDataLoaded),
+                GetType(),
+                ErrorLogService, 
+                NotificationService, 
+                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
+                additionalData: new { EmployeeId = EmployeeId }
+            );
+        }
     }
 
     private string GetFullName()
     {
-        if (employee == null) return "";
-        var fullName = $"{employee.LastName}{employee.FirstName}".Trim();
-        return string.IsNullOrEmpty(fullName) ? employee.Username : fullName;
+        try
+        {
+            if (employee == null) return "";
+            var fullName = $"{employee.LastName}{employee.FirstName}".Trim();
+            return string.IsNullOrEmpty(fullName) ? employee.Username : fullName;
+        }
+        catch (Exception ex)
+        {
+            // 名稱格式化失敗，記錄錯誤但不影響顯示
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(GetFullName),
+                GetType(),
+                ErrorLogService, 
+                NotificationService, 
+                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
+                additionalData: new { EmployeeId = EmployeeId }
+            );
+            
+            return "名稱格式錯誤";
+        }
     }
 
     private string GetEmailContact()
     {
-        if (employee?.EmployeeContacts == null) return "-";
-        
-        var emailContact = employee.EmployeeContacts
-            .FirstOrDefault(ec => ec.ContactType?.TypeName == "Email");
-        
-        return emailContact?.ContactValue ?? "-";
+        try
+        {
+            if (employee?.EmployeeContacts == null) return "-";
+            
+            var emailContact = employee.EmployeeContacts
+                .FirstOrDefault(ec => ec.ContactType?.TypeName == "Email");
+            
+            return emailContact?.ContactValue ?? "-";
+        }
+        catch (Exception ex)
+        {
+            // 電子郵件取得失敗，記錄錯誤但不影響顯示
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(GetEmailContact),
+                GetType(),
+                ErrorLogService, 
+                NotificationService, 
+                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
+                additionalData: new { EmployeeId = EmployeeId }
+            );
+            
+            return "-";
+        }
     }
 
     // 設定標籤頁結構
     private List<GenericDetailPageComponent<Employee, IEmployeeService>.TabSection> GetTabSections()
     {
-        return new List<GenericDetailPageComponent<Employee, IEmployeeService>.TabSection>
-        {            new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
+        try
+        {
+            return new List<GenericDetailPageComponent<Employee, IEmployeeService>.TabSection>
             {
-                Id = "basic",
-                Title = "基本資料",
-                Content = @<div>
-                    <BasicInfoDisplayComponent 
-                        Title="員工基本資訊"
-                        IconClass="fas fa-user"
-                        IconColor="text-primary"
-                        Fields="@GetEmployeeBasicFields()" />
-                </div>
-            },
-            
-            new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
-            {
-                Id = "account",
-                Title = "帳號資訊",
-                Content = @<div class="row">
-                    <DetailFieldComponent Label="帳號狀態">
-                        @if (employee?.Status == EntityStatus.Active)
+                new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div>
+                        <BasicInfoDisplayComponent 
+                            Title="員工基本資訊"
+                            IconClass="fas fa-user"
+                            IconColor="text-primary"
+                            Fields="@GetEmployeeBasicFields()" />
+                    </div>
+                },
+                
+                new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
+                {
+                    Id = "account",
+                    Title = "帳號資訊",
+                    Content = @<div class="row">
+                        <DetailFieldComponent Label="帳號狀態">
+                            @if (employee?.Status == EntityStatus.Active)
+                            {
+                                <span class="badge bg-success">啟用</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">停用</span>
+                            }
+                        </DetailFieldComponent>
+                        <DetailFieldComponent Label="鎖定狀態">
+                            @if (employee?.IsLocked == true)
+                            {
+                                <span class="badge bg-danger">已鎖定</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">正常</span>
+                            }
+                        </DetailFieldComponent>
+                        @if (employee?.FailedLoginAttempts > 0)
                         {
-                            <span class="badge bg-success">啟用</span>
+                            <DetailFieldComponent Label="失敗登入次數" Value="@employee.FailedLoginAttempts.ToString()" />
+                        }
+                        @if (employee?.LockedAt.HasValue == true)
+                        {
+                            <DetailFieldComponent Label="鎖定時間" Value="@employee.LockedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
+                        }
+                        @if (employee?.LastLoginAt.HasValue == true)
+                        {
+                            <DetailFieldComponent Label="最後登入時間" Value="@employee.LastLoginAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
                         }
                         else
                         {
-                            <span class="badge bg-danger">停用</span>
+                            <DetailFieldComponent Label="登入記錄" Value="@("從未登入")" />
                         }
-                    </DetailFieldComponent>
-                    <DetailFieldComponent Label="鎖定狀態">
-                        @if (employee?.IsLocked == true)
+                    </div>
+                },
+                
+                new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
+                {
+                    Id = "role",
+                    Title = "角色權限",
+                    Content = @<div class="row">
+                        @if (employee?.Role != null)
                         {
-                            <span class="badge bg-danger">已鎖定</span>
+                            <DetailFieldComponent Label="角色名稱" Value="@employee.Role.RoleName" IsBold="true" />
+                            @if (!string.IsNullOrWhiteSpace(employee.Role.Description))
+                            {
+                                <DetailFieldComponent Label="角色描述" Value="@employee.Role.Description" />
+                            }
                         }
                         else
                         {
-                            <span class="badge bg-success">正常</span>
-                        }
-                    </DetailFieldComponent>
-                    @if (employee?.FailedLoginAttempts > 0)
-                    {
-                        <DetailFieldComponent Label="失敗登入次數" Value="@employee.FailedLoginAttempts.ToString()" />
-                    }
-                    @if (employee?.LockedAt.HasValue == true)
-                    {
-                        <DetailFieldComponent Label="鎖定時間" Value="@employee.LockedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
-                    }
-                    @if (employee?.LastLoginAt.HasValue == true)
-                    {
-                        <DetailFieldComponent Label="最後登入時間" Value="@employee.LastLoginAt.Value.ToString("yyyy/MM/dd HH:mm:ss")" />
-                    }                    else
-                    {
-                        <DetailFieldComponent Label="登入記錄" Value="@("從未登入")" />
-                    }
-                </div>
-            },
-            
-            new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
-            {
-                Id = "role",
-                Title = "角色權限",
-                Content = @<div class="row">
-                    @if (employee?.Role != null)
-                    {
-                        <DetailFieldComponent Label="角色名稱" Value="@employee.Role.RoleName" IsBold="true" />
-                        @if (!string.IsNullOrWhiteSpace(employee.Role.Description))
-                        {
-                            <DetailFieldComponent Label="角色描述" Value="@employee.Role.Description" />
-                        }
-                    }
-                    else
-                    {
-                        <div class="col-12">
-                            <div class="alert alert-warning">
-                                <i class="bi bi-exclamation-triangle me-2"></i>
-                                未設定角色
+                            <div class="col-12">
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    未設定角色
+                                </div>
                             </div>
-                        </div>
-                    }
-                </div>
-            },
+                        }
+                    </div>
+                },
+                
+                new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
+                {
+                    Id = "contacts",
+                    Title = "聯絡方式",
+                    Content = @<div>
+                        <ContactDisplayComponent 
+                            Contacts="@GetContactEntities()"
+                            Title="員工聯絡方式"
+                            ShowStatus="true"
+                            ShowStatistics="true"
+                            ShowCreateButton="false"
+                            EmptyTitle="尚未設定聯絡方式"
+                            EmptyMessage="此員工目前沒有任何聯絡方式資料" />
+                    </div>
+                },
+                
+                new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
+                {
+                    Id = "addresses",
+                    Title = "地址資料",
+                    Content = @<div>
+                        <AddressDisplayComponent 
+                            Addresses="@GetAddressEntities()"
+                            Title="員工地址資料"
+                            ShowStatus="true"
+                            ShowAddressDetails="true"
+                            ShowMapLink="true"
+                            ShowStatistics="true"
+                            ShowCreateButton="false"
+                            EmptyTitle="尚未設定地址"
+                            EmptyMessage="此員工目前沒有任何地址資料" />
+                    </div>
+                },
+                  
+                new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
+                {
+                    Id = "system",
+                    Title = "系統資訊",
+                    Content = @<div>
+                        <SystemInfoDisplayComponent 
+                            CreatedAt="@(employee?.CreatedAt ?? DateTime.MinValue)"
+                            UpdatedAt="@employee?.UpdatedAt"
+                            CreatedBy="@employee?.CreatedBy"
+                            UpdatedBy="@employee?.UpdatedBy"
+                            Remarks="@employee?.Remarks"
+                            ShowTimeline="true"
+                            ShowRemarks="true" />
+                    </div>
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            // 標籤頁設定失敗，記錄錯誤但返回基本結構
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(GetTabSections),
+                GetType(),
+                ErrorLogService, 
+                NotificationService, 
+                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
+                additionalData: new { EmployeeId = EmployeeId }
+            );
             
-            new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
+            // 返回基本標籤頁結構
+            return new List<GenericDetailPageComponent<Employee, IEmployeeService>.TabSection>
             {
-                Id = "contacts",
-                Title = "聯絡方式",
-                Content = @<div>
-                    <ContactDisplayComponent 
-                        Contacts="@GetContactEntities()"
-                        Title="員工聯絡方式"
-                        ShowStatus="true"
-                        ShowStatistics="true"
-                        ShowCreateButton="false"
-                        EmptyTitle="尚未設定聯絡方式"
-                        EmptyMessage="此員工目前沒有任何聯絡方式資料" />
-                </div>
-            },
-            
-            new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
-            {
-                Id = "addresses",
-                Title = "地址資料",
-                Content = @<div>
-                    <AddressDisplayComponent 
-                        Addresses="@GetAddressEntities()"
-                        Title="員工地址資料"
-                        ShowStatus="true"
-                        ShowAddressDetails="true"
-                        ShowMapLink="true"
-                        ShowStatistics="true"
-                        ShowCreateButton="false"
-                        EmptyTitle="尚未設定地址"
-                        EmptyMessage="此員工目前沒有任何地址資料" />
-                </div>
-            },
-              new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
-            {
-                Id = "system",
-                Title = "系統資訊",
-                Content = @<div>
-                    <SystemInfoDisplayComponent 
-                        CreatedAt="@(employee?.CreatedAt ?? DateTime.MinValue)"
-                        UpdatedAt="@employee?.UpdatedAt"
-                        CreatedBy="@employee?.CreatedBy"
-                        UpdatedBy="@employee?.UpdatedBy"
-                        Remarks="@employee?.Remarks"
-                        ShowTimeline="true"
-                        ShowRemarks="true" />
-                </div>
-            }        };
+                new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div><p>載入錯誤，請重新整理頁面</p></div>
+                }
+            };
+        }
     }
 
     // 取得員工基本資料欄位
     private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetEmployeeBasicFields()
     {
-        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        try
         {
-            new()
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
             {
-                Label = "員工代碼",
-                Value = employee?.EmployeeCode,
-                IsPrimary = true,
-                ValueBold = true,
-                IconClass = "fas fa-id-badge",
-                IconBgClass = "bg-primary bg-opacity-10",
-                IconTextClass = "text-primary",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "帳號",
-                Value = employee?.Username,
-                ValueBold = true,
-                IconClass = "fas fa-user-circle",
-                IconBgClass = "bg-info bg-opacity-10",
-                IconTextClass = "text-info",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "姓名",
-                Value = GetFullName(),
-                IconClass = "fas fa-user",
-                IconBgClass = "bg-success bg-opacity-10",
-                IconTextClass = "text-success",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "電子郵件",
-                Value = GetEmailContact(),
-                Format = BasicInfoDisplayComponent.FieldFormat.Email,
-                IconClass = "fas fa-envelope",
-                IconBgClass = "bg-warning bg-opacity-10",
-                IconTextClass = "text-warning",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "部門",
-                Value = employee?.Department,
-                EmptyText = "-",
-                IconClass = "fas fa-building",
-                IconBgClass = "bg-secondary bg-opacity-10",
-                IconTextClass = "text-secondary",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "職位",
-                Value = employee?.Position,
-                EmptyText = "-",
-                IconClass = "fas fa-briefcase",
-                IconBgClass = "bg-info bg-opacity-10",
-                IconTextClass = "text-info",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "狀態",
-                CustomContent = @<div>
-                    @if (employee?.Status != null)
-                    {
-                        <StatusBadgeComponent Status="@employee.Status" />
-                    }
-                </div>,
-                IconClass = "fas fa-toggle-on",
-                IconBgClass = "bg-success bg-opacity-10",
-                IconTextClass = "text-success",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "備註",
-                Value = employee?.Remarks,
-                Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
-                IconClass = "fas fa-sticky-note",
-                IconBgClass = "bg-warning bg-opacity-10",
-                IconTextClass = "text-warning",
-                ColSize = 12,
-                VisibilityCondition = () => !string.IsNullOrEmpty(employee?.Remarks)
-            }
-        };
+                new()
+                {
+                    Label = "員工代碼",
+                    Value = employee?.EmployeeCode,
+                    IsPrimary = true,
+                    ValueBold = true,
+                    IconClass = "fas fa-id-badge",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "帳號",
+                    Value = employee?.Username,
+                    ValueBold = true,
+                    IconClass = "fas fa-user-circle",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "姓名",
+                    Value = GetFullName(),
+                    IconClass = "fas fa-user",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "電子郵件",
+                    Value = GetEmailContact(),
+                    Format = BasicInfoDisplayComponent.FieldFormat.Email,
+                    IconClass = "fas fa-envelope",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "部門",
+                    Value = employee?.Department,
+                    EmptyText = "-",
+                    IconClass = "fas fa-building",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    IconTextClass = "text-secondary",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "職位",
+                    Value = employee?.Position,
+                    EmptyText = "-",
+                    IconClass = "fas fa-briefcase",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "狀態",
+                    CustomContent = @<div>
+                        @if (employee?.Status != null)
+                        {
+                            <StatusBadgeComponent Status="@employee.Status" />
+                        }
+                    </div>,
+                    IconClass = "fas fa-toggle-on",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "備註",
+                    Value = employee?.Remarks,
+                    Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
+                    IconClass = "fas fa-sticky-note",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    ColSize = 12,
+                    VisibilityCondition = () => !string.IsNullOrEmpty(employee?.Remarks)
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            // 基本資料欄位設定失敗，記錄錯誤但返回空列表
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(GetEmployeeBasicFields),
+                GetType(),
+                ErrorLogService, 
+                NotificationService, 
+                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
+                additionalData: new { EmployeeId = EmployeeId }
+            );
+            
+            // 返回空列表以避免頁面崩潰
+            return new List<BasicInfoDisplayComponent.BasicInfoField>();
+        }
     }
 
     // 轉換方法
     private IEnumerable<IContactEntity> GetContactEntities()
     {
-        return employeeContacts.AsContactDisplayEntities();
+        try
+        {
+            return employeeContacts?.AsContactDisplayEntities() ?? new List<IContactEntity>();
+        }
+        catch (Exception ex)
+        {
+            // 聯絡方式轉換失敗，記錄錯誤但返回空列表
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(GetContactEntities),
+                GetType(),
+                ErrorLogService, 
+                NotificationService, 
+                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
+                additionalData: new { EmployeeId = EmployeeId }
+            );
+            
+            return new List<IContactEntity>();
+        }
     }
 
     private IEnumerable<IAddressEntity> GetAddressEntities()
     {
-        return employeeAddresses.AsAddressDisplayEntities();
+        try
+        {
+            return employeeAddresses?.AsAddressDisplayEntities() ?? new List<IAddressEntity>();
+        }
+        catch (Exception ex)
+        {
+            // 地址轉換失敗，記錄錯誤但返回空列表
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(GetAddressEntities),
+                GetType(),
+                ErrorLogService, 
+                NotificationService, 
+                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
+                additionalData: new { EmployeeId = EmployeeId }
+            );
+            
+            return new List<IAddressEntity>();
+        }
     }
 }

@@ -8,6 +8,7 @@
 @inject IAddressTypeService AddressTypeService
 @inject IAuthenticationService AuthenticationService
 @inject INotificationService NotificationService
+@inject IErrorLogService ErrorLogService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @using ERPCore2.Components.Shared.SubCollections
@@ -215,25 +216,101 @@
 
     protected override async Task OnInitializedAsync()
     {
-        InitializeBreadcrumbs();
-        await LoadAdditionalData();
+        try
+        {
+            InitializeBreadcrumbs();
+            await LoadAdditionalData();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(OnInitializedAsync), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { 
+                    PageName = "EmployeeEdit",
+                    Action = "Initialize",
+                    EmployeeId = Id
+                });
+            
+            // 設置預設值避免頁面崩潰
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("員工管理", "/employees"),
+                new(Id.HasValue ? "編輯員工" : "新增員工")
+            };
+        }
     }
 
-    protected override Task OnParametersSetAsync()
+    protected override async Task OnParametersSetAsync()
     {
-        // 當參數變化時（例如從 Detail 導航到 Edit），重新初始化麵包屑
-        InitializeBreadcrumbs();
-        return Task.CompletedTask;
+        try
+        {
+            // 當參數變化時（例如從 Detail 導航到 Edit），重新初始化麵包屑
+            InitializeBreadcrumbs();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(OnParametersSetAsync), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: false, // 參數設置錯誤不需要打擾使用者
+                additionalData: new { 
+                    PageName = "EmployeeEdit",
+                    Action = "ParametersSet",
+                    EmployeeId = Id
+                });
+            
+            // 設置預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("員工管理", "/employees"),
+                new(Id.HasValue ? "編輯員工" : "新增員工")
+            };
+        }
     }
 
     private void InitializeBreadcrumbs()
     {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        try
         {
-            new("首頁", "/"),
-            new("員工管理", "/employees"),
-            new(Id.HasValue ? "編輯員工" : "新增員工")
-        };
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("員工管理", "/employees"),
+                new(Id.HasValue ? "編輯員工" : "新增員工")
+            };
+        }
+        catch (Exception ex)
+        {
+            // 記錄麵包屑初始化錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                    ex, 
+                    nameof(InitializeBreadcrumbs), 
+                    GetType(),
+                    ErrorLogService,
+                    NotificationService,
+                    showUserFriendlyMessage: false, // 這類錯誤不需要打擾使用者
+                    additionalData: new { 
+                        PageName = "EmployeeEdit",
+                        Action = "InitializeBreadcrumbs",
+                        EmployeeId = Id
+                    });
+            });
+            
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
     }
 
     private async Task LoadAdditionalData()
@@ -260,7 +337,19 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"載入額外資料時發生錯誤：{ex.Message}");
+            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(LoadAdditionalData), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { 
+                    PageName = "EmployeeEdit",
+                    Action = "LoadAdditionalData",
+                    EmployeeId = Id
+                });
+            
             // 初始化空列表以防止UI錯誤
             roles = new List<Role>();
             contactTypes = new List<ContactType>();
@@ -416,7 +505,26 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入員工詳細資料失敗：", ex.Message);
+            // 統一錯誤處理
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(LoadEmployeeData), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { 
+                    PageName = "EmployeeEdit",
+                    Action = "LoadEmployeeData",
+                    EmployeeId = Id
+                });
+            
+            // 設置預設值避免頁面崩潰
+            employee = new Employee();
+            employeeContacts = new List<EmployeeContact>();
+            employeeAddresses = new List<EmployeeAddress>();
+            
+            // 重新拋出異常讓 GenericEditPageComponent 處理
             throw;
         }
         finally
@@ -521,7 +629,20 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"儲存時發生錯誤：{ex.Message}");
+            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(SaveEmployee), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { 
+                    PageName = "EmployeeEdit",
+                    Action = "SaveEmployee",
+                    EmployeeId = entity.Id,
+                    IsNewEmployee = !Id.HasValue
+                });
+            
             return false;
         }
     }
@@ -571,9 +692,20 @@
                 await NotificationService.ShowSuccessAsync("登入失敗次數已重設");
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync("重設失敗");
+            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(ResetFailedAttempts), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { 
+                    PageName = "EmployeeEdit",
+                    Action = "ResetFailedAttempts",
+                    EmployeeId = employee?.Id
+                });
         }
     }
 
@@ -602,9 +734,21 @@
                 }
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync("重設密碼失敗");
+            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(ShowPasswordResetDialog), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { 
+                    PageName = "EmployeeEdit",
+                    Action = "ShowPasswordResetDialog",
+                    EmployeeId = employee?.Id,
+                    Username = employee?.Username
+                });
         }
     }
 
