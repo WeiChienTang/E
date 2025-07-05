@@ -67,7 +67,9 @@
         
         try
         {
-            _isLoading = true;            if (CustomerId <= 0) return null;
+            _isLoading = true;
+            
+            if (CustomerId <= 0) return null;
             var result = await CustomerService.GetByIdAsync(CustomerId);
             customer = result; // 保持本地變數同步
             
@@ -81,7 +83,24 @@
             return result;
         }
         catch (Exception ex)
-        {            Console.Error.WriteLine($"[CustomerDetail] 載入客戶資料失敗：{ex.Message}");
+        {
+            // 統一錯誤處理
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(LoadCustomerDataAsync),
+                this.GetType(),
+                ErrorLogService, 
+                NotificationService, 
+                showUserFriendlyMessage: true,
+                additionalData: new { CustomerId = CustomerId }
+            );
+            
+            // 設置預設值避免頁面崩潰
+            customer = null;
+            customerContacts = new List<CustomerContact>();
+            customerAddresses = new List<CustomerAddress>();
+            
+            // 重新拋出異常讓 GenericDetailPageComponent 處理
             throw;
         }
         finally
@@ -90,192 +109,332 @@
         }
     }
     
-    private Task LoadAdditionalDataAsync()
+    private async Task LoadAdditionalDataAsync()
     {
-        // 由於GetByIdAsync已經Include所有關聯資料，這裡不需要額外查詢
-        // 所有資料已在LoadCustomerDataAsync中處理完成
-        return Task.CompletedTask;
+        try
+        {
+            // 由於GetByIdAsync已經Include所有關聯資料，這裡不需要額外查詢
+            // 所有資料已在LoadCustomerDataAsync中處理完成
+            
+            // 如果有額外的資料載入需求，可以在此處理
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            // 額外資料載入失敗不應該影響主要功能
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(LoadAdditionalDataAsync),
+                this.GetType(),
+                ErrorLogService, 
+                NotificationService, 
+                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
+                additionalData: new { CustomerId = CustomerId }
+            );
+        }
     }
 
-    private Task OnCustomerDataLoaded()
+    private async Task OnCustomerDataLoaded()
     {
-        // 資料載入完成後的處理
-        StateHasChanged();        
-        return Task.CompletedTask;
+        try
+        {
+            // 資料載入完成後的處理
+            await Task.Run(() => StateHasChanged());
+        }
+        catch (Exception ex)
+        {
+            // 資料載入後處理失敗不應該影響主要功能
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(OnCustomerDataLoaded),
+                this.GetType(),
+                ErrorLogService, 
+                NotificationService, 
+                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
+                additionalData: new { CustomerId = CustomerId }
+            );
+        }
     }
     private string BuildAddressText(CustomerAddress address)
     {
-        var parts = new List<string>();
-        
-        if (!string.IsNullOrEmpty(address.PostalCode))
-            parts.Add($"({address.PostalCode})");
-        
-        if (!string.IsNullOrEmpty(address.City))
-            parts.Add(address.City);
-        
-        if (!string.IsNullOrEmpty(address.District))
-            parts.Add(address.District);
-        
-        if (!string.IsNullOrEmpty(address.Address))
-            parts.Add(address.Address);
-        
-        return parts.Any() ? string.Join(" ", parts) : "地址不完整";
+        try
+        {
+            if (address == null) return "地址不完整";
+            
+            var parts = new List<string>();
+            
+            if (!string.IsNullOrEmpty(address.PostalCode))
+                parts.Add($"({address.PostalCode})");
+            
+            if (!string.IsNullOrEmpty(address.City))
+                parts.Add(address.City);
+            
+            if (!string.IsNullOrEmpty(address.District))
+                parts.Add(address.District);
+            
+            if (!string.IsNullOrEmpty(address.Address))
+                parts.Add(address.Address);
+            
+            return parts.Any() ? string.Join(" ", parts) : "地址不完整";
+        }
+        catch (Exception ex)
+        {
+            // 地址格式化失敗，記錄錯誤但不影響顯示
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(BuildAddressText),
+                this.GetType(),
+                ErrorLogService, 
+                NotificationService, 
+                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
+                additionalData: new { CustomerId = CustomerId, AddressId = address?.Id }
+            );
+            
+            return "地址格式錯誤";
+        }
     }
 
     // 設定標籤頁結構
     private List<GenericDetailPageComponent<Customer, ICustomerService>.TabSection> GetTabSections()
-    {        
-        return new List<GenericDetailPageComponent<Customer, ICustomerService>.TabSection>
-        {           
-             new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
-            {
-                Id = "basic",
-                Title = "基本資料",
-                Content = @<div>
-                    <BasicInfoDisplayComponent 
-                        Title="客戶基本資訊"
-                        IconClass="fas fa-building"
-                        IconColor="text-primary"
-                        Fields="@GetCustomerBasicFields()" />
-                </div>
-            },
-              new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
-            {
-                Id = "contacts",
-                Title = "聯絡方式",
-                Content = @<div>                    <ContactDisplayComponent 
-                        Contacts="@GetContactEntities()"
-                        Title="客戶聯絡方式"
-                        ShowStatus="true"
-                        ShowStatistics="true"
-                        ShowCreateButton="false"
-                        EmptyTitle="尚未設定聯絡方式"
-                        EmptyMessage="此客戶目前沒有任何聯絡方式資料" />
-                </div>
-            },
+    {
+        try
+        {
+            return new List<GenericDetailPageComponent<Customer, ICustomerService>.TabSection>
+            {           
+                 new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div>
+                        <BasicInfoDisplayComponent 
+                            Title="客戶基本資訊"
+                            IconClass="fas fa-building"
+                            IconColor="text-primary"
+                            Fields="@GetCustomerBasicFields()" />
+                    </div>
+                },
+                  new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
+                {
+                    Id = "contacts",
+                    Title = "聯絡方式",
+                    Content = @<div>
+                        <ContactDisplayComponent 
+                            Contacts="@GetContactEntities()"
+                            Title="客戶聯絡方式"
+                            ShowStatus="true"
+                            ShowStatistics="true"
+                            ShowCreateButton="false"
+                            EmptyTitle="尚未設定聯絡方式"
+                            EmptyMessage="此客戶目前沒有任何聯絡方式資料" />
+                    </div>
+                },
+                
+                new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
+                {
+                    Id = "addresses",
+                    Title = "地址資料",
+                    Content = @<div>
+                        <AddressDisplayComponent 
+                            Addresses="@GetAddressEntities()"
+                            Title="客戶地址資料"
+                            ShowStatus="true"
+                            ShowAddressDetails="true"
+                            ShowMapLink="true"
+                            ShowStatistics="true"
+                            ShowCreateButton="false"
+                            EmptyTitle="尚未設定地址"
+                            EmptyMessage="此客戶目前沒有任何地址資料" />
+                    </div>
+                },
+                
+                new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
+                {
+                    Id = "system",
+                    Title = "系統資訊",
+                    Content = @<div>
+                        <SystemInfoDisplayComponent 
+                            CreatedAt="@(customer?.CreatedAt ?? DateTime.MinValue)"
+                            UpdatedAt="@customer?.UpdatedAt"
+                            CreatedBy="@customer?.CreatedBy"
+                            UpdatedBy="@customer?.UpdatedBy"
+                            Remarks="@customer?.Remarks"
+                            ShowTimeline="true"
+                            ShowRemarks="true" />
+                    </div>
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            // 標籤頁設定失敗，記錄錯誤但返回基本結構
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(GetTabSections),
+                this.GetType(),
+                ErrorLogService, 
+                NotificationService, 
+                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
+                additionalData: new { CustomerId = CustomerId }
+            );
             
-            new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
+            // 返回基本標籤頁結構
+            return new List<GenericDetailPageComponent<Customer, ICustomerService>.TabSection>
             {
-                Id = "addresses",
-                Title = "地址資料",
-                Content = @<div>                    <AddressDisplayComponent 
-                        Addresses="@GetAddressEntities()"
-                        Title="客戶地址資料"
-                        ShowStatus="true"
-                        ShowAddressDetails="true"
-                        ShowMapLink="true"
-                        ShowStatistics="true"
-                        ShowCreateButton="false"
-                        EmptyTitle="尚未設定地址"
-                        EmptyMessage="此客戶目前沒有任何地址資料" />
-                </div>
-            },
-            
-            new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
-            {
-                Id = "system",
-                Title = "系統資訊",
-                Content = @<div>
-                    <SystemInfoDisplayComponent 
-                        CreatedAt="@(customer?.CreatedAt ?? DateTime.MinValue)"
-                        UpdatedAt="@customer?.UpdatedAt"
-                        CreatedBy="@customer?.CreatedBy"
-                        UpdatedBy="@customer?.UpdatedBy"
-                        Remarks="@customer?.Remarks"
-                        ShowTimeline="true"
-                        ShowRemarks="true" />
-                </div>
-            }        };
+                new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div><p>載入錯誤，請重新整理頁面</p></div>
+                }
+            };
+        }
     }
 
     // 取得客戶基本資料欄位
     private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetCustomerBasicFields()
     {
-        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        try
         {
-            new()
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
             {
-                Label = "統一編號",
-                Value = customer?.TaxNumber,
-                IsPrimary = true,
-                ValueBold = true,
-                IconClass = "fas fa-id-card",
-                IconBgClass = "bg-primary bg-opacity-10",
-                IconTextClass = "text-primary",
-                EmptyText = "未設定",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "公司名稱",
-                Value = customer?.CompanyName,
-                ValueBold = true,
-                IconClass = "fas fa-building",
-                IconBgClass = "bg-info bg-opacity-10",
-                IconTextClass = "text-info",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "聯絡人",
-                Value = customer?.ContactPerson,
-                IconClass = "fas fa-user",
-                IconBgClass = "bg-success bg-opacity-10",
-                IconTextClass = "text-success",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "客戶類型",
-                Value = customer?.CustomerType?.TypeName,
-                IconClass = "fas fa-tags",
-                IconBgClass = "bg-warning bg-opacity-10",
-                IconTextClass = "text-warning",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "行業類型",
-                Value = customer?.IndustryType?.IndustryTypeName,
-                IconClass = "fas fa-industry",
-                IconBgClass = "bg-secondary bg-opacity-10",
-                IconTextClass = "text-secondary",
-                ColSize = 6
-            },            new()
-            {
-                Label = "狀態",
-                CustomContent = @<div>
-                    @if (customer?.Status != null)
-                    {
-                        <span class="badge @(customer.Status == EntityStatus.Active ? "bg-success" : "bg-secondary")">
-                            @(customer.Status == EntityStatus.Active ? "有效" : "無效")
-                        </span>
-                    }
-                </div>,
-                IconClass = "fas fa-toggle-on",
-                IconBgClass = "bg-success bg-opacity-10",
-                IconTextClass = "text-success",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "備註",
-                Value = customer?.Remarks,
-                Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
-                IconClass = "fas fa-sticky-note",
-                IconBgClass = "bg-warning bg-opacity-10",
-                IconTextClass = "text-warning",
-                ColSize = 12,
-                VisibilityCondition = () => !string.IsNullOrEmpty(customer?.Remarks)
-            }        };
+                new()
+                {
+                    Label = "統一編號",
+                    Value = customer?.TaxNumber,
+                    IsPrimary = true,
+                    ValueBold = true,
+                    IconClass = "fas fa-id-card",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary",
+                    EmptyText = "未設定",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "公司名稱",
+                    Value = customer?.CompanyName,
+                    ValueBold = true,
+                    IconClass = "fas fa-building",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "聯絡人",
+                    Value = customer?.ContactPerson,
+                    IconClass = "fas fa-user",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "客戶類型",
+                    Value = customer?.CustomerType?.TypeName,
+                    IconClass = "fas fa-tags",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "行業類型",
+                    Value = customer?.IndustryType?.IndustryTypeName,
+                    IconClass = "fas fa-industry",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    IconTextClass = "text-secondary",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "狀態",
+                    CustomContent = @<div>
+                        @if (customer?.Status != null)
+                        {
+                            <span class="badge @(customer.Status == EntityStatus.Active ? "bg-success" : "bg-secondary")">
+                                @(customer.Status == EntityStatus.Active ? "有效" : "無效")
+                            </span>
+                        }
+                    </div>,
+                    IconClass = "fas fa-toggle-on",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "備註",
+                    Value = customer?.Remarks,
+                    Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
+                    IconClass = "fas fa-sticky-note",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    ColSize = 12,
+                    VisibilityCondition = () => !string.IsNullOrEmpty(customer?.Remarks)
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            // 基本資料欄位設定失敗，記錄錯誤但返回空列表
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(GetCustomerBasicFields),
+                this.GetType(),
+                ErrorLogService, 
+                NotificationService, 
+                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
+                additionalData: new { CustomerId = CustomerId }
+            );
+            
+            // 返回空列表以避免頁面崩潰
+            return new List<BasicInfoDisplayComponent.BasicInfoField>();
+        }
     }    // 轉換方法
     private IEnumerable<IContactEntity> GetContactEntities()
     {
-        return customerContacts.AsContactDisplayEntities();
+        try
+        {
+            return customerContacts?.AsContactDisplayEntities() ?? new List<IContactEntity>();
+        }
+        catch (Exception ex)
+        {
+            // 聯絡方式轉換失敗，記錄錯誤但返回空列表
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(GetContactEntities),
+                this.GetType(),
+                ErrorLogService, 
+                NotificationService, 
+                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
+                additionalData: new { CustomerId = CustomerId }
+            );
+            
+            return new List<IContactEntity>();
+        }
     }
 
     private IEnumerable<IAddressEntity> GetAddressEntities()
     {
-        return customerAddresses.AsAddressDisplayEntities();
+        try
+        {
+            return customerAddresses?.AsAddressDisplayEntities() ?? new List<IAddressEntity>();
+        }
+        catch (Exception ex)
+        {
+            // 地址轉換失敗，記錄錯誤但返回空列表
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(GetAddressEntities),
+                this.GetType(),
+                ErrorLogService, 
+                NotificationService, 
+                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
+                additionalData: new { CustomerId = CustomerId }
+            );
+            
+            return new List<IAddressEntity>();
+        }
     }
 }

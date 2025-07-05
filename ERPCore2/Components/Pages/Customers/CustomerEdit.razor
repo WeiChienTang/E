@@ -104,19 +104,88 @@
       // 麵包屑導航
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();    protected override void OnInitialized()
     {
-        InitializeBreadcrumbs();
-        InitializeBasicFormFields(); // 先初始化基本表單欄位
-        // AdditionalDataLoader 會由 GenericEditPageComponent 自動調用
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeBasicFormFields(); // 先初始化基本表單欄位
+            // AdditionalDataLoader 會由 GenericEditPageComponent 自動調用
+        }
+        catch (Exception ex)
+        {
+            // 記錄初始化錯誤（使用 Fire-and-Forget 因為這裡不能用 async）
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                    ex, 
+                    nameof(OnInitialized), 
+                    GetType(),
+                    ErrorLogService,
+                    NotificationService,
+                    showUserFriendlyMessage: true,
+                    additionalData: new { 
+                        PageName = "CustomerEdit",
+                        Action = "Initialize",
+                        CustomerId = Id,
+                        Phase = "ComponentInitialization"
+                    });
+            });
+            
+            // 確保基本初始化完成，避免程式崩潰
+            try
+            {
+                breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+                {
+                    new("首頁", "/"),
+                    new("客戶管理", "/customers"),
+                    new(Id.HasValue ? "編輯客戶" : "新增客戶")
+                };
+                basicFormFields = new List<FormFieldDefinition>();
+                basicFormSections = new Dictionary<string, string>();
+            }
+            catch
+            {
+                // 如果連預設值都設定失敗，至少確保不是 null
+                breadcrumbItems ??= new List<GenericHeaderComponent.BreadcrumbItem>();
+                basicFormFields ??= new List<FormFieldDefinition>();
+                basicFormSections ??= new Dictionary<string, string>();
+            }
+        }
     }
 
     private void InitializeBreadcrumbs()
     {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        try
         {
-            new("首頁", "/"),
-            new("客戶管理", "/customers"),
-            new(Id.HasValue ? "編輯客戶" : "新增客戶")
-        };    }    private async Task LoadAdditionalData()
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("客戶管理", "/customers"),
+                new(Id.HasValue ? "編輯客戶" : "新增客戶")
+            };
+        }
+        catch (Exception ex)
+        {
+            // 記錄麵包屑初始化錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                    ex, 
+                    nameof(InitializeBreadcrumbs), 
+                    GetType(),
+                    ErrorLogService,
+                    NotificationService,
+                    showUserFriendlyMessage: false, // 這類錯誤不需要打擾使用者
+                    additionalData: new { 
+                        PageName = "CustomerEdit",
+                        Action = "InitializeBreadcrumbs",
+                        CustomerId = Id
+                    });
+            });
+            
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }    private async Task LoadAdditionalData()
     {
         // 簡化：只載入選項列表
         try
@@ -129,137 +198,223 @@
             // 轉換為子集合組件用的基礎實體清單
             contactTypeOptions = contactTypes.Cast<ERPCore2.Data.BaseEntity>().ToList();
             addressTypeOptions = addressTypes.Cast<ERPCore2.Data.BaseEntity>().ToList();
-              InitializeFormFields();
+              
+            InitializeFormFields();
             
             // 不需要手動調用 StateHasChanged()，GenericEditPageComponent 會處理
         }        
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"載入額外資料時發生錯誤：{ex.Message}");
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(LoadAdditionalData), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { 
+                    PageName = "CustomerEdit",
+                    Action = "LoadAdditionalData",
+                    CustomerId = Id,
+                    ExpectedData = "CustomerTypes, IndustryTypes, ContactTypes, AddressTypes"
+                });
+            
+            // 設定安全的預設值，確保程式不會崩潰
+            customerTypes = new List<CustomerType>();
+            industryTypes = new List<IndustryType>();
+            contactTypes = new List<ContactType>();
+            addressTypes = new List<AddressType>();
+            contactTypeOptions = new List<ERPCore2.Data.BaseEntity>();
+            addressTypeOptions = new List<ERPCore2.Data.BaseEntity>();
+            
+            // 即使失敗也要初始化表單欄位
+            try
+            {
+                InitializeFormFields();
+            }
+            catch
+            {
+                // 如果初始化表單欄位也失敗，至少確保基本結構存在
+                basicFormFields ??= new List<FormFieldDefinition>();
+                basicFormSections ??= new Dictionary<string, string>();
+            }
         }
     }
 
     private void InitializeBasicFormFields()
     {
-        // 先初始化不需要選項的基本欄位
-        basicFormFields = new List<FormFieldDefinition>
+        try
         {
-            new()
+            // 先初始化不需要選項的基本欄位
+            basicFormFields = new List<FormFieldDefinition>
             {
-                PropertyName = nameof(Customer.CustomerCode),
-                Label = "客戶代碼",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入客戶代碼",
-                IsRequired = true,
-                ContainerCssClass = "col-md-4"
-            },
-            new()
-            {
-                PropertyName = nameof(Customer.CompanyName),
-                Label = "公司名稱",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入公司名稱",
-                IsRequired = true,
-                ContainerCssClass = "col-md-8"
-            },
-            new()
-            {
-                PropertyName = nameof(Customer.ContactPerson),
-                Label = "聯絡人",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入聯絡人姓名",
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                PropertyName = nameof(Customer.TaxNumber),
-                Label = "統一編號",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入統一編號",
-                ContainerCssClass = "col-md-6"
-            }
-        };
+                new()
+                {
+                    PropertyName = nameof(Customer.CustomerCode),
+                    Label = "客戶代碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入客戶代碼",
+                    IsRequired = true,
+                    ContainerCssClass = "col-md-4"
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.CompanyName),
+                    Label = "公司名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入公司名稱",
+                    IsRequired = true,
+                    ContainerCssClass = "col-md-8"
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.ContactPerson),
+                    Label = "聯絡人",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入聯絡人姓名",
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.TaxNumber),
+                    Label = "統一編號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入統一編號",
+                    ContainerCssClass = "col-md-6"
+                }
+            };
 
-        basicFormSections = new Dictionary<string, string>
+            basicFormSections = new Dictionary<string, string>
+            {
+                { nameof(Customer.CustomerCode), "基本資訊" },
+                { nameof(Customer.CompanyName), "基本資訊" },
+                { nameof(Customer.ContactPerson), "聯絡資訊" },
+                { nameof(Customer.TaxNumber), "財務資訊" }
+            };
+        }
+        catch (Exception ex)
         {
-            { nameof(Customer.CustomerCode), "基本資訊" },
-            { nameof(Customer.CompanyName), "基本資訊" },
-            { nameof(Customer.ContactPerson), "聯絡資訊" },
-            { nameof(Customer.TaxNumber), "財務資訊" }
-        };
+            // 記錄表單欄位初始化錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                    ex, 
+                    nameof(InitializeBasicFormFields), 
+                    GetType(),
+                    ErrorLogService,
+                    NotificationService,
+                    showUserFriendlyMessage: false, // 內部初始化錯誤不打擾使用者
+                    additionalData: new { 
+                        PageName = "CustomerEdit",
+                        Action = "InitializeBasicFormFields",
+                        CustomerId = Id
+                    });
+            });
+            
+            // 設定安全的預設值
+            basicFormFields = new List<FormFieldDefinition>();
+            basicFormSections = new Dictionary<string, string>();
+        }
     }    private void InitializeFormFields()
     {
-        // 創建自動完成搜索函式
-        var customerTypeSearchFunction = new Func<string, Task<List<SelectOption>>>(async (keyword) =>
+        try
         {
-            List<CustomerType> results;
-            if (string.IsNullOrWhiteSpace(keyword))
+            // 創建自動完成搜索函式
+            var customerTypeSearchFunction = new Func<string, Task<List<SelectOption>>>(async (keyword) =>
             {
-                // 如果關鍵字為空，返回所有客戶類型（用於初始化顯示值）
-                results = customerTypes.Take(10).ToList();
-            }
-            else
+                List<CustomerType> results;
+                if (string.IsNullOrWhiteSpace(keyword))
+                {
+                    // 如果關鍵字為空，返回所有客戶類型（用於初始化顯示值）
+                    results = customerTypes.Take(10).ToList();
+                }
+                else
+                {
+                    results = await CustomerService.SearchCustomerTypesAsync(keyword);
+                }
+                
+                return results.Select(ct => new SelectOption
+                {
+                    Text = ct.TypeName,
+                    Value = ct.Id.ToString()
+                }).ToList();
+            });
+
+            var industryTypeSearchFunction = new Func<string, Task<List<SelectOption>>>(async (keyword) =>
             {
-                results = await CustomerService.SearchCustomerTypesAsync(keyword);
-            }
+                List<IndustryType> results;
+                if (string.IsNullOrWhiteSpace(keyword))
+                {
+                    // 如果關鍵字為空，返回所有行業類型（用於初始化顯示值）
+                    results = industryTypes.Take(10).ToList();
+                }
+                else
+                {
+                    results = await CustomerService.SearchIndustryTypesAsync(keyword);
+                }
+                
+                return results.Select(it => new SelectOption
+                {
+                    Text = it.IndustryTypeName,
+                    Value = it.Id.ToString()
+                }).ToList();
+            });
+
+            // 添加需要自動完成的欄位到現有的basicFormFields
+            basicFormFields.AddRange(new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(Customer.CustomerTypeId),
+                    Label = "客戶類型",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "輸入客戶類型名稱進行搜尋...",
+                    SearchFunction = customerTypeSearchFunction,
+                    MinSearchLength = 1,
+                    AutoCompleteDelayMs = 300,
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.IndustryTypeId),
+                    Label = "行業類型",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "輸入行業類型名稱進行搜尋...",
+                    SearchFunction = industryTypeSearchFunction,
+                    MinSearchLength = 1,
+                    AutoCompleteDelayMs = 300,
+                    ContainerCssClass = "col-md-6"
+                }
+            });
+
+            // 更新表單區段
+            basicFormSections[nameof(Customer.CustomerTypeId)] = "分類資訊";
+            basicFormSections[nameof(Customer.IndustryTypeId)] = "分類資訊";
+        }
+        catch (Exception ex)
+        {
+            // 記錄表單欄位初始化錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                    ex, 
+                    nameof(InitializeFormFields), 
+                    GetType(),
+                    ErrorLogService,
+                    NotificationService,
+                    showUserFriendlyMessage: false, // 內部初始化錯誤不打擾使用者
+                    additionalData: new { 
+                        PageName = "CustomerEdit",
+                        Action = "InitializeFormFields",
+                        CustomerId = Id
+                    });
+            });
             
-            return results.Select(ct => new SelectOption
-            {
-                Text = ct.TypeName,
-                Value = ct.Id.ToString()
-            }).ToList();
-        });
-
-        var industryTypeSearchFunction = new Func<string, Task<List<SelectOption>>>(async (keyword) =>
-        {
-            List<IndustryType> results;
-            if (string.IsNullOrWhiteSpace(keyword))
-            {
-                // 如果關鍵字為空，返回所有行業類型（用於初始化顯示值）
-                results = industryTypes.Take(10).ToList();
-            }
-            else
-            {
-                results = await CustomerService.SearchIndustryTypesAsync(keyword);
-            }
-            
-            return results.Select(it => new SelectOption
-            {
-                Text = it.IndustryTypeName,
-                Value = it.Id.ToString()
-            }).ToList();
-        });
-
-        // 添加需要自動完成的欄位到現有的basicFormFields
-        basicFormFields.AddRange(new List<FormFieldDefinition>
-        {
-            new()
-            {
-                PropertyName = nameof(Customer.CustomerTypeId),
-                Label = "客戶類型",
-                FieldType = FormFieldType.AutoComplete,
-                Placeholder = "輸入客戶類型名稱進行搜尋...",
-                SearchFunction = customerTypeSearchFunction,
-                MinSearchLength = 1,
-                AutoCompleteDelayMs = 300,
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                PropertyName = nameof(Customer.IndustryTypeId),
-                Label = "行業類型",
-                FieldType = FormFieldType.AutoComplete,
-                Placeholder = "輸入行業類型名稱進行搜尋...",
-                SearchFunction = industryTypeSearchFunction,
-                MinSearchLength = 1,
-                AutoCompleteDelayMs = 300,
-                ContainerCssClass = "col-md-6"
-            }
-        });
-
-        // 更新表單區段
-        basicFormSections[nameof(Customer.CustomerTypeId)] = "分類資訊";
-        basicFormSections[nameof(Customer.IndustryTypeId)] = "分類資訊";
+            // 如果失敗，至少確保基本結構存在
+            basicFormFields ??= new List<FormFieldDefinition>();
+            basicFormSections ??= new Dictionary<string, string>();
+        }
     }
     
     private async Task<Customer?> LoadCustomerData()
@@ -305,8 +460,33 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入客戶詳細資料失敗：", ex.Message);
-            throw;
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(LoadCustomerData), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { 
+                    PageName = "CustomerEdit",
+                    Action = "LoadCustomerData",
+                    CustomerId = Id
+                });
+            
+            // 設定安全的預設值，確保程式不會崩潰
+            customer = new Customer
+            {
+                CustomerCode = "ERROR",
+                CompanyName = "",
+                ContactPerson = "",
+                TaxNumber = "",
+                Status = EntityStatus.Active
+            };
+            customerContacts = new List<CustomerContact>();
+            customerAddresses = new List<CustomerAddress>();
+            
+            return customer;
         }
     }private async Task<string> GenerateCustomerCodeAsync()
     {
