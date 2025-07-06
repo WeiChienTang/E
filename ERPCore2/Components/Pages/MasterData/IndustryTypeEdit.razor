@@ -7,11 +7,12 @@
 @using ERPCore2.Components.Shared.Forms
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Components.Shared.PageModels
+@using ERPCore2.Helpers
 @using Microsoft.AspNetCore.Components.Forms
 @inject IIndustryTypeService IndustryTypeService
 @inject INotificationService NotificationService
+@inject IErrorLogService ErrorLogService
 @inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯行業類型" : "新增行業類型")</PageTitle>
@@ -58,74 +59,102 @@
 
     private void InitializeBreadcrumbs()
     {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        try
         {
-            new("首頁", "/"),
-            new("行業類型管理", "/industrytypes"),
-            new(Id.HasValue ? "編輯行業類型" : "新增行業類型")
-        };
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("行業類型管理", "/industrytypes"),
+                new(Id.HasValue ? "編輯行業類型" : "新增行業類型")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                "IndustryTypeEdit.InitializeBreadcrumbs",
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                false
+            );
+        }
     }
 
     private void InitializeFormFields()
     {
-        // 狀態選項
-        var statusOptions = new List<SelectOption>
+        try
         {
-            new() { Value = EntityStatus.Active.ToString(), Text = "啟用" },
-            new() { Value = EntityStatus.Inactive.ToString(), Text = "停用" }
-        };        formFields = new List<FormFieldDefinition>
-        {
-            new()
+            // 狀態選項
+            var statusOptions = new List<SelectOption>
             {
-                PropertyName = nameof(IndustryType.IndustryTypeCode),
-                Label = "行業類型代碼",
-                FieldType = FormFieldType.Text,
-                ContainerCssClass = "col-md-4",
-                Placeholder = "請輸入行業類型代碼",
-                IsRequired = false,
-                MaxLength = 10,
-                HelpText = "行業類型的簡短代碼（選填）"
-            },
-            new()
+                new() { Value = EntityStatus.Active.ToString(), Text = "啟用" },
+                new() { Value = EntityStatus.Inactive.ToString(), Text = "停用" }
+            };        formFields = new List<FormFieldDefinition>
             {
-                PropertyName = nameof(IndustryType.IndustryTypeName),
-                Label = "行業類型名稱",
-                FieldType = FormFieldType.Text,
-                ContainerCssClass = "col-md-8",
-                Placeholder = "請輸入行業類型名稱",
-                IsRequired = true,
-                MaxLength = 100,
-                HelpText = "行業類型的完整名稱（必填）"
-            },
-            new()
-            {
-                PropertyName = nameof(IndustryType.Status),
-                Label = "狀態",
-                FieldType = FormFieldType.Select,
-                ContainerCssClass = "col-md-6",
-                Options = statusOptions,
-                IsRequired = true,
-                HelpText = "行業類型的狀態"
-            },
-            new()
-            {
-                PropertyName = nameof(IndustryType.Remarks),
-                Label = "備註",
-                FieldType = FormFieldType.TextArea,
-                ContainerCssClass = "col-12",
-                Placeholder = "請輸入行業類型相關備註",
-                Rows = 3,
-                HelpText = "輸入行業類型的相關備註資訊"
-            }
-        };
+                new()
+                {
+                    PropertyName = nameof(IndustryType.IndustryTypeCode),
+                    Label = "行業類型代碼",
+                    FieldType = FormFieldType.Text,
+                    ContainerCssClass = "col-md-4",
+                    Placeholder = "請輸入行業類型代碼",
+                    IsRequired = false,
+                    MaxLength = 10,
+                    HelpText = "行業類型的簡短代碼（選填）"
+                },
+                new()
+                {
+                    PropertyName = nameof(IndustryType.IndustryTypeName),
+                    Label = "行業類型名稱",
+                    FieldType = FormFieldType.Text,
+                    ContainerCssClass = "col-md-8",
+                    Placeholder = "請輸入行業類型名稱",
+                    IsRequired = true,
+                    MaxLength = 100,
+                    HelpText = "行業類型的完整名稱（必填）"
+                },
+                new()
+                {
+                    PropertyName = nameof(IndustryType.Status),
+                    Label = "狀態",
+                    FieldType = FormFieldType.Select,
+                    ContainerCssClass = "col-md-6",
+                    Options = statusOptions,
+                    IsRequired = true,
+                    HelpText = "行業類型的狀態"
+                },
+                new()
+                {
+                    PropertyName = nameof(IndustryType.Remarks),
+                    Label = "備註",
+                    FieldType = FormFieldType.TextArea,
+                    ContainerCssClass = "col-12",
+                    Placeholder = "請輸入行業類型相關備註",
+                    Rows = 3,
+                    HelpText = "輸入行業類型的相關備註資訊"
+                }
+            };
 
-        formSections = new Dictionary<string, string>
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(IndustryType.IndustryTypeCode), "基本資訊" },
+                { nameof(IndustryType.IndustryTypeName), "基本資訊" },
+                { nameof(IndustryType.Status), "設定" },
+                { nameof(IndustryType.Remarks), "額外資訊" }
+            };
+        }
+        catch (Exception ex)
         {
-            { nameof(IndustryType.IndustryTypeCode), "基本資訊" },
-            { nameof(IndustryType.IndustryTypeName), "基本資訊" },
-            { nameof(IndustryType.Status), "設定" },
-            { nameof(IndustryType.Remarks), "額外資訊" }
-        };
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                "IndustryTypeEdit.InitializeFormFields",
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                false
+            );
+        }
     }
     
     private async Task<IndustryType?> LoadIndustryTypeData()
@@ -154,7 +183,14 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入行業類型詳細資料失敗：", ex.Message);
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                "IndustryTypeEdit.LoadIndustryTypeData",
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                false
+            );
             throw;
         }
     }
@@ -193,8 +229,14 @@
             }
         }        catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "儲存行業類型資料時發生錯誤：", ex.Message);
-            await NotificationService.ShowErrorAsync($"儲存時發生錯誤：{ex.Message}");
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                "IndustryTypeEdit.SaveIndustryType",
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                true
+            );
             return false;
         }
     }

@@ -5,7 +5,9 @@
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject IErrorLogService ErrorLogService
 @using ERPCore2.Services.Notifications
+@using ERPCore2.Helpers
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯材質" : "新增材質")</PageTitle>
@@ -40,98 +42,127 @@
 
     protected override void OnInitialized()
     {
-        InitializeBreadcrumbs();
-        InitializeFormFields();
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeFormFields();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "OnInitialized", typeof(MaterialEdit), ErrorLogService, NotificationService);
+        }
     }
 
     private void InitializeBreadcrumbs()
     {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        try
         {
-            new("首頁", "/"),
-            new("基礎資料", "#"),
-            new("材質管理", "/materials"),
-            new(Id.HasValue ? "編輯材質" : "新增材質")
-        };
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("基礎資料", "#"),
+                new("材質管理", "/materials"),
+                new(Id.HasValue ? "編輯材質" : "新增材質")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "InitializeBreadcrumbs", typeof(MaterialEdit), ErrorLogService, NotificationService);
+        }
     }
 
     private void InitializeFormFields()
     {
-        formFields = new List<FormFieldDefinition>
+        try
         {
-            // 基本資訊區段
-            new()
+            formFields = new List<FormFieldDefinition>
             {
-                PropertyName = nameof(Material.Code),
-                Label = "材質代碼",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入材質代碼",
-                IsRequired = true,
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                PropertyName = nameof(Material.Name),
-                Label = "材質名稱",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入材質名稱",
-                IsRequired = true,
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                PropertyName = nameof(Material.Category),
-                Label = "材質類別",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入材質類別",
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                PropertyName = nameof(Material.Status),
-                Label = "狀態",
-                FieldType = FormFieldType.Select,
-                Options = new List<SelectOption>
+                // 基本資訊區段
+                new()
                 {
-                    new() { Text = "啟用", Value = "Active" },
-                    new() { Text = "停用", Value = "Inactive" }
+                    PropertyName = nameof(Material.Code),
+                    Label = "材質代碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入材質代碼",
+                    IsRequired = true,
+                    ContainerCssClass = "col-md-6"
                 },
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                PropertyName = nameof(Material.Description),
-                Label = "材質描述",
-                FieldType = FormFieldType.TextArea,
-                Placeholder = "請輸入材質描述",
-                Rows = 3,
-                ContainerCssClass = "col-12"
-            },
-            new()
-            {
-                PropertyName = nameof(Material.Remarks),
-                Label = "備註",
-                FieldType = FormFieldType.TextArea,
-                Placeholder = "請輸入備註",
-                Rows = 3,
-                ContainerCssClass = "col-12"
-            }
-        };
+                new()
+                {
+                    PropertyName = nameof(Material.Name),
+                    Label = "材質名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入材質名稱",
+                    IsRequired = true,
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(Material.Category),
+                    Label = "材質類別",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入材質類別",
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(Material.Status),
+                    Label = "狀態",
+                    FieldType = FormFieldType.Select,
+                    Options = new List<SelectOption>
+                    {
+                        new() { Text = "啟用", Value = "Active" },
+                        new() { Text = "停用", Value = "Inactive" }
+                    },
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(Material.Description),
+                    Label = "材質描述",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入材質描述",
+                    Rows = 3,
+                    ContainerCssClass = "col-12"
+                },
+                new()
+                {
+                    PropertyName = nameof(Material.Remarks),
+                    Label = "備註",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入備註",
+                    Rows = 3,
+                    ContainerCssClass = "col-12"
+                }
+            };
 
-        formSections = new Dictionary<string, string>
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(Material.Code), "基本資訊" },
+                { nameof(Material.Name), "基本資訊" },
+                { nameof(Material.Category), "基本資訊" },
+                { nameof(Material.Status), "設定" },
+                { nameof(Material.Description), "詳細資訊" },
+                { nameof(Material.Remarks), "額外資訊" }
+            };
+        }
+        catch (Exception ex)
         {
-            { nameof(Material.Code), "基本資訊" },
-            { nameof(Material.Name), "基本資訊" },
-            { nameof(Material.Category), "基本資訊" },
-            { nameof(Material.Status), "設定" },
-            { nameof(Material.Description), "詳細資訊" },
-            { nameof(Material.Remarks), "額外資訊" }
-        };
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "InitializeFormFields", typeof(MaterialEdit), ErrorLogService, NotificationService);
+        }
     }
 
     private List<FormFieldDefinition> GetFormFields()
     {
-        return formFields;
+        try
+        {
+            return formFields;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "GetFormFields", typeof(MaterialEdit), ErrorLogService, NotificationService);
+            return new List<FormFieldDefinition>();
+        }
     }
 
     private async Task<Material?> LoadMaterialData()
@@ -158,7 +189,7 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入材質資料時發生錯誤：", ex.Message);
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "LoadMaterialData", typeof(MaterialEdit), ErrorLogService, NotificationService);
             Navigation.NavigateTo("/materials");
             return null;
         }

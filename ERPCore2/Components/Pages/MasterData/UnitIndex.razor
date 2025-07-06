@@ -9,6 +9,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
+@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>單位維護</PageTitle>
@@ -39,19 +40,49 @@
 
     protected override void OnInitialized()
     {
-        InitializeBreadcrumbs();
-        InitializeFilters();
-        InitializeTableColumns();
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeFilters();
+            InitializeTableColumns();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(OnInitialized),
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                true,
+                null
+            );
+        }
     }
 
     private void InitializeBreadcrumbs()
     {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        try
         {
-            new("首頁", "/"),
-            new("基礎資料", "#"),
-            new("單位維護")
-        };
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("基礎資料", "#"),
+                new("單位維護")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(InitializeBreadcrumbs),
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                true,
+                null
+            );
+        }
     }
 
     // 載入單位資料
@@ -67,86 +98,134 @@
 
     private void InitializeFilters()
     {
-        // 準備狀態選項
-        var activeOptions = new List<SelectOption>
+        try
         {
-            new() { Text = "啟用", Value = "true" },
-            new() { Text = "停用", Value = "false" }
-        };
+            // 準備狀態選項
+            var activeOptions = new List<SelectOption>
+            {
+                new() { Text = "啟用", Value = "true" },
+                new() { Text = "停用", Value = "false" }
+            };
 
-        var baseUnitOptions = new List<SelectOption>
+            var baseUnitOptions = new List<SelectOption>
+            {
+                new() { Text = "是", Value = "true" },
+                new() { Text = "否", Value = "false" }
+            };
+
+            // 建立篩選定義
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("UnitCode", "單位代碼", "輸入單位代碼搜尋")
+                .AddText("UnitName", "單位名稱", "輸入單位名稱搜尋")
+                .AddText("Symbol", "單位符號", "輸入單位符號搜尋", isAdvanced: true)
+                .AddSelect("IsBaseUnit", "基本單位", baseUnitOptions, isAdvanced: true)
+                .AddSelect("IsActive", "狀態", activeOptions, isAdvanced: true)
+                .Build();
+        }
+        catch (Exception ex)
         {
-            new() { Text = "是", Value = "true" },
-            new() { Text = "否", Value = "false" }
-        };
-
-        // 建立篩選定義
-        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-            .AddText("UnitCode", "單位代碼", "輸入單位代碼搜尋")
-            .AddText("UnitName", "單位名稱", "輸入單位名稱搜尋")
-            .AddText("Symbol", "單位符號", "輸入單位符號搜尋", isAdvanced: true)
-            .AddSelect("IsBaseUnit", "基本單位", baseUnitOptions, isAdvanced: true)
-            .AddSelect("IsActive", "狀態", activeOptions, isAdvanced: true)
-            .Build();
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(InitializeFilters),
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                true,
+                null
+            );
+        }
     }
 
     private void InitializeTableColumns()
     {
-        columnDefinitions = new List<TableColumnDefinition>
+        try
         {
-            TableColumnDefinition.Text("單位代碼", nameof(Unit.UnitCode)),
-            TableColumnDefinition.Text("單位名稱", nameof(Unit.UnitName)),
-            TableColumnDefinition.Text("符號", nameof(Unit.Symbol)),
-            TableColumnDefinition.Boolean("基本單位", nameof(Unit.IsBaseUnit), 
-                trueText: "是", falseText: "否"),
-            TableColumnDefinition.Boolean("狀態", nameof(Unit.IsActive), 
-                trueText: "啟用", falseText: "停用"),
-            TableColumnDefinition.Date("建立日期", nameof(Unit.CreatedAt), "yyyy/MM/dd")
-        };
+            columnDefinitions = new List<TableColumnDefinition>
+            {
+                TableColumnDefinition.Text("單位代碼", nameof(Unit.UnitCode)),
+                TableColumnDefinition.Text("單位名稱", nameof(Unit.UnitName)),
+                TableColumnDefinition.Text("符號", nameof(Unit.Symbol)),
+                TableColumnDefinition.Boolean("基本單位", nameof(Unit.IsBaseUnit), 
+                    trueText: "是", falseText: "否"),
+                TableColumnDefinition.Boolean("狀態", nameof(Unit.IsActive), 
+                    trueText: "啟用", falseText: "停用"),
+                TableColumnDefinition.Date("建立日期", nameof(Unit.CreatedAt), "yyyy/MM/dd")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(InitializeTableColumns),
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                true,
+                null
+            );
+        }
     }
 
     // 自定義篩選邏輯
     private IQueryable<Unit> ApplyUnitFilters(SearchFilterModel searchModel, IQueryable<Unit> query)
     {
-        // 單位代碼篩選
-        var unitCodeFilter = searchModel.GetFilterValue("UnitCode")?.ToString();
-        if (!string.IsNullOrWhiteSpace(unitCodeFilter))
+        try
         {
-            query = query.Where(u => 
-                u.UnitCode.Contains(unitCodeFilter, StringComparison.OrdinalIgnoreCase));
-        }
+            // 單位代碼篩選
+            var unitCodeFilter = searchModel.GetFilterValue("UnitCode")?.ToString();
+            if (!string.IsNullOrWhiteSpace(unitCodeFilter))
+            {
+                query = query.Where(u => 
+                    u.UnitCode.Contains(unitCodeFilter, StringComparison.OrdinalIgnoreCase));
+            }
 
-        // 單位名稱篩選
-        var unitNameFilter = searchModel.GetFilterValue("UnitName")?.ToString();
-        if (!string.IsNullOrWhiteSpace(unitNameFilter))
+            // 單位名稱篩選
+            var unitNameFilter = searchModel.GetFilterValue("UnitName")?.ToString();
+            if (!string.IsNullOrWhiteSpace(unitNameFilter))
+            {
+                query = query.Where(u => 
+                    u.UnitName.Contains(unitNameFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 單位符號篩選
+            var symbolFilter = searchModel.GetFilterValue("Symbol")?.ToString();
+            if (!string.IsNullOrWhiteSpace(symbolFilter))
+            {
+                query = query.Where(u => 
+                    !string.IsNullOrEmpty(u.Symbol) && 
+                    u.Symbol.Contains(symbolFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 基本單位篩選
+            var isBaseUnitFilter = searchModel.GetFilterValue("IsBaseUnit")?.ToString();
+            if (!string.IsNullOrWhiteSpace(isBaseUnitFilter) && bool.TryParse(isBaseUnitFilter, out var isBaseUnit))
+            {
+                query = query.Where(u => u.IsBaseUnit == isBaseUnit);
+            }
+
+            // 狀態篩選
+            var isActiveFilter = searchModel.GetFilterValue("IsActive")?.ToString();
+            if (!string.IsNullOrWhiteSpace(isActiveFilter) && bool.TryParse(isActiveFilter, out var isActive))
+            {
+                query = query.Where(u => u.IsActive == isActive);
+            }
+
+            return query.OrderBy(u => u.UnitCode);
+        }
+        catch (Exception ex)
         {
-            query = query.Where(u => 
-                u.UnitName.Contains(unitNameFilter, StringComparison.OrdinalIgnoreCase));
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(ApplyUnitFilters),
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                true,
+                new { SearchModel = searchModel }
+            );
+            
+            // 發生錯誤時返回原始查詢
+            return query.OrderBy(u => u.UnitCode);
         }
-
-        // 單位符號篩選
-        var symbolFilter = searchModel.GetFilterValue("Symbol")?.ToString();
-        if (!string.IsNullOrWhiteSpace(symbolFilter))
-        {
-            query = query.Where(u => 
-                !string.IsNullOrEmpty(u.Symbol) && 
-                u.Symbol.Contains(symbolFilter, StringComparison.OrdinalIgnoreCase));
-        }
-
-        // 基本單位篩選
-        var isBaseUnitFilter = searchModel.GetFilterValue("IsBaseUnit")?.ToString();
-        if (!string.IsNullOrWhiteSpace(isBaseUnitFilter) && bool.TryParse(isBaseUnitFilter, out var isBaseUnit))
-        {
-            query = query.Where(u => u.IsBaseUnit == isBaseUnit);
-        }
-
-        // 狀態篩選
-        var isActiveFilter = searchModel.GetFilterValue("IsActive")?.ToString();
-        if (!string.IsNullOrWhiteSpace(isActiveFilter) && bool.TryParse(isActiveFilter, out var isActive))
-        {
-            query = query.Where(u => u.IsActive == isActive);
-        }
-
-        return query.OrderBy(u => u.UnitCode);
     }
 }

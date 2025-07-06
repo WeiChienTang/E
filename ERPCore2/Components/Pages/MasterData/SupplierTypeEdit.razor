@@ -5,10 +5,12 @@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
+@using ERPCore2.Helpers
 @inject ISupplierTypeService SupplierTypeService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject IErrorLogService ErrorLogService
 @using ERPCore2.Services.Notifications
 @rendermode InteractiveServer
 @implements IDisposable
@@ -54,14 +56,28 @@
 
     protected override void OnInitialized()
     {
-        InitializeBreadcrumbs();
-        InitializeFormFields();
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeFormFields();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(OnInitialized), GetType(), ErrorLogService, NotificationService);
+        }
     }
 
     protected override void OnParametersSet()
     {
-        // 當參數變化時（例如從 Detail 導航到 Edit），重新初始化麵包屑
-        InitializeBreadcrumbs();
+        try
+        {
+            // 當參數變化時（例如從 Detail 導航到 Edit），重新初始化麵包屑
+            InitializeBreadcrumbs();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(OnParametersSet), GetType(), ErrorLogService, NotificationService);
+        }
     }
 
     private void InitializeBreadcrumbs()
@@ -167,7 +183,7 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入廠商類型詳細資料失敗：", ex.Message);
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(LoadSupplierTypeData), GetType(), ErrorLogService, NotificationService);
             throw;
         }
         finally
@@ -178,31 +194,54 @@
 
     private string GetPageTitle()
     {
-        return Id.HasValue ? "編輯廠商類型" : "新增廠商類型";
+        try
+        {
+            return Id.HasValue ? "編輯廠商類型" : "新增廠商類型";
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(GetPageTitle), GetType(), ErrorLogService, NotificationService);
+            return "廠商類型";
+        }
     }    
 
     private async Task<bool> ValidateSupplierType(SupplierType entity)
-    {        
-        // 驗證基本資料
-        if (string.IsNullOrWhiteSpace(entity.TypeName))
+    {
+        try
         {
-            await NotificationService.ShowErrorAsync("類型名稱為必填欄位");
-            return false;
-        }        // 檢查類型名稱是否重複
-        var isNameExists = await SupplierTypeService.IsSupplierTypeNameExistsAsync(entity.TypeName, Id);
-        if (isNameExists)
+            // 驗證基本資料
+            if (string.IsNullOrWhiteSpace(entity.TypeName))
+            {
+                await NotificationService.ShowErrorAsync("類型名稱為必填欄位");
+                return false;
+            }
+            
+            // 檢查類型名稱是否重複
+            var isNameExists = await SupplierTypeService.IsSupplierTypeNameExistsAsync(entity.TypeName, Id);
+            if (isNameExists)
+            {
+                await NotificationService.ShowErrorAsync("此類型名稱已存在，請使用其他名稱");
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync("此類型名稱已存在，請使用其他名稱");
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(ValidateSupplierType), GetType(), ErrorLogService, NotificationService);
             return false;
         }
-
-        // 調試信息
-        await JSRuntime.InvokeVoidAsync("console.log", "驗證通過，準備保存廠商類型");
-        return true;
     }
 
     public void Dispose()
     {
-        _loadingSemaphore?.Dispose();
+        try
+        {
+            _loadingSemaphore?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(Dispose), GetType(), ErrorLogService, NotificationService);
+        }
     }
 }

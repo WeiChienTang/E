@@ -1,4 +1,5 @@
 @page "/units/detail/{unitId:int}"
+@using ERPCore2.Helpers
 @inject IUnitService UnitService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -50,7 +51,6 @@
         // 防止重複載入
         if (_isLoading)
         {
-            Console.WriteLine("[UnitDetail] 載入中，跳過重複調用");
             return unit;
         }
         
@@ -66,7 +66,7 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[UnitDetail] 載入單位資料失敗：{ex.Message}");
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "LoadUnitDataAsync", typeof(UnitDetail), ErrorLogService, NotificationService, true, new { UnitId });
             throw;
         }
         finally
@@ -83,24 +83,34 @@
 
     private Task OnUnitDataLoaded()
     {
-        // 資料載入完成後的處理
-        StateHasChanged();        
-        return Task.CompletedTask;
+        try
+        {
+            // 資料載入完成後的處理
+            StateHasChanged();        
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "OnUnitDataLoaded", typeof(UnitDetail), ErrorLogService, NotificationService, false);
+            return Task.CompletedTask;
+        }
     }
 
     // 設定標籤頁結構
     private List<GenericDetailPageComponent<Unit, IUnitService>.TabSection> GetTabSections()
-    {        
-        return new List<GenericDetailPageComponent<Unit, IUnitService>.TabSection>
-        {           
-             new GenericDetailPageComponent<Unit, IUnitService>.TabSection
-            {
-                Id = "basic",
-                Title = "基本資料",
-                Content = @<div>
-                    <BasicInfoDisplayComponent Fields="@GetUnitBasicFields()" />
-                </div>
-            },
+    {
+        try
+        {
+            return new List<GenericDetailPageComponent<Unit, IUnitService>.TabSection>
+            {           
+                 new GenericDetailPageComponent<Unit, IUnitService>.TabSection
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div>
+                        <BasicInfoDisplayComponent Fields="@GetUnitBasicFields()" />
+                    </div>
+                },
             new GenericDetailPageComponent<Unit, IUnitService>.TabSection
             {
                 Id = "conversions",
@@ -211,62 +221,76 @@
                 </div>
             }
         };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "GetTabSections", typeof(UnitDetail), ErrorLogService, NotificationService, false);
+            return new List<GenericDetailPageComponent<Unit, IUnitService>.TabSection>();
+        }
     }
 
     // 取得單位基本資料欄位
     private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetUnitBasicFields()
     {
-        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        try
         {
-            new()
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
             {
-                Label = "單位代碼",
-                Value = unit?.UnitCode,
-                IsPrimary = true,
-                ValueBold = true,
-                IconClass = "fas fa-code",
-                IconBgClass = "bg-primary bg-opacity-10",
-                IconTextClass = "text-primary",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "單位名稱",
-                Value = unit?.UnitName,
-                ValueBold = true,
-                IconClass = "fas fa-tag",
-                IconBgClass = "bg-info bg-opacity-10",
-                IconTextClass = "text-info",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "單位符號",
-                Value = unit?.Symbol,
-                IconClass = "fas fa-font",
-                IconBgClass = "bg-warning bg-opacity-10",
-                IconTextClass = "text-warning",
-                EmptyText = "未設定",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "基本單位",
-                Value = unit?.IsBaseUnit == true ? "是" : "否",
-                IconClass = "fas fa-star",
-                IconBgClass = "bg-warning bg-opacity-10",
-                IconTextClass = "text-warning",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "狀態",
-                Value = unit?.IsActive == true ? "啟用" : "停用",
-                IconClass = "fas fa-toggle-on",
-                IconBgClass = "bg-success bg-opacity-10",
-                IconTextClass = "text-success",
-                ColSize = 6
-            }
-        };
+                new()
+                {
+                    Label = "單位代碼",
+                    Value = unit?.UnitCode,
+                    IsPrimary = true,
+                    ValueBold = true,
+                    IconClass = "fas fa-code",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "單位名稱",
+                    Value = unit?.UnitName,
+                    ValueBold = true,
+                    IconClass = "fas fa-tag",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "單位符號",
+                    Value = unit?.Symbol,
+                    IconClass = "fas fa-font",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    EmptyText = "未設定",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "基本單位",
+                    Value = unit?.IsBaseUnit == true ? "是" : "否",
+                    IconClass = "fas fa-star",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "狀態",
+                    Value = unit?.IsActive == true ? "啟用" : "停用",
+                    IconClass = "fas fa-toggle-on",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    ColSize = 6
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "GetUnitBasicFields", typeof(UnitDetail), ErrorLogService, NotificationService, false);
+            return new List<BasicInfoDisplayComponent.BasicInfoField>();
+        }
     }
 }

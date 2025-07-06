@@ -2,9 +2,9 @@
 @page "/colors/edit/{id:int?}"
 @inject IColorService ColorService
 @inject INotificationService NotificationService
+@inject IErrorLogService ErrorLogService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@using ERPCore2.Services.Notifications
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯顏色" : "新增顏色")</PageTitle>
@@ -39,100 +39,134 @@
 
     protected override void OnInitialized()
     {
-        InitializeBreadcrumbs();
-        InitializeFormFields();
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeFormFields();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "初始化顏色編輯頁面時發生錯誤", GetType(), ErrorLogService, NotificationService);
+        }
     }
 
     private void InitializeBreadcrumbs()
     {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        try
         {
-            new("首頁", "/"),
-            new("基礎資料", "#"),
-            new("顏色管理", "/colors"),
-            new(Id.HasValue ? "編輯顏色" : "新增顏色")
-        };
-    }    private void InitializeFormFields()
-    {        formFields = new List<FormFieldDefinition>
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("基礎資料", "#"),
+                new("顏色管理", "/colors"),
+                new(Id.HasValue ? "編輯顏色" : "新增顏色")
+            };
+        }
+        catch (Exception ex)
         {
-            // 基本資訊區段
-            new()
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "初始化麵包屑導航時發生錯誤", GetType(), ErrorLogService, NotificationService);
+        }
+    }
+
+    private void InitializeFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
             {
-                PropertyName = nameof(Color.Name),
-                Label = "名稱",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入顏色名稱",
-                IsRequired = true,
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                PropertyName = nameof(Color.Code),
-                Label = "編碼",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入顏色編碼",
-                IsRequired = false,
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                PropertyName = nameof(Color.Status),
-                Label = "狀態",
-                FieldType = FormFieldType.Select,
-                Options = new List<SelectOption>
+                // 基本資訊區段
+                new()
                 {
-                    new() { Text = "啟用", Value = "Active" },
-                    new() { Text = "停用", Value = "Inactive" }
+                    PropertyName = nameof(Color.Name),
+                    Label = "名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入顏色名稱",
+                    IsRequired = true,
+                    ContainerCssClass = "col-md-6"
                 },
-                ContainerCssClass = "col-md-6"
-            },
-            // 詳細資訊區段
-            new()
+                new()
+                {
+                    PropertyName = nameof(Color.Code),
+                    Label = "編碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入顏色編碼",
+                    IsRequired = false,
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(Color.Status),
+                    Label = "狀態",
+                    FieldType = FormFieldType.Select,
+                    Options = new List<SelectOption>
+                    {
+                        new() { Text = "啟用", Value = "Active" },
+                        new() { Text = "停用", Value = "Inactive" }
+                    },
+                    ContainerCssClass = "col-md-6"
+                },
+                // 詳細資訊區段
+                new()
+                {
+                    PropertyName = nameof(Color.Description),
+                    Label = "描述",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入顏色描述",
+                    Rows = 3,
+                    ContainerCssClass = "col-12"
+                },
+                // 其他資訊區段
+                new()
+                {
+                    PropertyName = nameof(Color.Remarks),
+                    Label = "備註",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入備註",
+                    Rows = 2,
+                    ContainerCssClass = "col-12"
+                }
+            };
+
+            formSections = new Dictionary<string, string>
             {
-                PropertyName = nameof(Color.Description),
-                Label = "描述",
-                FieldType = FormFieldType.TextArea,
-                Placeholder = "請輸入顏色描述",
-                Rows = 3,
-                ContainerCssClass = "col-12"
-            },
-            // 其他資訊區段
-            new()
-            {
-                PropertyName = nameof(Color.Remarks),
-                Label = "備註",
-                FieldType = FormFieldType.TextArea,
-                Placeholder = "請輸入備註",
-                Rows = 2,
-                ContainerCssClass = "col-12"
-            }
-        };        formSections = new Dictionary<string, string>
+                { nameof(Color.Name), "基本資訊" },
+                { nameof(Color.Code), "基本資訊" },
+                { nameof(Color.Status), "設定" },
+                { nameof(Color.Description), "詳細資訊" },
+                { nameof(Color.Remarks), "額外資訊" }
+            };
+        }
+        catch (Exception ex)
         {
-            { nameof(Color.Name), "基本資訊" },
-            { nameof(Color.Code), "基本資訊" },
-            { nameof(Color.Status), "設定" },
-            { nameof(Color.Description), "詳細資訊" },
-            { nameof(Color.Remarks), "額外資訊" }
-        };
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "初始化表單欄位時發生錯誤", GetType(), ErrorLogService, NotificationService);
+        }
     }
 
     private List<FormFieldDefinition> GetFormFields()
     {
-        return formFields;
+        try
+        {
+            return formFields;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "取得表單欄位時發生錯誤", GetType(), ErrorLogService, NotificationService);
+            return new List<FormFieldDefinition>();
+        }
     }
 
     private async Task<Color?> LoadColorData()
     {
-        if (!Id.HasValue) 
-        {
-            return new Color
-            {
-                Status = EntityStatus.Active
-            };
-        }
-
         try
         {
+            if (!Id.HasValue) 
+            {
+                return new Color
+                {
+                    Status = EntityStatus.Active
+                };
+            }
+
             var color = await ColorService.GetByIdAsync(Id.Value);            
             
             if (color == null)
@@ -145,10 +179,9 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入顏色資料時發生錯誤：", ex.Message);
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "載入顏色資料時發生錯誤", GetType(), ErrorLogService, NotificationService);
             Navigation.NavigateTo("/colors");
             return null;
         }
     }
-
 }

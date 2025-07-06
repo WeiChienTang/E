@@ -1,9 +1,10 @@
 @page "/roles/detail/{roleId:int}"
+@using ERPCore2.Helpers
 @inject IRoleService RoleService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 @inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogServiceㄋ
+@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>角色詳細資料</PageTitle>
@@ -50,7 +51,6 @@
         // 防止重複載入
         if (_isLoading)
         {
-            Console.WriteLine("[RoleDetail] 載入中，跳過重複調用");
             return role;
         }
         
@@ -65,7 +65,14 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[RoleDetail] 載入角色資料失敗：{ex.Message}");
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "載入角色資料失敗",
+                typeof(RoleDetail),
+                ErrorLogService, 
+                NotificationService,
+                additionalData: new { RoleId }
+            );
             throw;
         }
         finally
@@ -76,22 +83,52 @@
     
     private Task LoadAdditionalDataAsync()
     {
-        // 由於GetByIdAsync已經Include所有關聯資料，這裡不需要額外查詢
-        return Task.CompletedTask;
+        try
+        {
+            // 由於GetByIdAsync已經Include所有關聯資料，這裡不需要額外查詢
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "載入額外資料失敗",
+                typeof(RoleDetail),
+                ErrorLogService, 
+                NotificationService
+            );
+            throw;
+        }
     }
 
     private Task OnRoleDataLoaded()
     {
-        // 資料載入完成後的處理
-        StateHasChanged();
-        return Task.CompletedTask;
+        try
+        {
+            // 資料載入完成後的處理
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "資料載入完成處理失敗",
+                typeof(RoleDetail),
+                ErrorLogService, 
+                NotificationService
+            );
+            throw;
+        }
     }
 
     // 設定標籤頁結構
     private List<GenericDetailPageComponent<Role, IRoleService>.TabSection> GetTabSections()
     {
-        return new List<GenericDetailPageComponent<Role, IRoleService>.TabSection>
-        {            new GenericDetailPageComponent<Role, IRoleService>.TabSection
+        try
+        {
+            return new List<GenericDetailPageComponent<Role, IRoleService>.TabSection>
+            {            new GenericDetailPageComponent<Role, IRoleService>.TabSection
             {
                 Id = "basic",
                 Title = "基本資料",
@@ -163,13 +200,27 @@
                 </div>
             }
             };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "取得標籤頁結構失敗",
+                typeof(RoleDetail),
+                ErrorLogService, 
+                NotificationService
+            );
+            throw;
+        }
     }
 
     // 取得基本資料欄位
     private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetBasicInfoFields()
     {
-        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        try
         {
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
+            {
             new()
             {
                 Label = "角色名稱",
@@ -226,5 +277,17 @@
                 Description = "使用此角色的員工數量"
             }
         };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "取得基本資料欄位失敗",
+                typeof(RoleDetail),
+                ErrorLogService, 
+                NotificationService
+            );
+            throw;
+        }
     }
 }

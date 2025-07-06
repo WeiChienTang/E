@@ -5,6 +5,7 @@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services
 @using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Helpers
 @inject IIndustryTypeService IndustryTypeService
 @inject ICustomerService CustomerService
 @inject ISupplierService SupplierService
@@ -61,7 +62,6 @@
     {
         if (_isLoading)
         {
-            Console.WriteLine("[IndustryTypeDetail] 載入中，跳過重複調用");
             return industryType;
         }
         
@@ -76,9 +76,18 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[IndustryTypeDetail] 載入行業類型資料失敗：{ex.Message}");
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "LoadIndustryTypeDataAsync", 
+                typeof(IndustryTypeDetail), 
+                ErrorLogService, 
+                NotificationService,
+                true,
+                new { IndustryTypeId = IndustryTypeId }
+            );
             throw;
-        }        finally
+        }
+        finally
         {
             _isLoading = false;
         }
@@ -86,10 +95,10 @@
     
     private Task LoadAdditionalDataAsync()
     {
-        if (industryType == null) return Task.CompletedTask;
-        
         try
         {
+            if (industryType == null) return Task.CompletedTask;
+            
             // 載入相關客戶和廠商資料 (暫時跳過，因為這些方法還不存在)
             // relatedCustomers = await CustomerService.GetByIndustryTypeIdAsync(industryType.Id);
             // relatedSuppliers = await SupplierService.GetByIndustryTypeIdAsync(industryType.Id);
@@ -98,7 +107,15 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[IndustryTypeDetail] 載入額外資料失敗：{ex.Message}");
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "LoadAdditionalDataAsync", 
+                typeof(IndustryTypeDetail), 
+                ErrorLogService, 
+                NotificationService,
+                true,
+                new { IndustryTypeId = industryType?.Id }
+            );
         }
         
         return Task.CompletedTask;
@@ -106,14 +123,31 @@
 
     private Task OnIndustryTypeDataLoaded()
     {
-        StateHasChanged();
+        try
+        {
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "OnIndustryTypeDataLoaded", 
+                typeof(IndustryTypeDetail), 
+                ErrorLogService, 
+                NotificationService,
+                false // 不顯示使用者通知，因為這是內部 UI 更新
+            );
+        }
+        
         return Task.CompletedTask;
     }
 
     // 設定標籤頁結構
     private List<GenericDetailPageComponent<IndustryType, IIndustryTypeService>.TabSection> GetTabSections()
     {
-        return new List<GenericDetailPageComponent<IndustryType, IIndustryTypeService>.TabSection>
+        try
+        {
+            return new List<GenericDetailPageComponent<IndustryType, IIndustryTypeService>.TabSection>
         {            new GenericDetailPageComponent<IndustryType, IIndustryTypeService>.TabSection
             {
                 Id = "basic",
@@ -265,12 +299,29 @@
                 </div>
             }
         };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "GetTabSections", 
+                typeof(IndustryTypeDetail), 
+                ErrorLogService, 
+                NotificationService,
+                false
+            );
+            
+            // 返回空的標籤頁列表避免頁面崩潰
+            return new List<GenericDetailPageComponent<IndustryType, IIndustryTypeService>.TabSection>();
+        }
     }
 
     // 取得行業類型基本資料欄位
     private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetIndustryTypeBasicFields()
     {
-        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        try
+        {
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
         {
             new()
             {
@@ -346,5 +397,20 @@
                 ColSize = 6
             }
         };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "GetIndustryTypeBasicFields", 
+                typeof(IndustryTypeDetail), 
+                ErrorLogService, 
+                NotificationService,
+                false
+            );
+            
+            // 返回空的欄位列表避免頁面崩潰
+            return new List<BasicInfoDisplayComponent.BasicInfoField>();
+        }
     }
 }

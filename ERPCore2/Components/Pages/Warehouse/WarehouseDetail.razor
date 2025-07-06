@@ -1,5 +1,8 @@
 @page "/warehouses/detail/{warehouseId:int}"
+@using ERPCore2.Helpers
 @inject IWarehouseService WarehouseService
+@inject IErrorLogService ErrorLogService
+@inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
@@ -62,7 +65,14 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[WarehouseDetail] 載入倉庫資料失敗：{ex.Message}");
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(LoadWarehouseDataAsync), 
+                GetType(), 
+                ErrorLogService, 
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { WarehouseId = WarehouseId });
             throw;
         }
         finally
@@ -73,23 +83,40 @@
 
     private Task OnWarehouseDataLoaded()
     {
-        // 資料載入完成後的處理
-        StateHasChanged();        
-        return Task.CompletedTask;
+        try
+        {
+            // 資料載入完成後的處理
+            StateHasChanged();        
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(OnWarehouseDataLoaded), 
+                GetType(), 
+                ErrorLogService, 
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { WarehouseId = WarehouseId });
+            return Task.CompletedTask;
+        }
     }
 
     // 設定標籤頁結構
     private List<GenericDetailPageComponent<Warehouse, IWarehouseService>.TabSection> GetTabSections()
-    {        
-        return new List<GenericDetailPageComponent<Warehouse, IWarehouseService>.TabSection>
-        {           
-             new GenericDetailPageComponent<Warehouse, IWarehouseService>.TabSection
-            {
-                Id = "basic",
-                Title = "基本資料",
-                Content = @<div>
-                    <BasicInfoDisplayComponent Fields="@GetWarehouseBasicFields()" />
-                </div>            },
+    {
+        try
+        {
+            return new List<GenericDetailPageComponent<Warehouse, IWarehouseService>.TabSection>
+            {           
+                 new GenericDetailPageComponent<Warehouse, IWarehouseService>.TabSection
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div>
+                        <BasicInfoDisplayComponent Fields="@GetWarehouseBasicFields()" />
+                    </div>            },
             
             new GenericDetailPageComponent<Warehouse, IWarehouseService>.TabSection
             {
@@ -182,12 +209,29 @@
                 </div>
             }
         };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(GetTabSections), 
+                GetType(), 
+                ErrorLogService, 
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { WarehouseId = WarehouseId });
+            
+            // 返回預設的空標籤頁列表
+            return new List<GenericDetailPageComponent<Warehouse, IWarehouseService>.TabSection>();
+        }
     }
 
     // 取得倉庫基本資料欄位
     private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetWarehouseBasicFields()
     {
-        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        try
+        {
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
         {
             new()
             {
@@ -292,18 +336,50 @@
                 ColSize = 6
             }
         };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(GetWarehouseBasicFields), 
+                GetType(), 
+                ErrorLogService, 
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { WarehouseId = WarehouseId });
+            
+            // 返回預設的空欄位列表
+            return new List<BasicInfoDisplayComponent.BasicInfoField>();
+        }
     }
 
     // 輔助方法：取得倉庫類型顯示名稱
     private string GetWarehouseTypeDisplayName(WarehouseTypeEnum? warehouseType)
     {
-        return warehouseType switch
+        try
         {
-            WarehouseTypeEnum.Main => "主倉庫",
-            WarehouseTypeEnum.Branch => "分倉庫",
-            WarehouseTypeEnum.Virtual => "虛擬倉庫",
-            WarehouseTypeEnum.Return => "退貨倉庫",
-            _ => "未知"
-        };
+            return warehouseType switch
+            {
+                WarehouseTypeEnum.Main => "主倉庫",
+                WarehouseTypeEnum.Branch => "分倉庫",
+                WarehouseTypeEnum.Virtual => "虛擬倉庫",
+                WarehouseTypeEnum.Return => "退貨倉庫",
+                _ => "未知"
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(GetWarehouseTypeDisplayName), 
+                GetType(), 
+                ErrorLogService, 
+                NotificationService,
+                showUserFriendlyMessage: false, // 這是內部錯誤，不需要通知使用者
+                additionalData: new { WarehouseType = warehouseType });
+            
+            // 返回預設值
+            return "未知";
+        }
     }
 }

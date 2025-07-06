@@ -39,16 +39,47 @@
 
     protected override void OnInitialized()
     {
-        InitializeBreadcrumbs();
-        InitializeFilters();
-        InitializeTableColumns();
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeFilters();
+            InitializeTableColumns();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(OnInitialized), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { PageName = "ProductIndex" });
+        }
     }    private void InitializeBreadcrumbs()
     {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        try
         {
-            new("首頁", "/"),
-            new("產品管理")
-        };
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("產品管理")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(InitializeBreadcrumbs), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { PageName = "ProductIndex" });
+            
+            // 設定預設值以防頁面無法正常運作
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
     }
 
     // 載入基礎資料（選項清單等）
@@ -61,13 +92,16 @@
             // 重新初始化篩選器（因為需要選項資料）
             InitializeFilters();
         }
-        catch (Exception ex)
+            catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandleErrorSimplyAsync(
+            await ErrorHandlingHelper.HandleErrorSafelyAsync(
                 ex, 
                 nameof(LoadBasicDataAsync), 
+                GetType(),
+                ErrorLogService,
                 NotificationService,
-                customMessage: "載入基礎資料失敗，將使用預設設定");
+                showUserFriendlyMessage: true,
+                additionalData: new { PageName = "ProductIndex" });
             
             // 設定預設值以防頁面無法正常運作
             productCategories = new List<ProductCategory>();
@@ -85,11 +119,14 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandleErrorSimplyAsync(
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
                 ex, 
                 nameof(LoadProductsAsync), 
+                GetType(),
+                ErrorLogService,
                 NotificationService,
-                customMessage: "載入產品資料失敗");
+                showUserFriendlyMessage: true,
+                additionalData: new { PageName = "ProductIndex" });
             
             StateHasChanged();
             return new List<Product>();
@@ -98,121 +135,172 @@
 
     private void InitializeFilters()
     {
-        // 準備產品分類選項
-        var categoryOptions = productCategories.Select(pc => new SelectOption
+        try
         {
-            Text = pc.CategoryName,
-            Value = pc.Id.ToString()
-        }).ToList();
+            // 準備產品分類選項
+            var categoryOptions = productCategories.Select(pc => new SelectOption
+            {
+                Text = pc.CategoryName,
+                Value = pc.Id.ToString()
+            }).ToList();
 
-        // 準備供應商選項
-        var supplierOptions = suppliers.Select(s => new SelectOption
-        {
-            Text = s.CompanyName,
-            Value = s.Id.ToString()
-        }).ToList();
+            // 準備供應商選項
+            var supplierOptions = suppliers.Select(s => new SelectOption
+            {
+                Text = s.CompanyName,
+                Value = s.Id.ToString()
+            }).ToList();
 
-        // 準備啟用狀態選項
-        var activeStatusOptions = new List<SelectOption>
-        {
-            new() { Text = "啟用", Value = "true" },
-            new() { Text = "停用", Value = "false" }
-        };
+            // 準備啟用狀態選項
+            var activeStatusOptions = new List<SelectOption>
+            {
+                new() { Text = "啟用", Value = "true" },
+                new() { Text = "停用", Value = "false" }
+            };
 
-        // 準備實體狀態選項
-        var statusOptions = new List<SelectOption>
+            // 準備實體狀態選項
+            var statusOptions = new List<SelectOption>
+            {
+                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
+                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
+            };        // 建立篩選定義
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("ProductCode", "產品代碼", "輸入產品代碼搜尋")
+                .AddText("ProductName", "產品名稱", "輸入產品名稱搜尋")
+                .AddSelect("ProductCategoryId", "產品分類", categoryOptions, isAdvanced: true)
+                .AddSelect("PrimarySupplierId", "主要供應商", supplierOptions, isAdvanced: true)
+                .AddSelect("IsActive", "啟用狀態", activeStatusOptions, isAdvanced: true)
+                .AddSelect("Status", "實體狀態", statusOptions, isAdvanced: true)
+                .AddText("Unit", "單位", "輸入單位搜尋", isAdvanced: true)
+                .Build();
+        }
+        catch (Exception ex)
         {
-            new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-            new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-        };        // 建立篩選定義
-        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-            .AddText("ProductCode", "產品代碼", "輸入產品代碼搜尋")
-            .AddText("ProductName", "產品名稱", "輸入產品名稱搜尋")
-            .AddSelect("ProductCategoryId", "產品分類", categoryOptions, isAdvanced: true)
-            .AddSelect("PrimarySupplierId", "主要供應商", supplierOptions, isAdvanced: true)
-            .AddSelect("IsActive", "啟用狀態", activeStatusOptions, isAdvanced: true)
-            .AddSelect("Status", "實體狀態", statusOptions, isAdvanced: true)
-            .AddText("Unit", "單位", "輸入單位搜尋", isAdvanced: true)
-            .Build();
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(InitializeFilters), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { PageName = "ProductIndex" });
+            
+            // 設定預設值以防頁面無法正常運作
+            filterDefinitions = new List<SearchFilterDefinition>();
+        }
     }
 
     private void InitializeTableColumns()
     {
-        columnDefinitions = new List<TableColumnDefinition>
+        try
         {
-            TableColumnDefinition.Text("產品代碼", nameof(Product.ProductCode)),
-            TableColumnDefinition.Text("產品名稱", nameof(Product.ProductName)),
-            TableColumnDefinition.Text("產品分類", "ProductCategory.CategoryName"),
-            TableColumnDefinition.Text("單位", "Unit.UnitName"),
-            TableColumnDefinition.Number("單價", nameof(Product.UnitPrice), "N2"),
-            TableColumnDefinition.Number("庫存", nameof(Product.CurrentStock), "N0"),
-            TableColumnDefinition.Status("啟用", nameof(Product.IsActive), new Dictionary<object, string>
+            columnDefinitions = new List<TableColumnDefinition>
             {
-                { true, "bg-success" },
-                { false, "bg-secondary" }
-            }),
-            TableColumnDefinition.Status("狀態", nameof(Product.Status), new Dictionary<object, string>
-            {
-                { EntityStatus.Active, "bg-success" },
-                { EntityStatus.Inactive, "bg-secondary" }
-            }),
-            TableColumnDefinition.Date("建立日期", nameof(Product.CreatedAt), "yyyy/MM/dd")
-        };
+                TableColumnDefinition.Text("產品代碼", nameof(Product.ProductCode)),
+                TableColumnDefinition.Text("產品名稱", nameof(Product.ProductName)),
+                TableColumnDefinition.Text("產品分類", "ProductCategory.CategoryName"),
+                TableColumnDefinition.Text("單位", "Unit.UnitName"),
+                TableColumnDefinition.Number("單價", nameof(Product.UnitPrice), "N2"),
+                TableColumnDefinition.Number("庫存", nameof(Product.CurrentStock), "N0"),
+                TableColumnDefinition.Status("啟用", nameof(Product.IsActive), new Dictionary<object, string>
+                {
+                    { true, "bg-success" },
+                    { false, "bg-secondary" }
+                }),
+                TableColumnDefinition.Status("狀態", nameof(Product.Status), new Dictionary<object, string>
+                {
+                    { EntityStatus.Active, "bg-success" },
+                    { EntityStatus.Inactive, "bg-secondary" }
+                }),
+                TableColumnDefinition.Date("建立日期", nameof(Product.CreatedAt), "yyyy/MM/dd")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(InitializeTableColumns), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { PageName = "ProductIndex" });
+            
+            // 設定預設值以防頁面無法正常運作
+            columnDefinitions = new List<TableColumnDefinition>();
+        }
     }    // 自定義篩選邏輯
     private IQueryable<Product> ApplyProductFilters(SearchFilterModel searchModel, IQueryable<Product> query)
     {
-        // 產品代碼篩選
-        var productCodeFilter = searchModel.GetFilterValue("ProductCode")?.ToString();
-        if (!string.IsNullOrWhiteSpace(productCodeFilter))
+        try
         {
-            query = query.Where(p => 
-                p.ProductCode.Contains(productCodeFilter, StringComparison.OrdinalIgnoreCase));
-        }
+            // 產品代碼篩選
+            var productCodeFilter = searchModel.GetFilterValue("ProductCode")?.ToString();
+            if (!string.IsNullOrWhiteSpace(productCodeFilter))
+            {
+                query = query.Where(p => 
+                    p.ProductCode.Contains(productCodeFilter, StringComparison.OrdinalIgnoreCase));
+            }
 
-        // 產品名稱篩選
-        var productNameFilter = searchModel.GetFilterValue("ProductName")?.ToString();
-        if (!string.IsNullOrWhiteSpace(productNameFilter))
-        {
-            query = query.Where(p => 
-                p.ProductName.Contains(productNameFilter, StringComparison.OrdinalIgnoreCase));
-        }
+            // 產品名稱篩選
+            var productNameFilter = searchModel.GetFilterValue("ProductName")?.ToString();
+            if (!string.IsNullOrWhiteSpace(productNameFilter))
+            {
+                query = query.Where(p => 
+                    p.ProductName.Contains(productNameFilter, StringComparison.OrdinalIgnoreCase));
+            }
 
-        // 產品分類篩選
-        var categoryIdFilter = searchModel.GetFilterValue("ProductCategoryId")?.ToString();
-        if (!string.IsNullOrWhiteSpace(categoryIdFilter) && int.TryParse(categoryIdFilter, out var categoryId))
-        {
-            query = query.Where(p => p.ProductCategoryId == categoryId);
-        }
+            // 產品分類篩選
+            var categoryIdFilter = searchModel.GetFilterValue("ProductCategoryId")?.ToString();
+            if (!string.IsNullOrWhiteSpace(categoryIdFilter) && int.TryParse(categoryIdFilter, out var categoryId))
+            {
+                query = query.Where(p => p.ProductCategoryId == categoryId);
+            }
 
-        // 主要供應商篩選
-        var supplierIdFilter = searchModel.GetFilterValue("PrimarySupplierId")?.ToString();
-        if (!string.IsNullOrWhiteSpace(supplierIdFilter) && int.TryParse(supplierIdFilter, out var supplierId))
-        {
-            query = query.Where(p => p.PrimarySupplierId == supplierId);
-        }
+            // 主要供應商篩選
+            var supplierIdFilter = searchModel.GetFilterValue("PrimarySupplierId")?.ToString();
+            if (!string.IsNullOrWhiteSpace(supplierIdFilter) && int.TryParse(supplierIdFilter, out var supplierId))
+            {
+                query = query.Where(p => p.PrimarySupplierId == supplierId);
+            }
 
-        // 啟用狀態篩選
-        var isActiveFilter = searchModel.GetFilterValue("IsActive")?.ToString();
-        if (!string.IsNullOrWhiteSpace(isActiveFilter) && bool.TryParse(isActiveFilter, out var isActive))
-        {
-            query = query.Where(p => p.IsActive == isActive);
-        }
+            // 啟用狀態篩選
+            var isActiveFilter = searchModel.GetFilterValue("IsActive")?.ToString();
+            if (!string.IsNullOrWhiteSpace(isActiveFilter) && bool.TryParse(isActiveFilter, out var isActive))
+            {
+                query = query.Where(p => p.IsActive == isActive);
+            }
 
-        // 實體狀態篩選
-        var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
-        if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
-        {
-            query = query.Where(p => p.Status == status);
-        }
+            // 實體狀態篩選
+            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
+            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
+            {
+                query = query.Where(p => p.Status == status);
+            }
 
-        // 單位篩選
-        var unitFilter = searchModel.GetFilterValue("Unit")?.ToString();
-        if (!string.IsNullOrWhiteSpace(unitFilter))
+            // 單位篩選
+            var unitFilter = searchModel.GetFilterValue("Unit")?.ToString();
+            if (!string.IsNullOrWhiteSpace(unitFilter))
+            {
+                query = query.Where(p => 
+                    p.Unit != null && p.Unit.UnitName != null && 
+                    p.Unit.UnitName.Contains(unitFilter, StringComparison.OrdinalIgnoreCase));        
+            }        
+            return query.OrderBy(p => p.ProductCode);
+        }
+        catch (Exception ex)
         {
-            query = query.Where(p => 
-                p.Unit != null && p.Unit.UnitName != null && 
-                p.Unit.UnitName.Contains(unitFilter, StringComparison.OrdinalIgnoreCase));        
-        }        
-        return query.OrderBy(p => p.ProductCode);
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(ApplyProductFilters), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { PageName = "ProductIndex", SearchModel = searchModel });
+            
+            // 發生錯誤時回傳原始查詢
+            return query;
+        }
     }
 }

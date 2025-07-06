@@ -1,8 +1,10 @@
 @page "/suppliers"
+@using ERPCore2.Helpers
 @inject ISupplierService SupplierService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
+@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>廠商維護</PageTitle>
@@ -34,23 +36,59 @@
 
     protected override void OnInitialized()
     {
-        InitializeBreadcrumbs();
-        InitializeFilters();
-        InitializeTableColumns();
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeFilters();
+            InitializeTableColumns();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(OnInitialized), 
+                this.GetType(),
+                ErrorLogService,
+                NotificationService);
+        }
     }
 
     private void InitializeBreadcrumbs()
     {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        try
         {
-            new("首頁", "/"),
-            new("廠商管理")
-        };
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("廠商管理")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(InitializeBreadcrumbs), 
+                this.GetType(),
+                ErrorLogService,
+                NotificationService);
+        }
     }    // 載入基礎資料（選項清單等）
     private async Task LoadBasicDataAsync()
     {
-        // 這個方法現在不需要載入任何資料，因為我們使用文字搜尋而不是下拉選單
-        await Task.CompletedTask;
+        try
+        {
+            // 這個方法現在不需要載入任何資料，因為我們使用文字搜尋而不是下拉選單
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(LoadBasicDataAsync), 
+                this.GetType(),
+                ErrorLogService,
+                NotificationService);
+        }
     }
 
     // 載入廠商資料
@@ -62,11 +100,12 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandleErrorSimplyAsync(
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
                 ex, 
                 nameof(LoadSuppliersAsync), 
-                NotificationService,
-                customMessage: "載入廠商資料失敗");
+                this.GetType(),
+                ErrorLogService,
+                NotificationService);
             
             StateHasChanged();
             return new List<Supplier>();
@@ -74,101 +113,144 @@
     }
 
     private void InitializeFilters()
-    {        // 準備狀態選項
-        var statusOptions = new List<SelectOption>
+    {
+        try
         {
-            new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-            new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-        };
+            // 準備狀態選項
+            var statusOptions = new List<SelectOption>
+            {
+                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
+                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
+            };
 
-        // 建立篩選定義
-        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-            .AddText("SupplierCode", "廠商代碼", "輸入廠商代碼搜尋")
-            .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
-            .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
-            .AddText("SupplierTypeName", "廠商類型", "輸入廠商類型搜尋")
-            .AddText("IndustryTypeName", "行業類型", "輸入行業類型搜尋")
-            .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
-            .AddText("TaxNumber", "統一編號", "輸入統一編號搜尋", isAdvanced: true)
-            .Build();
+            // 建立篩選定義
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("SupplierCode", "廠商代碼", "輸入廠商代碼搜尋")
+                .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
+                .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
+                .AddText("SupplierTypeName", "廠商類型", "輸入廠商類型搜尋")
+                .AddText("IndustryTypeName", "行業類型", "輸入行業類型搜尋")
+                .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
+                .AddText("TaxNumber", "統一編號", "輸入統一編號搜尋", isAdvanced: true)
+                .Build();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(InitializeFilters), 
+                this.GetType(),
+                ErrorLogService,
+                NotificationService);
+        }
     }
 
     private void InitializeTableColumns()
     {
-        columnDefinitions = new List<TableColumnDefinition>
+        try
         {
-            TableColumnDefinition.Text("廠商代碼", nameof(Supplier.SupplierCode)),
-            TableColumnDefinition.Text("公司名稱", nameof(Supplier.CompanyName)),
-            TableColumnDefinition.Text("聯絡人", nameof(Supplier.ContactPerson)),
-            TableColumnDefinition.Text("廠商類型", "SupplierType.TypeName"),
-            TableColumnDefinition.Text("行業類型", "IndustryType.IndustryTypeName"),
-            TableColumnDefinition.Status("狀態", nameof(Supplier.Status), new Dictionary<object, string>
+            columnDefinitions = new List<TableColumnDefinition>
             {
-                { EntityStatus.Active, "bg-success" },
-                { EntityStatus.Inactive, "bg-secondary" }
-            }),
-            TableColumnDefinition.Date("建立日期", nameof(Supplier.CreatedAt), "yyyy/MM/dd")
-        };
+                TableColumnDefinition.Text("廠商代碼", nameof(Supplier.SupplierCode)),
+                TableColumnDefinition.Text("公司名稱", nameof(Supplier.CompanyName)),
+                TableColumnDefinition.Text("聯絡人", nameof(Supplier.ContactPerson)),
+                TableColumnDefinition.Text("廠商類型", "SupplierType.TypeName"),
+                TableColumnDefinition.Text("行業類型", "IndustryType.IndustryTypeName"),
+                TableColumnDefinition.Status("狀態", nameof(Supplier.Status), new Dictionary<object, string>
+                {
+                    { EntityStatus.Active, "bg-success" },
+                    { EntityStatus.Inactive, "bg-secondary" }
+                }),
+                TableColumnDefinition.Date("建立日期", nameof(Supplier.CreatedAt), "yyyy/MM/dd")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(InitializeTableColumns), 
+                this.GetType(),
+                ErrorLogService,
+                NotificationService);
+        }
     }
 
     // 自定義篩選邏輯
     private IQueryable<Supplier> ApplySupplierFilters(SearchFilterModel searchModel, IQueryable<Supplier> query)
     {
-        // 廠商代碼篩選
-        var supplierCodeFilter = searchModel.GetFilterValue("SupplierCode")?.ToString();
-        if (!string.IsNullOrWhiteSpace(supplierCodeFilter))
+        try
         {
-            query = query.Where(s => 
-                s.SupplierCode.Contains(supplierCodeFilter, StringComparison.OrdinalIgnoreCase));
-        }
+            // 廠商代碼篩選
+            var supplierCodeFilter = searchModel.GetFilterValue("SupplierCode")?.ToString();
+            if (!string.IsNullOrWhiteSpace(supplierCodeFilter))
+            {
+                query = query.Where(s => 
+                    s.SupplierCode.Contains(supplierCodeFilter, StringComparison.OrdinalIgnoreCase));
+            }
 
-        // 公司名稱篩選
-        var companyNameFilter = searchModel.GetFilterValue("CompanyName")?.ToString();
-        if (!string.IsNullOrWhiteSpace(companyNameFilter))
-        {
-            query = query.Where(s => 
-                s.CompanyName.Contains(companyNameFilter, StringComparison.OrdinalIgnoreCase));
-        }
+            // 公司名稱篩選
+            var companyNameFilter = searchModel.GetFilterValue("CompanyName")?.ToString();
+            if (!string.IsNullOrWhiteSpace(companyNameFilter))
+            {
+                query = query.Where(s => 
+                    s.CompanyName.Contains(companyNameFilter, StringComparison.OrdinalIgnoreCase));
+            }
 
-        // 聯絡人篩選
-        var contactPersonFilter = searchModel.GetFilterValue("ContactPerson")?.ToString();
-        if (!string.IsNullOrWhiteSpace(contactPersonFilter))
-        {
-            query = query.Where(s => 
-                !string.IsNullOrEmpty(s.ContactPerson) && 
-                s.ContactPerson.Contains(contactPersonFilter, StringComparison.OrdinalIgnoreCase));
-        }        // 廠商類型篩選
-        var supplierTypeNameFilter = searchModel.GetFilterValue("SupplierTypeName")?.ToString();
-        if (!string.IsNullOrWhiteSpace(supplierTypeNameFilter))
-        {
-            query = query.Where(s => 
-                s.SupplierType != null && 
-                s.SupplierType.TypeName.Contains(supplierTypeNameFilter, StringComparison.OrdinalIgnoreCase));
-        }
+            // 聯絡人篩選
+            var contactPersonFilter = searchModel.GetFilterValue("ContactPerson")?.ToString();
+            if (!string.IsNullOrWhiteSpace(contactPersonFilter))
+            {
+                query = query.Where(s => 
+                    !string.IsNullOrEmpty(s.ContactPerson) && 
+                    s.ContactPerson.Contains(contactPersonFilter, StringComparison.OrdinalIgnoreCase));
+            }
 
-        // 行業類型篩選
-        var industryTypeNameFilter = searchModel.GetFilterValue("IndustryTypeName")?.ToString();
-        if (!string.IsNullOrWhiteSpace(industryTypeNameFilter))
-        {
-            query = query.Where(s => 
-                s.IndustryType != null && 
-                s.IndustryType.IndustryTypeName.Contains(industryTypeNameFilter, StringComparison.OrdinalIgnoreCase));
-        }
+            // 廠商類型篩選
+            var supplierTypeNameFilter = searchModel.GetFilterValue("SupplierTypeName")?.ToString();
+            if (!string.IsNullOrWhiteSpace(supplierTypeNameFilter))
+            {
+                query = query.Where(s => 
+                    s.SupplierType != null && 
+                    s.SupplierType.TypeName.Contains(supplierTypeNameFilter, StringComparison.OrdinalIgnoreCase));
+            }
 
-        // 狀態篩選
-        var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
-        if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
-        {
-            query = query.Where(s => s.Status == status);
-        }
+            // 行業類型篩選
+            var industryTypeNameFilter = searchModel.GetFilterValue("IndustryTypeName")?.ToString();
+            if (!string.IsNullOrWhiteSpace(industryTypeNameFilter))
+            {
+                query = query.Where(s => 
+                    s.IndustryType != null && 
+                    s.IndustryType.IndustryTypeName.Contains(industryTypeNameFilter, StringComparison.OrdinalIgnoreCase));
+            }
 
-        // 統一編號篩選
-        var taxNumberFilter = searchModel.GetFilterValue("TaxNumber")?.ToString();
-        if (!string.IsNullOrWhiteSpace(taxNumberFilter))
+            // 狀態篩選
+            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
+            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
+            {
+                query = query.Where(s => s.Status == status);
+            }
+
+            // 統一編號篩選
+            var taxNumberFilter = searchModel.GetFilterValue("TaxNumber")?.ToString();
+            if (!string.IsNullOrWhiteSpace(taxNumberFilter))
+            {
+                query = query.Where(s => 
+                    !string.IsNullOrEmpty(s.TaxNumber) && 
+                    s.TaxNumber.Contains(taxNumberFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return query.OrderBy(s => s.SupplierCode);
+        }
+        catch (Exception ex)
         {
-            query = query.Where(s => 
-                !string.IsNullOrEmpty(s.TaxNumber) && 
-                s.TaxNumber.Contains(taxNumberFilter, StringComparison.OrdinalIgnoreCase));
-        }        return query.OrderBy(s => s.SupplierCode);
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(ApplySupplierFilters), 
+                this.GetType(),
+                ErrorLogService,
+                NotificationService);
+            
+            return query.OrderBy(s => s.SupplierCode);
+        }
     }
 }

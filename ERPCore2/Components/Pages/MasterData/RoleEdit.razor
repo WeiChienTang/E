@@ -1,9 +1,11 @@
 @page "/roles/edit"
 @page "/roles/edit/{id:int?}"
+@using ERPCore2.Helpers
 @inject IRoleService RoleService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
+@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯角色" : "新增角色")</PageTitle>
@@ -46,8 +48,15 @@
 
     protected override void OnInitialized()
     {
-        InitializeBreadcrumbs();
-        InitializeBasicFormFields();
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeBasicFormFields();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "初始化角色編輯頁面失敗", GetType(), ErrorLogService, NotificationService);
+        }
     }
 
     private void InitializeBreadcrumbs()
@@ -63,8 +72,15 @@
 
     private async Task LoadAdditionalData()
     {
-        // 載入其他必要資料
-        await Task.CompletedTask;
+        try
+        {
+            // 載入其他必要資料
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "載入額外資料失敗", GetType(), ErrorLogService, NotificationService);
+        }
     }
 
     private void InitializeBasicFormFields()
@@ -127,7 +143,7 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入角色資料失敗：", ex.Message);
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "載入角色資料失敗", GetType(), ErrorLogService, NotificationService);
             return null;
         }
     }
@@ -140,13 +156,23 @@
             var nameCheckResult = await RoleService.IsRoleNameExistsAsync(entity.RoleName, entity.Id);
             if (!nameCheckResult.IsSuccess)
             {
-                await JSRuntime.InvokeVoidAsync("console.error", "驗證失敗：", nameCheckResult.ErrorMessage);
+                _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                    new Exception($"驗證失敗：{nameCheckResult.ErrorMessage}"), 
+                    "角色名稱驗證失敗", 
+                    GetType(), 
+                    ErrorLogService, 
+                    NotificationService);
                 return false;
             }
 
             if (nameCheckResult.Data)
             {
-                await JSRuntime.InvokeVoidAsync("console.error", "角色名稱重複");
+                _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                    new Exception("角色名稱重複"), 
+                    "角色名稱重複", 
+                    GetType(), 
+                    ErrorLogService, 
+                    NotificationService);
                 return false;
             }
 
@@ -163,7 +189,12 @@
 
             if (!result.IsSuccess)
             {
-                await JSRuntime.InvokeVoidAsync("console.error", "儲存失敗：", result.ErrorMessage);
+                _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                    new Exception($"儲存失敗：{result.ErrorMessage}"), 
+                    "角色儲存失敗", 
+                    GetType(), 
+                    ErrorLogService, 
+                    NotificationService);
                 return false;
             }
 
@@ -172,7 +203,7 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "儲存角色失敗：", ex.Message);
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "儲存角色失敗", GetType(), ErrorLogService, NotificationService);
             return false;
         }
     }

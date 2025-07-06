@@ -9,6 +9,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
+@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>客戶類型</PageTitle>
@@ -52,90 +53,172 @@
 
     protected override void OnInitialized()
     {
-        InitializeBreadcrumbs();
-        InitializeFilters();
-        InitializeTableColumns();
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeFilters();
+            InitializeTableColumns();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                "初始化客戶類型頁面失敗",
+                typeof(CustomerTypeIndex),
+                ErrorLogService,
+                NotificationService
+            );
+        }
     }
 
     private void InitializeBreadcrumbs()
     {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        try
         {
-            new("首頁", "/"),
-            new("客戶管理", "/customers"),
-            new("客戶類型管理")
-        };
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("客戶管理", "/customers"),
+                new("客戶類型管理")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                "初始化麵包屑導航失敗",
+                typeof(CustomerTypeIndex),
+                ErrorLogService,
+                NotificationService
+            );
+        }
     }
 
     // 載入客戶類型資料
     private async Task<List<CustomerType>> LoadCustomerTypesAsync()
     {
-        return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
-            async () => await CustomerTypeService.GetAllAsync(),
-            new List<CustomerType>(),
-            NotificationService,
-            "載入客戶類型資料失敗"
-        );
+        try
+        {
+            return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
+                async () => await CustomerTypeService.GetAllAsync(),
+                new List<CustomerType>(),
+                NotificationService,
+                "載入客戶類型資料失敗"
+            );
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                "載入客戶類型資料失敗",
+                typeof(CustomerTypeIndex),
+                ErrorLogService,
+                NotificationService
+            );
+            return new List<CustomerType>();
+        }
     }
 
     private void InitializeFilters()
     {
-        // 準備狀態選項
-        var statusOptions = new List<SelectOption>
+        try
         {
-            new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-            new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-        };
+            // 準備狀態選項
+            var statusOptions = new List<SelectOption>
+            {
+                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
+                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
+            };
 
-        // 建立篩選定義
-        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-            .AddText("TypeName", "類型名稱", "輸入類型名稱搜尋")
-            .AddText("Description", "描述", "輸入描述搜尋", isAdvanced: true)
-            .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
-            .Build();
+            // 建立篩選定義
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("TypeName", "類型名稱", "輸入類型名稱搜尋")
+                .AddText("Description", "描述", "輸入描述搜尋", isAdvanced: true)
+                .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
+                .Build();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                "初始化篩選器失敗",
+                typeof(CustomerTypeIndex),
+                ErrorLogService,
+                NotificationService
+            );
+        }
     }
 
     private void InitializeTableColumns()
     {
-        columnDefinitions = new List<TableColumnDefinition>
+        try
         {
-            TableColumnDefinition.Text("類型名稱", nameof(CustomerType.TypeName)),
-            TableColumnDefinition.Text("描述", nameof(CustomerType.Description)),
-            TableColumnDefinition.Status("狀態", nameof(CustomerType.Status), new Dictionary<object, string>
+            columnDefinitions = new List<TableColumnDefinition>
             {
-                { EntityStatus.Active, "bg-success" },
-                { EntityStatus.Inactive, "bg-secondary" }
-            }),
-            TableColumnDefinition.Date("建立日期", nameof(CustomerType.CreatedAt), "yyyy/MM/dd"),
-            TableColumnDefinition.Date("更新日期", nameof(CustomerType.UpdatedAt), "yyyy/MM/dd")
-        };
+                TableColumnDefinition.Text("類型名稱", nameof(CustomerType.TypeName)),
+                TableColumnDefinition.Text("描述", nameof(CustomerType.Description)),
+                TableColumnDefinition.Status("狀態", nameof(CustomerType.Status), new Dictionary<object, string>
+                {
+                    { EntityStatus.Active, "bg-success" },
+                    { EntityStatus.Inactive, "bg-secondary" }
+                }),
+                TableColumnDefinition.Date("建立日期", nameof(CustomerType.CreatedAt), "yyyy/MM/dd"),
+                TableColumnDefinition.Date("更新日期", nameof(CustomerType.UpdatedAt), "yyyy/MM/dd")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                "初始化表格欄位失敗",
+                typeof(CustomerTypeIndex),
+                ErrorLogService,
+                NotificationService
+            );
+        }
     }
 
     // 自定義篩選邏輯
     private IQueryable<CustomerType> ApplyCustomerTypeFilters(SearchFilterModel searchModel, IQueryable<CustomerType> query)
     {
-        // 類型名稱篩選
-        var typeNameFilter = searchModel.GetFilterValue("TypeName")?.ToString();
-        if (!string.IsNullOrWhiteSpace(typeNameFilter))
+        try
         {
-            query = query.Where(ct => 
-                ct.TypeName.Contains(typeNameFilter, StringComparison.OrdinalIgnoreCase));
-        }
+            // 類型名稱篩選
+            var typeNameFilter = searchModel.GetFilterValue("TypeName")?.ToString();
+            if (!string.IsNullOrWhiteSpace(typeNameFilter))
+            {
+                query = query.Where(ct => 
+                    ct.TypeName.Contains(typeNameFilter, StringComparison.OrdinalIgnoreCase));
+            }
 
-        // 描述篩選
-        var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
-        if (!string.IsNullOrWhiteSpace(descriptionFilter))
-        {
-            query = query.Where(ct => 
-                !string.IsNullOrEmpty(ct.Description) && 
-                ct.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
-        }
+            // 描述篩選
+            var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
+            if (!string.IsNullOrWhiteSpace(descriptionFilter))
+            {
+                query = query.Where(ct => 
+                    !string.IsNullOrEmpty(ct.Description) && 
+                    ct.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
+            }
 
-        // 狀態篩選
-        var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
-        if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
+            // 狀態篩選
+            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
+            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
+            {
+                query = query.Where(ct => ct.Status == status);
+            }
+            
+            return query.OrderBy(ct => ct.TypeName);
+        }
+        catch (Exception ex)
         {
-            query = query.Where(ct => ct.Status == status);
-        }        return query.OrderBy(ct => ct.TypeName);
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                "套用客戶類型篩選失敗",
+                typeof(CustomerTypeIndex),
+                ErrorLogService,
+                NotificationService
+            );
+            return query.OrderBy(ct => ct.TypeName);
+        }
     }
 }

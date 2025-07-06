@@ -1,4 +1,5 @@
 @page "/sizes/detail/{sizeId:int}"
+@using ERPCore2.Helpers
 @inject ISizeService SizeService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -66,7 +67,14 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[SizeDetail] 載入尺寸資料失敗：{ex.Message}");
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "載入尺寸資料失敗", 
+                GetType(), 
+                ErrorLogService, 
+                NotificationService, 
+                false, 
+                new { SizeId });
             throw;
         }
         finally
@@ -77,34 +85,66 @@
     
     private Task LoadAdditionalDataAsync()
     {
-        // Size 實體比較簡單，不需要額外查詢
-        return Task.CompletedTask;
+        try
+        {
+            // Size 實體比較簡單，不需要額外查詢
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "載入額外資料失敗", 
+                GetType(), 
+                ErrorLogService, 
+                NotificationService, 
+                false, 
+                new { SizeId });
+            throw;
+        }
     }
 
     private Task OnSizeDataLoaded()
     {
-        // 資料載入完成後的處理
-        StateHasChanged();        
-        return Task.CompletedTask;
+        try
+        {
+            // 資料載入完成後的處理
+            StateHasChanged();        
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "資料載入完成處理失敗", 
+                GetType(), 
+                ErrorLogService, 
+                NotificationService, 
+                false, 
+                new { SizeId });
+            throw;
+        }
     }
 
     // 設定標籤頁結構
     private List<GenericDetailPageComponent<Size, ISizeService>.TabSection> GetTabSections()
-    {        
-        return new List<GenericDetailPageComponent<Size, ISizeService>.TabSection>
-        {           
-             new GenericDetailPageComponent<Size, ISizeService>.TabSection
-            {
-                Id = "basic",
-                Title = "基本資料",
-                Content = @<div>
-                    <BasicInfoDisplayComponent 
-                        Title="尺寸基本資訊"
-                        IconClass="fas fa-ruler"
-                        IconColor="text-primary"
-                        Fields="@GetSizeBasicFields()" />
-                </div>
-            },
+    {
+        try
+        {
+            return new List<GenericDetailPageComponent<Size, ISizeService>.TabSection>
+            {           
+                 new GenericDetailPageComponent<Size, ISizeService>.TabSection
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div>
+                        <BasicInfoDisplayComponent 
+                            Title="尺寸基本資訊"
+                            IconClass="fas fa-ruler"
+                            IconColor="text-primary"
+                            Fields="@GetSizeBasicFields()" />
+                    </div>
+                },
             
             new GenericDetailPageComponent<Size, ISizeService>.TabSection
             {
@@ -170,68 +210,96 @@
                 </div>
             }        
         };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "設定標籤頁結構失敗", 
+                GetType(), 
+                ErrorLogService, 
+                NotificationService, 
+                false, 
+                new { SizeId });
+            throw;
+        }
     }
 
     // 取得尺寸基本資料欄位
     private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetSizeBasicFields()
     {
-        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        try
         {
-            new()
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
             {
-                Label = "尺寸代碼",
-                Value = size?.SizeCode,
-                IsPrimary = true,
-                ValueBold = true,
-                IconClass = "fas fa-barcode",
-                IconBgClass = "bg-primary bg-opacity-10",
-                IconTextClass = "text-primary",
-                EmptyText = "未設定",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "尺寸名稱",
-                Value = size?.SizeName,
-                ValueBold = true,
-                IconClass = "fas fa-tag",
-                IconBgClass = "bg-info bg-opacity-10",
-                IconTextClass = "text-info",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "啟用狀態",
-                CustomContent = @<div>
-                    @if (size?.IsActive == true)
-                    {
-                        <span class="badge bg-success">
-                            <i class="fas fa-check me-1"></i>啟用
-                        </span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-secondary">
-                            <i class="fas fa-times me-1"></i>停用
-                        </span>
-                    }
-                </div>,
-                IconClass = "fas fa-toggle-on",
-                IconBgClass = "bg-success bg-opacity-10",
-                IconTextClass = "text-success",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "描述",
-                Value = size?.Description,
-                Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
-                IconClass = "fas fa-sticky-note",
-                IconBgClass = "bg-warning bg-opacity-10",
-                IconTextClass = "text-warning",
-                ColSize = 12,
-                VisibilityCondition = () => !string.IsNullOrEmpty(size?.Description)
-            }        
-        };
+                new()
+                {
+                    Label = "尺寸代碼",
+                    Value = size?.SizeCode,
+                    IsPrimary = true,
+                    ValueBold = true,
+                    IconClass = "fas fa-barcode",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary",
+                    EmptyText = "未設定",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "尺寸名稱",
+                    Value = size?.SizeName,
+                    ValueBold = true,
+                    IconClass = "fas fa-tag",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "啟用狀態",
+                    CustomContent = @<div>
+                        @if (size?.IsActive == true)
+                        {
+                            <span class="badge bg-success">
+                                <i class="fas fa-check me-1"></i>啟用
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-times me-1"></i>停用
+                            </span>
+                        }
+                    </div>,
+                    IconClass = "fas fa-toggle-on",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "描述",
+                    Value = size?.Description,
+                    Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
+                    IconClass = "fas fa-sticky-note",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    ColSize = 12,
+                    VisibilityCondition = () => !string.IsNullOrEmpty(size?.Description)
+                }        
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "取得尺寸基本資料欄位失敗", 
+                GetType(), 
+                ErrorLogService, 
+                NotificationService, 
+                false, 
+                new { SizeId });
+            throw;
+        }
     }
 }

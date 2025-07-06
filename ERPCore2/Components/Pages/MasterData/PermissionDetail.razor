@@ -1,4 +1,5 @@
 @page "/permissions/detail/{permissionId:int}"
+@using ERPCore2.Helpers
 @inject IPermissionManagementService PermissionService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -65,7 +66,7 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[PermissionDetail] 載入權限資料失敗：{ex.Message}");
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "LoadPermissionDataAsync", typeof(PermissionDetail), ErrorLogService, NotificationService);
             throw;
         }
         finally
@@ -76,21 +77,39 @@
     
     private Task LoadAdditionalDataAsync()
     {
-        // 由於GetByIdAsync已經Include所有關聯資料，這裡不需要額外查詢
-        return Task.CompletedTask;
+        try
+        {
+            // 由於GetByIdAsync已經Include所有關聯資料，這裡不需要額外查詢
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "LoadAdditionalDataAsync", typeof(PermissionDetail), ErrorLogService, NotificationService);
+            throw;
+        }
     }
 
     private Task OnPermissionDataLoaded()
     {
-        // 資料載入完成後的處理
-        StateHasChanged();
-        return Task.CompletedTask;
+        try
+        {
+            // 資料載入完成後的處理
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "OnPermissionDataLoaded", typeof(PermissionDetail), ErrorLogService, NotificationService);
+            throw;
+        }
     }
 
     // 設定標籤頁結構
     private List<GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection> GetTabSections()
     {
-        return new List<GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection>
+        try
+        {
+            return new List<GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection>
         {            new GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection
             {
                 Id = "basic",
@@ -171,12 +190,20 @@
                 </div>
             }
         };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "GetTabSections", typeof(PermissionDetail), ErrorLogService, NotificationService);
+            return new List<GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection>();
+        }
     }
 
     // 取得權限基本資料欄位
     private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetPermissionBasicFields()
     {
-        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        try
+        {
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
         {
             new()
             {
@@ -228,5 +255,11 @@
                 ColSize = 12
             }
         };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "GetPermissionBasicFields", typeof(PermissionDetail), ErrorLogService, NotificationService);
+            return new List<BasicInfoDisplayComponent.BasicInfoField>();
+        }
     }
 }

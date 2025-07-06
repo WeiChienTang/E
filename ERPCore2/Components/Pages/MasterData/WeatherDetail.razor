@@ -5,6 +5,7 @@
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
+@using ERPCore2.Helpers
 @inject IWeatherService WeatherService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -70,7 +71,14 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[WeatherDetail] 載入天氣資料失敗：{ex.Message}");
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "LoadWeatherDataAsync", 
+                typeof(WeatherDetail), 
+                ErrorLogService, 
+                NotificationService,
+                true,
+                new { WeatherId });
             throw;
         }
         finally
@@ -81,128 +89,188 @@
 
     private Task LoadAdditionalDataAsync()
     {
-        return Task.CompletedTask;
+        try
+        {
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "LoadAdditionalDataAsync", 
+                typeof(WeatherDetail), 
+                ErrorLogService, 
+                NotificationService,
+                true,
+                new { WeatherId });
+            throw;
+        }
     }
 
     private Task OnWeatherDataLoaded()
     {
-        StateHasChanged();
-        return Task.CompletedTask;
+        try
+        {
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "OnWeatherDataLoaded", 
+                typeof(WeatherDetail), 
+                ErrorLogService, 
+                NotificationService,
+                true,
+                new { WeatherId });
+            throw;
+        }
     }
 
     // 設定標籤頁結構
     private List<GenericDetailPageComponent<Weather, IWeatherService>.TabSection> GetTabSections()
     {
-        return new List<GenericDetailPageComponent<Weather, IWeatherService>.TabSection>
-        {            new GenericDetailPageComponent<Weather, IWeatherService>.TabSection
-            {
-                Id = "basic",
-                Title = "基本資料",
-                Content = @<div>
-                    <BasicInfoDisplayComponent 
-                        Title="天氣基本資訊"
-                        IconClass="fas fa-cloud-sun"
-                        IconColor="text-primary"
-                        Fields="@GetWeatherBasicFields()"
-                        ShowFieldCount="false"
-                        DefaultColSize="6" />
-                </div>
-            },
-              new GenericDetailPageComponent<Weather, IWeatherService>.TabSection
-            {
-                Id = "system",
-                Title = "系統資訊",
-                Content = @<div>
-                    <SystemInfoDisplayComponent 
-                        CreatedAt="@(weather?.CreatedAt ?? DateTime.MinValue)"
-                        UpdatedAt="@weather?.UpdatedAt"
-                        CreatedBy="@weather?.CreatedBy"
-                        UpdatedBy="@weather?.UpdatedBy"
-                        Remarks="@weather?.Remarks"
-                        ShowTimeline="true"
-                        ShowRemarks="true" />
-                </div>
-            }
-        };
+        try
+        {
+            return new List<GenericDetailPageComponent<Weather, IWeatherService>.TabSection>
+            {            new GenericDetailPageComponent<Weather, IWeatherService>.TabSection
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div>
+                        <BasicInfoDisplayComponent 
+                            Title="天氣基本資訊"
+                            IconClass="fas fa-cloud-sun"
+                            IconColor="text-primary"
+                            Fields="@GetWeatherBasicFields()"
+                            ShowFieldCount="false"
+                            DefaultColSize="6" />
+                    </div>
+                },
+                  new GenericDetailPageComponent<Weather, IWeatherService>.TabSection
+                {
+                    Id = "system",
+                    Title = "系統資訊",
+                    Content = @<div>
+                        <SystemInfoDisplayComponent 
+                            CreatedAt="@(weather?.CreatedAt ?? DateTime.MinValue)"
+                            UpdatedAt="@weather?.UpdatedAt"
+                            CreatedBy="@weather?.CreatedBy"
+                            UpdatedBy="@weather?.UpdatedBy"
+                            Remarks="@weather?.Remarks"
+                            ShowTimeline="true"
+                            ShowRemarks="true" />
+                    </div>
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "GetTabSections", 
+                typeof(WeatherDetail), 
+                ErrorLogService, 
+                NotificationService,
+                true,
+                new { WeatherId });
+            throw;
+        }
     }
 
     // 取得天氣基本資料欄位
     private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetWeatherBasicFields()
     {
-        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        try
         {
-            new()
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
             {
-                Label = "天氣代碼",
-                Value = weather?.Code,
-                IsPrimary = true,
-                EmptyText = "未設定",
-                IconClass = "fas fa-barcode",
-                IconBgClass = "bg-primary bg-opacity-10",
-                IconTextClass = "text-primary",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "天氣名稱",
-                Value = weather?.Name,
-                ValueBold = true,
-                IconClass = "fas fa-cloud-sun",
-                IconBgClass = "bg-info bg-opacity-10",
-                IconTextClass = "text-info",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "圖示",
-                Value = weather?.Icon,
-                VisibilityCondition = () => !string.IsNullOrEmpty(weather?.Icon),
-                IconClass = "fas fa-image",
-                IconBgClass = "bg-secondary bg-opacity-10",
-                IconTextClass = "text-secondary",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "參考溫度",
-                Value = weather?.ReferenceTemperature,
-                Format = BasicInfoDisplayComponent.FieldFormat.Temperature,
-                VisibilityCondition = () => weather?.ReferenceTemperature.HasValue == true,
-                IconClass = "fas fa-thermometer-half",
-                IconBgClass = "bg-warning bg-opacity-10",
-                IconTextClass = "text-warning",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "狀態",
-                Type = BasicInfoDisplayComponent.FieldType.Status,
-                Value = weather?.Status,
-                IconClass = "fas fa-flag",
-                IconBgClass = "bg-success bg-opacity-10",
-                IconTextClass = "text-success",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "描述",
-                Value = weather?.Description,
-                VisibilityCondition = () => !string.IsNullOrEmpty(weather?.Description),
-                IconClass = "fas fa-align-left",
-                IconBgClass = "bg-info bg-opacity-10",
-                IconTextClass = "text-info",
-                ColSize = 12
-            },
-            new()
-            {
-                Label = "備註",
-                Value = weather?.Remarks,
-                VisibilityCondition = () => !string.IsNullOrEmpty(weather?.Remarks),
-                IconClass = "fas fa-sticky-note",
-                IconBgClass = "bg-secondary bg-opacity-10",
-                IconTextClass = "text-secondary",
-                ColSize = 12
-            }
-        };
+                new()
+                {
+                    Label = "天氣代碼",
+                    Value = weather?.Code,
+                    IsPrimary = true,
+                    EmptyText = "未設定",
+                    IconClass = "fas fa-barcode",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "天氣名稱",
+                    Value = weather?.Name,
+                    ValueBold = true,
+                    IconClass = "fas fa-cloud-sun",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "圖示",
+                    Value = weather?.Icon,
+                    VisibilityCondition = () => !string.IsNullOrEmpty(weather?.Icon),
+                    IconClass = "fas fa-image",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    IconTextClass = "text-secondary",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "參考溫度",
+                    Value = weather?.ReferenceTemperature,
+                    Format = BasicInfoDisplayComponent.FieldFormat.Temperature,
+                    VisibilityCondition = () => weather?.ReferenceTemperature.HasValue == true,
+                    IconClass = "fas fa-thermometer-half",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "狀態",
+                    Type = BasicInfoDisplayComponent.FieldType.Status,
+                    Value = weather?.Status,
+                    IconClass = "fas fa-flag",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "描述",
+                    Value = weather?.Description,
+                    VisibilityCondition = () => !string.IsNullOrEmpty(weather?.Description),
+                    IconClass = "fas fa-align-left",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 12
+                },
+                new()
+                {
+                    Label = "備註",
+                    Value = weather?.Remarks,
+                    VisibilityCondition = () => !string.IsNullOrEmpty(weather?.Remarks),
+                    IconClass = "fas fa-sticky-note",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    IconTextClass = "text-secondary",
+                    ColSize = 12
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                "GetWeatherBasicFields", 
+                typeof(WeatherDetail), 
+                ErrorLogService, 
+                NotificationService,
+                true,
+                new { WeatherId });
+            throw;
+        }
     }
 }

@@ -7,6 +7,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
+@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>天氣</PageTitle>
@@ -43,87 +44,168 @@
 
     protected override async Task OnInitializedAsync()
     {
-        InitializeBreadcrumbs();
-        InitializeFilters();
-        InitializeTableColumns();
-        await Task.CompletedTask;
+        try
+        {
+            await InitializeBreadcrumbsAsync();
+            await InitializeFiltersAsync();
+            await InitializeTableColumnsAsync();
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(OnInitializedAsync),
+                typeof(WeatherIndex),
+                ErrorLogService,
+                NotificationService
+            );
+        }
     }
 
-    private void InitializeBreadcrumbs()
+    private async Task InitializeBreadcrumbsAsync()
     {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        try
         {
-            new("首頁", "/"),
-            new("基礎資料", "#"),
-            new("天氣管理")
-        };
-    }
-
-    private void InitializeFilters()
-    {
-        // 準備狀態選項
-        var statusOptions = new List<SelectOption>
-        {
-            new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-            new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-        };
-
-        // 建立篩選定義
-        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-            .AddText("Name", "天氣名稱", "輸入天氣名稱搜尋")
-            .AddText("Description", "描述", "輸入描述搜尋")
-            .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
-            .Build();
-    }
-
-    private void InitializeTableColumns()
-    {
-        columnDefinitions = new List<TableColumnDefinition>
-        {
-            TableColumnDefinition.Text("天氣名稱", nameof(Weather.Name)),
-            TableColumnDefinition.Text("描述", nameof(Weather.Description)),
-            TableColumnDefinition.Status("狀態", nameof(Weather.Status), new Dictionary<object, string>
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
             {
-                { EntityStatus.Active, "bg-success" },
-                { EntityStatus.Inactive, "bg-secondary" }
-            }),
-            TableColumnDefinition.Date("建立日期", nameof(Weather.CreatedAt), "yyyy/MM/dd")
-        };
+                new("首頁", "/"),
+                new("基礎資料", "#"),
+                new("天氣管理")
+            };
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(InitializeBreadcrumbsAsync),
+                typeof(WeatherIndex),
+                ErrorLogService,
+                NotificationService
+            );
+        }
+    }
+
+    private async Task InitializeFiltersAsync()
+    {
+        try
+        {
+            // 準備狀態選項
+            var statusOptions = new List<SelectOption>
+            {
+                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
+                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
+            };
+
+            // 建立篩選定義
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("Name", "天氣名稱", "輸入天氣名稱搜尋")
+                .AddText("Description", "描述", "輸入描述搜尋")
+                .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
+                .Build();
+                
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(InitializeFiltersAsync),
+                typeof(WeatherIndex),
+                ErrorLogService,
+                NotificationService
+            );
+        }
+    }
+
+    private async Task InitializeTableColumnsAsync()
+    {
+        try
+        {
+            columnDefinitions = new List<TableColumnDefinition>
+            {
+                TableColumnDefinition.Text("天氣名稱", nameof(Weather.Name)),
+                TableColumnDefinition.Text("描述", nameof(Weather.Description)),
+                TableColumnDefinition.Status("狀態", nameof(Weather.Status), new Dictionary<object, string>
+                {
+                    { EntityStatus.Active, "bg-success" },
+                    { EntityStatus.Inactive, "bg-secondary" }
+                }),
+                TableColumnDefinition.Date("建立日期", nameof(Weather.CreatedAt), "yyyy/MM/dd")
+            };
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(InitializeTableColumnsAsync),
+                typeof(WeatherIndex),
+                ErrorLogService,
+                NotificationService
+            );
+        }
     }    // 資料載入委派
     private async Task<List<Weather>> LoadDataAsync()
     {
-        return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
-            async () => await WeatherService.GetAllAsync(),
-            new List<Weather>(),
-            NotificationService,
-            "載入天氣資料失敗"
-        );
+        try
+        {
+            return await WeatherService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(LoadDataAsync),
+                typeof(WeatherIndex),
+                ErrorLogService,
+                NotificationService
+            );
+            return new List<Weather>();
+        }
     }
 
     // 篩選邏輯委派
     private IQueryable<Weather> ApplyWeatherFilters(SearchFilterModel searchModel, IQueryable<Weather> query)
     {
-        // 天氣名稱篩選
-        var nameFilter = searchModel.GetFilterValue("Name")?.ToString();
-        if (!string.IsNullOrWhiteSpace(nameFilter))
+        try
         {
-            query = query.Where(w => w.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
-        }
+            // 天氣名稱篩選
+            var nameFilter = searchModel.GetFilterValue("Name")?.ToString();
+            if (!string.IsNullOrWhiteSpace(nameFilter))
+            {
+                query = query.Where(w => w.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
+            }
 
-        // 描述篩選
-        var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
-        if (!string.IsNullOrWhiteSpace(descriptionFilter))
-        {
-            query = query.Where(w => 
-                !string.IsNullOrEmpty(w.Description) && 
-                w.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
-        }
+            // 描述篩選
+            var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
+            if (!string.IsNullOrWhiteSpace(descriptionFilter))
+            {
+                query = query.Where(w => 
+                    !string.IsNullOrEmpty(w.Description) && 
+                    w.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
+            }
 
-        // 狀態篩選
-        var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
-        if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
+            // 狀態篩選
+            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
+            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
+            {
+                query = query.Where(w => w.Status == status);
+            }
+            
+            return query.OrderBy(w => w.Name);
+        }
+        catch (Exception ex)
         {
-            query = query.Where(w => w.Status == status);
-        }        return query.OrderBy(w => w.Name);
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(ApplyWeatherFilters),
+                typeof(WeatherIndex),
+                ErrorLogService,
+                NotificationService
+            );
+            return query.OrderBy(w => w.Name);
+        }
     }
 }

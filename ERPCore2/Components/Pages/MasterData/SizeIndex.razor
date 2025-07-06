@@ -1,4 +1,5 @@
 @page "/sizes"
+@using ERPCore2.Helpers
 @inject ISizeService SizeService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -35,19 +36,43 @@
 
     protected override void OnInitialized()
     {
-        InitializeBreadcrumbs();
-        InitializeFilters();
-        InitializeTableColumns();
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeFilters();
+            InitializeTableColumns();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(OnInitialized), 
+                GetType(),
+                ErrorLogService,
+                NotificationService);
+        }
     }
 
     private void InitializeBreadcrumbs()
     {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        try
         {
-            new("首頁", "/"),
-            new("基礎資料", "#"),
-            new("尺寸維護")
-        };
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("基礎資料", "#"),
+                new("尺寸維護")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(InitializeBreadcrumbs), 
+                GetType(),
+                ErrorLogService,
+                NotificationService);
+        }
     }
 
     // 載入基礎資料（此頁面不需要選項清單）
@@ -60,11 +85,12 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandleErrorSimplyAsync(
+            _ = await ErrorHandlingHelper.HandleErrorSafelyAsync(
                 ex, 
                 nameof(LoadBasicDataAsync), 
-                NotificationService,
-                customMessage: "載入基礎資料失敗");
+                GetType(),
+                ErrorLogService,
+                NotificationService);
             StateHasChanged();
         }
     }
@@ -78,11 +104,12 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandleErrorSimplyAsync(
+            _ = await ErrorHandlingHelper.HandleErrorSafelyAsync(
                 ex, 
                 nameof(LoadSizesAsync), 
-                NotificationService,
-                customMessage: "載入尺寸資料失敗");
+                GetType(),
+                ErrorLogService,
+                NotificationService);
             
             StateHasChanged();
             return new List<Size>();
@@ -91,73 +118,110 @@
 
     private void InitializeFilters()
     {
-        // 準備啟用狀態選項
-        var activeStatusOptions = new List<SelectOption>
+        try
         {
-            new() { Text = "啟用", Value = "true" },
-            new() { Text = "停用", Value = "false" }
-        };
+            // 準備啟用狀態選項
+            var activeStatusOptions = new List<SelectOption>
+            {
+                new() { Text = "啟用", Value = "true" },
+                new() { Text = "停用", Value = "false" }
+            };
 
-        // 建立篩選定義
-        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-            .AddText("SizeCode", "尺寸代碼", "輸入尺寸代碼搜尋")
-            .AddText("SizeName", "尺寸名稱", "輸入尺寸名稱搜尋")
-            .AddText("Description", "尺寸描述", "輸入描述內容搜尋", isAdvanced: true)
-            .AddSelect("IsActive", "啟用狀態", activeStatusOptions, isAdvanced: true)
-            .Build();
+            // 建立篩選定義
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("SizeCode", "尺寸代碼", "輸入尺寸代碼搜尋")
+                .AddText("SizeName", "尺寸名稱", "輸入尺寸名稱搜尋")
+                .AddText("Description", "尺寸描述", "輸入描述內容搜尋", isAdvanced: true)
+                .AddSelect("IsActive", "啟用狀態", activeStatusOptions, isAdvanced: true)
+                .Build();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(InitializeFilters), 
+                GetType(),
+                ErrorLogService,
+                NotificationService);
+        }
     }
 
     private void InitializeTableColumns()
     {
-        columnDefinitions = new List<TableColumnDefinition>
+        try
         {
-            TableColumnDefinition.Text("尺寸代碼", nameof(Size.SizeCode)),
-            TableColumnDefinition.Text("尺寸名稱", nameof(Size.SizeName)),
-            TableColumnDefinition.Text("描述", nameof(Size.Description)),
-            TableColumnDefinition.Status("啟用狀態", nameof(Size.IsActive), new Dictionary<object, string>
+            columnDefinitions = new List<TableColumnDefinition>
             {
-                { true, "bg-success" },
-                { false, "bg-secondary" }
-            }),
-            TableColumnDefinition.Date("建立日期", nameof(Size.CreatedAt), "yyyy/MM/dd")
-        };
+                TableColumnDefinition.Text("尺寸代碼", nameof(Size.SizeCode)),
+                TableColumnDefinition.Text("尺寸名稱", nameof(Size.SizeName)),
+                TableColumnDefinition.Text("描述", nameof(Size.Description)),
+                TableColumnDefinition.Status("啟用狀態", nameof(Size.IsActive), new Dictionary<object, string>
+                {
+                    { true, "bg-success" },
+                    { false, "bg-secondary" }
+                }),
+                TableColumnDefinition.Date("建立日期", nameof(Size.CreatedAt), "yyyy/MM/dd")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(InitializeTableColumns), 
+                GetType(),
+                ErrorLogService,
+                NotificationService);
+        }
     }
 
     // 自定義篩選邏輯
     private IQueryable<Size> ApplySizeFilters(SearchFilterModel searchModel, IQueryable<Size> query)
     {
-        // 尺寸代碼篩選
-        var sizeCodeFilter = searchModel.GetFilterValue("SizeCode")?.ToString();
-        if (!string.IsNullOrWhiteSpace(sizeCodeFilter))
+        try
         {
-            query = query.Where(s => 
-                s.SizeCode.Contains(sizeCodeFilter, StringComparison.OrdinalIgnoreCase));
-        }
+            // 尺寸代碼篩選
+            var sizeCodeFilter = searchModel.GetFilterValue("SizeCode")?.ToString();
+            if (!string.IsNullOrWhiteSpace(sizeCodeFilter))
+            {
+                query = query.Where(s => 
+                    s.SizeCode.Contains(sizeCodeFilter, StringComparison.OrdinalIgnoreCase));
+            }
 
-        // 尺寸名稱篩選
-        var sizeNameFilter = searchModel.GetFilterValue("SizeName")?.ToString();
-        if (!string.IsNullOrWhiteSpace(sizeNameFilter))
+            // 尺寸名稱篩選
+            var sizeNameFilter = searchModel.GetFilterValue("SizeName")?.ToString();
+            if (!string.IsNullOrWhiteSpace(sizeNameFilter))
+            {
+                query = query.Where(s => 
+                    s.SizeName.Contains(sizeNameFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 描述篩選
+            var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
+            if (!string.IsNullOrWhiteSpace(descriptionFilter))
+            {
+                query = query.Where(s => 
+                    !string.IsNullOrEmpty(s.Description) && 
+                    s.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 啟用狀態篩選
+            var isActiveFilter = searchModel.GetFilterValue("IsActive")?.ToString();
+            if (!string.IsNullOrWhiteSpace(isActiveFilter) && bool.TryParse(isActiveFilter, out var isActive))
+            {
+                query = query.Where(s => s.IsActive == isActive);
+            }
+
+            return query.OrderBy(s => s.SizeName);
+        }
+        catch (Exception ex)
         {
-            query = query.Where(s => 
-                s.SizeName.Contains(sizeNameFilter, StringComparison.OrdinalIgnoreCase));
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(ApplySizeFilters), 
+                GetType(),
+                ErrorLogService,
+                NotificationService);
+            return query; // 發生錯誤時返回原始查詢
         }
-
-        // 描述篩選
-        var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
-        if (!string.IsNullOrWhiteSpace(descriptionFilter))
-        {
-            query = query.Where(s => 
-                !string.IsNullOrEmpty(s.Description) && 
-                s.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
-        }
-
-        // 啟用狀態篩選
-        var isActiveFilter = searchModel.GetFilterValue("IsActive")?.ToString();
-        if (!string.IsNullOrWhiteSpace(isActiveFilter) && bool.TryParse(isActiveFilter, out var isActive))
-        {
-            query = query.Where(s => s.IsActive == isActive);
-        }
-
-        return query.OrderBy(s => s.SizeName);
     }
 }

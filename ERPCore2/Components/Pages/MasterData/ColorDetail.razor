@@ -5,6 +5,7 @@
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
+@using ERPCore2.Helpers
 @inject IColorService ColorService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -55,7 +56,6 @@
     {
         if (_isLoading)
         {
-            Console.WriteLine("[ColorDetail] 載入中，跳過重複調用");
             return color;
         }
         
@@ -70,7 +70,15 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[ColorDetail] 載入顏色資料失敗：{ex.Message}");
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(LoadColorDataAsync),
+                typeof(ColorDetail),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { ColorId }
+            );
             throw;
         }
         finally
@@ -81,105 +89,169 @@
 
     private Task LoadAdditionalDataAsync()
     {
-        return Task.CompletedTask;
+        try
+        {
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(LoadAdditionalDataAsync),
+                typeof(ColorDetail),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { ColorId }
+            );
+            throw;
+        }
     }
 
     private Task OnColorDataLoaded()
     {
-        StateHasChanged();
-        return Task.CompletedTask;
+        try
+        {
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(OnColorDataLoaded),
+                typeof(ColorDetail),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { ColorId }
+            );
+            throw;
+        }
     }    // 設定標籤頁結構
     private List<GenericDetailPageComponent<Color, IColorService>.TabSection> GetTabSections()
     {
-        return new List<GenericDetailPageComponent<Color, IColorService>.TabSection>
-        {            new GenericDetailPageComponent<Color, IColorService>.TabSection
-            {
-                Id = "basic",
-                Title = "基本資料",
-                Content = @<div>
-                    <BasicInfoDisplayComponent 
-                        Title="顏色基本資訊"
-                        IconClass="fas fa-palette"
-                        IconColor="text-primary"
-                        Fields="@GetColorBasicFields()"
-                        ShowFieldCount="false"
-                        DefaultColSize="6" />
-                </div>
-            },
-              new GenericDetailPageComponent<Color, IColorService>.TabSection
-            {
-                Id = "system",
-                Title = "系統資訊",
-                Content = @<div>
-                    <SystemInfoDisplayComponent 
-                        CreatedAt="@(color?.CreatedAt ?? DateTime.MinValue)"
-                        UpdatedAt="@color?.UpdatedAt"
-                        CreatedBy="@color?.CreatedBy"
-                        UpdatedBy="@color?.UpdatedBy"
-                        Remarks="@color?.Remarks"
-                        ShowTimeline="true"
-                        ShowRemarks="true" />
-                </div>
-            }
-        };
+        try
+        {
+            return new List<GenericDetailPageComponent<Color, IColorService>.TabSection>
+            {            new GenericDetailPageComponent<Color, IColorService>.TabSection
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div>
+                        <BasicInfoDisplayComponent 
+                            Title="顏色基本資訊"
+                            IconClass="fas fa-palette"
+                            IconColor="text-primary"
+                            Fields="@GetColorBasicFields()"
+                            ShowFieldCount="false"
+                            DefaultColSize="6" />
+                    </div>
+                },
+                  new GenericDetailPageComponent<Color, IColorService>.TabSection
+                {
+                    Id = "system",
+                    Title = "系統資訊",
+                    Content = @<div>
+                        <SystemInfoDisplayComponent 
+                            CreatedAt="@(color?.CreatedAt ?? DateTime.MinValue)"
+                            UpdatedAt="@color?.UpdatedAt"
+                            CreatedBy="@color?.CreatedBy"
+                            UpdatedBy="@color?.UpdatedBy"
+                            Remarks="@color?.Remarks"
+                            ShowTimeline="true"
+                            ShowRemarks="true" />
+                    </div>
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(GetTabSections),
+                typeof(ColorDetail),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { ColorId }
+            );
+            throw;
+        }
     }
 
     // 取得顏色基本資料欄位
     private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetColorBasicFields()
     {
-        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        try
         {
-            new()
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
             {
-                Label = "顏色代碼",
-                Value = color?.Code,
-                IsPrimary = true,
-                EmptyText = "未設定",
-                IconClass = "fas fa-barcode",
-                IconBgClass = "bg-primary bg-opacity-10",
-                IconTextClass = "text-primary",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "顏色名稱",
-                Value = color?.Name,
-                ValueBold = true,
-                IconClass = "fas fa-palette",
-                IconBgClass = "bg-info bg-opacity-10",
-                IconTextClass = "text-info",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "狀態",
-                Type = BasicInfoDisplayComponent.FieldType.Status,
-                Value = color?.Status,
-                IconClass = "fas fa-flag",
-                IconBgClass = "bg-success bg-opacity-10",
-                IconTextClass = "text-success",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "描述",
-                Value = color?.Description,
-                VisibilityCondition = () => !string.IsNullOrEmpty(color?.Description),
-                IconClass = "fas fa-align-left",
-                IconBgClass = "bg-info bg-opacity-10",
-                IconTextClass = "text-info",
-                ColSize = 12
-            },
-            new()
-            {
-                Label = "備註",
-                Value = color?.Remarks,
-                VisibilityCondition = () => !string.IsNullOrEmpty(color?.Remarks),
-                IconClass = "fas fa-sticky-note",
-                IconBgClass = "bg-secondary bg-opacity-10",
-                IconTextClass = "text-secondary",
-                ColSize = 12
-            }
-        };
+                new()
+                {
+                    Label = "顏色代碼",
+                    Value = color?.Code,
+                    IsPrimary = true,
+                    EmptyText = "未設定",
+                    IconClass = "fas fa-barcode",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "顏色名稱",
+                    Value = color?.Name,
+                    ValueBold = true,
+                    IconClass = "fas fa-palette",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "狀態",
+                    Type = BasicInfoDisplayComponent.FieldType.Status,
+                    Value = color?.Status,
+                    IconClass = "fas fa-flag",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "描述",
+                    Value = color?.Description,
+                    VisibilityCondition = () => !string.IsNullOrEmpty(color?.Description),
+                    IconClass = "fas fa-align-left",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 12
+                },
+                new()
+                {
+                    Label = "備註",
+                    Value = color?.Remarks,
+                    VisibilityCondition = () => !string.IsNullOrEmpty(color?.Remarks),
+                    IconClass = "fas fa-sticky-note",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    IconTextClass = "text-secondary",
+                    ColSize = 12
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex, 
+                nameof(GetColorBasicFields),
+                typeof(ColorDetail),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { ColorId }
+            );
+            throw;
+        }
     }
 }

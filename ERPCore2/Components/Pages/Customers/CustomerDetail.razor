@@ -7,6 +7,7 @@
 @using ERPCore2.Services
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Extensions
+@using ERPCore2.Helpers
 @inject ICustomerService CustomerService
 @inject ICustomerContactService CustomerContactService
 @inject ICustomerAddressService CustomerAddressService
@@ -61,7 +62,6 @@
         // 防止重複載入
         if (_isLoading)
         {
-            Console.WriteLine("[CustomerDetail] 載入中，跳過重複調用");
             return customer;
         }
         

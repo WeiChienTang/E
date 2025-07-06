@@ -5,6 +5,7 @@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services
 @using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Helpers
 @inject IProductService ProductService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -34,6 +35,7 @@
                            UseTabLayout="true"
                            TabSections="@GetTabSections()">
 </GenericDetailPageComponent>
+
 @code {
     [Parameter] public int ProductId { get; set; }
 
@@ -71,8 +73,16 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[ProductDetail] 載入商品資料失敗：{ex.Message}");
-            throw;
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(LoadProductDataAsync),
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: true,
+                additionalData: new { ProductId = ProductId, PageName = "ProductDetail" });
+            
+            return null;
         }
         finally
         {
@@ -92,303 +102,464 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[ProductDetail] 載入額外資料失敗：{ex.Message}");
-            // 不拋出異常，讓頁面繼續顯示
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(LoadAdditionalDataAsync),
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: false,
+                additionalData: new { ProductId = product?.Id, PageName = "ProductDetail" });
+            
+            // 設定預設值避免頁面錯誤
+            productSuppliers = new List<ProductSupplier>();
         }
     }
 
     private Task OnProductDataLoaded()
     {
-        // 資料載入完成後的處理
-        StateHasChanged();
-        return Task.CompletedTask;
+        try
+        {
+            // 資料載入完成後的處理
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(OnProductDataLoaded),
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: false,
+                additionalData: new { ProductId = product?.Id, PageName = "ProductDetail" });
+            
+            return Task.CompletedTask;
+        }
     }
 
     // 輔助方法
     private string FormatPrice(decimal? price)
     {
-        return price.HasValue ? $"NT$ {price.Value:N2}" : "未設定";
+        try
+        {
+            return price.HasValue ? $"NT$ {price.Value:N2}" : "未設定";
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(FormatPrice),
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: false,
+                additionalData: new { Price = price, PageName = "ProductDetail" });
+            
+            return "格式錯誤";
+        }
     }
 
     private string FormatPercentage(decimal? percentage)
     {
-        return percentage.HasValue ? $"{percentage.Value:P2}" : "無法計算";
+        try
+        {
+            return percentage.HasValue ? $"{percentage.Value:P2}" : "無法計算";
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(FormatPercentage),
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: false,
+                additionalData: new { Percentage = percentage, PageName = "ProductDetail" });
+            
+            return "格式錯誤";
+        }
     }
 
     private decimal? CalculateMarginRate(decimal unitPrice, decimal costPrice)
     {
-        if (unitPrice <= 0) return null;
-        return (unitPrice - costPrice) / unitPrice;
+        try
+        {
+            if (unitPrice <= 0) return null;
+            return (unitPrice - costPrice) / unitPrice;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(CalculateMarginRate),
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: false,
+                additionalData: new { UnitPrice = unitPrice, CostPrice = costPrice, PageName = "ProductDetail" });
+            
+            return null;
+        }
     }
 
     private string GetStockStatus()
     {
-        if (product == null) return "未知";
-
-        if (product.MinStockLevel.HasValue && product.CurrentStock <= product.MinStockLevel.Value)
+        try
         {
-            return "庫存不足";
-        }
+            if (product == null) return "未知";
 
-        if (product.MaxStockLevel.HasValue && product.CurrentStock >= product.MaxStockLevel.Value)
+            if (product.MinStockLevel.HasValue && product.CurrentStock <= product.MinStockLevel.Value)
+            {
+                return "庫存不足";
+            }
+
+            if (product.MaxStockLevel.HasValue && product.CurrentStock >= product.MaxStockLevel.Value)
+            {
+                return "庫存過量";
+            }
+
+            return "正常";
+        }
+        catch (Exception ex)
         {
-            return "庫存過量";
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(GetStockStatus),
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: false,
+                additionalData: new { ProductId = product?.Id, PageName = "ProductDetail" });
+            
+            return "未知";
         }
-
-        return "正常";
     }
 
     private string GetStockStatusBadgeClass(string status)
     {
-        return status switch
+        try
         {
-            "庫存不足" => "bg-danger",
-            "庫存過量" => "bg-warning",
-            "正常" => "bg-success",
-            _ => "bg-secondary"
-        };
+            return status switch
+            {
+                "庫存不足" => "bg-danger",
+                "庫存過量" => "bg-warning",
+                "正常" => "bg-success",
+                _ => "bg-secondary"
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(GetStockStatusBadgeClass),
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: false,
+                additionalData: new { Status = status, PageName = "ProductDetail" });
+            
+            return "bg-secondary";
+        }
     }
 
     // 設定標籤頁結構
     private List<GenericDetailPageComponent<Product, IProductService>.TabSection> GetTabSections()
     {
-        return new List<GenericDetailPageComponent<Product, IProductService>.TabSection>
-        {            new GenericDetailPageComponent<Product, IProductService>.TabSection
+        try
+        {
+            return new List<GenericDetailPageComponent<Product, IProductService>.TabSection>
             {
-                Id = "basic",
-                Title = "基本資料",
-                Content = @<div>
-                    <BasicInfoDisplayComponent 
-                        Title="商品基本資訊"
-                        IconClass="fas fa-box"
-                        IconColor="text-primary"
-                        Fields="@GetProductBasicFields()" />
-                </div>
-            },
-            
-            new GenericDetailPageComponent<Product, IProductService>.TabSection
-            {
-                Id = "pricing",
-                Title = "價格資訊",
-                Content = @<div class="row">
-                    <DetailFieldComponent Label="單價" Value="@FormatPrice(product?.UnitPrice)" />
-                    <DetailFieldComponent Label="成本價" Value="@FormatPrice(product?.CostPrice)" />
-                    @if (product?.UnitPrice.HasValue == true && product?.CostPrice.HasValue == true)
-                    {
-                        <DetailFieldComponent Label="毛利" Value="@FormatPrice(product.UnitPrice!.Value - product.CostPrice!.Value)" />
-                        <DetailFieldComponent Label="毛利率" Value="@FormatPercentage(CalculateMarginRate(product.UnitPrice!.Value, product.CostPrice!.Value))" />
-                    }
-                </div>
-            },
-            
-            new GenericDetailPageComponent<Product, IProductService>.TabSection
-            {
-                Id = "inventory",
-                Title = "庫存資訊",
-                Content = @<div class="row">
-                    <DetailFieldComponent Label="現有庫存" Value="@product?.CurrentStock.ToString()" IsBold="true" />
-                    <DetailFieldComponent Label="庫存狀態">
-                        @if (product != null)
+                new GenericDetailPageComponent<Product, IProductService>.TabSection
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div>
+                        <BasicInfoDisplayComponent 
+                            Title="商品基本資訊"
+                            IconClass="fas fa-box"
+                            IconColor="text-primary"
+                            Fields="@GetProductBasicFields()" />
+                    </div>
+                },
+                
+                new GenericDetailPageComponent<Product, IProductService>.TabSection
+                {
+                    Id = "pricing",
+                    Title = "價格資訊",
+                    Content = @<div class="row">
+                        <DetailFieldComponent Label="單價" Value="@FormatPrice(product?.UnitPrice)" />
+                        <DetailFieldComponent Label="成本價" Value="@FormatPrice(product?.CostPrice)" />
+                        @if (product?.UnitPrice.HasValue == true && product?.CostPrice.HasValue == true)
                         {
-                            var stockStatus = GetStockStatus();
-                            <span class="badge @GetStockStatusBadgeClass(stockStatus)">
-                                @stockStatus
-                            </span>
+                            <DetailFieldComponent Label="毛利" Value="@FormatPrice(product.UnitPrice!.Value - product.CostPrice!.Value)" />
+                            <DetailFieldComponent Label="毛利率" Value="@FormatPercentage(CalculateMarginRate(product.UnitPrice!.Value, product.CostPrice!.Value))" />
                         }
-                    </DetailFieldComponent>
-                    <DetailFieldComponent Label="最低庫存量" Value="@(product?.MinStockLevel?.ToString() ?? "未設定")" />
-                    <DetailFieldComponent Label="最高庫存量" Value="@(product?.MaxStockLevel?.ToString() ?? "未設定")" />
-                </div>
-            },
-            
-            new GenericDetailPageComponent<Product, IProductService>.TabSection
-            {
-                Id = "suppliers",
-                Title = "供應商資訊",
-                Content = @<div>
-                    @if (productSuppliers.Any())
-                    {
-                        <div class="mt-2">
-                            @foreach (var productSupplier in productSuppliers.OrderByDescending(ps => ps.IsPrimarySupplier))
+                    </div>
+                },
+                
+                new GenericDetailPageComponent<Product, IProductService>.TabSection
+                {
+                    Id = "inventory",
+                    Title = "庫存資訊",
+                    Content = @<div class="row">
+                        <DetailFieldComponent Label="現有庫存" Value="@product?.CurrentStock.ToString()" IsBold="true" />
+                        <DetailFieldComponent Label="庫存狀態">
+                            @if (product != null)
                             {
-                                <div class="card mb-2">
-                                    <div class="card-body p-3">
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <div>
-                                                <h6 class="card-title mb-1">
-                                                    @productSupplier.Supplier?.CompanyName
-                                                    @if (productSupplier.IsPrimarySupplier || productSupplier.SupplierId == product?.PrimarySupplierId)
+                                var stockStatus = GetStockStatus();
+                                <span class="badge @GetStockStatusBadgeClass(stockStatus)">
+                                    @stockStatus
+                                </span>
+                            }
+                        </DetailFieldComponent>
+                        <DetailFieldComponent Label="最低庫存量" Value="@(product?.MinStockLevel?.ToString() ?? "未設定")" />
+                        <DetailFieldComponent Label="最高庫存量" Value="@(product?.MaxStockLevel?.ToString() ?? "未設定")" />
+                    </div>
+                },
+                
+                new GenericDetailPageComponent<Product, IProductService>.TabSection
+                {
+                    Id = "suppliers",
+                    Title = "供應商資訊",
+                    Content = @<div>
+                        @if (productSuppliers.Any())
+                        {
+                            <div class="mt-2">
+                                @foreach (var productSupplier in productSuppliers.OrderByDescending(ps => ps.IsPrimarySupplier))
+                                {
+                                    <div class="card mb-2">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h6 class="card-title mb-1">
+                                                        @productSupplier.Supplier?.CompanyName
+                                                        @if (productSupplier.IsPrimarySupplier || productSupplier.SupplierId == product?.PrimarySupplierId)
+                                                        {
+                                                            <span class="badge bg-primary ms-1">主要</span>
+                                                        }
+                                                    </h6>
+                                                    @if (!string.IsNullOrEmpty(productSupplier.SupplierProductCode))
                                                     {
-                                                        <span class="badge bg-primary ms-1">主要</span>
+                                                        <small class="text-muted">供應商代碼：@productSupplier.SupplierProductCode</small>
                                                     }
-                                                </h6>
-                                                @if (!string.IsNullOrEmpty(productSupplier.SupplierProductCode))
+                                                </div>
+                                            </div>
+                                            <div class="row mt-2">
+                                                @if (productSupplier.SupplierPrice.HasValue)
                                                 {
-                                                    <small class="text-muted">供應商代碼：@productSupplier.SupplierProductCode</small>
+                                                    <div class="col-6 col-md-3">
+                                                        <small class="text-muted">報價</small><br>
+                                                        <strong>NT$ @productSupplier.SupplierPrice.Value.ToString("N2")</strong>
+                                                    </div>
+                                                }
+                                                @if (productSupplier.LeadTime.HasValue)
+                                                {
+                                                    <div class="col-6 col-md-3">
+                                                        <small class="text-muted">交期</small><br>
+                                                        <span>@productSupplier.LeadTime 天</span>
+                                                    </div>
+                                                }
+                                                @if (productSupplier.MinOrderQuantity.HasValue)
+                                                {
+                                                    <div class="col-6 col-md-3">
+                                                        <small class="text-muted">最小訂購量</small><br>
+                                                        <span>@productSupplier.MinOrderQuantity</span>
+                                                    </div>
                                                 }
                                             </div>
                                         </div>
-                                        <div class="row mt-2">
-                                            @if (productSupplier.SupplierPrice.HasValue)
-                                            {
-                                                <div class="col-6 col-md-3">
-                                                    <small class="text-muted">報價</small><br>
-                                                    <strong>NT$ @productSupplier.SupplierPrice.Value.ToString("N2")</strong>
-                                                </div>
-                                            }
-                                            @if (productSupplier.LeadTime.HasValue)
-                                            {
-                                                <div class="col-6 col-md-3">
-                                                    <small class="text-muted">交期</small><br>
-                                                    <span>@productSupplier.LeadTime 天</span>
-                                                </div>
-                                            }
-                                            @if (productSupplier.MinOrderQuantity.HasValue)
-                                            {
-                                                <div class="col-6 col-md-3">
-                                                    <small class="text-muted">最小訂購量</small><br>
-                                                    <span>@productSupplier.MinOrderQuantity</span>
-                                                </div>
-                                            }
-                                        </div>
                                     </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-muted p-3 text-center">
-                            <i class="fas fa-truck fa-2x mb-2 d-block"></i>
-                            尚未設定供應商
-                        </div>
-                    }
-                </div>
-            },            
-            new GenericDetailPageComponent<Product, IProductService>.TabSection
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-muted p-3 text-center">
+                                <i class="fas fa-truck fa-2x mb-2 d-block"></i>
+                                尚未設定供應商
+                            </div>
+                        }
+                    </div>
+                },
+                
+                new GenericDetailPageComponent<Product, IProductService>.TabSection
+                {
+                    Id = "system",
+                    Title = "系統資訊",
+                    Content = @<div>
+                        <SystemInfoDisplayComponent 
+                            CreatedAt="@(product?.CreatedAt ?? DateTime.MinValue)"
+                            UpdatedAt="@product?.UpdatedAt"
+                            CreatedBy="@product?.CreatedBy"
+                            UpdatedBy="@product?.UpdatedBy"
+                            Remarks="@product?.Remarks"
+                            ShowTimeline="true"
+                            ShowRemarks="true" />
+                    </div>
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(GetTabSections),
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: false,
+                additionalData: new { ProductId = product?.Id, PageName = "ProductDetail" });
+            
+            // 返回最基本的標籤頁結構
+            return new List<GenericDetailPageComponent<Product, IProductService>.TabSection>
             {
-                Id = "system",
-                Title = "系統資訊",
-                Content = @<div>
-                    <SystemInfoDisplayComponent 
-                        CreatedAt="@(product?.CreatedAt ?? DateTime.MinValue)"
-                        UpdatedAt="@product?.UpdatedAt"
-                        CreatedBy="@product?.CreatedBy"
-                        UpdatedBy="@product?.UpdatedBy"
-                        Remarks="@product?.Remarks"
-                        ShowTimeline="true"
-                        ShowRemarks="true" />
-                </div>
-            }        };
+                new GenericDetailPageComponent<Product, IProductService>.TabSection
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div class="text-center text-muted p-3">載入錯誤</div>
+                }
+            };
+        }
     }
 
     // 取得商品基本資料欄位
     private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetProductBasicFields()
     {
-        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        try
         {
-            new()
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
             {
-                Label = "商品代碼",
-                Value = product?.ProductCode,
-                IsPrimary = true,
-                ValueBold = true,
-                IconClass = "fas fa-barcode",
-                IconBgClass = "bg-primary bg-opacity-10",
-                IconTextClass = "text-primary",
-                ColSize = 6
-            },
-            new()
+                new()
+                {
+                    Label = "商品代碼",
+                    Value = product?.ProductCode,
+                    IsPrimary = true,
+                    ValueBold = true,
+                    IconClass = "fas fa-barcode",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "商品名稱",
+                    Value = product?.ProductName,
+                    ValueBold = true,
+                    IconClass = "fas fa-box",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "商品分類",
+                    Value = product?.ProductCategory?.CategoryName,
+                    IconClass = "fas fa-tags",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "單位",
+                    Value = product?.Unit?.UnitName,
+                    IconClass = "fas fa-weight",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    IconTextClass = "text-secondary",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "狀態",
+                    CustomContent = @<div>
+                        @if (product?.Status != null)
+                        {
+                            <StatusBadgeComponent Status="@product.Status" />
+                        }
+                    </div>,
+                    IconClass = "fas fa-toggle-on",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "啟用狀態",
+                    CustomContent = @<div>
+                        @if (product != null)
+                        {
+                            <span class="badge @(product.IsActive ? "bg-success" : "bg-secondary")">
+                                @(product.IsActive ? "啟用" : "停用")
+                            </span>
+                        }
+                    </div>,
+                    IconClass = "fas fa-power-off",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "商品描述",
+                    Value = product?.Description,
+                    Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
+                    IconClass = "fas fa-align-left",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 12,
+                    VisibilityCondition = () => !string.IsNullOrEmpty(product?.Description)
+                },
+                new()
+                {
+                    Label = "規格說明",
+                    Value = product?.Specification,
+                    Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
+                    IconClass = "fas fa-list-alt",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    IconTextClass = "text-secondary",
+                    ColSize = 12,
+                    VisibilityCondition = () => !string.IsNullOrEmpty(product?.Specification)
+                },
+                new()
+                {
+                    Label = "備註",
+                    Value = product?.Remarks,
+                    Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
+                    IconClass = "fas fa-sticky-note",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    ColSize = 12,
+                    VisibilityCondition = () => !string.IsNullOrEmpty(product?.Remarks)
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                nameof(GetProductBasicFields),
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                showUserFriendlyMessage: false,
+                additionalData: new { ProductId = product?.Id, PageName = "ProductDetail" });
+            
+            // 返回最基本的欄位結構
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
             {
-                Label = "商品名稱",
-                Value = product?.ProductName,
-                ValueBold = true,
-                IconClass = "fas fa-box",
-                IconBgClass = "bg-info bg-opacity-10",
-                IconTextClass = "text-info",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "商品分類",
-                Value = product?.ProductCategory?.CategoryName,
-                IconClass = "fas fa-tags",
-                IconBgClass = "bg-warning bg-opacity-10",
-                IconTextClass = "text-warning",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "單位",
-                Value = product?.Unit?.UnitName,
-                IconClass = "fas fa-weight",
-                IconBgClass = "bg-secondary bg-opacity-10",
-                IconTextClass = "text-secondary",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "狀態",
-                CustomContent = @<div>
-                    @if (product?.Status != null)
-                    {
-                        <StatusBadgeComponent Status="@product.Status" />
-                    }
-                </div>,
-                IconClass = "fas fa-toggle-on",
-                IconBgClass = "bg-success bg-opacity-10",
-                IconTextClass = "text-success",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "啟用狀態",
-                CustomContent = @<div>
-                    @if (product != null)
-                    {
-                        <span class="badge @(product.IsActive ? "bg-success" : "bg-secondary")">
-                            @(product.IsActive ? "啟用" : "停用")
-                        </span>
-                    }
-                </div>,
-                IconClass = "fas fa-power-off",
-                IconBgClass = "bg-info bg-opacity-10",
-                IconTextClass = "text-info",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "商品描述",
-                Value = product?.Description,
-                Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
-                IconClass = "fas fa-align-left",
-                IconBgClass = "bg-info bg-opacity-10",
-                IconTextClass = "text-info",
-                ColSize = 12,
-                VisibilityCondition = () => !string.IsNullOrEmpty(product?.Description)
-            },
-            new()
-            {
-                Label = "規格說明",
-                Value = product?.Specification,
-                Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
-                IconClass = "fas fa-list-alt",
-                IconBgClass = "bg-secondary bg-opacity-10",
-                IconTextClass = "text-secondary",
-                ColSize = 12,
-                VisibilityCondition = () => !string.IsNullOrEmpty(product?.Specification)
-            },
-            new()
-            {
-                Label = "備註",
-                Value = product?.Remarks,
-                Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
-                IconClass = "fas fa-sticky-note",
-                IconBgClass = "bg-warning bg-opacity-10",
-                IconTextClass = "text-warning",
-                ColSize = 12,
-                VisibilityCondition = () => !string.IsNullOrEmpty(product?.Remarks)
-            }
-        };
+                new()
+                {
+                    Label = "載入錯誤",
+                    Value = "無法載入商品基本資料",
+                    IconClass = "fas fa-exclamation-triangle",
+                    IconBgClass = "bg-danger bg-opacity-10",
+                    IconTextClass = "text-danger",
+                    ColSize = 12
+                }
+            };
+        }
     }
 }

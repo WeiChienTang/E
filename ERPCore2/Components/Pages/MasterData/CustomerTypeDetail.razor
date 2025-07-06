@@ -6,6 +6,7 @@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
+@using ERPCore2.Helpers
 @inject ICustomerTypeService CustomerTypeService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -54,7 +55,6 @@
         // 防止重複載入
         if (_isLoading)
         {
-            Console.WriteLine("[CustomerTypeDetail] 載入中，跳過重複調用");
             return customerType;
         }
         
@@ -69,7 +69,9 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[CustomerTypeDetail] 載入客戶類型資料失敗：{ex.Message}");
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
+                $"[CustomerTypeDetail] 載入客戶類型資料失敗 - CustomerTypeId: {CustomerTypeId}",
+                GetType(), ErrorLogService, NotificationService);
             throw;
         }
         finally
@@ -80,15 +82,27 @@
 
     private Task OnCustomerTypeDataLoaded()
     {
-        // 資料載入完成後的處理
-        StateHasChanged();
-        return Task.CompletedTask;
+        try
+        {
+            // 資料載入完成後的處理
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
+                "[CustomerTypeDetail] 資料載入完成處理失敗",
+                GetType(), ErrorLogService, NotificationService);
+            return Task.CompletedTask;
+        }
     }
 
     // 設定標籤頁結構
     private List<GenericDetailPageComponent<CustomerType, ICustomerTypeService>.TabSection> GetTabSections()
     {
-        return new List<GenericDetailPageComponent<CustomerType, ICustomerTypeService>.TabSection>
+        try
+        {
+            return new List<GenericDetailPageComponent<CustomerType, ICustomerTypeService>.TabSection>
         {            new GenericDetailPageComponent<CustomerType, ICustomerTypeService>.TabSection
             {
                 Id = "basic",
@@ -158,12 +172,22 @@
                 </div>
             }
         };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
+                "[CustomerTypeDetail] 設定標籤頁結構失敗",
+                GetType(), ErrorLogService, NotificationService);
+            return new List<GenericDetailPageComponent<CustomerType, ICustomerTypeService>.TabSection>();
+        }
     }
 
     // 取得客戶類型基本資料欄位
     private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetCustomerTypeBasicFields()
     {
-        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        try
+        {
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
         {
             new()
             {
@@ -207,5 +231,13 @@
                 ColSize = 12
             }
         };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
+                "[CustomerTypeDetail] 取得客戶類型基本資料欄位失敗",
+                GetType(), ErrorLogService, NotificationService);
+            return new List<BasicInfoDisplayComponent.BasicInfoField>();
+        }
     }
 }

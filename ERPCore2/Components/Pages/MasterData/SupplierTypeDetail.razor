@@ -6,6 +6,7 @@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
+@using ERPCore2.Helpers
 @inject ISupplierTypeService SupplierTypeService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -56,7 +57,6 @@
         // 防止重複載入
         if (_isLoading)
         {
-            Console.WriteLine("[SupplierTypeDetail] 載入中，跳過重複調用");
             return supplierType;
         }
         
@@ -72,7 +72,7 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[SupplierTypeDetail] 載入廠商類型資料失敗：{ex.Message}");
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "LoadSupplierTypeDataAsync", GetType(), ErrorLogService, NotificationService);
             throw;
         }
         finally
@@ -83,16 +83,26 @@
 
     private Task OnSupplierTypeDataLoaded()
     {
-        // 資料載入完成後的處理
-        StateHasChanged();
-        return Task.CompletedTask;
+        try
+        {
+            // 資料載入完成後的處理
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "OnSupplierTypeDataLoaded", GetType(), ErrorLogService, NotificationService);
+            return Task.CompletedTask;
+        }
     }
 
     // 設定標籤頁結構
     private List<GenericDetailPageComponent<SupplierType, ISupplierTypeService>.TabSection> GetTabSections()
     {
-        return new List<GenericDetailPageComponent<SupplierType, ISupplierTypeService>.TabSection>
-        {            new GenericDetailPageComponent<SupplierType, ISupplierTypeService>.TabSection
+        try
+        {
+            return new List<GenericDetailPageComponent<SupplierType, ISupplierTypeService>.TabSection>
+            {            new GenericDetailPageComponent<SupplierType, ISupplierTypeService>.TabSection
             {
                 Id = "basic",
                 Title = "基本資料",
@@ -158,12 +168,20 @@
                 </div>
             }
         };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "GetTabSections", GetType(), ErrorLogService, NotificationService);
+            return new List<GenericDetailPageComponent<SupplierType, ISupplierTypeService>.TabSection>();
+        }
     }
 
     // 取得廠商類型基本資料欄位
     private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetSupplierTypeBasicFields()
     {
-        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        try
+        {
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
         {
             new()
             {
@@ -207,5 +225,11 @@
                 ColSize = 12
             }
         };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "GetSupplierTypeBasicFields", GetType(), ErrorLogService, NotificationService);
+            return new List<BasicInfoDisplayComponent.BasicInfoField>();
+        }
     }
 }

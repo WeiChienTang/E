@@ -156,6 +156,11 @@ await ErrorHandlingHelper.HandleErrorSafelyAsync(...); // 可能導致死鎖
 - ✅ **EmployeeEdit.razor** - 完整錯誤處理強化  
 - ✅ **EmployeeDetail.razor** - 完整錯誤處理強化
 
+### Products 模組
+- ✅ **ProductIndex.razor** - 完整錯誤處理強化
+- ✅ **ProductEdit.razor** - 完整錯誤處理強化  
+- ✅ **ProductDetail.razor** - 完整錯誤處理強化
+
 ### 修改重點
 1. **統一錯誤處理方法**：所有 try-catch 區塊改用 `ErrorHandlingHelper.HandleErrorSafelyAsync()`
 2. **分層責任明確**：頁面層負責錯誤處理與通知，Service 層只記錄錯誤

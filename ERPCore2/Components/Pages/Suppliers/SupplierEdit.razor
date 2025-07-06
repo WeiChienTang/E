@@ -8,8 +8,10 @@
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject IErrorLogService ErrorLogService
 @using ERPCore2.Components.Shared.SubCollections
 @using ERPCore2.Services.Notifications
+@using ERPCore2.Helpers
 @inject INotificationService NotificationService
 @rendermode InteractiveServer
 @implements IDisposable
@@ -98,23 +100,45 @@
 
     protected override async Task OnInitializedAsync()
     {
-        InitializeBreadcrumbs();
-        await LoadAdditionalData();
+        try
+        {
+            InitializeBreadcrumbs();
+            await LoadAdditionalData();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(OnInitializedAsync), GetType(), ErrorLogService, NotificationService);
+        }
     }    protected override Task OnParametersSetAsync()
     {
-        // 當參數變化時（例如從 Detail 導航到 Edit），重新初始化麵包屑
-        InitializeBreadcrumbs();
-        return Task.CompletedTask;
+        try
+        {
+            // 當參數變化時（例如從 Detail 導航到 Edit），重新初始化麵包屑
+            InitializeBreadcrumbs();
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(OnParametersSetAsync), GetType(), ErrorLogService, NotificationService);
+            return Task.CompletedTask;
+        }
     }
 
     private void InitializeBreadcrumbs()
     {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        try
         {
-            new("首頁", "/"),
-            new("廠商管理", "/suppliers"),
-            new(Id.HasValue ? "編輯廠商" : "新增廠商")
-        };
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("廠商管理", "/suppliers"),
+                new(Id.HasValue ? "編輯廠商" : "新增廠商")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(InitializeBreadcrumbs), GetType(), ErrorLogService, NotificationService);
+        }
     }
 
     private async Task LoadAdditionalData()
@@ -137,7 +161,7 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"載入額外資料時發生錯誤：{ex.Message}");
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(LoadAdditionalData), GetType(), ErrorLogService, NotificationService);
             // 初始化空列表以防止UI錯誤
             supplierTypes = new List<SupplierType>();
             industryTypes = new List<IndustryType>();
@@ -154,101 +178,109 @@
 
     private void InitializeFormFields()
     {
-        // 廠商類型選項
-        var supplierTypeOptions = supplierTypes.Select(st => new SelectOption
+        try
         {
-            Text = st.TypeName,
-            Value = st.Id.ToString()
-        }).ToList();
+            // 廠商類型選項
+            var supplierTypeOptions = supplierTypes.Select(st => new SelectOption
+            {
+                Text = st.TypeName,
+                Value = st.Id.ToString()
+            }).ToList();
 
-        // 行業類型選項
-        var industryTypeOptions = industryTypes.Select(it => new SelectOption
-        {
-            Text = it.IndustryTypeName,
-            Value = it.Id.ToString()
-        }).ToList();
+            // 行業類型選項
+            var industryTypeOptions = industryTypes.Select(it => new SelectOption
+            {
+                Text = it.IndustryTypeName,
+                Value = it.Id.ToString()
+            }).ToList();
 
-        basicFormFields = new List<FormFieldDefinition>
-        {
-            new()
+            basicFormFields = new List<FormFieldDefinition>
             {
-                PropertyName = nameof(Supplier.SupplierCode),
-                Label = "廠商代碼",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入廠商代碼",
-                IsRequired = true,
-                ContainerCssClass = "col-md-4"
-            },
-            new()
-            {
-                PropertyName = nameof(Supplier.CompanyName),
-                Label = "公司名稱",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入公司名稱",
-                IsRequired = true,
-                ContainerCssClass = "col-md-8"
-            },
-            new()
-            {
-                PropertyName = nameof(Supplier.ContactPerson),
-                Label = "聯絡人",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入聯絡人姓名",
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                PropertyName = nameof(Supplier.TaxNumber),
-                Label = "統一編號",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入統一編號",
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                PropertyName = nameof(Supplier.SupplierTypeId),
-                Label = "廠商類型",
-                FieldType = FormFieldType.Select,
-                Options = supplierTypeOptions,
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                PropertyName = nameof(Supplier.IndustryTypeId),
-                Label = "行業類型",
-                FieldType = FormFieldType.Select,
-                Options = industryTypeOptions,
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                PropertyName = nameof(Supplier.PaymentTerms),
-                Label = "付款條件",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入付款條件",
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                PropertyName = nameof(Supplier.CreditLimit),
-                Label = "信用額度",
-                FieldType = FormFieldType.Number,
-                Placeholder = "請輸入信用額度",
-                ContainerCssClass = "col-md-6"
-            }
-        };
+                // ...existing form fields...
+                new()
+                {
+                    PropertyName = nameof(Supplier.SupplierCode),
+                    Label = "廠商代碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入廠商代碼",
+                    IsRequired = true,
+                    ContainerCssClass = "col-md-4"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.CompanyName),
+                    Label = "公司名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入公司名稱",
+                    IsRequired = true,
+                    ContainerCssClass = "col-md-8"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.ContactPerson),
+                    Label = "聯絡人",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入聯絡人姓名",
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.TaxNumber),
+                    Label = "統一編號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入統一編號",
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.SupplierTypeId),
+                    Label = "廠商類型",
+                    FieldType = FormFieldType.Select,
+                    Options = supplierTypeOptions,
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.IndustryTypeId),
+                    Label = "行業類型",
+                    FieldType = FormFieldType.Select,
+                    Options = industryTypeOptions,
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.PaymentTerms),
+                    Label = "付款條件",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入付款條件",
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.CreditLimit),
+                    Label = "信用額度",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入信用額度",
+                    ContainerCssClass = "col-md-6"
+                }
+            };
 
-        basicFormSections = new Dictionary<string, string>
+            basicFormSections = new Dictionary<string, string>
+            {
+                { nameof(Supplier.SupplierCode), "基本資訊" },
+                { nameof(Supplier.CompanyName), "基本資訊" },
+                { nameof(Supplier.ContactPerson), "聯絡資訊" },
+                { nameof(Supplier.TaxNumber), "財務資訊" },
+                { nameof(Supplier.SupplierTypeId), "分類資訊" },
+                { nameof(Supplier.IndustryTypeId), "分類資訊" },
+                { nameof(Supplier.PaymentTerms), "財務資訊" },
+                { nameof(Supplier.CreditLimit), "財務資訊" }
+            };
+        }
+        catch (Exception ex)
         {
-            { nameof(Supplier.SupplierCode), "基本資訊" },
-            { nameof(Supplier.CompanyName), "基本資訊" },
-            { nameof(Supplier.ContactPerson), "聯絡資訊" },
-            { nameof(Supplier.TaxNumber), "財務資訊" },
-            { nameof(Supplier.SupplierTypeId), "分類資訊" },
-            { nameof(Supplier.IndustryTypeId), "分類資訊" },
-            { nameof(Supplier.PaymentTerms), "財務資訊" },
-            { nameof(Supplier.CreditLimit), "財務資訊" }
-        };
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(InitializeFormFields), GetType(), ErrorLogService, NotificationService);
+        }
     }
 
     private async Task<Supplier?> LoadSupplierData()
@@ -300,7 +332,7 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入廠商詳細資料失敗：", ex.Message);
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(LoadSupplierData), GetType(), ErrorLogService, NotificationService);
             throw;
         }
         finally
@@ -311,12 +343,28 @@
 
     private string GenerateSupplierCode()
     {
-        return $"S{DateTime.Now:yyyyMMddHHmmss}";
+        try
+        {
+            return $"S{DateTime.Now:yyyyMMddHHmmss}";
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(GenerateSupplierCode), GetType(), ErrorLogService, NotificationService);
+            return string.Empty;
+        }
     }
 
     private string GetPageTitle()
     {
-        return Id.HasValue ? "編輯廠商" : "新增廠商";
+        try
+        {
+            return Id.HasValue ? "編輯廠商" : "新增廠商";
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(GetPageTitle), GetType(), ErrorLogService, NotificationService);
+            return "廠商管理";
+        }
     }    private async Task<bool> SaveSupplier(Supplier entity)
     {
         try
@@ -376,7 +424,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"儲存時發生錯誤：{ex.Message}");
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(SaveSupplier), GetType(), ErrorLogService, NotificationService);
             return false;
         }
     }
@@ -385,22 +433,45 @@
 
     private Task OnSupplierContactsChanged(List<SupplierContact> updatedContacts)
     {
-        supplierContacts = updatedContacts;
-        StateHasChanged();
-        return Task.CompletedTask;
+        try
+        {
+            supplierContacts = updatedContacts;
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(OnSupplierContactsChanged), GetType(), ErrorLogService, NotificationService);
+            return Task.CompletedTask;
+        }
     }
 
     private Task OnSupplierAddressesChanged(List<SupplierAddress> updatedAddresses)
     {
-        supplierAddresses = updatedAddresses;
-        StateHasChanged();
-        return Task.CompletedTask;
+        try
+        {
+            supplierAddresses = updatedAddresses;
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(OnSupplierAddressesChanged), GetType(), ErrorLogService, NotificationService);
+            return Task.CompletedTask;
+        }
     }
 
 #endregion
 
     public void Dispose()
     {
-        _loadingSemaphore?.Dispose();
+        try
+        {
+            _loadingSemaphore?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(Dispose), GetType(), ErrorLogService, NotificationService);
+        }
     }
 }

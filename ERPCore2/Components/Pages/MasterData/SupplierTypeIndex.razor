@@ -9,6 +9,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
+@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>廠商類型</PageTitle>
@@ -51,21 +52,38 @@
     private List<TableColumnDefinition> columnDefinitions = new();
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        InitializeBreadcrumbs();
-        InitializeFilters();
-        InitializeTableColumns();
+        try
+        {
+            await Task.Run(() =>
+            {
+                InitializeBreadcrumbs();
+                InitializeFilters();
+                InitializeTableColumns();
+            });
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(OnInitializedAsync), GetType(), ErrorLogService, NotificationService);
+        }
     }
 
     private void InitializeBreadcrumbs()
     {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        try
         {
-            new("首頁", "/"),
-            new("基礎資料", "/"),
-            new("廠商類型管理")
-        };
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("基礎資料", "/"),
+                new("廠商類型管理")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(InitializeBreadcrumbs), GetType(), ErrorLogService, NotificationService);
+        }
     }
 
     // 載入廠商類型資料
@@ -81,64 +99,86 @@
 
     private void InitializeFilters()
     {
-        // 準備狀態選項
-        var statusOptions = new List<SelectOption>
+        try
         {
-            new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-            new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-        };
+            // 準備狀態選項
+            var statusOptions = new List<SelectOption>
+            {
+                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
+                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
+            };
 
-        // 建立篩選定義
-        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-            .AddText("TypeName", "類型名稱", "輸入類型名稱搜尋")
-            .AddText("Description", "描述", "輸入描述搜尋", isAdvanced: true)
-            .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
-            .Build();
+            // 建立篩選定義
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("TypeName", "類型名稱", "輸入類型名稱搜尋")
+                .AddText("Description", "描述", "輸入描述搜尋", isAdvanced: true)
+                .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
+                .Build();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(InitializeFilters), GetType(), ErrorLogService, NotificationService);
+        }
     }
 
     private void InitializeTableColumns()
     {
-        columnDefinitions = new List<TableColumnDefinition>
+        try
         {
-            TableColumnDefinition.Text("類型名稱", nameof(SupplierType.TypeName)),
-            TableColumnDefinition.Text("描述", nameof(SupplierType.Description)),
-            TableColumnDefinition.Status("狀態", nameof(SupplierType.Status), new Dictionary<object, string>
+            columnDefinitions = new List<TableColumnDefinition>
             {
-                { EntityStatus.Active, "bg-success" },
-                { EntityStatus.Inactive, "bg-secondary" }
-            }),
-            TableColumnDefinition.Date("建立日期", nameof(SupplierType.CreatedAt), "yyyy/MM/dd"),
-            TableColumnDefinition.Date("更新日期", nameof(SupplierType.UpdatedAt), "yyyy/MM/dd")
-        };
+                TableColumnDefinition.Text("類型名稱", nameof(SupplierType.TypeName)),
+                TableColumnDefinition.Text("描述", nameof(SupplierType.Description)),
+                TableColumnDefinition.Status("狀態", nameof(SupplierType.Status), new Dictionary<object, string>
+                {
+                    { EntityStatus.Active, "bg-success" },
+                    { EntityStatus.Inactive, "bg-secondary" }
+                }),
+                TableColumnDefinition.Date("建立日期", nameof(SupplierType.CreatedAt), "yyyy/MM/dd"),
+                TableColumnDefinition.Date("更新日期", nameof(SupplierType.UpdatedAt), "yyyy/MM/dd")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(InitializeTableColumns), GetType(), ErrorLogService, NotificationService);
+        }
     }
 
     // 自定義篩選邏輯
     private IQueryable<SupplierType> ApplySupplierTypeFilters(SearchFilterModel searchModel, IQueryable<SupplierType> query)
     {
-        // 類型名稱篩選
-        var typeNameFilter = searchModel.GetFilterValue("TypeName")?.ToString();
-        if (!string.IsNullOrWhiteSpace(typeNameFilter))
+        try
         {
-            query = query.Where(st => 
-                st.TypeName.Contains(typeNameFilter, StringComparison.OrdinalIgnoreCase));
+            // 類型名稱篩選
+            var typeNameFilter = searchModel.GetFilterValue("TypeName")?.ToString();
+            if (!string.IsNullOrWhiteSpace(typeNameFilter))
+            {
+                query = query.Where(st => 
+                    st.TypeName.Contains(typeNameFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 描述篩選
+            var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
+            if (!string.IsNullOrWhiteSpace(descriptionFilter))
+            {
+                query = query.Where(st => 
+                    !string.IsNullOrEmpty(st.Description) && 
+                    st.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 狀態篩選
+            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
+            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
+            {
+                query = query.Where(st => st.Status == status);
+            }        
+
+            return query.OrderBy(st => st.TypeName);
         }
-
-        // 描述篩選
-        var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
-        if (!string.IsNullOrWhiteSpace(descriptionFilter))
+        catch (Exception ex)
         {
-            query = query.Where(st => 
-                !string.IsNullOrEmpty(st.Description) && 
-                st.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(ApplySupplierTypeFilters), GetType(), ErrorLogService, NotificationService);
+            return query; // 回傳原始查詢作為後備
         }
-
-        // 狀態篩選
-        var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
-        if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
-        {
-            query = query.Where(st => st.Status == status);
-        }        
-
-        return query.OrderBy(st => st.TypeName);
     }
 }

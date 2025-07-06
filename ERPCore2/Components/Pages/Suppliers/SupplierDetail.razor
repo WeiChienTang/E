@@ -4,6 +4,7 @@
 @using ERPCore2.Components.Shared.Badges
 @using ERPCore2.Components.Shared.Buttons
 @using ERPCore2.Extensions
+@using ERPCore2.Helpers
 @inject ISupplierService SupplierService
 @inject ISupplierContactService SupplierContactService
 @inject ISupplierAddressService SupplierAddressService
@@ -72,7 +73,13 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[SupplierDetail] 載入廠商資料失敗：{ex.Message}");
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
+                nameof(LoadSupplierDataAsync), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                true,
+                new { SupplierId = SupplierId });
             throw;
         }
         finally
@@ -96,217 +103,310 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[SupplierDetail] 載入額外資料失敗：{ex.Message}");
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
+                nameof(LoadAdditionalDataAsync), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                true,
+                new { SupplierId = SupplierId });
         }
     }
 
     private Task OnSupplierDataLoaded()
     {
-        // 資料載入完成後的處理
-        StateHasChanged();
-        return Task.CompletedTask;
+        try
+        {
+            // 資料載入完成後的處理
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
+                nameof(OnSupplierDataLoaded), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                true,
+                new { SupplierId = SupplierId });
+            return Task.CompletedTask;
+        }
     }
 
     private string GetFullAddress(SupplierAddress address)
     {
-        var addressParts = new List<string>();
-        
-        if (!string.IsNullOrEmpty(address.PostalCode))
-            addressParts.Add($"({address.PostalCode})");
-        if (!string.IsNullOrEmpty(address.City))
-            addressParts.Add(address.City);
-        if (!string.IsNullOrEmpty(address.District))
-            addressParts.Add(address.District);
-        if (!string.IsNullOrEmpty(address.Address))
-            addressParts.Add(address.Address);
+        try
+        {
+            if (address == null)
+                return "地址不完整";
+                
+            var addressParts = new List<string>();
+            
+            if (!string.IsNullOrEmpty(address.PostalCode))
+                addressParts.Add($"({address.PostalCode})");
+            if (!string.IsNullOrEmpty(address.City))
+                addressParts.Add(address.City);
+            if (!string.IsNullOrEmpty(address.District))
+                addressParts.Add(address.District);
+            if (!string.IsNullOrEmpty(address.Address))
+                addressParts.Add(address.Address);
 
-        return addressParts.Any() ? string.Join(" ", addressParts) : "地址不完整";
+            return addressParts.Any() ? string.Join(" ", addressParts) : "地址不完整";
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
+                nameof(GetFullAddress), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                false,
+                new { SupplierId = SupplierId });
+            return "地址處理錯誤";
+        }
     }
 
     // 設定標籤頁結構
     private List<GenericDetailPageComponent<Supplier, ISupplierService>.TabSection> GetTabSections()
     {
-        return new List<GenericDetailPageComponent<Supplier, ISupplierService>.TabSection>
-        {            new GenericDetailPageComponent<Supplier, ISupplierService>.TabSection
-            {
-                Id = "basic",
-                Title = "基本資料",
-                Content = @<div>
-                    <BasicInfoDisplayComponent 
-                        Title="廠商基本資訊"
-                        IconClass="fas fa-truck"
-                        IconColor="text-primary"
-                        Fields="@GetSupplierBasicFields()" />
-                </div>
-            },
-            
-            new GenericDetailPageComponent<Supplier, ISupplierService>.TabSection
-            {
-                Id = "contacts",
-                Title = "聯絡方式",
-                Content = @<div>
-                    <ContactDisplayComponent 
-                        Contacts="@GetContactEntities()"
-                        Title="廠商聯絡方式"
-                        ShowStatus="true"
-                        ShowStatistics="true"
-                        ShowCreateButton="false"
-                        EmptyTitle="尚未設定聯絡方式"
-                        EmptyMessage="此廠商目前沒有任何聯絡方式資料" />
-                </div>
-            },
-            
-            new GenericDetailPageComponent<Supplier, ISupplierService>.TabSection
-            {
-                Id = "addresses",
-                Title = "地址資料",
-                Content = @<div>
-                    <AddressDisplayComponent 
-                        Addresses="@GetAddressEntities()"
-                        Title="廠商地址資料"
-                        ShowStatus="true"
-                        ShowAddressDetails="true"
-                        ShowMapLink="true"
-                        ShowStatistics="true"
-                        ShowCreateButton="false"
-                        EmptyTitle="尚未設定地址"
-                        EmptyMessage="此廠商目前沒有任何地址資料" />
-                </div>
-            },
-              new GenericDetailPageComponent<Supplier, ISupplierService>.TabSection
-            {
-                Id = "system",
-                Title = "系統資訊",
-                Content = @<div>
-                    <SystemInfoDisplayComponent 
-                        CreatedAt="@(supplier?.CreatedAt ?? DateTime.MinValue)"
-                        UpdatedAt="@supplier?.UpdatedAt"
-                        CreatedBy="@supplier?.CreatedBy"
-                        UpdatedBy="@supplier?.UpdatedBy"
-                        Remarks="@supplier?.Remarks"
-                        ShowTimeline="true"
-                        ShowRemarks="true" />
-                </div>
-            }        };
+        try
+        {
+            return new List<GenericDetailPageComponent<Supplier, ISupplierService>.TabSection>
+            {            new GenericDetailPageComponent<Supplier, ISupplierService>.TabSection
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div>
+                        <BasicInfoDisplayComponent 
+                            Title="廠商基本資訊"
+                            IconClass="fas fa-truck"
+                            IconColor="text-primary"
+                            Fields="@GetSupplierBasicFields()" />
+                    </div>
+                },
+                
+                new GenericDetailPageComponent<Supplier, ISupplierService>.TabSection
+                {
+                    Id = "contacts",
+                    Title = "聯絡方式",
+                    Content = @<div>
+                        <ContactDisplayComponent 
+                            Contacts="@GetContactEntities()"
+                            Title="廠商聯絡方式"
+                            ShowStatus="true"
+                            ShowStatistics="true"
+                            ShowCreateButton="false"
+                            EmptyTitle="尚未設定聯絡方式"
+                            EmptyMessage="此廠商目前沒有任何聯絡方式資料" />
+                    </div>
+                },
+                
+                new GenericDetailPageComponent<Supplier, ISupplierService>.TabSection
+                {
+                    Id = "addresses",
+                    Title = "地址資料",
+                    Content = @<div>
+                        <AddressDisplayComponent 
+                            Addresses="@GetAddressEntities()"
+                            Title="廠商地址資料"
+                            ShowStatus="true"
+                            ShowAddressDetails="true"
+                            ShowMapLink="true"
+                            ShowStatistics="true"
+                            ShowCreateButton="false"
+                            EmptyTitle="尚未設定地址"
+                            EmptyMessage="此廠商目前沒有任何地址資料" />
+                    </div>
+                },
+                  new GenericDetailPageComponent<Supplier, ISupplierService>.TabSection
+                {
+                    Id = "system",
+                    Title = "系統資訊",
+                    Content = @<div>
+                        <SystemInfoDisplayComponent 
+                            CreatedAt="@(supplier?.CreatedAt ?? DateTime.MinValue)"
+                            UpdatedAt="@supplier?.UpdatedAt"
+                            CreatedBy="@supplier?.CreatedBy"
+                            UpdatedBy="@supplier?.UpdatedBy"
+                            Remarks="@supplier?.Remarks"
+                            ShowTimeline="true"
+                            ShowRemarks="true" />
+                    </div>
+                }        };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
+                nameof(GetTabSections), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                false,
+                new { SupplierId = SupplierId });
+            return new List<GenericDetailPageComponent<Supplier, ISupplierService>.TabSection>();
+        }
     }
 
     // 取得廠商基本資料欄位
     private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetSupplierBasicFields()
     {
-        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        try
         {
-            new()
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
             {
-                Label = "廠商代碼",
-                Value = supplier?.SupplierCode,
-                IsPrimary = true,
-                ValueBold = true,
-                IconClass = "fas fa-barcode",
-                IconBgClass = "bg-primary bg-opacity-10",
-                IconTextClass = "text-primary",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "公司名稱",
-                Value = supplier?.CompanyName,
-                ValueBold = true,
-                IconClass = "fas fa-building",
-                IconBgClass = "bg-info bg-opacity-10",
-                IconTextClass = "text-info",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "聯絡人",
-                Value = supplier?.ContactPerson,
-                IconClass = "fas fa-user",
-                IconBgClass = "bg-success bg-opacity-10",
-                IconTextClass = "text-success",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "統一編號",
-                Value = supplier?.TaxNumber,
-                IconClass = "fas fa-id-card",
-                IconBgClass = "bg-warning bg-opacity-10",
-                IconTextClass = "text-warning",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "付款條件",
-                Value = supplier?.PaymentTerms,
-                IconClass = "fas fa-credit-card",
-                IconBgClass = "bg-secondary bg-opacity-10",
-                IconTextClass = "text-secondary",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "信用額度",
-                Value = supplier?.CreditLimit,
-                Format = BasicInfoDisplayComponent.FieldFormat.Currency,
-                IconClass = "fas fa-money-check",
-                IconBgClass = "bg-success bg-opacity-10",
-                IconTextClass = "text-success",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "廠商類型",
-                Value = supplier?.SupplierType?.TypeName,
-                IconClass = "fas fa-tags",
-                IconBgClass = "bg-info bg-opacity-10",
-                IconTextClass = "text-info",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "行業類型",
-                Value = supplier?.IndustryType?.IndustryTypeName,
-                IconClass = "fas fa-industry",
-                IconBgClass = "bg-secondary bg-opacity-10",
-                IconTextClass = "text-secondary",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "狀態",
-                CustomContent = @<div>
-                    @if (supplier?.Status != null)
-                    {
-                        <StatusBadgeComponent Status="@supplier.Status" />
-                    }
-                </div>,
-                IconClass = "fas fa-toggle-on",
-                IconBgClass = "bg-success bg-opacity-10",
-                IconTextClass = "text-success",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "備註",
-                Value = supplier?.Remarks,
-                Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
-                IconClass = "fas fa-sticky-note",
-                IconBgClass = "bg-warning bg-opacity-10",
-                IconTextClass = "text-warning",
-                ColSize = 12,
-                VisibilityCondition = () => !string.IsNullOrEmpty(supplier?.Remarks)
-            }
-        };
+                new()
+                {
+                    Label = "廠商代碼",
+                    Value = supplier?.SupplierCode,
+                    IsPrimary = true,
+                    ValueBold = true,
+                    IconClass = "fas fa-barcode",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "公司名稱",
+                    Value = supplier?.CompanyName,
+                    ValueBold = true,
+                    IconClass = "fas fa-building",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "聯絡人",
+                    Value = supplier?.ContactPerson,
+                    IconClass = "fas fa-user",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "統一編號",
+                    Value = supplier?.TaxNumber,
+                    IconClass = "fas fa-id-card",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "付款條件",
+                    Value = supplier?.PaymentTerms,
+                    IconClass = "fas fa-credit-card",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    IconTextClass = "text-secondary",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "信用額度",
+                    Value = supplier?.CreditLimit,
+                    Format = BasicInfoDisplayComponent.FieldFormat.Currency,
+                    IconClass = "fas fa-money-check",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "廠商類型",
+                    Value = supplier?.SupplierType?.TypeName,
+                    IconClass = "fas fa-tags",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "行業類型",
+                    Value = supplier?.IndustryType?.IndustryTypeName,
+                    IconClass = "fas fa-industry",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    IconTextClass = "text-secondary",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "狀態",
+                    CustomContent = @<div>
+                        @if (supplier?.Status != null)
+                        {
+                            <StatusBadgeComponent Status="@supplier.Status" />
+                        }
+                    </div>,
+                    IconClass = "fas fa-toggle-on",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "備註",
+                    Value = supplier?.Remarks,
+                    Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
+                    IconClass = "fas fa-sticky-note",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    ColSize = 12,
+                    VisibilityCondition = () => !string.IsNullOrEmpty(supplier?.Remarks)
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
+                nameof(GetSupplierBasicFields), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                false,
+                new { SupplierId = SupplierId });
+            return new List<BasicInfoDisplayComponent.BasicInfoField>();
+        }
     }
 
     // 轉換方法
     private IEnumerable<IContactEntity> GetContactEntities()
     {
-        return supplierContacts.AsContactDisplayEntities();
+        try
+        {
+            return supplierContacts.AsContactDisplayEntities();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
+                nameof(GetContactEntities), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                false,
+                new { SupplierId = SupplierId });
+            return new List<IContactEntity>();
+        }
     }
 
     private IEnumerable<IAddressEntity> GetAddressEntities()
     {
-        return supplierAddresses.AsAddressDisplayEntities();
+        try
+        {
+            return supplierAddresses.AsAddressDisplayEntities();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
+                nameof(GetAddressEntities), 
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                false,
+                new { SupplierId = SupplierId });
+            return new List<IAddressEntity>();
+        }
     }
 }

@@ -268,7 +268,7 @@
         await ItemsChanged.InvokeAsync(Items);
         StateHasChanged();
     }
-      public Task<bool> ValidateAsync()
+    public Task<bool> ValidateAsync()
     {
         // 地址通常不強制驗證，可以根據需要自訂
         return Task.FromResult(true);

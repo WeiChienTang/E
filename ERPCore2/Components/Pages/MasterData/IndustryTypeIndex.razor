@@ -11,6 +11,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
+@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>行業類型維護</PageTitle>
@@ -54,91 +55,183 @@
 
     protected override void OnInitialized()
     {
-        InitializeBreadcrumbs();
-        InitializeFilters();
-        InitializeTableColumns();
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeFilters();
+            InitializeTableColumns();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                "OnInitialized",
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                true,
+                "初始化行業類型頁面失敗"
+            );
+        }
     }
 
     private void InitializeBreadcrumbs()
     {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        try
         {
-            new("首頁", "/"),
-            new("行業類型管理")
-        };
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("行業類型管理")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                "InitializeBreadcrumbs",
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                true,
+                "初始化導覽列失敗"
+            );
+        }
     }
 
     // 載入行業類型資料
     private async Task<List<IndustryType>> LoadIndustryTypesAsync()
     {
-        return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
-            async () => await IndustryTypeService.GetAllAsync(),
-            new List<IndustryType>(),
-            NotificationService,
-            "載入行業類型資料失敗"
-        );
+        try
+        {
+            return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
+                async () => await IndustryTypeService.GetAllAsync(),
+                new List<IndustryType>(),
+                NotificationService,
+                "載入行業類型資料失敗"
+            );
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                "LoadIndustryTypesAsync",
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                true,
+                "載入行業類型資料發生未預期錯誤"
+            );
+            return new List<IndustryType>();
+        }
     }
 
     private void InitializeFilters()
     {
-        // 準備狀態選項
-        var statusOptions = new List<SelectOption>
+        try
         {
-            new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-            new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-        };
+            // 準備狀態選項
+            var statusOptions = new List<SelectOption>
+            {
+                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
+                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
+            };
 
-        // 建立篩選定義
-        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-            .AddText("IndustryTypeName", "行業類型名稱", "輸入行業類型名稱搜尋")
-            .AddText("IndustryTypeCode", "行業類型代碼", "輸入行業類型代碼搜尋", isAdvanced: true)
-            .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
-            .Build();
+            // 建立篩選定義
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("IndustryTypeName", "行業類型名稱", "輸入行業類型名稱搜尋")
+                .AddText("IndustryTypeCode", "行業類型代碼", "輸入行業類型代碼搜尋", isAdvanced: true)
+                .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
+                .Build();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                "InitializeFilters",
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                true,
+                "初始化篩選器失敗"
+            );
+        }
     }
 
     private void InitializeTableColumns()
     {
-        columnDefinitions = new List<TableColumnDefinition>
+        try
         {
-            TableColumnDefinition.Text("行業類型代碼", nameof(IndustryType.IndustryTypeCode)),
-            TableColumnDefinition.Text("行業類型名稱", nameof(IndustryType.IndustryTypeName)),
-            TableColumnDefinition.Status("狀態", nameof(IndustryType.Status), new Dictionary<object, string>
+            columnDefinitions = new List<TableColumnDefinition>
             {
-                { EntityStatus.Active, "bg-success" },
-                { EntityStatus.Inactive, "bg-secondary" }
-            }),
-            TableColumnDefinition.Date("建立日期", nameof(IndustryType.CreatedAt), "yyyy/MM/dd"),
-            TableColumnDefinition.Date("更新日期", nameof(IndustryType.UpdatedAt), "yyyy/MM/dd")
-        };
+                TableColumnDefinition.Text("行業類型代碼", nameof(IndustryType.IndustryTypeCode)),
+                TableColumnDefinition.Text("行業類型名稱", nameof(IndustryType.IndustryTypeName)),
+                TableColumnDefinition.Status("狀態", nameof(IndustryType.Status), new Dictionary<object, string>
+                {
+                    { EntityStatus.Active, "bg-success" },
+                    { EntityStatus.Inactive, "bg-secondary" }
+                }),
+                TableColumnDefinition.Date("建立日期", nameof(IndustryType.CreatedAt), "yyyy/MM/dd"),
+                TableColumnDefinition.Date("更新日期", nameof(IndustryType.UpdatedAt), "yyyy/MM/dd")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                "InitializeTableColumns",
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                true,
+                "初始化表格欄位失敗"
+            );
+        }
     }
 
     // 自定義篩選邏輯
     private IQueryable<IndustryType> ApplyIndustryTypeFilters(SearchFilterModel searchModel, IQueryable<IndustryType> query)
     {
-        // 行業類型名稱篩選
-        var industryTypeNameFilter = searchModel.GetFilterValue("IndustryTypeName")?.ToString();
-        if (!string.IsNullOrWhiteSpace(industryTypeNameFilter))
+        try
         {
-            query = query.Where(it => 
-                it.IndustryTypeName.Contains(industryTypeNameFilter, StringComparison.OrdinalIgnoreCase));
-        }
+            // 行業類型名稱篩選
+            var industryTypeNameFilter = searchModel.GetFilterValue("IndustryTypeName")?.ToString();
+            if (!string.IsNullOrWhiteSpace(industryTypeNameFilter))
+            {
+                query = query.Where(it => 
+                    it.IndustryTypeName.Contains(industryTypeNameFilter, StringComparison.OrdinalIgnoreCase));
+            }
 
-        // 行業類型代碼篩選
-        var industryTypeCodeFilter = searchModel.GetFilterValue("IndustryTypeCode")?.ToString();
-        if (!string.IsNullOrWhiteSpace(industryTypeCodeFilter))
+            // 行業類型代碼篩選
+            var industryTypeCodeFilter = searchModel.GetFilterValue("IndustryTypeCode")?.ToString();
+            if (!string.IsNullOrWhiteSpace(industryTypeCodeFilter))
+            {
+                query = query.Where(it => 
+                    !string.IsNullOrEmpty(it.IndustryTypeCode) && 
+                    it.IndustryTypeCode.Contains(industryTypeCodeFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 狀態篩選
+            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
+            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
+            {
+                query = query.Where(it => it.Status == status);
+            }
+
+            return query.OrderBy(it => it.IndustryTypeName);
+        }
+        catch (Exception ex)
         {
-            query = query.Where(it => 
-                !string.IsNullOrEmpty(it.IndustryTypeCode) && 
-                it.IndustryTypeCode.Contains(industryTypeCodeFilter, StringComparison.OrdinalIgnoreCase));
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                ex,
+                "ApplyIndustryTypeFilters",
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                true,
+                "套用篩選條件失敗"
+            );
+            return query.OrderBy(it => it.IndustryTypeName);
         }
-
-        // 狀態篩選
-        var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
-        if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
-        {
-            query = query.Where(it => it.Status == status);
-        }
-
-        return query.OrderBy(it => it.IndustryTypeName);
     }
 }

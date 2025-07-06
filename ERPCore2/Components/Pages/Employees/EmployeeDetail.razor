@@ -6,6 +6,7 @@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Extensions
+@using ERPCore2.Helpers
 @inject IEmployeeService EmployeeService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -57,7 +58,6 @@
     {
         if (_isLoading)
         {
-            Console.WriteLine("[EmployeeDetail] 載入中，跳過重複調用");
             return employee;
         }
         

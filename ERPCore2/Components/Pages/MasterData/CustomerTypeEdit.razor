@@ -5,10 +5,12 @@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
+@using ERPCore2.Helpers
 @inject ICustomerTypeService CustomerTypeService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject IErrorLogService ErrorLogService
 @using ERPCore2.Services.Notifications
 @rendermode InteractiveServer
 @implements IDisposable
@@ -51,82 +53,111 @@
     // 麵包屑導航
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();    protected override void OnInitialized()
     {
-        InitializeBreadcrumbs();
-        InitializeFormFields();
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeFormFields();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "初始化頁面失敗", GetType(), ErrorLogService, NotificationService);
+        }
     }
 
     protected override void OnParametersSet()
     {
-        // 當參數變化時（例如從 Detail 導航到 Edit），重新初始化麵包屑
-        InitializeBreadcrumbs();
+        try
+        {
+            // 當參數變化時（例如從 Detail 導航到 Edit），重新初始化麵包屑
+            InitializeBreadcrumbs();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "設定參數失敗", GetType(), ErrorLogService, NotificationService);
+        }
     }
 
     private void InitializeBreadcrumbs()
     {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        try
         {
-            new("首頁", "/"),
-            new("客戶管理", "/customers"),
-            new("客戶類型管理", "/customer-types"),
-            new(Id.HasValue ? "編輯客戶類型" : "新增客戶類型")
-        };
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("客戶管理", "/customers"),
+                new("客戶類型管理", "/customer-types"),
+                new(Id.HasValue ? "編輯客戶類型" : "新增客戶類型")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "初始化麵包屑導航失敗", GetType(), ErrorLogService, NotificationService);
+        }
     }
 
     private void InitializeFormFields()
     {
-        // 準備狀態選項
-        var statusOptions = new List<SelectOption>
+        try
         {
-            new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-            new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-        };
+            // 準備狀態選項
+            var statusOptions = new List<SelectOption>
+            {
+                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
+                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
+            };
 
-        formFields = new List<FormFieldDefinition>
-        {            
-            new()
-            {
-                PropertyName = nameof(CustomerType.TypeName),
-                Label = "類型名稱",
-                FieldType = FormFieldType.Text,
-                IsRequired = true,
-                Placeholder = "請輸入類型名稱",
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                PropertyName = nameof(CustomerType.Status),
-                Label = "狀態",
-                FieldType = FormFieldType.Select,
-                IsRequired = true,
-                Options = statusOptions,
-                ContainerCssClass = "col-md-6"
-            },
-            new()
-            {
-                PropertyName = nameof(CustomerType.Description),
-                Label = "描述",
-                FieldType = FormFieldType.TextArea,
-                Placeholder = "請輸入類型描述（選填）",
-                Rows = 3,
-                ContainerCssClass = "col-12"
-            },            new()
-            {
-                PropertyName = nameof(CustomerType.Remarks),
-                Label = "備註",
-                FieldType = FormFieldType.TextArea,
-                Placeholder = "請輸入備註資訊（選填）",
-                Rows = 2,
-                ContainerCssClass = "col-12"
-            }
-        };
+            formFields = new List<FormFieldDefinition>
+            {            
+                new()
+                {
+                    PropertyName = nameof(CustomerType.TypeName),
+                    Label = "類型名稱",
+                    FieldType = FormFieldType.Text,
+                    IsRequired = true,
+                    Placeholder = "請輸入類型名稱",
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(CustomerType.Status),
+                    Label = "狀態",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = statusOptions,
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(CustomerType.Description),
+                    Label = "描述",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入類型描述（選填）",
+                    Rows = 3,
+                    ContainerCssClass = "col-12"
+                },            
+                new()
+                {
+                    PropertyName = nameof(CustomerType.Remarks),
+                    Label = "備註",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入備註資訊（選填）",
+                    Rows = 2,
+                    ContainerCssClass = "col-12"
+                }
+            };
 
-        formSections = new Dictionary<string, string>
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(CustomerType.TypeName), "基本資訊" },
+                { nameof(CustomerType.Status), "基本資訊" },
+                { nameof(CustomerType.Description), "詳細資訊" },
+                { nameof(CustomerType.Remarks), "詳細資訊" }
+            };
+        }
+        catch (Exception ex)
         {
-            { nameof(CustomerType.TypeName), "基本資訊" },
-            { nameof(CustomerType.Status), "基本資訊" },
-            { nameof(CustomerType.Description), "詳細資訊" },
-            { nameof(CustomerType.Remarks), "詳細資訊" }
-        };
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "初始化表單欄位失敗", GetType(), ErrorLogService, NotificationService);
+        }
     }
 
     private async Task<CustomerType?> LoadCustomerTypeData()
@@ -162,7 +193,7 @@
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", "載入客戶類型詳細資料失敗：", ex.Message);
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "載入客戶類型詳細資料失敗", GetType(), ErrorLogService, NotificationService);
             throw;
         }
         finally
@@ -173,28 +204,50 @@
 
     private string GetPageTitle()
     {
-        return Id.HasValue ? "編輯客戶類型" : "新增客戶類型";
+        try
+        {
+            return Id.HasValue ? "編輯客戶類型" : "新增客戶類型";
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "取得頁面標題失敗", GetType(), ErrorLogService, NotificationService);
+            return "客戶類型";
+        }
     }    private async Task<bool> ValidateCustomerType(CustomerType entity)
-    {        // 驗證基本資料
-        if (string.IsNullOrWhiteSpace(entity.TypeName))
-        {
-            await NotificationService.ShowErrorAsync("類型名稱為必填欄位");
-            return false;
-        }
-
-        // 檢查類型名稱是否重複
-        var isNameExists = await CustomerTypeService.IsTypeNameExistsAsync(entity.TypeName, Id);
-        if (isNameExists)
-        {
-            await NotificationService.ShowErrorAsync("此類型名稱已存在，請使用其他名稱");
-            return false;
-        }
-
-        // 調試信息
-        await JSRuntime.InvokeVoidAsync("console.log", "驗證通過，準備保存客戶類型");
-        return true;
-    }public void Dispose()
     {
-        _loadingSemaphore?.Dispose();
+        try
+        {
+            // 驗證基本資料
+            if (string.IsNullOrWhiteSpace(entity.TypeName))
+            {
+                await NotificationService.ShowErrorAsync("類型名稱為必填欄位");
+                return false;
+            }
+
+            // 檢查類型名稱是否重複
+            var isNameExists = await CustomerTypeService.IsTypeNameExistsAsync(entity.TypeName, Id);
+            if (isNameExists)
+            {
+                await NotificationService.ShowErrorAsync("此類型名稱已存在，請使用其他名稱");
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "驗證客戶類型資料失敗", GetType(), ErrorLogService, NotificationService);
+            return false;
+        }
+    }    public void Dispose()
+    {
+        try
+        {
+            _loadingSemaphore?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "釋放資源失敗", GetType(), ErrorLogService, NotificationService);
+        }
     }
 }
