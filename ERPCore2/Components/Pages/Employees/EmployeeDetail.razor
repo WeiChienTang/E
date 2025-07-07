@@ -10,8 +10,6 @@
 @inject IEmployeeService EmployeeService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>員工詳細資料</PageTitle>
@@ -81,13 +79,10 @@
         catch (Exception ex)
         {
             // 統一錯誤處理
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(LoadEmployeeDataAsync),
                 GetType(),
-                ErrorLogService, 
-                NotificationService, 
-                showUserFriendlyMessage: true,
                 additionalData: new { EmployeeId = EmployeeId }
             );
             
@@ -118,13 +113,10 @@
         catch (Exception ex)
         {
             // 額外資料載入失敗不應該影響主要功能
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(LoadAdditionalDataAsync),
                 GetType(),
-                ErrorLogService, 
-                NotificationService, 
-                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
                 additionalData: new { EmployeeId = EmployeeId }
             );
         }
@@ -140,13 +132,12 @@
         catch (Exception ex)
         {
             // 資料載入後處理失敗不應該影響主要功能
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(OnEmployeeDataLoaded),
                 GetType(),
                 ErrorLogService, 
                 NotificationService, 
-                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
                 additionalData: new { EmployeeId = EmployeeId }
             );
         }
@@ -163,13 +154,10 @@
         catch (Exception ex)
         {
             // 名稱格式化失敗，記錄錯誤但不影響顯示
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(GetFullName),
                 GetType(),
-                ErrorLogService, 
-                NotificationService, 
-                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
                 additionalData: new { EmployeeId = EmployeeId }
             );
             
@@ -191,13 +179,10 @@
         catch (Exception ex)
         {
             // 電子郵件取得失敗，記錄錯誤但不影響顯示
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(GetEmailContact),
                 GetType(),
-                ErrorLogService, 
-                NotificationService, 
-                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
                 additionalData: new { EmployeeId = EmployeeId }
             );
             
@@ -348,13 +333,10 @@
         catch (Exception ex)
         {
             // 標籤頁設定失敗，記錄錯誤但返回基本結構
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(GetTabSections),
                 GetType(),
-                ErrorLogService, 
-                NotificationService, 
-                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
                 additionalData: new { EmployeeId = EmployeeId }
             );
             
@@ -468,13 +450,10 @@
         catch (Exception ex)
         {
             // 基本資料欄位設定失敗，記錄錯誤但返回空列表
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(GetEmployeeBasicFields),
                 GetType(),
-                ErrorLogService, 
-                NotificationService, 
-                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
                 additionalData: new { EmployeeId = EmployeeId }
             );
             
@@ -493,13 +472,10 @@
         catch (Exception ex)
         {
             // 聯絡方式轉換失敗，記錄錯誤但返回空列表
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(GetContactEntities),
                 GetType(),
-                ErrorLogService, 
-                NotificationService, 
-                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
                 additionalData: new { EmployeeId = EmployeeId }
             );
             
@@ -516,13 +492,10 @@
         catch (Exception ex)
         {
             // 地址轉換失敗，記錄錯誤但返回空列表
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(GetAddressEntities),
                 GetType(),
-                ErrorLogService, 
-                NotificationService, 
-                showUserFriendlyMessage: false, // 不通知使用者，因為不影響主要功能
                 additionalData: new { EmployeeId = EmployeeId }
             );
             

@@ -1,10 +1,9 @@
 @page "/colors/edit"
 @page "/colors/edit/{id:int?}"
 @inject IColorService ColorService
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService 
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯顏色" : "新增顏色")</PageTitle>
@@ -46,7 +45,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "初始化顏色編輯頁面時發生錯誤", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitialized), GetType(), NotificationService);
         }
     }
 
@@ -64,7 +63,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "初始化麵包屑導航時發生錯誤", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType(), NotificationService);
         }
     }
 
@@ -138,7 +137,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "初始化表單欄位時發生錯誤", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, "初始化表單欄位時發生錯誤", GetType(), NotificationService);
         }
     }
 
@@ -150,7 +149,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "取得表單欄位時發生錯誤", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, "取得表單欄位時發生錯誤", GetType(), NotificationService);
             return new List<FormFieldDefinition>();
         }
     }
@@ -179,7 +178,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "載入顏色資料時發生錯誤", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadColorData), GetType());
             Navigation.NavigateTo("/colors");
             return null;
         }

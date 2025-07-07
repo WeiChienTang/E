@@ -11,8 +11,6 @@
 @inject ISupplierService SupplierService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>行業類型詳細資料</PageTitle>
@@ -76,13 +74,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
-                "LoadIndustryTypeDataAsync", 
-                typeof(IndustryTypeDetail), 
-                ErrorLogService, 
-                NotificationService,
-                true,
+                nameof(LoadIndustryTypeDataAsync), 
+                GetType(), 
                 new { IndustryTypeId = IndustryTypeId }
             );
             throw;
@@ -99,21 +94,15 @@
         {
             if (industryType == null) return Task.CompletedTask;
             
-            // 載入相關客戶和廠商資料 (暫時跳過，因為這些方法還不存在)
-            // relatedCustomers = await CustomerService.GetByIndustryTypeIdAsync(industryType.Id);
-            // relatedSuppliers = await SupplierService.GetByIndustryTypeIdAsync(industryType.Id);
             relatedCustomersCount = 0; // relatedCustomers.Count;
             relatedSuppliersCount = 0; // relatedSuppliers.Count;
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
-                "LoadAdditionalDataAsync", 
-                typeof(IndustryTypeDetail), 
-                ErrorLogService, 
-                NotificationService,
-                true,
+                nameof(LoadAdditionalDataAsync), 
+                GetType(),
                 new { IndustryTypeId = industryType?.Id }
             );
         }
@@ -129,13 +118,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
-                "OnIndustryTypeDataLoaded", 
-                typeof(IndustryTypeDetail), 
-                ErrorLogService, 
-                NotificationService,
-                false // 不顯示使用者通知，因為這是內部 UI 更新
+                nameof(OnIndustryTypeDataLoaded),
+                GetType()
             );
         }
         
@@ -302,13 +288,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
-                "GetTabSections", 
-                typeof(IndustryTypeDetail), 
-                ErrorLogService, 
-                NotificationService,
-                false
+                nameof(GetTabSections), 
+                GetType() 
             );
             
             // 返回空的標籤頁列表避免頁面崩潰
@@ -400,13 +383,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
-                "GetIndustryTypeBasicFields", 
-                typeof(IndustryTypeDetail), 
-                ErrorLogService, 
-                NotificationService,
-                false
+                nameof(GetIndustryTypeBasicFields), 
+                GetType() 
             );
             
             // 返回空的欄位列表避免頁面崩潰

@@ -51,7 +51,8 @@
     private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
     
     // 麵包屑導航
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();    protected override void OnInitialized()
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();    
+    protected override void OnInitialized()
     {
         try
         {
@@ -60,7 +61,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "初始化頁面失敗", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(OnInitialized), 
+                GetType()
+                );
         }
     }
 
@@ -73,7 +78,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "設定參數失敗", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(OnParametersSet), 
+                GetType()
+                );
         }
     }
 
@@ -91,7 +100,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "初始化麵包屑導航失敗", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType());
         }
     }
 
@@ -156,7 +165,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "初始化表單欄位失敗", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFormFields), GetType());
         }
     }
 
@@ -193,7 +202,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "載入客戶類型詳細資料失敗", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomerTypeData), GetType());
             throw;
         }
         finally
@@ -210,10 +219,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "取得頁面標題失敗", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetPageTitle), GetType());
             return "客戶類型";
         }
-    }    private async Task<bool> ValidateCustomerType(CustomerType entity)
+    }    
+    private async Task<bool> ValidateCustomerType(CustomerType entity)
     {
         try
         {
@@ -236,10 +246,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "驗證客戶類型資料失敗", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ValidateCustomerType), GetType());
             return false;
         }
-    }    public void Dispose()
+    }    
+    public void Dispose()
     {
         try
         {
@@ -247,7 +258,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "釋放資源失敗", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(Dispose), GetType());
         }
     }
 }

@@ -139,6 +139,9 @@ builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.Authent
 
 var app = builder.Build();
 
+// 初始化 ErrorHandlingHelper
+ErrorHandlingHelper.Initialize(app.Services);
+
 // 註冊全域例外處理中間件 (必須在其他中間件之前)
 app.UseMiddleware<GlobalExceptionHelper>();
 

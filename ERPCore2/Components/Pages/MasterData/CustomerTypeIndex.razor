@@ -8,8 +8,6 @@
 @inject ICustomerTypeService CustomerTypeService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>客戶類型</PageTitle>
@@ -61,12 +59,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "初始化客戶類型頁面失敗",
-                typeof(CustomerTypeIndex),
-                ErrorLogService,
-                NotificationService
+                nameof(OnInitialized),
+                GetType(),
+                additionalData: "初始化客戶類型頁面失敗"
             );
         }
     }
@@ -84,12 +81,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "初始化麵包屑導航失敗",
-                typeof(CustomerTypeIndex),
-                ErrorLogService,
-                NotificationService
+                nameof(InitializeBreadcrumbs),
+                GetType(),
+                additionalData: "初始化麵包屑導航失敗"
             );
         }
     }
@@ -99,21 +95,15 @@
     {
         try
         {
-            return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
-                async () => await CustomerTypeService.GetAllAsync(),
-                new List<CustomerType>(),
-                NotificationService,
-                "載入客戶類型資料失敗"
-            );
+            return await CustomerTypeService.GetAllAsync();
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "載入客戶類型資料失敗",
-                typeof(CustomerTypeIndex),
-                ErrorLogService,
-                NotificationService
+                nameof(LoadCustomerTypesAsync),
+                GetType(),
+                additionalData: "載入客戶類型資料失敗"
             );
             return new List<CustomerType>();
         }
@@ -139,12 +129,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "初始化篩選器失敗",
-                typeof(CustomerTypeIndex),
-                ErrorLogService,
-                NotificationService
+                nameof(InitializeFilters),
+                GetType(),
+                additionalData: "初始化篩選器失敗"
             );
         }
     }
@@ -168,12 +157,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "初始化表格欄位失敗",
-                typeof(CustomerTypeIndex),
-                ErrorLogService,
-                NotificationService
+                nameof(InitializeTableColumns),
+                GetType(),
+                additionalData: "初始化表格欄位失敗"
             );
         }
     }
@@ -211,12 +199,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "套用客戶類型篩選失敗",
-                typeof(CustomerTypeIndex),
-                ErrorLogService,
-                NotificationService
+                nameof(ApplyCustomerTypeFilters),
+                GetType(),
+                additionalData: "套用客戶類型篩選失敗"
             );
             return query.OrderBy(ct => ct.TypeName);
         }

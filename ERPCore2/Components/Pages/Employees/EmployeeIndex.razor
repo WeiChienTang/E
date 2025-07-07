@@ -1,10 +1,9 @@
 @page "/employees"
 @inject IEmployeeService EmployeeService
 @inject IRoleService RoleService
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 @rendermode InteractiveServer
 
 <PageTitle>員工維護</PageTitle>
@@ -62,13 +61,10 @@
             // 記錄初始化錯誤（使用 Fire-and-Forget 因為這裡不能用 async）
             _ = Task.Run(async () =>
             {
-                await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                await ErrorHandlingHelper.HandlePageErrorAsync(
                     ex, 
                     nameof(OnInitialized), 
                     GetType(),
-                    ErrorLogService,
-                    NotificationService,
-                    showUserFriendlyMessage: true,
                     additionalData: new { 
                         PageName = "EmployeeIndex",
                         Action = "Initialize",
@@ -112,13 +108,10 @@
             // 記錄麵包屑初始化錯誤
             _ = Task.Run(async () =>
             {
-                await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                await ErrorHandlingHelper.HandlePageErrorAsync(
                     ex, 
                     nameof(InitializeBreadcrumbs), 
                     GetType(),
-                    ErrorLogService,
-                    NotificationService,
-                    showUserFriendlyMessage: false, // 這類錯誤不需要打擾使用者
                     additionalData: new { 
                         PageName = "EmployeeIndex",
                         Action = "InitializeBreadcrumbs"
@@ -146,13 +139,10 @@
         catch (Exception ex)
         {
             // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(LoadBasicDataAsync), 
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
                 additionalData: new { 
                     PageName = "EmployeeIndex",
                     Action = "LoadBasicData",
@@ -178,13 +168,10 @@
         catch (Exception ex)
         {
             // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(LoadEmployeesAsync), 
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
                 additionalData: new { 
                     PageName = "EmployeeIndex",
                     Action = "LoadEmployees",
@@ -241,13 +228,10 @@
             // 記錄篩選器初始化錯誤
             _ = Task.Run(async () =>
             {
-                await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                await ErrorHandlingHelper.HandlePageErrorAsync(
                     ex, 
                     nameof(InitializeFilters), 
                     GetType(),
-                    ErrorLogService,
-                    NotificationService,
-                    showUserFriendlyMessage: false, // 內部初始化錯誤不打擾使用者
                     additionalData: new { 
                         PageName = "EmployeeIndex",
                         Action = "InitializeFilters"
@@ -303,13 +287,10 @@
             // 記錄表格欄位初始化錯誤
             _ = Task.Run(async () =>
             {
-                await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                await ErrorHandlingHelper.HandlePageErrorAsync(
                     ex, 
                     nameof(InitializeTableColumns), 
                     GetType(),
-                    ErrorLogService,
-                    NotificationService,
-                    showUserFriendlyMessage: false, // 內部初始化錯誤不打擾使用者
                     additionalData: new { 
                         PageName = "EmployeeIndex",
                         Action = "InitializeTableColumns"
@@ -419,13 +400,10 @@
             // 記錄篩選錯誤（這裡不能用 async，所以使用 Fire-and-Forget）
             _ = Task.Run(async () =>
             {
-                await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                await ErrorHandlingHelper.HandlePageErrorAsync(
                     ex, 
                     nameof(ApplyEmployeeFilters), 
                     GetType(),
-                    ErrorLogService,
-                    NotificationService,
-                    showUserFriendlyMessage: true,
                     additionalData: new { 
                         PageName = "EmployeeIndex",
                         Action = "ApplyFilters",
@@ -457,13 +435,10 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(LockEmployee), 
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
                 additionalData: new { 
                     PageName = "EmployeeIndex",
                     Action = "LockEmployee",
@@ -492,13 +467,10 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(UnlockEmployee), 
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
                 additionalData: new { 
                     PageName = "EmployeeIndex",
                     Action = "UnlockEmployee",

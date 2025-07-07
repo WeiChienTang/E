@@ -9,8 +9,6 @@
 @inject IColorService ColorService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>顏色詳細資料</PageTitle>
@@ -70,13 +68,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(LoadColorDataAsync),
-                typeof(ColorDetail),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
+                GetType(),
                 additionalData: new { ColorId }
             );
             throw;
@@ -95,13 +90,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(LoadAdditionalDataAsync),
                 typeof(ColorDetail),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
                 additionalData: new { ColorId }
             );
             throw;
@@ -117,13 +109,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(OnColorDataLoaded),
                 typeof(ColorDetail),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
                 additionalData: new { ColorId }
             );
             throw;
@@ -167,13 +156,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(GetTabSections),
                 typeof(ColorDetail),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
                 additionalData: new { ColorId }
             );
             throw;
@@ -242,13 +228,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(GetColorBasicFields),
                 typeof(ColorDetail),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
                 additionalData: new { ColorId }
             );
             throw;

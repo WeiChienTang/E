@@ -7,7 +7,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
+
 @rendermode InteractiveServer
 
 <PageTitle>顏色</PageTitle>
@@ -57,14 +57,12 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "ColorIndex.OnInitializedAsync",
-                typeof(ColorIndex),
-                ErrorLogService,
+                nameof(OnInitializedAsync),
+                GetType(),
                 NotificationService,
-                false,
-                "初始化顏色頁面失敗"
+                additionalData: "初始化顏色頁面失敗"
             );
         }
     }
@@ -82,14 +80,12 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "ColorIndex.InitializeBreadcrumbs",
-                typeof(ColorIndex),
+                nameof(InitializeBreadcrumbs),
+                GetType(),
                 ErrorLogService,
-                NotificationService,
-                false,
-                "初始化導覽路徑失敗"
+                NotificationService
             );
         }
     }
@@ -115,14 +111,13 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "ColorIndex.InitializeFilters",
-                typeof(ColorIndex),
+                nameof(InitializeFilters),
+                GetType(),
                 ErrorLogService,
                 NotificationService,
-                false,
-                "初始化篩選器失敗"
+                additionalData: "初始化篩選器失敗"
             );
         }
     }
@@ -147,14 +142,13 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "ColorIndex.InitializeTableColumns",
-                typeof(ColorIndex),
+                nameof(InitializeTableColumns),
+                GetType(),
                 ErrorLogService,
                 NotificationService,
-                false,
-                "初始化表格欄位失敗"
+                additionalData: "初始化表格欄位失敗"
             );
         }
     }
@@ -162,12 +156,22 @@
     // 資料載入委派
     private async Task<List<Color>> LoadDataAsync()
     {
-        return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
-            async () => await ColorService.GetAllAsync(),
-            new List<Color>(),
-            NotificationService,
-            "載入顏色資料失敗"
-        );
+        try
+        {
+            return await ColorService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadDataAsync),
+                GetType(),
+                ErrorLogService,
+                NotificationService,
+                additionalData: "載入顏色資料失敗"
+            );
+            return new List<Color>();
+        }
     }
 
     // 篩選邏輯委派
@@ -211,14 +215,13 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "ColorIndex.ApplyColorFilters",
-                typeof(ColorIndex),
+                nameof(ApplyColorFilters),
+                GetType(),
                 ErrorLogService,
                 NotificationService,
-                false,
-                "應用篩選條件失敗"
+                additionalData: "應用篩選條件失敗"
             );
             return query.OrderBy(c => c.Name);
         }

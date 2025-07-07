@@ -116,13 +116,12 @@
             // 記錄初始化錯誤（使用 Fire-and-Forget 因為這裡不能用 async）
             _ = Task.Run(async () =>
             {
-                await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                await ErrorHandlingHelper.HandlePageErrorAsync(
                     ex, 
                     nameof(OnInitialized), 
                     GetType(),
                     ErrorLogService,
                     NotificationService,
-                    showUserFriendlyMessage: true,
                     additionalData: new { 
                         PageName = "CustomerEdit",
                         Action = "Initialize",
@@ -169,13 +168,12 @@
             // 記錄麵包屑初始化錯誤
             _ = Task.Run(async () =>
             {
-                await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                await ErrorHandlingHelper.HandlePageErrorAsync(
                     ex, 
                     nameof(InitializeBreadcrumbs), 
                     GetType(),
                     ErrorLogService,
                     NotificationService,
-                    showUserFriendlyMessage: false, // 這類錯誤不需要打擾使用者
                     additionalData: new { 
                         PageName = "CustomerEdit",
                         Action = "InitializeBreadcrumbs",
@@ -207,13 +205,12 @@
         catch (Exception ex)
         {
             // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(LoadAdditionalData), 
                 GetType(),
                 ErrorLogService,
                 NotificationService,
-                showUserFriendlyMessage: true,
                 additionalData: new { 
                     PageName = "CustomerEdit",
                     Action = "LoadAdditionalData",
@@ -299,13 +296,12 @@
             // 記錄表單欄位初始化錯誤
             _ = Task.Run(async () =>
             {
-                await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                await ErrorHandlingHelper.HandlePageErrorAsync(
                     ex, 
                     nameof(InitializeBasicFormFields), 
                     GetType(),
                     ErrorLogService,
                     NotificationService,
-                    showUserFriendlyMessage: false, // 內部初始化錯誤不打擾使用者
                     additionalData: new { 
                         PageName = "CustomerEdit",
                         Action = "InitializeBasicFormFields",
@@ -398,13 +394,12 @@
             // 記錄表單欄位初始化錯誤
             _ = Task.Run(async () =>
             {
-                await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                await ErrorHandlingHelper.HandlePageErrorAsync(
                     ex, 
                     nameof(InitializeFormFields), 
                     GetType(),
                     ErrorLogService,
                     NotificationService,
-                    showUserFriendlyMessage: false, // 內部初始化錯誤不打擾使用者
                     additionalData: new { 
                         PageName = "CustomerEdit",
                         Action = "InitializeFormFields",
@@ -462,13 +457,12 @@
         catch (Exception ex)
         {
             // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(LoadCustomerData), 
                 GetType(),
                 ErrorLogService,
                 NotificationService,
-                showUserFriendlyMessage: true,
                 additionalData: new { 
                     PageName = "CustomerEdit",
                     Action = "LoadCustomerData",

@@ -7,10 +7,9 @@
 @inject IContactTypeService ContactTypeService
 @inject IAddressTypeService AddressTypeService
 @inject IAuthenticationService AuthenticationService
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 @using ERPCore2.Components.Shared.SubCollections
 @using ERPCore2.Components.Shared.Buttons
 @using ERPCore2.Services.Notifications
@@ -223,13 +222,10 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(OnInitializedAsync), 
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
                 additionalData: new { 
                     PageName = "EmployeeEdit",
                     Action = "Initialize",
@@ -255,13 +251,10 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(OnParametersSetAsync), 
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false, // 參數設置錯誤不需要打擾使用者
                 additionalData: new { 
                     PageName = "EmployeeEdit",
                     Action = "ParametersSet",
@@ -294,13 +287,10 @@
             // 記錄麵包屑初始化錯誤
             _ = Task.Run(async () =>
             {
-                await ErrorHandlingHelper.HandleErrorSafelyAsync(
+                await ErrorHandlingHelper.HandlePageErrorAsync(
                     ex, 
                     nameof(InitializeBreadcrumbs), 
                     GetType(),
-                    ErrorLogService,
-                    NotificationService,
-                    showUserFriendlyMessage: false, // 這類錯誤不需要打擾使用者
                     additionalData: new { 
                         PageName = "EmployeeEdit",
                         Action = "InitializeBreadcrumbs",
@@ -337,13 +327,10 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(LoadAdditionalData), 
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
                 additionalData: new { 
                     PageName = "EmployeeEdit",
                     Action = "LoadAdditionalData",
@@ -506,13 +493,10 @@
         catch (Exception ex)
         {
             // 統一錯誤處理
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(LoadEmployeeData), 
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
                 additionalData: new { 
                     PageName = "EmployeeEdit",
                     Action = "LoadEmployeeData",
@@ -629,13 +613,10 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(SaveEmployee), 
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
                 additionalData: new { 
                     PageName = "EmployeeEdit",
                     Action = "SaveEmployee",
@@ -694,13 +675,10 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(ResetFailedAttempts), 
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
                 additionalData: new { 
                     PageName = "EmployeeEdit",
                     Action = "ResetFailedAttempts",
@@ -736,13 +714,10 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(ShowPasswordResetDialog), 
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
                 additionalData: new { 
                     PageName = "EmployeeEdit",
                     Action = "ShowPasswordResetDialog",

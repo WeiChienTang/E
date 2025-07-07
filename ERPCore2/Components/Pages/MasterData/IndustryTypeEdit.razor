@@ -11,7 +11,6 @@
 @using Microsoft.AspNetCore.Components.Forms
 @inject IIndustryTypeService IndustryTypeService
 @inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
@@ -70,13 +69,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "IndustryTypeEdit.InitializeBreadcrumbs",
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                false
+                nameof(InitializeBreadcrumbs),
+                GetType()
             );
         }
     }
@@ -146,13 +142,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "IndustryTypeEdit.InitializeFormFields",
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                false
+                nameof(InitializeFormFields),
+                GetType()
             );
         }
     }
@@ -183,13 +176,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "IndustryTypeEdit.LoadIndustryTypeData",
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                false
+                nameof(LoadIndustryTypeData),
+                GetType()
             );
             throw;
         }
@@ -229,13 +219,10 @@
             }
         }        catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "IndustryTypeEdit.SaveIndustryType",
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                true
+                nameof(SaveIndustryType),
+                GetType()
             );
             return false;
         }

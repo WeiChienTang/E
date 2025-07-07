@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using ERPCore2.Services;
 using ERPCore2.Services.Notifications;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ERPCore2.Helpers
 {
@@ -10,6 +11,16 @@ namespace ERPCore2.Helpers
     /// </summary>
     public static class ErrorHandlingHelper
     {
+        private static IServiceProvider? _serviceProvider;
+
+        /// <summary>
+        /// 初始化服務提供者（在 Program.cs 中呼叫）
+        /// </summary>
+        public static void Initialize(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+        }
+
         /// <summary>
         /// Razor 頁面層錯誤處理 - 記錄錯誤 + 通知使用者
         /// 功能：1.防止程式崩潰 2.記錄到ErrorLog資料表 3.顯示使用者友善訊息
@@ -17,22 +28,28 @@ namespace ERPCore2.Helpers
         /// <param name="exception">捕獲的例外</param>
         /// <param name="methodName">發生錯誤的方法名稱</param>
         /// <param name="componentType">元件類型</param>
-        /// <param name="errorLogService">錯誤記錄服務</param>
-        /// <param name="notificationService">通知服務</param>
         /// <param name="additionalData">額外的錯誤資料</param>
         /// <returns>錯誤 ID</returns>
         public static async Task<string> HandlePageErrorAsync(
             Exception exception,
             string methodName,
             Type componentType,
-            IErrorLogService errorLogService,
-            INotificationService notificationService,
             object? additionalData = null)
         {
             string errorId = string.Empty;
             
+            if (_serviceProvider == null)
+            {
+                // 如果服務提供者未初始化，回傳降級錯誤 ID
+                return $"PAGE_NO_PROVIDER_{DateTime.UtcNow.Ticks}";
+            }
+
             try
             {
+                using var scope = _serviceProvider.CreateScope();
+                var errorLogService = scope.ServiceProvider.GetRequiredService<IErrorLogService>();
+                var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+
                 // 記錄錯誤到資料庫
                 errorId = await LogErrorToDatabase(exception, methodName, componentType.Name, componentType.FullName, true, errorLogService, additionalData);
 
@@ -45,6 +62,8 @@ namespace ERPCore2.Helpers
                 // 如果記錄錯誤失敗，至少要通知使用者
                 try
                 {
+                    using var scope = _serviceProvider.CreateScope();
+                    var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
                     await notificationService.ShowErrorAsync("系統發生錯誤，請稍後再試", "系統錯誤");
                 }
                 catch
