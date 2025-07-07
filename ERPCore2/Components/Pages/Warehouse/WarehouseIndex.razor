@@ -3,7 +3,6 @@
 @inject IWarehouseService WarehouseService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@inject INotificationService NotificationService
 @rendermode InteractiveServer
 
 <PageTitle>倉庫維護</PageTitle>
@@ -42,11 +41,12 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSimplyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(OnInitialized),
-                NotificationService,
-                customMessage: "初始化頁面失敗");
+                GetType(),
+                additionalData: "初始化頁面失敗"
+            );
         }
     }
 
@@ -62,11 +62,12 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSimplyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(InitializeBreadcrumbs),
-                NotificationService,
-                customMessage: "初始化導覽失敗");
+                GetType(),
+                additionalData: "初始化導覽失敗"
+            );
         }
     }
 
@@ -79,11 +80,12 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSimplyAsync(
-                ex, 
-                nameof(LoadWarehousesAsync), 
-                NotificationService,
-                customMessage: "載入倉庫資料失敗");
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadWarehousesAsync),
+                GetType(),
+                additionalData: "載入倉庫資料失敗"
+            );
             
             StateHasChanged();
             return new List<Warehouse>();
@@ -127,11 +129,12 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSimplyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(InitializeFilters),
-                NotificationService,
-                customMessage: "初始化篩選器失敗");
+                GetType(),
+                additionalData: "初始化篩選器失敗"
+            );
         }
     }
 
@@ -159,10 +162,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSimplyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(InitializeTableColumns),
-                NotificationService,
+                GetType(),
                 customMessage: "初始化表格欄位失敗");
         }
     }
@@ -231,10 +234,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSimplyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(ApplyWarehouseFilters),
-                NotificationService,
+                GetType(),
                 customMessage: "篩選倉庫資料失敗");
             
             // 發生錯誤時返回原始查詢

@@ -3,8 +3,7 @@
 @inject IProductService ProductService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
+
 @rendermode InteractiveServer
 
 <PageTitle>產品維護</PageTitle>
@@ -47,14 +46,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(OnInitialized), 
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
-                additionalData: new { PageName = "ProductIndex" });
+                additionalData: "ProductIndex頁面初始化");
         }
     }    private void InitializeBreadcrumbs()
     {
@@ -68,14 +64,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(InitializeBreadcrumbs), 
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
-                additionalData: new { PageName = "ProductIndex" });
+                additionalData: "ProductIndex麵包屑初始化");
             
             // 設定預設值以防頁面無法正常運作
             breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
@@ -94,14 +87,11 @@
         }
             catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandleErrorSafelyAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(LoadBasicDataAsync), 
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
-                additionalData: new { PageName = "ProductIndex" });
+                additionalData: "ProductIndex基礎資料載入");
             
             // 設定預設值以防頁面無法正常運作
             productCategories = new List<ProductCategory>();
@@ -119,14 +109,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(LoadProductsAsync), 
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
-                additionalData: new { PageName = "ProductIndex" });
+                additionalData: "ProductIndex產品資料載入");
             
             StateHasChanged();
             return new List<Product>();
@@ -176,14 +163,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(InitializeFilters), 
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
-                additionalData: new { PageName = "ProductIndex" });
+                additionalData: "ProductIndex篩選器初始化");
             
             // 設定預設值以防頁面無法正常運作
             filterDefinitions = new List<SearchFilterDefinition>();
@@ -217,14 +201,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(InitializeTableColumns), 
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
-                additionalData: new { PageName = "ProductIndex" });
+                additionalData: "ProductIndex表格欄位初始化");
             
             // 設定預設值以防頁面無法正常運作
             columnDefinitions = new List<TableColumnDefinition>();
@@ -290,14 +271,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(ApplyProductFilters), 
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
-                additionalData: new { PageName = "ProductIndex", SearchModel = searchModel });
+                additionalData: "ProductIndex篩選器套用");
             
             // 發生錯誤時回傳原始查詢
             return query;

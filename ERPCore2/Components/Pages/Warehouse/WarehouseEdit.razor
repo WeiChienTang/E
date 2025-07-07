@@ -1,8 +1,6 @@
 @page "/warehouses/edit"
 @page "/warehouses/edit/{id:int?}"
 @inject IWarehouseService WarehouseService
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @using ERPCore2.Services.Notifications
@@ -55,12 +53,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "OnInitialized",
+                nameof(OnInitialized),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
                 showUserFriendlyMessage: true);
         }
     }
@@ -78,13 +74,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "InitializeBreadcrumbs",
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false);
+                nameof(InitializeBreadcrumbs),
+                GetType()
+                );
         }
     }
 
@@ -189,13 +183,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "InitializeFormFields",
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false);
+                nameof(InitializeFormFields),
+                GetType()
+                );
         }
     }
     
@@ -224,13 +216,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "LoadData",
+                nameof(LoadWarehouseData),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
                 additionalData: new { WarehouseId = Id });
             
             StateHasChanged();
@@ -256,13 +245,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "GenerateWarehouseCode",
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false);
+                nameof(GenerateWarehouseCodeAsync),
+                GetType()
+                );
             
             return "WH001";
         }
@@ -299,21 +286,18 @@
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(
                     result,
-                    "SaveData",
-                    NotificationService,
-                    customErrorMessage: $"倉庫{(entity.Id == 0 ? "新增" : "更新")}失敗");
+                    nameof(SaveWarehouse),
+                    GetType()
+                    );
                 return false;
             }
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "SaveData",
+                nameof(SaveWarehouse),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
                 additionalData: new { WarehouseId = entity.Id, WarehouseName = entity.WarehouseName });
             
             StateHasChanged();

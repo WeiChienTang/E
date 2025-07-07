@@ -6,12 +6,11 @@
 @using ERPCore2.Components.Shared.Tables
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Components.Shared.PageModels
+@using ERPCore2.Components.Shared
 @using ERPCore2.Helpers
 @inject IIndustryTypeService IndustryTypeService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>行業類型維護</PageTitle>
@@ -63,14 +62,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "OnInitialized",
+                nameof(OnInitialized),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                true,
-                "初始化行業類型頁面失敗"
+                additionalData: "初始化行業類型頁面失敗"
             );
         }
     }
@@ -87,14 +83,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "InitializeBreadcrumbs",
+                nameof(InitializeBreadcrumbs),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                true,
-                "初始化導覽列失敗"
+                additionalData: "初始化導覽列失敗"
             );
         }
     }
@@ -104,23 +97,15 @@
     {
         try
         {
-            return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
-                async () => await IndustryTypeService.GetAllAsync(),
-                new List<IndustryType>(),
-                NotificationService,
-                "載入行業類型資料失敗"
-            );
+            return await IndustryTypeService.GetAllAsync();
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "LoadIndustryTypesAsync",
+                nameof(LoadIndustryTypesAsync),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                true,
-                "載入行業類型資料發生未預期錯誤"
+                additionalData: "載入行業類型資料失敗"
             );
             return new List<IndustryType>();
         }
@@ -146,14 +131,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "InitializeFilters",
+                nameof(InitializeFilters),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                true,
-                "初始化篩選器失敗"
+                additionalData: "初始化篩選器失敗"
             );
         }
     }
@@ -177,14 +159,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "InitializeTableColumns",
+                nameof(InitializeTableColumns),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                true,
-                "初始化表格欄位失敗"
+                additionalData: "初始化表格欄位失敗"
             );
         }
     }
@@ -222,14 +201,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "ApplyIndustryTypeFilters",
+                nameof(ApplyIndustryTypeFilters),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                true,
-                "套用篩選條件失敗"
+                additionalData: "套用篩選條件失敗"
             );
             return query.OrderBy(it => it.IndustryTypeName);
         }
