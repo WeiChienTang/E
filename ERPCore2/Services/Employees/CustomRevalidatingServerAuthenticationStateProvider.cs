@@ -9,23 +9,15 @@ namespace ERPCore2.Services.Auth
     /// </summary>
     public class CustomRevalidatingServerAuthenticationStateProvider : RevalidatingServerAuthenticationStateProvider
     {
-        private readonly IServiceScopeFactory? _scopeFactory;
+        private readonly IServiceScopeFactory _scopeFactory;
 
-        // 完整建構子
+        // 建構子
         public CustomRevalidatingServerAuthenticationStateProvider(
             ILoggerFactory loggerFactory,
             IServiceScopeFactory scopeFactory)
             : base(loggerFactory)
         {
             _scopeFactory = scopeFactory;
-        }
-
-        // 簡易建構子
-        public CustomRevalidatingServerAuthenticationStateProvider(
-            ILogger<CustomRevalidatingServerAuthenticationStateProvider> logger)
-            : base(LoggerFactory.Create(builder => builder.AddConsole()))
-        {
-            _scopeFactory = null;
         }
 
         protected override TimeSpan RevalidationInterval => TimeSpan.FromMinutes(30);
@@ -42,10 +34,6 @@ namespace ERPCore2.Services.Auth
                 // 獲取用戶 ID
                 var userIdClaim = authenticationState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
-                    return false;
-
-                // 如果 _scopeFactory 為 null，無法進行驗證
-                if (_scopeFactory == null)
                     return false;
 
                 using var scope = _scopeFactory.CreateScope();
