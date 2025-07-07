@@ -1,0 +1,211 @@
+/* 彈出式通知樣式 */
+.toast-notification {
+    position: fixed;
+    right: 20px;
+    min-width: 300px;
+    max-width: 400px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    animation: slideInRight 0.3s ease-out;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    border-left: 4px solid;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 動畫效果 */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.toast-notification.toast-hiding {
+    animation: slideOutRight 0.3s ease-in;
+    opacity: 0;
+    transform: translateX(100%);
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* 不同類型的通知顏色 */
+.toast-success {
+    background-color: rgba(220, 252, 231, 0.95);
+    border-left-color: #10b981;
+    color: #065f46;
+}
+
+.toast-warning {
+    background-color: rgba(254, 243, 199, 0.95);
+    border-left-color: #f59e0b;
+    color: #92400e;
+}
+
+.toast-danger {
+    background-color: rgba(254, 226, 226, 0.95);
+    border-left-color: #ef4444;
+    color: #991b1b;
+}
+
+.toast-info {
+    background-color: rgba(219, 234, 254, 0.95);
+    border-left-color: #3b82f6;
+    color: #1e40af;
+}
+
+/* 內容區域 */
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.toast-content i {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.toast-message {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+/* 關閉按鈕 */
+.toast-close {
+    background: none;
+    border: none;
+    padding: 4px;
+    margin-left: 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+    color: inherit;
+    opacity: 0.7;
+    min-width: 20px;
+    height: 20px;
+}
+
+.toast-close:hover {
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.toast-close:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.toast-close i {
+    font-size: 14px;
+}
+
+/* 可關閉狀態 */
+.toast-notification.dismissible {
+    cursor: default;
+}
+
+/* 響應式設計 */
+@media (max-width: 480px) {
+    .toast-notification {
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+        max-width: none;
+    }
+}
+
+/* 暗色主題支援 */
+@media (prefers-color-scheme: dark) {
+    .toast-success {
+        background-color: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border-left-color: #10b981;
+    }
+
+    .toast-warning {
+        background-color: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border-left-color: #f59e0b;
+    }
+
+    .toast-danger {
+        background-color: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border-left-color: #ef4444;
+    }
+
+    .toast-info {
+        background-color: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+        border-left-color: #3b82f6;
+    }
+
+    .toast-close:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .toast-close:focus {
+        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5);
+    }
+}
+
+/* 高對比度模式支援 */
+@media (prefers-contrast: high) {
+    .toast-notification {
+        border-width: 2px;
+        border-style: solid;
+    }
+
+    .toast-success {
+        border-color: #10b981;
+    }
+
+    .toast-warning {
+        border-color: #f59e0b;
+    }
+
+    .toast-danger {
+        border-color: #ef4444;
+    }
+
+    .toast-info {
+        border-color: #3b82f6;
+    }
+}
+
+/* 動畫偏好設定 */
+@media (prefers-reduced-motion: reduce) {
+    .toast-notification {
+        animation: none;
+        transition: none;
+    }
+
+    .toast-notification.toast-hiding {
+        animation: none;
+        opacity: 0;
+    }
+}

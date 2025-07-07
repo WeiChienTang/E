@@ -7,6 +7,7 @@
 @using ERPCore2.Components.Shared.Loading
 @using ERPCore2.Components.Shared.Buttons
 @using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.Tables
 @using Microsoft.AspNetCore.Components.Web
 @inject IErrorLogService ErrorLogService
 @inject NavigationManager Navigation
@@ -25,7 +26,7 @@
 
 @* 頁面標題 *@
 <GenericHeaderComponent Title="錯誤記錄管理"
-                       Subtitle="檢視與管理系統錯誤記錄，包含統計儀表板"
+                       Subtitle="檢視與管理系統錯誤記錄"
                        HeadingLevel="h1"
                        BreadcrumbItems="@breadcrumbItems"
                        ShowDivider="true" />
@@ -34,82 +35,13 @@
 {
     <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
         <LoadingComponent IsLoading="true" 
-                        LoadingText="載入錯誤記錄統計中..." 
+                        LoadingText="載入錯誤記錄中..." 
                         ShowText="true" 
                         Size="LoadingComponent.LoadingSize.Large" />
     </div>
 }
 else
 {
-    @* 統計儀表板 *@
-    <div class="row mb-4">
-        <div class="col-md-2">
-            <div class="stats-card">
-                <div class="card-body text-center">
-                    <div class="stats-icon stats-total mx-auto mb-3">
-                        <i class="fas fa-list"></i>
-                    </div>
-                    <h4 class="mb-1">@statistics.TotalErrors</h4>
-                    <small class="text-muted">總錯誤數</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="stats-card">
-                <div class="card-body text-center">
-                    <div class="stats-icon stats-critical mx-auto mb-3">
-                        <i class="fas fa-times-circle"></i>
-                    </div>
-                    <h4 class="mb-1">@statistics.CriticalErrors</h4>
-                    <small class="text-muted">嚴重錯誤</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="stats-card">
-                <div class="card-body text-center">
-                    <div class="stats-icon stats-error mx-auto mb-3">
-                        <i class="fas fa-exclamation-circle"></i>
-                    </div>
-                    <h4 class="mb-1">@(statistics.ErrorsByLevel.TryGetValue(ErrorLevel.Error, out var regularErrors) ? regularErrors : 0)</h4>
-                    <small class="text-muted">一般錯誤</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="stats-card">
-                <div class="card-body text-center">
-                    <div class="stats-icon stats-warning mx-auto mb-3">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <h4 class="mb-1">@(statistics.ErrorsByLevel.TryGetValue(ErrorLevel.Warning, out var warnings) ? warnings : 0)</h4>
-                    <small class="text-muted">警告</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="stats-card">
-                <div class="card-body text-center">
-                    <div class="stats-icon stats-resolved mx-auto mb-3">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <h4 class="mb-1">@(statistics.TotalErrors - statistics.UnresolvedErrors)</h4>
-                    <small class="text-muted">已處理</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="stats-card">
-                <div class="card-body text-center">
-                    <div class="stats-icon stats-info mx-auto mb-3">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <h4 class="mb-1">@statistics.TodayErrors</h4>
-                    <small class="text-muted">今日錯誤</small>
-                </div>
-            </div>
-        </div>
-    </div>
 
     @* 篩選區域 *@
     <GenericSearchFilterComponent TModel="SearchFilterModel"
@@ -129,117 +61,49 @@ else
                 <div>
                     <small class="text-muted">共 @filteredErrorLogs.Count 筆記錄</small>
                 </div>
-                <div>
+                <div class="btn-group">
+                    <GenericButtonComponent Variant="ButtonVariant.Primary" 
+                                           Text="全選" 
+                                           IconClass="fas fa-check-square"
+                                           OnClick="@SelectAllCurrentPage"
+                                           IsDisabled="@(!GetPagedErrorLogs().Any())"
+                                           Size="ButtonSize.Small" />
                     <GenericButtonComponent Variant="ButtonVariant.Success" 
-                                           Text="批次標記已處理" 
-                                           IconClass="fas fa-check-double"
+                                           Text="完成" 
+                                           IconClass="fas fa-check"
                                            OnClick="@MarkSelectedAsResolved"
-                                           IsDisabled="@(!selectedErrorIds.Any())" />
-                    <GenericButtonComponent Variant="ButtonVariant.Secondary" 
-                                           Text="重新載入" 
-                                           IconClass="fas fa-sync-alt"
-                                           OnClick="@LoadDataAsync" 
-                                           CssClass="ms-2" />
+                                           IsDisabled="@(!selectedErrorIds.Any())"
+                                           Size="ButtonSize.Small" />
+                    <GenericButtonComponent Variant="ButtonVariant.Danger" 
+                                           Text="移除" 
+                                           IconClass="fas fa-trash"
+                                           OnClick="@RemoveSelectedErrors"
+                                           IsDisabled="@(!selectedErrorIds.Any())"
+                                           Size="ButtonSize.Small" />
                 </div>
             </div>
         </div>
         
         <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th width="50">
-                            <input type="checkbox" class="form-check-input" @onchange="ToggleSelectAll" />
-                        </th>
-                        <th>錯誤訊息</th>
-                        <th width="100">等級</th>
-                        <th width="120">來源</th>
-                        <th width="160">發生時間</th>
-                        <th width="80">狀態</th>
-                        <th width="120">操作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var errorLog in GetPagedErrorLogs())
-                    {
-                        <tr class="@(selectedErrorIds.Contains(errorLog.Id) ? "table-active" : "")">
-                            <td>
-                                <input type="checkbox" class="form-check-input" 
-                                       checked="@selectedErrorIds.Contains(errorLog.Id)"
-                                       @onchange="@((e) => ToggleErrorSelection(errorLog.Id, (bool)e.Value!))" />
-                            </td>
-                            <td>
-                                <div class="error-message" title="@errorLog.Message">
-                                    @errorLog.Message
-                                </div>
-                            </td>
-                            <td>
-                                <span class="level-badge @GetErrorLevelBadgeClass(errorLog.Level)">
-                                    @GetErrorLevelDisplay(errorLog.Level)
-                                </span>
-                            </td>
-                            <td>@GetErrorSourceDisplay(errorLog.Source)</td>
-                            <td class="small">@errorLog.OccurredAt.ToString("MM-dd HH:mm")</td>
-                            <td>
-                                @if (errorLog.IsResolved)
-                                {
-                                    <span class="badge bg-success">已處理</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-danger">未處理</span>
-                                }
-                            </td>
-                            <td>
-                                <div class="btn-group btn-group-sm">
-                                    <GenericButtonComponent Variant="ButtonVariant.Info" 
-                                                           Text="" 
-                                                           IconClass="fas fa-eye"
-                                                           OnClick="@(() => Navigation.NavigateTo($"/error-logs/detail/{errorLog.Id}"))"
-                                                           Size="ButtonSize.Small" />
-                                    @if (!errorLog.IsResolved)
-                                    {
-                                        <GenericButtonComponent Variant="ButtonVariant.Success" 
-                                                               Text="" 
-                                                               IconClass="fas fa-check"
-                                                               OnClick="@(() => MarkSingleAsResolved(errorLog.Id))"
-                                                               Size="ButtonSize.Small" />
-                                    }
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+            <GenericTableComponent TItem="ErrorLog"
+                                 Items="@GetPagedErrorLogs()"
+                                 ColumnDefinitions="@GetColumnDefinitionsWithCheckbox()"
+                                 ShowActions="false"
+                                 IsStriped="false"
+                                 IsHoverable="true"
+                                 IsBordered="false"
+                                 EnableRowClick="true"
+                                 OnRowClick="@HandleRowClick"
+                                 EmptyMessage="沒有找到錯誤記錄"
+                                 GetRowCssClass="@GetRowCssClass"
+                                 EnablePagination="true"
+                                 CurrentPage="@currentPage"
+                                 PageSize="@pageSize"
+                                 TotalItems="@filteredErrorLogs.Count"
+                                 OnPageChanged="@HandlePageChanged"
+                                 OnPageSizeChanged="@HandlePageSizeChanged"
+                                 ShowPageSizeSelector="true" />
         </div>
-        
-        @* 分頁 *@
-        @if (GetTotalPages() > 1)
-        {
-            <div class="d-flex justify-content-between align-items-center p-3">
-                <div>
-                    <small class="text-muted">
-                        顯示第 @((currentPage - 1) * pageSize + 1) - @Math.Min(currentPage * pageSize, filteredErrorLogs.Count) 筆，共 @filteredErrorLogs.Count 筆
-                    </small>
-                </div>
-                <nav>
-                    <ul class="pagination pagination-sm mb-0">
-                        <li class="page-item @(currentPage == 1 ? "disabled" : "")">
-                            <button class="page-link" @onclick="() => ChangePage(currentPage - 1)" disabled="@(currentPage == 1)">上一頁</button>
-                        </li>
-                        @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(GetTotalPages(), currentPage + 2); i++)
-                        {
-                            <li class="page-item @(i == currentPage ? "active" : "")">
-                                <button class="page-link" @onclick="() => ChangePage(i)">@i</button>
-                            </li>
-                        }
-                        <li class="page-item @(currentPage == GetTotalPages() ? "disabled" : "")">
-                            <button class="page-link" @onclick="() => ChangePage(currentPage + 1)" disabled="@(currentPage == GetTotalPages())">下一頁</button>
-                        </li>
-                    </ul>
-                </nav>
-            </div>
-        }
     </div>
 }
 
@@ -247,7 +111,6 @@ else
     // 資料
     private List<ErrorLog> allErrorLogs = new();
     private List<ErrorLog> filteredErrorLogs = new();
-    private ErrorStatistics statistics = new();
     
     // 狀態
     private bool IsLoading = true;
@@ -261,10 +124,13 @@ else
     
     // 分頁
     private int currentPage = 1;
-    private readonly int pageSize = 20;
+    private int pageSize = 20;
     
     // 選擇
     private HashSet<int> selectedErrorIds = new();
+
+    // 表格欄位定義
+    private List<TableColumnDefinition> columnDefinitions = new();
 
     // 麵包屑導航
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
@@ -277,6 +143,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         InitializeFilters();
+        InitializeTableColumns();
         await LoadDataAsync();
     }
 
@@ -331,11 +198,12 @@ else
         await ApplyFilters(searchModel);
     }
 
-    private async Task HandleFilterChanged(SearchFilterModel searchModel)
+    private Task HandleFilterChanged(SearchFilterModel searchModel)
     {
         // 更新本地篩選模型參考，確保與組件同步
         filterModel = searchModel;
         StateHasChanged();
+        return Task.CompletedTask;
     }
 
     private async Task ApplyFilters(SearchFilterModel searchModel)
@@ -425,9 +293,6 @@ else
             var result = await ErrorLogService.GetAllAsync();
             allErrorLogs = result?.ToList() ?? new List<ErrorLog>();
             
-            // 載入統計資料
-            statistics = await ErrorLogService.GetStatisticsAsync();
-            
             // 應用篩選
             await ApplyFilters(filterModel);
         }
@@ -464,17 +329,80 @@ else
         }
     }
 
+    private async Task HandlePageChanged(int newPage)
+    {
+        currentPage = newPage;
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task HandlePageSizeChanged(int newPageSize)
+    {
+        pageSize = newPageSize;
+        currentPage = 1; // 重置到第一頁
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleRowClick(ErrorLog errorLog)
+    {
+        // 導航到錯誤記錄詳情頁面
+        Navigation.NavigateTo($"/error-logs/detail/{errorLog.Id}");
+        await Task.CompletedTask;
+    }
+
     private void ToggleSelectAll(ChangeEventArgs e)
     {
         var isChecked = (bool)e.Value!;
         if (isChecked)
         {
-            selectedErrorIds = GetPagedErrorLogs().Where(el => !el.IsResolved).Select(el => el.Id).ToHashSet();
+            // 獲取當前頁面的資料進行全選
+            var currentPageItems = filteredErrorLogs
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .Where(el => !el.IsResolved)
+                .Select(el => el.Id)
+                .ToHashSet();
+            
+            foreach (var id in currentPageItems)
+            {
+                selectedErrorIds.Add(id);
+            }
         }
         else
         {
             selectedErrorIds.Clear();
         }
+        StateHasChanged();
+    }
+
+    private void SelectAllCurrentPage()
+    {
+        // 獲取當前頁面的所有錯誤記錄ID
+        var currentPageItems = GetPagedErrorLogs()
+            .Select(el => el.Id)
+            .ToList();
+        
+        // 檢查是否當前頁面的所有項目都已選中
+        var allSelected = currentPageItems.All(id => selectedErrorIds.Contains(id));
+        
+        if (allSelected)
+        {
+            // 如果全部已選中，則取消選中當前頁面的所有項目
+            foreach (var id in currentPageItems)
+            {
+                selectedErrorIds.Remove(id);
+            }
+        }
+        else
+        {
+            // 否則選中當前頁面的所有項目
+            foreach (var id in currentPageItems)
+            {
+                selectedErrorIds.Add(id);
+            }
+        }
+        
         StateHasChanged();
     }
 
@@ -517,6 +445,31 @@ else
         }
     }
 
+    private async Task RemoveSelectedErrors()
+    {
+        try
+        {
+            if (!selectedErrorIds.Any())
+            {
+                ShowAlert("請選擇要移除的錯誤記錄", AlertComponent.AlertType.Warning);
+                return;
+            }
+
+            foreach (var errorId in selectedErrorIds.ToList())
+            {
+                await ErrorLogService.DeleteAsync(errorId);
+            }
+            
+            selectedErrorIds.Clear();
+            await LoadDataAsync();
+            ShowAlert($"已成功移除選定的錯誤記錄", AlertComponent.AlertType.Success);
+        }
+        catch (Exception ex)
+        {
+            ShowAlert($"移除錯誤記錄時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
+        }
+    }
+
     private async Task MarkSingleAsResolved(int errorId)
     {
         try
@@ -539,12 +492,137 @@ else
         }
     }
 
-    private void ShowAlert(string message, AlertComponent.AlertType type)
+    private void InitializeTableColumns()
     {
-        alertMessage = message;
-        alertType = type;
-        showAlert = true;
-        StateHasChanged();
+        // 建立狀態的徽章映射
+        var statusBadgeMap = new Dictionary<object, string>
+        {
+            { true, "bg-success" },
+            { false, "bg-danger" }
+        };
+
+        // 建立錯誤等級的徽章映射
+        var levelBadgeMap = new Dictionary<object, string>
+        {
+            { ErrorLevel.Critical, "level-critical" },
+            { ErrorLevel.Error, "level-error" },
+            { ErrorLevel.Warning, "level-warning" },
+            { ErrorLevel.Info, "level-info" }
+        };
+
+        columnDefinitions = new List<TableColumnDefinition>
+        {
+            // 錯誤訊息欄位
+            TableColumnDefinition.Template("錯誤訊息", GetMessageTemplate()),
+            
+            // 錯誤等級欄位
+            new TableColumnDefinition
+            {
+                Title = "等級",
+                CustomTemplate = GetLevelTemplate(),
+                CellCssClass = "text-center",
+                HeaderStyle = "width: 100px;"
+            },
+            
+            // 錯誤來源欄位
+            new TableColumnDefinition
+            {
+                Title = "來源",
+                CustomTemplate = GetSourceTemplate(),
+                CellCssClass = "text-center",
+                HeaderStyle = "width: 120px;"
+            },
+            
+            // 發生時間欄位
+            new TableColumnDefinition
+            {
+                Title = "發生時間",
+                PropertyName = "OccurredAt",
+                DataType = ColumnDataType.DateTime,
+                Format = "MM-dd HH:mm",
+                CellCssClass = "small text-center",
+                HeaderStyle = "width: 160px;"
+            },
+            
+            // 狀態欄位
+            new TableColumnDefinition
+            {
+                Title = "狀態",
+                CustomTemplate = GetStatusTemplate(),
+                CellCssClass = "text-center",
+                HeaderStyle = "width: 80px;"
+            }
+        };
+    }
+
+    private List<TableColumnDefinition> GetColumnDefinitionsWithCheckbox()
+    {
+        var columnsWithCheckbox = new List<TableColumnDefinition>
+        {
+            // 選擇框欄位
+            new TableColumnDefinition
+            {
+                Title = "",
+                CustomTemplate = GetCheckboxTemplate(),
+                CellCssClass = "text-center",
+                HeaderStyle = "width: 50px;"
+            }
+        };
+        
+        // 添加其他欄位
+        columnsWithCheckbox.AddRange(columnDefinitions);
+        
+        return columnsWithCheckbox;
+    }
+
+    private RenderFragment<object> GetCheckboxTemplate() => (errorLog) =>
+    {
+        var error = (ErrorLog)errorLog;
+        return @<input type="checkbox" class="form-check-input" 
+                       checked="@selectedErrorIds.Contains(error.Id)"
+                       @onclick:stopPropagation="true"
+                       @onchange:stopPropagation="true"
+                       @onchange="@((e) => ToggleErrorSelection(error.Id, (bool)e.Value!))" />;
+    };
+
+    private RenderFragment<object> GetMessageTemplate() => (errorLog) =>
+    {
+        var error = (ErrorLog)errorLog;
+        return @<div class="error-message" title="@error.Message">
+                    @error.Message
+                </div>;
+    };
+
+    private RenderFragment<object> GetLevelTemplate() => (errorLog) =>
+    {
+        var error = (ErrorLog)errorLog;
+        return @<span class="level-badge @GetErrorLevelBadgeClass(error.Level)">
+                    @GetErrorLevelDisplay(error.Level)
+                </span>;
+    };
+
+    private RenderFragment<object> GetSourceTemplate() => (errorLog) =>
+    {
+        var error = (ErrorLog)errorLog;
+        return @<text>@GetErrorSourceDisplay(error.Source)</text>;
+    };
+
+    private RenderFragment<object> GetStatusTemplate() => (errorLog) =>
+    {
+        var error = (ErrorLog)errorLog;
+        if (error.IsResolved)
+        {
+            return @<span class="badge bg-success">已處理</span>;
+        }
+        else
+        {
+            return @<span class="badge bg-danger">未處理</span>;
+        }
+    };
+
+    private string GetRowCssClass(ErrorLog errorLog)
+    {
+        return selectedErrorIds.Contains(errorLog.Id) ? "table-active" : "";
     }
 
     // 輔助方法
@@ -577,4 +655,49 @@ else
         _ => "bg-secondary"
     };
 
+    private string FormatCellValue(ErrorLog errorLog, TableColumnDefinition column)
+    {
+        var value = GetPropertyValue(errorLog, column.PropertyName);
+        
+        if (value == null)
+            return column.NullDisplayText ?? "-";
+
+        return column.DataType switch
+        {
+            ColumnDataType.Text => System.Web.HttpUtility.HtmlEncode(value.ToString() ?? ""),
+            ColumnDataType.DateTime => FormatDateTime(value, column.Format),
+            _ => System.Web.HttpUtility.HtmlEncode(value.ToString() ?? "")
+        };
+    }
+
+    private object? GetPropertyValue(ErrorLog errorLog, string propertyName)
+    {
+        if (errorLog == null || string.IsNullOrEmpty(propertyName))
+            return null;
+
+        var property = typeof(ErrorLog).GetProperty(propertyName);
+        return property?.GetValue(errorLog);
+    }
+
+    private string FormatDateTime(object value, string? format)
+    {
+        format = format ?? "MM-dd HH:mm";
+        
+        var dateString = value switch
+        {
+            DateTime dt => dt.ToString(format),
+            DateTimeOffset dto => dto.ToString(format),
+            _ => value.ToString()
+        };
+        
+        return System.Web.HttpUtility.HtmlEncode(dateString ?? "");
+    }
+
+    private void ShowAlert(string message, AlertComponent.AlertType type)
+    {
+        alertMessage = message;
+        alertType = type;
+        showAlert = true;
+        StateHasChanged();
+    }
 }

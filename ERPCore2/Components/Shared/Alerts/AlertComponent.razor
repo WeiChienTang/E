@@ -1,18 +1,25 @@
-@* 警告訊息組件 - 遵循設計原則的色彩系統 *@
+@* 彈出式通知組件 - 右上角浮動顯示 *@
 @using static ERPCore2.Components.Shared.Alerts.AlertComponent
+@implements IDisposable
 
 @if (IsVisible)
 {
-    <div class="alert @GetAlertClass() @(IsDismissible ? "alert-dismissible fade show" : "")" role="alert">
-        @if (!string.IsNullOrEmpty(IconClass))
-        {
-            <i class="@IconClass me-2"></i>
-        }
-        @Message
-        @ChildContent        
+    <div class="toast-notification @GetAlertClass() @(IsDismissible ? "dismissible" : "") @(_isHiding ? "toast-hiding" : "")" 
+         style="@GetNotificationStyle()" 
+         role="alert">
+        <div class="toast-content">
+            @if (!string.IsNullOrEmpty(IconClass))
+            {
+                <i class="@IconClass"></i>
+            }
+            <span class="toast-message">@Message</span>
+            @ChildContent
+        </div>
         @if (IsDismissible)
         {
-            <button type="button" class="btn-close" @onclick="HandleDismiss"></button>
+            <button type="button" class="toast-close" @onclick="HandleDismiss">
+                <i class="bi bi-x"></i>
+            </button>
         }
     </div>
 }
@@ -25,27 +32,78 @@
     [Parameter] public string IconClass { get; set; } = string.Empty;
     [Parameter] public EventCallback OnDismiss { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public int ZIndex { get; set; } = 1050;
+    [Parameter] public int TopOffset { get; set; } = 20;
+    [Parameter] public bool AutoClose { get; set; } = true;
+    [Parameter] public int AutoCloseDelay { get; set; } = 3000;
+
+    private Timer? _autoCloseTimer;
+    private bool _isHiding = false;
+
+    protected override void OnInitialized()
+    {
+        if (AutoClose && AutoCloseDelay > 0)
+        {
+            _autoCloseTimer = new Timer(async _ => await AutoDismiss(), null, AutoCloseDelay, Timeout.Infinite);
+        }
+    }
 
     private string GetAlertClass()
     {
         return Type switch
         {
-            AlertType.Success => "alert-success",
-            AlertType.Warning => "alert-warning",
-            AlertType.Danger => "alert-danger",
-            AlertType.Info => "alert-info",
-            _ => "alert-info"
+            AlertType.Success => "toast-success",
+            AlertType.Warning => "toast-warning",
+            AlertType.Danger => "toast-danger",
+            AlertType.Info => "toast-info",
+            _ => "toast-info"
         };
-    }    
+    }
+
+    private string GetNotificationStyle()
+    {
+        return $"position: fixed; top: {TopOffset}px; right: 20px; z-index: {ZIndex}; min-width: 300px; max-width: 400px;";
+    }
     
     private async Task HandleDismiss()
     {
+        _isHiding = true;
+        StateHasChanged();
+        
+        // 等待動畫完成後再真正隱藏
+        await Task.Delay(300);
+        
         IsVisible = false;
+        _autoCloseTimer?.Dispose();
         if (OnDismiss.HasDelegate)
         {
             await OnDismiss.InvokeAsync();
         }
         StateHasChanged();
+    }
+
+    private async Task AutoDismiss()
+    {
+        await InvokeAsync(async () =>
+        {
+            _isHiding = true;
+            StateHasChanged();
+            
+            // 等待動畫完成後再真正隱藏
+            await Task.Delay(300);
+            
+            IsVisible = false;
+            if (OnDismiss.HasDelegate)
+            {
+                await OnDismiss.InvokeAsync();
+            }
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        _autoCloseTimer?.Dispose();
     }
 
     public enum AlertType

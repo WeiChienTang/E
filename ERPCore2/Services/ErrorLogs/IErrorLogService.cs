@@ -70,29 +70,10 @@ namespace ERPCore2.Services
         Task<ServiceResult> MarkBatchAsResolvedAsync(List<string> errorIds, string resolvedBy, string resolution);
 
         /// <summary>
-        /// 取得錯誤統計資訊
-        /// </summary>
-        /// <returns>錯誤統計</returns>
-        Task<ErrorStatistics> GetStatisticsAsync();
-
-        /// <summary>
         /// 清理舊的錯誤記錄
         /// </summary>
         /// <param name="daysToKeep">保留天數</param>
         /// <returns>刪除的記錄數量</returns>
         Task<int> CleanupOldErrorsAsync(int daysToKeep = 30);
-    }
-
-    /// <summary>
-    /// 錯誤統計資訊
-    /// </summary>
-    public class ErrorStatistics
-    {
-        public int TotalErrors { get; set; }
-        public int UnresolvedErrors { get; set; }
-        public int CriticalErrors { get; set; }
-        public int TodayErrors { get; set; }
-        public Dictionary<ErrorLevel, int> ErrorsByLevel { get; set; } = new();
-        public Dictionary<ErrorSource, int> ErrorsBySource { get; set; } = new();
     }
 }

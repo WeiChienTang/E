@@ -177,31 +177,6 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得錯誤統計資訊
-        /// </summary>
-        public async Task<ErrorStatistics> GetStatisticsAsync()
-        {
-            var today = DateTime.Today;
-            var tomorrow = today.AddDays(1);
-
-            var allErrors = await _dbSet.Where(x => !x.IsDeleted).ToListAsync();
-
-            var statistics = new ErrorStatistics
-            {
-                TotalErrors = allErrors.Count,
-                UnresolvedErrors = allErrors.Count(x => !x.IsResolved),
-                CriticalErrors = allErrors.Count(x => x.Level == ErrorLevel.Critical),
-                TodayErrors = allErrors.Count(x => x.OccurredAt >= today && x.OccurredAt < tomorrow),
-                ErrorsByLevel = allErrors.GroupBy(x => x.Level)
-                    .ToDictionary(g => g.Key, g => g.Count()),
-                ErrorsBySource = allErrors.GroupBy(x => x.Source)
-                    .ToDictionary(g => g.Key, g => g.Count())
-            };
-
-            return statistics;
-        }
-
-        /// <summary>
         /// 清理舊的錯誤記錄
         /// </summary>
         public async Task<int> CleanupOldErrorsAsync(int daysToKeep = 30)

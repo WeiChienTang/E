@@ -1,32 +1,3 @@
-    .stats-card {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        overflow: hidden;
-        transition: transform 0.2s ease;
-    }
-    
-    .stats-card:hover {
-        transform: translateY(-2px);
-    }
-    
-    .stats-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-    }
-    
-    .stats-critical { background: rgba(220, 53, 69, 0.1); color: #dc3545; }
-    .stats-error { background: rgba(253, 126, 20, 0.1); color: #fd7e14; }
-    .stats-warning { background: rgba(255, 193, 7, 0.1); color: #ffc107; }
-    .stats-info { background: rgba(13, 202, 240, 0.1); color: #0dcaf0; }
-    .stats-total { background: rgba(108, 117, 125, 0.1); color: #6c757d; }
-    .stats-resolved { background: rgba(40, 167, 69, 0.1); color: #28a745; }
-    
     .error-table {
         background: white;
         border-radius: 12px;
