@@ -9,42 +9,50 @@
 ## 標準實作模式
 
 ### 1. 建構子注入
+
+#### 簡易版建構子（適用於簡單測試或最小依賴）
+```csharp
+public class [業務領域]Service : GenericManagementService<[實體]>, I[業務領域]Service
+{
+    public [業務領域]Service(AppDbContext context) : base(context)
+    {
+    }
+}
+```
+
+#### 完整版建構子（適用於生產環境的完整功能）
 ```csharp
 public class [業務領域]Service : GenericManagementService<[實體]>, I[業務領域]Service
 {
     public [業務領域]Service(
         AppDbContext context, 
-        ILogger<GenericManagementService<[實體]>> logger, 
-        IErrorLogService errorLogService) : base(context, logger, errorLogService)
+        ILogger<GenericManagementService<[實體]>> logger) : base(context, logger)
     {
     }
 }
 ```
 
-⚠️ **重要提醒：避免重複宣告基底類別欄位**
-- **不要** 在子類別中重複宣告 `ILogger` 和 `IErrorLogService` 欄位
-- **不要** 在子類別中重複宣告 `_context` 和 `_dbSet` 欄位
-- 基底類別 `GenericManagementService<T>` 已提供這些欄位為 `protected`，可直接使用
-- 建構子參數中的 `ILogger` 泛型類型應為 `ILogger<GenericManagementService<T>>`，不是 `ILogger<ServiceClassName>`
-
 ```csharp
 // 正確做法 - 直接使用基底類別提供的欄位
-public class CustomerService : GenericManagementService<Customer>, ICustomerService
+public class ColorService : GenericManagementService<Color>, IColorService
 {
-    public CustomerService(
+    public ColorService(AppDbContext context) : base(context)
+    {
+    }
+
+    public ColorService(
         AppDbContext context, 
-        ILogger<GenericManagementService<Customer>> logger, 
-        IErrorLogService errorLogService) : base(context, logger, errorLogService)
+        ILogger<GenericManagementService<Color>> logger) : base(context, logger)
     {
     }
     
     // 可直接使用基底類別的 protected 欄位：
-    // _context, _dbSet, _logger, _errorLogService
+    // _context, _dbSet, _logger
 }
 ```
 
 ### 2. 錯誤處理模式
-所有公開方法必須包含 try-catch：
+所有公開方法必須包含 try-catch，使用 `ErrorHandlingHelper` 統一處理：
 
 ```csharp
 // 異步方法範例
@@ -59,8 +67,24 @@ public async Task<List<[實體]>> GetAllAsync()
     }
     catch (Exception ex)
     {
-        await _errorLogService.LogErrorAsync(ex);
-        _logger.LogError(ex, "Error in GetAllAsync");
+        await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), typeof([Service類別名稱]), _logger);
+        return new List<[實體]>();  // 安全預設值
+    }
+}
+
+// 同步方法範例
+public List<[實體]> GetAllSync()
+{
+    try
+    {
+        return _dbSet
+            .Where(e => !e.IsDeleted)
+            .OrderBy(e => e.Name)
+            .ToList();
+    }
+    catch (Exception ex)
+    {
+        ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetAllSync), typeof([Service類別名稱]), _logger);
         return new List<[實體]>();  // 安全預設值
     }
 }
@@ -82,8 +106,7 @@ public async Task<ServiceResult> ValidateAsync([實體] entity)
     }
     catch (Exception ex)
     {
-        await _errorLogService.LogErrorAsync(ex);
-        _logger.LogError(ex, "Error in ValidateAsync");
+        await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), typeof([Service類別名稱]), _logger);
         return ServiceResult.Failure("驗證過程發生錯誤");
     }
 }
@@ -110,8 +133,7 @@ namespace ERPCore2.Services
     {
         public CustomerService(
             AppDbContext context, 
-            ILogger<GenericManagementService<Customer>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<Customer>> logger) : base(context, logger)
         {
         }
 
@@ -128,8 +150,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "Error in GetAllAsync");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), typeof(CustomerService), _logger);
                 return new List<Customer>();
             }
         }
@@ -146,8 +167,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "Error in IsCustomerCodeExistsAsync");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCustomerCodeExistsAsync), typeof(CustomerService), _logger);
                 return false;
             }
         }
@@ -175,8 +195,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "Error in ValidateAsync");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), typeof(CustomerService), _logger);
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
         }
@@ -223,45 +242,6 @@ public static void AddApplicationServices(this IServiceCollection services, stri
     // ... 其他服務
 }
 ```
-
-## Razor 頁面錯誤處理
-
-使用 `ErrorHandlingHelper` 統一處理頁面層級的錯誤：
-
-```csharp
-@inject I[業務領域]Service [業務領域]Service
-@inject INotificationService NotificationService
-
-// 簡單資料載入
-private async Task<List<[實體]>> Load[實體]sAsync()
-{
-    return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
-        async () => await [業務領域]Service.GetAllAsync(),
-        new List<[實體]>(),
-        NotificationService,
-        "載入資料失敗"
-    );
-}
-
-// 處理 ServiceResult
-private async Task SaveAsync()
-{
-    var result = await [業務領域]Service.CreateAsync(entity);
-    
-    if (result.Success)
-    {
-        await NotificationService.ShowSuccessAsync("儲存成功");
-        Navigation.NavigateTo("/[路由]");
-    }
-    else
-    {
-        await ErrorHandlingHelper.HandleServiceResultErrorAsync(
-            result, NotificationService, "儲存失敗"
-        );
-    }
-}
-```
-
 ## 實作檢查清單
 
 - [ ] 繼承 `GenericManagementService<T>`
@@ -270,6 +250,9 @@ private async Task SaveAsync()
 - [ ] 建構子正確調用基底類別：`base(context, logger, errorLogService)`
 - [ ] 實作必要的抽象方法：`SearchAsync()` 和 `ValidateAsync()`
 - [ ] 所有公開方法都有 try-catch 錯誤處理
-- [ ] 錯誤記錄：`_errorLogService.LogErrorAsync()` + `_logger.LogError()`
+- [ ] 異步方法使用 `ErrorHandlingHelper.HandleServiceErrorAsync()`
+- [ ] 同步方法使用 `ErrorHandlingHelper.HandleServiceErrorSync()`
+- [ ] 頁面層使用 `ErrorHandlingHelper.HandlePageErrorAsync()`
 - [ ] 回傳安全預設值
 - [ ] 在 `ServiceRegistration.cs` 註冊服務
+- [ ] 在 `Program.cs` 中初始化 `ErrorHandlingHelper.Initialize(app.Services)`
