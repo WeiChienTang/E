@@ -3,8 +3,6 @@
 @inject ISizeService SizeService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>尺寸維護</PageTitle>
@@ -44,12 +42,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(OnInitialized), 
                 GetType(),
-                ErrorLogService,
-                NotificationService);
+                additionalData: new { Page = "SizeIndex", Action = "Initialize" });
         }
     }
 
@@ -66,12 +63,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(InitializeBreadcrumbs), 
                 GetType(),
-                ErrorLogService,
-                NotificationService);
+                additionalData: new { Page = "SizeIndex", Action = "InitializeBreadcrumbs" });
         }
     }
 
@@ -85,12 +81,11 @@
         }
         catch (Exception ex)
         {
-            _ = await ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(LoadBasicDataAsync), 
                 GetType(),
-                ErrorLogService,
-                NotificationService);
+                additionalData: new { Page = "SizeIndex", Action = "LoadBasicData" });
             StateHasChanged();
         }
     }
@@ -104,12 +99,11 @@
         }
         catch (Exception ex)
         {
-            _ = await ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(LoadSizesAsync), 
                 GetType(),
-                ErrorLogService,
-                NotificationService);
+                additionalData: new { Page = "SizeIndex", Action = "LoadSizes" });
             
             StateHasChanged();
             return new List<Size>();
@@ -137,12 +131,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(InitializeFilters), 
                 GetType(),
-                ErrorLogService,
-                NotificationService);
+                additionalData: new { Page = "SizeIndex", Action = "InitializeFilters" });
         }
     }
 
@@ -165,12 +158,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(InitializeTableColumns), 
                 GetType(),
-                ErrorLogService,
-                NotificationService);
+                additionalData: new { Page = "SizeIndex", Action = "InitializeTableColumns" });
         }
     }
 
@@ -215,12 +207,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(ApplySizeFilters), 
                 GetType(),
-                ErrorLogService,
-                NotificationService);
+                additionalData: new { Page = "SizeIndex", Action = "ApplySizeFilters" });
             return query; // 發生錯誤時返回原始查詢
         }
     }

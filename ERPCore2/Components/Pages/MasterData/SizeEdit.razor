@@ -5,7 +5,6 @@
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯尺寸" : "新增尺寸")</PageTitle>
@@ -55,7 +54,9 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "SizeEdit.OnInitialized", this.GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitialized), GetType(),
+                additionalData: "初始化尺寸編輯頁面時發生錯誤"
+            );
         }
     }
 
@@ -73,7 +74,9 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "SizeEdit.InitializeBreadcrumbs", this.GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType(),
+                additionalData: "初始化麵包屑導航時發生錯誤"
+            );
         }
     }
 
@@ -86,7 +89,9 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "SizeEdit.LoadAdditionalData", this.GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalData), GetType(),
+                additionalData: "載入額外資料時發生錯誤"
+            );
         }
         
         return Task.CompletedTask;
@@ -150,7 +155,9 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "SizeEdit.InitializeBasicFormFields", this.GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBasicFormFields), GetType(),
+                additionalData: "初始化基本表單欄位時發生錯誤"
+            );
         }
     }
     
@@ -180,7 +187,9 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "SizeEdit.LoadSizeData", this.GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSizeData), GetType(),
+                additionalData: $"載入尺寸資料時發生錯誤，ID: {Id}"
+            );
             return null;
         }
     }
@@ -205,7 +214,9 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "SizeEdit.GenerateSizeCodeAsync", this.GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GenerateSizeCodeAsync), GetType(),
+                additionalData: "生成尺寸代碼時發生錯誤"
+            );
             // 如果生成失敗，返回預設格式
             return $"SIZE{DateTime.Now:yyyyMMddHHmmss}";
         }
@@ -248,7 +259,9 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "SizeEdit.SaveSize", this.GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveSize), GetType(),
+                additionalData: $"儲存尺寸資料時發生錯誤，ID: {Id}, 操作: {(Id.HasValue ? "更新" : "新增")}"
+            );
             return false;
         }
     }

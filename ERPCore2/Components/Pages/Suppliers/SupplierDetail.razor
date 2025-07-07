@@ -73,13 +73,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
-                nameof(LoadSupplierDataAsync), 
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex,
+                nameof(LoadSupplierDataAsync),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                true,
-                new { SupplierId = SupplierId });
+                additionalData: new { SupplierId = SupplierId });
             throw;
         }
         finally
@@ -103,13 +100,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
-                nameof(LoadAdditionalDataAsync), 
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex,
+                nameof(LoadAdditionalDataAsync),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                true,
-                new { SupplierId = SupplierId });
+                additionalData: new { SupplierId = SupplierId });
         }
     }
 
@@ -123,13 +117,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
-                nameof(OnSupplierDataLoaded), 
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex,
+                nameof(OnSupplierDataLoaded),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                true,
-                new { SupplierId = SupplierId });
+                additionalData: new { SupplierId = SupplierId });
             return Task.CompletedTask;
         }
     }
@@ -156,13 +147,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
-                nameof(GetFullAddress), 
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex,
+                nameof(GetFullAddress),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                false,
-                new { SupplierId = SupplierId });
+                additionalData: new { SupplierId = SupplierId });
             return "地址處理錯誤";
         }
     }
@@ -237,13 +225,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
-                nameof(GetTabSections), 
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex,
+                nameof(GetTabSections),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                false,
-                new { SupplierId = SupplierId });
+                additionalData: new { SupplierId = SupplierId });
             return new List<GenericDetailPageComponent<Supplier, ISupplierService>.TabSection>();
         }
     }
@@ -360,13 +345,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
-                nameof(GetSupplierBasicFields), 
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex,
+                nameof(GetSupplierBasicFields),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                false,
-                new { SupplierId = SupplierId });
+                additionalData: new { SupplierId = SupplierId });
             return new List<BasicInfoDisplayComponent.BasicInfoField>();
         }
     }
@@ -380,13 +362,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
-                nameof(GetContactEntities), 
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex,
+                nameof(GetContactEntities),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                false,
-                new { SupplierId = SupplierId });
+                additionalData: new { SupplierId = SupplierId });
             return new List<IContactEntity>();
         }
     }
@@ -399,13 +378,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
-                nameof(GetAddressEntities), 
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex,
+                nameof(GetAddressEntities),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                false,
-                new { SupplierId = SupplierId });
+                additionalData: new { SupplierId = SupplierId });
             return new List<IAddressEntity>();
         }
     }

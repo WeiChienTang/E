@@ -2,10 +2,9 @@
 @using ERPCore2.Components.Shared
 @using ERPCore2.Helpers
 @inject IMaterialService MaterialService
+@inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>材質</PageTitle>
@@ -58,14 +57,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(OnInitialized),
-                typeof(MaterialIndex),
-                ErrorLogService,
-                NotificationService,
-                true,
-                "材質頁面初始化失敗");
+                GetType(),
+                additionalData: "材質頁面初始化失敗");
         }
     }
 
@@ -82,14 +78,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(InitializeBreadcrumbs),
-                typeof(MaterialIndex),
-                ErrorLogService,
-                NotificationService,
-                true,
-                "初始化麵包屑導航失敗");
+                GetType(),
+                additionalData: "初始化麵包屑導航失敗");
         }
     }
 
@@ -98,23 +91,16 @@
     {
         try
         {
-            return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
-                async () => await MaterialService.GetAllAsync(),
-                new List<Material>(),
-                NotificationService,
-                "載入材質資料失敗"
-            );
+            return await MaterialService.GetAllAsync();
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(LoadMaterialsAsync),
-                typeof(MaterialIndex),
-                ErrorLogService,
-                NotificationService,
-                true,
-                "載入材質資料發生錯誤");
+                GetType(),
+                additionalData: "載入材質資料發生錯誤");
+            await NotificationService.ShowErrorAsync("載入材質資料失敗");
             return new List<Material>();
         }
     }
@@ -149,14 +135,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(InitializeFilters),
-                typeof(MaterialIndex),
-                ErrorLogService,
-                NotificationService,
-                true,
-                "初始化篩選器失敗");
+                GetType(),
+                additionalData: "初始化篩選器失敗");
         }
     }
 
@@ -190,14 +173,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(InitializeTableColumns),
-                typeof(MaterialIndex),
-                ErrorLogService,
-                NotificationService,
-                true,
-                "初始化表格欄位失敗");
+                GetType(),
+                additionalData: "初始化表格欄位失敗");
         }
     }
 
@@ -258,14 +238,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(ApplyMaterialFilters),
-                typeof(MaterialIndex),
-                ErrorLogService,
-                NotificationService,
-                true,
-                "套用材質篩選失敗");
+                GetType(),
+                additionalData: "套用材質篩選失敗");
             return query.OrderBy(m => m.Code);
         }
     }

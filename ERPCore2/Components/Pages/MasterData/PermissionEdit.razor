@@ -2,10 +2,9 @@
 @page "/permissions/edit/{id:int?}"
 @using ERPCore2.Helpers
 @inject IPermissionManagementService PermissionService
+@inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯權限" : "新增權限")</PageTitle>
@@ -58,7 +57,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "OnInitialized", typeof(PermissionEdit), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitialized), GetType());
         }
     }
 
@@ -76,7 +75,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "InitializeBreadcrumbs", typeof(PermissionEdit), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType());
         }
     }
 
@@ -102,7 +101,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "LoadAdditionalData", typeof(PermissionEdit), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalData), GetType());
         }
     }
 
@@ -133,7 +132,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "UpdateFormFieldOptions", typeof(PermissionEdit), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(UpdateFormFieldOptions), GetType());
         }
     }
 
@@ -207,7 +206,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "InitializeBasicFormFields", typeof(PermissionEdit), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBasicFormFields), GetType());
         }
     }
 
@@ -232,7 +231,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "LoadPermissionData", typeof(PermissionEdit), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPermissionData), GetType());
             return null;
         }
     }
@@ -285,7 +284,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "SavePermission", typeof(PermissionEdit), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SavePermission), GetType(), 
+                additionalData: new { EntityId = entity?.Id, PermissionCode = entity?.PermissionCode });
             return false;
         }
     }

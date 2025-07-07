@@ -3,8 +3,6 @@
 @inject ISizeService SizeService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>尺寸詳細資料</PageTitle>
@@ -51,7 +49,6 @@
         // 防止重複載入
         if (_isLoading)
         {
-            Console.WriteLine("[SizeDetail] 載入中，跳過重複調用");
             return size;
         }
         
@@ -67,14 +64,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                "載入尺寸資料失敗", 
-                GetType(), 
-                ErrorLogService, 
-                NotificationService, 
-                false, 
-                new { SizeId });
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSizeDataAsync), GetType(),
+                additionalData: new { SizeId });
             throw;
         }
         finally
@@ -92,14 +83,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                "載入額外資料失敗", 
-                GetType(), 
-                ErrorLogService, 
-                NotificationService, 
-                false, 
-                new { SizeId });
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType(),
+                additionalData: new { SizeId });
             throw;
         }
     }
@@ -114,14 +99,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                "資料載入完成處理失敗", 
-                GetType(), 
-                ErrorLogService, 
-                NotificationService, 
-                false, 
-                new { SizeId });
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnSizeDataLoaded), GetType(),
+                additionalData: new { SizeId });
             throw;
         }
     }
@@ -213,14 +192,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                "設定標籤頁結構失敗", 
-                GetType(), 
-                ErrorLogService, 
-                NotificationService, 
-                false, 
-                new { SizeId });
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetTabSections), GetType(),
+                additionalData: new { SizeId });
             throw;
         }
     }
@@ -291,14 +264,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                "取得尺寸基本資料欄位失敗", 
-                GetType(), 
-                ErrorLogService, 
-                NotificationService, 
-                false, 
-                new { SizeId });
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetSizeBasicFields), GetType(),
+                additionalData: new { SizeId });
             throw;
         }
     }

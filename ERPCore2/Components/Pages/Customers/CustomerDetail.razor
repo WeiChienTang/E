@@ -121,7 +121,7 @@
                 ex, 
                 nameof(LoadAdditionalDataAsync),
                 GetType(),
-                additionalData: new { CustomerId = CustomerId }
+                new { CustomerId = CustomerId }
             );
         }
     }
@@ -140,7 +140,7 @@
                 ex, 
                 nameof(OnCustomerDataLoaded),
                 GetType(),
-                additionalData: new { CustomerId = CustomerId }
+                new { CustomerId = CustomerId }
             );
         }
     }

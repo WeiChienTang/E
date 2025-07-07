@@ -3,6 +3,7 @@
 @inject IWarehouseService WarehouseService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 @using ERPCore2.Services.Notifications
 @using ERPCore2.Data.Entities
 @using ERPCore2.Helpers
@@ -44,24 +45,25 @@
     // 麵包屑導航
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         try
         {
             InitializeBreadcrumbs();
             InitializeFormFields();
+            await base.OnInitializedAsync();
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                nameof(OnInitialized),
-                GetType(),
-                showUserFriendlyMessage: true);
+                nameof(OnInitializedAsync),
+                GetType()
+                );
         }
     }
 
-    private void InitializeBreadcrumbs()
+    private async void InitializeBreadcrumbs()
     {
         try
         {
@@ -74,7 +76,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(InitializeBreadcrumbs),
                 GetType()
@@ -82,7 +84,7 @@
         }
     }
 
-    private void InitializeFormFields()
+    private async void InitializeFormFields()
     {
         try
         {
@@ -183,7 +185,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(InitializeFormFields),
                 GetType()
@@ -216,7 +218,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(LoadWarehouseData),
                 GetType(),
@@ -245,7 +247,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(GenerateWarehouseCodeAsync),
                 GetType()
@@ -284,17 +286,17 @@
             }
             else
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(
-                    result,
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    new Exception($"Service operation failed: {result.ErrorMessage}"),
                     nameof(SaveWarehouse),
-                    GetType()
-                    );
+                    GetType(),
+                    additionalData: new { WarehouseId = entity.Id, WarehouseName = entity.WarehouseName, ErrorMessage = result.ErrorMessage });
                 return false;
             }
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(SaveWarehouse),
                 GetType(),

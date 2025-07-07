@@ -4,8 +4,6 @@
 @inject IRoleService RoleService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯角色" : "新增角色")</PageTitle>
@@ -55,19 +53,28 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "初始化角色編輯頁面失敗", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitialized), GetType(),
+                additionalData: new { Id = Id });
         }
     }
 
     private void InitializeBreadcrumbs()
     {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        try
         {
-            new("首頁", "/"),
-            new("基礎資料", "#"),
-            new("角色維護", "/roles"),
-            new(Id.HasValue ? "編輯角色" : "新增角色")
-        };
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("基礎資料", "#"),
+                new("角色維護", "/roles"),
+                new(Id.HasValue ? "編輯角色" : "新增角色")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType(),
+                additionalData: new { Id = Id });
+        }
     }
 
     private async Task LoadAdditionalData()
@@ -79,50 +86,59 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "載入額外資料失敗", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalData), GetType(),
+                additionalData: new { Id = Id });
         }
     }
 
     private void InitializeBasicFormFields()
     {
-        basicFormFields = new List<FormFieldDefinition>
+        try
         {
-            new FormFieldDefinition
+            basicFormFields = new List<FormFieldDefinition>
             {
-                PropertyName = nameof(Role.RoleName),
-                Label = "角色名稱",
-                IsRequired = true,
-                Placeholder = "請輸入角色名稱",
-                FieldType = FormFieldType.Text,
-                MaxLength = 50
-            },
-            new FormFieldDefinition
-            {
-                PropertyName = nameof(Role.Description),
-                Label = "角色描述",
-                IsRequired = false,
-                Placeholder = "請輸入角色描述",
-                FieldType = FormFieldType.TextArea,
-                MaxLength = 200,
-                Rows = 3
-            },
-            new FormFieldDefinition
-            {
-                PropertyName = nameof(Role.IsSystemRole),
-                Label = "系統角色",
-                FieldType = FormFieldType.Checkbox,
-                HelpText = "系統角色無法刪除且權限受限制"
-            }
-        };
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Role.RoleName),
+                    Label = "角色名稱",
+                    IsRequired = true,
+                    Placeholder = "請輸入角色名稱",
+                    FieldType = FormFieldType.Text,
+                    MaxLength = 50
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Role.Description),
+                    Label = "角色描述",
+                    IsRequired = false,
+                    Placeholder = "請輸入角色描述",
+                    FieldType = FormFieldType.TextArea,
+                    MaxLength = 200,
+                    Rows = 3
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Role.IsSystemRole),
+                    Label = "系統角色",
+                    FieldType = FormFieldType.Checkbox,
+                    HelpText = "系統角色無法刪除且權限受限制"
+                }
+            };
 
-        basicFormSections = new Dictionary<string, string>
+            basicFormSections = new Dictionary<string, string>
+            {
+                { nameof(Role.RoleName), "基本資訊" },
+                { nameof(Role.Description), "基本資訊" },
+                { nameof(Role.IsSystemRole), "角色設定" }
+            };
+        }
+        catch (Exception ex)
         {
-            { nameof(Role.RoleName), "基本資訊" },
-            { nameof(Role.Description), "基本資訊" },
-            { nameof(Role.IsSystemRole), "角色設定" }
-        };
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBasicFormFields), GetType(),
+                additionalData: new { Id = Id });
+        }
     }
-      private async Task<Role?> LoadRoleData()
+    private async Task<Role?> LoadRoleData()
     {
         try
         {
@@ -143,7 +159,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "載入角色資料失敗", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadRoleData), GetType(),
+                additionalData: new { Id = Id });
             return null;
         }
     }
@@ -156,23 +173,21 @@
             var nameCheckResult = await RoleService.IsRoleNameExistsAsync(entity.RoleName, entity.Id);
             if (!nameCheckResult.IsSuccess)
             {
-                _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                _ = ErrorHandlingHelper.HandlePageErrorAsync(
                     new Exception($"驗證失敗：{nameCheckResult.ErrorMessage}"), 
-                    "角色名稱驗證失敗", 
-                    GetType(), 
-                    ErrorLogService, 
-                    NotificationService);
+                    nameof(SaveRole), 
+                    GetType(),
+                    additionalData: new { Id = Id, RoleName = entity.RoleName, ErrorMessage = nameCheckResult.ErrorMessage });
                 return false;
             }
 
             if (nameCheckResult.Data)
             {
-                _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                _ = ErrorHandlingHelper.HandlePageErrorAsync(
                     new Exception("角色名稱重複"), 
-                    "角色名稱重複", 
-                    GetType(), 
-                    ErrorLogService, 
-                    NotificationService);
+                    nameof(SaveRole), 
+                    GetType(),
+                    additionalData: new { Id = Id, RoleName = entity.RoleName });
                 return false;
             }
 
@@ -189,12 +204,11 @@
 
             if (!result.IsSuccess)
             {
-                _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+                _ = ErrorHandlingHelper.HandlePageErrorAsync(
                     new Exception($"儲存失敗：{result.ErrorMessage}"), 
-                    "角色儲存失敗", 
-                    GetType(), 
-                    ErrorLogService, 
-                    NotificationService);
+                    nameof(SaveRole), 
+                    GetType(),
+                    additionalData: new { Id = Id, RoleName = entity.RoleName, ErrorMessage = result.ErrorMessage });
                 return false;
             }
 
@@ -203,7 +217,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "儲存角色失敗", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveRole), GetType(),
+                additionalData: new { Id = Id, RoleName = entity.RoleName });
             return false;
         }
     }

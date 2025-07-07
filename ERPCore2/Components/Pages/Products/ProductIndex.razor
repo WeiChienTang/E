@@ -12,7 +12,8 @@
                           TService="IProductService"
                           Service="@ProductService"
                           EntityBasePath="/products"
-                          PageTitle="產品維護"                          PageSubtitle="管理所有產品資料與庫存資訊"
+                          PageTitle="產品維護"                          
+                          PageSubtitle="管理所有產品資料與庫存資訊"
                           EntityName="產品"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
@@ -85,9 +86,9 @@
             // 重新初始化篩選器（因為需要選項資料）
             InitializeFilters();
         }
-            catch (Exception ex)
+        catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(LoadBasicDataAsync), 
                 GetType(),

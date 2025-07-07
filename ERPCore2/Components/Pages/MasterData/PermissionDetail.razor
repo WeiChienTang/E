@@ -3,8 +3,6 @@
 @inject IPermissionManagementService PermissionService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>權限詳細資料</PageTitle>
@@ -66,7 +64,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "LoadPermissionDataAsync", typeof(PermissionDetail), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPermissionDataAsync), GetType(),
+                additionalData: new { PermissionId = PermissionId });
             throw;
         }
         finally
@@ -84,7 +83,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "LoadAdditionalDataAsync", typeof(PermissionDetail), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType(),
+                additionalData: new { PermissionId = PermissionId });
             throw;
         }
     }
@@ -99,7 +99,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "OnPermissionDataLoaded", typeof(PermissionDetail), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnPermissionDataLoaded), GetType(),
+                additionalData: new { PermissionId = PermissionId });
             throw;
         }
     }
@@ -193,7 +194,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "GetTabSections", typeof(PermissionDetail), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetTabSections), GetType(),
+                additionalData: new { PermissionId = PermissionId });
             return new List<GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection>();
         }
     }
@@ -258,7 +260,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "GetPermissionBasicFields", typeof(PermissionDetail), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetPermissionBasicFields), GetType(),
+                additionalData: new { PermissionId = PermissionId });
             return new List<BasicInfoDisplayComponent.BasicInfoField>();
         }
     }

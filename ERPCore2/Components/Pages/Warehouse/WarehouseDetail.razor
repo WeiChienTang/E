@@ -65,13 +65,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                nameof(LoadWarehouseDataAsync), 
-                GetType(), 
-                ErrorLogService, 
-                NotificationService,
-                showUserFriendlyMessage: true,
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehouseDataAsync), GetType(),
                 additionalData: new { WarehouseId = WarehouseId });
             throw;
         }
@@ -91,13 +85,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                nameof(OnWarehouseDataLoaded), 
-                GetType(), 
-                ErrorLogService, 
-                NotificationService,
-                showUserFriendlyMessage: true,
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnWarehouseDataLoaded), GetType(),
                 additionalData: new { WarehouseId = WarehouseId });
             return Task.CompletedTask;
         }
@@ -212,13 +200,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                nameof(GetTabSections), 
-                GetType(), 
-                ErrorLogService, 
-                NotificationService,
-                showUserFriendlyMessage: true,
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetTabSections), GetType(),
                 additionalData: new { WarehouseId = WarehouseId });
             
             // 返回預設的空標籤頁列表
@@ -339,13 +321,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                nameof(GetWarehouseBasicFields), 
-                GetType(), 
-                ErrorLogService, 
-                NotificationService,
-                showUserFriendlyMessage: true,
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetWarehouseBasicFields), GetType(),
                 additionalData: new { WarehouseId = WarehouseId });
             
             // 返回預設的空欄位列表
@@ -369,13 +345,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                nameof(GetWarehouseTypeDisplayName), 
-                GetType(), 
-                ErrorLogService, 
-                NotificationService,
-                showUserFriendlyMessage: false, // 這是內部錯誤，不需要通知使用者
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetWarehouseTypeDisplayName), GetType(),
                 additionalData: new { WarehouseType = warehouseType });
             
             // 返回預設值

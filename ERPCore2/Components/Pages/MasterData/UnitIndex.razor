@@ -48,14 +48,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(OnInitialized),
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                true,
-                null
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitialized), GetType(),
+                additionalData: null
             );
         }
     }
@@ -73,14 +67,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(InitializeBreadcrumbs),
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                true,
-                null
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType(),
+                additionalData: null
             );
         }
     }
@@ -88,12 +76,20 @@
     // 載入單位資料
     private async Task<List<Unit>> LoadUnitsAsync()
     {
-        return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
-            async () => await UnitService.GetAllAsync(),
-            new List<Unit>(),
-            NotificationService,
-            "載入單位資料失敗"
-        );
+        try
+        {
+            return await UnitService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadUnitsAsync),
+                GetType()
+            );
+            await NotificationService.ShowErrorAsync("載入單位資料失敗");
+            return new List<Unit>();
+        }
     }
 
     private void InitializeFilters()
@@ -124,14 +120,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(InitializeFilters),
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                true,
-                null
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFilters), GetType(),
+                additionalData: null
             );
         }
     }
@@ -154,14 +144,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(InitializeTableColumns),
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                true,
-                null
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeTableColumns), GetType(),
+                additionalData: null
             );
         }
     }
@@ -214,14 +198,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(ApplyUnitFilters),
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                true,
-                new { SearchModel = searchModel }
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyUnitFilters), GetType(),
+                additionalData: new { SearchModel = searchModel }
             );
             
             // 發生錯誤時返回原始查詢

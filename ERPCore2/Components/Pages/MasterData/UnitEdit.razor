@@ -10,7 +10,6 @@
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯單位" : "新增單位")</PageTitle>
@@ -58,9 +57,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
-                "UnitEdit.OnInitialized", GetType(), ErrorLogService, NotificationService, false, 
-                "初始化單位編輯頁面失敗");
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitialized), GetType(),
+                additionalData: "初始化單位編輯頁面失敗");
         }
     }
 
@@ -78,9 +76,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
-                "UnitEdit.InitializeBreadcrumbs", GetType(), ErrorLogService, NotificationService, false, 
-                "初始化麵包屑導航失敗");
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType(),
+                additionalData: "初始化麵包屑導航失敗");
         }
     }
 
@@ -148,9 +145,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
-                "UnitEdit.InitializeFormFields", GetType(), ErrorLogService, NotificationService, false, 
-                "初始化表單欄位失敗");
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFormFields), GetType(),
+                additionalData: "初始化表單欄位失敗");
         }
     }
 
@@ -181,9 +177,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
-                "UnitEdit.LoadUnitData", GetType(), ErrorLogService, NotificationService, false, 
-                "載入單位資料失敗");
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadUnitData), GetType(),
+                additionalData: "載入單位資料失敗");
             Navigation.NavigateTo("/units");
             return null;
         }
@@ -206,9 +201,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
-                "UnitEdit.GenerateUnitCodeAsync", GetType(), ErrorLogService, NotificationService, false, 
-                "產生單位代碼失敗");
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GenerateUnitCodeAsync), GetType(),
+                additionalData: "產生單位代碼失敗");
             return "U001";
         }
     }
@@ -261,9 +255,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, 
-                "UnitEdit.SaveUnit", GetType(), ErrorLogService, NotificationService, false, 
-                "儲存單位資料失敗");
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveUnit), GetType(),
+                additionalData: "儲存單位資料失敗");
             return false;
         }
     }

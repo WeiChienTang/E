@@ -73,13 +73,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(LoadProductDataAsync),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
                 additionalData: new { ProductId = ProductId, PageName = "ProductDetail" });
             
             return null;
@@ -102,13 +99,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(LoadAdditionalDataAsync),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false,
                 additionalData: new { ProductId = product?.Id, PageName = "ProductDetail" });
             
             // 設定預設值避免頁面錯誤
@@ -126,13 +120,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(OnProductDataLoaded),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false,
                 additionalData: new { ProductId = product?.Id, PageName = "ProductDetail" });
             
             return Task.CompletedTask;
@@ -148,13 +139,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(FormatPrice),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false,
                 additionalData: new { Price = price, PageName = "ProductDetail" });
             
             return "格式錯誤";
@@ -169,13 +157,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(FormatPercentage),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false,
                 additionalData: new { Percentage = percentage, PageName = "ProductDetail" });
             
             return "格式錯誤";
@@ -191,13 +176,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(CalculateMarginRate),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false,
                 additionalData: new { UnitPrice = unitPrice, CostPrice = costPrice, PageName = "ProductDetail" });
             
             return null;
@@ -224,13 +206,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(GetStockStatus),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false,
                 additionalData: new { ProductId = product?.Id, PageName = "ProductDetail" });
             
             return "未知";
@@ -251,13 +230,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(GetStockStatusBadgeClass),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false,
                 additionalData: new { Status = status, PageName = "ProductDetail" });
             
             return "bg-secondary";
@@ -403,13 +379,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(GetTabSections),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false,
                 additionalData: new { ProductId = product?.Id, PageName = "ProductDetail" });
             
             // 返回最基本的標籤頁結構
@@ -538,13 +511,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(GetProductBasicFields),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false,
                 additionalData: new { ProductId = product?.Id, PageName = "ProductDetail" });
             
             // 返回最基本的欄位結構

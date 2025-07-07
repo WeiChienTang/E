@@ -8,8 +8,6 @@
 @inject ISupplierTypeService SupplierTypeService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>廠商類型</PageTitle>
@@ -65,7 +63,9 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(OnInitializedAsync), GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(),
+                additionalData: new { Component = "SupplierTypeIndex", Action = "Initialize" }
+            );
         }
     }
 
@@ -82,19 +82,26 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(InitializeBreadcrumbs), GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType(),
+                additionalData: new { Component = "SupplierTypeIndex", Action = "InitializeBreadcrumbs" }
+            );
         }
     }
 
     // 載入廠商類型資料
     private async Task<List<SupplierType>> LoadSupplierTypesAsync()
     {
-        return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
-            async () => await SupplierTypeService.GetAllAsync(),
-            new List<SupplierType>(),
-            NotificationService,
-            "載入廠商類型資料失敗"
-        );
+        try
+        {
+            return await SupplierTypeService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSupplierTypesAsync), GetType(),
+                additionalData: new { Component = "SupplierTypeIndex", Action = "LoadSupplierTypes" }
+            );
+            return new List<SupplierType>(); // 回傳空列表作為後備
+        }
     }
 
     private void InitializeFilters()
@@ -117,7 +124,9 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(InitializeFilters), GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFilters), GetType(),
+                additionalData: new { Component = "SupplierTypeIndex", Action = "InitializeFilters" }
+            );
         }
     }
 
@@ -140,7 +149,9 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(InitializeTableColumns), GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeTableColumns), GetType(),
+                additionalData: new { Component = "SupplierTypeIndex", Action = "InitializeTableColumns" }
+            );
         }
     }
 
@@ -177,7 +188,9 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(ApplySupplierTypeFilters), GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplySupplierTypeFilters), GetType(),
+                additionalData: new { Component = "SupplierTypeIndex", Action = "ApplySupplierTypeFilters", SearchModel = searchModel }
+            );
             return query; // 回傳原始查詢作為後備
         }
     }

@@ -7,6 +7,7 @@
 @inject IProductService ProductService
 @inject IProductCategoryService ProductCategoryService
 @inject ISupplierService SupplierService
+@inject INotificationService NotificationService
 @inject NavigationManager Navigation
 
 @rendermode InteractiveServer
@@ -81,13 +82,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(OnInitialized),
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false,
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitialized), GetType(),
                 additionalData: new { ProductId = Id });
         }
     }
@@ -105,13 +100,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(InitializeBreadcrumb),
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false,
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumb), GetType(),
                 additionalData: new { ProductId = Id });
             
             // 設定預設值
@@ -127,13 +116,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(GetPageTitle),
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false,
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetPageTitle), GetType(),
                 additionalData: new { ProductId = Id });
             
             return "產品管理";
@@ -256,13 +239,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(GetFormFields),
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false,
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFormFields), GetType(),
                 additionalData: new { ProductId = Id });
             
             return new List<FormFieldDefinition>();
@@ -298,13 +275,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(GetFormSections),
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false,
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFormSections), GetType(),
                 additionalData: new { ProductId = Id });
             
             return new Dictionary<string, string>();
@@ -342,13 +313,7 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(LoadProductData),
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadProductData), GetType(),
                 additionalData: new { ProductId = Id });
             
             StateHasChanged();
@@ -371,13 +336,7 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(LoadReferenceData),
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadReferenceData), GetType(),
                 additionalData: new { PageName = "ProductEdit" });
             
             // 設定預設值
@@ -409,23 +368,14 @@
             }
             else
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(
-                    result,
-                    nameof(SaveProduct),
-                    NotificationService,
-                    customErrorMessage: "儲存產品失敗");
+                // 顯示錯誤通知
+                await NotificationService.ShowErrorAsync("儲存產品失敗", result.ErrorMessage);
                 return false;
             }
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(SaveProduct),
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveProduct), GetType(),
                 additionalData: new { ProductId = entity.Id, ProductName = entity.ProductName });
             
             StateHasChanged();
@@ -445,13 +395,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(OnProductSuppliersChanged),
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false,
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnProductSuppliersChanged), GetType(),
                 additionalData: new { ProductId = Id, SuppliersCount = updatedSuppliers?.Count });
             
             return Task.CompletedTask;
@@ -473,13 +417,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(BeforeAddSupplier),
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false,
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(BeforeAddSupplier), GetType(),
                 additionalData: new { ProductId = Id, SupplierId = newSupplier?.SupplierId });
             
             return Task.FromResult(false);
@@ -503,11 +441,8 @@
                 var result = await ProductService.UpdateProductSuppliersAsync(Id.Value, productSuppliers);
                 if (!result.IsSuccess)
                 {
-                    await ErrorHandlingHelper.HandleServiceErrorAsync(
-                        result,
-                        nameof(AfterAddSupplier),
-                        NotificationService,
-                        customErrorMessage: "新增供應商失敗");
+                    // 顯示錯誤通知
+                    await NotificationService.ShowErrorAsync("新增供應商失敗", result.ErrorMessage);
                     
                     // 儲存失敗，移除剛才新增的項目
                     productSuppliers.Remove(newSupplier);
@@ -519,13 +454,7 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(AfterAddSupplier),
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: true,
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(AfterAddSupplier), GetType(),
                 additionalData: new { ProductId = Id, SupplierId = newSupplier.SupplierId });
             
             // 發生錯誤時移除剛才新增的項目
@@ -545,13 +474,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(UpdateAvailableSuppliers),
-                GetType(),
-                ErrorLogService,
-                NotificationService,
-                showUserFriendlyMessage: false,
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(UpdateAvailableSuppliers), GetType(),
                 additionalData: new { ProductId = Id, ProductSuppliersCount = productSuppliers?.Count, SuppliersCount = suppliers?.Count });
             
             // 設定預設值

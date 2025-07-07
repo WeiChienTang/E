@@ -50,24 +50,22 @@
     {
         try
         {
-            InitializeBreadcrumbs();
-            InitializeFilters();
-            InitializeTableColumns();
-            await Task.CompletedTask;
+            await InitializeBreadcrumbs();
+            await InitializeFilters();
+            await InitializeTableColumns();
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(OnInitializedAsync),
                 GetType(),
-                NotificationService,
                 additionalData: "初始化顏色頁面失敗"
             );
         }
     }
 
-    private void InitializeBreadcrumbs()
+    private async Task InitializeBreadcrumbs()
     {
         try
         {
@@ -80,17 +78,15 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(InitializeBreadcrumbs),
-                GetType(),
-                ErrorLogService,
-                NotificationService
+                GetType()
             );
         }
     }
 
-    private void InitializeFilters()
+    private async Task InitializeFilters()
     {
         try
         {
@@ -111,18 +107,16 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(InitializeFilters),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
                 additionalData: "初始化篩選器失敗"
             );
         }
     }
 
-    private void InitializeTableColumns()
+    private async Task InitializeTableColumns()
     {
         try
         {
@@ -142,12 +136,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(InitializeTableColumns),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
                 additionalData: "初始化表格欄位失敗"
             );
         }
@@ -166,8 +158,6 @@
                 ex,
                 nameof(LoadDataAsync),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
                 additionalData: "載入顏色資料失敗"
             );
             return new List<Color>();
@@ -219,8 +209,6 @@
                 ex,
                 nameof(ApplyColorFilters),
                 GetType(),
-                ErrorLogService,
-                NotificationService,
                 additionalData: "應用篩選條件失敗"
             );
             return query.OrderBy(c => c.Name);

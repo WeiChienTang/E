@@ -15,7 +15,8 @@
 <GenericIndexPageComponent TEntity="Weather" 
                           TService="IWeatherService"
                           Service="@WeatherService"
-                          EntityBasePath="/weather"                          PageTitle="天氣"
+                          EntityBasePath="/weather"                          
+                          PageTitle="天氣"
                           PageSubtitle="管理所有天氣類型資料"
                           AddButtonText="新增天氣"
                           AddButtonTitle="新增天氣資料"
@@ -29,7 +30,8 @@
                           EnableStandardActions="true"
                           EntityName="天氣"
                           GetEntityDisplayName="@(weather => weather.Name)"
-                          DeleteSuccessMessage="天氣刪除成功"                          DeleteConfirmMessage="確定要刪除天氣「{0}」嗎？"
+                          DeleteSuccessMessage="天氣刪除成功"                          
+                          DeleteConfirmMessage="確定要刪除天氣「{0}」嗎？"
                           @ref="indexComponent">
 </GenericIndexPageComponent>
 
@@ -53,12 +55,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(OnInitializedAsync),
-                typeof(WeatherIndex),
-                ErrorLogService,
-                NotificationService
+                GetType()
             );
         }
     }
@@ -77,12 +77,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(InitializeBreadcrumbsAsync),
-                typeof(WeatherIndex),
-                ErrorLogService,
-                NotificationService
+                GetType()
             );
         }
     }
@@ -109,12 +107,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(InitializeFiltersAsync),
-                typeof(WeatherIndex),
-                ErrorLogService,
-                NotificationService
+                GetType()
             );
         }
     }
@@ -138,12 +134,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(InitializeTableColumnsAsync),
-                typeof(WeatherIndex),
-                ErrorLogService,
-                NotificationService
+                GetType()
             );
         }
     }    // 資料載入委派
@@ -155,12 +149,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(LoadDataAsync),
-                typeof(WeatherIndex),
-                ErrorLogService,
-                NotificationService
+                GetType()
             );
             return new List<Weather>();
         }
@@ -198,12 +190,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(ApplyWeatherFilters),
-                typeof(WeatherIndex),
-                ErrorLogService,
-                NotificationService
+                GetType()
             );
             return query.OrderBy(w => w.Name);
         }

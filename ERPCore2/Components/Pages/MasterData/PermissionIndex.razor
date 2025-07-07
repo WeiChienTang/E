@@ -1,10 +1,10 @@
 @page "/permissions"
 @using ERPCore2.Helpers
 @inject IPermissionManagementService PermissionService
+@inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
+
 @rendermode InteractiveServer
 
 <PageTitle>權限維護</PageTitle>
@@ -43,14 +43,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(OnInitialized),
-                typeof(PermissionIndex),
-                ErrorLogService,
-                NotificationService,
-                true,
-                "權限頁面初始化失敗"
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitialized), GetType(),
+                additionalData: "權限頁面初始化失敗"
             );
         }
     }
@@ -68,14 +62,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(InitializeBreadcrumbs),
-                typeof(PermissionIndex),
-                ErrorLogService,
-                NotificationService,
-                true,
-                "初始化麵包屑導航失敗"
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType(),
+                additionalData: "初始化麵包屑導航失敗"
             );
         }
     }
@@ -85,24 +73,14 @@
     {
         try
         {
-            return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
-                async () => await PermissionService.GetAllAsync(),
-                new List<Permission>(),
-                NotificationService,
-                "載入權限資料失敗"
-            );
+            return await PermissionService.GetAllAsync();
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(LoadPermissionsAsync),
-                typeof(PermissionIndex),
-                ErrorLogService,
-                NotificationService,
-                true,
-                "載入權限資料失敗"
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPermissionsAsync), GetType(),
+                additionalData: "載入權限資料失敗"
             );
+            await NotificationService.ShowErrorAsync("載入權限資料失敗");
             return new List<Permission>();
         }
     }
@@ -122,14 +100,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(InitializeFilters),
-                typeof(PermissionIndex),
-                ErrorLogService,
-                NotificationService,
-                true,
-                "初始化篩選條件失敗"
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFilters), GetType(),
+                additionalData: "初始化篩選條件失敗"
             );
         }
     }
@@ -150,14 +122,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(InitializeTableColumns),
-                typeof(PermissionIndex),
-                ErrorLogService,
-                NotificationService,
-                true,
-                "初始化表格欄位失敗"
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeTableColumns), GetType(),
+                additionalData: "初始化表格欄位失敗"
             );
         }
     }
@@ -212,14 +178,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                nameof(ApplyPermissionFilters),
-                typeof(PermissionIndex),
-                ErrorLogService,
-                NotificationService,
-                true,
-                "套用篩選條件失敗"
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyPermissionFilters), GetType(),
+                additionalData: "套用篩選條件失敗"
             );
             return query;
         }

@@ -5,7 +5,6 @@
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@inject IErrorLogService ErrorLogService
 @using ERPCore2.Services.Notifications
 @using ERPCore2.Helpers
 @rendermode InteractiveServer
@@ -49,7 +48,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "OnInitialized", typeof(MaterialEdit), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitialized), GetType(),
+                additionalData: new { Id });
         }
     }
 
@@ -67,7 +67,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "InitializeBreadcrumbs", typeof(MaterialEdit), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType(),
+                additionalData: new { Id });
         }
     }
 
@@ -148,7 +149,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "InitializeFormFields", typeof(MaterialEdit), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFormFields), GetType(),
+                additionalData: new { Id });
         }
     }
 
@@ -160,7 +162,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "GetFormFields", typeof(MaterialEdit), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFormFields), GetType(),
+                additionalData: new { Id });
             return new List<FormFieldDefinition>();
         }
     }
@@ -189,7 +192,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "LoadMaterialData", typeof(MaterialEdit), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadMaterialData), GetType(),
+                additionalData: new { Id });
             Navigation.NavigateTo("/materials");
             return null;
         }

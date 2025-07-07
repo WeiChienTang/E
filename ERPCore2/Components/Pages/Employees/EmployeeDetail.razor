@@ -8,6 +8,8 @@
 @using ERPCore2.Extensions
 @using ERPCore2.Helpers
 @inject IEmployeeService EmployeeService
+@inject IErrorLogService ErrorLogService
+@inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
@@ -136,8 +138,6 @@
                 ex, 
                 nameof(OnEmployeeDataLoaded),
                 GetType(),
-                ErrorLogService, 
-                NotificationService, 
                 additionalData: new { EmployeeId = EmployeeId }
             );
         }

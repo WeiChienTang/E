@@ -24,7 +24,8 @@
                          Entity="@supplier"
                          Service="@SupplierService"
                          EntityName="廠商"
-                         EntityNamePlural="廠商"                         FormTitle="基本資料"
+                         EntityNamePlural="廠商"                         
+                         FormTitle="基本資料"
                          FormSubtitle="廠商的基本公司資訊"
                          IndexRoute="/suppliers"
                          UseGenericForm="true"
@@ -34,8 +35,9 @@
                          DataLoader="@LoadSupplierData"
                          SaveHandler="@SaveSupplier"
                          AdditionalDataLoader="@LoadAdditionalData">    
-                         <AdditionalSections>        @* 聯絡方式管理 *@
-
+                         <AdditionalSections>        
+                        
+                        @* 聯絡方式管理 *@
         <ContactManagerComponent TContactEntity="SupplierContact"
                                TParentEntity="Supplier"
                                Items="@supplierContacts"
@@ -107,7 +109,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(OnInitializedAsync), GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(),
+                additionalData: new { Id });
         }
     }    protected override Task OnParametersSetAsync()
     {
@@ -119,7 +122,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(OnParametersSetAsync), GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnParametersSetAsync), GetType(),
+                additionalData: new { Id });
             return Task.CompletedTask;
         }
     }
@@ -137,7 +141,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(InitializeBreadcrumbs), GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType(),
+                additionalData: new { Id });
         }
     }
 
@@ -161,7 +166,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(LoadAdditionalData), GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalData), GetType(),
+                additionalData: new { Id, _isLoadingData });
             // 初始化空列表以防止UI錯誤
             supplierTypes = new List<SupplierType>();
             industryTypes = new List<IndustryType>();
@@ -279,7 +285,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(InitializeFormFields), GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFormFields), GetType(),
+                additionalData: new { 
+                    SupplierTypesCount = supplierTypes?.Count ?? 0,
+                    IndustryTypesCount = industryTypes?.Count ?? 0
+                });
         }
     }
 
@@ -332,7 +342,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(LoadSupplierData), GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSupplierData), GetType(),
+                additionalData: new { Id, SupplierId = supplier?.Id });
             throw;
         }
         finally
@@ -349,7 +360,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(GenerateSupplierCode), GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GenerateSupplierCode), GetType(),
+                additionalData: new { Timestamp = DateTime.Now });
             return string.Empty;
         }
     }
@@ -362,10 +374,12 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(GetPageTitle), GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetPageTitle), GetType(),
+                additionalData: new { Id });
             return "廠商管理";
         }
-    }    private async Task<bool> SaveSupplier(Supplier entity)
+    }    
+    private async Task<bool> SaveSupplier(Supplier entity)
     {
         try
         {
@@ -424,7 +438,15 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(SaveSupplier), GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveSupplier), GetType(),
+                additionalData: new { 
+                    Id, 
+                    EntityId = entity?.Id,
+                    SupplierCode = entity?.SupplierCode,
+                    CompanyName = entity?.CompanyName,
+                    ContactsCount = supplierContacts?.Count ?? 0,
+                    AddressesCount = supplierAddresses?.Count ?? 0
+                });
             return false;
         }
     }
@@ -441,7 +463,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(OnSupplierContactsChanged), GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnSupplierContactsChanged), GetType(),
+                additionalData: new { 
+                    ContactsCount = updatedContacts?.Count ?? 0,
+                    SupplierId = supplier?.Id 
+                });
             return Task.CompletedTask;
         }
     }
@@ -456,7 +482,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(OnSupplierAddressesChanged), GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnSupplierAddressesChanged), GetType(),
+                additionalData: new { 
+                    AddressesCount = updatedAddresses?.Count ?? 0,
+                    SupplierId = supplier?.Id 
+                });
             return Task.CompletedTask;
         }
     }
@@ -471,7 +501,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, nameof(Dispose), GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(Dispose), GetType(),
+                additionalData: new { SemaphoreDisposed = _loadingSemaphore?.CurrentCount });
         }
     }
 }

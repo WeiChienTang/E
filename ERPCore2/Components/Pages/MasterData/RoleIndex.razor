@@ -4,7 +4,6 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>角色維護</PageTitle>
@@ -43,12 +42,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "角色維護頁面初始化失敗",
-                typeof(RoleIndex),
-                ErrorLogService,
-                NotificationService
+                nameof(OnInitialized),
+                GetType(),
+                additionalData: new { PageName = "RoleIndex" }
             );
         }
     }
@@ -66,12 +64,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "初始化麵包屑導航失敗",
-                typeof(RoleIndex),
-                ErrorLogService,
-                NotificationService
+                nameof(InitializeBreadcrumbs),
+                GetType(),
+                additionalData: new { PageName = "RoleIndex" }
             );
         }
     }
@@ -79,12 +76,20 @@
     // 載入角色資料
     private async Task<List<Role>> LoadRolesAsync()
     {
-        return await ErrorHandlingHelper.ExecuteWithErrorHandlingAsync(
-            async () => await RoleService.GetAllAsync(),
-            new List<Role>(),
-            NotificationService,
-            "載入角色資料失敗"
-        );
+        try
+        {
+            return await RoleService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadRolesAsync),
+                GetType(),
+                additionalData: new { PageName = "RoleIndex" }
+            );
+            return new List<Role>();
+        }
     }
 
     private void InitializeFilters()
@@ -107,12 +112,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "初始化篩選器失敗",
-                typeof(RoleIndex),
-                ErrorLogService,
-                NotificationService
+                nameof(InitializeFilters),
+                GetType(),
+                additionalData: new { PageName = "RoleIndex" }
             );
         }
     }    private void InitializeTableColumns()
@@ -133,12 +137,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "初始化表格欄位失敗",
-                typeof(RoleIndex),
-                ErrorLogService,
-                NotificationService
+                nameof(InitializeTableColumns),
+                GetType(),
+                additionalData: new { PageName = "RoleIndex" }
             );
         }
     }
@@ -176,12 +179,15 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                "套用角色篩選失敗",
-                typeof(RoleIndex),
-                ErrorLogService,
-                NotificationService
+                nameof(ApplyRoleFilters),
+                GetType(),
+                additionalData: new { 
+                    PageName = "RoleIndex",
+                    Action = "ApplyFilters",
+                    FilterModel = searchModel
+                }
             );
             // 發生錯誤時返回未過濾的查詢結果
             return query.OrderBy(r => r.RoleName);

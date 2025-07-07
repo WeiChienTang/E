@@ -3,8 +3,6 @@
 @inject IRoleService RoleService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>角色詳細資料</PageTitle>
@@ -37,13 +35,41 @@
     private bool _isLoading = false; // 防止重複載入
 
     // 麵包屑導航
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
     {
-        new("首頁", "/"),
-        new("基礎資料", "#"),
-        new("角色維護", "/roles"),
-        new("角色詳細資料")
-    };
+        try
+        {
+            breadcrumbItems = GetBreadcrumbItems();
+            await base.OnInitializedAsync();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType());
+            throw;
+        }
+    }
+
+    // 取得麵包屑導航項目
+    private List<GenericHeaderComponent.BreadcrumbItem> GetBreadcrumbItems()
+    {
+        try
+        {
+            return new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("基礎資料", "#"),
+                new("角色維護", "/roles"),
+                new("角色詳細資料")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetBreadcrumbItems), GetType());
+            throw;
+        }
+    }
 
     // GenericDetailPageComponent 需要的方法
     private async Task<Role?> LoadRoleDataAsync()
@@ -65,12 +91,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                "載入角色資料失敗",
-                typeof(RoleDetail),
-                ErrorLogService, 
-                NotificationService,
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadRoleDataAsync), GetType(),
                 additionalData: new { RoleId }
             );
             throw;
@@ -90,13 +111,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                "載入額外資料失敗",
-                typeof(RoleDetail),
-                ErrorLogService, 
-                NotificationService
-            );
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType());
             throw;
         }
     }
@@ -111,13 +126,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                "資料載入完成處理失敗",
-                typeof(RoleDetail),
-                ErrorLogService, 
-                NotificationService
-            );
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnRoleDataLoaded), GetType());
             throw;
         }
     }
@@ -203,13 +212,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                "取得標籤頁結構失敗",
-                typeof(RoleDetail),
-                ErrorLogService, 
-                NotificationService
-            );
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetTabSections), GetType());
             throw;
         }
     }
@@ -280,13 +283,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                "取得基本資料欄位失敗",
-                typeof(RoleDetail),
-                ErrorLogService, 
-                NotificationService
-            );
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetBasicInfoFields), GetType());
             throw;
         }
     }

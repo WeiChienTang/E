@@ -10,8 +10,6 @@
 @inject ISupplierTypeService SupplierTypeService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>廠商類型詳細資料</PageTitle>
@@ -72,7 +70,9 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "LoadSupplierTypeDataAsync", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSupplierTypeDataAsync), GetType(),
+                additionalData: new { SupplierTypeId = SupplierTypeId }
+            );
             throw;
         }
         finally
@@ -91,7 +91,9 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "OnSupplierTypeDataLoaded", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnSupplierTypeDataLoaded), GetType(),
+                additionalData: new { SupplierTypeId = SupplierTypeId }
+            );
             return Task.CompletedTask;
         }
     }
@@ -171,7 +173,9 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "GetTabSections", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetTabSections), GetType(),
+                additionalData: new { SupplierTypeId = SupplierTypeId }
+            );
             return new List<GenericDetailPageComponent<SupplierType, ISupplierTypeService>.TabSection>();
         }
     }
@@ -228,7 +232,9 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(ex, "GetSupplierTypeBasicFields", GetType(), ErrorLogService, NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetSupplierTypeBasicFields), GetType(),
+                additionalData: new { SupplierTypeId = SupplierTypeId }
+            );
             return new List<BasicInfoDisplayComponent.BasicInfoField>();
         }
     }

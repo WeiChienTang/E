@@ -9,8 +9,6 @@
 @inject IWeatherService WeatherService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
 <PageTitle>天氣詳細資料</PageTitle>
@@ -56,7 +54,6 @@
     {
         if (_isLoading)
         {
-            Console.WriteLine("[WeatherDetail] 載入中，跳過重複調用");
             return weather;
         }
         
@@ -71,14 +68,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                "LoadWeatherDataAsync", 
-                typeof(WeatherDetail), 
-                ErrorLogService, 
-                NotificationService,
-                true,
-                new { WeatherId });
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWeatherDataAsync), GetType(),
+                additionalData: new { WeatherId });
             throw;
         }
         finally
@@ -95,14 +86,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                "LoadAdditionalDataAsync", 
-                typeof(WeatherDetail), 
-                ErrorLogService, 
-                NotificationService,
-                true,
-                new { WeatherId });
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType(),
+                additionalData: new { WeatherId });
             throw;
         }
     }
@@ -116,14 +101,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                "OnWeatherDataLoaded", 
-                typeof(WeatherDetail), 
-                ErrorLogService, 
-                NotificationService,
-                true,
-                new { WeatherId });
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnWeatherDataLoaded), GetType(),
+                additionalData: new { WeatherId });
             throw;
         }
     }
@@ -167,14 +146,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                "GetTabSections", 
-                typeof(WeatherDetail), 
-                ErrorLogService, 
-                NotificationService,
-                true,
-                new { WeatherId });
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetTabSections), GetType(),
+                additionalData: new { WeatherId });
             throw;
         }
     }
@@ -262,14 +235,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                "GetWeatherBasicFields", 
-                typeof(WeatherDetail), 
-                ErrorLogService, 
-                NotificationService,
-                true,
-                new { WeatherId });
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetWeatherBasicFields), GetType(),
+                additionalData: new { WeatherId });
             throw;
         }
     }

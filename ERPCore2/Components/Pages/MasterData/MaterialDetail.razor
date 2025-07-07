@@ -70,13 +70,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                $"載入材質資料失敗 - MaterialId: {MaterialId}",
-                typeof(MaterialDetail),
-                ErrorLogService,
-                NotificationService
-            );
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadMaterialDataAsync), GetType(),
+                additionalData: $"MaterialId: {MaterialId}");
             throw;
         }
         finally
@@ -93,13 +88,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                "載入額外資料失敗",
-                typeof(MaterialDetail),
-                ErrorLogService,
-                NotificationService
-            );
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType());
             throw;
         }
     }
@@ -113,13 +102,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                "資料載入完成處理失敗",
-                typeof(MaterialDetail),
-                ErrorLogService,
-                NotificationService
-            );
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnMaterialDataLoaded), GetType());
             throw;
         }
     }
@@ -183,13 +166,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                "設定標籤頁結構失敗",
-                typeof(MaterialDetail),
-                ErrorLogService,
-                NotificationService
-            );
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetTabSections), GetType());
             throw;
         }
     }
@@ -291,13 +268,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex,
-                "取得材質基本資料欄位失敗",
-                typeof(MaterialDetail),
-                ErrorLogService,
-                NotificationService
-            );
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetMaterialBasicFields), GetType());
             throw;
         }
     }

@@ -166,7 +166,8 @@
                 ex,
                 nameof(InitializeTableColumns),
                 GetType(),
-                customMessage: "初始化表格欄位失敗");
+                additionalData: "初始化表格欄位失敗"
+            );
         }
     }
 
@@ -238,7 +239,8 @@
                 ex,
                 nameof(ApplyWarehouseFilters),
                 GetType(),
-                customMessage: "篩選倉庫資料失敗");
+                additionalData: "篩選倉庫資料失敗"
+            );
             
             // 發生錯誤時返回原始查詢
             return query.OrderBy(w => w.WarehouseCode);

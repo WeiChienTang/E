@@ -44,12 +44,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                nameof(OnInitialized), 
-                this.GetType(),
-                ErrorLogService,
-                NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitialized), GetType(),
+                additionalData: new { PageName = "SupplierIndex", Action = "OnInitialized" });
         }
     }
 
@@ -65,12 +61,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                nameof(InitializeBreadcrumbs), 
-                this.GetType(),
-                ErrorLogService,
-                NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType(),
+                additionalData: new { PageName = "SupplierIndex", Action = "InitializeBreadcrumbs" });
         }
     }    // 載入基礎資料（選項清單等）
     private async Task LoadBasicDataAsync()
@@ -82,12 +74,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                nameof(LoadBasicDataAsync), 
-                this.GetType(),
-                ErrorLogService,
-                NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadBasicDataAsync), GetType(),
+                additionalData: new { PageName = "SupplierIndex", Action = "LoadBasicDataAsync" });
         }
     }
 
@@ -100,12 +88,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                nameof(LoadSuppliersAsync), 
-                this.GetType(),
-                ErrorLogService,
-                NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSuppliersAsync), GetType(),
+                additionalData: new { PageName = "SupplierIndex", Action = "LoadSuppliersAsync" });
             
             StateHasChanged();
             return new List<Supplier>();
@@ -136,12 +120,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                nameof(InitializeFilters), 
-                this.GetType(),
-                ErrorLogService,
-                NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFilters), GetType(),
+                additionalData: new { PageName = "SupplierIndex", Action = "InitializeFilters" });
         }
     }
 
@@ -166,12 +146,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                nameof(InitializeTableColumns), 
-                this.GetType(),
-                ErrorLogService,
-                NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeTableColumns), GetType(),
+                additionalData: new { PageName = "SupplierIndex", Action = "InitializeTableColumns" });
         }
     }
 
@@ -243,12 +219,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandleErrorSafelyAsync(
-                ex, 
-                nameof(ApplySupplierFilters), 
-                this.GetType(),
-                ErrorLogService,
-                NotificationService);
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplySupplierFilters), GetType(),
+                additionalData: new { PageName = "SupplierIndex", Action = "ApplySupplierFilters" });
             
             return query.OrderBy(s => s.SupplierCode);
         }
