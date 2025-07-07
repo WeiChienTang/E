@@ -2,6 +2,7 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -12,10 +13,19 @@ namespace ERPCore2.Services
     /// </summary>
     public class InventoryTransactionTypeService : GenericManagementService<InventoryTransactionType>, IInventoryTransactionTypeService
     {
+        /// <summary>
+        /// 完整建構子
+        /// </summary>
         public InventoryTransactionTypeService(
             AppDbContext context, 
-            ILogger<GenericManagementService<InventoryTransactionType>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<InventoryTransactionType>> logger) : base(context, logger)
+        {
+        }
+
+        /// <summary>
+        /// 簡易建構子
+        /// </summary>
+        public InventoryTransactionTypeService(AppDbContext context) : base(context)
         {
         }
 
@@ -38,12 +48,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchAsync),
-                    SearchTerm = searchTerm,
-                    ServiceType = GetType().Name 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { 
+                    SearchTerm = searchTerm 
                 });
-                _logger.LogError(ex, "Error searching inventory transaction types with term {SearchTerm}", searchTerm);
                 throw;
             }
         }
@@ -64,13 +71,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsTypeCodeExistsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsTypeCodeExistsAsync), GetType(), _logger, new { 
                     TypeCode = typeCode,
-                    ExcludeId = excludeId,
-                    ServiceType = GetType().Name 
+                    ExcludeId = excludeId 
                 });
-                _logger.LogError(ex, "Error checking if type code exists {TypeCode}", typeCode);
                 return false; // 安全預設值
             }
         }
@@ -89,12 +93,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByTransactionTypeAsync),
-                    TransactionType = transactionType,
-                    ServiceType = GetType().Name 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByTransactionTypeAsync), GetType(), _logger, new { 
+                    TransactionType = transactionType 
                 });
-                _logger.LogError(ex, "Error getting inventory transaction types by type {TransactionType}", transactionType);
                 throw;
             }
         }
@@ -113,11 +114,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetRequiresApprovalTypesAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting requires approval types");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetRequiresApprovalTypesAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -136,11 +133,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAffectsCostTypesAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting affects cost types");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAffectsCostTypesAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -167,12 +160,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GenerateNextNumberAsync),
-                    TypeId = typeId,
-                    ServiceType = GetType().Name 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GenerateNextNumberAsync), GetType(), _logger, new { 
+                    TypeId = typeId 
                 });
-                _logger.LogError(ex, "Error generating next number for type {TypeId}", typeId);
                 return string.Empty; // 安全預設值
             }
         }
@@ -199,12 +189,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ValidateAsync),
-                    EntityId = entity.Id,
-                    ServiceType = GetType().Name 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { 
+                    EntityId = entity.Id 
                 });
-                _logger.LogError(ex, "Error validating inventory transaction type entity {EntityId}", entity.Id);
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
         }
@@ -225,13 +212,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsNameExistsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsNameExistsAsync), GetType(), _logger, new { 
                     Name = name,
-                    ExcludeId = excludeId,
-                    ServiceType = GetType().Name 
+                    ExcludeId = excludeId 
                 });
-                _logger.LogError(ex, "Error checking if name exists {Name}", name);
                 return false; // 安全預設值
             }
         }

@@ -255,8 +255,8 @@ private async Task SaveAsync()
     }
     else
     {
-        await ErrorHandlingHelper.HandleServiceErrorAsync(
-            result, nameof(SaveAsync), NotificationService, "儲存失敗"
+        await ErrorHandlingHelper.HandleServiceResultErrorAsync(
+            result, NotificationService, "儲存失敗"
         );
     }
 }

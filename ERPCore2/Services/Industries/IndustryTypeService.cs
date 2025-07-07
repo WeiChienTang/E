@@ -3,6 +3,7 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -15,8 +16,11 @@ namespace ERPCore2.Services
     {
         public IndustryTypeService(
             AppDbContext context, 
-            ILogger<GenericManagementService<IndustryType>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<IndustryType>> logger) : base(context, logger)
+        {
+        }
+
+        public IndustryTypeService(AppDbContext context) : base(context)
         {
         }
 
@@ -33,11 +37,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting all industry types");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -59,12 +59,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchAsync),
-                    ServiceType = GetType().Name,
-                    SearchTerm = searchTerm 
-                });
-                _logger.LogError(ex, "Error searching industry types with term {SearchTerm}", searchTerm);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, 
+                    new { SearchTerm = searchTerm });
                 throw;
             }
         }
@@ -117,14 +113,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ValidateAsync),
-                    ServiceType = GetType().Name,
-                    EntityId = entity.Id,
-                    EntityName = entity.IndustryTypeName 
-                });
-                _logger.LogError(ex, "Error validating industry type {EntityName} with ID {EntityId}", 
-                    entity.IndustryTypeName, entity.Id);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger,
+                    new { EntityId = entity.Id, EntityName = entity.IndustryTypeName });
                 throw;
             }
         }
@@ -144,18 +134,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(CanDeleteAsync),
-                    ServiceType = GetType().Name,
-                    EntityId = entity.Id,
-                    EntityName = entity.IndustryTypeName 
-                });
-                _logger.LogError(ex, "Error checking if industry type can be deleted {EntityName} with ID {EntityId}", 
-                    entity.IndustryTypeName, entity.Id);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger,
+                    new { EntityId = entity.Id, EntityName = entity.IndustryTypeName });
                 throw;
             }
         }        
-        
 
         #endregion
 
@@ -175,16 +158,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsNameExistsAsync),
-                    ServiceType = GetType().Name,
-                    Name = name,
-                    ExcludeId = excludeId 
-                });
-                _logger.LogError(ex, "Error checking if industry type name exists {IndustryTypeName}", name);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsNameExistsAsync), GetType(), _logger,
+                    new { Name = name, ExcludeId = excludeId });
                 throw;
             }
-        }        public async Task<bool> IsIndustryTypeNameExistsAsync(string industryTypeName, int? excludeId = null)
+        }
+
+        public async Task<bool> IsIndustryTypeNameExistsAsync(string industryTypeName, int? excludeId = null)
         {
             try
             {
@@ -192,13 +172,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsIndustryTypeNameExistsAsync),
-                    ServiceType = GetType().Name,
-                    IndustryTypeName = industryTypeName,
-                    ExcludeId = excludeId 
-                });
-                _logger.LogError(ex, "Error checking if industry type name exists {IndustryTypeName}", industryTypeName);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsIndustryTypeNameExistsAsync), GetType(), _logger,
+                    new { IndustryTypeName = industryTypeName, ExcludeId = excludeId });
                 throw;
             }
         }
@@ -220,16 +195,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsIndustryTypeCodeExistsAsync),
-                    ServiceType = GetType().Name,
-                    IndustryTypeCode = industryTypeCode,
-                    ExcludeId = excludeId 
-                });
-                _logger.LogError(ex, "Error checking if industry type code exists {IndustryTypeCode}", industryTypeCode);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsIndustryTypeCodeExistsAsync), GetType(), _logger,
+                    new { IndustryTypeCode = industryTypeCode, ExcludeId = excludeId });
                 throw;
             }
-        }        public async Task<(List<IndustryType> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize)
+        }
+
+        public async Task<(List<IndustryType> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize)
         {
             try
             {
@@ -237,14 +209,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetPagedAsync),
-                    ServiceType = GetType().Name,
-                    PageNumber = pageNumber,
-                    PageSize = pageSize 
-                });
-                _logger.LogError(ex, "Error getting paged industry types with page {PageNumber} and size {PageSize}", 
-                    pageNumber, pageSize);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedAsync), GetType(), _logger,
+                    new { PageNumber = pageNumber, PageSize = pageSize });
                 throw;
             }
         }

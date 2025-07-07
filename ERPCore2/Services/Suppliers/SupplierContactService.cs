@@ -2,6 +2,7 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -15,7 +16,12 @@ namespace ERPCore2.Services
         public SupplierContactService(
             AppDbContext context, 
             ILogger<GenericManagementService<SupplierContact>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            IErrorLogService errorLogService) : base(context, logger)
+        {
+        }
+
+        // 簡易建構子
+        public SupplierContactService(AppDbContext context) : base(context)
         {
         }
 
@@ -35,8 +41,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "Error in GetAllAsync");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), typeof(SupplierContactService), _logger);
                 return new List<SupplierContact>();
             }
         }
@@ -61,8 +66,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "Error in SearchAsync");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), typeof(SupplierContactService), _logger);
                 return new List<SupplierContact>();
             }
         }
@@ -110,8 +114,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "Error in ValidateAsync for supplier contact");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), typeof(SupplierContactService), _logger);
                 return ServiceResult.Failure($"驗證時發生錯誤: {ex.Message}");
             }
         }
@@ -132,8 +135,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "Error getting supplier contacts for supplier {SupplierId}", supplierId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySupplierIdAsync), typeof(SupplierContactService), _logger);
                 throw;
             }
         }
@@ -151,8 +153,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "Error getting supplier contacts by type {ContactTypeId}", contactTypeId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByContactTypeAsync), typeof(SupplierContactService), _logger);
                 throw;
             }
         }
@@ -167,8 +168,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "Error getting primary contact for supplier {SupplierId}", supplierId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPrimaryContactAsync), typeof(SupplierContactService), _logger);
                 throw;
             }
         }
@@ -185,9 +185,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "Error getting contact by type for supplier {SupplierId}, type {ContactTypeId}", 
-                    supplierId, contactTypeId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetContactByTypeAsync), typeof(SupplierContactService), _logger);
                 throw;
             }
         }
@@ -229,8 +227,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "Error setting primary contact {ContactId}", contactId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetPrimaryContactAsync), typeof(SupplierContactService), _logger);
                 return ServiceResult.Failure($"設定主要聯絡方式時發生錯誤: {ex.Message}");
             }
         }
@@ -255,8 +252,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "Error copying contact to supplier {TargetSupplierId}", targetSupplierId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CopyContactToSupplierAsync), typeof(SupplierContactService), _logger);
                 return ServiceResult<SupplierContact>.Failure($"複製聯絡方式時發生錯誤: {ex.Message}");
             }
         }
@@ -265,10 +261,10 @@ namespace ERPCore2.Services
         {
             try
             {
-                var hasEemail = await _dbSet
+                var hasPrimary = await _dbSet
                     .AnyAsync(sc => sc.SupplierId == supplierId && sc.IsPrimary && !sc.IsDeleted);
 
-                if (!hasEemail)
+                if (!hasPrimary)
                 {
                     // 找第一個可用的聯絡方式設為主要
                     var firstContact = await _dbSet
@@ -288,8 +284,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "Error ensuring supplier has primary contact {SupplierId}", supplierId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(EnsureSupplierHasPrimaryContactAsync), typeof(SupplierContactService), _logger);
                 return ServiceResult.Failure($"確保主要聯絡方式時發生錯誤: {ex.Message}");
             }
         }
@@ -310,8 +305,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "Error getting contacts with default for supplier {SupplierId}", supplierId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetContactsWithDefaultAsync), typeof(SupplierContactService), _logger);
                 throw;
             }
         }
@@ -367,8 +361,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "Error updating supplier contacts for supplier {SupplierId}", supplierId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateSupplierContactsAsync), typeof(SupplierContactService), _logger);
                 return ServiceResult.Failure($"更新廠商聯絡方式時發生錯誤: {ex.Message}");
             }
         }
@@ -379,98 +372,152 @@ namespace ERPCore2.Services
 
         public SupplierContact CreateNewContact(int supplierId, int contactCount)
         {
-            return new SupplierContact
+            try
             {
-                SupplierId = supplierId,
-                ContactTypeId = null,
-                ContactValue = string.Empty,
-                IsPrimary = contactCount == 0, // 第一個聯絡方式預設為主要
-                Status = EntityStatus.Active
-            };
+                return new SupplierContact
+                {
+                    SupplierId = supplierId,
+                    ContactTypeId = null,
+                    ContactValue = string.Empty,
+                    IsPrimary = contactCount == 0, // 第一個聯絡方式預設為主要
+                    Status = EntityStatus.Active
+                };
+            }
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(CreateNewContact), typeof(SupplierContactService), _logger);
+                return new SupplierContact
+                {
+                    SupplierId = supplierId,
+                    ContactTypeId = null,
+                    ContactValue = string.Empty,
+                    IsPrimary = false,
+                    Status = EntityStatus.Active
+                };
+            }
         }
 
         public void InitializeDefaultContacts(List<SupplierContact> contactList, List<ContactType> contactTypes)
         {
-            // 確保有基本的聯絡類型
-            var defaultTypes = new[] { "電話", "傳真", "Email" };
-
-            foreach (var typeName in defaultTypes)
+            try
             {
-                var contactType = contactTypes.FirstOrDefault(ct => ct.TypeName == typeName);
-                if (contactType != null && !contactList.Any(c => c.ContactTypeId == contactType.Id))
+                // 確保有基本的聯絡類型
+                var defaultTypes = new[] { "電話", "傳真", "Email" };
+
+                foreach (var typeName in defaultTypes)
                 {
-                    var newContact = new SupplierContact
+                    var contactType = contactTypes.FirstOrDefault(ct => ct.TypeName == typeName);
+                    if (contactType != null && !contactList.Any(c => c.ContactTypeId == contactType.Id))
                     {
-                        ContactTypeId = contactType.Id,
-                        ContactValue = string.Empty,
-                        IsPrimary = contactList.Count == 0,
-                        Status = EntityStatus.Active
-                    };
-                    contactList.Add(newContact);
+                        var newContact = new SupplierContact
+                        {
+                            ContactTypeId = contactType.Id,
+                            ContactValue = string.Empty,
+                            IsPrimary = contactList.Count == 0,
+                            Status = EntityStatus.Active
+                        };
+                        contactList.Add(newContact);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(InitializeDefaultContacts), typeof(SupplierContactService), _logger);
             }
         }
 
         public int? GetDefaultContactTypeId(int contactCount, List<ContactType> contactTypes)
         {
-            // 根據聯絡方式數量決定預設的聯絡類型
-            var defaultTypes = new[] { "電話", "傳真", "Email" };
-            
-            if (contactCount < defaultTypes.Length)
+            try
             {
-                var typeName = defaultTypes[contactCount];
-                var contactType = contactTypes.FirstOrDefault(ct => ct.TypeName == typeName);
-                return contactType?.Id;
+                // 根據聯絡方式數量決定預設的聯絡類型
+                var defaultTypes = new[] { "電話", "傳真", "Email" };
+                
+                if (contactCount < defaultTypes.Length)
+                {
+                    var typeName = defaultTypes[contactCount];
+                    var contactType = contactTypes.FirstOrDefault(ct => ct.TypeName == typeName);
+                    return contactType?.Id;
+                }
+                
+                // 如果超出預設類型，返回第一個可用的類型
+                return contactTypes.FirstOrDefault()?.Id;
             }
-            
-            // 如果超出預設類型，返回第一個可用的類型
-            return contactTypes.FirstOrDefault()?.Id;
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetDefaultContactTypeId), typeof(SupplierContactService), _logger);
+                return null;
+            }
         }
 
         public ServiceResult EnsurePrimaryContactExists(List<SupplierContact> contacts)
         {
-            if (!contacts.Any(c => c.IsPrimary))
+            try
             {
-                var firstContact = contacts.FirstOrDefault();
-                if (firstContact != null)
+                if (!contacts.Any(c => c.IsPrimary))
                 {
-                    firstContact.IsPrimary = true;
+                    var firstContact = contacts.FirstOrDefault();
+                    if (firstContact != null)
+                    {
+                        firstContact.IsPrimary = true;
+                    }
                 }
-            }
 
-            return ServiceResult.Success();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(EnsurePrimaryContactExists), typeof(SupplierContactService), _logger);
+                return ServiceResult.Failure($"確保主要聯絡方式時發生錯誤: {ex.Message}");
+            }
         }
 
         public int GetCompletedContactCount(List<SupplierContact> contacts)
         {
-            if (contacts == null)
-                return 0;
+            try
+            {
+                if (contacts == null)
+                    return 0;
 
-            return contacts.Count(c => 
-                !string.IsNullOrWhiteSpace(c.ContactValue) &&
-                c.ContactTypeId.HasValue);
+                return contacts.Count(c => 
+                    !string.IsNullOrWhiteSpace(c.ContactValue) &&
+                    c.ContactTypeId.HasValue);
+            }
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetCompletedContactCount), typeof(SupplierContactService), _logger);
+                return 0;
+            }
         }
 
         public int GetContactCompletedFieldsCount(List<SupplierContact> contacts)
         {
-            if (contacts == null)
-                return 0;
-
-            int totalFields = 0;
-            int completedFields = 0;
-
-            foreach (var contact in contacts)
+            try
             {
-                totalFields += 2; // ContactTypeId, ContactValue
+                if (contacts == null)
+                    return 0;
 
-                if (contact.ContactTypeId.HasValue)
-                    completedFields++;
+                int totalFields = 0;
+                int completedFields = 0;
 
-                if (!string.IsNullOrWhiteSpace(contact.ContactValue))
-                    completedFields++;
+                foreach (var contact in contacts)
+                {
+                    totalFields += 2; // ContactTypeId, ContactValue
+
+                    if (contact.ContactTypeId.HasValue)
+                        completedFields++;
+
+                    if (!string.IsNullOrWhiteSpace(contact.ContactValue))
+                        completedFields++;
+                }
+
+                return completedFields;
             }
-
-            return completedFields;
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetContactCompletedFieldsCount), typeof(SupplierContactService), _logger);
+                return 0;
+            }
         }
 
         #endregion

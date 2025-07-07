@@ -3,6 +3,7 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -15,8 +16,11 @@ namespace ERPCore2.Services
     {
         public AddressTypeService(
             AppDbContext context, 
-            ILogger<GenericManagementService<AddressType>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<AddressType>> logger) : base(context, logger)
+        {
+        }
+
+        public AddressTypeService(AppDbContext context) : base(context)
         {
         }
 
@@ -32,12 +36,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting all address types");
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
+                return new List<AddressType>();
             }
         }
 
@@ -53,12 +53,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetActiveAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting active address types");
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetActiveAsync), GetType(), _logger);
+                return new List<AddressType>();
             }
         }
 
@@ -84,12 +80,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ValidateAsync),
-                    EntityId = entity.Id,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error validating address type entity {EntityId}", entity.Id);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger);
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
         }
@@ -111,13 +102,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchAsync),
-                    SearchTerm = searchTerm,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error searching address types with term {SearchTerm}", searchTerm);
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger);
+                return new List<AddressType>();
             }
         }
 
@@ -135,13 +121,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsNameExistsAsync),
-                    Name = name,
-                    ExcludeId = excludeId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error checking if address type name exists {Name}", name);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsNameExistsAsync), GetType(), _logger);
                 return false; // 安全預設值
             }
         }
@@ -155,13 +135,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsTypeNameExistsAsync),
-                    TypeName = typeName,
-                    ExcludeId = excludeId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error checking if address type name exists {TypeName}", typeName);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsTypeNameExistsAsync), GetType(), _logger);
                 return false; // 安全預設值
             }
         }
@@ -185,13 +159,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetPagedAsync),
-                    PageNumber = pageNumber,
-                    PageSize = pageSize,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting paged address types page {PageNumber} size {PageSize}", pageNumber, pageSize);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedAsync), GetType(), _logger);
                 return (new List<AddressType>(), 0); // 安全預設值
             }
         }
@@ -211,12 +179,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(CanDeleteAsync),
-                    EntityId = entity.Id,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error checking if address type can be deleted {EntityId}", entity.Id);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger);
                 return ServiceResult.Failure("檢查刪除條件時發生錯誤");
             }
         }
@@ -240,12 +203,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(DeleteAsync),
-                    Id = id,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error deleting address type {Id}", id);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteAsync), GetType(), _logger);
                 return ServiceResult.Failure("刪除過程發生錯誤");
             }
         }

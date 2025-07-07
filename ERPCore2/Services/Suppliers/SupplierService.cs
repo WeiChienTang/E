@@ -2,6 +2,7 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -12,10 +13,20 @@ namespace ERPCore2.Services
     /// </summary>
     public class SupplierService : GenericManagementService<Supplier>, ISupplierService
     {
+        /// <summary>
+        /// 完整建構子 - 包含 ILogger
+        /// </summary>
         public SupplierService(
             AppDbContext context, 
-            ILogger<GenericManagementService<Supplier>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<Supplier>> logger) : base(context, logger)
+        {
+        }
+
+        /// <summary>
+        /// 簡易建構子 - 不包含 ILogger
+        /// </summary>
+        public SupplierService(
+            AppDbContext context) : base(context)
         {
         }
 
@@ -34,11 +45,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting all suppliers");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -58,12 +65,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByIdAsync),
-                    Id = id,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting supplier by id {Id}", id);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByIdAsync), GetType(), _logger, new { Id = id });
                 throw;
             }
         }
@@ -88,15 +90,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchAsync),
-                    SearchTerm = searchTerm,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error searching suppliers with term {SearchTerm}", searchTerm);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { SearchTerm = searchTerm });
                 throw;
             }
-        }        public override async Task<ServiceResult> ValidateAsync(Supplier entity)
+        }
+
+        public override async Task<ServiceResult> ValidateAsync(Supplier entity)
         {
             try
             {
@@ -141,13 +140,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ValidateAsync),
-                    EntityId = entity.Id,
-                    SupplierCode = entity.SupplierCode,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error validating supplier {SupplierCode}", entity.SupplierCode);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, 
+                    new { EntityId = entity.Id, SupplierCode = entity.SupplierCode });
                 throw;
             }
         }
@@ -167,12 +161,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetBySupplierCodeAsync),
-                    SupplierCode = supplierCode,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting supplier by code {SupplierCode}", supplierCode);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySupplierCodeAsync), GetType(), _logger, 
+                    new { SupplierCode = supplierCode });
                 throw;
             }
         }
@@ -190,13 +180,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsSupplierCodeExistsAsync),
-                    SupplierCode = supplierCode,
-                    ExcludeId = excludeId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error checking supplier code exists {SupplierCode}", supplierCode);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsSupplierCodeExistsAsync), GetType(), _logger, 
+                    new { SupplierCode = supplierCode, ExcludeId = excludeId });
                 throw;
             }
         }
@@ -214,12 +199,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetBySupplierTypeAsync),
-                    SupplierTypeId = supplierTypeId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting suppliers by type {SupplierTypeId}", supplierTypeId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySupplierTypeAsync), GetType(), _logger, 
+                    new { SupplierTypeId = supplierTypeId });
                 throw;
             }
         }
@@ -237,12 +218,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByIndustryTypeAsync),
-                    IndustryTypeId = industryTypeId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting suppliers by industry type {IndustryTypeId}", industryTypeId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByIndustryTypeAsync), GetType(), _logger, 
+                    new { IndustryTypeId = industryTypeId });
                 throw;
             }
         }
@@ -262,11 +239,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetSupplierTypesAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting supplier types");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetSupplierTypesAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -282,11 +255,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetIndustryTypesAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting industry types");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetIndustryTypesAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -307,12 +276,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetSupplierContactsAsync),
-                    SupplierId = supplierId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting supplier contacts for supplier {SupplierId}", supplierId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetSupplierContactsAsync), GetType(), _logger, 
+                    new { SupplierId = supplierId });
                 throw;
             }
         }
@@ -335,7 +300,9 @@ namespace ERPCore2.Services
                 {
                     contact.IsDeleted = true;
                     contact.UpdatedAt = DateTime.UtcNow;
-                }                // 更新或新增聯絡資料
+                }
+
+                // 更新或新增聯絡資料
                 foreach (var contact in contacts)
                 {
                     if (contact.Id <= 0) // 新增（包括負數臨時 ID）
@@ -375,13 +342,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(UpdateSupplierContactsAsync),
-                    SupplierId = supplierId,
-                    ContactsCount = contacts.Count,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error updating supplier contacts for supplier {SupplierId}", supplierId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateSupplierContactsAsync), GetType(), _logger, 
+                    new { SupplierId = supplierId, ContactsCount = contacts.Count });
                 return ServiceResult.Failure($"更新廠商聯絡資料時發生錯誤: {ex.Message}");
             }
         }
@@ -402,12 +364,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetSupplierAddressesAsync),
-                    SupplierId = supplierId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting supplier addresses for supplier {SupplierId}", supplierId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetSupplierAddressesAsync), GetType(), _logger, 
+                    new { SupplierId = supplierId });
                 throw;
             }
         }
@@ -466,13 +424,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(UpdateSupplierAddressesAsync),
-                    SupplierId = supplierId,
-                    AddressesCount = addresses.Count,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error updating supplier addresses for supplier {SupplierId}", supplierId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateSupplierAddressesAsync), GetType(), _logger, 
+                    new { SupplierId = supplierId, AddressesCount = addresses.Count });
                 return ServiceResult.Failure($"更新廠商地址資料時發生錯誤: {ex.Message}");
             }
         }
@@ -499,13 +452,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(UpdateSupplierStatusAsync),
-                    SupplierId = supplierId,
-                    Status = status,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error updating supplier status for supplier {SupplierId}", supplierId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateSupplierStatusAsync), GetType(), _logger, 
+                    new { SupplierId = supplierId, Status = status });
                 return ServiceResult.Failure($"更新廠商狀態時發生錯誤: {ex.Message}");
             }
         }
@@ -516,33 +464,58 @@ namespace ERPCore2.Services
 
         public void InitializeNewSupplier(Supplier supplier)
         {
-            supplier.SupplierCode = string.Empty;
-            supplier.CompanyName = string.Empty;
-            supplier.ContactPerson = string.Empty;
-            supplier.TaxNumber = string.Empty;
-            supplier.PaymentTerms = string.Empty;
-            supplier.SupplierTypeId = null;
-            supplier.IndustryTypeId = null;
-            supplier.CreditLimit = null;
-            supplier.Status = EntityStatus.Active;
+            try
+            {
+                supplier.SupplierCode = string.Empty;
+                supplier.CompanyName = string.Empty;
+                supplier.ContactPerson = string.Empty;
+                supplier.TaxNumber = string.Empty;
+                supplier.PaymentTerms = string.Empty;
+                supplier.SupplierTypeId = null;
+                supplier.IndustryTypeId = null;
+                supplier.CreditLimit = null;
+                supplier.Status = EntityStatus.Active;
+            }
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(InitializeNewSupplier), GetType(), _logger);
+                throw;
+            }
         }
 
         public int GetBasicRequiredFieldsCount()
         {
-            return 2; // SupplierCode, CompanyName
+            try
+            {
+                return 2; // SupplierCode, CompanyName
+            }
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetBasicRequiredFieldsCount), GetType(), _logger);
+                throw;
+            }
         }
 
         public int GetBasicCompletedFieldsCount(Supplier supplier)
         {
-            int count = 0;
+            try
+            {
+                int count = 0;
 
-            if (!string.IsNullOrWhiteSpace(supplier.SupplierCode))
-                count++;
+                if (!string.IsNullOrWhiteSpace(supplier.SupplierCode))
+                    count++;
 
-            if (!string.IsNullOrWhiteSpace(supplier.CompanyName))
-                count++;
+                if (!string.IsNullOrWhiteSpace(supplier.CompanyName))
+                    count++;
 
-            return count;
+                return count;
+            }
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetBasicCompletedFieldsCount), GetType(), _logger, 
+                    new { SupplierId = supplier.Id });
+                throw;
+            }
         }
 
         #endregion

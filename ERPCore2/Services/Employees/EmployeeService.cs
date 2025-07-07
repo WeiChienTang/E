@@ -1,6 +1,7 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
+using ERPCore2.Helpers;
 using ERPCore2.Services;
 using ERPCore2.Services.GenericManagementService;
 using Microsoft.EntityFrameworkCore;
@@ -14,12 +15,23 @@ namespace ERPCore2.Services
     /// </summary>
     public class EmployeeService : GenericManagementService<Employee>, IEmployeeService
     {
+        /// <summary>
+        /// 完整建構子 - 包含 Logger
+        /// </summary>
         public EmployeeService(
             AppDbContext context, 
-            ILogger<GenericManagementService<Employee>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<Employee>> logger) : base(context, logger)
         {
-        }        // 覆寫 GetAllAsync 以載入相關資料
+        }
+
+        /// <summary>
+        /// 簡易建構子 - 不包含 Logger
+        /// </summary>
+        public EmployeeService(AppDbContext context) : base(context)
+        {
+        }
+
+        // 覆寫 GetAllAsync 以載入相關資料
         public override async Task<List<Employee>> GetAllAsync()
         {
             try
@@ -36,14 +48,15 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
                     Method = nameof(GetAllAsync),
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error getting all employees");
                 throw;
             }
-        }        // 覆寫 GetByIdAsync 以載入相關資料
+        }
+
+        // 覆寫 GetByIdAsync 以載入相關資料
         public override async Task<Employee?> GetByIdAsync(int id)
         {
             try
@@ -58,12 +71,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByIdAsync), GetType(), _logger, new { 
                     Method = nameof(GetByIdAsync),
                     ServiceType = GetType().Name,
                     EmployeeId = id
                 });
-                _logger.LogError(ex, "Error getting employee by ID: {EmployeeId}", id);
                 throw;
             }
         }
@@ -89,12 +101,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByUsernameAsync), GetType(), _logger, new { 
                     Method = nameof(GetByUsernameAsync),
                     ServiceType = GetType().Name,
                     Username = username
                 });
-                _logger.LogError(ex, "Error getting employee by username: {Username}", username);
                 return ServiceResult<Employee>.Failure($"取得員工資料時發生錯誤：{ex.Message}");
             }
         }
@@ -120,12 +131,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByEmployeeCodeAsync), GetType(), _logger, new { 
                     Method = nameof(GetByEmployeeCodeAsync),
                     ServiceType = GetType().Name,
                     EmployeeCode = employeeCode
                 });
-                _logger.LogError(ex, "Error getting employee by employee code: {EmployeeCode}", employeeCode);
                 return ServiceResult<Employee>.Failure($"取得員工資料時發生錯誤：{ex.Message}");
             }
         }
@@ -150,13 +160,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsUsernameExistsAsync), GetType(), _logger, new { 
                     Method = nameof(IsUsernameExistsAsync),
                     ServiceType = GetType().Name,
                     Username = username,
                     ExcludeEmployeeId = excludeEmployeeId
                 });
-                _logger.LogError(ex, "Error checking username exists: {Username}", username);
                 return ServiceResult<bool>.Failure($"檢查使用者名稱時發生錯誤：{ex.Message}");
             }
         }
@@ -181,13 +190,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsEmployeeCodeExistsAsync), GetType(), _logger, new { 
                     Method = nameof(IsEmployeeCodeExistsAsync),
                     ServiceType = GetType().Name,
                     EmployeeCode = employeeCode,
                     ExcludeEmployeeId = excludeEmployeeId
                 });
-                _logger.LogError(ex, "Error checking employee code exists: {EmployeeCode}", employeeCode);
                 return ServiceResult<bool>.Failure($"檢查員工編號時發生錯誤：{ex.Message}");
             }
         }
@@ -200,7 +208,9 @@ namespace ERPCore2.Services
             try
             {
                 if (string.IsNullOrWhiteSpace(searchTerm))
-                    return ServiceResult<List<Employee>>.Success(await GetAllAsync());                var employees = await _dbSet
+                    return ServiceResult<List<Employee>>.Success(await GetAllAsync());
+
+                var employees = await _dbSet
                     .Include(e => e.Role)
                     .Where(e => !e.IsDeleted && 
                                ((e.FirstName != null && e.FirstName.Contains(searchTerm)) ||
@@ -215,12 +225,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchEmployeesAsync), GetType(), _logger, new { 
                     Method = nameof(SearchEmployeesAsync),
                     ServiceType = GetType().Name,
                     SearchTerm = searchTerm
                 });
-                _logger.LogError(ex, "Error searching employees: {SearchTerm}", searchTerm);
                 return ServiceResult<List<Employee>>.Failure($"搜尋員工時發生錯誤：{ex.Message}");
             }
         }
@@ -242,12 +251,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetEmployeesByRoleAsync), GetType(), _logger, new { 
                     Method = nameof(GetEmployeesByRoleAsync),
                     ServiceType = GetType().Name,
                     RoleId = roleId
                 });
-                _logger.LogError(ex, "Error getting employees by role: {RoleId}", roleId);
                 return ServiceResult<List<Employee>>.Failure($"取得角色員工時發生錯誤：{ex.Message}");
             }
         }
@@ -272,12 +280,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetEmployeesByDepartmentAsync), GetType(), _logger, new { 
                     Method = nameof(GetEmployeesByDepartmentAsync),
                     ServiceType = GetType().Name,
                     Department = department
                 });
-                _logger.LogError(ex, "Error getting employees by department: {Department}", department);
                 return ServiceResult<List<Employee>>.Failure($"取得部門員工時發生錯誤：{ex.Message}");
             }
         }
@@ -307,13 +314,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ChangeEmployeeRoleAsync), GetType(), _logger, new { 
                     Method = nameof(ChangeEmployeeRoleAsync),
                     ServiceType = GetType().Name,
                     EmployeeId = employeeId,
                     NewRoleId = newRoleId
                 });
-                _logger.LogError(ex, "Error changing employee role: {EmployeeId}, {NewRoleId}", employeeId, newRoleId);
                 return ServiceResult.Failure($"變更員工角色時發生錯誤：{ex.Message}");
             }
         }
@@ -330,13 +336,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetEmployeeActiveStatusAsync), GetType(), _logger, new { 
                     Method = nameof(SetEmployeeActiveStatusAsync),
                     ServiceType = GetType().Name,
                     EmployeeId = employeeId,
                     IsActive = isActive
                 });
-                _logger.LogError(ex, "Error setting employee active status: {EmployeeId}, {IsActive}", employeeId, isActive);
                 return ServiceResult.Failure($"設定員工狀態時發生錯誤：{ex.Message}");
             }
         }
@@ -358,11 +363,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetActiveEmployeesAsync), GetType(), _logger, new { 
                     Method = nameof(GetActiveEmployeesAsync),
                     ServiceType = GetType().Name
                 });
-                _logger.LogError(ex, "Error getting active employees");
                 return ServiceResult<List<Employee>>.Failure($"取得啟用員工清單時發生錯誤：{ex.Message}");
             }
         }
@@ -406,7 +410,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error validating employee data");
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(ValidateEmployeeData), GetType(), _logger);
                 return ServiceResult<bool>.Failure($"驗證員工資料時發生錯誤：{ex.Message}");
             }
         }
@@ -440,15 +444,16 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GenerateNextEmployeeCodeAsync), GetType(), _logger, new { 
                     Method = nameof(GenerateNextEmployeeCodeAsync),
                     ServiceType = GetType().Name,
                     Prefix = prefix
                 });
-                _logger.LogError(ex, "Error generating next employee code: {Prefix}", prefix);
                 return ServiceResult<string>.Failure($"產生員工編號時發生錯誤：{ex.Message}");
             }
-        }        /// <summary>
+        }
+
+        /// <summary>
         /// 驗證員工資料
         /// </summary>
         public override async Task<ServiceResult> ValidateAsync(Employee entity)
@@ -525,15 +530,16 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { 
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity?.Id
                 });
-                _logger.LogError(ex, "Error validating employee: {EntityId}", entity?.Id);
                 return ServiceResult.Failure($"驗證員工資料時發生錯誤：{ex.Message}");
             }
-        }        // 覆寫 SearchAsync 實作搜尋邏輯
+        }
+
+        // 覆寫 SearchAsync 實作搜尋邏輯
         public override async Task<List<Employee>> SearchAsync(string searchTerm)
         {
             try
@@ -543,17 +549,18 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { 
                     Method = nameof(SearchAsync),
                     ServiceType = GetType().Name,
                     SearchTerm = searchTerm
                 });
-                _logger.LogError(ex, "Error in SearchAsync: {SearchTerm}", searchTerm);
                 return new List<Employee>();
             }
         }
 
-        #region 聯絡資料與地址管理        /// <summary>
+        #region 聯絡資料與地址管理
+
+        /// <summary>
         /// 更新員工聯絡資料
         /// </summary>
         public async Task<ServiceResult> UpdateEmployeeContactsAsync(int employeeId, List<EmployeeContact> contacts)
@@ -565,7 +572,8 @@ namespace ERPCore2.Services
                     .Where(ec => ec.EmployeeId == employeeId)
                     .ToListAsync();
                 _context.EmployeeContacts.RemoveRange(existingContacts);
-                  // 新增新的聯絡資料
+
+                // 新增新的聯絡資料
                 foreach (var contact in contacts.Where(c => !string.IsNullOrWhiteSpace(c.ContactValue)))
                 {
                     // 建立新的聯絡實體以避免 ID 衝突
@@ -590,12 +598,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateEmployeeContactsAsync), GetType(), _logger, new { 
                     Method = nameof(UpdateEmployeeContactsAsync),
                     ServiceType = GetType().Name,
                     EmployeeId = employeeId
                 });
-                _logger.LogError(ex, "Error updating employee contacts: {EmployeeId}", employeeId);
                 return ServiceResult.Failure($"更新員工聯絡資料失敗：{ex.Message}");
             }
         }
@@ -612,7 +619,8 @@ namespace ERPCore2.Services
                     .Where(ea => ea.EmployeeId == employeeId)
                     .ToListAsync();
                 _context.EmployeeAddresses.RemoveRange(existingAddresses);
-                  // 新增新的地址資料
+
+                // 新增新的地址資料
                 foreach (var address in addresses.Where(a => !string.IsNullOrWhiteSpace(a.Address) || !string.IsNullOrWhiteSpace(a.City)))
                 {
                     // 建立新的地址實體以避免 ID 衝突
@@ -640,12 +648,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateEmployeeAddressesAsync), GetType(), _logger, new { 
                     Method = nameof(UpdateEmployeeAddressesAsync),
                     ServiceType = GetType().Name,
                     EmployeeId = employeeId
                 });
-                _logger.LogError(ex, "Error updating employee addresses: {EmployeeId}", employeeId);
                 return ServiceResult.Failure($"更新員工地址資料失敗：{ex.Message}");
             }
         }

@@ -1,7 +1,9 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -14,7 +16,20 @@ namespace ERPCore2.Services
     public class AuthenticationService : IAuthenticationService
     {
         private readonly AppDbContext _context;
+        private readonly ILogger<AuthenticationService>? _logger;
 
+        /// <summary>
+        /// 完整建構子 (包含 ILogger)
+        /// </summary>
+        public AuthenticationService(AppDbContext context, ILogger<AuthenticationService> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        /// <summary>
+        /// 簡易建構子
+        /// </summary>
         public AuthenticationService(AppDbContext context)
         {
             _context = context;
@@ -53,7 +68,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                return ServiceResult<Employee>.Failure($"登入時發生錯誤：{ex.Message}");
+                var errorId = await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(LoginAsync), typeof(AuthenticationService), _logger);
+                return ServiceResult<Employee>.Failure($"登入時發生錯誤，錯誤編號：{errorId}");
             }
         }
 
@@ -77,7 +93,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                return ServiceResult.Failure($"登出時發生錯誤：{ex.Message}");
+                var errorId = await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(LogoutAsync), typeof(AuthenticationService), _logger);
+                return ServiceResult.Failure($"登出時發生錯誤，錯誤編號：{errorId}");
             }
         }
 
@@ -110,7 +127,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                return ServiceResult.Failure($"變更密碼時發生錯誤：{ex.Message}");
+                var errorId = await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ChangePasswordAsync), typeof(AuthenticationService), _logger);
+                return ServiceResult.Failure($"變更密碼時發生錯誤，錯誤編號：{errorId}");
             }
         }
 
@@ -140,7 +158,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                return ServiceResult.Failure($"重設密碼時發生錯誤：{ex.Message}");
+                var errorId = await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ResetPasswordAsync), typeof(AuthenticationService), _logger);
+                return ServiceResult.Failure($"重設密碼時發生錯誤，錯誤編號：{errorId}");
             }
         }
 
@@ -149,32 +168,40 @@ namespace ERPCore2.Services
         /// </summary>
         public ServiceResult<bool> ValidatePasswordStrength(string password)
         {
-            if (string.IsNullOrWhiteSpace(password))
-                return ServiceResult<bool>.Failure("密碼不能為空");
+            try
+            {
+                if (string.IsNullOrWhiteSpace(password))
+                    return ServiceResult<bool>.Failure("密碼不能為空");
 
-            if (password.Length < 8)
-                return ServiceResult<bool>.Failure("密碼長度不能少於8個字元");
+                if (password.Length < 8)
+                    return ServiceResult<bool>.Failure("密碼長度不能少於8個字元");
 
-            if (password.Length > 128)
-                return ServiceResult<bool>.Failure("密碼長度不能超過128個字元");
+                if (password.Length > 128)
+                    return ServiceResult<bool>.Failure("密碼長度不能超過128個字元");
 
-            // 檢查是否包含大寫字母
-            if (!Regex.IsMatch(password, @"[A-Z]"))
-                return ServiceResult<bool>.Failure("密碼必須包含至少一個大寫字母");
+                // 檢查是否包含大寫字母
+                if (!Regex.IsMatch(password, @"[A-Z]"))
+                    return ServiceResult<bool>.Failure("密碼必須包含至少一個大寫字母");
 
-            // 檢查是否包含小寫字母
-            if (!Regex.IsMatch(password, @"[a-z]"))
-                return ServiceResult<bool>.Failure("密碼必須包含至少一個小寫字母");
+                // 檢查是否包含小寫字母
+                if (!Regex.IsMatch(password, @"[a-z]"))
+                    return ServiceResult<bool>.Failure("密碼必須包含至少一個小寫字母");
 
-            // 檢查是否包含數字
-            if (!Regex.IsMatch(password, @"[0-9]"))
-                return ServiceResult<bool>.Failure("密碼必須包含至少一個數字");
+                // 檢查是否包含數字
+                if (!Regex.IsMatch(password, @"[0-9]"))
+                    return ServiceResult<bool>.Failure("密碼必須包含至少一個數字");
 
-            // 檢查是否包含特殊字元
-            if (!Regex.IsMatch(password, @"[!@#$%^&*()_+\-=\[\]{};':""\\|,.<>\/?]"))
-                return ServiceResult<bool>.Failure("密碼必須包含至少一個特殊字元");
+                // 檢查是否包含特殊字元
+                if (!Regex.IsMatch(password, @"[!@#$%^&*()_+\-=\[\]{};':""\\|,.<>\/?]"))
+                    return ServiceResult<bool>.Failure("密碼必須包含至少一個特殊字元");
 
-            return ServiceResult<bool>.Success(true);
+                return ServiceResult<bool>.Success(true);
+            }
+            catch (Exception ex)
+            {
+                var errorId = ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(ValidatePasswordStrength), typeof(AuthenticationService), _logger);
+                return ServiceResult<bool>.Failure($"驗證密碼強度時發生錯誤，錯誤編號：{errorId}");
+            }
         }
 
         /// <summary>
@@ -182,24 +209,32 @@ namespace ERPCore2.Services
         /// </summary>
         public ServiceResult<bool> ValidateUsername(string username)
         {
-            if (string.IsNullOrWhiteSpace(username))
-                return ServiceResult<bool>.Failure("使用者名稱不能為空");
+            try
+            {
+                if (string.IsNullOrWhiteSpace(username))
+                    return ServiceResult<bool>.Failure("使用者名稱不能為空");
 
-            if (username.Length < 3)
-                return ServiceResult<bool>.Failure("使用者名稱長度不能少於3個字元");
+                if (username.Length < 3)
+                    return ServiceResult<bool>.Failure("使用者名稱長度不能少於3個字元");
 
-            if (username.Length > 50)
-                return ServiceResult<bool>.Failure("使用者名稱長度不能超過50個字元");
+                if (username.Length > 50)
+                    return ServiceResult<bool>.Failure("使用者名稱長度不能超過50個字元");
 
-            // 檢查是否只包含英文字母、數字和底線
-            if (!Regex.IsMatch(username, @"^[a-zA-Z0-9_]+$"))
-                return ServiceResult<bool>.Failure("使用者名稱只能包含英文字母、數字和底線");
+                // 檢查是否只包含英文字母、數字和底線
+                if (!Regex.IsMatch(username, @"^[a-zA-Z0-9_]+$"))
+                    return ServiceResult<bool>.Failure("使用者名稱只能包含英文字母、數字和底線");
 
-            // 不能以數字開頭
-            if (char.IsDigit(username[0]))
-                return ServiceResult<bool>.Failure("使用者名稱不能以數字開頭");
+                // 不能以數字開頭
+                if (char.IsDigit(username[0]))
+                    return ServiceResult<bool>.Failure("使用者名稱不能以數字開頭");
 
-            return ServiceResult<bool>.Success(true);
+                return ServiceResult<bool>.Success(true);
+            }
+            catch (Exception ex)
+            {
+                var errorId = ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(ValidateUsername), typeof(AuthenticationService), _logger);
+                return ServiceResult<bool>.Failure($"驗證使用者名稱時發生錯誤，錯誤編號：{errorId}");
+            }
         }
 
         /// <summary>
@@ -224,7 +259,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                return ServiceResult.Failure($"更新最後登入時間時發生錯誤：{ex.Message}");
+                var errorId = await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateLastLoginAsync), typeof(AuthenticationService), _logger);
+                return ServiceResult.Failure($"更新最後登入時間時發生錯誤，錯誤編號：{errorId}");
             }
         }
 
@@ -245,7 +281,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                return ServiceResult<bool>.Failure($"檢查鎖定狀態時發生錯誤：{ex.Message}");
+                var errorId = await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsUserLockedAsync), typeof(AuthenticationService), _logger);
+                return ServiceResult<bool>.Failure($"檢查鎖定狀態時發生錯誤，錯誤編號：{errorId}");
             }
         }
 
@@ -271,7 +308,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                return ServiceResult.Failure($"鎖定帳號時發生錯誤：{ex.Message}");
+                var errorId = await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(LockUserAsync), typeof(AuthenticationService), _logger);
+                return ServiceResult.Failure($"鎖定帳號時發生錯誤，錯誤編號：{errorId}");
             }
         }
 
@@ -297,7 +335,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                return ServiceResult.Failure($"解鎖帳號時發生錯誤：{ex.Message}");
+                var errorId = await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UnlockUserAsync), typeof(AuthenticationService), _logger);
+                return ServiceResult.Failure($"解鎖帳號時發生錯誤，錯誤編號：{errorId}");
             }
         }
 
@@ -308,10 +347,18 @@ namespace ERPCore2.Services
         /// </summary>
         private string HashPassword(string password)
         {
-            using var sha256 = SHA256.Create();
-            var saltedPassword = password + "ERPCore2_Salt";
-            var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(saltedPassword));
-            return Convert.ToBase64String(hashedBytes);
+            try
+            {
+                using var sha256 = SHA256.Create();
+                var saltedPassword = password + "ERPCore2_Salt";
+                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(saltedPassword));
+                return Convert.ToBase64String(hashedBytes);
+            }
+            catch (Exception ex)
+            {
+                var errorId = ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(HashPassword), typeof(AuthenticationService), _logger);
+                throw new InvalidOperationException($"密碼雜湊時發生錯誤，錯誤編號：{errorId}", ex);
+            }
         }
 
         /// <summary>
@@ -319,8 +366,16 @@ namespace ERPCore2.Services
         /// </summary>
         private bool VerifyPassword(string password, string hash)
         {
-            var hashedPassword = HashPassword(password);
-            return hashedPassword == hash;
+            try
+            {
+                var hashedPassword = HashPassword(password);
+                return hashedPassword == hash;
+            }
+            catch (Exception ex)
+            {
+                var errorId = ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(VerifyPassword), typeof(AuthenticationService), _logger);
+                throw new InvalidOperationException($"驗證密碼時發生錯誤，錯誤編號：{errorId}", ex);
+            }
         }
 
         #endregion

@@ -1,6 +1,7 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -10,8 +11,11 @@ namespace ERPCore2.Services
     {
         public WeatherService(
             AppDbContext context, 
-            ILogger<GenericManagementService<Weather>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<Weather>> logger) : base(context, logger)
+        {
+        }
+
+        public WeatherService(AppDbContext context) : base(context)
         {
         }
 
@@ -29,12 +33,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
                     Method = nameof(GetAllAsync),
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error getting all weather data");
-                throw;
+                return new List<Weather>();
             }
         }
 
@@ -58,13 +61,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { 
                     Method = nameof(SearchAsync),
                     SearchTerm = searchTerm,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error searching weather data with term {SearchTerm}", searchTerm);
-                throw;
+                return new List<Weather>();
             }
         }        /// <summary>
         /// 覆寫驗證方法，添加天氣特定的驗證規則
@@ -89,14 +91,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { 
                     Method = nameof(ValidateAsync),
                     EntityId = entity.Id,
                     EntityName = entity.Name,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error validating weather entity with ID {EntityId}", entity.Id);
-                throw;
+                return ServiceResult.Failure("天氣驗證過程中發生錯誤，請稍後再試");
             }
         }
 
@@ -116,14 +117,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsNameExistsAsync), GetType(), _logger, new { 
                     Method = nameof(IsNameExistsAsync),
                     Name = name,
                     ExcludeId = excludeId,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error checking if weather name exists: {Name}", name);
-                throw;
+                return false;
             }
         }
 
@@ -143,14 +143,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCodeExistsAsync), GetType(), _logger, new { 
                     Method = nameof(IsCodeExistsAsync),
                     Code = code,
                     ExcludeId = excludeId,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error checking if weather code exists: {Code}", code);
-                throw;
+                return false;
             }
         }
 
@@ -167,13 +166,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByCodeAsync), GetType(), _logger, new { 
                     Method = nameof(GetByCodeAsync),
                     Code = code,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error getting weather by code: {Code}", code);
-                throw;
+                return null;
             }
         }
 
@@ -194,14 +192,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByTemperatureRangeAsync), GetType(), _logger, new { 
                     Method = nameof(GetByTemperatureRangeAsync),
                     MinTemperature = minTemperature,
                     MaxTemperature = maxTemperature,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error getting weather by temperature range: {MinTemperature}-{MaxTemperature}", minTemperature, maxTemperature);
-                throw;
+                return new List<Weather>();
             }
         }
     }

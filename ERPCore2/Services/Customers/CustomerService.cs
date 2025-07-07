@@ -3,6 +3,7 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -13,10 +14,19 @@ namespace ERPCore2.Services
     /// </summary>
     public class CustomerService : GenericManagementService<Customer>, ICustomerService
     {
+        /// <summary>
+        /// 完整建構子 - 使用 ILogger
+        /// </summary>
         public CustomerService(
             AppDbContext context, 
-            ILogger<GenericManagementService<Customer>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<Customer>> logger) : base(context, logger)
+        {
+        }
+
+        /// <summary>
+        /// 簡易建構子 - 不使用 ILogger
+        /// </summary>
+        public CustomerService(AppDbContext context) : base(context)
         {
         }
 
@@ -35,11 +45,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting all customers");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -59,12 +65,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByIdAsync),
-                    Id = id,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting customer by id {Id}", id);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByIdAsync), GetType(), _logger, new { Id = id });
                 throw;
             }
         }
@@ -89,12 +90,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchAsync),
-                    SearchTerm = searchTerm,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error searching customers with term {SearchTerm}", searchTerm);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { SearchTerm = searchTerm });
                 throw;
             }
         }
@@ -164,13 +160,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ValidateAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { 
                     EntityId = entity.Id,
-                    CustomerCode = entity.CustomerCode,
-                    ServiceType = GetType().Name 
+                    CustomerCode = entity.CustomerCode 
                 });
-                _logger.LogError(ex, "Error validating customer entity {EntityId}", entity.Id);
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
         }
@@ -193,12 +186,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByCustomerCodeAsync),
-                    CustomerCode = customerCode,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting customer by code {CustomerCode}", customerCode);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByCustomerCodeAsync), GetType(), _logger, new { CustomerCode = customerCode });
                 throw;
             }
         }
@@ -219,12 +207,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByCompanyNameAsync),
-                    CompanyName = companyName,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting customers by company name {CompanyName}", companyName);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByCompanyNameAsync), GetType(), _logger, new { CompanyName = companyName });
                 throw;
             }
         }
@@ -245,13 +228,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsCustomerCodeExistsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCustomerCodeExistsAsync), GetType(), _logger, new { 
                     CustomerCode = customerCode,
-                    ExcludeId = excludeId,
-                    ServiceType = GetType().Name 
+                    ExcludeId = excludeId 
                 });
-                _logger.LogError(ex, "Error checking if customer code exists {CustomerCode}", customerCode);
                 return false; // 安全預設值
             }
         }
@@ -271,11 +251,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetCustomerTypesAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting customer types");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCustomerTypesAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -291,11 +267,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetIndustryTypesAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting industry types");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetIndustryTypesAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -311,14 +283,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetContactTypesAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting contact types");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetContactTypesAsync), GetType(), _logger);
                 throw;
             }
-        }        public async Task<List<AddressType>> GetAddressTypesAsync()
+        }
+
+        public async Task<List<AddressType>> GetAddressTypesAsync()
         {
             try
             {
@@ -329,11 +299,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAddressTypesAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting address types");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAddressTypesAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -354,12 +320,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchCustomerTypesAsync),
-                    Keyword = keyword,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error searching customer types with keyword: {Keyword}", keyword);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchCustomerTypesAsync), GetType(), _logger, new { Keyword = keyword });
                 throw;
             }
         }
@@ -380,12 +341,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchIndustryTypesAsync),
-                    Keyword = keyword,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error searching industry types with keyword: {Keyword}", keyword);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchIndustryTypesAsync), GetType(), _logger, new { Keyword = keyword });
                 throw;
             }
         }
@@ -406,12 +362,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetCustomerContactsAsync),
-                    CustomerId = customerId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting customer contacts for customer {CustomerId}", customerId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCustomerContactsAsync), GetType(), _logger, new { CustomerId = customerId });
                 throw;
             }
         }
@@ -431,7 +382,9 @@ namespace ERPCore2.Services
                     .ToListAsync();
 
                 // 刪除現有聯絡資料
-                _context.CustomerContacts.RemoveRange(existingContacts);                // 新增更新的聯絡資料
+                _context.CustomerContacts.RemoveRange(existingContacts);
+
+                // 新增更新的聯絡資料
                 foreach (var contact in contacts.Where(c => !string.IsNullOrWhiteSpace(c.ContactValue)))
                 {
                     // 建立新的聯絡實體以避免 ID 衝突
@@ -452,18 +405,14 @@ namespace ERPCore2.Services
 
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Successfully updated contacts for customer {CustomerId}", customerId);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(UpdateCustomerContactsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateCustomerContactsAsync), GetType(), _logger, new { 
                     CustomerId = customerId,
-                    ContactsCount = contacts?.Count ?? 0,
-                    ServiceType = GetType().Name 
+                    ContactsCount = contacts?.Count ?? 0 
                 });
-                _logger.LogError(ex, "Error updating customer contacts for customer {CustomerId}", customerId);
                 return ServiceResult.Failure("更新客戶聯絡資料時發生錯誤");
             }
         }
@@ -486,7 +435,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error initializing new customer");
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(InitializeNewCustomer), GetType(), _logger);
                 throw;
             }
         }
@@ -499,7 +448,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting basic required fields count");
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetBasicRequiredFieldsCount), GetType(), _logger);
                 throw;
             }
         }
@@ -520,7 +469,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting basic completed fields count for customer {CustomerId}", customer?.Id ?? 0);
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetBasicCompletedFieldsCount), GetType(), _logger, new { CustomerId = customer?.Id ?? 0 });
                 throw;
             }
         }

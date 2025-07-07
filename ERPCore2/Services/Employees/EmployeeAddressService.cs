@@ -3,6 +3,7 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -13,10 +14,19 @@ namespace ERPCore2.Services
     /// </summary>
     public class EmployeeAddressService : GenericManagementService<EmployeeAddress>, IEmployeeAddressService
     {
+        /// <summary>
+        /// 完整建構子
+        /// </summary>
         public EmployeeAddressService(
             AppDbContext context, 
-            ILogger<GenericManagementService<EmployeeAddress>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<EmployeeAddress>> logger) : base(context, logger)
+        {
+        }
+
+        /// <summary>
+        /// 簡易建構子
+        /// </summary>
+        public EmployeeAddressService(AppDbContext context) : base(context)
         {
         }
 
@@ -45,8 +55,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "搜尋員工地址時發生錯誤: SearchTerm={SearchTerm}", searchTerm);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { searchTerm });
                 return new List<EmployeeAddress>();
             }
         }
@@ -92,8 +101,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "驗證員工地址時發生錯誤: EmployeeId={EmployeeId}", entity.EmployeeId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { entity.EmployeeId });
                 return ServiceResult.Failure("驗證員工地址時發生錯誤");
             }
         }
@@ -112,8 +120,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "取得所有員工地址時發生錯誤");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
                 return new List<EmployeeAddress>();
             }
         }
@@ -129,8 +136,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "根據ID取得員工地址時發生錯誤: Id={Id}", id);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByIdAsync), GetType(), _logger, new { id });
                 return null;
             }
         }
@@ -154,8 +160,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "根據員工ID取得地址清單時發生錯誤: EmployeeId={EmployeeId}", employeeId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByEmployeeIdAsync), GetType(), _logger, new { employeeId });
                 return new List<EmployeeAddress>();
             }
         }
@@ -173,8 +178,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "取得員工主要地址時發生錯誤: EmployeeId={EmployeeId}", employeeId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPrimaryAddressAsync), GetType(), _logger, new { employeeId });
                 return null;
             }
         }
@@ -194,8 +198,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "根據地址類型取得地址清單時發生錯誤: AddressTypeId={AddressTypeId}", addressTypeId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByAddressTypeAsync), GetType(), _logger, new { addressTypeId });
                 return new List<EmployeeAddress>();
             }
         }
@@ -241,8 +244,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "設定主要地址時發生錯誤: AddressId={AddressId}", addressId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetPrimaryAddressAsync), GetType(), _logger, new { addressId });
                 return ServiceResult.Failure("設定主要地址時發生錯誤");
             }
         }
@@ -282,9 +284,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "複製地址時發生錯誤: SourceAddressId={SourceAddressId}, TargetEmployeeId={TargetEmployeeId}",
-                    sourceAddress.Id, targetEmployeeId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CopyAddressToEmployeeAsync), GetType(), _logger, new { sourceAddress.Id, targetEmployeeId });
                 return ServiceResult<EmployeeAddress>.Failure("複製地址時發生錯誤");
             }
         }
@@ -313,8 +313,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "確保員工主要地址時發生錯誤: EmployeeId={EmployeeId}", employeeId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(EnsureEmployeeHasPrimaryAddressAsync), GetType(), _logger, new { employeeId });
                 return ServiceResult.Failure("確保員工主要地址時發生錯誤");
             }
         }
@@ -351,8 +350,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "取得員工地址清單並初始化預設地址時發生錯誤: EmployeeId={EmployeeId}", employeeId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAddressesWithDefaultAsync), GetType(), _logger, new { employeeId });
                 return new List<EmployeeAddress>();
             }
         }
@@ -388,8 +386,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "更新或新增員工地址時發生錯誤: AddressId={AddressId}", address.Id);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateOrCreateAddressAsync), GetType(), _logger, new { address.Id });
                 return ServiceResult<EmployeeAddress>.Failure("更新或新增地址時發生錯誤");
             }
         }
@@ -418,8 +415,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _errorLogService.LogErrorAsync(ex).Wait();
-                _logger.LogError(ex, "驗證地址資料完整性時發生錯誤: EmployeeId={EmployeeId}", address.EmployeeId);
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(ValidateAddress), GetType(), _logger, new { address.EmployeeId });
                 return ServiceResult.Failure("驗證地址資料時發生錯誤");
             }
         }
@@ -449,8 +445,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _errorLogService.LogErrorAsync(ex).Wait();
-                _logger.LogError(ex, "格式化完整地址字串時發生錯誤");
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(FormatFullAddress), GetType(), _logger);
                 return string.Empty;
             }
         }
@@ -474,8 +469,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "檢查地址是否重複時發生錯誤: EmployeeId={EmployeeId}", address.EmployeeId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsDuplicateAddressAsync), GetType(), _logger, new { address.EmployeeId });
                 return false;
             }
         }
@@ -507,8 +501,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "取得員工地址統計時發生錯誤: EmployeeId={EmployeeId}", employeeId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAddressCompletionStatsAsync), GetType(), _logger, new { employeeId });
                 return ServiceResult<Dictionary<string, int>>.Failure("取得地址統計時發生錯誤");
             }
         }
@@ -532,8 +525,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "取得指定城市的員工地址清單時發生錯誤: City={City}", city);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAddressesByCityAsync), GetType(), _logger, new { city });
                 return new List<EmployeeAddress>();
             }
         }
@@ -557,8 +549,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "取得指定行政區的員工地址清單時發生錯誤: District={District}", district);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAddressesByDistrictAsync), GetType(), _logger, new { district });
                 return new List<EmployeeAddress>();
             }
         }
@@ -582,8 +573,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "取得指定郵遞區號的員工地址清單時發生錯誤: PostalCode={PostalCode}", postalCode);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAddressesByPostalCodeAsync), GetType(), _logger, new { postalCode });
                 return new List<EmployeeAddress>();
             }
         }
@@ -611,9 +601,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _errorLogService.LogErrorAsync(ex).Wait();
-                _logger.LogError(ex, "取得員工地址值時發生錯誤: EmployeeId={EmployeeId}, AddressTypeName={AddressTypeName}",
-                    employeeId, addressTypeName);
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetAddressValue), GetType(), _logger, new { employeeId, addressTypeName });
                 return string.Empty;
             }
         }
@@ -681,9 +669,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _errorLogService.LogErrorAsync(ex).Wait();
-                _logger.LogError(ex, "更新員工地址值時發生錯誤: EmployeeId={EmployeeId}, AddressTypeName={AddressTypeName}",
-                    employeeId, addressTypeName);
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(UpdateAddressValue), GetType(), _logger, new { employeeId, addressTypeName });
                 return ServiceResult.Failure("更新地址時發生錯誤");
             }
         }
@@ -699,8 +685,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _errorLogService.LogErrorAsync(ex).Wait();
-                _logger.LogError(ex, "計算已完成的地址欄位數量時發生錯誤");
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetAddressCompletedFieldsCount), GetType(), _logger);
                 return 0;
             }
         }
@@ -744,8 +729,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _errorLogService.LogErrorAsync(ex).Wait();
-                _logger.LogError(ex, "驗證員工地址資料時發生錯誤");
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(ValidateEmployeeAddresses), GetType(), _logger);
                 return ServiceResult.Failure("驗證員工地址資料時發生錯誤");
             }
         }
@@ -778,8 +762,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _errorLogService.LogErrorAsync(ex).Wait();
-                _logger.LogError(ex, "確保主要地址唯一性時發生錯誤");
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(EnsureUniquePrimaryAddresses), GetType(), _logger);
                 return ServiceResult.Failure("處理主要地址時發生錯誤");
             }
         }

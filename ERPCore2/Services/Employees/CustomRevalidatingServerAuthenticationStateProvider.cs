@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using System.Security.Claims;
+using ERPCore2.Helpers;
 
 namespace ERPCore2.Services.Auth
 {    /// <summary>
@@ -8,8 +9,9 @@ namespace ERPCore2.Services.Auth
     /// </summary>
     public class CustomRevalidatingServerAuthenticationStateProvider : RevalidatingServerAuthenticationStateProvider
     {
-        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IServiceScopeFactory? _scopeFactory;
 
+        // 完整建構子
         public CustomRevalidatingServerAuthenticationStateProvider(
             ILoggerFactory loggerFactory,
             IServiceScopeFactory scopeFactory)
@@ -18,20 +20,34 @@ namespace ERPCore2.Services.Auth
             _scopeFactory = scopeFactory;
         }
 
+        // 簡易建構子
+        public CustomRevalidatingServerAuthenticationStateProvider(
+            ILogger<CustomRevalidatingServerAuthenticationStateProvider> logger)
+            : base(LoggerFactory.Create(builder => builder.AddConsole()))
+        {
+            _scopeFactory = null;
+        }
+
         protected override TimeSpan RevalidationInterval => TimeSpan.FromMinutes(30);
 
         protected override async Task<bool> ValidateAuthenticationStateAsync(
             AuthenticationState authenticationState, CancellationToken cancellationToken)
         {
-            // 如果用戶未認證，返回 false
-            if (!authenticationState.User.Identity?.IsAuthenticated ?? true)
-                return false;
-
-            // 獲取用戶 ID
-            var userIdClaim = authenticationState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
-                return false;            try
+            try
             {
+                // 如果用戶未認證，返回 false
+                if (!authenticationState.User.Identity?.IsAuthenticated ?? true)
+                    return false;
+
+                // 獲取用戶 ID
+                var userIdClaim = authenticationState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+                    return false;
+
+                // 如果 _scopeFactory 為 null，無法進行驗證
+                if (_scopeFactory == null)
+                    return false;
+
                 using var scope = _scopeFactory.CreateScope();
                 var employeeService = scope.ServiceProvider.GetRequiredService<ERPCore2.Services.IEmployeeService>();
                 
@@ -42,8 +58,9 @@ namespace ERPCore2.Services.Auth
 
                 return !employee.IsDeleted && !employee.IsLocked;
             }
-            catch
+            catch (Exception ex)
             {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAuthenticationStateAsync), typeof(CustomRevalidatingServerAuthenticationStateProvider));
                 return false;
             }
         }

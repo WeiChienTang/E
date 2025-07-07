@@ -2,6 +2,7 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -12,10 +13,19 @@ namespace ERPCore2.Services
     /// </summary>
     public class WarehouseService : GenericManagementService<Warehouse>, IWarehouseService
     {
+        /// <summary>
+        /// 完整建構子 - 使用 ILogger
+        /// </summary>
         public WarehouseService(
             AppDbContext context, 
-            ILogger<GenericManagementService<Warehouse>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<Warehouse>> logger) : base(context, logger)
+        {
+        }
+
+        /// <summary>
+        /// 簡易建構子 - 不使用 ILogger
+        /// </summary>
+        public WarehouseService(AppDbContext context) : base(context)
         {
         }
 
@@ -34,12 +44,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting all warehouses");
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
+                return new List<Warehouse>();
             }
         }
 
@@ -63,13 +69,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchAsync),
-                    SearchTerm = searchTerm,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error searching warehouses with term {SearchTerm}", searchTerm);
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { SearchTerm = searchTerm });
+                return new List<Warehouse>();
             }
         }
 
@@ -78,12 +79,20 @@ namespace ERPCore2.Services
         /// </summary>
         public async Task<bool> IsWarehouseCodeExistsAsync(string warehouseCode, int? excludeId = null)
         {
-            var query = _dbSet.Where(w => w.WarehouseCode == warehouseCode && !w.IsDeleted);
+            try
+            {
+                var query = _dbSet.Where(w => w.WarehouseCode == warehouseCode && !w.IsDeleted);
 
-            if (excludeId.HasValue)
-                query = query.Where(w => w.Id != excludeId.Value);
+                if (excludeId.HasValue)
+                    query = query.Where(w => w.Id != excludeId.Value);
 
-            return await query.AnyAsync();
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsWarehouseCodeExistsAsync), GetType(), _logger, new { WarehouseCode = warehouseCode, ExcludeId = excludeId });
+                return false;
+            }
         }
 
         /// <summary>
@@ -91,11 +100,19 @@ namespace ERPCore2.Services
         /// </summary>
         public async Task<List<Warehouse>> GetByWarehouseTypeAsync(WarehouseTypeEnum warehouseType)
         {
-            return await _dbSet
-                .Include(w => w.WarehouseLocations)
-                .Where(w => !w.IsDeleted && w.WarehouseType == warehouseType)
-                .OrderBy(w => w.WarehouseCode)
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+                    .Include(w => w.WarehouseLocations)
+                    .Where(w => !w.IsDeleted && w.WarehouseType == warehouseType)
+                    .OrderBy(w => w.WarehouseCode)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByWarehouseTypeAsync), GetType(), _logger, new { WarehouseType = warehouseType });
+                return new List<Warehouse>();
+            }
         }
 
         /// <summary>
@@ -103,9 +120,17 @@ namespace ERPCore2.Services
         /// </summary>
         public async Task<Warehouse?> GetDefaultWarehouseAsync()
         {
-            return await _dbSet
-                .Include(w => w.WarehouseLocations)
-                .FirstOrDefaultAsync(w => !w.IsDeleted && w.IsDefault);
+            try
+            {
+                return await _dbSet
+                    .Include(w => w.WarehouseLocations)
+                    .FirstOrDefaultAsync(w => !w.IsDeleted && w.IsDefault);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetDefaultWarehouseAsync), GetType(), _logger);
+                return null;
+            }
         }
 
         /// <summary>
@@ -128,6 +153,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetDefaultWarehouseAsync), GetType(), _logger, new { WarehouseId = warehouseId });
                 return ServiceResult.Failure($"設定預設倉庫失敗：{ex.Message}");
             }
         }
@@ -137,9 +163,17 @@ namespace ERPCore2.Services
         /// </summary>
         public async Task<Warehouse?> GetWarehouseWithLocationsAsync(int warehouseId)
         {
-            return await _dbSet
-                .Include(w => w.WarehouseLocations.Where(l => !l.IsDeleted))
-                .FirstOrDefaultAsync(w => w.Id == warehouseId && !w.IsDeleted);
+            try
+            {
+                return await _dbSet
+                    .Include(w => w.WarehouseLocations.Where(l => !l.IsDeleted))
+                    .FirstOrDefaultAsync(w => w.Id == warehouseId && !w.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetWarehouseWithLocationsAsync), GetType(), _logger, new { WarehouseId = warehouseId });
+                return null;
+            }
         }
 
         /// <summary>
@@ -147,18 +181,26 @@ namespace ERPCore2.Services
         /// </summary>
         public override async Task<ServiceResult> ValidateAsync(Warehouse entity)
         {
-            // 基本驗證
-            if (string.IsNullOrWhiteSpace(entity.WarehouseCode))
-                return ServiceResult.Failure("倉庫代碼為必填");
-            
-            if (string.IsNullOrWhiteSpace(entity.WarehouseName))
-                return ServiceResult.Failure("倉庫名稱為必填");
+            try
+            {
+                // 基本驗證
+                if (string.IsNullOrWhiteSpace(entity.WarehouseCode))
+                    return ServiceResult.Failure("倉庫代碼為必填");
+                
+                if (string.IsNullOrWhiteSpace(entity.WarehouseName))
+                    return ServiceResult.Failure("倉庫名稱為必填");
 
-            // 檢查倉庫代碼是否重複
-            if (await IsWarehouseCodeExistsAsync(entity.WarehouseCode, entity.Id))
-                return ServiceResult.Failure("倉庫代碼已存在");
+                // 檢查倉庫代碼是否重複
+                if (await IsWarehouseCodeExistsAsync(entity.WarehouseCode, entity.Id))
+                    return ServiceResult.Failure("倉庫代碼已存在");
 
-            return ServiceResult.Success();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { EntityId = entity.Id });
+                return ServiceResult.Failure("驗證過程發生錯誤");
+            }
         }
 
         /// <summary>
@@ -166,12 +208,20 @@ namespace ERPCore2.Services
         /// </summary>
         public override async Task<bool> IsNameExistsAsync(string name, int? excludeId = null)
         {
-            var query = _dbSet.Where(w => w.WarehouseName == name && !w.IsDeleted);
+            try
+            {
+                var query = _dbSet.Where(w => w.WarehouseName == name && !w.IsDeleted);
 
-            if (excludeId.HasValue)
-                query = query.Where(w => w.Id != excludeId.Value);
+                if (excludeId.HasValue)
+                    query = query.Where(w => w.Id != excludeId.Value);
 
-            return await query.AnyAsync();
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsNameExistsAsync), GetType(), _logger, new { Name = name, ExcludeId = excludeId });
+                return false;
+            }
         }
     }
 }

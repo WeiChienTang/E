@@ -3,6 +3,7 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -13,10 +14,19 @@ namespace ERPCore2.Services
     /// </summary>
     public class SupplierTypeService : GenericManagementService<SupplierType>, ISupplierTypeService
     {
+        /// <summary>
+        /// 完整建構子 - 包含 ILogger
+        /// </summary>
         public SupplierTypeService(
             AppDbContext context, 
-            ILogger<GenericManagementService<SupplierType>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<SupplierType>> logger) : base(context, logger)
+        {
+        }
+
+        /// <summary>
+        /// 簡易建構子 - 不包含 ILogger
+        /// </summary>
+        public SupplierTypeService(AppDbContext context) : base(context)
         {
         }
 
@@ -33,12 +43,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAllAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error getting all supplier types");
-                throw;
+                return new List<SupplierType>();
             }
         }
 
@@ -58,13 +66,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { 
                     SearchTerm = searchTerm,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error searching supplier types with term {SearchTerm}", searchTerm);
-                throw;
+                return new List<SupplierType>();
             }
         }
 
@@ -101,12 +107,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ValidateAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { 
                     EntityId = entity.Id,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error validating supplier type entity {EntityId}", entity.Id);
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
         }
@@ -119,13 +123,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsNameExistsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsNameExistsAsync), GetType(), _logger, new { 
                     Name = name,
                     ExcludeId = excludeId,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error checking if supplier type name exists {Name}", name);
                 return false; // 安全預設值
             }
         }
@@ -141,12 +143,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(CanDeleteAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { 
                     EntityId = entity.Id,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error checking if supplier type can be deleted {EntityId}", entity.Id);
                 return ServiceResult.Failure("檢查刪除條件時發生錯誤");
             }
         }
@@ -168,13 +168,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsSupplierTypeNameExistsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsSupplierTypeNameExistsAsync), GetType(), _logger, new { 
                     TypeName = typeName,
                     ExcludeId = excludeId,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error checking supplier type name exists {TypeName}", typeName);
                 return false; // 安全預設值
             }
         }
@@ -188,13 +186,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByTypeNameAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByTypeNameAsync), GetType(), _logger, new { 
                     TypeName = typeName,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error getting supplier type by name {TypeName}", typeName);
-                throw;
+                return null; // 安全預設值
             }
         }
 
@@ -210,12 +206,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(CanDeleteSupplierTypeAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteSupplierTypeAsync), GetType(), _logger, new { 
                     SupplierTypeId = supplierTypeId,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error checking if supplier type can be deleted {SupplierTypeId}", supplierTypeId);
                 return false; // 安全預設值
             }
         }

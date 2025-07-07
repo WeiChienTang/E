@@ -1,6 +1,7 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -8,10 +9,15 @@ namespace ERPCore2.Services
 {
     public class UnitConversionService : GenericManagementService<UnitConversion>, IUnitConversionService
     {
+        // 完整建構子
         public UnitConversionService(
             AppDbContext context, 
-            ILogger<GenericManagementService<UnitConversion>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<UnitConversion>> logger) : base(context, logger)
+        {
+        }
+
+        // 簡易建構子
+        public UnitConversionService(AppDbContext context) : base(context)
         {
         }
 
@@ -29,11 +35,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAllAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error getting all unit conversions");
                 throw;
             }
         }
@@ -49,12 +53,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByIdAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByIdAsync), GetType(), _logger, new { 
                     Id = id,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error getting unit conversion by id {Id}", id);
                 throw;
             }
         }
@@ -75,12 +77,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByUnitAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByUnitAsync), GetType(), _logger, new { 
                     UnitId = unitId,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error getting unit conversions by unit {UnitId}", unitId);
                 return ServiceResult<IEnumerable<UnitConversion>>.Failure("取得單位轉換列表時發生錯誤");
             }
         }
@@ -117,13 +117,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetConversionRateAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetConversionRateAsync), GetType(), _logger, new { 
                     FromUnitId = fromUnitId,
                     ToUnitId = toUnitId,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error getting conversion rate from {FromUnitId} to {ToUnitId}", fromUnitId, toUnitId);
                 return ServiceResult<decimal?>.Failure("取得轉換率時發生錯誤");
             }
         }
@@ -148,14 +146,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ValidateAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { 
                     EntityId = entity.Id,
                     FromUnitId = entity.FromUnitId,
                     ToUnitId = entity.ToUnitId,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error validating unit conversion entity {EntityId}", entity.Id);
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
         }
@@ -181,12 +177,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { 
                     SearchTerm = searchTerm,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error searching unit conversions with term {SearchTerm}", searchTerm);
                 throw;
             }
         }

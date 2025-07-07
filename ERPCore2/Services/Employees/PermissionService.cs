@@ -1,6 +1,7 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
+using ERPCore2.Helpers;
 using ERPCore2.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -24,6 +25,17 @@ namespace ERPCore2.Services
             _context = context;
             _cache = cache;
             _logger = logger;
+            _errorLogService = errorLogService;
+        }
+
+        /// <summary>
+        /// 簡易建構子 - 不包含 ILogger
+        /// </summary>
+        public PermissionService(AppDbContext context, IMemoryCache cache, IErrorLogService errorLogService)
+        {
+            _context = context;
+            _cache = cache;
+            _logger = null!; // 簡易建構子可以不提供 logger
             _errorLogService = errorLogService;
         }        /// <summary>
         /// 檢查員工是否具有特定權限
@@ -59,13 +71,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(HasPermissionAsync),
-                    ServiceType = GetType().Name,
-                    EmployeeId = employeeId,
-                    PermissionCode = permissionCode 
-                });
-                _logger.LogError(ex, "Error checking permission for employee {EmployeeId} with code {PermissionCode}", employeeId, permissionCode);
+                var errorId = await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex, 
+                    nameof(HasPermissionAsync), 
+                    GetType(), 
+                    _logger, 
+                    new { EmployeeId = employeeId, PermissionCode = permissionCode });
+                
                 Console.WriteLine($"💥 PermissionService.HasPermissionAsync 例外: {ex.Message}");
                 return ServiceResult<bool>.Failure($"檢查權限時發生錯誤：{ex.Message}");
             }
@@ -88,13 +100,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(HasAllPermissionsAsync),
-                    ServiceType = GetType().Name,
-                    EmployeeId = employeeId,
-                    PermissionCodes = permissionCodes 
-                });
-                _logger.LogError(ex, "Error checking all permissions for employee {EmployeeId}", employeeId);
+                var errorId = await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex, 
+                    nameof(HasAllPermissionsAsync), 
+                    GetType(), 
+                    _logger, 
+                    new { EmployeeId = employeeId, PermissionCodes = permissionCodes });
+                
                 return ServiceResult<bool>.Failure($"檢查權限時發生錯誤：{ex.Message}");
             }
         }
@@ -116,13 +128,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(HasAnyPermissionAsync),
-                    ServiceType = GetType().Name,
-                    EmployeeId = employeeId,
-                    PermissionCodes = permissionCodes 
-                });
-                _logger.LogError(ex, "Error checking any permission for employee {EmployeeId}", employeeId);
+                var errorId = await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex, 
+                    nameof(HasAnyPermissionAsync), 
+                    GetType(), 
+                    _logger, 
+                    new { EmployeeId = employeeId, PermissionCodes = permissionCodes });
+                
                 return ServiceResult<bool>.Failure($"檢查權限時發生錯誤：{ex.Message}");
             }
         }
@@ -165,12 +177,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetEmployeePermissionsAsync),
-                    ServiceType = GetType().Name,
-                    EmployeeId = employeeId 
-                });
-                _logger.LogError(ex, "Error getting employee permissions for employee {EmployeeId}", employeeId);
+                var errorId = await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex, 
+                    nameof(GetEmployeePermissionsAsync), 
+                    GetType(), 
+                    _logger, 
+                    new { EmployeeId = employeeId });
+                
                 return ServiceResult<List<Permission>>.Failure($"取得員工權限時發生錯誤：{ex.Message}");
             }
         }
@@ -193,12 +206,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetEmployeePermissionCodesAsync),
-                    ServiceType = GetType().Name,
-                    EmployeeId = employeeId 
-                });
-                _logger.LogError(ex, "Error getting employee permission codes for employee {EmployeeId}", employeeId);
+                var errorId = await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex, 
+                    nameof(GetEmployeePermissionCodesAsync), 
+                    GetType(), 
+                    _logger, 
+                    new { EmployeeId = employeeId });
+                
                 return ServiceResult<List<string>>.Failure($"取得員工權限代碼時發生錯誤：{ex.Message}");
             }
         }
@@ -234,12 +248,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetRolePermissionsAsync),
-                    ServiceType = GetType().Name,
-                    RoleId = roleId 
-                });
-                _logger.LogError(ex, "Error getting role permissions for role {RoleId}", roleId);
+                var errorId = await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex, 
+                    nameof(GetRolePermissionsAsync), 
+                    GetType(), 
+                    _logger, 
+                    new { RoleId = roleId });
+                
                 return ServiceResult<List<Permission>>.Failure($"取得角色權限時發生錯誤：{ex.Message}");
             }
         }
@@ -264,12 +279,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(PermissionExistsAsync),
-                    ServiceType = GetType().Name,
-                    PermissionCode = permissionCode 
-                });
-                _logger.LogError(ex, "Error checking if permission exists: {PermissionCode}", permissionCode);
+                var errorId = await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex, 
+                    nameof(PermissionExistsAsync), 
+                    GetType(), 
+                    _logger, 
+                    new { PermissionCode = permissionCode });
+                
                 return ServiceResult<bool>.Failure($"檢查權限代碼時發生錯誤：{ex.Message}");
             }
         }
@@ -291,12 +307,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(RefreshEmployeePermissionCacheAsync),
-                    ServiceType = GetType().Name,
-                    EmployeeId = employeeId 
-                });
-                _logger.LogError(ex, "Error refreshing employee permission cache for employee {EmployeeId}", employeeId);
+                var errorId = await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex, 
+                    nameof(RefreshEmployeePermissionCacheAsync), 
+                    GetType(), 
+                    _logger, 
+                    new { EmployeeId = employeeId });
+                
                 return ServiceResult.Failure($"刷新員工權限快取時發生錯誤：{ex.Message}");
             }
         }        /// <summary>
@@ -314,7 +331,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error clearing all permission cache");
+                var errorId = ErrorHandlingHelper.HandleServiceErrorSync(
+                    ex, 
+                    nameof(ClearAllPermissionCacheAsync), 
+                    GetType(), 
+                    _logger);
+                
                 return Task.FromResult(ServiceResult.Failure($"清除權限快取時發生錯誤：{ex.Message}"));
             }
         }        /// <summary>
@@ -336,12 +358,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetModulePermissionsAsync),
-                    ServiceType = GetType().Name,
-                    ModulePrefix = modulePrefix 
-                });
-                _logger.LogError(ex, "Error getting module permissions for prefix {ModulePrefix}", modulePrefix);
+                var errorId = await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex, 
+                    nameof(GetModulePermissionsAsync), 
+                    GetType(), 
+                    _logger, 
+                    new { ModulePrefix = modulePrefix });
+                
                 return ServiceResult<List<Permission>>.Failure($"取得模組權限時發生錯誤：{ex.Message}");
             }
         }
@@ -366,13 +389,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(CanAccessModuleAsync),
-                    ServiceType = GetType().Name,
-                    EmployeeId = employeeId,
-                    ModulePrefix = modulePrefix 
-                });
-                _logger.LogError(ex, "Error checking module access for employee {EmployeeId} and module {ModulePrefix}", employeeId, modulePrefix);
+                var errorId = await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex, 
+                    nameof(CanAccessModuleAsync), 
+                    GetType(), 
+                    _logger, 
+                    new { EmployeeId = employeeId, ModulePrefix = modulePrefix });
+                
                 return ServiceResult<bool>.Failure($"檢查模組存取權限時發生錯誤：{ex.Message}");
             }
         }

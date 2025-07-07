@@ -18,16 +18,13 @@ namespace ERPCore2.Services.GenericManagementService
     protected readonly AppDbContext _context;
     protected readonly DbSet<T> _dbSet;
     protected readonly ILogger<GenericManagementService<T>>? _logger;
-    protected readonly IErrorLogService? _errorLogService;
 
         protected GenericManagementService(
             AppDbContext context,
-            ILogger<GenericManagementService<T>> logger,
-            IErrorLogService errorLogService)
+            ILogger<GenericManagementService<T>> logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _errorLogService = errorLogService ?? throw new ArgumentNullException(nameof(errorLogService));
             _dbSet = _context.Set<T>();
         }
 
@@ -36,7 +33,6 @@ namespace ERPCore2.Services.GenericManagementService
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _dbSet = _context.Set<T>();
             _logger = null;
-            _errorLogService = null;
         }
 
         #region 基本 CRUD 操作
@@ -55,7 +51,7 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _errorLogService, _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
                 return new List<T>();
             }
         }
@@ -74,7 +70,7 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetActiveAsync), GetType(), _errorLogService, _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetActiveAsync), GetType(), _logger);
                 return new List<T>();
             }
         }
@@ -91,7 +87,7 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByIdAsync), GetType(), _errorLogService, _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByIdAsync), GetType(), _logger);
                 return null;
             }
         }
@@ -127,7 +123,7 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CreateAsync), GetType(), _errorLogService, _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CreateAsync), GetType(), _logger);
                 return ServiceResult<T>.Failure($"建立資料時發生錯誤: {ex.Message}");
             }
         }
@@ -165,7 +161,7 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateAsync), GetType(), _errorLogService, _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateAsync), GetType(), _logger);
                 return ServiceResult<T>.Failure($"更新資料時發生錯誤: {ex.Message}");
             }
         }
@@ -191,7 +187,7 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteAsync), GetType(), _errorLogService, _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteAsync), GetType(), _logger);
                 return ServiceResult.Failure($"刪除資料時發生錯誤: {ex.Message}");
             }
         }
@@ -232,7 +228,7 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CreateBatchAsync), GetType(), _errorLogService, _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CreateBatchAsync), GetType(), _logger);
                 return ServiceResult<List<T>>.Failure($"批次建立時發生錯誤: {ex.Message}");
             }
         }
@@ -269,7 +265,7 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateBatchAsync), GetType(), _errorLogService, _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateBatchAsync), GetType(), _logger);
                 return ServiceResult<List<T>>.Failure($"批次更新時發生錯誤: {ex.Message}");
             }
         }
@@ -301,7 +297,7 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteBatchAsync), GetType(), _errorLogService, _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteBatchAsync), GetType(), _logger);
                 return ServiceResult.Failure($"批次刪除時發生錯誤: {ex.Message}");
             }
         }
@@ -339,7 +335,7 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedAsync), GetType(), _errorLogService, _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedAsync), GetType(), _logger);
                 return (new List<T>(), 0);
             }
         }
@@ -360,7 +356,7 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ExistsAsync), GetType(), _errorLogService, _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ExistsAsync), GetType(), _logger);
                 return false;
             }
         }
@@ -376,7 +372,7 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCountAsync), GetType(), _errorLogService, _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCountAsync), GetType(), _logger);
                 return 0;
             }
         }
@@ -406,7 +402,7 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetStatusAsync), GetType(), _errorLogService, _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetStatusAsync), GetType(), _logger);
                 return ServiceResult.Failure($"設定狀態時發生錯誤: {ex.Message}");
             }
         }
@@ -435,7 +431,7 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ToggleStatusAsync), GetType(), _errorLogService, _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ToggleStatusAsync), GetType(), _logger);
                 return ServiceResult.Failure($"切換狀態時發生錯誤: {ex.Message}");
             }
         }
@@ -467,7 +463,7 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetStatusBatchAsync), GetType(), _errorLogService, _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetStatusBatchAsync), GetType(), _logger);
                 return ServiceResult.Failure($"批次設定狀態時發生錯誤: {ex.Message}");
             }
         }
@@ -495,7 +491,7 @@ namespace ERPCore2.Services.GenericManagementService
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsNameExistsAsync), GetType(), _errorLogService, _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsNameExistsAsync), GetType(), _logger);
                 return false;
             }
         }

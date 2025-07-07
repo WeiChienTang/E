@@ -2,6 +2,7 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -12,10 +13,15 @@ namespace ERPCore2.Services
     /// </summary>
     public class SizeService : GenericManagementService<Size>, ISizeService
     {
+        // 完整建構子
         public SizeService(
             AppDbContext context, 
-            ILogger<GenericManagementService<Size>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<Size>> logger) : base(context, logger)
+        {
+        }
+
+        // 簡易建構子
+        public SizeService(AppDbContext context) : base(context)
         {
         }
 
@@ -33,11 +39,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting all sizes");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -52,12 +54,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByIdAsync),
-                    Id = id,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting size by id {Id}", id);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByIdAsync), GetType(), _logger, new { Id = id });
                 throw;
             }
         }
@@ -82,12 +79,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchAsync),
-                    SearchTerm = searchTerm,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error searching sizes with term {SearchTerm}", searchTerm);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { SearchTerm = searchTerm });
                 throw;
             }
         }
@@ -124,12 +116,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ValidateAsync),
-                    EntityId = entity.Id,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error validating size entity {EntityId}", entity.Id);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { EntityId = entity.Id });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
         }
@@ -151,12 +138,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetBySizeCodeAsync),
-                    SizeCode = sizeCode,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting size by code {SizeCode}", sizeCode);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySizeCodeAsync), GetType(), _logger, new { SizeCode = sizeCode });
                 throw;
             }
         }
@@ -179,13 +161,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsSizeCodeExistsAsync),
-                    SizeCode = sizeCode,
-                    ExcludeId = excludeId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error checking size code exists {SizeCode}", sizeCode);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsSizeCodeExistsAsync), GetType(), _logger, new { SizeCode = sizeCode, ExcludeId = excludeId });
                 return false; // 安全預設值
             }
         }
@@ -201,11 +177,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetActiveSizesAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting active sizes");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetActiveSizesAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -225,12 +197,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetBySizeNameAsync),
-                    SizeName = sizeName,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting sizes by name {SizeName}", sizeName);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySizeNameAsync), GetType(), _logger, new { SizeName = sizeName });
                 throw;
             }
         }
@@ -254,18 +221,11 @@ namespace ERPCore2.Services
 
                 await _context.SaveChangesAsync();
                 
-                _logger.LogInformation("Size {SizeId} active status updated to {IsActive}", sizeId, isActive);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(UpdateActiveStatusAsync),
-                    SizeId = sizeId,
-                    IsActive = isActive,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error updating active status for size {SizeId}", sizeId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateActiveStatusAsync), GetType(), _logger, new { SizeId = sizeId, IsActive = isActive });
                 return ServiceResult.Failure("更新啟用狀態時發生錯誤");
             }
         }
@@ -291,18 +251,11 @@ namespace ERPCore2.Services
 
                 await _context.SaveChangesAsync();
                 
-                _logger.LogInformation("Batch updated active status for {Count} sizes to {IsActive}", sizes.Count, isActive);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(BatchUpdateActiveStatusAsync),
-                    SizeIds = sizeIds,
-                    IsActive = isActive,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error batch updating active status for sizes");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(BatchUpdateActiveStatusAsync), GetType(), _logger, new { SizeIds = sizeIds, IsActive = isActive });
                 return ServiceResult.Failure("批次更新啟用狀態時發生錯誤");
             }
         }

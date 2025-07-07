@@ -2,6 +2,7 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -12,10 +13,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class MaterialService : GenericManagementService<Material>, IMaterialService
     {
-        public MaterialService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<Material>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+        public MaterialService(AppDbContext context, ILogger<GenericManagementService<Material>> logger) : base(context, logger)
+        {
+        }
+
+        public MaterialService(AppDbContext context) : base(context)
         {
         }
 
@@ -35,12 +37,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
                     Method = nameof(GetAllAsync),
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error getting all materials");
-                throw;
+                return new List<Material>();
             }
         }
 
@@ -57,13 +58,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByIdAsync), GetType(), _logger, new { 
                     Method = nameof(GetByIdAsync),
                     ServiceType = GetType().Name,
                     Id = id
                 });
-                _logger.LogError(ex, "Error getting material by id {Id}", id);
-                throw;
+                return null;
             }
         }
 
@@ -91,13 +91,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { 
                     Method = nameof(SearchAsync),
                     ServiceType = GetType().Name,
                     SearchTerm = searchTerm
                 });
-                _logger.LogError(ex, "Error searching materials with term {SearchTerm}", searchTerm);
-                throw;
+                return new List<Material>();
             }
         }
 
@@ -144,15 +143,14 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { 
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
                     EntityName = entity.Name,
                     EntityCode = entity.Code
                 });
-                _logger.LogError(ex, "Error validating material {EntityName} with code {EntityCode}", entity.Name, entity.Code);
-                throw;
+                return ServiceResult.Failure("驗證過程中發生錯誤");
             }
         }
 
@@ -172,14 +170,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsNameExistsAsync), GetType(), _logger, new { 
                     Method = nameof(IsNameExistsAsync),
                     ServiceType = GetType().Name,
                     Name = name,
                     ExcludeId = excludeId
                 });
-                _logger.LogError(ex, "Error checking if material name exists {Name}", name);
-                throw;
+                return false;
             }
         }
 
@@ -199,14 +196,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCodeExistsAsync), GetType(), _logger, new { 
                     Method = nameof(IsCodeExistsAsync),
                     ServiceType = GetType().Name,
                     Code = code,
                     ExcludeId = excludeId
                 });
-                _logger.LogError(ex, "Error checking if material code exists {Code}", code);
-                throw;
+                return false;
             }
         }
 
@@ -224,13 +220,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByCodeAsync), GetType(), _logger, new { 
                     Method = nameof(GetByCodeAsync),
                     ServiceType = GetType().Name,
                     Code = code
                 });
-                _logger.LogError(ex, "Error getting material by code {Code}", code);
-                throw;
+                return null;
             }
         }
 
@@ -249,13 +244,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByCategoryAsync), GetType(), _logger, new { 
                     Method = nameof(GetByCategoryAsync),
                     ServiceType = GetType().Name,
                     Category = category
                 });
-                _logger.LogError(ex, "Error getting materials by category {Category}", category);
-                throw;
+                return new List<Material>();
             }
         }
 
@@ -275,12 +269,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCategoriesAsync), GetType(), _logger, new { 
                     Method = nameof(GetCategoriesAsync),
                     ServiceType = GetType().Name
                 });
-                _logger.LogError(ex, "Error getting material categories");
-                throw;
+                return new List<string>();
             }
         }
 
@@ -300,13 +293,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySupplierAsync), GetType(), _logger, new { 
                     Method = nameof(GetBySupplierAsync),
                     ServiceType = GetType().Name,
                     SupplierId = supplierId
                 });
-                _logger.LogError(ex, "Error getting materials by supplier {SupplierId}", supplierId);
-                throw;
+                return new List<Material>();
             }
         }
 
@@ -326,12 +318,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetEcoFriendlyMaterialsAsync), GetType(), _logger, new { 
                     Method = nameof(GetEcoFriendlyMaterialsAsync),
                     ServiceType = GetType().Name
                 });
-                _logger.LogError(ex, "Error getting eco-friendly materials");
-                throw;
+                return new List<Material>();
             }
         }
 
@@ -359,14 +350,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByDensityRangeAsync), GetType(), _logger, new { 
                     Method = nameof(GetByDensityRangeAsync),
                     ServiceType = GetType().Name,
                     MinDensity = minDensity,
                     MaxDensity = maxDensity
                 });
-                _logger.LogError(ex, "Error getting materials by density range {MinDensity} - {MaxDensity}", minDensity, maxDensity);
-                throw;
+                return new List<Material>();
             }
         }
 
@@ -394,14 +384,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByMeltingPointRangeAsync), GetType(), _logger, new { 
                     Method = nameof(GetByMeltingPointRangeAsync),
                     ServiceType = GetType().Name,
                     MinMeltingPoint = minMeltingPoint,
                     MaxMeltingPoint = maxMeltingPoint
                 });
-                _logger.LogError(ex, "Error getting materials by melting point range {MinMeltingPoint} - {MaxMeltingPoint}", minMeltingPoint, maxMeltingPoint);
-                throw;
+                return new List<Material>();
             }
         }
     }

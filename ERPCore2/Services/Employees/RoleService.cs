@@ -3,6 +3,7 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -15,8 +16,11 @@ namespace ERPCore2.Services
     {
         public RoleService(
             AppDbContext context, 
-            ILogger<GenericManagementService<Role>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<Role>> logger) : base(context, logger)
+        {
+        }
+
+        public RoleService(AppDbContext context) : base(context)
         {
         }
 
@@ -34,12 +38,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting all roles");
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
+                return new List<Role>();
             }
         }
 
@@ -55,13 +55,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByIdAsync),
-                    ServiceType = GetType().Name,
-                    RoleId = id 
-                });
-                _logger.LogError(ex, "Error getting role by ID {RoleId}", id);
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByIdAsync), GetType(), _logger, new { RoleId = id });
+                return null;
             }
         }
 
@@ -87,12 +82,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByNameAsync),
-                    ServiceType = GetType().Name,
-                    RoleName = roleName 
-                });
-                _logger.LogError(ex, "Error getting role by name {RoleName}", roleName);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByNameAsync), GetType(), _logger, new { RoleName = roleName });
                 return ServiceResult<Role>.Failure($"取得角色資料時發生錯誤：{ex.Message}");
             }
         }
@@ -115,11 +105,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetSystemRolesAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting system roles");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetSystemRolesAsync), GetType(), _logger);
                 return ServiceResult<List<Role>>.Failure($"取得系統角色時發生錯誤：{ex.Message}");
             }
         }
@@ -142,11 +128,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetCustomRolesAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting custom roles");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCustomRolesAsync), GetType(), _logger);
                 return ServiceResult<List<Role>>.Failure($"取得自訂角色時發生錯誤：{ex.Message}");
             }
         }
@@ -171,13 +153,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsRoleNameExistsAsync),
-                    ServiceType = GetType().Name,
-                    RoleName = roleName,
-                    ExcludeRoleId = excludeRoleId 
-                });
-                _logger.LogError(ex, "Error checking if role name exists {RoleName}", roleName);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsRoleNameExistsAsync), GetType(), _logger, new { RoleName = roleName, ExcludeRoleId = excludeRoleId });
                 return ServiceResult<bool>.Failure($"檢查角色名稱時發生錯誤：{ex.Message}");
             }
         }
@@ -229,13 +205,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(AssignPermissionsToRoleAsync),
-                    ServiceType = GetType().Name,
-                    RoleId = roleId,
-                    PermissionIds = permissionIds 
-                });
-                _logger.LogError(ex, "Error assigning permissions to role {RoleId}", roleId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(AssignPermissionsToRoleAsync), GetType(), _logger, new { RoleId = roleId, PermissionIds = permissionIds });
                 return ServiceResult.Failure($"指派權限時發生錯誤：{ex.Message}");
             }
         }
@@ -265,13 +235,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(RemovePermissionsFromRoleAsync),
-                    ServiceType = GetType().Name,
-                    RoleId = roleId,
-                    PermissionIds = permissionIds 
-                });
-                _logger.LogError(ex, "Error removing permissions from role {RoleId}", roleId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(RemovePermissionsFromRoleAsync), GetType(), _logger, new { RoleId = roleId, PermissionIds = permissionIds });
                 return ServiceResult.Failure($"移除權限時發生錯誤：{ex.Message}");
             }
         }
@@ -301,12 +265,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ClearRolePermissionsAsync),
-                    ServiceType = GetType().Name,
-                    RoleId = roleId 
-                });
-                _logger.LogError(ex, "Error clearing role permissions for role {RoleId}", roleId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ClearRolePermissionsAsync), GetType(), _logger, new { RoleId = roleId });
                 return ServiceResult.Failure($"清除角色權限時發生錯誤：{ex.Message}");
             }
         }
@@ -343,13 +302,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(CopyRolePermissionsAsync),
-                    ServiceType = GetType().Name,
-                    SourceRoleId = sourceRoleId,
-                    TargetRoleId = targetRoleId 
-                });
-                _logger.LogError(ex, "Error copying role permissions from {SourceRoleId} to {TargetRoleId}", sourceRoleId, targetRoleId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CopyRolePermissionsAsync), GetType(), _logger, new { SourceRoleId = sourceRoleId, TargetRoleId = targetRoleId });
                 return ServiceResult.Failure($"複製角色權限時發生錯誤：{ex.Message}");
             }
         }
@@ -369,12 +322,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetEmployeeCountByRoleAsync),
-                    ServiceType = GetType().Name,
-                    RoleId = roleId 
-                });
-                _logger.LogError(ex, "Error getting employee count for role {RoleId}", roleId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetEmployeeCountByRoleAsync), GetType(), _logger, new { RoleId = roleId });
                 return ServiceResult<int>.Failure($"取得角色員工數量時發生錯誤：{ex.Message}");
             }
         }
@@ -402,12 +350,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(CanDeleteRoleAsync),
-                    ServiceType = GetType().Name,
-                    RoleId = roleId 
-                });
-                _logger.LogError(ex, "Error checking if role can be deleted {RoleId}", roleId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteRoleAsync), GetType(), _logger, new { RoleId = roleId });
                 return ServiceResult<bool>.Failure($"檢查角色刪除權限時發生錯誤：{ex.Message}");
             }
         }
@@ -435,12 +378,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchRolesAsync),
-                    ServiceType = GetType().Name,
-                    SearchTerm = searchTerm 
-                });
-                _logger.LogError(ex, "Error searching roles with term {SearchTerm}", searchTerm);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchRolesAsync), GetType(), _logger, new { SearchTerm = searchTerm });
                 return ServiceResult<List<Role>>.Failure($"搜尋角色時發生錯誤：{ex.Message}");
             }
         }
@@ -461,11 +399,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAssignableRolesAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting assignable roles");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAssignableRolesAsync), GetType(), _logger);
                 return ServiceResult<List<Role>>.Failure($"取得可指派角色時發生錯誤：{ex.Message}");
             }
         }
@@ -493,10 +427,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error validating role data");
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(ValidateRoleData), GetType(), _logger);
                 return ServiceResult<bool>.Failure($"驗證角色資料時發生錯誤：{ex.Message}");
             }
-        }        // 覆寫 ValidateAsync 以加入業務驗證
+        }
+
+        // 覆寫 ValidateAsync 以加入業務驗證
         public override async Task<ServiceResult> ValidateAsync(Role entity)
         {
             try
@@ -518,13 +454,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ValidateAsync),
-                    ServiceType = GetType().Name,
-                    EntityId = entity?.Id,
-                    EntityName = entity?.RoleName 
-                });
-                _logger.LogError(ex, "Error validating role {RoleName}", entity?.RoleName);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { EntityId = entity?.Id, EntityName = entity?.RoleName });
                 return ServiceResult.Failure($"驗證角色時發生錯誤：{ex.Message}");
             }
         }
@@ -539,12 +469,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchAsync),
-                    ServiceType = GetType().Name,
-                    SearchTerm = searchTerm 
-                });
-                _logger.LogError(ex, "Error in SearchAsync with term {SearchTerm}", searchTerm);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { SearchTerm = searchTerm });
                 return new List<Role>();
             }
         }
@@ -565,12 +490,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(DeleteAsync),
-                    ServiceType = GetType().Name,
-                    RoleId = id 
-                });
-                _logger.LogError(ex, "Error deleting role {RoleId}", id);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteAsync), GetType(), _logger, new { RoleId = id });
                 return ServiceResult.Failure($"刪除角色時發生錯誤：{ex.Message}");
             }
         }

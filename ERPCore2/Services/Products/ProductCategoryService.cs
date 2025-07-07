@@ -2,6 +2,7 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -12,10 +13,19 @@ namespace ERPCore2.Services
     /// </summary>
     public class ProductCategoryService : GenericManagementService<ProductCategory>, IProductCategoryService
     {
+        /// <summary>
+        /// 完整建構子 - 包含 ILogger
+        /// </summary>
         public ProductCategoryService(
             AppDbContext context, 
-            ILogger<GenericManagementService<ProductCategory>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<ProductCategory>> logger) : base(context, logger)
+        {
+        }
+
+        /// <summary>
+        /// 簡易建構子 - 不包含 ILogger
+        /// </summary>
+        public ProductCategoryService(AppDbContext context) : base(context)
         {
         }
 
@@ -33,12 +43,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting all product categories");
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
+                return new List<ProductCategory>();
             }
         }
 
@@ -54,13 +60,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByIdAsync),
-                    Id = id,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting product category by id {Id}", id);
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByIdAsync), GetType(), _logger, new { Id = id });
+                return null;
             }
         }
 
@@ -82,13 +83,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchAsync),
-                    SearchTerm = searchTerm,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error searching product categories with term {SearchTerm}", searchTerm);
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { SearchTerm = searchTerm });
+                return new List<ProductCategory>();
             }
         }
 
@@ -146,14 +142,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ValidateAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { 
                     EntityId = entity.Id,
-                    CategoryName = entity.CategoryName,
-                    ServiceType = GetType().Name 
+                    CategoryName = entity.CategoryName
                 });
-                _logger.LogError(ex, "Error validating product category {CategoryName}", entity.CategoryName);
-                throw;
+                return ServiceResult.Failure("驗證過程中發生錯誤");
             }
         }
 
@@ -165,14 +158,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsNameExistsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsNameExistsAsync), GetType(), _logger, new { 
                     Name = name,
-                    ExcludeId = excludeId,
-                    ServiceType = GetType().Name 
+                    ExcludeId = excludeId
                 });
-                _logger.LogError(ex, "Error checking if name exists {Name}", name);
-                throw;
+                return false;
             }
         }
 
@@ -187,13 +177,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(CanDeleteAsync),
-                    EntityId = entity.Id,
-                    ServiceType = GetType().Name 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { 
+                    EntityId = entity.Id
                 });
-                _logger.LogError(ex, "Error checking if category can be deleted {CategoryId}", entity.Id);
-                throw;
+                return ServiceResult.Failure("檢查刪除權限時發生錯誤");
             }
         }
 
@@ -214,14 +201,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsCategoryNameExistsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCategoryNameExistsAsync), GetType(), _logger, new { 
                     CategoryName = categoryName,
-                    ExcludeId = excludeId,
-                    ServiceType = GetType().Name 
+                    ExcludeId = excludeId
                 });
-                _logger.LogError(ex, "Error checking category name exists {CategoryName}", categoryName);
-                throw;
+                return false;
             }
         }
 
@@ -238,14 +222,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsCategoryCodeExistsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCategoryCodeExistsAsync), GetType(), _logger, new { 
                     CategoryCode = categoryCode,
-                    ExcludeId = excludeId,
-                    ServiceType = GetType().Name 
+                    ExcludeId = excludeId
                 });
-                _logger.LogError(ex, "Error checking category code exists {CategoryCode}", categoryCode);
-                throw;
+                return false;
             }
         }
 
@@ -259,13 +240,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByCategoryNameAsync),
-                    CategoryName = categoryName,
-                    ServiceType = GetType().Name 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByCategoryNameAsync), GetType(), _logger, new { 
+                    CategoryName = categoryName
                 });
-                _logger.LogError(ex, "Error getting category by name {CategoryName}", categoryName);
-                throw;
+                return null;
             }
         }
 
@@ -279,13 +257,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByCategoryCodeAsync),
-                    CategoryCode = categoryCode,
-                    ServiceType = GetType().Name 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByCategoryCodeAsync), GetType(), _logger, new { 
+                    CategoryCode = categoryCode
                 });
-                _logger.LogError(ex, "Error getting category by code {CategoryCode}", categoryCode);
-                throw;
+                return null;
             }
         }
 
@@ -300,12 +275,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetTopLevelCategoriesAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting top level categories");
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetTopLevelCategoriesAsync), GetType(), _logger);
+                return new List<ProductCategory>();
             }
         }
 
@@ -320,13 +291,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetChildCategoriesAsync),
-                    ParentCategoryId = parentCategoryId,
-                    ServiceType = GetType().Name 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetChildCategoriesAsync), GetType(), _logger, new { 
+                    ParentCategoryId = parentCategoryId
                 });
-                _logger.LogError(ex, "Error getting child categories for parent {ParentCategoryId}", parentCategoryId);
-                throw;
+                return new List<ProductCategory>();
             }
         }
 
@@ -343,12 +311,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetCategoryTreeAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting category tree");
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCategoryTreeAsync), GetType(), _logger);
+                return new List<ProductCategory>();
             }
         }
 
@@ -371,13 +335,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(CanDeleteCategoryAsync),
-                    CategoryId = categoryId,
-                    ServiceType = GetType().Name 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteCategoryAsync), GetType(), _logger, new { 
+                    CategoryId = categoryId
                 });
-                _logger.LogError(ex, "Error checking if category can be deleted {CategoryId}", categoryId);
-                throw;
+                return false;
             }
         }
 
@@ -402,15 +363,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(CanSetAsParentAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanSetAsParentAsync), GetType(), _logger, new { 
                     CategoryId = categoryId,
-                    ParentCategoryId = parentCategoryId,
-                    ServiceType = GetType().Name 
+                    ParentCategoryId = parentCategoryId
                 });
-                _logger.LogError(ex, "Error checking if can set as parent {CategoryId} -> {ParentCategoryId}", 
-                    categoryId, parentCategoryId);
-                throw;
+                return false;
             }
         }
 

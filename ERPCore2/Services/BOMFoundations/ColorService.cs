@@ -2,6 +2,7 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -11,8 +12,11 @@ namespace ERPCore2.Services
     {
         public ColorService(
             AppDbContext context, 
-            ILogger<GenericManagementService<Color>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<Color>> logger) : base(context, logger)
+        {
+        }
+
+        public ColorService(AppDbContext context) : base(context)
         {
         }
 
@@ -30,12 +34,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
                     Method = nameof(GetAllAsync),
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error getting all colors");
-                throw;
+                return new List<Color>();
             }
         }
 
@@ -60,13 +63,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { 
                     Method = nameof(SearchAsync),
                     ServiceType = GetType().Name,
                     SearchTerm = searchTerm 
                 });
-                _logger.LogError(ex, "Error searching colors with term: {SearchTerm}", searchTerm);
-                throw;
+                return new List<Color>();
             }
         }
 
@@ -98,14 +100,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { 
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
                     EntityName = entity.Name 
                 });
-                _logger.LogError(ex, "Error validating color entity: {EntityId}, {EntityName}", entity.Id, entity.Name);
-                throw;
+                return ServiceResult.Failure("驗證過程中發生錯誤");
             }
         }
 
@@ -125,14 +126,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsNameExistsAsync), GetType(), _logger, new { 
                     Method = nameof(IsNameExistsAsync),
                     ServiceType = GetType().Name,
                     Name = name,
                     ExcludeId = excludeId 
                 });
-                _logger.LogError(ex, "Error checking if color name exists: {Name}, ExcludeId: {ExcludeId}", name, excludeId);
-                throw;
+                return false;
             }
         }
 
@@ -152,14 +152,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCodeExistsAsync), GetType(), _logger, new { 
                     Method = nameof(IsCodeExistsAsync),
                     ServiceType = GetType().Name,
                     Code = code,
                     ExcludeId = excludeId 
                 });
-                _logger.LogError(ex, "Error checking if color code exists: {Code}, ExcludeId: {ExcludeId}", code, excludeId);
-                throw;
+                return false;
             }
         }
 
@@ -176,13 +175,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByCodeAsync), GetType(), _logger, new { 
                     Method = nameof(GetByCodeAsync),
                     ServiceType = GetType().Name,
                     Code = code 
                 });
-                _logger.LogError(ex, "Error getting color by code: {Code}", code);
-                throw;
+                return null;
             }
         }
 
@@ -199,13 +197,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByHexCodeAsync), GetType(), _logger, new { 
                     Method = nameof(GetByHexCodeAsync),
                     ServiceType = GetType().Name,
                     HexCode = hexCode 
                 });
-                _logger.LogError(ex, "Error getting color by hex code: {HexCode}", hexCode);
-                throw;
+                return null;
             }
         }
 
@@ -225,14 +222,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsHexCodeExistsAsync), GetType(), _logger, new { 
                     Method = nameof(IsHexCodeExistsAsync),
                     ServiceType = GetType().Name,
                     HexCode = hexCode,
                     ExcludeId = excludeId 
                 });
-                _logger.LogError(ex, "Error checking if hex code exists: {HexCode}, ExcludeId: {ExcludeId}", hexCode, excludeId);
-                throw;
+                return false;
             }
         }
     }

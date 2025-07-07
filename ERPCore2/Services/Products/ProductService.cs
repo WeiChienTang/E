@@ -13,10 +13,19 @@ namespace ERPCore2.Services
     /// </summary>
     public class ProductService : GenericManagementService<Product>, IProductService
     {
+        /// <summary>
+        /// 完整建構子 - 使用 ILogger
+        /// </summary>
         public ProductService(
             AppDbContext context, 
-            ILogger<GenericManagementService<Product>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<Product>> logger) : base(context, logger)
+        {
+        }
+
+        /// <summary>
+        /// 簡易建構子 - 不使用 ILogger
+        /// </summary>
+        public ProductService(AppDbContext context) : base(context)
         {
         }
 
@@ -36,11 +45,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting all products");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -59,12 +64,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByIdAsync),
-                    Id = id,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting product by ID {Id}", id);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByIdAsync), GetType(), _logger, new { Id = id });
                 throw;
             }
         }
@@ -90,12 +90,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchAsync),
-                    SearchTerm = searchTerm,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error searching products with term {SearchTerm}", searchTerm);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { SearchTerm = searchTerm });
                 throw;
             }
         }
@@ -167,13 +162,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ValidateAsync),
-                    EntityId = entity.Id,
-                    ProductCode = entity.ProductCode,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error validating product {EntityId}", entity.Id);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { EntityId = entity.Id, ProductCode = entity.ProductCode });
                 return ServiceResult.Failure($"驗證商品時發生錯誤: {ex.Message}");
             }
         }
@@ -194,12 +183,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByProductCodeAsync),
-                    ProductCode = productCode,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting product by code {ProductCode}", productCode);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductCodeAsync), GetType(), _logger, new { ProductCode = productCode });
                 throw;
             }
         }
@@ -217,13 +201,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsProductCodeExistsAsync),
-                    ProductCode = productCode,
-                    ExcludeId = excludeId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error checking product code exists {ProductCode}", productCode);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsProductCodeExistsAsync), GetType(), _logger, new { ProductCode = productCode, ExcludeId = excludeId });
                 throw;
             }
         }
@@ -242,12 +220,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByProductCategoryAsync),
-                    ProductCategoryId = productCategoryId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting products by category {ProductCategoryId}", productCategoryId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductCategoryAsync), GetType(), _logger, new { ProductCategoryId = productCategoryId });
                 throw;
             }
         }
@@ -266,12 +239,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByPrimarySupplierAsync),
-                    SupplierId = supplierId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting products by primary supplier {SupplierId}", supplierId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByPrimarySupplierAsync), GetType(), _logger, new { SupplierId = supplierId });
                 throw;
             }
         }
@@ -290,11 +258,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetActiveProductsAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting active products");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetActiveProductsAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -315,11 +279,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetLowStockProductsAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting low stock products");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetLowStockProductsAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -340,11 +300,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetOverStockProductsAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting over stock products");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetOverStockProductsAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -361,13 +317,10 @@ namespace ERPCore2.Services
                     .Where(pc => pc.Status == EntityStatus.Active && !pc.IsDeleted)
                     .OrderBy(pc => pc.CategoryName)
                     .ToListAsync();
-            }            catch (Exception ex)
+            }
+            catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetProductCategoriesAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting product categories");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetProductCategoriesAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -383,11 +336,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetSuppliersAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting suppliers");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetSuppliersAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -403,11 +352,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetUnitsAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting units");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetUnitsAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -428,12 +373,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetProductSuppliersAsync),
-                    ProductId = productId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting product suppliers for product {ProductId}", productId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetProductSuppliersAsync), GetType(), _logger, new { ProductId = productId });
                 throw;
             }
         }
@@ -504,12 +444,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(UpdateProductSuppliersAsync),
-                    ProductId = productId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error updating product suppliers for product {ProductId}", productId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateProductSuppliersAsync), GetType(), _logger, new { ProductId = productId });
                 return ServiceResult.Failure($"更新商品供應商關聯時發生錯誤: {ex.Message}");
             }
         }
@@ -532,13 +467,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SetPrimarySupplierAsync),
-                    ProductId = productId,
-                    SupplierId = supplierId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error setting primary supplier for product {ProductId}", productId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetPrimarySupplierAsync), GetType(), _logger, new { ProductId = productId, SupplierId = supplierId });
                 return ServiceResult.Failure($"設定主要供應商時發生錯誤: {ex.Message}");
             }
         }
@@ -570,13 +499,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(UpdateStockAsync),
-                    ProductId = productId,
-                    NewStock = newStock,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error updating stock for product {ProductId}", productId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateStockAsync), GetType(), _logger, new { ProductId = productId, NewStock = newStock });
                 return ServiceResult.Failure($"更新庫存時發生錯誤: {ex.Message}");
             }
         }
@@ -602,21 +525,14 @@ namespace ERPCore2.Services
 
                 await _context.SaveChangesAsync();
                 
-                _logger.LogInformation("Stock adjusted for product {ProductId}: {Adjustment} (Reason: {Reason})", 
+                _logger?.LogInformation("Stock adjusted for product {ProductId}: {Adjustment} (Reason: {Reason})", 
                     productId, adjustment, reason);
                     
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(AdjustStockAsync),
-                    ProductId = productId,
-                    Adjustment = adjustment,
-                    Reason = reason,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error adjusting stock for product {ProductId}", productId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(AdjustStockAsync), GetType(), _logger, new { ProductId = productId, Adjustment = adjustment, Reason = reason });
                 return ServiceResult.Failure($"調整庫存時發生錯誤: {ex.Message}");
             }
         }
@@ -655,14 +571,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SetStockLevelsAsync),
-                    ProductId = productId,
-                    MinLevel = minLevel,
-                    MaxLevel = maxLevel,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error setting stock levels for product {ProductId}", productId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetStockLevelsAsync), GetType(), _logger, new { ProductId = productId, MinLevel = minLevel, MaxLevel = maxLevel });
                 return ServiceResult.Failure($"設定庫存警戒值時發生錯誤: {ex.Message}");
             }
         }
@@ -700,14 +609,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(UpdatePricesAsync),
-                    ProductId = productId,
-                    UnitPrice = unitPrice,
-                    CostPrice = costPrice,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error updating prices for product {ProductId}", productId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdatePricesAsync), GetType(), _logger, new { ProductId = productId, UnitPrice = unitPrice, CostPrice = costPrice });
                 return ServiceResult.Failure($"更新價格時發生錯誤: {ex.Message}");
             }
         }
@@ -757,14 +659,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(BatchUpdatePricesAsync),
-                    ProductIds = productIds,
-                    PriceAdjustment = priceAdjustment,
-                    IsPercentage = isPercentage,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error batch updating prices");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(BatchUpdatePricesAsync), GetType(), _logger, new { ProductIds = productIds, PriceAdjustment = priceAdjustment, IsPercentage = isPercentage });
                 return ServiceResult.Failure($"批次更新價格時發生錯誤: {ex.Message}");
             }
         }
@@ -791,12 +686,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ToggleActiveStatusAsync),
-                    ProductId = productId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error toggling active status for product {ProductId}", productId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ToggleActiveStatusAsync), GetType(), _logger, new { ProductId = productId });
                 return ServiceResult.Failure($"切換啟用狀態時發生錯誤: {ex.Message}");
             }
         }
@@ -825,13 +715,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(BatchSetActiveStatusAsync),
-                    ProductIds = productIds,
-                    IsActive = isActive,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error batch setting active status");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(BatchSetActiveStatusAsync), GetType(), _logger, new { ProductIds = productIds, IsActive = isActive });
                 return ServiceResult.Failure($"批次設定啟用狀態時發生錯誤: {ex.Message}");
             }
         }
@@ -842,58 +726,98 @@ namespace ERPCore2.Services
 
         public void InitializeNewProduct(Product product)
         {
-            product.ProductCode = string.Empty;
-            product.ProductName = string.Empty;
-            product.Description = string.Empty;
-            product.Specification = string.Empty;
-            product.UnitId = null;
-            product.UnitPrice = null;
-            product.CostPrice = null;
-            product.MinStockLevel = null;
-            product.MaxStockLevel = null;
-            product.CurrentStock = 0;
-            product.IsActive = true;
-            product.ProductCategoryId = null;
-            product.PrimarySupplierId = null;
-            product.Status = EntityStatus.Active;
+            try
+            {
+                product.ProductCode = string.Empty;
+                product.ProductName = string.Empty;
+                product.Description = string.Empty;
+                product.Specification = string.Empty;
+                product.UnitId = null;
+                product.UnitPrice = null;
+                product.CostPrice = null;
+                product.MinStockLevel = null;
+                product.MaxStockLevel = null;
+                product.CurrentStock = 0;
+                product.IsActive = true;
+                product.ProductCategoryId = null;
+                product.PrimarySupplierId = null;
+                product.Status = EntityStatus.Active;
+            }
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(InitializeNewProduct), GetType(), _logger);
+                throw;
+            }
         }
 
         public int GetBasicRequiredFieldsCount()
         {
-            return 2; // ProductCode, ProductName
+            try
+            {
+                return 2; // ProductCode, ProductName
+            }
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetBasicRequiredFieldsCount), GetType(), _logger);
+                throw;
+            }
         }
 
         public int GetBasicCompletedFieldsCount(Product product)
         {
-            int count = 0;
+            try
+            {
+                int count = 0;
 
-            if (!string.IsNullOrWhiteSpace(product.ProductCode))
-                count++;
+                if (!string.IsNullOrWhiteSpace(product.ProductCode))
+                    count++;
 
-            if (!string.IsNullOrWhiteSpace(product.ProductName))
-                count++;
+                if (!string.IsNullOrWhiteSpace(product.ProductName))
+                    count++;
 
-            return count;
+                return count;
+            }
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetBasicCompletedFieldsCount), GetType(), _logger, new { ProductId = product?.Id });
+                throw;
+            }
         }
 
         public bool IsStockSufficient(Product product, int requiredQuantity)
         {
-            return product.CurrentStock >= requiredQuantity;
+            try
+            {
+                return product.CurrentStock >= requiredQuantity;
+            }
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(IsStockSufficient), GetType(), _logger, new { ProductId = product?.Id, RequiredQuantity = requiredQuantity });
+                throw;
+            }
         }
 
         public string GetStockStatus(Product product)
         {
-            if (product.MinStockLevel.HasValue && product.CurrentStock <= product.MinStockLevel.Value)
+            try
             {
-                return "庫存不足";
-            }
+                if (product.MinStockLevel.HasValue && product.CurrentStock <= product.MinStockLevel.Value)
+                {
+                    return "庫存不足";
+                }
 
-            if (product.MaxStockLevel.HasValue && product.CurrentStock >= product.MaxStockLevel.Value)
+                if (product.MaxStockLevel.HasValue && product.CurrentStock >= product.MaxStockLevel.Value)
+                {
+                    return "庫存過量";
+                }
+
+                return "正常";
+            }
+            catch (Exception ex)
             {
-                return "庫存過量";
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetStockStatus), GetType(), _logger, new { ProductId = product?.Id });
+                throw;
             }
-
-            return "正常";
         }
 
         #endregion

@@ -1,6 +1,7 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
+using ERPCore2.Helpers;
 using ERPCore2.Services;
 using ERPCore2.Services.GenericManagementService;
 using Microsoft.EntityFrameworkCore;
@@ -15,8 +16,11 @@ namespace ERPCore2.Services
     {
         public EmployeeContactService(
             AppDbContext context, 
-            ILogger<GenericManagementService<EmployeeContact>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<EmployeeContact>> logger) : base(context, logger)
+        {
+        }
+
+        public EmployeeContactService(AppDbContext context) : base(context)
         {
         }
 
@@ -43,11 +47,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "搜尋員工聯絡資料時發生錯誤: SearchTerm={SearchTerm}", searchTerm);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { SearchTerm = searchTerm });
                 return new List<EmployeeContact>();
             }
         }
@@ -106,11 +106,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ValidateAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "驗證員工聯絡資料時發生錯誤: EmployeeId={EmployeeId}", entity.EmployeeId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { EmployeeId = entity.EmployeeId });
                 return ServiceResult.Failure("驗證員工聯絡資料時發生錯誤");
             }
         }
@@ -129,11 +125,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "取得所有員工聯絡資料時發生錯誤");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
                 return new List<EmployeeContact>();
             }
         }
@@ -149,11 +141,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByIdAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "根據ID取得員工聯絡資料時發生錯誤: Id={Id}", id);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByIdAsync), GetType(), _logger, new { Id = id });
                 return null;
             }
         }
@@ -181,14 +169,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetContactValue),
-                    ServiceType = GetType().Name 
-                }).Wait();
-                _logger.LogError(ex, "Error in GetContactValue");
-
-                _logger.LogError(ex, "取得員工聯絡資料值時發生錯誤: EmployeeId={EmployeeId}, ContactTypeName={ContactTypeName}",
-                    employeeId, contactTypeName);
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetContactValue), GetType(), _logger, new { EmployeeId = employeeId, ContactTypeName = contactTypeName });
                 return string.Empty;
             }
         }
@@ -245,14 +226,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(UpdateContactValue),
-                    ServiceType = GetType().Name 
-                }).Wait();
-                _logger.LogError(ex, "Error in UpdateContactValue");
-
-                _logger.LogError(ex, "更新員工聯絡資料值時發生錯誤: EmployeeId={EmployeeId}, ContactTypeName={ContactTypeName}",
-                    employeeId, contactTypeName);
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(UpdateContactValue), GetType(), _logger, new { EmployeeId = employeeId, ContactTypeName = contactTypeName });
                 return ServiceResult.Failure("更新聯絡資料時發生錯誤");
             }
         }
@@ -268,11 +242,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetContactCompletedFieldsCount),
-                    ServiceType = GetType().Name 
-                }).Wait();
-                _logger.LogError(ex, "計算已完成的聯絡資料數量時發生錯誤");
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetContactCompletedFieldsCount), GetType(), _logger);
                 return 0;
             }
         }
@@ -316,11 +286,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ValidateEmployeeContacts),
-                    ServiceType = GetType().Name 
-                }).Wait();
-                _logger.LogError(ex, "驗證員工聯絡資料時發生錯誤");
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(ValidateEmployeeContacts), GetType(), _logger);
                 return ServiceResult.Failure("驗證員工聯絡資料時發生錯誤");
             }
         }
@@ -353,13 +319,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(EnsureUniquePrimaryContacts),
-                    ServiceType = GetType().Name 
-                }).Wait();
-                _logger.LogError(ex, "Error in EnsureUniquePrimaryContacts");
-
-                _logger.LogError(ex, "確保主要聯絡方式唯一性時發生錯誤");
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(EnsureUniquePrimaryContacts), GetType(), _logger);
                 return ServiceResult.Failure("處理主要聯絡方式時發生錯誤");
             }
         }
@@ -384,13 +344,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByEmployeeIdAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error in GetEmployeeContactsAsync");
-
-                _logger.LogError(ex, "根據員工ID取得聯絡資料時發生錯誤: EmployeeId={EmployeeId}", employeeId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByEmployeeIdAsync), GetType(), _logger, new { EmployeeId = employeeId });
                 return ServiceResult<List<EmployeeContact>>.Failure("取得員工聯絡資料時發生錯誤");
             }
         }
@@ -415,11 +369,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByContactTypeAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "根據聯絡類型取得員工聯絡資料時發生錯誤: ContactTypeId={ContactTypeId}", contactTypeId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByContactTypeAsync), GetType(), _logger, new { ContactTypeId = contactTypeId });
                 return ServiceResult<List<EmployeeContact>>.Failure("取得員工聯絡資料時發生錯誤");
             }
         }
@@ -461,13 +411,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SetAsPrimaryAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error in SetAsPrimaryAsync");
-
-                _logger.LogError(ex, "設定主要聯絡方式時發生錯誤: EmployeeContactId={EmployeeContactId}", employeeContactId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetAsPrimaryAsync), GetType(), _logger, new { EmployeeContactId = employeeContactId });
                 return ServiceResult.Failure("設定主要聯絡方式時發生錯誤");
             }
         }

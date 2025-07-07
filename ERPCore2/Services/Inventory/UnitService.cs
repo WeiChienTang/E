@@ -1,6 +1,7 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -11,10 +12,19 @@ namespace ERPCore2.Services
     /// </summary>
     public class UnitService : GenericManagementService<Unit>, IUnitService
     {
+        /// <summary>
+        /// 完整建構子 - 使用 ILogger
+        /// </summary>
         public UnitService(
             AppDbContext context, 
-            ILogger<GenericManagementService<Unit>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<Unit>> logger) : base(context, logger)
+        {
+        }
+
+        /// <summary>
+        /// 簡易建構子 - 不使用 ILogger
+        /// </summary>
+        public UnitService(AppDbContext context) : base(context)
         {
         }
 
@@ -34,12 +44,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting all units");
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
+                return new List<Unit>();
             }
         }
 
@@ -65,13 +71,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchAsync),
-                    SearchTerm = searchTerm,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error searching units with term {SearchTerm}", searchTerm);
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, 
+                    new { SearchTerm = searchTerm });
+                return new List<Unit>();
             }
         }
 
@@ -91,14 +93,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsUnitCodeExistsAsync),
-                    UnitCode = unitCode,
-                    ExcludeId = excludeId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error checking unit code exists: {UnitCode}", unitCode);
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsUnitCodeExistsAsync), GetType(), _logger, 
+                    new { UnitCode = unitCode, ExcludeId = excludeId });
+                return false;
             }
         }
 
@@ -116,12 +113,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetBaseUnitsAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting base units");
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBaseUnitsAsync), GetType(), _logger);
+                return new List<Unit>();
             }
         }
 
@@ -141,13 +134,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetUnitWithConversionsAsync),
-                    UnitId = unitId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting unit with conversions for unit ID {UnitId}", unitId);
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetUnitWithConversionsAsync), GetType(), _logger, 
+                    new { UnitId = unitId });
+                return null;
             }
         }
 
@@ -186,16 +175,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ConvertUnitsAsync),
-                    FromUnitId = fromUnitId,
-                    ToUnitId = toUnitId,
-                    Quantity = quantity,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error converting units from {FromUnitId} to {ToUnitId} with quantity {Quantity}", 
-                    fromUnitId, toUnitId, quantity);
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ConvertUnitsAsync), GetType(), _logger, 
+                    new { FromUnitId = fromUnitId, ToUnitId = toUnitId, Quantity = quantity });
+                return null;
             }
         }
 
@@ -220,13 +202,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetConvertibleUnitsAsync),
-                    UnitId = unitId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting convertible units for unit ID {UnitId}", unitId);
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetConvertibleUnitsAsync), GetType(), _logger, 
+                    new { UnitId = unitId });
+                return new List<Unit>();
             }
         }
 
@@ -252,14 +230,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ValidateAsync),
-                    UnitId = entity.Id,
-                    UnitCode = entity.UnitCode,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error validating unit with code {UnitCode}", entity.UnitCode);
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, 
+                    new { UnitId = entity.Id, UnitCode = entity.UnitCode });
+                return ServiceResult.Failure("驗證過程中發生錯誤");
             }
         }
 
@@ -279,14 +252,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsNameExistsAsync),
-                    Name = name,
-                    ExcludeId = excludeId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error checking name exists: {Name}", name);
-                throw;
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsNameExistsAsync), GetType(), _logger, 
+                    new { Name = name, ExcludeId = excludeId });
+                return false;
             }
         }
     }

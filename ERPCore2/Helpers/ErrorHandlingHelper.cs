@@ -84,7 +84,6 @@ namespace ERPCore2.Helpers
         /// <param name="exception">捕獲的例外</param>
         /// <param name="methodName">發生錯誤的方法名稱</param>
         /// <param name="serviceType">服務類型</param>
-        /// <param name="errorLogService">錯誤記錄服務（可為 null）</param>
         /// <param name="logger">記錄器（可為 null）</param>
         /// <param name="additionalData">額外的錯誤資料</param>
         /// <returns>錯誤 ID</returns>
@@ -92,19 +91,24 @@ namespace ERPCore2.Helpers
             Exception exception,
             string methodName,
             Type serviceType,
-            IErrorLogService? errorLogService = null,
             ILogger? logger = null,
             object? additionalData = null)
         {
             string errorId = string.Empty;
             
+            if (_serviceProvider == null)
+            {
+                // 如果服務提供者未初始化，回傳降級錯誤 ID
+                return $"SERVICE_NO_PROVIDER_{DateTime.UtcNow.Ticks}";
+            }
+
             try
             {
+                using var scope = _serviceProvider.CreateScope();
+                var errorLogService = scope.ServiceProvider.GetRequiredService<IErrorLogService>();
+
                 // 記錄錯誤到資料庫
-                if (errorLogService != null)
-                {
-                    errorId = await LogErrorToDatabase(exception, methodName, serviceType.Name, serviceType.FullName, false, errorLogService, additionalData);
-                }
+                errorId = await LogErrorToDatabase(exception, methodName, serviceType.Name, serviceType.FullName, false, errorLogService, additionalData);
 
                 // 記錄到應用程式日誌
                 logger?.LogError(exception, "Service Error in {ServiceType}.{MethodName}", serviceType.Name, methodName);
@@ -118,34 +122,76 @@ namespace ERPCore2.Helpers
         }
 
         /// <summary>
-        /// 處理 ServiceResult 失敗 - 只通知使用者，不重複記錄
-        /// 用於 Service 已回傳失敗結果，只需通知使用者的情況
+        /// Service 層同步方法錯誤處理 - 記錄錯誤但不阻塞執行
+        /// 功能：1.防止程式崩潰 2.記錄到日誌 3.嘗試記錄到資料庫（非阻塞）
         /// </summary>
-        /// <param name="result">失敗的 ServiceResult</param>
-        /// <param name="notificationService">通知服務</param>
-        /// <param name="customErrorMessage">自訂錯誤訊息</param>
-        public static async Task HandleServiceResultErrorAsync(
-            ServiceResult result,
-            INotificationService notificationService,
-            string? customErrorMessage = null)
+        /// <param name="exception">捕獲的例外</param>
+        /// <param name="methodName">發生錯誤的方法名稱</param>
+        /// <param name="serviceType">服務類型</param>
+        /// <param name="logger">記錄器（可為 null）</param>
+        /// <param name="additionalData">額外的錯誤資料</param>
+        /// <returns>錯誤 ID（可能為空）</returns>
+        public static string HandleServiceErrorSync(
+            Exception exception,
+            string methodName,
+            Type serviceType,
+            ILogger? logger = null,
+            object? additionalData = null)
         {
+            string errorId = string.Empty;
+            
             try
             {
-                var errorMessage = customErrorMessage ?? result.ErrorMessage ?? "操作失敗";
+                // 先記錄到應用程式日誌（同步操作）
+                logger?.LogError(exception, "Sync Service Error in {ServiceType}.{MethodName}", serviceType.Name, methodName);
                 
-                // 如果有驗證錯誤，組合訊息
-                if (result.ValidationErrors?.Any() == true)
+                // 嘗試非阻塞地記錄到資料庫
+                if (_serviceProvider != null)
                 {
-                    errorMessage += "\n" + string.Join("\n", result.ValidationErrors);
+                    // 使用 Task.Run 避免阻塞同步方法
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            using var scope = _serviceProvider.CreateScope();
+                            var errorLogService = scope.ServiceProvider.GetRequiredService<IErrorLogService>();
+                            
+                            var errorData = new
+                            {
+                                TypeName = serviceType.Name,
+                                MethodName = methodName,
+                                FullTypeName = serviceType.FullName,
+                                Timestamp = DateTime.UtcNow,
+                                IsPageLayer = false,
+                                IsServiceLayer = true,
+                                IsSyncMethod = true,
+                                AdditionalData = additionalData
+                            };
+                            
+                            await errorLogService.LogErrorAsync(exception, errorData);
+                        }
+                        catch
+                        {
+                            // 如果記錄到資料庫失敗，忽略錯誤（已經記錄到日誌）
+                        }
+                    });
+                    
+                    errorId = $"SYNC_SERVICE_{DateTime.UtcNow.Ticks}";
                 }
-
-                await notificationService.ShowErrorAsync(errorMessage, "操作失敗");
+                else
+                {
+                    errorId = $"SYNC_SERVICE_NO_PROVIDER_{DateTime.UtcNow.Ticks}";
+                }
             }
-            catch
+            catch (Exception)
             {
-                // 如果通知失敗，忽略錯誤
+                // 如果連日誌記錄都失敗，至少產生一個錯誤 ID
+                errorId = $"SYNC_SERVICE_FALLBACK_{DateTime.UtcNow.Ticks}";
             }
+            
+            return errorId;
         }
+
 
         #region 私有輔助方法
 

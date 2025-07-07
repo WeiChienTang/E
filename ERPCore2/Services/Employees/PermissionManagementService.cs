@@ -3,6 +3,7 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
@@ -14,10 +15,19 @@ namespace ERPCore2.Services
     /// </summary>
     public class PermissionManagementService : GenericManagementService<Permission>, IPermissionManagementService
     {
+        /// <summary>
+        /// 完整建構子 - 使用 ILogger
+        /// </summary>
         public PermissionManagementService(
             AppDbContext context, 
-            ILogger<GenericManagementService<Permission>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<Permission>> logger) : base(context, logger)
+        {
+        }
+
+        /// <summary>
+        /// 簡易建構子 - 不使用 ILogger
+        /// </summary>
+        public PermissionManagementService(AppDbContext context) : base(context)
         {
         }
 
@@ -33,11 +43,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting all permissions");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -62,12 +68,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByCodeAsync),
-                    PermissionCode = permissionCode,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting permission by code {PermissionCode}", permissionCode);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByCodeAsync), GetType(), _logger, 
+                    new { PermissionCode = permissionCode });
                 return ServiceResult<Permission>.Failure("取得權限資料時發生錯誤");
             }
         }
@@ -91,12 +93,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetPermissionsByModuleAsync),
-                    ModulePrefix = modulePrefix,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting permissions by module {ModulePrefix}", modulePrefix);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPermissionsByModuleAsync), GetType(), _logger, 
+                    new { ModulePrefix = modulePrefix });
                 return ServiceResult<List<Permission>>.Failure("取得模組權限時發生錯誤");
             }
         }
@@ -121,13 +119,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsPermissionCodeExistsAsync),
-                    PermissionCode = permissionCode,
-                    ExcludePermissionId = excludePermissionId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error checking permission code exists {PermissionCode}", permissionCode);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsPermissionCodeExistsAsync), GetType(), _logger, 
+                    new { PermissionCode = permissionCode, ExcludePermissionId = excludePermissionId });
                 return ServiceResult<bool>.Failure($"檢查權限代碼時發生錯誤：{ex.Message}");
             }
         }
@@ -150,11 +143,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAllModulesAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting all modules");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllModulesAsync), GetType(), _logger);
                 return ServiceResult<List<string>>.Failure($"取得模組清單時發生錯誤：{ex.Message}");
             }
         }
@@ -199,12 +188,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(CreatePermissionsBatchAsync),
-                    PermissionCount = permissions?.Count,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error creating permissions batch with {PermissionCount} permissions", permissions?.Count);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CreatePermissionsBatchAsync), GetType(), _logger, 
+                    new { PermissionCount = permissions?.Count });
                 return ServiceResult.Failure($"批次建立權限時發生錯誤：{ex.Message}");
             }
         }
@@ -282,11 +267,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(InitializeDefaultPermissionsAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error initializing default permissions");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(InitializeDefaultPermissionsAsync), GetType(), _logger);
                 return ServiceResult.Failure($"初始化預設權限時發生錯誤：{ex.Message}");
             }
         }
@@ -313,12 +294,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchPermissionsAsync),
-                    SearchTerm = searchTerm,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error searching permissions with term {SearchTerm}", searchTerm);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchPermissionsAsync), GetType(), _logger, 
+                    new { SearchTerm = searchTerm });
                 return ServiceResult<List<Permission>>.Failure($"搜尋權限時發生錯誤：{ex.Message}");
             }
         }
@@ -328,32 +305,43 @@ namespace ERPCore2.Services
         /// </summary>
         public ServiceResult<bool> ValidatePermissionCode(string permissionCode)
         {
-            if (string.IsNullOrWhiteSpace(permissionCode))
-                return ServiceResult<bool>.Failure("權限代碼不能為空");
+            try
+            {
+                if (string.IsNullOrWhiteSpace(permissionCode))
+                    return ServiceResult<bool>.Failure("權限代碼不能為空");
 
-            if (permissionCode.Length > 100)
-                return ServiceResult<bool>.Failure("權限代碼長度不能超過100個字元");
+                if (permissionCode.Length > 100)
+                    return ServiceResult<bool>.Failure("權限代碼長度不能超過100個字元");
 
-            // 權限代碼格式：Module.Action (例如：Customer.View, Role.Create)
-            var regex = new Regex(@"^[A-Za-z][A-Za-z0-9]*\.[A-Za-z][A-Za-z0-9]*$");
-            if (!regex.IsMatch(permissionCode))
-                return ServiceResult<bool>.Failure("權限代碼格式錯誤，應為 'Module.Action' 格式，例如：Customer.View");
+                // 權限代碼格式：Module.Action (例如：Customer.View, Role.Create)
+                var regex = new Regex(@"^[A-Za-z][A-Za-z0-9]*\.[A-Za-z][A-Za-z0-9]*$");
+                if (!regex.IsMatch(permissionCode))
+                    return ServiceResult<bool>.Failure("權限代碼格式錯誤，應為 'Module.Action' 格式，例如：Customer.View");
 
-            var parts = permissionCode.Split('.');
-            if (parts.Length != 2)
-                return ServiceResult<bool>.Failure("權限代碼必須包含一個點號分隔模組和動作");
+                var parts = permissionCode.Split('.');
+                if (parts.Length != 2)
+                    return ServiceResult<bool>.Failure("權限代碼必須包含一個點號分隔模組和動作");
 
-            var module = parts[0];
-            var action = parts[1];
+                var module = parts[0];
+                var action = parts[1];
 
-            if (module.Length < 2 || module.Length > 50)
-                return ServiceResult<bool>.Failure("模組名稱長度必須在2-50個字元之間");
+                if (module.Length < 2 || module.Length > 50)
+                    return ServiceResult<bool>.Failure("模組名稱長度必須在2-50個字元之間");
 
-            if (action.Length < 2 || action.Length > 50)
-                return ServiceResult<bool>.Failure("動作名稱長度必須在2-50個字元之間");
+                if (action.Length < 2 || action.Length > 50)
+                    return ServiceResult<bool>.Failure("動作名稱長度必須在2-50個字元之間");
 
-            return ServiceResult<bool>.Success(true);
-        }        // 覆寫 ValidateAsync 以加入業務驗證
+                return ServiceResult<bool>.Success(true);
+            }
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(ValidatePermissionCode), GetType(), _logger, 
+                    new { PermissionCode = permissionCode });
+                return ServiceResult<bool>.Failure($"驗證權限代碼時發生錯誤：{ex.Message}");
+            }
+        }
+
+        // 覆寫 ValidateAsync 以加入業務驗證
         public override async Task<ServiceResult> ValidateAsync(Permission entity)
         {
             try
@@ -386,13 +374,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ValidateAsync),
-                    EntityId = entity?.Id,
-                    PermissionCode = entity?.PermissionCode,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error validating permission {PermissionCode}", entity?.PermissionCode);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, 
+                    new { EntityId = entity?.Id, PermissionCode = entity?.PermissionCode });
                 return ServiceResult.Failure($"驗證權限時發生錯誤：{ex.Message}");
             }
         }
@@ -407,12 +390,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchAsync),
-                    SearchTerm = searchTerm,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error in SearchAsync with term {SearchTerm}", searchTerm);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, 
+                    new { SearchTerm = searchTerm });
                 return new List<Permission>();
             }
         }
@@ -433,12 +412,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(DeleteAsync),
-                    PermissionId = id,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error deleting permission {PermissionId}", id);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteAsync), GetType(), _logger, 
+                    new { PermissionId = id });
                 return ServiceResult.Failure($"刪除權限時發生錯誤：{ex.Message}");
             }
         }

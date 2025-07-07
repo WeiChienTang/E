@@ -2,6 +2,7 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -12,10 +13,21 @@ namespace ERPCore2.Services
     /// </summary>
     public class SupplierAddressService : GenericManagementService<SupplierAddress>, ISupplierAddressService
     {
+        /// <summary>
+        /// 完整建構子（含Logger）
+        /// </summary>
         public SupplierAddressService(
             AppDbContext context, 
-            ILogger<GenericManagementService<SupplierAddress>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<SupplierAddress>> logger) 
+            : base(context, logger)
+        {
+        }
+
+        /// <summary>
+        /// 簡易建構子（不含Logger）
+        /// </summary>
+        public SupplierAddressService(AppDbContext context) 
+            : base(context)
         {
         }
 
@@ -35,11 +47,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error in GetAllAsync");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -66,48 +74,53 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchAsync),
-                    ServiceType = GetType().Name,
-                    SearchTerm = searchTerm
-                });
-                _logger.LogError(ex, "Error in SearchAsync with term: {SearchTerm}", searchTerm);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { SearchTerm = searchTerm });
                 throw;
             }
         }
 
         public override Task<ServiceResult> ValidateAsync(SupplierAddress entity)
         {
-            var errors = new List<string>();
-
-            // 驗證必填欄位
-            if (entity.SupplierId <= 0)
+            try
             {
-                errors.Add("廠商為必填欄位");
+                var errors = new List<string>();
+
+                // 驗證必填欄位
+                if (entity.SupplierId <= 0)
+                {
+                    errors.Add("廠商為必填欄位");
+                }
+
+                // 驗證地址資料長度
+                if (!string.IsNullOrWhiteSpace(entity.PostalCode) && entity.PostalCode.Length > 10)
+                {
+                    errors.Add("郵遞區號不可超過10個字元");
+                }
+
+                if (!string.IsNullOrWhiteSpace(entity.City) && entity.City.Length > 50)
+                {
+                    errors.Add("城市不可超過50個字元");
+                }
+
+                if (!string.IsNullOrWhiteSpace(entity.District) && entity.District.Length > 50)
+                {
+                    errors.Add("行政區不可超過50個字元");
+                }
+
+                if (!string.IsNullOrWhiteSpace(entity.Address) && entity.Address.Length > 200)
+                {
+                    errors.Add("地址不可超過200個字元");
+                }
+
+                return Task.FromResult(errors.Any() 
+                    ? ServiceResult.Failure(string.Join("; ", errors))
+                    : ServiceResult.Success());
             }
-
-            // 驗證地址資料長度
-            if (!string.IsNullOrWhiteSpace(entity.PostalCode) && entity.PostalCode.Length > 10)
+            catch (Exception ex)
             {
-                errors.Add("郵遞區號不可超過10個字元");
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(ValidateAsync), GetType(), _logger, new { EntityId = entity.Id });
+                return Task.FromResult(ServiceResult.Failure("驗證時發生錯誤"));
             }
-
-            if (!string.IsNullOrWhiteSpace(entity.City) && entity.City.Length > 50)
-            {
-                errors.Add("城市不可超過50個字元");
-            }
-
-            if (!string.IsNullOrWhiteSpace(entity.District) && entity.District.Length > 50)
-            {
-                errors.Add("行政區不可超過50個字元");
-            }
-
-            if (!string.IsNullOrWhiteSpace(entity.Address) && entity.Address.Length > 200)
-            {
-                errors.Add("地址不可超過200個字元");
-            }            return Task.FromResult(errors.Any() 
-                ? ServiceResult.Failure(string.Join("; ", errors))
-                : ServiceResult.Success());
         }
 
         #endregion
@@ -126,12 +139,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetBySupplierIdAsync),
-                    ServiceType = GetType().Name,
-                    SupplierId = supplierId
-                });
-                _logger.LogError(ex, "Error getting supplier addresses for supplier {SupplierId}", supplierId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySupplierIdAsync), GetType(), _logger, new { SupplierId = supplierId });
                 throw;
             }
         }
@@ -149,12 +157,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByAddressTypeAsync),
-                    ServiceType = GetType().Name,
-                    AddressTypeId = addressTypeId
-                });
-                _logger.LogError(ex, "Error getting supplier addresses by type {AddressTypeId}", addressTypeId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByAddressTypeAsync), GetType(), _logger, new { AddressTypeId = addressTypeId });
                 throw;
             }
         }
@@ -169,12 +172,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetPrimaryAddressAsync),
-                    ServiceType = GetType().Name,
-                    SupplierId = supplierId
-                });
-                _logger.LogError(ex, "Error getting primary address for supplier {SupplierId}", supplierId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPrimaryAddressAsync), GetType(), _logger, new { SupplierId = supplierId });
                 throw;
             }
         }
@@ -191,14 +189,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAddressByTypeAsync),
-                    ServiceType = GetType().Name,
-                    SupplierId = supplierId,
-                    AddressTypeId = addressTypeId
-                });
-                _logger.LogError(ex, "Error getting address by type for supplier {SupplierId}, type {AddressTypeId}", 
-                    supplierId, addressTypeId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAddressByTypeAsync), GetType(), _logger, new { SupplierId = supplierId, AddressTypeId = addressTypeId });
                 throw;
             }
         }
@@ -240,12 +231,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SetPrimaryAddressAsync),
-                    ServiceType = GetType().Name,
-                    AddressId = addressId
-                });
-                _logger.LogError(ex, "Error setting primary address {AddressId}", addressId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetPrimaryAddressAsync), GetType(), _logger, new { AddressId = addressId });
                 return ServiceResult.Failure($"設定主要地址時發生錯誤: {ex.Message}");
             }
         }
@@ -273,13 +259,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(CopyAddressToSupplierAsync),
-                    ServiceType = GetType().Name,
-                    TargetSupplierId = targetSupplierId,
-                    TargetAddressTypeId = targetAddressTypeId
-                });
-                _logger.LogError(ex, "Error copying address to supplier {TargetSupplierId}", targetSupplierId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CopyAddressToSupplierAsync), GetType(), _logger, new { TargetSupplierId = targetSupplierId, TargetAddressTypeId = targetAddressTypeId });
                 return ServiceResult<SupplierAddress>.Failure($"複製地址時發生錯誤: {ex.Message}");
             }
         }
@@ -311,12 +291,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(EnsureSupplierHasPrimaryAddressAsync),
-                    ServiceType = GetType().Name,
-                    SupplierId = supplierId
-                });
-                _logger.LogError(ex, "Error ensuring supplier has primary address {SupplierId}", supplierId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(EnsureSupplierHasPrimaryAddressAsync), GetType(), _logger, new { SupplierId = supplierId });
                 return ServiceResult.Failure($"確保主要地址時發生錯誤: {ex.Message}");
             }
         }
@@ -337,12 +312,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAddressesWithDefaultAsync),
-                    ServiceType = GetType().Name,
-                    SupplierId = supplierId
-                });
-                _logger.LogError(ex, "Error getting addresses with default for supplier {SupplierId}", supplierId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAddressesWithDefaultAsync), GetType(), _logger, new { SupplierId = supplierId });
                 throw;
             }
         }
@@ -365,7 +335,9 @@ namespace ERPCore2.Services
                 {
                     address.IsDeleted = true;
                     address.UpdatedAt = DateTime.UtcNow;
-                }                // 更新或新增地址
+                }
+
+                // 更新或新增地址
                 foreach (var address in addresses)
                 {
                     if (address.Id <= 0) // 新增（包括負數臨時 ID）
@@ -411,12 +383,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(UpdateSupplierAddressesAsync),
-                    ServiceType = GetType().Name,
-                    SupplierId = supplierId
-                });
-                _logger.LogError(ex, "Error updating supplier addresses for supplier {SupplierId}", supplierId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateSupplierAddressesAsync), GetType(), _logger, new { SupplierId = supplierId });
                 return ServiceResult.Failure($"更新廠商地址時發生錯誤: {ex.Message}");
             }
         }
@@ -427,110 +394,158 @@ namespace ERPCore2.Services
 
         public SupplierAddress CreateNewAddress(int supplierId, int addressCount)
         {
-            return new SupplierAddress
+            try
             {
-                SupplierId = supplierId,
-                AddressTypeId = null,
-                PostalCode = string.Empty,
-                City = string.Empty,
-                District = string.Empty,
-                Address = string.Empty,
-                IsPrimary = addressCount == 0, // 第一個地址預設為主要
-                Status = EntityStatus.Active
-            };
+                return new SupplierAddress
+                {
+                    SupplierId = supplierId,
+                    AddressTypeId = null,
+                    PostalCode = string.Empty,
+                    City = string.Empty,
+                    District = string.Empty,
+                    Address = string.Empty,
+                    IsPrimary = addressCount == 0, // 第一個地址預設為主要
+                    Status = EntityStatus.Active
+                };
+            }
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(CreateNewAddress), GetType(), _logger, new { SupplierId = supplierId, AddressCount = addressCount });
+                throw;
+            }
         }
 
         public void InitializeDefaultAddresses(List<SupplierAddress> addressList, List<AddressType> addressTypes)
         {
-            // 確保有基本的地址類型
-            var defaultTypes = new[] { "營業地址", "聯絡地址", "發票地址" };
-
-            foreach (var typeName in defaultTypes)
+            try
             {
-                var addressType = addressTypes.FirstOrDefault(at => at.TypeName == typeName);
-                if (addressType != null && !addressList.Any(a => a.AddressTypeId == addressType.Id))
+                // 確保有基本的地址類型
+                var defaultTypes = new[] { "營業地址", "聯絡地址", "發票地址" };
+
+                foreach (var typeName in defaultTypes)
                 {
-                    var newAddress = new SupplierAddress
+                    var addressType = addressTypes.FirstOrDefault(at => at.TypeName == typeName);
+                    if (addressType != null && !addressList.Any(a => a.AddressTypeId == addressType.Id))
                     {
-                        AddressTypeId = addressType.Id,
-                        PostalCode = string.Empty,
-                        City = string.Empty,
-                        District = string.Empty,
-                        Address = string.Empty,
-                        IsPrimary = addressList.Count == 0,
-                        Status = EntityStatus.Active
-                    };
-                    addressList.Add(newAddress);
+                        var newAddress = new SupplierAddress
+                        {
+                            AddressTypeId = addressType.Id,
+                            PostalCode = string.Empty,
+                            City = string.Empty,
+                            District = string.Empty,
+                            Address = string.Empty,
+                            IsPrimary = addressList.Count == 0,
+                            Status = EntityStatus.Active
+                        };
+                        addressList.Add(newAddress);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(InitializeDefaultAddresses), GetType(), _logger);
+                throw;
             }
         }
 
         public int? GetDefaultAddressTypeId(int addressCount, List<AddressType> addressTypes)
         {
-            // 根據地址數量決定預設的地址類型
-            var defaultTypes = new[] { "營業地址", "聯絡地址", "發票地址" };
-            
-            if (addressCount < defaultTypes.Length)
+            try
             {
-                var typeName = defaultTypes[addressCount];
-                var addressType = addressTypes.FirstOrDefault(at => at.TypeName == typeName);
-                return addressType?.Id;
+                // 根據地址數量決定預設的地址類型
+                var defaultTypes = new[] { "營業地址", "聯絡地址", "發票地址" };
+                
+                if (addressCount < defaultTypes.Length)
+                {
+                    var typeName = defaultTypes[addressCount];
+                    var addressType = addressTypes.FirstOrDefault(at => at.TypeName == typeName);
+                    return addressType?.Id;
+                }
+                
+                // 如果超出預設類型，返回第一個可用的類型
+                return addressTypes.FirstOrDefault()?.Id;
             }
-            
-            // 如果超出預設類型，返回第一個可用的類型
-            return addressTypes.FirstOrDefault()?.Id;
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetDefaultAddressTypeId), GetType(), _logger, new { AddressCount = addressCount });
+                return null;
+            }
         }
 
         public ServiceResult EnsurePrimaryAddressExists(List<SupplierAddress> addresses)
         {
-            if (!addresses.Any(a => a.IsPrimary))
+            try
             {
-                var firstAddress = addresses.FirstOrDefault();
-                if (firstAddress != null)
+                if (!addresses.Any(a => a.IsPrimary))
                 {
-                    firstAddress.IsPrimary = true;
+                    var firstAddress = addresses.FirstOrDefault();
+                    if (firstAddress != null)
+                    {
+                        firstAddress.IsPrimary = true;
+                    }
                 }
-            }
 
-            return ServiceResult.Success();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(EnsurePrimaryAddressExists), GetType(), _logger);
+                return ServiceResult.Failure("確保主要地址時發生錯誤");
+            }
         }
 
         public int GetCompletedAddressCount(List<SupplierAddress> addresses)
         {
-            if (addresses == null)
-                return 0;
+            try
+            {
+                if (addresses == null)
+                    return 0;
 
-            return addresses.Count(a =>
-                !string.IsNullOrWhiteSpace(a.Address) &&
-                !string.IsNullOrWhiteSpace(a.City));
+                return addresses.Count(a =>
+                    !string.IsNullOrWhiteSpace(a.Address) &&
+                    !string.IsNullOrWhiteSpace(a.City));
+            }
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetCompletedAddressCount), GetType(), _logger);
+                return 0;
+            }
         }
 
         public int GetAddressCompletedFieldsCount(List<SupplierAddress> addresses)
         {
-            if (addresses == null)
-                return 0;
-
-            int totalFields = 0;
-            int completedFields = 0;
-
-            foreach (var address in addresses)
+            try
             {
-                totalFields += 4; // AddressTypeId, City, District, Address
+                if (addresses == null)
+                    return 0;
 
-                if (address.AddressTypeId.HasValue)
-                    completedFields++;
+                int totalFields = 0;
+                int completedFields = 0;
 
-                if (!string.IsNullOrWhiteSpace(address.City))
-                    completedFields++;
+                foreach (var address in addresses)
+                {
+                    totalFields += 4; // AddressTypeId, City, District, Address
 
-                if (!string.IsNullOrWhiteSpace(address.District))
-                    completedFields++;
+                    if (address.AddressTypeId.HasValue)
+                        completedFields++;
 
-                if (!string.IsNullOrWhiteSpace(address.Address))
-                    completedFields++;
+                    if (!string.IsNullOrWhiteSpace(address.City))
+                        completedFields++;
+
+                    if (!string.IsNullOrWhiteSpace(address.District))
+                        completedFields++;
+
+                    if (!string.IsNullOrWhiteSpace(address.Address))
+                        completedFields++;
+                }
+
+                return completedFields;
             }
-
-            return completedFields;
+            catch (Exception ex)
+            {
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetAddressCompletedFieldsCount), GetType(), _logger);
+                return 0;
+            }
         }
 
         #endregion

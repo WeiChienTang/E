@@ -3,6 +3,7 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -15,8 +16,11 @@ namespace ERPCore2.Services
     {
         public ContactTypeService(
             AppDbContext context, 
-            ILogger<GenericManagementService<ContactType>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<ContactType>> logger) : base(context, logger)
+        {
+        }
+
+        public ContactTypeService(AppDbContext context) : base(context)
         {
         }
 
@@ -32,11 +36,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
                     Method = nameof(GetAllAsync),
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error getting all contact types");
                 throw;
             }
         }
@@ -53,11 +56,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetActiveAsync), GetType(), _logger, new { 
                     Method = nameof(GetActiveAsync),
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error getting active contact types");
                 throw;
             }
         }
@@ -84,12 +86,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { 
                     Method = nameof(ValidateAsync),
                     EntityId = entity.Id,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error validating contact type entity {EntityId}", entity.Id);
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
         }
@@ -111,12 +112,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { 
                     Method = nameof(SearchAsync),
                     SearchTerm = searchTerm,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error searching contact types with term {SearchTerm}", searchTerm);
                 throw;
             }
         }
@@ -135,13 +135,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsNameExistsAsync), GetType(), _logger, new { 
                     Method = nameof(IsNameExistsAsync),
                     Name = name,
                     ExcludeId = excludeId,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error checking if contact type name exists {Name}", name);
                 return false; // 安全預設值
             }
         }
@@ -163,12 +162,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteAsync), GetType(), _logger, new { 
                     Method = nameof(DeleteAsync),
                     Id = id,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error deleting contact type {Id}", id);
                 return ServiceResult.Failure("刪除過程發生錯誤");
             }
         }
@@ -182,13 +180,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsTypeNameExistsAsync), GetType(), _logger, new { 
                     Method = nameof(IsTypeNameExistsAsync),
                     TypeName = typeName,
                     ExcludeId = excludeId,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error checking if contact type name exists {TypeName}", typeName);
                 return false; // 安全預設值
             }
         }
@@ -211,13 +208,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedAsync), GetType(), _logger, new { 
                     Method = nameof(GetPagedAsync),
                     PageNumber = pageNumber,
                     PageSize = pageSize,
                     ServiceType = GetType().Name 
                 });
-                _logger.LogError(ex, "Error getting paged contact types page {PageNumber} size {PageSize}", pageNumber, pageSize);
                 return (new List<ContactType>(), 0); // 安全預設值
             }
         }

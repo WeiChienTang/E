@@ -1,6 +1,7 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -8,11 +9,23 @@ namespace ERPCore2.Services
 {
     public class WarehouseLocationService : GenericManagementService<WarehouseLocation>, IWarehouseLocationService
     {
+        private readonly IErrorLogService _errorLogService;
+
+        // 完整建構子
         public WarehouseLocationService(
             AppDbContext context, 
             ILogger<GenericManagementService<WarehouseLocation>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            IErrorLogService errorLogService) : base(context, logger)
         {
+            _errorLogService = errorLogService;
+        }
+
+        // 簡易建構子
+        public WarehouseLocationService(
+            AppDbContext context, 
+            IErrorLogService errorLogService) : base(context)
+        {
+            _errorLogService = errorLogService;
         }
 
         public override async Task<List<WarehouseLocation>> GetAllAsync()
@@ -28,11 +41,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting all warehouse locations");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex, 
+                    nameof(GetAllAsync), 
+                    GetType(), 
+                    _logger,
+                    new { ServiceType = GetType().Name }
+                );
                 throw;
             }
         }
@@ -47,12 +62,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByIdAsync),
-                    Id = id,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting warehouse location by id {Id}", id);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex, 
+                    nameof(GetByIdAsync), 
+                    GetType(), 
+                    _logger,
+                    new { Id = id, ServiceType = GetType().Name }
+                );
                 throw;
             }
         }
@@ -71,12 +87,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetByWarehouseIdAsync),
-                    WarehouseId = warehouseId,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting warehouse locations by warehouse {WarehouseId}", warehouseId);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex, 
+                    nameof(GetByWarehouseIdAsync), 
+                    GetType(), 
+                    _logger,
+                    new { WarehouseId = warehouseId, ServiceType = GetType().Name }
+                );
                 return ServiceResult<IEnumerable<WarehouseLocation>>.Failure("取得倉庫庫位列表時發生錯誤");
             }
         }
@@ -101,14 +118,18 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ValidateAsync),
-                    EntityId = entity.Id,
-                    WarehouseId = entity.WarehouseId,
-                    LocationCode = entity.LocationCode,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error validating warehouse location entity {EntityId}", entity.Id);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex, 
+                    nameof(ValidateAsync), 
+                    GetType(), 
+                    _logger,
+                    new { 
+                        EntityId = entity.Id,
+                        WarehouseId = entity.WarehouseId,
+                        LocationCode = entity.LocationCode,
+                        ServiceType = GetType().Name 
+                    }
+                );
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
         }
@@ -132,12 +153,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchAsync),
-                    SearchTerm = searchTerm,
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error searching warehouse locations with term {SearchTerm}", searchTerm);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex, 
+                    nameof(SearchAsync), 
+                    GetType(), 
+                    _logger,
+                    new { SearchTerm = searchTerm, ServiceType = GetType().Name }
+                );
                 throw;
             }
         }

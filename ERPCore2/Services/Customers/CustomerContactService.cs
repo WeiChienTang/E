@@ -1,6 +1,7 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
+using ERPCore2.Helpers;
 using ERPCore2.Services;
 using ERPCore2.Services.GenericManagementService;
 using Microsoft.EntityFrameworkCore;
@@ -15,8 +16,11 @@ namespace ERPCore2.Services
     {
         public CustomerContactService(
             AppDbContext context, 
-            ILogger<GenericManagementService<CustomerContact>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<CustomerContact>> logger) : base(context, logger)
+        {
+        }
+
+        public CustomerContactService(AppDbContext context) : base(context)
         {
         }
 
@@ -42,8 +46,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "Error in SearchAsync");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger);
                 return new List<CustomerContact>();
             }
         }
@@ -119,8 +122,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "Error in ValidateAsync");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger);
                 return ServiceResult.Failure("驗證客戶聯絡資料時發生錯誤");
             }
         }
@@ -143,8 +145,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "Error in GetAllAsync");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
                 return new List<CustomerContact>();
             }
         }
@@ -160,8 +161,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex);
-                _logger.LogError(ex, "Error in GetByIdAsync");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByIdAsync), GetType(), _logger);
                 return null;
             }
         }
@@ -191,9 +191,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _errorLogService.LogErrorAsync(ex).Wait();
-                _logger.LogError(ex, "Error getting contact value for customer {CustomerId}, type {ContactTypeName}", 
-                    customerId, contactTypeName);
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetContactValue), GetType(), _logger, 
+                    new { CustomerId = customerId, ContactTypeName = contactTypeName });
                 return string.Empty;
             }
         }
@@ -252,9 +251,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _errorLogService.LogErrorAsync(ex).Wait();
-                _logger.LogError(ex, "Error updating contact value for customer {CustomerId}, type {ContactTypeName}", 
-                    customerId, contactTypeName);
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(UpdateContactValue), GetType(), _logger, 
+                    new { CustomerId = customerId, ContactTypeName = contactTypeName });
                 return ServiceResult.Failure("更新聯絡資料時發生錯誤");
             }
         }
@@ -272,8 +270,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _errorLogService.LogErrorAsync(ex).Wait();
-                _logger.LogError(ex, "Error counting completed contact fields");
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetContactCompletedFieldsCount), GetType(), _logger);
                 return 0;
             }
         }
@@ -333,8 +330,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _errorLogService.LogErrorAsync(ex).Wait();
-                _logger.LogError(ex, "Error validating customer contacts");
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(ValidateCustomerContacts), GetType(), _logger);
                 return ServiceResult.Failure("驗證客戶聯絡資料時發生錯誤");
             }
         }
@@ -370,7 +366,7 @@ namespace ERPCore2.Services
                             contact.UpdatedAt = DateTime.UtcNow;
                         }
                         
-                        _logger.LogWarning("Customer {CustomerId} ContactType {ContactTypeId} had multiple primary contacts, kept only first one", 
+                        _logger?.LogWarning("Customer {CustomerId} ContactType {ContactTypeId} had multiple primary contacts, kept only first one", 
                             group.Key.CustomerId, group.Key.ContactTypeId);
                     }
                     else if (primaryContacts.Count == 0 && group.Any())
@@ -386,8 +382,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _errorLogService.LogErrorAsync(ex).Wait();
-                _logger.LogError(ex, "Error ensuring unique primary contacts");
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(EnsureUniquePrimaryContacts), GetType(), _logger);
                 return ServiceResult.Failure("確保唯一主要聯絡方式時發生錯誤");
             }
         }

@@ -3,6 +3,7 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using ERPCore2.Services.GenericManagementService;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -13,10 +14,19 @@ namespace ERPCore2.Services
     /// </summary>
     public class CustomerTypeService : GenericManagementService<CustomerType>, ICustomerTypeService
     {
+        /// <summary>
+        /// 完整建構子
+        /// </summary>
         public CustomerTypeService(
             AppDbContext context, 
-            ILogger<GenericManagementService<CustomerType>> logger, 
-            IErrorLogService errorLogService) : base(context, logger, errorLogService)
+            ILogger<GenericManagementService<CustomerType>> logger) : base(context, logger)
+        {
+        }
+
+        /// <summary>
+        /// 簡易建構子
+        /// </summary>
+        public CustomerTypeService(AppDbContext context) : base(context)
         {
         }
 
@@ -38,12 +48,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(SearchAsync),
-                    SearchTerm = searchTerm,
-                    ServiceType = GetType().Name 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { 
+                    SearchTerm = searchTerm
                 });
-                _logger.LogError(ex, "Error searching customer types with term {SearchTerm}", searchTerm);
                 throw;
             }
         }
@@ -85,13 +92,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(ValidateAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { 
                     EntityId = entity.Id,
-                    EntityTypeName = entity.TypeName,
-                    ServiceType = GetType().Name 
+                    EntityTypeName = entity.TypeName
                 });
-                _logger.LogError(ex, "Error validating customer type with ID {EntityId}", entity.Id);
                 return ServiceResult.Failure("驗證客戶類型時發生錯誤");
             }
         }
@@ -111,13 +115,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsNameExistsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsNameExistsAsync), GetType(), _logger, new { 
                     Name = name,
-                    ExcludeId = excludeId,
-                    ServiceType = GetType().Name 
+                    ExcludeId = excludeId
                 });
-                _logger.LogError(ex, "Error checking if customer type name exists: {Name}", name);
                 return false;
             }
         }
@@ -137,11 +138,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                _logger.LogError(ex, "Error getting all customer types");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -171,12 +168,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(DeleteAsync),
-                    Id = id,
-                    ServiceType = GetType().Name 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteAsync), GetType(), _logger, new { 
+                    Id = id
                 });
-                _logger.LogError(ex, "Error deleting customer type with ID {Id}", id);
                 return ServiceResult.Failure("刪除客戶類型時發生錯誤");
             }
         }
@@ -203,13 +197,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(IsTypeNameExistsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsTypeNameExistsAsync), GetType(), _logger, new { 
                     TypeName = typeName,
-                    ExcludeId = excludeId,
-                    ServiceType = GetType().Name 
+                    ExcludeId = excludeId
                 });
-                _logger.LogError(ex, "Error checking if customer type name exists: {TypeName}", typeName);
                 return false;
             }
         }        /// <summary>
@@ -233,14 +224,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(GetPagedAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedAsync), GetType(), _logger, new { 
                     PageNumber = pageNumber,
-                    PageSize = pageSize,
-                    ServiceType = GetType().Name 
+                    PageSize = pageSize
                 });
-                _logger.LogError(ex, "Error getting paged customer types. Page: {PageNumber}, Size: {PageSize}", 
-                    pageNumber, pageSize);
                 return (new List<CustomerType>(), 0);
             }
         }
@@ -277,12 +264,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogErrorAsync(ex, new { 
-                    Method = nameof(DeleteBatchWithValidationAsync),
-                    IdsCount = ids?.Count,
-                    ServiceType = GetType().Name 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteBatchWithValidationAsync), GetType(), _logger, new { 
+                    IdsCount = ids?.Count
                 });
-                _logger.LogError(ex, "Error batch deleting customer types");
                 return ServiceResult.Failure("批次刪除客戶類型時發生錯誤");
             }
         }
