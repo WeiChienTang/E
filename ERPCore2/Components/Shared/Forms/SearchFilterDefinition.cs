@@ -224,7 +224,7 @@ public class SearchFilterModel
     /// </summary>
     public void SetFilterValue(string name, object? value)
     {
-        if (value == null)
+        if (value == null || (value is string strVal && string.IsNullOrWhiteSpace(strVal)))
         {
             // 清除所有可能的值
             TextFilters.Remove(name);
@@ -244,8 +244,11 @@ public class SearchFilterModel
         switch (value)
         {
             case string strValue:
-                TextFilters[name] = strValue;
-                SelectFilters[name] = strValue;
+                if (!string.IsNullOrWhiteSpace(strValue))
+                {
+                    TextFilters[name] = strValue;
+                    SelectFilters[name] = strValue;
+                }
                 break;
             
             case decimal decValue:

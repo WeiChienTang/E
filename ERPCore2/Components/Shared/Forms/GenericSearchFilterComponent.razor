@@ -179,13 +179,14 @@
         // 空選項
         builder.OpenElement(sequence + 10, "option");
         builder.AddAttribute(sequence + 11, "value", "");
-        builder.AddContent(sequence + 12, filter.EmptyOptionText ?? "全部");
+        var currentValue = FilterModel.GetFilterValue(filter.PropertyName)?.ToString();
+        builder.AddAttribute(sequence + 12, "selected", string.IsNullOrWhiteSpace(currentValue));
+        builder.AddContent(sequence + 13, filter.EmptyOptionText ?? "全部");
         builder.CloseElement();
         
         // 選項
         if (filter.Options != null)
         {
-            var currentValue = FilterModel.GetFilterValue(filter.PropertyName)?.ToString();
             var optionSequence = sequence + 20;
             
             foreach (var option in filter.Options)

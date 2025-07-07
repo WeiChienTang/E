@@ -6,6 +6,7 @@
 @using ERPCore2.Components.Shared.Alerts
 @using ERPCore2.Components.Shared.Loading
 @using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Components.Shared.Forms
 @using Microsoft.AspNetCore.Components.Web
 @inject IErrorLogService ErrorLogService
 @inject NavigationManager Navigation
@@ -111,50 +112,15 @@ else
     </div>
 
     @* 篩選區域 *@
-    <div class="filter-section">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label">錯誤訊息</label>
-                <input type="text" class="form-control" placeholder="輸入錯誤訊息關鍵字..." @bind="filterMessage" @onkeypress="HandleKeyPress" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">錯誤等級</label>
-                <select class="form-select" @bind="filterLevel">
-                    <option value="">全部</option>
-                    <option value="Critical">嚴重</option>
-                    <option value="Error">錯誤</option>
-                    <option value="Warning">警告</option>
-                    <option value="Info">資訊</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">錯誤來源</label>
-                <select class="form-select" @bind="filterSource">
-                    <option value="">全部</option>
-                    <option value="Database">資料庫</option>
-                    <option value="BusinessLogic">業務邏輯</option>
-                    <option value="UserInterface">使用者介面</option>
-                    <option value="System">系統層級</option>
-                    <option value="API">API</option>
-                    <option value="Security">安全相關</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">處理狀態</label>
-                <select class="form-select" @bind="filterResolved">
-                    <option value="">全部</option>
-                    <option value="false">未處理</option>
-                    <option value="true">已處理</option>
-                </select>
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <GenericButtonComponent Variant="ButtonVariant.Primary" 
-                                       Text="搜尋" 
-                                       IconClass="fas fa-search"
-                                       OnClick="@ApplyFilters" />
-            </div>
-        </div>
-    </div>
+    <GenericSearchFilterComponent TModel="SearchFilterModel"
+                                FilterDefinitions="@filterDefinitions"
+                                FilterModel="@filterModel"
+                                OnSearch="@HandleSearch"
+                                OnFilterChanged="@HandleFilterChanged"
+                                AutoSearch="true"
+                                ShowSearchButton="false"
+                                ShowAdvancedToggle="true"
+                                SearchDelayMs="500" />
 
     @* 錯誤記錄表格 *@
     <div class="error-table">
@@ -289,11 +255,9 @@ else
     private string alertMessage = string.Empty;
     private AlertComponent.AlertType alertType = AlertComponent.AlertType.Info;
     
-    // 篩選
-    private string filterMessage = string.Empty;
-    private string filterLevel = string.Empty;
-    private string filterSource = string.Empty;
-    private string filterResolved = string.Empty;
+    // 新的篩選系統
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private SearchFilterModel filterModel = new();
     
     // 分頁
     private int currentPage = 1;
@@ -312,7 +276,143 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        InitializeFilters();
         await LoadDataAsync();
+    }
+
+    private void InitializeFilters()
+    {
+        try
+        {
+            // 錯誤等級選項
+            var levelOptions = new List<SelectOption>
+            {
+                new() { Text = "資訊", Value = ErrorLevel.Info.ToString() },
+                new() { Text = "警告", Value = ErrorLevel.Warning.ToString() },
+                new() { Text = "錯誤", Value = ErrorLevel.Error.ToString() },
+                new() { Text = "嚴重", Value = ErrorLevel.Critical.ToString() }
+            };
+
+            // 錯誤來源選項
+            var sourceOptions = new List<SelectOption>
+            {
+                new() { Text = "資料庫", Value = ErrorSource.Database.ToString() },
+                new() { Text = "業務邏輯", Value = ErrorSource.BusinessLogic.ToString() },
+                new() { Text = "使用者介面", Value = ErrorSource.UserInterface.ToString() },
+                new() { Text = "系統層級", Value = ErrorSource.System.ToString() },
+                new() { Text = "API", Value = ErrorSource.API.ToString() },
+                new() { Text = "安全相關", Value = ErrorSource.Security.ToString() }
+            };
+
+            // 處理狀態選項
+            var resolvedOptions = new List<SelectOption>
+            {
+                new() { Text = "未處理", Value = "false" },
+                new() { Text = "已處理", Value = "true" }
+            };
+
+            // 建立篩選定義
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("Message", "錯誤訊息", "輸入錯誤訊息關鍵字...")
+                .AddSelect("Level", "錯誤等級", levelOptions)
+                .AddSelect("Source", "錯誤來源", sourceOptions, isAdvanced: true)
+                .AddSelect("IsResolved", "處理狀態", resolvedOptions, isAdvanced: true)
+                .AddDateRange("OccurredDate", "發生時間", isAdvanced: true)
+                .Build();
+        }
+        catch (Exception ex)
+        {
+            ShowAlert($"初始化篩選器失敗：{ex.Message}", AlertComponent.AlertType.Danger);
+        }
+    }
+
+    private async Task HandleSearch(SearchFilterModel searchModel)
+    {
+        await ApplyFilters(searchModel);
+    }
+
+    private async Task HandleFilterChanged(SearchFilterModel searchModel)
+    {
+        // 更新本地篩選模型參考，確保與組件同步
+        filterModel = searchModel;
+        StateHasChanged();
+    }
+
+    private async Task ApplyFilters(SearchFilterModel searchModel)
+    {
+        try
+        {
+            if (searchModel == null || !searchModel.HasAnyFilter())
+            {
+                // 如果沒有篩選條件，顯示所有數據
+                filteredErrorLogs = allErrorLogs.OrderByDescending(e => e.OccurredAt).ToList();
+            }
+            else
+            {
+                filteredErrorLogs = allErrorLogs.AsQueryable().Where(e =>
+                    ApplyErrorLogFilters(searchModel, e)
+                ).OrderByDescending(e => e.OccurredAt).ToList();
+            }
+            
+            currentPage = 1;
+            selectedErrorIds.Clear();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ShowAlert($"套用篩選時發生錯誤：{ex.Message}", AlertComponent.AlertType.Danger);
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private bool ApplyErrorLogFilters(SearchFilterModel searchModel, ErrorLog errorLog)
+    {
+        // 錯誤訊息篩選
+        var messageFilter = searchModel.GetFilterValue("Message")?.ToString();
+        if (!string.IsNullOrWhiteSpace(messageFilter) && 
+            !errorLog.Message.Contains(messageFilter, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        // 錯誤等級篩選
+        var levelFilter = searchModel.GetFilterValue("Level")?.ToString();
+        if (!string.IsNullOrWhiteSpace(levelFilter) && 
+            errorLog.Level.ToString() != levelFilter)
+        {
+            return false;
+        }
+
+        // 錯誤來源篩選
+        var sourceFilter = searchModel.GetFilterValue("Source")?.ToString();
+        if (!string.IsNullOrWhiteSpace(sourceFilter) && 
+            errorLog.Source.ToString() != sourceFilter)
+        {
+            return false;
+        }
+
+        // 處理狀態篩選
+        var resolvedFilter = searchModel.GetFilterValue("IsResolved")?.ToString();
+        if (!string.IsNullOrWhiteSpace(resolvedFilter) && 
+            bool.TryParse(resolvedFilter, out var isResolved) &&
+            errorLog.IsResolved != isResolved)
+        {
+            return false;
+        }
+
+        // 日期範圍篩選
+        var dateRange = searchModel.GetFilterValue("OccurredDate") as DateRange;
+        if (dateRange != null && dateRange.IsValid())
+        {
+            var occurredDate = errorLog.OccurredAt.Date;
+            if (!dateRange.Contains(occurredDate))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private async Task LoadDataAsync()
@@ -329,7 +429,7 @@ else
             statistics = await ErrorLogService.GetStatisticsAsync();
             
             // 應用篩選
-            ApplyFilters();
+            await ApplyFilters(filterModel);
         }
         catch (Exception ex)
         {
@@ -339,28 +439,6 @@ else
         {
             IsLoading = false;
             StateHasChanged();
-        }
-    }
-
-    private void ApplyFilters()
-    {
-        filteredErrorLogs = allErrorLogs.AsQueryable().Where(e =>
-            (string.IsNullOrEmpty(filterMessage) || e.Message.Contains(filterMessage, StringComparison.OrdinalIgnoreCase)) &&
-            (string.IsNullOrEmpty(filterLevel) || e.Level.ToString() == filterLevel) &&
-            (string.IsNullOrEmpty(filterSource) || e.Source.ToString() == filterSource) &&
-            (string.IsNullOrEmpty(filterResolved) || e.IsResolved.ToString().ToLower() == filterResolved)
-        ).OrderByDescending(e => e.OccurredAt).ToList();
-        
-        currentPage = 1;
-        selectedErrorIds.Clear();
-        StateHasChanged();
-    }
-
-    private void HandleKeyPress(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            ApplyFilters();
         }
     }
 
