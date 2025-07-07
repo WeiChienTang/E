@@ -1,89 +1,112 @@
-using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using ERPCore2.Services;
 using ERPCore2.Services.Notifications;
 
 namespace ERPCore2.Helpers
 {
     /// <summary>
-    /// 錯誤處理 Helper - 提供 Razor 頁面統一的錯誤處理方法
-    /// 與 GlobalExceptionHelper (中間件) 搭配使用，處理已捕獲的例外
+    /// 統一錯誤處理 Helper
+    /// 提供三種核心功能：1.防止程式崩潰 2.記錄錯誤到資料庫 3.通知使用者
     /// </summary>
     public static class ErrorHandlingHelper
     {
         /// <summary>
-        /// 安全處理錯誤 - 適用於 Razor 頁面的事件處理器
+        /// Razor 頁面層錯誤處理 - 記錄錯誤 + 通知使用者
+        /// 功能：1.防止程式崩潰 2.記錄到ErrorLog資料表 3.顯示使用者友善訊息
         /// </summary>
         /// <param name="exception">捕獲的例外</param>
         /// <param name="methodName">發生錯誤的方法名稱</param>
         /// <param name="componentType">元件類型</param>
         /// <param name="errorLogService">錯誤記錄服務</param>
         /// <param name="notificationService">通知服務</param>
-        /// <param name="showUserFriendlyMessage">是否顯示使用者友善訊息，預設 true</param>
         /// <param name="additionalData">額外的錯誤資料</param>
         /// <returns>錯誤 ID</returns>
-        public static async Task<string> HandleErrorSafelyAsync(
+        public static async Task<string> HandlePageErrorAsync(
             Exception exception,
             string methodName,
             Type componentType,
             IErrorLogService errorLogService,
             INotificationService notificationService,
-            bool showUserFriendlyMessage = true,
             object? additionalData = null)
         {
             string errorId = string.Empty;
             
             try
             {
-                // 組合額外資料
-                var errorData = new
-                {
-                    ComponentType = componentType.Name,
-                    MethodName = methodName,
-                    ComponentFullName = componentType.FullName,
-                    Timestamp = DateTime.UtcNow,
-                    IsRazorComponent = true,
-                    AdditionalData = additionalData
-                };
-
                 // 記錄錯誤到資料庫
-                errorId = await errorLogService.LogErrorAsync(exception, errorData);
+                errorId = await LogErrorToDatabase(exception, methodName, componentType.Name, componentType.FullName, true, errorLogService, additionalData);
 
-                // 顯示使用者友善的錯誤訊息
-                if (showUserFriendlyMessage)
-                {
-                    var userMessage = GetUserFriendlyMessage(exception);
-                    await notificationService.ShowErrorAsync(userMessage, "操作失敗");
-                }
+                // 通知使用者
+                var userMessage = GetUserFriendlyMessage(exception);
+                await notificationService.ShowErrorAsync(userMessage, "操作失敗");
             }
             catch (Exception)
             {
-                // 如果記錄錯誤時也失敗，至少要顯示基本錯誤訊息
+                // 如果記錄錯誤失敗，至少要通知使用者
                 try
                 {
                     await notificationService.ShowErrorAsync("系統發生錯誤，請稍後再試", "系統錯誤");
                 }
                 catch
                 {
-                    // 如果連通知都失敗，就無能為力了
+                    // 如果連通知都失敗，無能為力
                 }
                 
-                // 生成備用錯誤 ID
-                errorId = $"FALLBACK_{DateTime.UtcNow.Ticks}";
+                errorId = $"PAGE_FALLBACK_{DateTime.UtcNow.Ticks}";
             }
 
             return errorId;
         }
 
         /// <summary>
-        /// 處理 Service 結果的錯誤 - 適用於處理 ServiceResult 失敗的情況
+        /// Service 層錯誤處理 - 只記錄錯誤，不通知使用者
+        /// 功能：1.防止程式崩潰 2.記錄到ErrorLog資料表 3.記錄到日誌
+        /// </summary>
+        /// <param name="exception">捕獲的例外</param>
+        /// <param name="methodName">發生錯誤的方法名稱</param>
+        /// <param name="serviceType">服務類型</param>
+        /// <param name="errorLogService">錯誤記錄服務（可為 null）</param>
+        /// <param name="logger">記錄器（可為 null）</param>
+        /// <param name="additionalData">額外的錯誤資料</param>
+        /// <returns>錯誤 ID</returns>
+        public static async Task<string> HandleServiceErrorAsync(
+            Exception exception,
+            string methodName,
+            Type serviceType,
+            IErrorLogService? errorLogService = null,
+            ILogger? logger = null,
+            object? additionalData = null)
+        {
+            string errorId = string.Empty;
+            
+            try
+            {
+                // 記錄錯誤到資料庫
+                if (errorLogService != null)
+                {
+                    errorId = await LogErrorToDatabase(exception, methodName, serviceType.Name, serviceType.FullName, false, errorLogService, additionalData);
+                }
+
+                // 記錄到應用程式日誌
+                logger?.LogError(exception, "Service Error in {ServiceType}.{MethodName}", serviceType.Name, methodName);
+            }
+            catch (Exception)
+            {
+                errorId = $"SERVICE_FALLBACK_{DateTime.UtcNow.Ticks}";
+            }
+
+            return errorId;
+        }
+
+        /// <summary>
+        /// 處理 ServiceResult 失敗 - 只通知使用者，不重複記錄
+        /// 用於 Service 已回傳失敗結果，只需通知使用者的情況
         /// </summary>
         /// <param name="result">失敗的 ServiceResult</param>
-        /// <param name="methodName">發生錯誤的方法名稱</param>
         /// <param name="notificationService">通知服務</param>
         /// <param name="customErrorMessage">自訂錯誤訊息</param>
-        public static async Task HandleServiceErrorAsync(
+        public static async Task HandleServiceResultErrorAsync(
             ServiceResult result,
-            string methodName,
             INotificationService notificationService,
             string? customErrorMessage = null)
         {
@@ -105,80 +128,32 @@ namespace ERPCore2.Helpers
             }
         }
 
-        /// <summary>
-        /// 處理 Service 結果的錯誤 - 泛型版本
-        /// </summary>
-        public static async Task HandleServiceErrorAsync<T>(
-            ServiceResult<T> result,
-            string methodName,
-            INotificationService notificationService,
-            string? customErrorMessage = null)
-        {
-            try
-            {
-                var errorMessage = customErrorMessage ?? result.ErrorMessage ?? "操作失敗";
-                
-                if (result.ValidationErrors?.Any() == true)
-                {
-                    errorMessage += "\n" + string.Join("\n", result.ValidationErrors);
-                }
-
-                await notificationService.ShowErrorAsync(errorMessage, "操作失敗");
-            }
-            catch
-            {
-                // 如果通知失敗，忽略錯誤
-            }
-        }
+        #region 私有輔助方法
 
         /// <summary>
-        /// 簡化版錯誤處理 - 只需要基本服務
+        /// 記錄錯誤到資料庫的統一方法
         /// </summary>
-        /// <param name="exception">捕獲的例外</param>
-        /// <param name="methodName">發生錯誤的方法名稱</param>
-        /// <param name="notificationService">通知服務</param>
-        /// <param name="customMessage">自訂錯誤訊息</param>
-        public static async Task HandleErrorSimplyAsync(
+        private static async Task<string> LogErrorToDatabase(
             Exception exception,
             string methodName,
-            INotificationService notificationService,
-            string? customMessage = null)
+            string typeName,
+            string? fullTypeName,
+            bool isPageLayer,
+            IErrorLogService errorLogService,
+            object? additionalData = null)
         {
-            try
+            var errorData = new
             {
-                var message = customMessage ?? GetUserFriendlyMessage(exception);
-                await notificationService.ShowErrorAsync(message, "操作失敗");
-            }
-            catch
-            {
-                // 如果通知失敗，忽略錯誤
-            }
-        }
+                TypeName = typeName,
+                MethodName = methodName,
+                FullTypeName = fullTypeName,
+                Timestamp = DateTime.UtcNow,
+                IsPageLayer = isPageLayer,
+                IsServiceLayer = !isPageLayer,
+                AdditionalData = additionalData
+            };
 
-        /// <summary>
-        /// 執行異步操作並處理錯誤 - 通用版本
-        /// </summary>
-        /// <typeparam name="T">返回值類型</typeparam>
-        /// <param name="operation">要執行的異步操作</param>
-        /// <param name="defaultValue">錯誤時的預設值</param>
-        /// <param name="notificationService">通知服務</param>
-        /// <param name="customMessage">自訂錯誤訊息</param>
-        /// <returns>操作結果或預設值</returns>
-        public static async Task<T> ExecuteWithErrorHandlingAsync<T>(
-            Func<Task<T>> operation,
-            T defaultValue,
-            INotificationService notificationService,
-            string? customMessage = null)
-        {
-            try
-            {
-                return await operation();
-            }
-            catch (Exception ex)
-            {
-                await HandleErrorSimplyAsync(ex, "ExecuteOperation", notificationService, customMessage);
-                return defaultValue;
-            }
+            return await errorLogService.LogErrorAsync(exception, errorData);
         }
 
         /// <summary>
@@ -206,5 +181,7 @@ namespace ERPCore2.Helpers
                 _ => "系統發生錯誤，請稍後再試或聯繫技術人員"
             };
         }
+
+        #endregion
     }
 }
