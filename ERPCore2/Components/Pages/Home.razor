@@ -8,6 +8,7 @@
 <PageTitle>美莊磚業 - 系統首頁</PageTitle>
 
 <div class="container-fluid">
+
     @* 功能搜尋區域 *@
     <div class="row mb-4">
         <div class="col-12">
@@ -63,7 +64,26 @@
             </div>
         </div>
     </div>
+
+    @* 系統更新通知區域 *@
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-info d-flex align-items-center" role="alert">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <div class="flex-grow-1">
+                    <strong>系統更新</strong> - 查看最新的系統功能與改進
+                </div>
+                <a href="/updates" class="btn btn-outline-primary btn-sm">
+                    <i class="bi-arrow-up-circle me-1"></i>
+                    查看更新
+                </a>
+            </div>
+        </div>
+    </div>
+
 </div>
+
+
 
 @code {
     // 搜尋結果
