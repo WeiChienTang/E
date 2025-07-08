@@ -1,0 +1,249 @@
+@page "/updates"
+@using ERPCore2.Models
+@using ERPCore2.Services
+@using ERPCore2.Components.Shared.Tables
+@using ERPCore2.Components.Shared.Headers
+@inject IUpdateService UpdateService
+@inject IJSRuntime JSRuntime
+
+<div class="container-fluid">
+    <GenericHeaderComponent Title="系統更新紀錄"
+                          Subtitle="@($"最後更新：{DateTime.Now:yyyy-MM-dd}")"
+                          HeadingLevel="h2"
+                          ShowDivider="true"
+                          AriaLabel="系統更新紀錄頁面"
+                          TitleClass="text-primary">
+        <Actions>
+            <i class="fas fa-history text-primary me-2"></i>
+        </Actions>
+    </GenericHeaderComponent>
+
+    @if (isLoading)
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">載入中...</span>
+                    </div>
+                    <p class="mt-3 text-muted">載入更新紀錄中...</p>
+                </div>
+            </div>
+        </div>
+    }
+    else if (!updates.Any())
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="empty-state">
+                    <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">目前沒有更新紀錄</h5>
+                    <p class="text-muted">系統更新紀錄將會顯示在這裡</p>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <!-- 左側：更新列表 -->
+            <div class="col-lg-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list me-2"></i>
+                            更新列表
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <GenericTableComponent TItem="UpdateRecord"
+                                             Items="@updates"
+                                             ColumnDefinitions="@GetTableColumns()"
+                                             ShowHeader="true"
+                                             IsStriped="true"
+                                             IsHoverable="true"
+                                             EnableRowClick="true"
+                                             OnRowClick="@HandleUpdateSelected"
+                                             CssClass="mb-0"
+                                             EmptyMessage="沒有找到更新紀錄"
+                                             GetRowCssClass="@GetRowCssClass" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側：詳細資訊 -->
+            <div class="col-lg-6">
+                <div class="card shadow-sm">
+                    <div class="card-header @GetVersionTypeClass(selectedUpdate?.Type ?? "")">
+                        @if (selectedUpdate != null)
+                        {
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <span class="badge @GetVersionBadgeClass(selectedUpdate.Type) me-2">
+                                        v@selectedUpdate.Version
+                                    </span>
+                                    @selectedUpdate.Title
+                                </h5>
+                                <small class="text-light">
+                                    <i class="fas fa-calendar-alt me-1"></i>
+                                    @selectedUpdate.ReleaseDate.ToString("yyyy年MM月dd日")
+                                </small>
+                            </div>
+                        }
+                        else
+                        {
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                更新詳情
+                            </h5>
+                        }
+                    </div>
+                    <div class="card-body">
+                        @if (selectedUpdate != null)
+                        {
+                            <div class="update-details">
+                                @foreach (var category in GetGroupedItems(selectedUpdate.Items))
+                                {
+                                    <div class="category-section mb-4">
+                                        <div class="category-title text-@GetCategoryColor(category.Key) mb-3">
+                                            <i class="@GetCategoryIcon(category.Key) category-icon me-2"></i>
+                                            <span class="fw-bold">@category.Key</span>
+                                            <span class="badge bg-light text-dark ms-2">@category.Count() 項</span>
+                                        </div>
+                                        <div class="category-items">
+                                            @foreach (var item in category)
+                                            {
+                                                <div class="update-item">
+                                                    <div class="d-flex align-items-start">
+                                                        <i class="@item.Icon text-@GetCategoryColor(item.Category) me-3 mt-1"></i>
+                                                        <div class="item-content">
+                                                            <p class="mb-0">@item.Description</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-5">
+                                <i class="fas fa-hand-pointer fa-3x text-muted mb-3"></i>
+                                <h6 class="text-muted">請點選左側列表查看詳細資訊</h6>
+                                <p class="text-muted mb-0">選擇一個版本以查看該版本的更新內容</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+
+
+@code {
+    private List<UpdateRecord> updates = new();
+    private UpdateRecord? selectedUpdate = null;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            updates = await UpdateService.GetUpdatesAsync();
+            // 預設選擇第一個更新紀錄
+            selectedUpdate = updates.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            // 可以加入錯誤處理邏輯
+            Console.WriteLine($"Error loading updates: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private List<TableColumnDefinition> GetTableColumns()
+    {
+        return new List<TableColumnDefinition>
+        {
+            TableColumnDefinition.Template("版本", context =>
+                @<span class="badge @GetVersionBadgeClass(((UpdateRecord)context).Type) me-2">
+                    v@(((UpdateRecord)context).Version)
+                </span>),
+            TableColumnDefinition.Text("標題", "Title"),
+            TableColumnDefinition.Date("發布日期", "ReleaseDate", "yyyy/MM/dd")
+        };
+    }
+
+    private async Task HandleUpdateSelected(UpdateRecord update)
+    {
+        selectedUpdate = update;
+        await Task.CompletedTask; // 保持方法為異步
+    }
+
+    private string GetRowCssClass(UpdateRecord update)
+    {
+        if (selectedUpdate != null && selectedUpdate.Version == update.Version)
+        {
+            return "table-primary";
+        }
+        return "";
+    }
+
+    private string GetVersionTypeClass(string type)
+    {
+        return type.ToLower() switch
+        {
+            "major" => "bg-primary text-white",
+            "minor" => "bg-info text-white", 
+            "patch" => "bg-secondary text-white",
+            _ => "bg-light"
+        };
+    }
+
+    private string GetVersionBadgeClass(string type)
+    {
+        return type.ToLower() switch
+        {
+            "major" => "bg-danger",
+            "minor" => "bg-warning text-dark",
+            "patch" => "bg-success",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetCategoryColor(string category)
+    {
+        return category switch
+        {
+            "新功能" => "success",
+            "改進" => "info",
+            "修復" => "warning",
+            "安全" => "danger",
+            _ => "secondary"
+        };
+    }
+
+    private string GetCategoryIcon(string category)
+    {
+        return category switch
+        {
+            "新功能" => "fas fa-star",
+            "改進" => "fas fa-arrow-up",
+            "修復" => "fas fa-wrench",
+            "安全" => "fas fa-shield-alt",
+            _ => "fas fa-circle"
+        };
+    }
+
+    private IEnumerable<IGrouping<string, UpdateItem>> GetGroupedItems(List<UpdateItem> items)
+    {
+        return items.GroupBy(i => i.Category);
+    }
+}

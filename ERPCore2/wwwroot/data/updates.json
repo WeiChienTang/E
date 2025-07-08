@@ -1,0 +1,135 @@
+[
+      {
+    "version": "2.1.0",
+    "releaseDate": "2024-07-08",
+    "title": "重大功能更新",
+    "type": "major",
+    "items": [
+      {
+        "category": "新功能",
+        "description": "新增產品尺寸管理功能",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新功能", 
+        "description": "新增錯誤日誌記錄系統",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "改進",
+        "description": "優化用戶權限管理",
+        "icon": "fas fa-arrow-up"
+      }
+    ]
+  },
+      {
+    "version": "2.1.0",
+    "releaseDate": "2024-07-08",
+    "title": "重大功能更新",
+    "type": "major",
+    "items": [
+      {
+        "category": "新功能",
+        "description": "新增產品尺寸管理功能",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新功能", 
+        "description": "新增錯誤日誌記錄系統",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "改進",
+        "description": "優化用戶權限管理",
+        "icon": "fas fa-arrow-up"
+      }
+    ]
+  },
+      {
+    "version": "2.1.0",
+    "releaseDate": "2024-07-08",
+    "title": "重大功能更新",
+    "type": "major",
+    "items": [
+      {
+        "category": "新功能",
+        "description": "新增產品尺寸管理功能",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新功能", 
+        "description": "新增錯誤日誌記錄系統",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "改進",
+        "description": "優化用戶權限管理",
+        "icon": "fas fa-arrow-up"
+      }
+    ]
+  },
+  {
+    "version": "2.1.0",
+    "releaseDate": "2024-07-08",
+    "title": "重大功能更新",
+    "type": "major",
+    "items": [
+      {
+        "category": "新功能",
+        "description": "新增產品尺寸管理功能",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新功能", 
+        "description": "新增錯誤日誌記錄系統",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "改進",
+        "description": "優化用戶權限管理",
+        "icon": "fas fa-arrow-up"
+      }
+    ]
+  },
+  {
+    "version": "2.0.5",
+    "releaseDate": "2024-06-30",
+    "title": "安全性更新與修復",
+    "type": "patch",
+    "items": [
+      {
+        "category": "修復",
+        "description": "修復產品尺寸排序問題",
+        "icon": "fas fa-bug"
+      },
+      {
+        "category": "安全",
+        "description": "強化身份驗證機制",
+        "icon": "fas fa-shield-alt"
+      }
+    ]
+  },
+  {
+    "version": "2.0.0",
+    "releaseDate": "2024-06-25",
+    "title": "全新版本發布",
+    "type": "major",
+    "items": [
+      {
+        "category": "新功能",
+        "description": "全新的用戶介面設計",
+        "icon": "fas fa-palette"
+      },
+      {
+        "category": "新功能",
+        "description": "支援多語言界面",
+        "icon": "fas fa-globe"
+      },
+      {
+        "category": "改進",
+        "description": "提升系統整體效能",
+        "icon": "fas fa-tachometer-alt"
+      }
+    ]
+  }
+]
