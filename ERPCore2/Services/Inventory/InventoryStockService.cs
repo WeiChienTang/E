@@ -474,6 +474,142 @@ namespace ERPCore2.Services.Inventory
 
         #endregion
 
+        #region 庫存總覽查詢方法
+
+        public async Task<List<InventoryStock>> GetInventoryOverviewAsync(int? warehouseId = null, int? categoryId = null, int? locationId = null)
+        {
+            try
+            {
+                var query = _context.InventoryStocks
+                    .Include(i => i.Product)
+                        .ThenInclude(p => p.ProductCategory)
+                    .Include(i => i.Product)
+                        .ThenInclude(p => p.Unit)
+                    .Include(i => i.Warehouse)
+                    .Include(i => i.WarehouseLocation)
+                    .Where(i => !i.IsDeleted);
+
+                // 篩選條件
+                if (warehouseId.HasValue)
+                {
+                    query = query.Where(i => i.WarehouseId == warehouseId.Value);
+                }
+
+                if (categoryId.HasValue)
+                {
+                    query = query.Where(i => i.Product.ProductCategoryId == categoryId.Value);
+                }
+
+                if (locationId.HasValue)
+                {
+                    query = query.Where(i => i.WarehouseLocationId == locationId.Value);
+                }
+
+                return await query
+                    .OrderBy(i => i.Warehouse.WarehouseName)
+                    .ThenBy(i => i.Product.ProductCode)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex,
+                    nameof(GetInventoryOverviewAsync),
+                    GetType(),
+                    _logger,
+                    new { WarehouseId = warehouseId, CategoryId = categoryId, LocationId = locationId }
+                );
+                throw;
+            }
+        }
+
+        public async Task<List<InventoryStock>> GetLowStockOverviewAsync()
+        {
+            try
+            {
+                return await _context.InventoryStocks
+                    .Include(i => i.Product)
+                        .ThenInclude(p => p.ProductCategory)
+                    .Include(i => i.Product)
+                        .ThenInclude(p => p.Unit)
+                    .Include(i => i.Warehouse)
+                    .Include(i => i.WarehouseLocation)
+                    .Where(i => !i.IsDeleted && 
+                               i.MinStockLevel.HasValue && 
+                               i.CurrentStock <= i.MinStockLevel.Value)
+                    .OrderBy(i => i.CurrentStock)
+                    .ThenBy(i => i.Product.ProductCode)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex,
+                    nameof(GetLowStockOverviewAsync),
+                    GetType(),
+                    _logger
+                );
+                throw;
+            }
+        }
+
+        public async Task<Dictionary<string, object>> GetInventoryStatisticsAsync()
+        {
+            try
+            {
+                var stats = new Dictionary<string, object>();
+
+                // 總商品數量
+                var totalProducts = await _context.InventoryStocks
+                    .Where(i => !i.IsDeleted)
+                    .Select(i => i.ProductId)
+                    .Distinct()
+                    .CountAsync();
+
+                // 總庫存價值
+                var totalInventoryValue = await _context.InventoryStocks
+                    .Where(i => !i.IsDeleted && i.AverageCost.HasValue)
+                    .SumAsync(i => i.CurrentStock * (i.AverageCost ?? 0));
+
+                // 低庫存商品數量
+                var lowStockCount = await _context.InventoryStocks
+                    .Where(i => !i.IsDeleted &&
+                               i.MinStockLevel.HasValue &&
+                               i.CurrentStock <= i.MinStockLevel.Value)
+                    .CountAsync();
+
+                // 零庫存商品數量
+                var zeroStockCount = await _context.InventoryStocks
+                    .Where(i => !i.IsDeleted && i.CurrentStock == 0)
+                    .CountAsync();
+
+                // 倉庫數量
+                var warehouseCount = await _context.Warehouses
+                    .Where(w => !w.IsDeleted && w.IsActive)
+                    .CountAsync();
+
+                stats.Add("TotalProducts", totalProducts);
+                stats.Add("TotalInventoryValue", Math.Round(totalInventoryValue, 2));
+                stats.Add("LowStockCount", lowStockCount);
+                stats.Add("ZeroStockCount", zeroStockCount);
+                stats.Add("WarehouseCount", warehouseCount);
+
+                return stats;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex,
+                    nameof(GetInventoryStatisticsAsync),
+                    GetType(),
+                    _logger
+                );
+                throw;
+            }
+        }
+
+        #endregion
+
         #region 庫存預留方法
 
         public async Task<ServiceResult> ReserveStockAsync(int productId, int warehouseId, int quantity,

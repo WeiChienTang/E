@@ -1,0 +1,271 @@
+/* 庫存總覽頁面樣式 */
+.inventory-overview {
+    background-color: #f8f9fc;
+    min-height: 100vh;
+}
+
+/* 統計卡片樣式 */
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+
+.border-left-danger {
+    border-left: 0.25rem solid #e74a3b !important;
+}
+
+/* 庫存狀態標籤 */
+.stock-status-normal {
+    background-color: #1cc88a;
+}
+
+.stock-status-low {
+    background-color: #f6c23e;
+}
+
+.stock-status-zero {
+    background-color: #e74a3b;
+}
+
+/* 表格樣式 */
+.inventory-table {
+    font-size: 0.875rem;
+}
+
+.inventory-table th {
+    background-color: #f8f9fc;
+    border-bottom: 2px solid #e3e6f0;
+    font-weight: 600;
+    color: #5a5c69;
+    white-space: nowrap;
+}
+
+.inventory-table td {
+    vertical-align: middle;
+    border-bottom: 1px solid #e3e6f0;
+}
+
+/* 低庫存行樣式 */
+.table-warning {
+    background-color: rgba(246, 194, 62, 0.1);
+}
+
+.table-danger {
+    background-color: rgba(231, 74, 59, 0.1);
+}
+
+/* 篩選區域樣式 */
+.filter-section {
+    background: white;
+    border-radius: 0.35rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+/* 商品代碼樣式 */
+.product-code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 0.25rem;
+}
+
+/* 數量顯示樣式 */
+.stock-quantity {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.stock-quantity.normal {
+    color: #1cc88a;
+}
+
+.stock-quantity.low {
+    color: #f6c23e;
+}
+
+.stock-quantity.zero {
+    color: #e74a3b;
+}
+
+/* 載入動畫樣式 */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.loading-text {
+    margin-top: 1rem;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* 空資料顯示樣式 */
+.empty-data {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.empty-data i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #dee2e6;
+}
+
+/* 按鈕樣式調整 */
+.btn-toolbar .btn-group {
+    margin-right: 0.5rem;
+}
+
+.btn-toolbar .btn-group:last-child {
+    margin-right: 0;
+}
+
+/* 分頁樣式 */
+.pagination-sm .page-link {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+    .inventory-table {
+        font-size: 0.75rem;
+    }
+    
+    .btn-toolbar {
+        flex-direction: column;
+    }
+    
+    .btn-group {
+        margin-bottom: 0.5rem;
+        width: 100%;
+    }
+    
+    .btn-group .btn {
+        flex: 1;
+    }
+    
+    .statistics-cards {
+        margin-bottom: 1rem;
+    }
+    
+    .filter-section .row {
+        margin-bottom: 0;
+    }
+    
+    .filter-section .col-md-3,
+    .filter-section .col-md-6 {
+        margin-bottom: 1rem;
+    }
+}
+
+/* 表格捲軸樣式 */
+.table-responsive {
+    border-radius: 0.35rem;
+}
+
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* 庫位標籤樣式 */
+.location-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* 倉庫標籤樣式 */
+.warehouse-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* 成本顯示樣式 */
+.cost-display {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 0.8rem;
+}
+
+/* 日期顯示樣式 */
+.date-display {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+/* 統計卡片內容樣式 */
+.stats-card .card-body {
+    padding: 1.25rem;
+}
+
+.stats-card .text-xs {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #5a5c69;
+}
+
+.stats-card .h5 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+/* 工具列樣式 */
+.toolbar-section {
+    background: white;
+    border-radius: 0.35rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    margin-bottom: 1rem;
+    padding: 1rem;
+}
+
+/* 表格容器樣式 */
+.table-container {
+    background: white;
+    border-radius: 0.35rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+/* 分頁容器樣式 */
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: white;
+    border-top: 1px solid #e3e6f0;
+    border-radius: 0 0 0.35rem 0.35rem;
+}
+
+/* 數據資訊樣式 */
+.data-info {
+    color: #6c757d;
+    font-size: 0.875rem;
+}

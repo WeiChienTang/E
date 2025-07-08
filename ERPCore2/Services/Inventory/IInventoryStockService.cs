@@ -16,6 +16,11 @@ namespace ERPCore2.Services.Inventory
         Task<List<InventoryStock>> GetLowStockItemsAsync();
         Task<int> GetAvailableStockAsync(int productId, int warehouseId, int? locationId = null);
         
+        // 庫存總覽查詢
+        Task<List<InventoryStock>> GetInventoryOverviewAsync(int? warehouseId = null, int? categoryId = null, int? locationId = null);
+        Task<List<InventoryStock>> GetLowStockOverviewAsync();
+        Task<Dictionary<string, object>> GetInventoryStatisticsAsync();
+        
         // 庫存異動
         Task<ServiceResult> AddStockAsync(int productId, int warehouseId, int quantity, 
             InventoryTransactionTypeEnum transactionType, string transactionNumber, 
