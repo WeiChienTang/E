@@ -33,9 +33,12 @@ namespace ERPCore2.Data.Context
       // Inventory Management
       public DbSet<Warehouse> Warehouses { get; set; }
       public DbSet<WarehouseLocation> WarehouseLocations { get; set; }
+      public DbSet<InventoryStock> InventoryStocks { get; set; }
+      public DbSet<InventoryTransaction> InventoryTransactions { get; set; }
+      public DbSet<InventoryReservation> InventoryReservations { get; set; }
       public DbSet<Unit> Units { get; set; }
       public DbSet<UnitConversion> UnitConversions { get; set; }
-      public DbSet<InventoryTransactionType> InventoryTransactionTypes { get; set; }
+      public DbSet<Entities.InventoryTransactionType> InventoryTransactionTypes { get; set; }
       
       // BOM Foundations
       public DbSet<Material> Materials { get; set; }

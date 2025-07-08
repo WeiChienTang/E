@@ -31,7 +31,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     TypeCode = "IN001",
                     TypeName = "採購入庫",
-                    TransactionType = InventoryTransactionTypeEnum.In,
+                    TransactionType = InventoryTransactionTypeEnum.Purchase,
                     AffectsCost = true,
                     RequiresApproval = true,
                     AutoGenerateNumber = true,
@@ -45,7 +45,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     TypeCode = "IN002",
                     TypeName = "生產入庫",
-                    TransactionType = InventoryTransactionTypeEnum.In,
+                    TransactionType = InventoryTransactionTypeEnum.ProductionCompletion,
                     AffectsCost = true,
                     RequiresApproval = false,
                     AutoGenerateNumber = true,
@@ -59,7 +59,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     TypeCode = "IN003",
                     TypeName = "調撥入庫",
-                    TransactionType = InventoryTransactionTypeEnum.In,
+                    TransactionType = InventoryTransactionTypeEnum.Transfer,
                     AffectsCost = false,
                     RequiresApproval = true,
                     AutoGenerateNumber = true,
@@ -73,7 +73,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     TypeCode = "OUT001",
                     TypeName = "銷售出庫",
-                    TransactionType = InventoryTransactionTypeEnum.Out,
+                    TransactionType = InventoryTransactionTypeEnum.Sale,
                     AffectsCost = false,
                     RequiresApproval = false,
                     AutoGenerateNumber = true,
@@ -87,7 +87,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     TypeCode = "OUT002",
                     TypeName = "調撥出庫",
-                    TransactionType = InventoryTransactionTypeEnum.Out,
+                    TransactionType = InventoryTransactionTypeEnum.Transfer,
                     AffectsCost = false,
                     RequiresApproval = true,
                     AutoGenerateNumber = true,
@@ -101,7 +101,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     TypeCode = "OUT003",
                     TypeName = "盤虧出庫",
-                    TransactionType = InventoryTransactionTypeEnum.Out,
+                    TransactionType = InventoryTransactionTypeEnum.StockTaking,
                     AffectsCost = true,
                     RequiresApproval = true,
                     AutoGenerateNumber = true,

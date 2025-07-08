@@ -1,5 +1,6 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Services;
+using ERPCore2.Services.Inventory;
 using ERPCore2.Services.Notifications;
 using Microsoft.EntityFrameworkCore;
 
@@ -63,6 +64,11 @@ namespace ERPCore2.Data
             services.AddScoped<IUnitService, UnitService>();
             services.AddScoped<IUnitConversionService, UnitConversionService>();
             services.AddScoped<IInventoryTransactionTypeService, InventoryTransactionTypeService>();
+            
+            // 庫存管理服務
+            services.AddScoped<IInventoryStockService, InventoryStockService>();
+            services.AddScoped<IInventoryTransactionService, InventoryTransactionService>();
+            services.AddScoped<IInventoryReservationService, InventoryReservationService>();
 
             // BOM基礎資料表服務
             services.AddScoped<IWeatherService, WeatherService>();

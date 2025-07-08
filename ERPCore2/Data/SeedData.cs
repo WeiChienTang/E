@@ -80,6 +80,7 @@ namespace ERPCore2.Data
                 new SupplierSeeder(),
                 new ProductSeeder(),
                 new InventorySeeder(),
+                new InventoryStockSeeder(), // 新增庫存主檔資料
                 new WeatherSeeder(),
                 new ErrorLogSeeder()
             };

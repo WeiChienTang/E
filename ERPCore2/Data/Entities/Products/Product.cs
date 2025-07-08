@@ -75,5 +75,6 @@ namespace ERPCore2.Data.Entities
         public ProductCategory? ProductCategory { get; set; }
         public Supplier? PrimarySupplier { get; set; }
         public ICollection<ProductSupplier> ProductSuppliers { get; set; } = new List<ProductSupplier>();
+        public ICollection<InventoryStock> InventoryStocks { get; set; } = new List<InventoryStock>();
     }
 }
