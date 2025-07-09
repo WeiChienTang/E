@@ -4,6 +4,7 @@
 @using ERPCore2.Services.Inventory
 @using ERPCore2.Helpers
 @using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.Tables
 @using Microsoft.AspNetCore.Components.Web
 @inject IInventoryStockService InventoryStockService
 @inject IProductService ProductService
@@ -55,160 +56,24 @@
                     <p class="mt-2 text-muted">載入庫存資料中...</p>
                 </div>
             }
-            else if (!filteredInventoryStocks.Any())
-            {
-                <div class="text-center p-4">
-                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">沒有找到符合條件的庫存資料</p>
-                </div>
-            }
             else
             {
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 120px;">商品代碼</th>
-                                <th>商品名稱</th>
-                                <th style="width: 100px;">分類</th>
-                                <th style="width: 80px;">單位</th>
-                                <th style="width: 120px;">倉庫</th>
-                                <th style="width: 100px;">庫位</th>
-                                <th style="width: 80px;" class="text-end">現有庫存</th>
-                                <th style="width: 80px;" class="text-end">預留庫存</th>
-                                <th style="width: 80px;" class="text-end">可用庫存</th>
-                                <th style="width: 80px;" class="text-end">警戒線</th>
-                                <th style="width: 100px;" class="text-center">狀態</th>
-                                <th style="width: 120px;" class="text-end">平均成本</th>
-                                <th style="width: 120px;">最後異動</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in pagedInventoryStocks)
-                            {
-                                var isLowStock = item.MinStockLevel.HasValue && item.CurrentStock <= item.MinStockLevel.Value;
-                                var isZeroStock = item.CurrentStock == 0;
-                                
-                                <tr class="@(isZeroStock ? "table-danger" : isLowStock ? "table-warning" : "")">
-                                    <td>
-                                        <code>@item.Product.ProductCode</code>
-                                    </td>
-                                    <td>
-                                        <strong>@item.Product.ProductName</strong>
-                                        @if (!string.IsNullOrEmpty(item.Product.Description))
-                                        {
-                                            <br><small class="text-muted">@item.Product.Description</small>
-                                        }
-                                    </td>
-                                    <td>
-                                        @(item.Product.ProductCategory?.CategoryName ?? "-")
-                                    </td>
-                                    <td>
-                                        @(item.Product.Unit?.UnitName ?? "-")
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-info">@item.Warehouse.WarehouseName</span>
-                                    </td>
-                                    <td>
-                                        @if (item.WarehouseLocation != null)
-                                        {
-                                            <span class="badge bg-secondary">@item.WarehouseLocation.LocationCode</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">-</span>
-                                        }
-                                    </td>
-                                    <td class="text-end">
-                                        <strong class="@(isZeroStock ? "text-danger" : isLowStock ? "text-warning" : "text-success")">
-                                            @item.CurrentStock.ToString("N0")
-                                        </strong>
-                                    </td>
-                                    <td class="text-end">
-                                        @item.ReservedStock.ToString("N0")
-                                    </td>
-                                    <td class="text-end">
-                                        <strong>@item.AvailableStock.ToString("N0")</strong>
-                                    </td>
-                                    <td class="text-end">
-                                        @(item.MinStockLevel?.ToString("N0") ?? "-")
-                                    </td>
-                                    <td class="text-center">
-                                        @if (isZeroStock)
-                                        {
-                                            <span class="badge bg-danger">零庫存</span>
-                                        }
-                                        else if (isLowStock)
-                                        {
-                                            <span class="badge bg-warning">低庫存</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-success">正常</span>
-                                        }
-                                    </td>
-                                    <td class="text-end">
-                                        @if (item.AverageCost.HasValue)
-                                        {
-                                            <span>$@item.AverageCost.Value.ToString("N2")</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">-</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (item.LastTransactionDate.HasValue)
-                                        {
-                                            <span>@item.LastTransactionDate.Value.ToString("yyyy/MM/dd")</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">-</span>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-                
-                <!-- 分頁 -->
-                @if (totalPages > 1)
-                {
-                    <div class="card-footer">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <small class="text-muted">
-                                    顯示第 @((currentPage - 1) * pageSize + 1) - @Math.Min(currentPage * pageSize, filteredInventoryStocks.Count) 筆，共 @filteredInventoryStocks.Count 筆
-                                </small>
-                            </div>
-                            <nav>
-                                <ul class="pagination pagination-sm mb-0">
-                                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
-                                        <button class="page-link" @onclick="() => ChangePage(currentPage - 1)" disabled="@(currentPage == 1)">
-                                            <i class="fas fa-chevron-left"></i>
-                                        </button>
-                                    </li>
-                                    
-                                    @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
-                                    {
-                                        var pageNum = i;
-                                        <li class="page-item @(currentPage == pageNum ? "active" : "")">
-                                            <button class="page-link" @onclick="() => ChangePage(pageNum)">@pageNum</button>
-                                        </li>
-                                    }
-                                    
-                                    <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
-                                        <button class="page-link" @onclick="() => ChangePage(currentPage + 1)" disabled="@(currentPage == totalPages)">
-                                            <i class="fas fa-chevron-right"></i>
-                                        </button>
-                                    </li>
-                                </ul>
-                            </nav>
-                        </div>
-                    </div>
-                }
+                <GenericTableComponent TItem="InventoryStock"
+                                     Items="@filteredInventoryStocks"
+                                     ColumnDefinitions="@columnDefinitions"
+                                     EmptyMessage="沒有找到符合條件的庫存資料"
+                                     ShowHeader="true"
+                                     IsStriped="true"
+                                     IsHoverable="true"
+                                     GetRowCssClass="@GetRowCssClass"
+                                     EnablePagination="true"
+                                     CurrentPage="@currentPage"
+                                     PageSize="@pageSize"
+                                     TotalItems="@filteredInventoryStocks.Count"
+                                     OnPageChanged="@OnPageChanged"
+                                     OnPageSizeChanged="@OnPageSizeChanged"
+                                     ShowPageSizeSelector="true"
+                                     PageSizeOptions="@pageSizeOptions" />
             }
         </div>
     </div>
@@ -231,10 +96,13 @@
     private SearchFilterModel searchModel = new();
     private List<SearchFilterDefinition> filterDefinitions = new();
     
+    // 表格相關
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<int> pageSizeOptions = new() { 10, 20, 50, 100 };
+    
     // 分頁相關
     private int currentPage = 1;
     private int pageSize = 20;
-    private int totalPages = 1;
     
     // 狀態
     private bool isLoading = true;
@@ -267,6 +135,7 @@
         {
             await LoadBasicDataAsync();
             InitializeFilters();
+            InitializeColumns();
             await LoadInventoryDataAsync();
             await LoadStatisticsAsync();
         }
@@ -419,9 +288,12 @@
 
     private void UpdatePagination()
     {
-        totalPages = (int)Math.Ceiling((double)filteredInventoryStocks.Count / pageSize);
+        // GenericTableComponent 會自動處理分頁邏輯
+        // 這裡只需要確保當前頁面在有效範圍內
+        var totalPages = (int)Math.Ceiling((double)filteredInventoryStocks.Count / pageSize);
         currentPage = Math.Min(currentPage, Math.Max(1, totalPages));
         
+        // 為了相容性，我們仍然設置 pagedInventoryStocks，但 GenericTableComponent 會使用 filteredInventoryStocks
         pagedInventoryStocks = filteredInventoryStocks
             .Skip((currentPage - 1) * pageSize)
             .Take(pageSize)
@@ -499,15 +371,6 @@
         }
     }
 
-    private void ChangePage(int page)
-    {
-        if (page >= 1 && page <= totalPages)
-        {
-            currentPage = page;
-            UpdatePagination();
-        }
-    }
-
     private async Task ExportToExcel()
     {
         try
@@ -529,5 +392,287 @@
     private async Task LoadStatisticsAsync()
     {
         statistics = await InventoryStockService.GetInventoryStatisticsAsync();
+    }
+
+    private void InitializeColumns()
+    {
+        columnDefinitions = new List<TableColumnDefinition>
+        {
+            // 商品代碼
+            new TableColumnDefinition
+            {
+                Title = "商品代碼",
+                PropertyName = "Product.ProductCode",
+                DataType = ColumnDataType.Html,
+                HeaderStyle = "width: 120px;",
+                CustomTemplate = item => builder =>
+                {
+                    var inventoryStock = (InventoryStock)item;
+                    builder.OpenElement(0, "code");
+                    builder.AddContent(1, inventoryStock.Product.ProductCode);
+                    builder.CloseElement();
+                }
+            },
+
+            // 商品名稱
+            new TableColumnDefinition
+            {
+                Title = "商品名稱",
+                PropertyName = "Product.ProductName",
+                DataType = ColumnDataType.Html,
+                CustomTemplate = item => builder =>
+                {
+                    var inventoryStock = (InventoryStock)item;
+                    builder.OpenElement(0, "div");
+                    
+                    builder.OpenElement(1, "strong");
+                    builder.AddContent(2, inventoryStock.Product.ProductName);
+                    builder.CloseElement();
+                    
+                    if (!string.IsNullOrEmpty(inventoryStock.Product.Description))
+                    {
+                        builder.OpenElement(3, "br");
+                        builder.CloseElement();
+                        builder.OpenElement(4, "small");
+                        builder.AddAttribute(5, "class", "text-muted");
+                        builder.AddContent(6, inventoryStock.Product.Description);
+                        builder.CloseElement();
+                    }
+                    
+                    builder.CloseElement();
+                }
+            },
+
+            // 分類
+            new TableColumnDefinition
+            {
+                Title = "分類",
+                PropertyName = "Product.ProductCategory.CategoryName",
+                DataType = ColumnDataType.Text,
+                HeaderStyle = "width: 100px;",
+                NullDisplayText = "-"
+            },
+
+            // 單位
+            new TableColumnDefinition
+            {
+                Title = "單位",
+                PropertyName = "Product.Unit.UnitName",
+                DataType = ColumnDataType.Text,
+                HeaderStyle = "width: 80px;",
+                NullDisplayText = "-"
+            },
+
+            // 倉庫
+            new TableColumnDefinition
+            {
+                Title = "倉庫",
+                PropertyName = "Warehouse.WarehouseName",
+                DataType = ColumnDataType.Html,
+                HeaderStyle = "width: 120px;",
+                CustomTemplate = item => builder =>
+                {
+                    var inventoryStock = (InventoryStock)item;
+                    builder.OpenElement(0, "span");
+                    builder.AddAttribute(1, "class", "badge bg-info");
+                    builder.AddContent(2, inventoryStock.Warehouse.WarehouseName);
+                    builder.CloseElement();
+                }
+            },
+
+            // 庫位
+            new TableColumnDefinition
+            {
+                Title = "庫位",
+                PropertyName = "WarehouseLocation.LocationCode",
+                DataType = ColumnDataType.Html,
+                HeaderStyle = "width: 100px;",
+                CustomTemplate = item => builder =>
+                {
+                    var inventoryStock = (InventoryStock)item;
+                    if (inventoryStock.WarehouseLocation != null)
+                    {
+                        builder.OpenElement(0, "span");
+                        builder.AddAttribute(1, "class", "badge bg-secondary");
+                        builder.AddContent(2, inventoryStock.WarehouseLocation.LocationCode);
+                        builder.CloseElement();
+                    }
+                    else
+                    {
+                        builder.OpenElement(0, "span");
+                        builder.AddAttribute(1, "class", "text-muted");
+                        builder.AddContent(2, "-");
+                        builder.CloseElement();
+                    }
+                }
+            },
+
+            // 現有庫存
+            new TableColumnDefinition
+            {
+                Title = "現有庫存",
+                PropertyName = "CurrentStock",
+                DataType = ColumnDataType.Html,
+                HeaderStyle = "width: 80px;",
+                HeaderCssClass = "text-end",
+                CellCssClass = "text-end",
+                CustomTemplate = item => builder =>
+                {
+                    var inventoryStock = (InventoryStock)item;
+                    var isZeroStock = inventoryStock.CurrentStock == 0;
+                    var isLowStock = inventoryStock.MinStockLevel.HasValue && inventoryStock.CurrentStock <= inventoryStock.MinStockLevel.Value;
+                    var cssClass = isZeroStock ? "text-danger" : isLowStock ? "text-warning" : "text-success";
+                    
+                    builder.OpenElement(0, "strong");
+                    builder.AddAttribute(1, "class", cssClass);
+                    builder.AddContent(2, inventoryStock.CurrentStock.ToString("N0"));
+                    builder.CloseElement();
+                }
+            },
+
+            // 預留庫存
+            new TableColumnDefinition
+            {
+                Title = "預留庫存",
+                PropertyName = "ReservedStock",
+                DataType = ColumnDataType.Number,
+                Format = "N0",
+                HeaderStyle = "width: 80px;",
+                HeaderCssClass = "text-end",
+                CellCssClass = "text-end"
+            },
+
+            // 可用庫存
+            new TableColumnDefinition
+            {
+                Title = "可用庫存",
+                PropertyName = "AvailableStock",
+                DataType = ColumnDataType.Html,
+                HeaderStyle = "width: 80px;",
+                HeaderCssClass = "text-end",
+                CellCssClass = "text-end",
+                CustomTemplate = item => builder =>
+                {
+                    var inventoryStock = (InventoryStock)item;
+                    builder.OpenElement(0, "strong");
+                    builder.AddContent(1, inventoryStock.AvailableStock.ToString("N0"));
+                    builder.CloseElement();
+                }
+            },
+
+            // 警戒線
+            new TableColumnDefinition
+            {
+                Title = "警戒線",
+                PropertyName = "MinStockLevel",
+                DataType = ColumnDataType.Number,
+                Format = "N0",
+                HeaderStyle = "width: 80px;",
+                HeaderCssClass = "text-end",
+                CellCssClass = "text-end",
+                NullDisplayText = "-"
+            },
+
+            // 狀態
+            new TableColumnDefinition
+            {
+                Title = "狀態",
+                PropertyName = "CurrentStock", // 用於狀態判斷
+                DataType = ColumnDataType.Html,
+                HeaderStyle = "width: 100px;",
+                HeaderCssClass = "text-center",
+                CellCssClass = "text-center",
+                CustomTemplate = item => builder =>
+                {
+                    var inventoryStock = (InventoryStock)item;
+                    var isZeroStock = inventoryStock.CurrentStock == 0;
+                    var isLowStock = inventoryStock.MinStockLevel.HasValue && inventoryStock.CurrentStock <= inventoryStock.MinStockLevel.Value;
+                    
+                    builder.OpenElement(0, "span");
+                    if (isZeroStock)
+                    {
+                        builder.AddAttribute(1, "class", "badge bg-danger");
+                        builder.AddContent(2, "零庫存");
+                    }
+                    else if (isLowStock)
+                    {
+                        builder.AddAttribute(1, "class", "badge bg-warning");
+                        builder.AddContent(2, "低庫存");
+                    }
+                    else
+                    {
+                        builder.AddAttribute(1, "class", "badge bg-success");
+                        builder.AddContent(2, "正常");
+                    }
+                    builder.CloseElement();
+                }
+            },
+
+            // 平均成本
+            new TableColumnDefinition
+            {
+                Title = "平均成本",
+                PropertyName = "AverageCost",
+                DataType = ColumnDataType.Html,
+                HeaderStyle = "width: 120px;",
+                HeaderCssClass = "text-end",
+                CellCssClass = "text-end",
+                CustomTemplate = item => builder =>
+                {
+                    var inventoryStock = (InventoryStock)item;
+                    builder.OpenElement(0, "span");
+                    if (inventoryStock.AverageCost.HasValue)
+                    {
+                        builder.AddContent(1, $"${inventoryStock.AverageCost.Value:N2}");
+                    }
+                    else
+                    {
+                        builder.AddAttribute(1, "class", "text-muted");
+                        builder.AddContent(2, "-");
+                    }
+                    builder.CloseElement();
+                }
+            },
+
+            // 最後異動
+            new TableColumnDefinition
+            {
+                Title = "最後異動",
+                PropertyName = "LastTransactionDate",
+                DataType = ColumnDataType.Date,
+                Format = "yyyy/MM/dd",
+                HeaderStyle = "width: 120px;",
+                NullDisplayText = "-"
+            }
+        };
+    }
+
+    // 取得列的 CSS 類別
+    private string GetRowCssClass(InventoryStock item)
+    {
+        var isZeroStock = item.CurrentStock == 0;
+        var isLowStock = item.MinStockLevel.HasValue && item.CurrentStock <= item.MinStockLevel.Value;
+        
+        if (isZeroStock) return "table-danger";
+        if (isLowStock) return "table-warning";
+        return "";
+    }
+
+    // 分頁事件處理
+    private Task OnPageChanged(int newPage)
+    {
+        currentPage = newPage;
+        UpdatePagination();
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task OnPageSizeChanged(int newPageSize)
+    {
+        pageSize = newPageSize;
+        currentPage = 1; // 重設為第一頁
+        UpdatePagination();
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 }
