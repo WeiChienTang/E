@@ -62,6 +62,7 @@
                                              ShowHeader="true"
                                              IsStriped="true"
                                              IsHoverable="true"
+                                             IsBordered="false"
                                              EnableRowClick="true"
                                              OnRowClick="@HandleUpdateSelected"
                                              CssClass="mb-0"
@@ -79,9 +80,6 @@
                         {
                             <div class="d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">
-                                    <span class="badge @GetVersionBadgeClass(selectedUpdate.Type) me-2">
-                                        v@selectedUpdate.Version
-                                    </span>
                                     @selectedUpdate.Title
                                 </h5>
                                 <small class="text-light">
@@ -189,7 +187,9 @@
 
     private string GetRowCssClass(UpdateRecord update)
     {
-        if (selectedUpdate != null && selectedUpdate.Version == update.Version)
+        if (selectedUpdate != null && 
+            selectedUpdate.Version == update.Version && 
+            selectedUpdate.ReleaseDate == update.ReleaseDate)
         {
             return "table-primary";
         }
@@ -223,9 +223,12 @@
         return category switch
         {
             "新功能" => "success",
+            "新增" => "success",
             "改進" => "info",
+            "修改" => "info",
             "修復" => "warning",
             "安全" => "danger",
+            "刪除" => "danger",
             _ => "secondary"
         };
     }
@@ -235,9 +238,12 @@
         return category switch
         {
             "新功能" => "fas fa-star",
+            "新增" => "fas fa-plus-circle",
             "改進" => "fas fa-arrow-up",
+            "修改" => "fas fa-edit",
             "修復" => "fas fa-wrench",
             "安全" => "fas fa-shield-alt",
+            "刪除" => "fas fa-trash",
             _ => "fas fa-circle"
         };
     }

@@ -1,134 +1,270 @@
 [
-      {
-    "version": "2.1.0",
-    "releaseDate": "2024-07-08",
-    "title": "重大功能更新",
-    "type": "major",
-    "items": [
-      {
-        "category": "新功能",
-        "description": "新增產品尺寸管理功能",
-        "icon": "fas fa-plus-circle"
-      },
-      {
-        "category": "新功能", 
-        "description": "新增錯誤日誌記錄系統",
-        "icon": "fas fa-plus-circle"
-      },
-      {
-        "category": "改進",
-        "description": "優化用戶權限管理",
-        "icon": "fas fa-arrow-up"
-      }
-    ]
-  },
-      {
-    "version": "2.1.0",
-    "releaseDate": "2024-07-08",
-    "title": "重大功能更新",
-    "type": "major",
-    "items": [
-      {
-        "category": "新功能",
-        "description": "新增產品尺寸管理功能",
-        "icon": "fas fa-plus-circle"
-      },
-      {
-        "category": "新功能", 
-        "description": "新增錯誤日誌記錄系統",
-        "icon": "fas fa-plus-circle"
-      },
-      {
-        "category": "改進",
-        "description": "優化用戶權限管理",
-        "icon": "fas fa-arrow-up"
-      }
-    ]
-  },
-      {
-    "version": "2.1.0",
-    "releaseDate": "2024-07-08",
-    "title": "重大功能更新",
-    "type": "major",
-    "items": [
-      {
-        "category": "新功能",
-        "description": "新增產品尺寸管理功能",
-        "icon": "fas fa-plus-circle"
-      },
-      {
-        "category": "新功能", 
-        "description": "新增錯誤日誌記錄系統",
-        "icon": "fas fa-plus-circle"
-      },
-      {
-        "category": "改進",
-        "description": "優化用戶權限管理",
-        "icon": "fas fa-arrow-up"
-      }
-    ]
-  },
   {
-    "version": "2.1.0",
-    "releaseDate": "2024-07-08",
-    "title": "重大功能更新",
-    "type": "major",
-    "items": [
-      {
-        "category": "新功能",
-        "description": "新增產品尺寸管理功能",
-        "icon": "fas fa-plus-circle"
-      },
-      {
-        "category": "新功能", 
-        "description": "新增錯誤日誌記錄系統",
-        "icon": "fas fa-plus-circle"
-      },
-      {
-        "category": "改進",
-        "description": "優化用戶權限管理",
-        "icon": "fas fa-arrow-up"
-      }
-    ]
-  },
-  {
-    "version": "2.0.5",
-    "releaseDate": "2024-06-30",
-    "title": "安全性更新與修復",
+    "version": "1",
+    "releaseDate": "2025-07-09",
+    "title": "更新日誌",
     "type": "patch",
     "items": [
       {
-        "category": "修復",
-        "description": "修復產品尺寸排序問題",
-        "icon": "fas fa-bug"
+        "category": "新增",
+        "description": "新增庫存詳細頁面及樣式，包含商品資訊、庫存統計及異動記錄",
+        "icon": "fas fa-plus-circle"
       },
       {
-        "category": "安全",
-        "description": "強化身份驗證機制",
-        "icon": "fas fa-shield-alt"
+        "category": "新增",
+        "description": "新增員工職位管理功能，包括詳細頁面、編輯頁面及列表頁面",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "新增商品分類詳細頁面及編輯頁面，增強商品分類管理功能",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "新增庫存總覽頁面及相關服務，強化庫存管理功能",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修改",
+        "description": "重構詳細組件以移除不必要的ColSize屬性並調整DefaultColSize",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "更新客戶及廠商頁面篩選邏輯，改為使用ID篩選並優化篩選器初始化流程",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "增強庫存查詢頁面錯誤處理，加入異常捕捉與錯誤回報機制",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "重構服務以使用IDbContextFactory改善DbContext管理",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "更新庫存概覽頁面，修正分頁邏輯及資料載入，增強性能與穩定性",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "使用GenericTableComponent重構庫存清單顯示，簡化代碼並增強可讀性",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "重構搜尋篩選器以移除進階切換選項並簡化篩選器定義",
+        "icon": "fas fa-edit"
       }
     ]
   },
   {
-    "version": "2.0.0",
-    "releaseDate": "2024-06-25",
-    "title": "全新版本發布",
-    "type": "major",
+    "version": "1",
+    "releaseDate": "2025-07-08",
+    "title": "更新日誌",
+    "type": "patch",
     "items": [
       {
-        "category": "新功能",
-        "description": "全新的用戶介面設計",
-        "icon": "fas fa-palette"
+        "category": "新增",
+        "description": "實作庫存服務及庫存交易服務，包含全面的庫存管理功能",
+        "icon": "fas fa-plus-circle"
       },
       {
-        "category": "新功能",
-        "description": "支援多語言界面",
-        "icon": "fas fa-globe"
+        "category": "新增",
+        "description": "新增錯誤日誌管理頁面及相關樣式",
+        "icon": "fas fa-plus-circle"
       },
       {
-        "category": "改進",
-        "description": "提升系統整體效能",
-        "icon": "fas fa-tachometer-alt"
+        "category": "新增",
+        "description": "新增更新紀錄頁面及相關服務，強化系統更新管理功能",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修改",
+        "description": "重構ErrorLog組件和服務",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "更新員工編輯頁面以增強密碼重設功能，並整合通用搜尋篩選組件",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "刪除",
+        "description": "移除不必要的錯誤處理範例",
+        "icon": "fas fa-trash"
+      }
+    ]
+  },
+  {
+    "version": "1",
+    "releaseDate": "2025-07-07",
+    "title": "更新日誌",
+    "type": "patch",
+    "items": [
+      {
+        "category": "修改",
+        "description": "更新建構子注入範例，統一使用ILogger並移除IErrorLogService",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "移除冗餘的建構子，強化IServiceScopeFactory的使用",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "重構廠商服務以增強錯誤處理和建構子重載",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "重構錯誤處理邏輯，統一錯誤記錄與通知邏輯",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "更新錯誤處理邏輯，統一使用HandlePageErrorAsync方法",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "重構Razor頁面中的錯誤處理",
+        "icon": "fas fa-edit"
+      }
+    ]
+  },
+  {
+    "version": "1",
+    "releaseDate": "2025-07-06",
+    "title": "更新日誌",
+    "type": "patch",
+    "items": [
+      {
+        "category": "修改",
+        "description": "增強多個組件的錯誤處理機制",
+        "icon": "fas fa-edit"
+      }
+    ]
+  },
+  {
+    "version": "1",
+    "releaseDate": "2025-07-05",
+    "title": "更新日誌",
+    "type": "patch",
+    "items": [
+      {
+        "category": "修改",
+        "description": "增強員工模組的錯誤處理機制",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "增強客戶頁面的錯誤處理機制",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "重構廠商服務以增強錯誤處理和日誌記錄",
+        "icon": "fas fa-edit"
+      }
+    ]
+  },
+  {
+    "version": "1",
+    "releaseDate": "2025-07-04",
+    "title": "更新日誌",
+    "type": "patch",
+    "items": [
+      {
+        "category": "新增",
+        "description": "增加統一的服務架構模式與錯誤處理機制，強化服務的可維護性與穩定性",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "實作全面的錯誤處理合規性於各服務中",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修改",
+        "description": "修正ColorIndex.razor中的排版問題，改善可讀性",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "修正ColorService中的格式問題，改善可讀性",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "刪除",
+        "description": "移除過時的文檔和腳本，包含錯誤處理合規性和記住我功能的相關資源",
+        "icon": "fas fa-trash"
+      }
+    ]
+  },
+  {
+    "version": "1",
+    "releaseDate": "2025-07-02",
+    "title": "更新日誌",
+    "type": "patch",
+    "items": [
+      {
+        "category": "新增",
+        "description": "新增錯誤處理範例頁面，並在導航菜單中添加相關項目",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "新增GlobalExceptionHelper全域例外處理中間件",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修改",
+        "description": "增強多個組件的錯誤處理和通知服務",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "重構全域例外處理中間件並更新相關引用",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "刪除",
+        "description": "移除GlobalErrorBoundary和相關檔案，簡化錯誤處理架構",
+        "icon": "fas fa-trash"
+      }
+    ]
+  },
+  {
+    "version": "1",
+    "releaseDate": "2025-07-01",
+    "title": "更新日誌",
+    "type": "patch",
+    "items": [
+      {
+        "category": "新增",
+        "description": "新增錯誤日誌功能，包含ErrorLog資料表和服務",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "新增ErrorLogDetail和ErrorLogIndex頁面的樣式以增強UI",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修改",
+        "description": "重構錯誤處理架構，新增全域例外處理中間件並簡化錯誤測試頁面",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "刪除",
+        "description": "移除BasicInfoDisplayComponent相關的範例頁面和組件",
+        "icon": "fas fa-trash"
       }
     ]
   }

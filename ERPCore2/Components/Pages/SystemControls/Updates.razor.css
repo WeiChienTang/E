@@ -104,11 +104,13 @@
 }
 
 /* 分類顏色邊框 */
-.category-section.category-新功能 {
+.category-section.category-新功能,
+.category-section.category-新增 {
     border-left-color: #198754;
 }
 
-.category-section.category-改進 {
+.category-section.category-改進,
+.category-section.category-修改 {
     border-left-color: #0dcaf0;
 }
 
@@ -116,7 +118,8 @@
     border-left-color: #ffc107;
 }
 
-.category-section.category-安全 {
+.category-section.category-安全,
+.category-section.category-刪除 {
     border-left-color: #dc3545;
 }
 
