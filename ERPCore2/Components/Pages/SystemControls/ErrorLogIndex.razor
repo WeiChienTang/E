@@ -51,7 +51,6 @@ else
                                 OnFilterChanged="@HandleFilterChanged"
                                 AutoSearch="true"
                                 ShowSearchButton="false"
-                                ShowAdvancedToggle="true"
                                 SearchDelayMs="500" />
 
     @* 錯誤記錄表格 *@
@@ -179,9 +178,9 @@ else
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("Message", "錯誤訊息", "輸入錯誤訊息關鍵字...")
                 .AddSelect("Level", "錯誤等級", levelOptions)
-                .AddSelect("Source", "錯誤來源", sourceOptions, isAdvanced: true)
-                .AddSelect("IsResolved", "處理狀態", resolvedOptions, isAdvanced: true)
-                .AddDateRange("OccurredDate", "發生時間", isAdvanced: true)
+                .AddSelect("Source", "錯誤來源", sourceOptions)
+                .AddSelect("IsResolved", "處理狀態", resolvedOptions)
+                .AddDateRange("OccurredDate", "發生時間")
                 .Build();
         }
         catch (Exception ex)

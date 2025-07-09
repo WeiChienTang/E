@@ -54,7 +54,6 @@
                                              OnFilterChanged="@HandleFilterChanged"
                                              AutoSearch="@AutoSearch"
                                              ShowSearchButton="@ShowSearchButton"
-                                             ShowAdvancedToggle="@ShowAdvancedToggle"
                                              SearchDelayMs="@SearchDelayMs" />
 
                 @* 列表表格 *@
@@ -119,7 +118,6 @@
     // 搜尋組件設定
     [Parameter] public bool AutoSearch { get; set; } = true;
     [Parameter] public bool ShowSearchButton { get; set; } = true;
-    [Parameter] public bool ShowAdvancedToggle { get; set; } = true;
     [Parameter] public int SearchDelayMs { get; set; } = 500;
     
     // 表格組件設定

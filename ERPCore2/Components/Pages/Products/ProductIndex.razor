@@ -155,11 +155,11 @@
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("ProductCode", "產品代碼", "輸入產品代碼搜尋")
                 .AddText("ProductName", "產品名稱", "輸入產品名稱搜尋")
-                .AddSelect("ProductCategoryId", "產品分類", categoryOptions, isAdvanced: true)
-                .AddSelect("PrimarySupplierId", "主要供應商", supplierOptions, isAdvanced: true)
-                .AddSelect("IsActive", "啟用狀態", activeStatusOptions, isAdvanced: true)
-                .AddSelect("Status", "實體狀態", statusOptions, isAdvanced: true)
-                .AddText("Unit", "單位", "輸入單位搜尋", isAdvanced: true)
+                .AddSelect("ProductCategoryId", "產品分類", categoryOptions)
+                .AddSelect("PrimarySupplierId", "主要供應商", supplierOptions)
+                .AddSelect("IsActive", "啟用狀態", activeStatusOptions)
+                .AddSelect("Status", "實體狀態", statusOptions)
+                .AddText("Unit", "單位", "輸入單位搜尋")
                 .Build();
         }
         catch (Exception ex)

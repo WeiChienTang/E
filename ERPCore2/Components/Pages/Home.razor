@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @inject INavigationSearchService NavigationSearchService
@@ -28,7 +28,6 @@
                                                  OnFilterChanged="HandleFilterChanged"
                                                  AutoSearch="true"
                                                  ShowSearchButton="false"
-                                                 ShowAdvancedToggle="false"
                                                  SearchDelayMs="300" />
 
                     @* 搜尋結果 *@

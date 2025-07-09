@@ -113,9 +113,9 @@
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("UnitCode", "單位代碼", "輸入單位代碼搜尋")
                 .AddText("UnitName", "單位名稱", "輸入單位名稱搜尋")
-                .AddText("Symbol", "單位符號", "輸入單位符號搜尋", isAdvanced: true)
-                .AddSelect("IsBaseUnit", "基本單位", baseUnitOptions, isAdvanced: true)
-                .AddSelect("IsActive", "狀態", activeOptions, isAdvanced: true)
+                .AddText("Symbol", "單位符號", "輸入單位符號搜尋")
+                .AddSelect("IsBaseUnit", "基本單位", baseUnitOptions)
+                .AddSelect("IsActive", "狀態", activeOptions)
                 .Build();
         }
         catch (Exception ex)

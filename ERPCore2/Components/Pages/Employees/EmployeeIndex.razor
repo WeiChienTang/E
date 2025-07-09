@@ -25,7 +25,6 @@
                           FilterApplier="@ApplyEmployeeFilters"
                           AutoSearch="true"
                           ShowSearchButton="true"
-                          ShowAdvancedToggle="true"
                           SearchDelayMs="500"
                           EntityName="員工"
                           GetEntityDisplayName="@(employee => $"{employee.FirstName} {employee.LastName}".Trim())"
@@ -215,12 +214,12 @@
                 .AddText("Username", "帳號", "輸入帳號搜尋")
                 .AddText("FirstName", "名字", "輸入名字搜尋")
                 .AddText("LastName", "姓氏", "輸入姓氏搜尋")
-                .AddText("Email", "電子郵件", "輸入電子郵件搜尋", isAdvanced: true)
-                .AddText("Department", "部門", "輸入部門搜尋", isAdvanced: true)
-                .AddText("Position", "職位", "輸入職位搜尋", isAdvanced: true)
-                .AddSelect("RoleId", "角色", roleOptions, isAdvanced: true)
-                .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
-                .AddSelect("IsLocked", "帳號狀態", lockOptions, isAdvanced: true)
+                .AddText("Email", "電子郵件", "輸入電子郵件搜尋")
+                .AddText("Department", "部門", "輸入部門搜尋")
+                .AddText("Position", "職位", "輸入職位搜尋")
+                .AddSelect("RoleId", "角色", roleOptions)
+                .AddSelect("Status", "狀態", statusOptions)
+                .AddSelect("IsLocked", "帳號狀態", lockOptions)
                 .Build();
         }
         catch (Exception ex)

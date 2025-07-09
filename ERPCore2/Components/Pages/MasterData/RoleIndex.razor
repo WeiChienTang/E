@@ -106,8 +106,8 @@
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("RoleName", "角色名稱", "輸入角色名稱搜尋")
-                .AddText("Description", "角色描述", "輸入角色描述搜尋", isAdvanced: true)
-                .AddSelect("IsSystemRole", "系統角色", systemRoleOptions, isAdvanced: true)
+                .AddText("Description", "角色描述", "輸入角色描述搜尋")
+                .AddSelect("IsSystemRole", "系統角色", systemRoleOptions)
                 .Build();
         }
         catch (Exception ex)

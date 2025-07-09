@@ -1,0 +1,68 @@
+@* 庫存統計卡片組元件 *@
+
+<StatisticsCardContainer>
+    <StatisticsCard Title="總商品數量"
+                   Value="@((decimal)Statistics.GetValueOrDefault("TotalProducts", 0))"
+                   IconClass="fas fa-boxes"
+                   BorderColor="primary"
+                   TextColor="primary"
+                   IsClickable="@OnTotalProductsClick.HasDelegate"
+                   OnClick="OnTotalProductsClick" />
+
+    <StatisticsCard Title="總庫存價值"
+                   Value="@((decimal)Statistics.GetValueOrDefault("TotalInventoryValue", 0m))"
+                   IconClass="fas fa-dollar-sign"
+                   BorderColor="success"
+                   TextColor="success"
+                   IsCurrency="true"
+                   IsClickable="@OnTotalValueClick.HasDelegate"
+                   OnClick="OnTotalValueClick" />
+
+    <StatisticsCard Title="低庫存警戒"
+                   Value="@((decimal)Statistics.GetValueOrDefault("LowStockCount", 0))"
+                   IconClass="fas fa-exclamation-triangle"
+                   BorderColor="warning"
+                   TextColor="warning"
+                   IsClickable="@OnLowStockClick.HasDelegate"
+                   OnClick="OnLowStockClick" />
+
+    <StatisticsCard Title="零庫存商品"
+                   Value="@((decimal)Statistics.GetValueOrDefault("ZeroStockCount", 0))"
+                   IconClass="fas fa-ban"
+                   BorderColor="danger"
+                   TextColor="danger"
+                   IsClickable="@OnZeroStockClick.HasDelegate"
+                   OnClick="OnZeroStockClick" />
+</StatisticsCardContainer>
+
+@code {
+    /// <summary>
+    /// 統計資料字典
+    /// </summary>
+    [Parameter, EditorRequired] 
+    public Dictionary<string, object> Statistics { get; set; } = new();
+
+    /// <summary>
+    /// 總商品數量卡片點擊事件
+    /// </summary>
+    [Parameter] 
+    public EventCallback OnTotalProductsClick { get; set; }
+
+    /// <summary>
+    /// 總庫存價值卡片點擊事件
+    /// </summary>
+    [Parameter] 
+    public EventCallback OnTotalValueClick { get; set; }
+
+    /// <summary>
+    /// 低庫存警戒卡片點擊事件
+    /// </summary>
+    [Parameter] 
+    public EventCallback OnLowStockClick { get; set; }
+
+    /// <summary>
+    /// 零庫存商品卡片點擊事件
+    /// </summary>
+    [Parameter] 
+    public EventCallback OnZeroStockClick { get; set; }
+}

@@ -191,10 +191,10 @@
                 .AddText("CustomerCode", "客戶代碼", "輸入客戶代碼搜尋")
                 .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
                 .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
-                .AddText("CustomerTypeName", "客戶類型", "輸入客戶類型名稱搜尋", isAdvanced: true)
-                .AddText("IndustryTypeName", "行業類型", "輸入行業類型名稱搜尋", isAdvanced: true)
-                .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
-                .AddText("TaxNumber", "統一編號", "輸入統一編號搜尋", isAdvanced: true)
+                .AddText("CustomerTypeName", "客戶類型", "輸入客戶類型名稱搜尋")
+                .AddText("IndustryTypeName", "行業類型", "輸入行業類型名稱搜尋")
+                .AddSelect("Status", "狀態", statusOptions)
+                .AddText("TaxNumber", "統一編號", "輸入統一編號搜尋")
                 .Build();
         }
         catch (Exception ex)

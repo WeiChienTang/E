@@ -31,7 +31,6 @@
                           FilterApplier="@ApplyIndustryTypeFilters"
                           AutoSearch="true"
                           ShowSearchButton="true"
-                          ShowAdvancedToggle="true"
                           SearchDelayMs="500"
                           EntityName="行業類型"
                           GetEntityDisplayName="@(industryType => industryType.IndustryTypeName)"
@@ -125,8 +124,8 @@
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("IndustryTypeName", "行業類型名稱", "輸入行業類型名稱搜尋")
-                .AddText("IndustryTypeCode", "行業類型代碼", "輸入行業類型代碼搜尋", isAdvanced: true)
-                .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
+                .AddText("IndustryTypeCode", "行業類型代碼", "輸入行業類型代碼搜尋")
+                .AddSelect("Status", "狀態", statusOptions)
                 .Build();
         }
         catch (Exception ex)

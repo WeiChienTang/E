@@ -1,0 +1,86 @@
+@* 統計卡片元件 *@
+
+<div class="col-xl-3 col-md-6 mb-3">
+    <div class="card border-left-@BorderColor shadow h-100 py-2">
+        <div class="card-body">
+            <div class="row no-gutters align-items-center">
+                <div class="col mr-2">
+                    <div class="text-xs font-weight-bold text-@TextColor text-uppercase mb-1">
+                        @Title
+                    </div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                        @if (IsCurrency)
+                        {
+                            <span>$@Value.ToString("N0")</span>
+                        }
+                        else
+                        {
+                            <span>@Value.ToString("N0")</span>
+                        }
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <i class="@IconClass fa-2x text-gray-300"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    /// <summary>
+    /// 卡片標題
+    /// </summary>
+    [Parameter, EditorRequired] 
+    public string Title { get; set; } = "";
+
+    /// <summary>
+    /// 顯示的數值
+    /// </summary>
+    [Parameter, EditorRequired] 
+    public decimal Value { get; set; }
+
+    /// <summary>
+    /// 圖示 CSS 類別
+    /// </summary>
+    [Parameter, EditorRequired] 
+    public string IconClass { get; set; } = "";
+
+    /// <summary>
+    /// 邊框顏色 (Bootstrap 顏色名稱: primary, success, warning, danger, info, secondary)
+    /// </summary>
+    [Parameter] 
+    public string BorderColor { get; set; } = "primary";
+
+    /// <summary>
+    /// 文字顏色 (Bootstrap 顏色名稱: primary, success, warning, danger, info, secondary)
+    /// </summary>
+    [Parameter] 
+    public string TextColor { get; set; } = "primary";
+
+    /// <summary>
+    /// 是否為貨幣格式 (會在前面加上 $ 符號)
+    /// </summary>
+    [Parameter] 
+    public bool IsCurrency { get; set; } = false;
+
+    /// <summary>
+    /// 點擊事件回調
+    /// </summary>
+    [Parameter] 
+    public EventCallback OnClick { get; set; }
+
+    /// <summary>
+    /// 是否可點擊
+    /// </summary>
+    [Parameter] 
+    public bool IsClickable { get; set; } = false;
+
+    private async Task HandleClick()
+    {
+        if (IsClickable && OnClick.HasDelegate)
+        {
+            await OnClick.InvokeAsync();
+        }
+    }
+}

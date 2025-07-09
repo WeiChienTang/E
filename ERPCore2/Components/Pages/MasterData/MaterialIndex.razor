@@ -26,7 +26,6 @@
                           FilterApplier="@ApplyMaterialFilters"
                           AutoSearch="true"
                           ShowSearchButton="true"
-                          ShowAdvancedToggle="true"
                           SearchDelayMs="500"
                           EntityName="材質"
                           GetEntityDisplayName="@(material => material.Name)"
@@ -129,8 +128,8 @@
                 .AddText("Code", "材質代碼", "輸入材質代碼搜尋")
                 .AddText("Category", "材質類別", "輸入材質類別搜尋")
                 .AddText("Description", "描述", "輸入描述搜尋")
-                .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
-                .AddSelect("IsEcoFriendly", "環保材質", ecoFriendlyOptions, isAdvanced: true)
+                .AddSelect("Status", "狀態", statusOptions)
+                .AddSelect("IsEcoFriendly", "環保材質", ecoFriendlyOptions)
                 .Build();
         }
         catch (Exception ex)

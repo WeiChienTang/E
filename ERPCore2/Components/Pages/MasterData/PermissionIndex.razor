@@ -93,9 +93,9 @@
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("PermissionName", "權限名稱", "輸入權限名稱搜尋")
                 .AddText("PermissionCode", "權限代碼", "輸入權限代碼搜尋")
-                .AddText("Module", "模組", "輸入模組名稱搜尋", isAdvanced: true)
-                .AddText("Action", "動作", "輸入動作名稱搜尋", isAdvanced: true)
-                .AddText("PermissionGroup", "權限群組", "輸入權限群組搜尋", isAdvanced: true)
+                .AddText("Module", "模組", "輸入模組名稱搜尋")
+                .AddText("Action", "動作", "輸入動作名稱搜尋")
+                .AddText("PermissionGroup", "權限群組", "輸入權限群組搜尋")
                 .Build();
         }
         catch (Exception ex)

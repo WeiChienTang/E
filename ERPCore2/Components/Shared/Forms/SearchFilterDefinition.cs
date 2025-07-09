@@ -65,11 +65,6 @@ public class SearchFilterDefinition
     public string? Placeholder { get; set; }
 
     /// <summary>
-    /// 是否為進階篩選（預設隱藏）
-    /// </summary>
-    public bool IsAdvanced { get; set; } = false;
-
-    /// <summary>
     /// 選項清單（用於 Select 和 MultiSelect）
     /// </summary>
     public List<SelectOption> Options { get; set; } = new();
@@ -405,15 +400,14 @@ public class SearchFilterBuilder<TModel>
     /// <summary>
     /// 添加文字篩選
     /// </summary>
-    public SearchFilterBuilder<TModel> AddText(string name, string label, string? placeholder = null, bool isAdvanced = false)
+    public SearchFilterBuilder<TModel> AddText(string name, string label, string? placeholder = null)
     {
         _filters.Add(new SearchFilterDefinition
         {
             Name = name,
             Label = label,
             Type = SearchFilterType.Text,
-            Placeholder = placeholder,
-            IsAdvanced = isAdvanced
+            Placeholder = placeholder
         });
         return this;
     }
@@ -421,15 +415,14 @@ public class SearchFilterBuilder<TModel>
     /// <summary>
     /// 添加數字篩選
     /// </summary>
-    public SearchFilterBuilder<TModel> AddNumber(string name, string label, string? placeholder = null, bool isAdvanced = false)
+    public SearchFilterBuilder<TModel> AddNumber(string name, string label, string? placeholder = null)
     {
         _filters.Add(new SearchFilterDefinition
         {
             Name = name,
             Label = label,
             Type = SearchFilterType.Number,
-            Placeholder = placeholder,
-            IsAdvanced = isAdvanced
+            Placeholder = placeholder
         });
         return this;
     }
@@ -437,14 +430,13 @@ public class SearchFilterBuilder<TModel>
     /// <summary>
     /// 添加數字範圍篩選
     /// </summary>
-    public SearchFilterBuilder<TModel> AddNumberRange(string name, string label, bool isAdvanced = false)
+    public SearchFilterBuilder<TModel> AddNumberRange(string name, string label)
     {
         _filters.Add(new SearchFilterDefinition
         {
             Name = name,
             Label = label,
-            Type = SearchFilterType.NumberRange,
-            IsAdvanced = isAdvanced
+            Type = SearchFilterType.NumberRange
         });
         return this;
     }
@@ -452,14 +444,13 @@ public class SearchFilterBuilder<TModel>
     /// <summary>
     /// 添加日期篩選
     /// </summary>
-    public SearchFilterBuilder<TModel> AddDate(string name, string label, bool isAdvanced = false)
+    public SearchFilterBuilder<TModel> AddDate(string name, string label)
     {
         _filters.Add(new SearchFilterDefinition
         {
             Name = name,
             Label = label,
-            Type = SearchFilterType.Date,
-            IsAdvanced = isAdvanced
+            Type = SearchFilterType.Date
         });
         return this;
     }
@@ -467,14 +458,13 @@ public class SearchFilterBuilder<TModel>
     /// <summary>
     /// 添加日期範圍篩選
     /// </summary>
-    public SearchFilterBuilder<TModel> AddDateRange(string name, string label, bool isAdvanced = false)
+    public SearchFilterBuilder<TModel> AddDateRange(string name, string label)
     {
         _filters.Add(new SearchFilterDefinition
         {
             Name = name,
             Label = label,
-            Type = SearchFilterType.DateRange,
-            IsAdvanced = isAdvanced
+            Type = SearchFilterType.DateRange
         });
         return this;
     }
@@ -482,15 +472,14 @@ public class SearchFilterBuilder<TModel>
     /// <summary>
     /// 添加選擇篩選
     /// </summary>
-    public SearchFilterBuilder<TModel> AddSelect(string name, string label, List<SelectOption> options, bool isAdvanced = false)
+    public SearchFilterBuilder<TModel> AddSelect(string name, string label, List<SelectOption> options)
     {
         _filters.Add(new SearchFilterDefinition
         {
             Name = name,
             Label = label,
             Type = SearchFilterType.Select,
-            Options = options,
-            IsAdvanced = isAdvanced
+            Options = options
         });
         return this;
     }
@@ -498,28 +487,26 @@ public class SearchFilterBuilder<TModel>
     /// <summary>
     /// 添加多選篩選
     /// </summary>
-    public SearchFilterBuilder<TModel> AddMultiSelect(string name, string label, List<SelectOption> options, bool isAdvanced = false)
+    public SearchFilterBuilder<TModel> AddMultiSelect(string name, string label, List<SelectOption> options)
     {
         _filters.Add(new SearchFilterDefinition
         {
             Name = name,
             Label = label,
             Type = SearchFilterType.MultiSelect,
-            Options = options,
-            IsAdvanced = isAdvanced
+            Options = options
         });
         return this;
     }    /// <summary>
     /// 添加布林篩選
     /// </summary>
-    public SearchFilterBuilder<TModel> AddBoolean(string name, string label, bool isAdvanced = false)
+    public SearchFilterBuilder<TModel> AddBoolean(string name, string label)
     {
         _filters.Add(new SearchFilterDefinition
         {
             Name = name,
             Label = label,
-            Type = SearchFilterType.Boolean,
-            IsAdvanced = isAdvanced
+            Type = SearchFilterType.Boolean
         });
         return this;
     }
@@ -533,8 +520,7 @@ public class SearchFilterBuilder<TModel>
         Func<string, Task<List<SelectOption>>> searchFunction,
         string? placeholder = null,
         int minSearchLength = 1,
-        int delayMs = 300,
-        bool isAdvanced = false)
+        int delayMs = 300)
     {
         _filters.Add(new SearchFilterDefinition
         {
@@ -544,8 +530,7 @@ public class SearchFilterBuilder<TModel>
             SearchFunction = searchFunction,
             Placeholder = placeholder,
             MinSearchLength = minSearchLength,
-            AutoCompleteDelayMs = delayMs,
-            IsAdvanced = isAdvanced
+            AutoCompleteDelayMs = delayMs
         });
         return this;
     }

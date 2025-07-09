@@ -125,8 +125,8 @@
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("SizeCode", "尺寸代碼", "輸入尺寸代碼搜尋")
                 .AddText("SizeName", "尺寸名稱", "輸入尺寸名稱搜尋")
-                .AddText("Description", "尺寸描述", "輸入描述內容搜尋", isAdvanced: true)
-                .AddSelect("IsActive", "啟用狀態", activeStatusOptions, isAdvanced: true)
+                .AddText("Description", "尺寸描述", "輸入描述內容搜尋")
+                .AddSelect("IsActive", "啟用狀態", activeStatusOptions)
                 .Build();
         }
         catch (Exception ex)

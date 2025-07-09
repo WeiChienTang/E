@@ -1,7 +1,10 @@
 @* 通用搜尋篩選組件 - 基於配置驅動的動態篩選 *@
 @using System.Reflection
 @using Microsoft.AspNetCore.Components.Rendering
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
 @using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Components.Shared.Forms
 @inject IJSRuntime JSRuntime
 @typeparam TModel
 @implements IDisposable
@@ -11,15 +14,8 @@
         <h6 class="card-title mb-0">
             <i class="fas fa-filter me-2"></i>
             搜尋篩選
-        </h6>        <div class="d-flex gap-2">            
-            @if (ShowAdvancedToggle && HasAdvancedFilters())
-            {
-                <GenericButtonComponent Variant="ButtonVariant.Primary" 
-                                       Text="@($"{(showAdvanced ? "隱藏" : "顯示")}進階篩選")" 
-                                       IconClass="@($"fas fa-{(showAdvanced ? "chevron-up" : "chevron-down")} me-1")" 
-                                       OnClick="ToggleAdvancedFilters" 
-                                       CssClass="search-filter-btn search-advanced-btn" />
-            }
+        </h6>        
+        <div class="d-flex gap-2">            
             <GenericButtonComponent Variant="ButtonVariant.Danger" Text="清除篩選" 
                                    IconClass="fas fa-times me-1" OnClick="ClearAllFilters" 
                                    CssClass="search-filter-btn search-clear-btn" />
@@ -30,7 +26,7 @@
         <div class="row g-3">
             @if (FilterDefinitions != null)
             {
-                @foreach (var filter in FilterDefinitions.Where(f => !f.IsAdvanced || showAdvanced))
+                @foreach (var filter in FilterDefinitions)
                 {
                     @RenderFilter(filter)
                 }
@@ -44,12 +40,10 @@
     [Parameter] public SearchFilterModel FilterModel { get; set; } = new();
     [Parameter] public EventCallback<SearchFilterModel> OnSearch { get; set; }
     [Parameter] public EventCallback<SearchFilterModel> OnFilterChanged { get; set; }
-    [Parameter] public bool AutoSearch { get; set; } = false;
-    [Parameter] public bool ShowSearchButton { get; set; } = true;
-    [Parameter] public bool ShowAdvancedToggle { get; set; } = true;
+    [Parameter] public bool AutoSearch { get; set; } = true;
+    [Parameter] public bool ShowSearchButton { get; set; } = false;
     [Parameter] public int SearchDelayMs { get; set; } = 300;
 
-    private bool showAdvanced = false;
     private Timer? searchTimer;
 
     // 自動完成相關狀態
@@ -93,20 +87,10 @@
         }
     }
 
-    private void ToggleAdvancedFilters()
-    {
-        showAdvanced = !showAdvanced;
-    }
-
     private async Task ClearAllFilters()
     {
         FilterModel = new SearchFilterModel();
         await HandleFilterChanged();
-    }
-
-    private bool HasAdvancedFilters()
-    {
-        return FilterDefinitions?.Any(f => f.IsAdvanced) ?? false;
     }    private RenderFragment RenderFilter(SearchFilterDefinition filter) => builder =>
     {
         var containerCssClass = filter.ContainerCssClass ?? "col-md-2";
@@ -135,9 +119,11 @@
                 break;
             case SearchFilterType.MultiSelect:
                 RenderMultiSelectFilter(builder, filter, 6);
-                break;            case SearchFilterType.DateRange:
+                break;            
+            case SearchFilterType.DateRange:
                 RenderDateRangeFilter(builder, filter, 6);
-                break;            case SearchFilterType.NumberRange:
+                break;            
+            case SearchFilterType.NumberRange:
                 RenderNumberRangeFilter(builder, filter, 6);
                 break;
             case SearchFilterType.Boolean:
@@ -152,7 +138,9 @@
         }
         
         builder.CloseElement(); // container div
-    };    private void RenderTextFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
+    };   
+
+    private void RenderTextFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
     {
         builder.OpenElement(sequence, "input");
         builder.AddAttribute(sequence + 1, "type", "text");
@@ -166,7 +154,9 @@
             _ = HandleFilterChanged();
         }));
         builder.CloseElement();
-    }    private void RenderSelectFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
+    }    
+
+    private void RenderSelectFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
     {
         builder.OpenElement(sequence, "select");
         builder.AddAttribute(sequence + 1, "class", "form-select");
@@ -201,7 +191,9 @@
         }
         
         builder.CloseElement();
-    }private void RenderMultiSelectFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
+    }
+    
+    private void RenderMultiSelectFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
     {
         // 簡化版多選，使用多個 checkbox
         if (filter.Options != null)
@@ -244,7 +236,9 @@
                 checkboxSequence += 13;
             }
         }
-    }    private void RenderDateRangeFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
+    }    
+    
+    private void RenderDateRangeFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
     {
         var dateRange = FilterModel.GetFilterValue(filter.PropertyName) as DateRange ?? new DateRange();
         
@@ -300,7 +294,9 @@
         builder.CloseElement();
         
         builder.CloseElement();
-    }    private void RenderNumberRangeFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
+    }    
+    
+    private void RenderNumberRangeFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
     {
         var numberRange = FilterModel.GetFilterValue(filter.PropertyName) as NumberRange ?? new NumberRange();
         
@@ -356,7 +352,9 @@
         builder.CloseElement();
         
         builder.CloseElement();
-    }    private void RenderCheckboxFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
+    }    
+    
+    private void RenderCheckboxFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
     {
         builder.OpenElement(sequence, "div");
         builder.AddAttribute(sequence + 1, "class", "form-check");

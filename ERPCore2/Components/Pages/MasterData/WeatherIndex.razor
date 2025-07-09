@@ -100,7 +100,7 @@
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("Name", "天氣名稱", "輸入天氣名稱搜尋")
                 .AddText("Description", "描述", "輸入描述搜尋")
-                .AddSelect("Status", "狀態", statusOptions, isAdvanced: true)
+                .AddSelect("Status", "狀態", statusOptions)
                 .Build();
                 
             await Task.CompletedTask;

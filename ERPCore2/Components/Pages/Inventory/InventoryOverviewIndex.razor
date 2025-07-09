@@ -3,6 +3,7 @@
 @using ERPCore2.Services
 @using ERPCore2.Services.Inventory
 @using ERPCore2.Helpers
+@using ERPCore2.Components.Shared.Forms
 @using Microsoft.AspNetCore.Components.Web
 @inject IInventoryStockService InventoryStockService
 @inject IProductService ProductService
@@ -15,191 +16,28 @@
 
 <PageTitle>庫存查詢總覽</PageTitle>
 
-<div class="page-header">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                <!-- 麵包屑導航 -->
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="/">首頁</a></li>
-                        <li class="breadcrumb-item">庫存管理</li>
-                        <li class="breadcrumb-item active" aria-current="page">庫存查詢總覽</li>
-                    </ol>
-                </nav>
-                
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h1 class="h3 mb-1">庫存查詢總覽</h1>
-                        <p class="text-muted mb-0">即時查看所有商品的庫存狀況與警戒提醒</p>
-                    </div>
-                    <div class="btn-toolbar" role="toolbar">
-                        <div class="btn-group me-2" role="group">
-                            <button type="button" class="btn btn-outline-success" @onclick="ExportToExcel">
-                                <i class="fas fa-file-excel me-1"></i>匯出Excel
-                            </button>
-                            <button type="button" class="btn btn-outline-primary" @onclick="RefreshData">
-                                <i class="fas fa-sync-alt me-1"></i>重新整理
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<GenericHeaderComponent 
+    Title="庫存查詢總覽" 
+    Subtitle="即時查看所有商品的庫存狀況與警戒提醒"
+    HeadingLevel="h1"
+    BreadcrumbItems="@breadcrumbItems"
+    ShowDivider="true"
+    ActionButtons="@actionButtons" />
 
 <div class="container-fluid">
     <!-- 統計卡片 -->
-    <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-3">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                總商品數量
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">@statistics.GetValueOrDefault("TotalProducts", 0)</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-boxes fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-xl-3 col-md-6 mb-3">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                總庫存價值
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">$@(((decimal)statistics.GetValueOrDefault("TotalInventoryValue", 0m)).ToString("N0"))</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-xl-3 col-md-6 mb-3">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                低庫存警戒
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">@statistics.GetValueOrDefault("LowStockCount", 0)</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-xl-3 col-md-6 mb-3">
-            <div class="card border-left-danger shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
-                                零庫存商品
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">@statistics.GetValueOrDefault("ZeroStockCount", 0)</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-ban fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <InventoryStatisticsCards Statistics="statistics" 
+                            OnLowStockClick="ShowLowStockOnly" 
+                            OnZeroStockClick="ShowZeroStockOnly" />
 
     <!-- 篩選區 -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">篩選條件</h6>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-3 mb-3">
-                    <label for="warehouseFilter" class="form-label">倉庫</label>
-                    <select id="warehouseFilter" class="form-select" @bind="selectedWarehouseId" @bind:after="OnFilterChanged">
-                        <option value="">全部倉庫</option>
-                        @foreach (var warehouse in warehouses)
-                        {
-                            <option value="@warehouse.Id">@warehouse.WarehouseName</option>
-                        }
-                    </select>
-                </div>
-                
-                <div class="col-md-3 mb-3">
-                    <label for="categoryFilter" class="form-label">商品分類</label>
-                    <select id="categoryFilter" class="form-select" @bind="selectedCategoryId" @bind:after="OnFilterChanged">
-                        <option value="">全部分類</option>
-                        @foreach (var category in productCategories)
-                        {
-                            <option value="@category.Id">@category.CategoryName</option>
-                        }
-                    </select>
-                </div>
-                
-                <div class="col-md-3 mb-3">
-                    <label for="locationFilter" class="form-label">庫位</label>
-                    <select id="locationFilter" class="form-select" @bind="selectedLocationId" @bind:after="OnFilterChanged" disabled="@(selectedWarehouseId == null)">
-                        <option value="">全部庫位</option>
-                        @foreach (var location in filteredLocations)
-                        {
-                            <option value="@location.Id">@location.LocationCode - @location.LocationName</option>
-                        }
-                    </select>
-                </div>
-                
-                <div class="col-md-3 mb-3">
-                    <label for="stockStatusFilter" class="form-label">庫存狀態</label>
-                    <select id="stockStatusFilter" class="form-select" @bind="stockStatusFilter" @bind:after="OnFilterChanged">
-                        <option value="">全部狀態</option>
-                        <option value="normal">正常庫存</option>
-                        <option value="low">低庫存</option>
-                        <option value="zero">零庫存</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="searchTerm" class="form-label">搜尋</label>
-                    <div class="input-group">
-                        <input type="text" id="searchTerm" class="form-control" placeholder="輸入商品代碼或名稱..." @bind="searchTerm" @onkeypress="OnSearchKeyPress">
-                        <button class="btn btn-outline-secondary" type="button" @onclick="OnFilterChanged">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="col-md-6 mb-3 d-flex align-items-end">
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-outline-warning" @onclick="ShowLowStockOnly">
-                            <i class="fas fa-exclamation-triangle me-1"></i>僅顯示低庫存
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" @onclick="ClearFilters">
-                            <i class="fas fa-times me-1"></i>清除篩選
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <GenericSearchFilterComponent TModel="SearchFilterModel"
+                                FilterDefinitions="@filterDefinitions"
+                                FilterModel="@searchModel"
+                                OnSearch="@HandleSearch"
+                                OnFilterChanged="@HandleFilterChanged"
+                                AutoSearch="true"
+                                ShowSearchButton="false" />
 
     <!-- 庫存清單 -->
     <div class="card shadow">
@@ -389,12 +227,9 @@
     private List<WarehouseLocation> warehouseLocations = new();
     private List<WarehouseLocation> filteredLocations = new();
     
-    // 篩選條件
-    private int? selectedWarehouseId;
-    private int? selectedCategoryId;
-    private int? selectedLocationId;
-    private string stockStatusFilter = "";
-    private string searchTerm = "";
+    // 篩選相關 - 使用通用篩選組件
+    private SearchFilterModel searchModel = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
     
     // 分頁相關
     private int currentPage = 1;
@@ -403,12 +238,35 @@
     
     // 狀態
     private bool isLoading = true;
+    
+    // GenericHeaderComponent 相關
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
+    {
+        new("首頁", "/"),
+        new("庫存管理"),
+        new("庫存查詢總覽")
+    };
+    
+    private RenderFragment actionButtons => __builder =>
+    {
+        <div class="btn-toolbar" role="toolbar">
+            <div class="btn-group me-2" role="group">
+                <button type="button" class="btn btn-outline-success" @onclick="ExportToExcel">
+                    <i class="fas fa-file-excel me-1"></i>匯出Excel
+                </button>
+                <button type="button" class="btn btn-outline-primary" @onclick="RefreshData">
+                    <i class="fas fa-sync-alt me-1"></i>重新整理
+                </button>
+            </div>
+        </div>
+    };
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             await LoadBasicDataAsync();
+            InitializeFilters();
             await LoadInventoryDataAsync();
             await LoadStatisticsAsync();
         }
@@ -427,6 +285,74 @@
         }
     }
 
+    private void InitializeFilters()
+    {
+        try
+        {
+            // 準備倉庫選項
+            var warehouseOptions = warehouses.Select(w => new SelectOption
+            {
+                Text = w.WarehouseName,
+                Value = w.Id.ToString()
+            }).ToList();
+
+            // 準備商品分類選項
+            var categoryOptions = productCategories.Select(c => new SelectOption
+            {
+                Text = c.CategoryName,
+                Value = c.Id.ToString()
+            }).ToList();
+
+            // 準備庫存狀態選項
+            var stockStatusOptions = new List<SelectOption>
+            {
+                new() { Text = "正常庫存", Value = "normal" },
+                new() { Text = "低庫存", Value = "low" },
+                new() { Text = "零庫存", Value = "zero" }
+            };
+
+            // 建立篩選定義
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddSelect("WarehouseId", "倉庫", warehouseOptions)
+                .AddSelect("CategoryId", "商品分類", categoryOptions)
+                .AddSelect("StockStatus", "庫存狀態", stockStatusOptions)
+                .AddText("SearchTerm", "搜尋", "輸入商品代碼或名稱...")
+                .Build();
+
+            // 設定容器 CSS 類別
+            if (filterDefinitions.Count >= 4)
+            {
+                filterDefinitions[0].ContainerCssClass = "col-md-3";
+                filterDefinitions[1].ContainerCssClass = "col-md-3";
+                filterDefinitions[2].ContainerCssClass = "col-md-3";
+                filterDefinitions[3].ContainerCssClass = "col-md-3";
+            }
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeFilters),
+                GetType(),
+                additionalData: "初始化篩選器失敗"
+            );
+        }
+    }
+
+    private void HandleSearch(SearchFilterModel filterModel)
+    {
+        searchModel = filterModel;
+        ApplyFilters();
+        StateHasChanged();
+    }
+
+    private void HandleFilterChanged(SearchFilterModel filterModel)
+    {
+        searchModel = filterModel;
+        ApplyFilters();
+        StateHasChanged();
+    }
+
     private async Task LoadBasicDataAsync()
     {
         warehouses = await WarehouseService.GetAllAsync();
@@ -436,17 +362,22 @@
 
     private async Task LoadInventoryDataAsync()
     {
+        // 取得篩選值
+        var selectedWarehouseId = GetSelectedId("WarehouseId");
+        var selectedCategoryId = GetSelectedId("CategoryId");
+        
         inventoryStocks = await InventoryStockService.GetInventoryOverviewAsync(
             selectedWarehouseId, 
             selectedCategoryId, 
-            selectedLocationId
+            null // 暫時不支援庫位篩選
         );
         ApplyFilters();
     }
 
-    private async Task LoadStatisticsAsync()
+    private int? GetSelectedId(string filterName)
     {
-        statistics = await InventoryStockService.GetInventoryStatisticsAsync();
+        var value = searchModel.GetFilterValue(filterName)?.ToString();
+        return int.TryParse(value, out var id) ? id : null;
     }
 
     private void ApplyFilters()
@@ -454,6 +385,7 @@
         filteredInventoryStocks = inventoryStocks.ToList();
 
         // 搜尋篩選
+        var searchTerm = searchModel.GetFilterValue("SearchTerm")?.ToString();
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             var term = searchTerm.Trim().ToLower();
@@ -464,6 +396,7 @@
         }
 
         // 庫存狀態篩選
+        var stockStatusFilter = searchModel.GetFilterValue("StockStatus")?.ToString();
         switch (stockStatusFilter)
         {
             case "low":
@@ -503,6 +436,7 @@
         try
         {
             // 更新庫位選項
+            var selectedWarehouseId = GetSelectedId("WarehouseId");
             if (selectedWarehouseId.HasValue)
             {
                 filteredLocations = warehouseLocations.Where(l => l.WarehouseId == selectedWarehouseId.Value).ToList();
@@ -510,7 +444,7 @@
             else
             {
                 filteredLocations = warehouseLocations;
-                selectedLocationId = null;
+                searchModel.SetFilterValue("LocationId", "");
             }
 
             await LoadInventoryDataAsync();
@@ -521,30 +455,32 @@
         }
     }
 
-    private async Task OnSearchKeyPress(KeyboardEventArgs e)
+    private void OnSearchKeyPress(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
-            await OnFilterChanged();
+            HandleFilterChanged(searchModel);
         }
     }
 
-    private async Task ShowLowStockOnly()
+    private void ShowLowStockOnly()
     {
-        stockStatusFilter = "low";
-        await OnFilterChanged();
+        searchModel.SetFilterValue("StockStatus", "low");
+        HandleFilterChanged(searchModel);
     }
 
-    private async Task ClearFilters()
+    private void ShowZeroStockOnly()
     {
-        selectedWarehouseId = null;
-        selectedCategoryId = null;
-        selectedLocationId = null;
-        stockStatusFilter = "";
-        searchTerm = "";
+        searchModel.SetFilterValue("StockStatus", "zero");
+        HandleFilterChanged(searchModel);
+    }
+
+    private void ClearFilters()
+    {
+        searchModel = new SearchFilterModel();
         currentPage = 1;
         
-        await OnFilterChanged();
+        HandleFilterChanged(searchModel);
     }
 
     private async Task RefreshData()
@@ -588,5 +524,10 @@
                 Navigation
             );
         }
+    }
+
+    private async Task LoadStatisticsAsync()
+    {
+        statistics = await InventoryStockService.GetInventoryStatisticsAsync();
     }
 }
