@@ -1,5 +1,6 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Services;
+using ERPCore2.Services.Employees;
 using ERPCore2.Services.Inventory;
 using ERPCore2.Services.Notifications;
 using Microsoft.EntityFrameworkCore;
@@ -79,6 +80,7 @@ namespace ERPCore2.Data
             services.AddScoped<IEmployeeService, EmployeeService>();
             services.AddScoped<IEmployeeContactService, EmployeeContactService>();
             services.AddScoped<IEmployeeAddressService, EmployeeAddressService>();
+            services.AddScoped<IEmployeePositionService, EmployeePositionService>();
             services.AddScoped<IRoleService, RoleService>();
             services.AddScoped<IPermissionService, PermissionService>();
             services.AddScoped<IPermissionManagementService, PermissionManagementService>();

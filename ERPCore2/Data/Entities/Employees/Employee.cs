@@ -57,11 +57,11 @@ namespace ERPCore2.Data.Entities
         public string? Department { get; set; }
 
         /// <summary>
-        /// 職位
+        /// 職位ID
         /// </summary>
         [Display(Name = "職位")]
-        [MaxLength(50, ErrorMessage = "職位不可超過50個字元")]
-        public string? Position { get; set; }
+        [ForeignKey(nameof(EmployeePosition))]
+        public int? EmployeePositionId { get; set; }
 
         /// <summary>
         /// 角色ID
@@ -93,6 +93,7 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "鎖定時間")]
         public DateTime? LockedAt { get; set; }        // 導航屬性
         public Role Role { get; set; } = null!;
+        public EmployeePosition? EmployeePosition { get; set; }
         public ICollection<EmployeeContact> EmployeeContacts { get; set; } = new List<EmployeeContact>();
         public ICollection<EmployeeAddress> EmployeeAddresses { get; set; } = new List<EmployeeAddress>();
     }

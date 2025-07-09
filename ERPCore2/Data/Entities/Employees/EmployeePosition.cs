@@ -1,0 +1,48 @@
+using System.ComponentModel.DataAnnotations;
+using ERPCore2.Data.Enums;
+
+namespace ERPCore2.Data.Entities
+{
+    /// <summary>
+    /// 員工職位實體
+    /// </summary>
+    public class EmployeePosition : BaseEntity
+    {
+        /// <summary>
+        /// 職位名稱
+        /// </summary>
+        [Required(ErrorMessage = "職位名稱為必填")]
+        [MaxLength(50, ErrorMessage = "職位名稱不可超過50個字元")]
+        [Display(Name = "職位名稱")]
+        public string Name { get; set; } = string.Empty;
+        
+        /// <summary>
+        /// 職位描述
+        /// </summary>
+        [MaxLength(200, ErrorMessage = "職位描述不可超過200個字元")]
+        [Display(Name = "職位描述")]
+        public string? Description { get; set; }
+
+        /// <summary>
+        /// 職位代碼
+        /// </summary>
+        [MaxLength(20, ErrorMessage = "職位代碼不可超過20個字元")]
+        [Display(Name = "職位代碼")]
+        public string? Code { get; set; }
+
+        /// <summary>
+        /// 職位等級
+        /// </summary>
+        [Display(Name = "職位等級")]
+        public int? Level { get; set; }
+
+        /// <summary>
+        /// 排序順序
+        /// </summary>
+        [Display(Name = "排序")]
+        public int SortOrder { get; set; }
+
+        // 導航屬性
+        public ICollection<Employee> Employees { get; set; } = new List<Employee>();
+    }
+}

@@ -71,6 +71,7 @@ namespace ERPCore2.Data
             {
                 new AuthSeeder(),
                 new BasicDataSeeder(),
+                new EmployeePositionSeeder(),
                 new ColorSeeder(),
                 new MaterialSeeder(),
                 new UnitSeeder(),

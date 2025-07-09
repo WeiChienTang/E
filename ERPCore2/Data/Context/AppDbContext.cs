@@ -17,6 +17,7 @@ namespace ERPCore2.Data.Context
       public DbSet<CustomerContact> CustomerContacts { get; set; }
       public DbSet<CustomerAddress> CustomerAddresses { get; set; }      
       public DbSet<Employee> Employees { get; set; }
+      public DbSet<EmployeePosition> EmployeePositions { get; set; }
       public DbSet<EmployeeContact> EmployeeContacts { get; set; }
       public DbSet<EmployeeAddress> EmployeeAddresses { get; set; }
       public DbSet<Role> Roles { get; set; }
@@ -169,6 +170,16 @@ namespace ERPCore2.Data.Context
                         entity.HasOne(e => e.Role)
                         .WithMany(r => r.Employees)
                         .OnDelete(DeleteBehavior.Restrict);
+                        
+                        entity.HasOne(e => e.EmployeePosition)
+                        .WithMany(ep => ep.Employees)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
+                  
+                  modelBuilder.Entity<EmployeePosition>(entity =>
+                  {
+                        // 欄位對應                        
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
                   });
                   
                   modelBuilder.Entity<EmployeeContact>(entity =>

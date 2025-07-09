@@ -65,7 +65,7 @@ namespace ERPCore2.Controllers
                     new Claim(ClaimTypes.Role, employee.Role?.RoleName ?? "User"),
                     new Claim("EmployeeCode", employee.EmployeeCode),
                     new Claim("Department", employee.Department ?? ""),
-                    new Claim("Position", employee.Position ?? "")
+                    new Claim("Position", employee.EmployeePosition?.Name ?? "")
                 };
 
                 // 建立認證身份

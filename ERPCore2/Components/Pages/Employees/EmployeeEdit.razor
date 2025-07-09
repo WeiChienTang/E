@@ -3,6 +3,7 @@
 @inject IEmployeeService EmployeeService
 @inject IEmployeeContactService EmployeeContactService
 @inject IEmployeeAddressService EmployeeAddressService
+@inject IEmployeePositionService EmployeePositionService
 @inject IRoleService RoleService
 @inject IContactTypeService ContactTypeService
 @inject IAddressTypeService AddressTypeService
@@ -10,6 +11,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
+@using ERPCore2.Services.Employees
 @using ERPCore2.Components.Shared.SubCollections
 @using ERPCore2.Components.Shared.Buttons
 @using ERPCore2.Services.Notifications
@@ -238,6 +240,7 @@
     
     // 選項清單
     private List<Role> roles = new();
+    private List<EmployeePosition> employeePositions = new();
     private List<ContactType> contactTypes = new();
     private List<AddressType> addressTypes = new();
     
@@ -368,6 +371,9 @@
             var rolesResult = await RoleService.GetAllAsync();
             roles = rolesResult ?? new List<Role>();
             
+            var employeePositionsResult = await EmployeePositionService.GetAllAsync();
+            employeePositions = employeePositionsResult ?? new List<EmployeePosition>();
+            
             var contactTypesResult = await ContactTypeService.GetAllAsync();
             contactTypes = contactTypesResult ?? new List<ContactType>();
             
@@ -409,6 +415,13 @@
         {
             Text = r.RoleName,
             Value = r.Id.ToString()
+        }).ToList();
+
+        // 職位選項
+        var positionOptions = employeePositions.Select(ep => new SelectOption
+        {
+            Text = ep.Name,
+            Value = ep.Id.ToString()
         }).ToList();
 
         basicFormFields = new List<FormFieldDefinition>
@@ -468,11 +481,12 @@
             },
             new()
             {
-                PropertyName = nameof(Employee.Position),
+                PropertyName = nameof(Employee.EmployeePositionId),
                 Label = "職位",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入職位",
-                ContainerCssClass = "col-md-6"
+                FieldType = FormFieldType.Select,
+                Placeholder = "請選擇職位",
+                ContainerCssClass = "col-md-6",
+                Options = positionOptions
             }
         };
 
@@ -484,7 +498,7 @@
             { nameof(Employee.FirstName), "基本資訊" },
             { nameof(Employee.RoleId), "角色權限" },
             { nameof(Employee.Department), "工作資訊" },
-            { nameof(Employee.Position), "工作資訊" }
+            { nameof(Employee.EmployeePositionId), "工作資訊" }
         };
     }
 
@@ -502,7 +516,7 @@
                     LastName = "",
                     FirstName = "",
                     Department = "",
-                    Position = "",
+                    EmployeePositionId = null,
                     Status = EntityStatus.Active,
                     IsLocked = false,
                     FailedLoginAttempts = 0

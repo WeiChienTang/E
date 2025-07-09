@@ -270,7 +270,7 @@
                     };
                 }),
                 TableColumnDefinition.Text("部門", nameof(Employee.Department)),
-                TableColumnDefinition.Text("職位", nameof(Employee.Position)),
+                TableColumnDefinition.Text("職位", "EmployeePosition.Name"),
                 TableColumnDefinition.Text("角色", "Role.RoleName"),
                 TableColumnDefinition.Date("最後登入", nameof(Employee.LastLoginAt), "yyyy/MM/dd HH:mm"),
                 TableColumnDefinition.Status("狀態", nameof(Employee.Status), new Dictionary<object, string>
@@ -367,8 +367,8 @@
             if (!string.IsNullOrWhiteSpace(positionFilter))
             {
                 query = query.Where(e => 
-                    !string.IsNullOrEmpty(e.Position) && 
-                    e.Position.Contains(positionFilter, StringComparison.OrdinalIgnoreCase));
+                    e.EmployeePosition != null && !string.IsNullOrEmpty(e.EmployeePosition.Name) && 
+                    e.EmployeePosition.Name.Contains(positionFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 角色篩選
