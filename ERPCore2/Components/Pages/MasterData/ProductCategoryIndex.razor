@@ -1,0 +1,227 @@
+@page "/product-categories"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@using ERPCore2.Components.Shared
+@using ERPCore2.Helpers
+@inject IProductCategoryService ProductCategoryService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
+
+@rendermode InteractiveServer
+
+<PageTitle>商品分類</PageTitle>
+
+<GenericIndexPageComponent TEntity="ProductCategory" 
+                          TService="IProductCategoryService"
+                          Service="@ProductCategoryService"
+                          EntityBasePath="/product-categories"                          
+                          PageTitle="商品分類"
+                          PageSubtitle="管理所有商品分類資料與階層結構"
+                          AddButtonText="新增商品分類"
+                          AddButtonTitle="新增商品分類資料"
+                          SearchSectionTitle="商品分類搜尋與管理"
+                          EmptyMessage="沒有找到符合條件的商品分類資料"                          
+                          DataLoader="@LoadDataAsync"
+                          FilterApplier="@ApplyProductCategoryFilters"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          EntityName="商品分類"
+                          GetEntityDisplayName="@(category => category.CategoryName)"
+                          DeleteSuccessMessage="商品分類刪除成功"
+                          DeleteConfirmMessage="確定要刪除商品分類「{0}」嗎？"
+                          EnableStandardActions="true"
+                          ShowViewButton="true"
+                          ShowEditButton="true"
+                          ShowDeleteButton="true"
+                          @ref="indexComponent">
+</GenericIndexPageComponent>
+
+@code {
+    private GenericIndexPageComponent<ProductCategory, IProductCategoryService> indexComponent = default!;
+    
+    // 設定選項
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await InitializeBreadcrumbs();
+            await InitializeFilters();
+            await InitializeTableColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(OnInitializedAsync),
+                GetType(),
+                additionalData: "初始化商品分類頁面失敗"
+            );
+        }
+    }
+
+    private async Task InitializeBreadcrumbs()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("基礎資料", "#"),
+                new("商品分類管理")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeBreadcrumbs),
+                GetType()
+            );
+        }
+    }
+
+    private async Task InitializeFilters()
+    {
+        try
+        {
+            // 載入所有分類來建立父分類選項
+            var allCategories = await ProductCategoryService.GetAllAsync();
+            var parentCategoryOptions = allCategories
+                .Where(c => c.ParentCategoryId == null) // 只顯示頂層分類作為父分類選項
+                .Select(c => new SelectOption 
+                { 
+                    Text = c.CategoryName, 
+                    Value = c.Id.ToString() 
+                })
+                .ToList();
+
+            // 建立篩選定義
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("CategoryName", "分類名稱", "輸入分類名稱搜尋")
+                .AddText("CategoryCode", "分類代碼", "輸入分類代碼搜尋")
+                .AddText("Description", "描述", "輸入描述搜尋")
+                .AddSelect("ParentCategoryId", "父分類", parentCategoryOptions)
+                .Build();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeFilters),
+                GetType(),
+                additionalData: "初始化篩選器失敗"
+            );
+        }
+    }
+
+    private async Task InitializeTableColumns()
+    {
+        try
+        {
+            columnDefinitions = new List<TableColumnDefinition>
+            {
+                TableColumnDefinition.Text("分類名稱", nameof(ProductCategory.CategoryName)),
+                TableColumnDefinition.Text("分類代碼", nameof(ProductCategory.CategoryCode)),
+                TableColumnDefinition.Template("父分類", item => {
+                    var category = (ProductCategory)item;
+                    return @<span>@(category.ParentCategory?.CategoryName ?? "-")</span>;
+                }),
+                TableColumnDefinition.Template("子分類數量", item => {
+                    var category = (ProductCategory)item;
+                    return @<span class="badge bg-info">@(category.ChildCategories?.Count ?? 0)</span>;
+                }),
+                TableColumnDefinition.Template("商品數量", item => {
+                    var category = (ProductCategory)item;
+                    return @<span class="badge bg-primary">@(category.Products?.Count ?? 0)</span>;
+                }),
+                TableColumnDefinition.Text("描述", nameof(ProductCategory.Description)),
+                TableColumnDefinition.Date("建立日期", nameof(ProductCategory.CreatedAt), "yyyy/MM/dd")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeTableColumns),
+                GetType(),
+                additionalData: "初始化表格欄位失敗"
+            );
+        }
+    }
+
+    // 資料載入委派
+    private async Task<List<ProductCategory>> LoadDataAsync()
+    {
+        try
+        {
+            return await ProductCategoryService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadDataAsync),
+                GetType(),
+                additionalData: "載入商品分類資料失敗"
+            );
+            return new List<ProductCategory>();
+        }
+    }
+
+    // 篩選邏輯委派
+    private IQueryable<ProductCategory> ApplyProductCategoryFilters(SearchFilterModel searchModel, IQueryable<ProductCategory> query)
+    {
+        try
+        {
+            // 分類名稱篩選
+            var nameFilter = searchModel.GetFilterValue("CategoryName")?.ToString();
+            if (!string.IsNullOrWhiteSpace(nameFilter))
+            {
+                query = query.Where(c => c.CategoryName.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 分類代碼篩選
+            var codeFilter = searchModel.GetFilterValue("CategoryCode")?.ToString();
+            if (!string.IsNullOrWhiteSpace(codeFilter))
+            {
+                query = query.Where(c => 
+                    !string.IsNullOrEmpty(c.CategoryCode) && 
+                    c.CategoryCode.Contains(codeFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 描述篩選
+            var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
+            if (!string.IsNullOrWhiteSpace(descriptionFilter))
+            {
+                query = query.Where(c => 
+                    !string.IsNullOrEmpty(c.Description) && 
+                    c.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 父分類篩選
+            var parentCategoryFilter = searchModel.GetFilterValue("ParentCategoryId")?.ToString();
+            if (!string.IsNullOrWhiteSpace(parentCategoryFilter) && int.TryParse(parentCategoryFilter, out var parentId))
+            {
+                query = query.Where(c => c.ParentCategoryId == parentId);
+            }
+
+            return query.OrderBy(c => c.CategoryName);
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ApplyProductCategoryFilters),
+                GetType(),
+                additionalData: "應用篩選條件失敗"
+            );
+            return query.OrderBy(c => c.CategoryName);
+        }
+    }
+}

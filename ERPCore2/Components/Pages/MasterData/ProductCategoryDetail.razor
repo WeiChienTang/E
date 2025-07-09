@@ -1,0 +1,347 @@
+@page "/product-categories/detail/{productCategoryId:int}"
+@using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Badges
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Helpers
+@inject IProductCategoryService ProductCategoryService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>商品分類詳細資料</PageTitle>
+
+<GenericDetailPageComponent TEntity="ProductCategory" 
+                           TService="IProductCategoryService"
+                           EntityId="@ProductCategoryId"
+                           Entity="@productCategory"
+                           Service="@ProductCategoryService"
+                           EntityName="商品分類"
+                           EntityNamePlural="商品分類"
+                           IndexRoute="/product-categories"
+                           EditRoute="/product-categories/edit"
+                           LoadingText="載入商品分類資料中..."
+                           BreadcrumbItems="@breadcrumbItems"
+                           DataLoader="@LoadProductCategoryDataAsync"
+                           AdditionalDataLoader="@LoadAdditionalDataAsync"
+                           EntityTitleSelector="@(c => c.CategoryName)"
+                           EntitySubtitleSelector="@(c => $"分類代碼：{c.CategoryCode ?? "未設定"}")"
+                           EntityDisplayNameSelector="@(c => c.CategoryName)"
+                           OnDataLoaded="@OnProductCategoryDataLoaded"
+                           UseTabLayout="true"
+                           TabSections="@GetTabSections()">
+</GenericDetailPageComponent>
+
+@code {
+    [Parameter] public int ProductCategoryId { get; set; }
+
+    private ProductCategory? productCategory;
+    private bool _isLoading = false;
+
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
+    {
+        new("首頁", "/"),
+        new("基礎資料", "#"),
+        new("商品分類管理", "/product-categories"),
+        new("商品分類詳細資料")
+    };
+
+    // GenericDetailPageComponent 需要的方法
+    private async Task<ProductCategory?> LoadProductCategoryDataAsync()
+    {
+        if (_isLoading)
+        {
+            return productCategory;
+        }
+        
+        try
+        {
+            _isLoading = true;
+            if (ProductCategoryId <= 0) return null;
+            
+            var result = await ProductCategoryService.GetByIdAsync(ProductCategoryId);
+            productCategory = result;
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(LoadProductCategoryDataAsync),
+                GetType(),
+                additionalData: new { ProductCategoryId }
+            );
+            throw;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(LoadAdditionalDataAsync),
+                typeof(ProductCategoryDetail),
+                additionalData: new { ProductCategoryId }
+            );
+            throw;
+        }
+    }
+
+    private Task OnProductCategoryDataLoaded()
+    {
+        try
+        {
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(OnProductCategoryDataLoaded),
+                typeof(ProductCategoryDetail),
+                additionalData: new { ProductCategoryId }
+            );
+            throw;
+        }
+    }
+
+    // 設定標籤頁結構
+    private List<GenericDetailPageComponent<ProductCategory, IProductCategoryService>.TabSection> GetTabSections()
+    {
+        try
+        {
+            return new List<GenericDetailPageComponent<ProductCategory, IProductCategoryService>.TabSection>
+            {
+                new GenericDetailPageComponent<ProductCategory, IProductCategoryService>.TabSection
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div>
+                        <BasicInfoDisplayComponent 
+                            Title="商品分類基本資訊"
+                            IconClass="fas fa-sitemap"
+                            IconColor="text-primary"
+                            Fields="@GetProductCategoryBasicFields()"
+                            ShowFieldCount="false"
+                            DefaultColSize="6" />
+                    </div>
+                },
+                new GenericDetailPageComponent<ProductCategory, IProductCategoryService>.TabSection
+                {
+                    Id = "hierarchy",
+                    Title = "階層關係",
+                    Content = @<div>
+                        <BasicInfoDisplayComponent 
+                            Title="分類階層關係"
+                            IconClass="fas fa-share-alt"
+                            IconColor="text-info"
+                            Fields="@GetProductCategoryHierarchyFields()"
+                            ShowFieldCount="false"
+                            DefaultColSize="12" />
+                    </div>
+                },
+                new GenericDetailPageComponent<ProductCategory, IProductCategoryService>.TabSection
+                {
+                    Id = "products",
+                    Title = $"關聯商品 ({productCategory?.Products?.Count ?? 0})",
+                    Content = @<div>
+                        @if (productCategory?.Products?.Any() == true)
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>商品代碼</th>
+                                            <th>商品名稱</th>
+                                            <th>規格</th>
+                                            <th>狀態</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var product in productCategory.Products.Take(10))
+                                        {
+                                            <tr>
+                                                <td>@product.ProductCode</td>
+                                                <td>@product.ProductName</td>
+                                                <td>@(product.Specification ?? "-")</td>
+                                                <td>
+                                                    <span class="badge @(product.Status == EntityStatus.Active ? "bg-success" : "bg-secondary")">
+                                                        @(product.Status == EntityStatus.Active ? "啟用" : "停用")
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                                @if (productCategory.Products.Count > 10)
+                                {
+                                    <p class="text-muted">只顯示前 10 筆商品，共 @productCategory.Products.Count 筆</p>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                此分類目前沒有關聯的商品
+                            </div>
+                        }
+                    </div>
+                },
+                new GenericDetailPageComponent<ProductCategory, IProductCategoryService>.TabSection
+                {
+                    Id = "system",
+                    Title = "系統資訊",
+                    Content = @<div>
+                        <SystemInfoDisplayComponent 
+                            CreatedAt="@(productCategory?.CreatedAt ?? DateTime.MinValue)"
+                            UpdatedAt="@productCategory?.UpdatedAt"
+                            CreatedBy="@productCategory?.CreatedBy"
+                            UpdatedBy="@productCategory?.UpdatedBy"
+                            Remarks="@productCategory?.Remarks"
+                            ShowTimeline="true"
+                            ShowRemarks="true" />
+                    </div>
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(GetTabSections),
+                typeof(ProductCategoryDetail),
+                additionalData: new { ProductCategoryId }
+            );
+            throw;
+        }
+    }
+
+    // 取得商品分類基本資料欄位
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetProductCategoryBasicFields()
+    {
+        try
+        {
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
+            {
+                new()
+                {
+                    Label = "分類代碼",
+                    Value = productCategory?.CategoryCode,
+                    IsPrimary = true,
+                    EmptyText = "未設定",
+                    IconClass = "fas fa-barcode",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "分類名稱",
+                    Value = productCategory?.CategoryName,
+                    ValueBold = true,
+                    IconClass = "fas fa-sitemap",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "描述",
+                    Value = productCategory?.Description,
+                    VisibilityCondition = () => !string.IsNullOrEmpty(productCategory?.Description),
+                    IconClass = "fas fa-align-left",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 12
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(GetProductCategoryBasicFields),
+                typeof(ProductCategoryDetail),
+                additionalData: new { ProductCategoryId }
+            );
+            throw;
+        }
+    }
+
+    // 取得商品分類階層關係欄位
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetProductCategoryHierarchyFields()
+    {
+        try
+        {
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
+            {
+                new()
+                {
+                    Label = "父分類",
+                    Value = productCategory?.ParentCategory?.CategoryName,
+                    EmptyText = "無（頂層分類）",
+                    IconClass = "fas fa-level-up-alt",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "子分類數量",
+                    Value = (productCategory?.ChildCategories?.Count ?? 0).ToString(),
+                    IconClass = "fas fa-level-down-alt",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "關聯商品數量",
+                    Value = (productCategory?.Products?.Count ?? 0).ToString(),
+                    IconClass = "fas fa-cube",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "子分類清單",
+                    Value = productCategory?.ChildCategories?.Any() == true 
+                        ? string.Join("、", productCategory.ChildCategories.Select(c => c.CategoryName))
+                        : null,
+                    EmptyText = "無子分類",
+                    VisibilityCondition = () => productCategory?.ChildCategories?.Any() == true,
+                    IconClass = "fas fa-list",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    IconTextClass = "text-secondary",
+                    ColSize = 12
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(GetProductCategoryHierarchyFields),
+                typeof(ProductCategoryDetail),
+                additionalData: new { ProductCategoryId }
+            );
+            throw;
+        }
+    }
+}
