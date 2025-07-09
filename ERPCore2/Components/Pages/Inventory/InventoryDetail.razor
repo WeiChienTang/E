@@ -1,0 +1,892 @@
+@page "/inventory/detail/{productId:int}"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Services
+@using ERPCore2.Services.Inventory
+@using ERPCore2.Helpers
+@using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.Tables
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Badges
+@using Microsoft.AspNetCore.Components.Web
+@inject IInventoryStockService InventoryStockService
+@inject IInventoryTransactionService InventoryTransactionService
+@inject IInventoryReservationService InventoryReservationService
+@inject IProductService ProductService
+@inject IWarehouseService WarehouseService
+@inject IWarehouseLocationService WarehouseLocationService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
+
+@rendermode InteractiveServer
+
+<PageTitle>@GetPageTitle()</PageTitle>
+
+<GenericHeaderComponent 
+    Title="@GetPageTitle()" 
+    Subtitle="@GetPageSubtitle()"
+    HeadingLevel="h1"
+    BreadcrumbItems="@breadcrumbItems"
+    ShowDivider="true"
+    IsLoading="@isLoading"
+    LoadingText="載入庫存資料中...">
+    
+    <ActionButtons>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-secondary" @onclick="NavigateToInventoryOverview">
+                <i class="fas fa-arrow-left me-2"></i>返回總覽
+            </button>
+            @if (product != null)
+            {
+                <button type="button" class="btn btn-outline-primary" @onclick="NavigateToProductDetail">
+                    <i class="fas fa-box me-2"></i>商品詳情
+                </button>
+                <button type="button" class="btn btn-outline-info" @onclick="ShowTransactionHistory">
+                    <i class="fas fa-history me-2"></i>異動歷史
+                </button>
+            }
+        </div>
+    </ActionButtons>
+</GenericHeaderComponent>
+
+@if (isLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">載入中...</span>
+        </div>
+        <p class="mt-3 text-muted">載入庫存資料中...</p>
+    </div>
+}
+else if (product == null)
+{
+    <div class="alert alert-warning" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        找不到指定的商品資料，請檢查商品是否存在。
+    </div>
+}
+else
+{
+    <div class="container-fluid">
+        <!-- 商品基本資訊卡片 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-box me-2"></i>商品基本資訊
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <DetailFieldComponent Label="商品名稱" Value="@product.ProductName" IsBold="true" />
+                                <DetailFieldComponent Label="商品代碼" Value="@product.ProductCode" />
+                                <DetailFieldComponent Label="商品分類" Value="@(product.ProductCategory?.CategoryName ?? "未分類")" />
+                                <DetailFieldComponent Label="規格" Value="@product.Specification" EmptyText="無" />
+                            </div>
+                            <div class="col-md-6">
+                                <DetailFieldComponent Label="單位" Value="@(product.Unit?.UnitName ?? "未設定")" />
+                                <DetailFieldComponent Label="售價" Value="@FormatCurrency(product.UnitPrice)" />
+                                <DetailFieldComponent Label="成本價" Value="@FormatCurrency(product.CostPrice)" />
+                                <DetailFieldComponent Label="狀態">
+                                    <StatusBadgeComponent Status="@product.Status" />
+                                </DetailFieldComponent>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 庫存統計卡片 -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                    總庫存量
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@totalStock</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-boxes fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                    可用庫存
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@availableStock</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    預留庫存
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@reservedStock</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-lock fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-info shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                    在途庫存
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@inTransitStock</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-truck fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 倉庫庫存分佈 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-warehouse me-2"></i>倉庫庫存分佈
+                        </h6>
+                        <span class="badge bg-primary">共 @inventoryStocks.Count 個庫位</span>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (inventoryStocks.Any())
+                        {
+                            <GenericTableComponent TItem="InventoryStock"
+                                                  Items="@inventoryStocks"
+                                                  ColumnDefinitions="@stockColumnDefinitions"
+                                                  ShowActions="false"
+                                                  IsStriped="true"
+                                                  IsHoverable="true"
+                                                  EnableSorting="false"
+                                                  EmptyMessage="沒有庫存資料" />
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">此商品目前沒有任何庫存資料</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 預留庫存明細 -->
+        @if (reservations.Any())
+        {
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                            <h6 class="m-0 font-weight-bold text-warning">
+                                <i class="fas fa-lock me-2"></i>預留庫存明細
+                            </h6>
+                            <span class="badge bg-warning">@reservations.Count 筆預留</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <GenericTableComponent TItem="InventoryReservation"
+                                                  Items="@reservations"
+                                                  ColumnDefinitions="@reservationColumnDefinitions"
+                                                  ShowActions="false"
+                                                  IsStriped="true"
+                                                  IsHoverable="true"
+                                                  EnableSorting="false"
+                                                  EmptyMessage="沒有預留庫存資料" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- 最近異動記錄 -->
+        @if (recentTransactions.Any())
+        {
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                            <h6 class="m-0 font-weight-bold text-info">
+                                <i class="fas fa-history me-2"></i>最近異動記錄（最近10筆）
+                            </h6>
+                            <button type="button" class="btn btn-sm btn-outline-info" @onclick="ShowAllTransactions">
+                                查看全部異動記錄
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <GenericTableComponent TItem="InventoryTransaction"
+                                                  Items="@recentTransactions"
+                                                  ColumnDefinitions="@transactionColumnDefinitions"
+                                                  ShowActions="false"
+                                                  IsStriped="true"
+                                                  IsHoverable="true"
+                                                  EnableSorting="false"
+                                                  EmptyMessage="沒有異動記錄" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- 成本資訊 -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calculator me-2"></i>成本資訊
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <DetailFieldComponent Label="標準成本" Value="@FormatCurrency(product.CostPrice)" />
+                                <DetailFieldComponent Label="加權平均成本" Value="@FormatCurrency(averageCost)" />
+                                <DetailFieldComponent Label="總庫存價值" Value="@FormatCurrency(totalStockValue)" IsBold="true" />
+                            </div>
+                            <div class="col-md-6">
+                                <DetailFieldComponent Label="最低庫存警戒線" Value="@(product.MinStockLevel?.ToString() ?? "未設定")" />
+                                <DetailFieldComponent Label="最高庫存警戒線" Value="@(product.MaxStockLevel?.ToString() ?? "未設定")" />
+                                <DetailFieldComponent Label="庫存狀態">
+                                    @{
+                                        var stockStatus = GetStockStatus();
+                                        var statusClass = GetStockStatusClass(stockStatus);
+                                    }
+                                    <span class="badge @statusClass">@stockStatus</span>
+                                </DetailFieldComponent>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int ProductId { get; set; }
+
+    // 資料模型
+    private Product? product;
+    private List<InventoryStock> inventoryStocks = new();
+    private List<InventoryReservation> reservations = new();
+    private List<InventoryTransaction> recentTransactions = new();
+
+    // 統計資料
+    private int totalStock = 0;
+    private int availableStock = 0;
+    private int reservedStock = 0;
+    private int inTransitStock = 0;
+    private decimal? averageCost = null;
+    private decimal totalStockValue = 0;
+
+    // 表格欄位定義
+    private List<TableColumnDefinition> stockColumnDefinitions = new();
+    private List<TableColumnDefinition> reservationColumnDefinitions = new();
+    private List<TableColumnDefinition> transactionColumnDefinitions = new();
+
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    // 狀態管理
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadDataAsync();
+            InitializeColumns();
+            InitializeBreadcrumbs();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                "頁面初始化", 
+                GetType(), 
+                Navigation
+            );
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            // 載入商品資料
+            product = await ProductService.GetByIdAsync(ProductId);
+            if (product == null) return;
+
+            // 載入庫存資料
+            await LoadInventoryStocksAsync();
+
+            // 載入預留庫存
+            await LoadReservationsAsync();
+
+            // 載入最近異動記錄
+            await LoadRecentTransactionsAsync();
+
+            // 計算統計資料
+            CalculateStatistics();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadDataAsync),
+                GetType(),
+                additionalData: new { ProductId }
+            );
+        }
+    }
+
+    private async Task LoadInventoryStocksAsync()
+    {
+        try
+        {
+            inventoryStocks = await InventoryStockService.GetByProductIdAsync(ProductId);
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadInventoryStocksAsync),
+                GetType(),
+                additionalData: new { ProductId }
+            );
+        }
+    }
+
+    private async Task LoadReservationsAsync()
+    {
+        try
+        {
+            // 這裡需要實作取得特定商品的預留庫存方法
+            reservations = await InventoryReservationService.GetByProductIdAsync(ProductId);
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadReservationsAsync),
+                GetType(),
+                additionalData: new { ProductId }
+            );
+        }
+    }
+
+    private async Task LoadRecentTransactionsAsync()
+    {
+        try
+        {
+            var allTransactions = await InventoryTransactionService.GetByProductIdAsync(ProductId);
+            recentTransactions = allTransactions.Take(10).ToList();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadRecentTransactionsAsync),
+                GetType(),
+                additionalData: new { ProductId }
+            );
+        }
+    }
+
+    private void CalculateStatistics()
+    {
+        try
+        {
+            totalStock = inventoryStocks.Sum(s => s.CurrentStock);
+            reservedStock = inventoryStocks.Sum(s => s.ReservedStock);
+            availableStock = totalStock - reservedStock;
+            inTransitStock = inventoryStocks.Sum(s => s.InTransitStock);
+
+            // 計算加權平均成本
+            var stocksWithCost = inventoryStocks.Where(s => s.AverageCost.HasValue && s.CurrentStock > 0);
+            if (stocksWithCost.Any())
+            {
+                var totalValue = stocksWithCost.Sum(s => s.CurrentStock * s.AverageCost!.Value);
+                var totalQuantity = stocksWithCost.Sum(s => s.CurrentStock);
+                averageCost = totalQuantity > 0 ? totalValue / totalQuantity : null;
+            }
+
+            // 計算總庫存價值
+            totalStockValue = averageCost.HasValue ? totalStock * averageCost.Value : 0;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(CalculateStatistics),
+                GetType(),
+                additionalData: new { ProductId }
+            );
+        }
+    }
+
+    private void InitializeColumns()
+    {
+        try
+        {
+            // 庫存表格欄位
+            stockColumnDefinitions = new List<TableColumnDefinition>
+            {
+                new TableColumnDefinition
+                {
+                    Title = "倉庫",
+                    PropertyName = "Warehouse.WarehouseName",
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 150px;"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "庫位",
+                    PropertyName = "WarehouseLocation.LocationName",
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 120px;",
+                    NullDisplayText = "預設庫位"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "現有庫存",
+                    PropertyName = "CurrentStock",
+                    DataType = ColumnDataType.Number,
+                    Format = "N0",
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end fw-bold"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "預留庫存",
+                    PropertyName = "ReservedStock",
+                    DataType = ColumnDataType.Number,
+                    Format = "N0",
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "可用庫存",
+                    PropertyName = "AvailableStock",
+                    DataType = ColumnDataType.Number,
+                    Format = "N0",
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end text-success fw-bold"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "在途庫存",
+                    PropertyName = "InTransitStock",
+                    DataType = ColumnDataType.Number,
+                    Format = "N0",
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "平均成本",
+                    PropertyName = "AverageCost",
+                    DataType = ColumnDataType.Currency,
+                    Format = "C2",
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "最後異動",
+                    PropertyName = "LastTransactionDate",
+                    DataType = ColumnDataType.DateTime,
+                    Format = "yyyy/MM/dd",
+                    HeaderStyle = "width: 120px;",
+                    NullDisplayText = "無"
+                }
+            };
+
+            // 預留庫存表格欄位
+            reservationColumnDefinitions = new List<TableColumnDefinition>
+            {
+                new TableColumnDefinition
+                {
+                    Title = "預留單號",
+                    PropertyName = "ReservationNumber",
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 150px;"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "倉庫",
+                    PropertyName = "Warehouse.WarehouseName",
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 120px;"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "預留類型",
+                    PropertyName = "ReservationType",
+                    DataType = ColumnDataType.Html,
+                    CustomTemplate = item => builder =>
+                    {
+                        var reservation = (InventoryReservation)item;
+                        var typeText = GetReservationTypeText(reservation.ReservationType);
+                        var typeColor = GetReservationTypeColor(reservation.ReservationType);
+                        builder.OpenElement(0, "span");
+                        builder.AddAttribute(1, "class", $"badge bg-{typeColor}");
+                        builder.AddContent(2, typeText);
+                        builder.CloseElement();
+                    }
+                },
+                new TableColumnDefinition
+                {
+                    Title = "預留數量",
+                    PropertyName = "ReservedQuantity",
+                    DataType = ColumnDataType.Number,
+                    Format = "N0",
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end fw-bold"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "已釋放",
+                    PropertyName = "ReleasedQuantity",
+                    DataType = ColumnDataType.Number,
+                    Format = "N0",
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "剩餘數量",
+                    PropertyName = "RemainingQuantity",
+                    DataType = ColumnDataType.Number,
+                    Format = "N0",
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end text-warning fw-bold"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "預留日期",
+                    PropertyName = "ReservationDate",
+                    DataType = ColumnDataType.DateTime,
+                    Format = "yyyy/MM/dd"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "到期日期",
+                    PropertyName = "ExpiryDate",
+                    DataType = ColumnDataType.DateTime,
+                    Format = "yyyy/MM/dd",
+                    NullDisplayText = "無期限"
+                }
+            };
+
+            // 異動記錄表格欄位
+            transactionColumnDefinitions = new List<TableColumnDefinition>
+            {
+                new TableColumnDefinition
+                {
+                    Title = "異動日期",
+                    PropertyName = "TransactionDate",
+                    DataType = ColumnDataType.DateTime,
+                    Format = "yyyy/MM/dd HH:mm",
+                    HeaderStyle = "width: 140px;"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "異動類型",
+                    PropertyName = "TransactionType",
+                    DataType = ColumnDataType.Html,
+                    CustomTemplate = item => builder =>
+                    {
+                        var transaction = (InventoryTransaction)item;
+                        var typeText = GetTransactionTypeText(transaction.TransactionType);
+                        var typeColor = GetTransactionTypeColor(transaction.TransactionType);
+                        builder.OpenElement(0, "span");
+                        builder.AddAttribute(1, "class", $"badge bg-{typeColor}");
+                        builder.AddContent(2, typeText);
+                        builder.CloseElement();
+                    }
+                },
+                new TableColumnDefinition
+                {
+                    Title = "倉庫",
+                    PropertyName = "Warehouse.WarehouseName",
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 120px;"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "異動數量",
+                    PropertyName = "Quantity",
+                    DataType = ColumnDataType.Html,
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end",
+                    CustomTemplate = item => builder =>
+                    {
+                        var transaction = (InventoryTransaction)item;
+                        var colorClass = transaction.Quantity > 0 ? "text-success" : "text-danger";
+                        var prefix = transaction.Quantity > 0 ? "+" : "";
+                        builder.OpenElement(0, "span");
+                        builder.AddAttribute(1, "class", $"fw-bold {colorClass}");
+                        builder.AddContent(2, $"{prefix}{transaction.Quantity:N0}");
+                        builder.CloseElement();
+                    }
+                },
+                new TableColumnDefinition
+                {
+                    Title = "異動後庫存",
+                    PropertyName = "StockAfter",
+                    DataType = ColumnDataType.Number,
+                    Format = "N0",
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "單據號碼",
+                    PropertyName = "TransactionNumber",
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 120px;"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "備註",
+                    PropertyName = "TransactionRemarks",
+                    DataType = ColumnDataType.Text,
+                    NullDisplayText = "無"
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeColumns),
+                GetType(),
+                additionalData: "初始化表格欄位失敗"
+            );
+        }
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new GenericHeaderComponent.BreadcrumbItem("首頁", "/"),
+                new GenericHeaderComponent.BreadcrumbItem("庫存管理", "/inventoryoverview"),
+                new GenericHeaderComponent.BreadcrumbItem("庫存詳情", "")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeBreadcrumbs),
+                GetType(),
+                additionalData: "初始化麵包屑導航失敗"
+            );
+        }
+    }
+
+    // 輔助方法
+    private string GetPageTitle()
+    {
+        return product != null ? $"{product.ProductName} - 庫存詳情" : "庫存詳情";
+    }
+
+    private string GetPageSubtitle()
+    {
+        return product != null ? $"商品代碼：{product.ProductCode}" : "載入中...";
+    }
+
+    private string FormatCurrency(decimal? value)
+    {
+        return value?.ToString("C2") ?? "未設定";
+    }
+
+    private string GetStockStatus()
+    {
+        if (product == null) return "未知";
+
+        if (totalStock == 0) return "無庫存";
+        if (product.MinStockLevel.HasValue && totalStock <= product.MinStockLevel.Value) return "庫存不足";
+        if (product.MaxStockLevel.HasValue && totalStock >= product.MaxStockLevel.Value) return "庫存過量";
+        return "正常";
+    }
+
+    private string GetStockStatusClass(string status)
+    {
+        return status switch
+        {
+            "無庫存" => "bg-danger",
+            "庫存不足" => "bg-warning",
+            "庫存過量" => "bg-info",
+            "正常" => "bg-success",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetReservationTypeText(InventoryReservationType type)
+    {
+        return type switch
+        {
+            InventoryReservationType.SalesOrder => "銷售訂單",
+            InventoryReservationType.ProductionOrder => "生產訂單",
+            InventoryReservationType.Other => "其他",
+            _ => type.ToString()
+        };
+    }
+
+    private string GetReservationTypeColor(InventoryReservationType type)
+    {
+        return type switch
+        {
+            InventoryReservationType.SalesOrder => "primary",
+            InventoryReservationType.ProductionOrder => "success",
+            InventoryReservationType.Other => "warning",
+            _ => "secondary"
+        };
+    }
+
+    private string GetTransactionTypeText(InventoryTransactionTypeEnum type)
+    {
+        return type switch
+        {
+            InventoryTransactionTypeEnum.Purchase => "採購入庫",
+            InventoryTransactionTypeEnum.Sale => "銷售出庫",
+            InventoryTransactionTypeEnum.Transfer => "庫存調撥",
+            InventoryTransactionTypeEnum.Adjustment => "庫存調整",
+            InventoryTransactionTypeEnum.ProductionCompletion => "生產完工",
+            InventoryTransactionTypeEnum.Return => "退貨",
+            _ => type.ToString()
+        };
+    }
+
+    private string GetTransactionTypeColor(InventoryTransactionTypeEnum type)
+    {
+        return type switch
+        {
+            InventoryTransactionTypeEnum.Purchase => "success",
+            InventoryTransactionTypeEnum.Sale => "danger",
+            InventoryTransactionTypeEnum.Transfer => "info",
+            InventoryTransactionTypeEnum.Adjustment => "warning",
+            InventoryTransactionTypeEnum.ProductionCompletion => "primary",
+            InventoryTransactionTypeEnum.Return => "secondary",
+            _ => "dark"
+        };
+    }
+
+    // 導航方法
+    private void NavigateToInventoryOverview()
+    {
+        try
+        {
+            Navigation.NavigateTo("/inventoryoverview");
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(NavigateToInventoryOverview),
+                GetType()
+            );
+        }
+    }
+
+    private void NavigateToProductDetail()
+    {
+        try
+        {
+            Navigation.NavigateTo($"/products/detail/{ProductId}");
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(NavigateToProductDetail),
+                GetType(),
+                additionalData: new { ProductId }
+            );
+        }
+    }
+
+    private async Task ShowTransactionHistory()
+    {
+        try
+        {
+            // 可以導航到詳細的異動歷史頁面，或者開啟模態對話框
+            Navigation.NavigateTo($"/inventory/transactions/{ProductId}");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ShowTransactionHistory),
+                GetType(),
+                additionalData: new { ProductId }
+            );
+        }
+    }
+
+    private async Task ShowAllTransactions()
+    {
+        try
+        {
+            Navigation.NavigateTo($"/inventory/transactions/{ProductId}");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ShowAllTransactions),
+                GetType(),
+                additionalData: new { ProductId }
+            );
+        }
+    }
+}

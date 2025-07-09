@@ -66,6 +66,8 @@
                                      IsStriped="true"
                                      IsHoverable="true"
                                      GetRowCssClass="@GetRowCssClass"
+                                     EnableRowClick="true"
+                                     OnRowClick="@OnRowClick"
                                      EnablePagination="true"
                                      CurrentPage="@currentPage"
                                      PageSize="@pageSize"
@@ -893,6 +895,24 @@
                 additionalData: $"變更頁面大小失敗，目標大小：{newPageSize}"
             );
             return Task.CompletedTask;
+        }
+    }
+
+    // 行點擊事件處理 - 跳轉到庫存詳細頁面
+    private void OnRowClick(InventoryStock item)
+    {
+        try
+        {
+            Navigation.NavigateTo($"/inventory/detail/{item.ProductId}");
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(OnRowClick),
+                GetType(),
+                additionalData: $"跳轉到庫存詳細頁面失敗，商品ID：{item.ProductId}"
+            );
         }
     }
 }

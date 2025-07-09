@@ -1,0 +1,258 @@
+/* InventoryDetail.razor.css */
+
+/* 統計卡片樣式 */
+.card.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+
+.card.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+
+.card.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+
+.card.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+
+/* 統計卡片懸停效果 */
+.card.border-left-primary:hover,
+.card.border-left-success:hover,
+.card.border-left-warning:hover,
+.card.border-left-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    transition: all 0.3s ease-in-out;
+}
+
+/* 表格行狀態顏色 */
+.inventory-row {
+    transition: background-color 0.2s ease-in-out;
+}
+
+.inventory-row.low-stock {
+    background-color: #fff3cd;
+}
+
+.inventory-row.zero-stock {
+    background-color: #f8d7da;
+}
+
+.inventory-row.over-stock {
+    background-color: #d1ecf1;
+}
+
+/* 數字顯示樣式 */
+.stock-positive {
+    color: #28a745 !important;
+    font-weight: 600;
+}
+
+.stock-negative {
+    color: #dc3545 !important;
+    font-weight: 600;
+}
+
+.stock-zero {
+    color: #6c757d !important;
+    font-style: italic;
+}
+
+/* 徽章樣式增強 */
+.badge {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+}
+
+/* 卡片標題樣式 */
+.card-header h5,
+.card-header h6 {
+    margin-bottom: 0;
+}
+
+.card-header .badge {
+    font-size: 0.875rem;
+}
+
+/* 詳細資訊欄位樣式 */
+.detail-field {
+    margin-bottom: 1rem;
+}
+
+.detail-field-label {
+    font-weight: 600;
+    color: #5a5c69;
+    margin-bottom: 0.25rem;
+}
+
+.detail-field-value {
+    color: #3a3b45;
+}
+
+/* 按鈕組樣式 */
+.btn-group .btn {
+    margin-right: 0;
+}
+
+/* 空狀態樣式 */
+.empty-state {
+    padding: 3rem 2rem;
+    text-align: center;
+}
+
+.empty-state i {
+    opacity: 0.5;
+    margin-bottom: 1rem;
+}
+
+.empty-state p {
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+/* 載入狀態樣式 */
+.loading-state {
+    padding: 3rem 2rem;
+    text-align: center;
+}
+
+.loading-state .spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+    /* 在小螢幕上調整統計卡片 */
+    .card.border-left-primary,
+    .card.border-left-success,
+    .card.border-left-warning,
+    .card.border-left-info {
+        margin-bottom: 1rem;
+    }
+    
+    /* 表格水平滾動 */
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    /* 按鈕組在小螢幕上垂直排列 */
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        margin-bottom: 0.5rem;
+        border-radius: 0.375rem !important;
+    }
+    
+    /* 卡片內容在小螢幕上的間距調整 */
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+/* 表格特殊樣式 */
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #5a5c69;
+    background-color: #f8f9fc;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* 異動數量顯示特殊樣式 */
+.transaction-quantity {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+}
+
+.transaction-in {
+    color: #28a745;
+}
+
+.transaction-out {
+    color: #dc3545;
+}
+
+/* 成本資訊特殊樣式 */
+.cost-info {
+    background: linear-gradient(45deg, #f8f9fc 0%, #ffffff 100%);
+}
+
+.cost-value {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: #2e59d9;
+}
+
+/* 庫存狀態指示器 */
+.stock-status-indicator {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.stock-status-normal {
+    background-color: #28a745;
+}
+
+.stock-status-low {
+    background-color: #ffc107;
+}
+
+.stock-status-zero {
+    background-color: #dc3545;
+}
+
+.stock-status-over {
+    background-color: #17a2b8;
+}
+
+/* 動畫效果 */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 40px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+/* 工具提示樣式 */
+.tooltip-inner {
+    max-width: 200px;
+    text-align: left;
+}
+
+/* 表格排序指示器 */
+.sortable-header {
+    cursor: pointer;
+    user-select: none;
+}
+
+.sortable-header:hover {
+    background-color: #e3e6f0;
+}
+
+.sort-indicator {
+    margin-left: 0.5rem;
+    opacity: 0.5;
+}
+
+.sort-indicator.active {
+    opacity: 1;
+}
