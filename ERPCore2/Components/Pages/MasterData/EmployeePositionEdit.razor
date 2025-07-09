@@ -1,0 +1,214 @@
+@page "/employee-positions/edit"
+@page "/employee-positions/edit/{id:int?}"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Services
+@using ERPCore2.Services.Employees
+@using ERPCore2.Components.Shared
+@using ERPCore2.Helpers
+@inject IEmployeePositionService EmployeePositionService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService 
+@rendermode InteractiveServer
+
+<PageTitle>@(Id.HasValue ? "編輯員工職位" : "新增員工職位")</PageTitle>
+
+<GenericEditPageComponent TEntity="EmployeePosition" 
+                         TService="IEmployeePositionService"
+                         @ref="editComponent"
+                         Id="@Id"
+                         Service="@EmployeePositionService"
+                         EntityName="員工職位"
+                         EntityNamePlural="員工職位"
+                         IndexRoute="/employee-positions"
+                         FormTitle="基本資料"
+                         FormSubtitle="員工職位的基本資訊"
+                         UseGenericForm="true"
+                         FormFields="@GetFormFields()"
+                         FormSections="@formSections"
+                         BreadcrumbItems="@breadcrumbItems"
+                         DataLoader="@LoadEmployeePositionData"
+                         UseGenericSave="true"
+                         SaveSuccessMessage="@(Id.HasValue ? "員工職位更新成功" : "員工職位新增成功")"
+                         SaveFailureMessage="員工職位儲存失敗"
+ />
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    
+    private GenericEditPageComponent<EmployeePosition, IEmployeePositionService>? editComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeFormFields();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitialized), GetType(), NotificationService);
+        }
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("基礎資料", "#"),
+                new("員工職位管理", "/employee-positions"),
+                new(Id.HasValue ? "編輯員工職位" : "新增員工職位")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType(), NotificationService);
+        }
+    }
+
+    private void InitializeFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                // 基本資訊區段
+                new()
+                {
+                    PropertyName = nameof(EmployeePosition.Name),
+                    Label = "職位名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入職位名稱",
+                    IsRequired = true,
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeePosition.Code),
+                    Label = "職位代碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入職位代碼",
+                    IsRequired = false,
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeePosition.Status),
+                    Label = "狀態",
+                    FieldType = FormFieldType.Select,
+                    Options = new List<SelectOption>
+                    {
+                        new() { Text = "啟用", Value = "Active" },
+                        new() { Text = "停用", Value = "Inactive" }
+                    },
+                    ContainerCssClass = "col-md-6"
+                },
+                // 職位設定區段
+                new()
+                {
+                    PropertyName = nameof(EmployeePosition.Level),
+                    Label = "職位等級",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入職位等級",
+                    IsRequired = false,
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeePosition.SortOrder),
+                    Label = "排序順序",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入排序順序",
+                    IsRequired = true,
+                    ContainerCssClass = "col-md-6"
+                },
+                // 詳細資訊區段
+                new()
+                {
+                    PropertyName = nameof(EmployeePosition.Description),
+                    Label = "職位描述",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入職位描述",
+                    Rows = 3,
+                    ContainerCssClass = "col-12"
+                },
+                // 其他資訊區段
+                new()
+                {
+                    PropertyName = nameof(EmployeePosition.Remarks),
+                    Label = "備註",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入備註",
+                    Rows = 2,
+                    ContainerCssClass = "col-12"
+                }
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(EmployeePosition.Name), "基本資訊" },
+                { nameof(EmployeePosition.Code), "基本資訊" },
+                { nameof(EmployeePosition.Status), "設定" },
+                { nameof(EmployeePosition.Level), "職位設定" },
+                { nameof(EmployeePosition.SortOrder), "職位設定" },
+                { nameof(EmployeePosition.Description), "詳細資訊" },
+                { nameof(EmployeePosition.Remarks), "額外資訊" }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, "初始化表單欄位時發生錯誤", GetType(), NotificationService);
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        try
+        {
+            return formFields;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, "取得表單欄位時發生錯誤", GetType(), NotificationService);
+            return new List<FormFieldDefinition>();
+        }
+    }
+
+    private async Task<EmployeePosition?> LoadEmployeePositionData()
+    {
+        try
+        {
+            if (!Id.HasValue) 
+            {
+                return new EmployeePosition
+                {
+                    Status = EntityStatus.Active,
+                    SortOrder = 0
+                };
+            }
+
+            var position = await EmployeePositionService.GetByIdAsync(Id.Value);            
+            
+            if (position == null)
+            {
+                await NotificationService.ShowErrorAsync("找不到指定的員工職位資料");
+                Navigation.NavigateTo("/employee-positions");
+                return null;
+            }
+            return position;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadEmployeePositionData), GetType());
+            Navigation.NavigateTo("/employee-positions");
+            return null;
+        }
+    }
+}
