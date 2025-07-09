@@ -211,18 +211,42 @@
 
     private void HandleSearch(SearchFilterModel filterModel)
     {
-        searchModel = filterModel;
-        currentPage = 1; // 重設為第一頁
-        ApplyFilters();
-        StateHasChanged();
+        try
+        {
+            searchModel = filterModel;
+            currentPage = 1; // 重設為第一頁
+            ApplyFilters();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(HandleSearch),
+                GetType(),
+                additionalData: "處理搜尋失敗"
+            );
+        }
     }
 
     private void HandleFilterChanged(SearchFilterModel filterModel)
     {
-        searchModel = filterModel;
-        currentPage = 1; // 重設為第一頁
-        ApplyFilters();
-        StateHasChanged();
+        try
+        {
+            searchModel = filterModel;
+            currentPage = 1; // 重設為第一頁
+            ApplyFilters();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(HandleFilterChanged),
+                GetType(),
+                additionalData: "處理篩選變更失敗"
+            );
+        }
     }
 
     private async Task LoadBasicDataAsync()
@@ -247,73 +271,122 @@
 
     private async Task LoadInventoryDataAsync()
     {
-        // 取得篩選值
-        var selectedWarehouseId = GetSelectedId("WarehouseId");
-        var selectedCategoryId = GetSelectedId("CategoryId");
-        
-        inventoryStocks = await InventoryStockService.GetInventoryOverviewAsync(
-            selectedWarehouseId, 
-            selectedCategoryId, 
-            null // 暫時不支援庫位篩選
-        );
-        ApplyFilters();
+        try
+        {
+            // 取得篩選值
+            var selectedWarehouseId = GetSelectedId("WarehouseId");
+            var selectedCategoryId = GetSelectedId("CategoryId");
+            
+            inventoryStocks = await InventoryStockService.GetInventoryOverviewAsync(
+                selectedWarehouseId, 
+                selectedCategoryId, 
+                null // 暫時不支援庫位篩選
+            );
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadInventoryDataAsync),
+                GetType(),
+                Navigation
+            );
+        }
     }
 
     private int? GetSelectedId(string filterName)
     {
-        var value = searchModel.GetFilterValue(filterName)?.ToString();
-        return int.TryParse(value, out var id) ? id : null;
+        try
+        {
+            var value = searchModel.GetFilterValue(filterName)?.ToString();
+            return int.TryParse(value, out var id) ? id : null;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(GetSelectedId),
+                GetType(),
+                additionalData: $"取得篩選ID失敗，篩選名稱：{filterName}"
+            );
+            return null;
+        }
     }
 
     private void ApplyFilters()
     {
-        filteredInventoryStocks = inventoryStocks.ToList();
-
-        // 搜尋篩選
-        var searchTerm = searchModel.GetFilterValue("SearchTerm")?.ToString();
-        if (!string.IsNullOrWhiteSpace(searchTerm))
+        try
         {
-            var term = searchTerm.Trim().ToLower();
-            filteredInventoryStocks = filteredInventoryStocks.Where(i =>
-                i.Product.ProductCode.ToLower().Contains(term) ||
-                i.Product.ProductName.ToLower().Contains(term)
-            ).ToList();
-        }
+            filteredInventoryStocks = inventoryStocks.ToList();
 
-        // 庫存狀態篩選
-        var stockStatusFilter = searchModel.GetFilterValue("StockStatus")?.ToString();
-        switch (stockStatusFilter)
+            // 搜尋篩選
+            var searchTerm = searchModel.GetFilterValue("SearchTerm")?.ToString();
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var term = searchTerm.Trim().ToLower();
+                filteredInventoryStocks = filteredInventoryStocks.Where(i =>
+                    i.Product.ProductCode.ToLower().Contains(term) ||
+                    i.Product.ProductName.ToLower().Contains(term)
+                ).ToList();
+            }
+
+            // 庫存狀態篩選
+            var stockStatusFilter = searchModel.GetFilterValue("StockStatus")?.ToString();
+            switch (stockStatusFilter)
+            {
+                case "low":
+                    filteredInventoryStocks = filteredInventoryStocks.Where(i =>
+                        i.MinStockLevel.HasValue && i.CurrentStock <= i.MinStockLevel.Value && i.CurrentStock > 0
+                    ).ToList();
+                    break;
+                case "zero":
+                    filteredInventoryStocks = filteredInventoryStocks.Where(i => i.CurrentStock == 0).ToList();
+                    break;
+                case "normal":
+                    filteredInventoryStocks = filteredInventoryStocks.Where(i =>
+                        !i.MinStockLevel.HasValue || i.CurrentStock > i.MinStockLevel.Value
+                    ).ToList();
+                    break;
+            }
+
+            UpdatePagination();
+        }
+        catch (Exception ex)
         {
-            case "low":
-                filteredInventoryStocks = filteredInventoryStocks.Where(i =>
-                    i.MinStockLevel.HasValue && i.CurrentStock <= i.MinStockLevel.Value && i.CurrentStock > 0
-                ).ToList();
-                break;
-            case "zero":
-                filteredInventoryStocks = filteredInventoryStocks.Where(i => i.CurrentStock == 0).ToList();
-                break;
-            case "normal":
-                filteredInventoryStocks = filteredInventoryStocks.Where(i =>
-                    !i.MinStockLevel.HasValue || i.CurrentStock > i.MinStockLevel.Value
-                ).ToList();
-                break;
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ApplyFilters),
+                GetType(),
+                additionalData: "套用篩選失敗"
+            );
         }
-
-        UpdatePagination();
     }
 
     private void UpdatePagination()
     {
-        // 確保當前頁面在有效範圍內
-        var totalPages = (int)Math.Ceiling((double)filteredInventoryStocks.Count / pageSize);
-        if (totalPages == 0) totalPages = 1; // 避免除零錯誤
-        currentPage = Math.Min(currentPage, Math.Max(1, totalPages));
-        
-        // 計算當前頁面要顯示的資料
-        pagedInventoryStocks = filteredInventoryStocks
-            .Skip((currentPage - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
+        try
+        {
+            // 確保當前頁面在有效範圍內
+            var totalPages = (int)Math.Ceiling((double)filteredInventoryStocks.Count / pageSize);
+            if (totalPages == 0) totalPages = 1; // 避免除零錯誤
+            currentPage = Math.Min(currentPage, Math.Max(1, totalPages));
+            
+            // 計算當前頁面要顯示的資料
+            pagedInventoryStocks = filteredInventoryStocks
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(UpdatePagination),
+                GetType(),
+                additionalData: "更新分頁失敗"
+            );
+        }
     }
 
     private async Task OnFilterChanged()
@@ -337,6 +410,15 @@
 
             await LoadInventoryDataAsync();
         }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(OnFilterChanged),
+                GetType(),
+                Navigation
+            );
+        }
         finally
         {
             isLoading = false;
@@ -345,32 +427,80 @@
 
     private void OnSearchKeyPress(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter")
+        try
         {
-            HandleFilterChanged(searchModel);
+            if (e.Key == "Enter")
+            {
+                HandleFilterChanged(searchModel);
+            }
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(OnSearchKeyPress),
+                GetType(),
+                additionalData: "處理搜尋按鍵失敗"
+            );
         }
     }
 
     private void ShowLowStockOnly()
     {
-        searchModel.SetFilterValue("StockStatus", "low");
-        currentPage = 1; // 重設為第一頁
-        HandleFilterChanged(searchModel);
+        try
+        {
+            searchModel.SetFilterValue("StockStatus", "low");
+            currentPage = 1; // 重設為第一頁
+            HandleFilterChanged(searchModel);
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ShowLowStockOnly),
+                GetType(),
+                additionalData: "顯示低庫存失敗"
+            );
+        }
     }
 
     private void ShowZeroStockOnly()
     {
-        searchModel.SetFilterValue("StockStatus", "zero");
-        currentPage = 1; // 重設為第一頁
-        HandleFilterChanged(searchModel);
+        try
+        {
+            searchModel.SetFilterValue("StockStatus", "zero");
+            currentPage = 1; // 重設為第一頁
+            HandleFilterChanged(searchModel);
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ShowZeroStockOnly),
+                GetType(),
+                additionalData: "顯示零庫存失敗"
+            );
+        }
     }
 
     private void ClearFilters()
     {
-        searchModel = new SearchFilterModel();
-        currentPage = 1;
-        
-        HandleFilterChanged(searchModel);
+        try
+        {
+            searchModel = new SearchFilterModel();
+            currentPage = 1;
+            
+            HandleFilterChanged(searchModel);
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ClearFilters),
+                GetType(),
+                additionalData: "清除篩選失敗"
+            );
+        }
     }
 
     private async Task RefreshData()
@@ -382,6 +512,15 @@
         {
             await LoadInventoryDataAsync();
             await LoadStatisticsAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(RefreshData),
+                GetType(),
+                Navigation
+            );
         }
         finally
         {
@@ -409,12 +548,26 @@
 
     private async Task LoadStatisticsAsync()
     {
-        statistics = await InventoryStockService.GetInventoryStatisticsAsync();
+        try
+        {
+            statistics = await InventoryStockService.GetInventoryStatisticsAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadStatisticsAsync),
+                GetType(),
+                Navigation
+            );
+        }
     }
 
     private void InitializeColumns()
     {
-        columnDefinitions = new List<TableColumnDefinition>
+        try
+        {
+            columnDefinitions = new List<TableColumnDefinition>
         {
             // 商品代碼
             new TableColumnDefinition
@@ -663,34 +816,83 @@
                 NullDisplayText = "-"
             }
         };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeColumns),
+                GetType(),
+                additionalData: "初始化欄位定義失敗"
+            );
+        }
     }
 
     // 取得列的 CSS 類別
     private string GetRowCssClass(InventoryStock item)
     {
-        var isZeroStock = item.CurrentStock == 0;
-        var isLowStock = item.MinStockLevel.HasValue && item.CurrentStock <= item.MinStockLevel.Value;
-        
-        if (isZeroStock) return "table-danger";
-        if (isLowStock) return "table-warning";
-        return "";
+        try
+        {
+            var isZeroStock = item.CurrentStock == 0;
+            var isLowStock = item.MinStockLevel.HasValue && item.CurrentStock <= item.MinStockLevel.Value;
+            
+            if (isZeroStock) return "table-danger";
+            if (isLowStock) return "table-warning";
+            return "";
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(GetRowCssClass),
+                GetType(),
+                additionalData: "取得列樣式失敗"
+            );
+            return "";
+        }
     }
 
     // 分頁事件處理
     private Task OnPageChanged(int newPage)
     {
-        currentPage = newPage;
-        UpdatePagination();
-        StateHasChanged();
-        return Task.CompletedTask;
+        try
+        {
+            currentPage = newPage;
+            UpdatePagination();
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(OnPageChanged),
+                GetType(),
+                additionalData: $"變更頁面失敗，目標頁面：{newPage}"
+            );
+            return Task.CompletedTask;
+        }
     }
 
     private Task OnPageSizeChanged(int newPageSize)
     {
-        pageSize = newPageSize;
-        currentPage = 1; // 重設為第一頁
-        UpdatePagination();
-        StateHasChanged();
-        return Task.CompletedTask;
+        try
+        {
+            pageSize = newPageSize;
+            currentPage = 1; // 重設為第一頁
+            UpdatePagination();
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(OnPageSizeChanged),
+                GetType(),
+                additionalData: $"變更頁面大小失敗，目標大小：{newPageSize}"
+            );
+            return Task.CompletedTask;
+        }
     }
 }

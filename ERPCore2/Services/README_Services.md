@@ -14,7 +14,7 @@
 ```csharp
 public class [業務領域]Service : GenericManagementService<[實體]>, I[業務領域]Service
 {
-    public [業務領域]Service(AppDbContext context) : base(context)
+    public [業務領域]Service(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
     {
     }
 }
@@ -25,8 +25,8 @@ public class [業務領域]Service : GenericManagementService<[實體]>, I[業�
 public class [業務領域]Service : GenericManagementService<[實體]>, I[業務領域]Service
 {
     public [業務領域]Service(
-        AppDbContext context, 
-        ILogger<GenericManagementService<[實體]>> logger) : base(context, logger)
+        IDbContextFactory<AppDbContext> contextFactory, 
+        ILogger<GenericManagementService<[實體]>> logger) : base(contextFactory, logger)
     {
     }
 }
@@ -36,18 +36,18 @@ public class [業務領域]Service : GenericManagementService<[實體]>, I[業�
 // 正確做法 - 直接使用基底類別提供的欄位
 public class ColorService : GenericManagementService<Color>, IColorService
 {
-    public ColorService(AppDbContext context) : base(context)
+    public ColorService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
     {
     }
 
     public ColorService(
-        AppDbContext context, 
-        ILogger<GenericManagementService<Color>> logger) : base(context, logger)
+        IDbContextFactory<AppDbContext> contextFactory, 
+        ILogger<GenericManagementService<Color>> logger) : base(contextFactory, logger)
     {
     }
     
     // 可直接使用基底類別的 protected 欄位：
-    // _context, _dbSet, _logger
+    // _contextFactory, _logger
 }
 ```
 
@@ -60,31 +60,39 @@ public async Task<List<[實體]>> GetAllAsync()
 {
     try
     {
-        return await _dbSet
+        using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.[實體複數名稱]
             .Where(e => !e.IsDeleted)
             .OrderBy(e => e.Name)
             .ToListAsync();
     }
     catch (Exception ex)
     {
-        await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), typeof([Service類別名稱]), _logger);
+        await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
+            Method = nameof(GetAllAsync),
+            ServiceType = GetType().Name 
+        });
         return new List<[實體]>();  // 安全預設值
     }
 }
 
-// 同步方法範例
+// 同步方法範例（不建議使用，建議改用異步）
 public List<[實體]> GetAllSync()
 {
     try
     {
-        return _dbSet
+        using var context = _contextFactory.CreateDbContext();
+        return context.[實體複數名稱]
             .Where(e => !e.IsDeleted)
             .OrderBy(e => e.Name)
             .ToList();
     }
     catch (Exception ex)
     {
-        ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetAllSync), typeof([Service類別名稱]), _logger);
+        ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetAllSync), GetType(), _logger, new { 
+            Method = nameof(GetAllSync),
+            ServiceType = GetType().Name 
+        });
         return new List<[實體]>();  // 安全預設值
     }
 }
@@ -106,7 +114,12 @@ public async Task<ServiceResult> ValidateAsync([實體] entity)
     }
     catch (Exception ex)
     {
-        await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), typeof([Service類別名稱]), _logger);
+        await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { 
+            Method = nameof(ValidateAsync),
+            ServiceType = GetType().Name,
+            EntityId = entity.Id,
+            EntityName = entity.Name 
+        });
         return ServiceResult.Failure("驗證過程發生錯誤");
     }
 }
@@ -132,8 +145,8 @@ namespace ERPCore2.Services
     public class CustomerService : GenericManagementService<Customer>, ICustomerService
     {
         public CustomerService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<Customer>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<Customer>> logger) : base(contextFactory, logger)
         {
         }
 
@@ -141,7 +154,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Customers
                     .Include(c => c.CustomerType)
                     .Include(c => c.IndustryType)
                     .Where(c => !c.IsDeleted)
@@ -150,7 +164,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), typeof(CustomerService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
+                    Method = nameof(GetAllAsync),
+                    ServiceType = GetType().Name 
+                });
                 return new List<Customer>();
             }
         }
@@ -159,7 +176,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(c => c.CustomerCode == customerCode && !c.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Customers.Where(c => c.CustomerCode == customerCode && !c.IsDeleted);
                 if (excludeId.HasValue)
                     query = query.Where(c => c.Id != excludeId.Value);
                 
@@ -167,7 +185,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCustomerCodeExistsAsync), typeof(CustomerService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCustomerCodeExistsAsync), GetType(), _logger, new { 
+                    Method = nameof(IsCustomerCodeExistsAsync),
+                    ServiceType = GetType().Name,
+                    CustomerCode = customerCode,
+                    ExcludeId = excludeId 
+                });
                 return false;
             }
         }
@@ -195,7 +218,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), typeof(CustomerService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { 
+                    Method = nameof(ValidateAsync),
+                    ServiceType = GetType().Name,
+                    EntityId = entity.Id,
+                    EntityName = entity.CompanyName 
+                });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
         }
@@ -206,8 +234,7 @@ namespace ERPCore2.Services
 ## GenericManagementService 提供的功能
 
 ### 基底類別提供的 Protected 成員
-- **`_context`**：資料庫上下文 (`AppDbContext`)
-- **`_dbSet`**：當前實體的 DbSet (`DbSet<T>`)
+- **`_contextFactory`**：資料庫上下文工廠 (`IDbContextFactory<AppDbContext>`)
 - **`_logger`**：日誌記錄器 (`ILogger<GenericManagementService<T>>`)
 - **`_errorLogService`**：錯誤記錄服務 (`IErrorLogService`)
 
@@ -245,13 +272,15 @@ public static void AddApplicationServices(this IServiceCollection services, stri
 ## 實作檢查清單
 
 - [ ] 繼承 `GenericManagementService<T>`
-- [ ] **不要** 重複宣告 `_logger`, `_errorLogService`, `_context`, `_dbSet` 欄位
-- [ ] 建構子使用正確的泛型類型：`ILogger<GenericManagementService<T>>`
-- [ ] 建構子正確調用基底類別：`base(context, logger, errorLogService)`
+- [ ] **不要** 重複宣告 `_logger`, `_errorLogService`, `_contextFactory` 欄位
+- [ ] 建構子使用正確的泛型類型：`IDbContextFactory<AppDbContext>` 和 `ILogger<GenericManagementService<T>>`
+- [ ] 建構子正確調用基底類別：`base(contextFactory, logger)`
+- [ ] 方法中使用 `using var context = await _contextFactory.CreateDbContextAsync();`
+- [ ] 查詢改為 `return await context.[實體複數名稱]...`
 - [ ] 實作必要的抽象方法：`SearchAsync()` 和 `ValidateAsync()`
 - [ ] 所有公開方法都有 try-catch 錯誤處理
-- [ ] 異步方法使用 `ErrorHandlingHelper.HandleServiceErrorAsync()`
-- [ ] 同步方法使用 `ErrorHandlingHelper.HandleServiceErrorSync()`
+- [ ] 異步方法使用 `ErrorHandlingHelper.HandleServiceErrorAsync()` 並傳入 `GetType()` 和詳細資訊
+- [ ] 同步方法使用 `ErrorHandlingHelper.HandleServiceErrorSync()` 並傳入 `GetType()` 和詳細資訊
 - [ ] 頁面層使用 `ErrorHandlingHelper.HandlePageErrorAsync()`
 - [ ] 回傳安全預設值
 - [ ] 在 `ServiceRegistration.cs` 註冊服務
