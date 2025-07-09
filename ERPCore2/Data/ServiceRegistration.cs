@@ -19,8 +19,8 @@ namespace ERPCore2.Data
         /// <param name="connectionString">資料庫連接字串</param>
         public static void AddDatabaseServices(this IServiceCollection services, string connectionString)
         {
-            // Database Configuration - 使用 DbContextFactory 解決並發問題
-            services.AddDbContextFactory<AppDbContext>(options =>
+            // Database Configuration - 使用標準 DbContext 註冊
+            services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(connectionString));
         }
 

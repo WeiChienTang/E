@@ -59,7 +59,7 @@
             else
             {
                 <GenericTableComponent TItem="InventoryStock"
-                                     Items="@filteredInventoryStocks"
+                                     Items="@pagedInventoryStocks"
                                      ColumnDefinitions="@columnDefinitions"
                                      EmptyMessage="沒有找到符合條件的庫存資料"
                                      ShowHeader="true"
@@ -133,6 +133,7 @@
     {
         try
         {
+            // 依序載入，避免並發問題
             await LoadBasicDataAsync();
             InitializeFilters();
             InitializeColumns();
@@ -211,6 +212,7 @@
     private void HandleSearch(SearchFilterModel filterModel)
     {
         searchModel = filterModel;
+        currentPage = 1; // 重設為第一頁
         ApplyFilters();
         StateHasChanged();
     }
@@ -218,15 +220,29 @@
     private void HandleFilterChanged(SearchFilterModel filterModel)
     {
         searchModel = filterModel;
+        currentPage = 1; // 重設為第一頁
         ApplyFilters();
         StateHasChanged();
     }
 
     private async Task LoadBasicDataAsync()
     {
-        warehouses = await WarehouseService.GetAllAsync();
-        productCategories = await ProductService.GetProductCategoriesAsync();
-        warehouseLocations = await WarehouseLocationService.GetAllAsync();
+        try
+        {
+            // 依序載入基礎資料，避免 DbContext 衝突
+            warehouses = await WarehouseService.GetAllAsync();
+            productCategories = await ProductService.GetProductCategoriesAsync();
+            warehouseLocations = await WarehouseLocationService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadBasicDataAsync),
+                GetType(),
+                Navigation
+            );
+        }
     }
 
     private async Task LoadInventoryDataAsync()
@@ -288,12 +304,12 @@
 
     private void UpdatePagination()
     {
-        // GenericTableComponent 會自動處理分頁邏輯
-        // 這裡只需要確保當前頁面在有效範圍內
+        // 確保當前頁面在有效範圍內
         var totalPages = (int)Math.Ceiling((double)filteredInventoryStocks.Count / pageSize);
+        if (totalPages == 0) totalPages = 1; // 避免除零錯誤
         currentPage = Math.Min(currentPage, Math.Max(1, totalPages));
         
-        // 為了相容性，我們仍然設置 pagedInventoryStocks，但 GenericTableComponent 會使用 filteredInventoryStocks
+        // 計算當前頁面要顯示的資料
         pagedInventoryStocks = filteredInventoryStocks
             .Skip((currentPage - 1) * pageSize)
             .Take(pageSize)
@@ -338,12 +354,14 @@
     private void ShowLowStockOnly()
     {
         searchModel.SetFilterValue("StockStatus", "low");
+        currentPage = 1; // 重設為第一頁
         HandleFilterChanged(searchModel);
     }
 
     private void ShowZeroStockOnly()
     {
         searchModel.SetFilterValue("StockStatus", "zero");
+        currentPage = 1; // 重設為第一頁
         HandleFilterChanged(searchModel);
     }
 

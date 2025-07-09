@@ -588,8 +588,9 @@ namespace ERPCore2.Services.Inventory
                     .Where(w => !w.IsDeleted && w.IsActive)
                     .CountAsync();
 
+                // 確保數據類型一致性
                 stats.Add("TotalProducts", totalProducts);
-                stats.Add("TotalInventoryValue", Math.Round(totalInventoryValue, 2));
+                stats.Add("TotalInventoryValue", totalInventoryValue);
                 stats.Add("LowStockCount", lowStockCount);
                 stats.Add("ZeroStockCount", zeroStockCount);
                 stats.Add("WarehouseCount", warehouseCount);

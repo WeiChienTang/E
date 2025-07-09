@@ -2,7 +2,7 @@
 
 <StatisticsCardContainer>
     <StatisticsCard Title="總商品數量"
-                   Value="@((decimal)Statistics.GetValueOrDefault("TotalProducts", 0))"
+                   Value="@(Convert.ToDecimal(Statistics.GetValueOrDefault("TotalProducts", 0)))"
                    IconClass="fas fa-boxes"
                    BorderColor="primary"
                    TextColor="primary"
@@ -10,7 +10,7 @@
                    OnClick="OnTotalProductsClick" />
 
     <StatisticsCard Title="總庫存價值"
-                   Value="@((decimal)Statistics.GetValueOrDefault("TotalInventoryValue", 0m))"
+                   Value="@(Convert.ToDecimal(Statistics.GetValueOrDefault("TotalInventoryValue", 0m)))"
                    IconClass="fas fa-dollar-sign"
                    BorderColor="success"
                    TextColor="success"
@@ -19,7 +19,7 @@
                    OnClick="OnTotalValueClick" />
 
     <StatisticsCard Title="低庫存警戒"
-                   Value="@((decimal)Statistics.GetValueOrDefault("LowStockCount", 0))"
+                   Value="@(Convert.ToDecimal(Statistics.GetValueOrDefault("LowStockCount", 0)))"
                    IconClass="fas fa-exclamation-triangle"
                    BorderColor="warning"
                    TextColor="warning"
@@ -27,7 +27,7 @@
                    OnClick="OnLowStockClick" />
 
     <StatisticsCard Title="零庫存商品"
-                   Value="@((decimal)Statistics.GetValueOrDefault("ZeroStockCount", 0))"
+                   Value="@(Convert.ToDecimal(Statistics.GetValueOrDefault("ZeroStockCount", 0)))"
                    IconClass="fas fa-ban"
                    BorderColor="danger"
                    TextColor="danger"
