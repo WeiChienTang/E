@@ -57,6 +57,11 @@
       },
       {
         "category": "修改",
+        "description": "更新更新紀錄頁面，修正多項功能與修改，強化庫存管理及錯誤處理機制",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
         "description": "重構搜尋篩選器以移除進階切換選項並簡化篩選器定義",
         "icon": "fas fa-edit"
       }
