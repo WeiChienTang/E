@@ -114,8 +114,7 @@
                         IconClass="fas fa-industry"
                         IconColor="text-primary"
                         Fields="@GetSupplierTypeBasicFields()"
-                        ShowFieldCount="false"
-                        DefaultColSize="6" />
+                        ShowFieldCount="false" />
                 </div>
             },
             
@@ -195,8 +194,16 @@
                 ValueBold = true,
                 IconClass = "fas fa-industry",
                 IconBgClass = "bg-primary bg-opacity-10",
-                IconTextClass = "text-primary",
-                ColSize = 6
+                IconTextClass = "text-primary"
+            },
+            new()
+            {
+                Label = "狀態",
+                Type = BasicInfoDisplayComponent.FieldType.Status,
+                Value = supplierType?.Status,
+                IconClass = "fas fa-flag",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success"
             },
             new()
             {
@@ -208,16 +215,7 @@
                 IconTextClass = "text-info",
                 ColSize = 12
             },
-            new()
-            {
-                Label = "狀態",
-                Type = BasicInfoDisplayComponent.FieldType.Status,
-                Value = supplierType?.Status,
-                IconClass = "fas fa-flag",
-                IconBgClass = "bg-success bg-opacity-10",
-                IconTextClass = "text-success",
-                ColSize = 6
-            },
+
             new()
             {
                 Label = "備註",

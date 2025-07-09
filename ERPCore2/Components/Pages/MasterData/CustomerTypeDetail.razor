@@ -115,8 +115,7 @@
                         IconClass="fas fa-users"
                         IconColor="text-primary"
                         Fields="@GetCustomerTypeBasicFields()"
-                        ShowFieldCount="false"
-                        DefaultColSize="6" />
+                        ShowFieldCount="false" />
                 </div>
             },
             
@@ -200,8 +199,16 @@
                 ValueBold = true,
                 IconClass = "fas fa-users",
                 IconBgClass = "bg-primary bg-opacity-10",
-                IconTextClass = "text-primary",
-                ColSize = 6
+                IconTextClass = "text-primary"
+            },
+            new()
+            {
+                Label = "狀態",
+                Type = BasicInfoDisplayComponent.FieldType.Status,
+                Value = customerType?.Status,
+                IconClass = "fas fa-flag",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success"
             },
             new()
             {
@@ -212,16 +219,6 @@
                 IconBgClass = "bg-info bg-opacity-10",
                 IconTextClass = "text-info",
                 ColSize = 12
-            },
-            new()
-            {
-                Label = "狀態",
-                Type = BasicInfoDisplayComponent.FieldType.Status,
-                Value = customerType?.Status,
-                IconClass = "fas fa-flag",
-                IconBgClass = "bg-success bg-opacity-10",
-                IconTextClass = "text-success",
-                ColSize = 6
             },
             new()
             {

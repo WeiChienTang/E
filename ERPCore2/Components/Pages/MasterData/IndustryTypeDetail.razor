@@ -144,8 +144,7 @@
                         IconClass="fas fa-industry"
                         IconColor="text-primary"
                         Fields="@GetIndustryTypeBasicFields()"
-                        ShowFieldCount="false"
-                        DefaultColSize="6" />
+                        ShowFieldCount="false" />
                 </div>
             },
             
@@ -314,8 +313,7 @@
                 EmptyText = "未設定",
                 IconClass = "fas fa-barcode",
                 IconBgClass = "bg-primary bg-opacity-10",
-                IconTextClass = "text-primary",
-                ColSize = 6
+                IconTextClass = "text-primary"
             },
             new()
             {
@@ -324,8 +322,7 @@
                 ValueBold = true,
                 IconClass = "fas fa-industry",
                 IconBgClass = "bg-info bg-opacity-10",
-                IconTextClass = "text-info",
-                ColSize = 6
+                IconTextClass = "text-info"
             },
             new()
             {
@@ -334,8 +331,7 @@
                 Value = industryType?.Status,
                 IconClass = "fas fa-flag",
                 IconBgClass = "bg-success bg-opacity-10",
-                IconTextClass = "text-success",
-                ColSize = 6
+                IconTextClass = "text-success"
             },
             new()
             {
@@ -344,8 +340,7 @@
                 Format = BasicInfoDisplayComponent.FieldFormat.DateTime,
                 IconClass = "fas fa-calendar-plus",
                 IconBgClass = "bg-secondary bg-opacity-10",
-                IconTextClass = "text-secondary",
-                ColSize = 6
+                IconTextClass = "text-secondary"
             },
             new()
             {
@@ -354,8 +349,7 @@
                 EmptyText = "系統",
                 IconClass = "fas fa-user",
                 IconBgClass = "bg-info bg-opacity-10",
-                IconTextClass = "text-info",
-                ColSize = 6
+                IconTextClass = "text-info"
             },
             new()
             {
@@ -365,8 +359,7 @@
                 VisibilityCondition = () => industryType?.UpdatedAt.HasValue == true,
                 IconClass = "fas fa-calendar-edit",
                 IconBgClass = "bg-warning bg-opacity-10",
-                IconTextClass = "text-warning",
-                ColSize = 6
+                IconTextClass = "text-warning"
             },
             new()
             {
@@ -376,8 +369,7 @@
                 VisibilityCondition = () => industryType?.UpdatedAt.HasValue == true,
                 IconClass = "fas fa-user-edit",
                 IconBgClass = "bg-warning bg-opacity-10",
-                IconTextClass = "text-warning",
-                ColSize = 6
+                IconTextClass = "text-warning"
             }
         };
         }

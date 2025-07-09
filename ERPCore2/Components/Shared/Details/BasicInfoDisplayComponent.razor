@@ -20,7 +20,8 @@
                 </h6>
             </div>
         }
-        <div class="card-body p-4">            <div class="row g-4">
+        <div class="card-body p-4">            
+            <div class="row g-4">
                 @foreach (var field in Fields.Where(f => ShouldShowField(f)))
                 {
                     <div class="col-md-@(field.ColSize ?? DefaultColSize)">
@@ -119,7 +120,7 @@ else
     // 顯示選項
     [Parameter] public bool ShowFieldCount { get; set; } = false;
     [Parameter] public bool ShowStatistics { get; set; } = false;
-    [Parameter] public int DefaultColSize { get; set; } = 6;
+    [Parameter] public int DefaultColSize { get; set; } = 3;
     [Parameter] public string? EmptyMessage { get; set; }
 
     // 樣式選項

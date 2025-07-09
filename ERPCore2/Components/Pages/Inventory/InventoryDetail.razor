@@ -9,6 +9,7 @@
 @using ERPCore2.Components.Shared.Details
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Components.Shared.Badges
+@using ERPCore2.Components.Shared.Cards
 @using Microsoft.AspNetCore.Components.Web
 @inject IInventoryStockService InventoryStockService
 @inject IInventoryTransactionService InventoryTransactionService
@@ -73,113 +74,48 @@ else
         <!-- 商品基本資訊卡片 -->
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card shadow">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-box me-2"></i>商品基本資訊
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <DetailFieldComponent Label="商品名稱" Value="@product.ProductName" IsBold="true" />
-                                <DetailFieldComponent Label="商品代碼" Value="@product.ProductCode" />
-                                <DetailFieldComponent Label="商品分類" Value="@(product.ProductCategory?.CategoryName ?? "未分類")" />
-                                <DetailFieldComponent Label="規格" Value="@product.Specification" EmptyText="無" />
-                            </div>
-                            <div class="col-md-6">
-                                <DetailFieldComponent Label="單位" Value="@(product.Unit?.UnitName ?? "未設定")" />
-                                <DetailFieldComponent Label="售價" Value="@FormatCurrency(product.UnitPrice)" />
-                                <DetailFieldComponent Label="成本價" Value="@FormatCurrency(product.CostPrice)" />
-                                <DetailFieldComponent Label="狀態">
-                                    <StatusBadgeComponent Status="@product.Status" />
-                                </DetailFieldComponent>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <BasicInfoDisplayComponent 
+                    Title="商品基本資訊"
+                    IconClass="fas fa-box"
+                    IconColor="text-white"
+                    Fields="@GetProductBasicInfoFields()"
+                    HeaderClass="bg-primary text-white"
+                    CardClass="shadow" />
             </div>
         </div>
 
         <!-- 庫存統計卡片 -->
+        <StatisticsCardContainer>
+            <StatisticsCard Title="總庫存量"
+                           Value="@totalStock"
+                           IconClass="fas fa-boxes"
+                           BorderColor="primary"
+                           TextColor="primary" />
+
+            <StatisticsCard Title="可用庫存"
+                           Value="@availableStock"
+                           IconClass="fas fa-check-circle"
+                           BorderColor="success"
+                           TextColor="success" />
+
+            <StatisticsCard Title="預留庫存"
+                           Value="@reservedStock"
+                           IconClass="fas fa-lock"
+                           BorderColor="warning"
+                           TextColor="warning" />
+
+            <StatisticsCard Title="在途庫存"
+                           Value="@inTransitStock"
+                           IconClass="fas fa-truck"
+                           BorderColor="info"
+                           TextColor="info" />
+        </StatisticsCardContainer>
+
+        <!-- 倉庫庫存分佈與預留庫存明細 -->
         <div class="row mb-4">
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-primary shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                    總庫存量
-                                </div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">@totalStock</div>
-                            </div>
-                            <div class="col-auto">
-                                <i class="fas fa-boxes fa-2x text-gray-300"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-success shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                    可用庫存
-                                </div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">@availableStock</div>
-                            </div>
-                            <div class="col-auto">
-                                <i class="fas fa-check-circle fa-2x text-gray-300"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-warning shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                    預留庫存
-                                </div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">@reservedStock</div>
-                            </div>
-                            <div class="col-auto">
-                                <i class="fas fa-lock fa-2x text-gray-300"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-info shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                    在途庫存
-                                </div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">@inTransitStock</div>
-                            </div>
-                            <div class="col-auto">
-                                <i class="fas fa-truck fa-2x text-gray-300"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 倉庫庫存分佈 -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card shadow">
+            <!-- 倉庫庫存分佈 -->
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow h-100">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                         <h6 class="m-0 font-weight-bold text-primary">
                             <i class="fas fa-warehouse me-2"></i>倉庫庫存分佈
@@ -208,21 +144,19 @@ else
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- 預留庫存明細 -->
-        @if (reservations.Any())
-        {
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card shadow">
-                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                            <h6 class="m-0 font-weight-bold text-warning">
-                                <i class="fas fa-lock me-2"></i>預留庫存明細
-                            </h6>
-                            <span class="badge bg-warning">@reservations.Count 筆預留</span>
-                        </div>
-                        <div class="card-body p-0">
+            <!-- 預留庫存明細 -->
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow h-100">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-warning">
+                            <i class="fas fa-lock me-2"></i>預留庫存明細
+                        </h6>
+                        <span class="badge bg-warning">@reservations.Count 筆預留</span>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (reservations.Any())
+                        {
                             <GenericTableComponent TItem="InventoryReservation"
                                                   Items="@reservations"
                                                   ColumnDefinitions="@reservationColumnDefinitions"
@@ -231,11 +165,18 @@ else
                                                   IsHoverable="true"
                                                   EnableSorting="false"
                                                   EmptyMessage="沒有預留庫存資料" />
-                        </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <i class="fas fa-lock fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">此商品目前沒有任何預留庫存</p>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
-        }
+        </div>
 
         <!-- 最近異動記錄 -->
         @if (recentTransactions.Any())
@@ -888,5 +829,90 @@ else
                 additionalData: new { ProductId }
             );
         }
+    }
+
+    private List<BasicInfoDisplayComponent.BasicInfoField> GetProductBasicInfoFields()
+    {
+        if (product == null) return new List<BasicInfoDisplayComponent.BasicInfoField>();
+
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new BasicInfoDisplayComponent.BasicInfoField
+            {
+                Label = "商品名稱",
+                Value = product.ProductName,
+                IsPrimary = true,
+                ValueBold = true,
+                IconClass = "fas fa-box",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary"
+            },
+            new BasicInfoDisplayComponent.BasicInfoField
+            {
+                Label = "商品代碼",
+                Value = product.ProductCode,
+                Format = BasicInfoDisplayComponent.FieldFormat.Code,
+                IconClass = "fas fa-barcode",
+                IconBgClass = "bg-secondary bg-opacity-10",
+                IconTextClass = "text-secondary"
+            },
+            new BasicInfoDisplayComponent.BasicInfoField
+            {
+                Label = "商品分類",
+                Value = product.ProductCategory?.CategoryName ?? "未分類",
+                IconClass = "fas fa-tags",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info"
+            },
+            new BasicInfoDisplayComponent.BasicInfoField
+            {
+                Label = "規格",
+                Value = product.Specification,
+                EmptyText = "無",
+                IconClass = "fas fa-ruler",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning"
+            },
+            new BasicInfoDisplayComponent.BasicInfoField
+            {
+                Label = "單位",
+                Value = product.Unit?.UnitName ?? "未設定",
+                IconClass = "fas fa-balance-scale",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success"
+            },
+            new BasicInfoDisplayComponent.BasicInfoField
+            {
+                Label = "售價",
+                Value = product.UnitPrice,
+                Format = BasicInfoDisplayComponent.FieldFormat.Currency,
+                IconClass = "fas fa-dollar-sign",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success"
+            },
+            new BasicInfoDisplayComponent.BasicInfoField
+            {
+                Label = "成本價",
+                Value = product.CostPrice,
+                Format = BasicInfoDisplayComponent.FieldFormat.Currency,
+                IconClass = "fas fa-calculator",
+                IconBgClass = "bg-danger bg-opacity-10",
+                IconTextClass = "text-danger"
+            },
+            new BasicInfoDisplayComponent.BasicInfoField
+            {
+                Label = "狀態",
+                Type = BasicInfoDisplayComponent.FieldType.Custom,
+                CustomContent = builder =>
+                {
+                    builder.OpenComponent<StatusBadgeComponent>(0);
+                    builder.AddAttribute(1, "Status", product.Status);
+                    builder.CloseComponent();
+                },
+                IconClass = "fas fa-info-circle",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary"
+            }
+        };
     }
 }

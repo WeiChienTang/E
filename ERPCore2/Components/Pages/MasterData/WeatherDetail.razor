@@ -123,8 +123,7 @@
                             IconClass="fas fa-cloud-sun"
                             IconColor="text-primary"
                             Fields="@GetWeatherBasicFields()"
-                            ShowFieldCount="false"
-                            DefaultColSize="6" />
+                            ShowFieldCount="false" />
                     </div>
                 },
                   new GenericDetailPageComponent<Weather, IWeatherService>.TabSection
@@ -167,8 +166,7 @@
                     EmptyText = "未設定",
                     IconClass = "fas fa-barcode",
                     IconBgClass = "bg-primary bg-opacity-10",
-                    IconTextClass = "text-primary",
-                    ColSize = 6
+                    IconTextClass = "text-primary"
                 },
                 new()
                 {
@@ -177,8 +175,7 @@
                     ValueBold = true,
                     IconClass = "fas fa-cloud-sun",
                     IconBgClass = "bg-info bg-opacity-10",
-                    IconTextClass = "text-info",
-                    ColSize = 6
+                    IconTextClass = "text-info"
                 },
                 new()
                 {
@@ -187,8 +184,7 @@
                     VisibilityCondition = () => !string.IsNullOrEmpty(weather?.Icon),
                     IconClass = "fas fa-image",
                     IconBgClass = "bg-secondary bg-opacity-10",
-                    IconTextClass = "text-secondary",
-                    ColSize = 6
+                    IconTextClass = "text-secondary"
                 },
                 new()
                 {
@@ -198,8 +194,7 @@
                     VisibilityCondition = () => weather?.ReferenceTemperature.HasValue == true,
                     IconClass = "fas fa-thermometer-half",
                     IconBgClass = "bg-warning bg-opacity-10",
-                    IconTextClass = "text-warning",
-                    ColSize = 6
+                    IconTextClass = "text-warning"
                 },
                 new()
                 {
@@ -208,8 +203,7 @@
                     Value = weather?.Status,
                     IconClass = "fas fa-flag",
                     IconBgClass = "bg-success bg-opacity-10",
-                    IconTextClass = "text-success",
-                    ColSize = 6
+                    IconTextClass = "text-success"
                 },
                 new()
                 {
