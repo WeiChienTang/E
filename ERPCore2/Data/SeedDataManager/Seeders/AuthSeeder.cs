@@ -45,7 +45,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { PermissionCode = "Customer.Read", PermissionName = "檢視客戶", Module = "Customer", Action = "Read", PermissionGroup = "客戶管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Customer.Update", PermissionName = "修改客戶", Module = "Customer", Action = "Update", PermissionGroup = "客戶管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Customer.Delete", PermissionName = "刪除客戶", Module = "Customer", Action = "Delete", PermissionGroup = "客戶管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
-                  // 供應商管理權限
+
+                // 供應商管理權限
                 new Permission { PermissionCode = "Supplier.Create", PermissionName = "建立供應商", Module = "Supplier", Action = "Create", PermissionGroup = "供應商管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Supplier.Read", PermissionName = "檢視供應商", Module = "Supplier", Action = "Read", PermissionGroup = "供應商管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Supplier.Update", PermissionName = "修改供應商", Module = "Supplier", Action = "Update", PermissionGroup = "供應商管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
@@ -70,19 +71,15 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { PermissionCode = "ProductCategory.Update", PermissionName = "修改產品分類", Module = "ProductCategory", Action = "Update", PermissionGroup = "產品管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "ProductCategory.Delete", PermissionName = "刪除產品分類", Module = "ProductCategory", Action = "Delete", PermissionGroup = "產品管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 
-                // BOM基礎元素 - 材質管理權限
+                // MasterData管理權限
                 new Permission { PermissionCode = "Material.Create", PermissionName = "建立材質", Module = "Material", Action = "Create", PermissionGroup = "BOM基礎元素", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Material.Read", PermissionName = "檢視材質", Module = "Material", Action = "Read", PermissionGroup = "BOM基礎元素", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Material.Update", PermissionName = "修改材質", Module = "Material", Action = "Update", PermissionGroup = "BOM基礎元素", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Material.Delete", PermissionName = "刪除材質", Module = "Material", Action = "Delete", PermissionGroup = "BOM基礎元素", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
-                
-                // BOM基礎元素 - 天氣管理權限
                 new Permission { PermissionCode = "Weather.Create", PermissionName = "建立天氣", Module = "Weather", Action = "Create", PermissionGroup = "BOM基礎元素", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Weather.Read", PermissionName = "檢視天氣", Module = "Weather", Action = "Read", PermissionGroup = "BOM基礎元素", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Weather.Update", PermissionName = "修改天氣", Module = "Weather", Action = "Update", PermissionGroup = "BOM基礎元素", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Weather.Delete", PermissionName = "刪除天氣", Module = "Weather", Action = "Delete", PermissionGroup = "BOM基礎元素", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
-                
-                // BOM基礎元素 - 顏色管理權限
                 new Permission { PermissionCode = "Color.Create", PermissionName = "建立顏色", Module = "Color", Action = "Create", PermissionGroup = "BOM基礎元素", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Color.Read", PermissionName = "檢視顏色", Module = "Color", Action = "Read", PermissionGroup = "BOM基礎元素", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Color.Update", PermissionName = "修改顏色", Module = "Color", Action = "Update", PermissionGroup = "BOM基礎元素", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
