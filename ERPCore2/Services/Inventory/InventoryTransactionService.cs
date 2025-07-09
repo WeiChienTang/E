@@ -13,13 +13,13 @@ namespace ERPCore2.Services.Inventory
     /// </summary>
     public class InventoryTransactionService : GenericManagementService<InventoryTransaction>, IInventoryTransactionService
     {
-        public InventoryTransactionService(AppDbContext context) : base(context)
+        public InventoryTransactionService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
         public InventoryTransactionService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<InventoryTransaction>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<InventoryTransaction>> logger) : base(contextFactory, logger)
         {
         }
 
@@ -653,3 +653,4 @@ namespace ERPCore2.Services.Inventory
         #endregion
     }
 }
+

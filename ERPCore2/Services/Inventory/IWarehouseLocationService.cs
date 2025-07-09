@@ -7,3 +7,4 @@ namespace ERPCore2.Services
         Task<ServiceResult<IEnumerable<WarehouseLocation>>> GetByWarehouseIdAsync(int warehouseId);
     }
 }
+

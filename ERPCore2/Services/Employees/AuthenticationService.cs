@@ -21,7 +21,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 完整建構子 (包含 ILogger)
         /// </summary>
-        public AuthenticationService(AppDbContext context, ILogger<AuthenticationService> logger)
+        public AuthenticationService(IDbContextFactory<AppDbContext> contextFactory, ILogger<AuthenticationService> logger)
         {
             _context = context;
             _logger = logger;
@@ -30,7 +30,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 簡易建構子
         /// </summary>
-        public AuthenticationService(AppDbContext context)
+        public AuthenticationService(IDbContextFactory<AppDbContext> contextFactory)
         {
             _context = context;
         }
@@ -381,3 +381,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

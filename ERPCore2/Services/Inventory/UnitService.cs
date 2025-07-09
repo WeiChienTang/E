@@ -16,15 +16,15 @@ namespace ERPCore2.Services
         /// 完整建構子 - 使用 ILogger
         /// </summary>
         public UnitService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<Unit>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<Unit>> logger) : base(contextFactory, logger)
         {
         }
 
         /// <summary>
         /// 簡易建構子 - 不使用 ILogger
         /// </summary>
-        public UnitService(AppDbContext context) : base(context)
+        public UnitService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 

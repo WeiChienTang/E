@@ -116,3 +116,4 @@ namespace ERPCore2.Services.Notifications
         }
     }
 }
+

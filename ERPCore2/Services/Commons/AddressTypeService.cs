@@ -15,12 +15,12 @@ namespace ERPCore2.Services
     public class AddressTypeService : GenericManagementService<AddressType>, IAddressTypeService
     {
         public AddressTypeService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<AddressType>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<AddressType>> logger) : base(contextFactory, logger)
         {
         }
 
-        public AddressTypeService(AppDbContext context) : base(context)
+        public AddressTypeService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 

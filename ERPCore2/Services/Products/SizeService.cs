@@ -15,13 +15,13 @@ namespace ERPCore2.Services
     {
         // 完整建構子
         public SizeService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<Size>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<Size>> logger) : base(contextFactory, logger)
         {
         }
 
         // 簡易建構子
-        public SizeService(AppDbContext context) : base(context)
+        public SizeService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
@@ -263,3 +263,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

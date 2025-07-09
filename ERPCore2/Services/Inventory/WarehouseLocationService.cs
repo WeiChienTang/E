@@ -13,17 +13,17 @@ namespace ERPCore2.Services
 
         // 完整建構子
         public WarehouseLocationService(
-            AppDbContext context, 
+            IDbContextFactory<AppDbContext> contextFactory, 
             ILogger<GenericManagementService<WarehouseLocation>> logger, 
-            IErrorLogService errorLogService) : base(context, logger)
+            IErrorLogService errorLogService) : base(contextFactory, logger)
         {
             _errorLogService = errorLogService;
         }
 
         // 簡易建構子
         public WarehouseLocationService(
-            AppDbContext context, 
-            IErrorLogService errorLogService) : base(context)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            IErrorLogService errorLogService) : base(contextFactory)
         {
             _errorLogService = errorLogService;
         }
@@ -165,3 +165,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

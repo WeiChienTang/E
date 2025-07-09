@@ -15,12 +15,12 @@ namespace ERPCore2.Services
     public class IndustryTypeService : GenericManagementService<IndustryType>, IIndustryTypeService
     {
         public IndustryTypeService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<IndustryType>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<IndustryType>> logger) : base(contextFactory, logger)
         {
         }
 
-        public IndustryTypeService(AppDbContext context) : base(context)
+        public IndustryTypeService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
@@ -218,3 +218,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

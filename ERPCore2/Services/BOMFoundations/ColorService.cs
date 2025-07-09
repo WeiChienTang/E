@@ -11,12 +11,12 @@ namespace ERPCore2.Services
     public class ColorService : GenericManagementService<Color>, IColorService
     {
         public ColorService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<Color>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<Color>> logger) : base(contextFactory, logger)
         {
         }
 
-        public ColorService(AppDbContext context) : base(context)
+        public ColorService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 

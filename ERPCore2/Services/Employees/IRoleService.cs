@@ -101,3 +101,4 @@ namespace ERPCore2.Services
         ServiceResult<bool> ValidateRoleData(Role role);
     }
 }
+

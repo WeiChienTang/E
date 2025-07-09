@@ -16,12 +16,12 @@ namespace ERPCore2.Services
     public class CustomerAddressService : GenericManagementService<CustomerAddress>, ICustomerAddressService
     {
         public CustomerAddressService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<CustomerAddress>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<CustomerAddress>> logger) : base(contextFactory, logger)
         {
         }
 
-        public CustomerAddressService(AppDbContext context) : base(context)
+        public CustomerAddressService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
@@ -842,3 +842,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

@@ -17,8 +17,8 @@ namespace ERPCore2.Services
         /// 完整建構子 - 包含 ILogger
         /// </summary>
         public SupplierService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<Supplier>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<Supplier>> logger) : base(contextFactory, logger)
         {
         }
 
@@ -26,7 +26,7 @@ namespace ERPCore2.Services
         /// 簡易建構子 - 不包含 ILogger
         /// </summary>
         public SupplierService(
-            AppDbContext context) : base(context)
+            IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
@@ -34,9 +34,11 @@ namespace ERPCore2.Services
 
         public override async Task<List<Supplier>> GetAllAsync()
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _dbSet
+                return await context.Suppliers
                     .Include(s => s.SupplierType)
                     .Include(s => s.IndustryType)
                     .Where(s => !s.IsDeleted)
@@ -52,9 +54,11 @@ namespace ERPCore2.Services
 
         public override async Task<Supplier?> GetByIdAsync(int id)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _dbSet
+                return await context.Suppliers
                     .Include(s => s.SupplierType)
                     .Include(s => s.IndustryType)
                     .Include(s => s.SupplierContacts)
@@ -72,12 +76,14 @@ namespace ERPCore2.Services
 
         public override async Task<List<Supplier>> SearchAsync(string searchTerm)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                return await context.Suppliers
                     .Include(s => s.SupplierType)
                     .Include(s => s.IndustryType)
                     .Where(s => !s.IsDeleted &&
@@ -152,9 +158,11 @@ namespace ERPCore2.Services
 
         public async Task<Supplier?> GetBySupplierCodeAsync(string supplierCode)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _dbSet
+                return await context.Suppliers
                     .Include(s => s.SupplierType)
                     .Include(s => s.IndustryType)
                     .FirstOrDefaultAsync(s => s.SupplierCode == supplierCode && !s.IsDeleted);
@@ -169,9 +177,11 @@ namespace ERPCore2.Services
 
         public async Task<bool> IsSupplierCodeExistsAsync(string supplierCode, int? excludeId = null)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                var query = _dbSet.Where(s => s.SupplierCode == supplierCode && !s.IsDeleted);
+                var query = context.Suppliers.Where(s => s.SupplierCode == supplierCode && !s.IsDeleted);
                 
                 if (excludeId.HasValue)
                     query = query.Where(s => s.Id != excludeId.Value);
@@ -188,9 +198,11 @@ namespace ERPCore2.Services
 
         public async Task<List<Supplier>> GetBySupplierTypeAsync(int supplierTypeId)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _dbSet
+                return await context.Suppliers
                     .Include(s => s.SupplierType)
                     .Include(s => s.IndustryType)
                     .Where(s => s.SupplierTypeId == supplierTypeId && !s.IsDeleted)
@@ -207,9 +219,11 @@ namespace ERPCore2.Services
 
         public async Task<List<Supplier>> GetByIndustryTypeAsync(int industryTypeId)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _dbSet
+                return await context.Suppliers
                     .Include(s => s.SupplierType)
                     .Include(s => s.IndustryType)
                     .Where(s => s.IndustryTypeId == industryTypeId && !s.IsDeleted)
@@ -230,9 +244,11 @@ namespace ERPCore2.Services
 
         public async Task<List<SupplierType>> GetSupplierTypesAsync()
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _context.SupplierTypes
+                return await context.SupplierTypes
                     .Where(st => st.Status == EntityStatus.Active && !st.IsDeleted)
                     .OrderBy(st => st.TypeName)
                     .ToListAsync();
@@ -246,9 +262,11 @@ namespace ERPCore2.Services
 
         public async Task<List<IndustryType>> GetIndustryTypesAsync()
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _context.IndustryTypes
+                return await context.IndustryTypes
                     .Where(it => it.Status == EntityStatus.Active && !it.IsDeleted)
                     .OrderBy(it => it.IndustryTypeName)
                     .ToListAsync();
@@ -266,9 +284,11 @@ namespace ERPCore2.Services
 
         public async Task<List<SupplierContact>> GetSupplierContactsAsync(int supplierId)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _context.SupplierContacts
+                return await context.SupplierContacts
                     .Include(sc => sc.ContactType)
                     .Where(sc => sc.SupplierId == supplierId && !sc.IsDeleted)
                     .OrderBy(sc => sc.ContactType!.TypeName)
@@ -284,10 +304,12 @@ namespace ERPCore2.Services
 
         public async Task<ServiceResult> UpdateSupplierContactsAsync(int supplierId, List<SupplierContact> contacts)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
                 // 取得現有聯絡資料
-                var existingContacts = await _context.SupplierContacts
+                var existingContacts = await context.SupplierContacts
                     .Where(sc => sc.SupplierId == supplierId && !sc.IsDeleted)
                     .ToListAsync();
 
@@ -321,7 +343,7 @@ namespace ERPCore2.Services
                             CreatedBy = "System", // TODO: 從認證取得使用者
                             Remarks = contact.Remarks
                         };
-                        _context.SupplierContacts.Add(newContact);
+                        context.SupplierContacts.Add(newContact);
                     }
                     else
                     {
@@ -337,7 +359,7 @@ namespace ERPCore2.Services
                     }
                 }
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -354,9 +376,11 @@ namespace ERPCore2.Services
 
         public async Task<List<SupplierAddress>> GetSupplierAddressesAsync(int supplierId)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _context.SupplierAddresses
+                return await context.SupplierAddresses
                     .Include(sa => sa.AddressType)
                     .Where(sa => sa.SupplierId == supplierId && !sa.IsDeleted)
                     .OrderBy(sa => sa.AddressType!.TypeName)
@@ -372,10 +396,12 @@ namespace ERPCore2.Services
 
         public async Task<ServiceResult> UpdateSupplierAddressesAsync(int supplierId, List<SupplierAddress> addresses)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
                 // 取得現有地址資料
-                var existingAddresses = await _context.SupplierAddresses
+                var existingAddresses = await context.SupplierAddresses
                     .Where(sa => sa.SupplierId == supplierId && !sa.IsDeleted)
                     .ToListAsync();
 
@@ -400,7 +426,7 @@ namespace ERPCore2.Services
                         // 新增
                         address.CreatedAt = DateTime.UtcNow;
                         address.UpdatedAt = DateTime.UtcNow;
-                        _context.SupplierAddresses.Add(address);
+                        context.SupplierAddresses.Add(address);
                     }
                     else
                     {
@@ -419,7 +445,7 @@ namespace ERPCore2.Services
                     }
                 }
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -436,6 +462,8 @@ namespace ERPCore2.Services
 
         public async Task<ServiceResult> UpdateSupplierStatusAsync(int supplierId, EntityStatus status)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
                 var supplier = await GetByIdAsync(supplierId);
@@ -447,7 +475,7 @@ namespace ERPCore2.Services
                 supplier.Status = status;
                 supplier.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -521,3 +549,6 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+
+
+

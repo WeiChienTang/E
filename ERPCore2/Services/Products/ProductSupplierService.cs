@@ -15,13 +15,13 @@ namespace ERPCore2.Services
     {
         // 完整建構子
         public ProductSupplierService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<ProductSupplier>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<ProductSupplier>> logger) : base(contextFactory, logger)
         {
         }
 
         // 簡易建構子
-        public ProductSupplierService(AppDbContext context) : base(context)
+        public ProductSupplierService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
@@ -575,3 +575,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

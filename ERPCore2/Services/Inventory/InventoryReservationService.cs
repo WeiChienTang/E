@@ -13,13 +13,13 @@ namespace ERPCore2.Services.Inventory
     /// </summary>
     public class InventoryReservationService : GenericManagementService<InventoryReservation>, IInventoryReservationService
     {
-        public InventoryReservationService(AppDbContext context) : base(context)
+        public InventoryReservationService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
         public InventoryReservationService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<InventoryReservation>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<InventoryReservation>> logger) : base(contextFactory, logger)
         {
         }
 
@@ -788,3 +788,4 @@ namespace ERPCore2.Services.Inventory
         #endregion
     }
 }
+

@@ -89,3 +89,4 @@ namespace ERPCore2.Services
         Task<ServiceResult<bool>> CanAccessModuleAsync(int employeeId, string modulePrefix);
     }
 }
+

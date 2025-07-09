@@ -17,15 +17,15 @@ namespace ERPCore2.Services
         /// 完整建構子 - 包含 ILogger
         /// </summary>
         public ProductCategoryService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<ProductCategory>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<ProductCategory>> logger) : base(contextFactory, logger)
         {
         }
 
         /// <summary>
         /// 簡易建構子 - 不包含 ILogger
         /// </summary>
-        public ProductCategoryService(AppDbContext context) : base(context)
+        public ProductCategoryService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
@@ -374,3 +374,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

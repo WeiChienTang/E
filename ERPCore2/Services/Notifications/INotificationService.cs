@@ -47,3 +47,4 @@ namespace ERPCore2.Services.Notifications
         Task ShowServiceResultAsync<T>(ServiceResult<T> result, string? successMessage = null);
     }
 }
+

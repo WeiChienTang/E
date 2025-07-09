@@ -13,11 +13,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class MaterialService : GenericManagementService<Material>, IMaterialService
     {
-        public MaterialService(AppDbContext context, ILogger<GenericManagementService<Material>> logger) : base(context, logger)
+        public MaterialService(IDbContextFactory<AppDbContext> contextFactory, ILogger<GenericManagementService<Material>> logger) : base(contextFactory, logger)
         {
         }
 
-        public MaterialService(AppDbContext context) : base(context)
+        public MaterialService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 

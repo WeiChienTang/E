@@ -18,15 +18,15 @@ namespace ERPCore2.Services
         /// 完整建構子
         /// </summary>
         public EmployeeAddressService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<EmployeeAddress>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<EmployeeAddress>> logger) : base(contextFactory, logger)
         {
         }
 
         /// <summary>
         /// 簡易建構子
         /// </summary>
-        public EmployeeAddressService(AppDbContext context) : base(context)
+        public EmployeeAddressService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
@@ -770,3 +770,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

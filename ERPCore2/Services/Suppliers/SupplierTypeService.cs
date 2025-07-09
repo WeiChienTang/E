@@ -18,15 +18,15 @@ namespace ERPCore2.Services
         /// 完整建構子 - 包含 ILogger
         /// </summary>
         public SupplierTypeService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<SupplierType>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<SupplierType>> logger) : base(contextFactory, logger)
         {
         }
 
         /// <summary>
         /// 簡易建構子 - 不包含 ILogger
         /// </summary>
-        public SupplierTypeService(AppDbContext context) : base(context)
+        public SupplierTypeService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
@@ -217,3 +217,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

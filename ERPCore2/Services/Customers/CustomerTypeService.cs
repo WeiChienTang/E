@@ -18,15 +18,15 @@ namespace ERPCore2.Services
         /// 完整建構子
         /// </summary>
         public CustomerTypeService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<CustomerType>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<CustomerType>> logger) : base(contextFactory, logger)
         {
         }
 
         /// <summary>
         /// 簡易建構子
         /// </summary>
-        public CustomerTypeService(AppDbContext context) : base(context)
+        public CustomerTypeService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
@@ -274,3 +274,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

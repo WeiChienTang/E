@@ -52,3 +52,4 @@ namespace ERPCore2.Services.Inventory
         Task<bool> IsTransactionNumberUniqueAsync(string transactionNumber, int? excludeId = null);
     }
 }
+

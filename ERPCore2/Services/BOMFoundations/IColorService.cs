@@ -35,3 +35,4 @@ namespace ERPCore2.Services
         Task<bool> IsHexCodeExistsAsync(string hexCode, int? excludeId = null);
     }
 }
+

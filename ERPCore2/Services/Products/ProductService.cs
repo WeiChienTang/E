@@ -17,15 +17,15 @@ namespace ERPCore2.Services
         /// 完整建構子 - 使用 ILogger
         /// </summary>
         public ProductService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<Product>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<Product>> logger) : base(contextFactory, logger)
         {
         }
 
         /// <summary>
         /// 簡易建構子 - 不使用 ILogger
         /// </summary>
-        public ProductService(AppDbContext context) : base(context)
+        public ProductService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
@@ -33,9 +33,11 @@ namespace ERPCore2.Services
 
         public override async Task<List<Product>> GetAllAsync()
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _dbSet
+                return await context.Products
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
@@ -52,9 +54,11 @@ namespace ERPCore2.Services
 
         public override async Task<Product?> GetByIdAsync(int id)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _dbSet
+                return await context.Products
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
@@ -71,12 +75,14 @@ namespace ERPCore2.Services
 
         public override async Task<List<Product>> SearchAsync(string searchTerm)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                return await context.Products
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
@@ -173,9 +179,11 @@ namespace ERPCore2.Services
 
         public async Task<Product?> GetByProductCodeAsync(string productCode)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _dbSet
+                return await context.Products
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
@@ -190,9 +198,11 @@ namespace ERPCore2.Services
 
         public async Task<bool> IsProductCodeExistsAsync(string productCode, int? excludeId = null)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                var query = _dbSet.Where(p => p.ProductCode == productCode && !p.IsDeleted);
+                var query = context.Products.Where(p => p.ProductCode == productCode && !p.IsDeleted);
                 
                 if (excludeId.HasValue)
                     query = query.Where(p => p.Id != excludeId.Value);
@@ -208,9 +218,11 @@ namespace ERPCore2.Services
 
         public async Task<List<Product>> GetByProductCategoryAsync(int productCategoryId)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _dbSet
+                return await context.Products
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
@@ -227,9 +239,11 @@ namespace ERPCore2.Services
 
         public async Task<List<Product>> GetByPrimarySupplierAsync(int supplierId)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _dbSet
+                return await context.Products
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
@@ -246,9 +260,11 @@ namespace ERPCore2.Services
 
         public async Task<List<Product>> GetActiveProductsAsync()
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _dbSet
+                return await context.Products
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
@@ -265,9 +281,11 @@ namespace ERPCore2.Services
 
         public async Task<List<Product>> GetLowStockProductsAsync()
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _dbSet
+                return await context.Products
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
@@ -286,9 +304,11 @@ namespace ERPCore2.Services
 
         public async Task<List<Product>> GetOverStockProductsAsync()
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _dbSet
+                return await context.Products
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
@@ -311,9 +331,11 @@ namespace ERPCore2.Services
 
         public async Task<List<ProductCategory>> GetProductCategoriesAsync()
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _context.ProductCategories
+                return await context.ProductCategories
                     .Where(pc => pc.Status == EntityStatus.Active && !pc.IsDeleted)
                     .OrderBy(pc => pc.CategoryName)
                     .ToListAsync();
@@ -327,9 +349,11 @@ namespace ERPCore2.Services
 
         public async Task<List<Supplier>> GetSuppliersAsync()
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _context.Suppliers
+                return await context.Suppliers
                     .Where(s => s.Status == EntityStatus.Active && !s.IsDeleted)
                     .OrderBy(s => s.CompanyName)
                     .ToListAsync();
@@ -343,9 +367,11 @@ namespace ERPCore2.Services
 
         public async Task<List<Unit>> GetUnitsAsync()
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                return await _context.Units
+                return await context.Units
                     .Where(u => u.IsActive && !u.IsDeleted)
                     .OrderBy(u => u.UnitName)
                     .ToListAsync();
@@ -365,7 +391,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _context.ProductSuppliers
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductSuppliers
                     .Include(ps => ps.Supplier)
                     .Where(ps => ps.ProductId == productId && !ps.IsDeleted)
                     .OrderBy(ps => ps.Supplier.CompanyName)
@@ -383,7 +410,8 @@ namespace ERPCore2.Services
             try
             {
                 // 取得現有供應商關聯
-                var existingRelations = await _context.ProductSuppliers
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var existingRelations = await context.ProductSuppliers
                     .Where(ps => ps.ProductId == productId && !ps.IsDeleted)
                     .ToListAsync();
 
@@ -420,7 +448,7 @@ namespace ERPCore2.Services
                             CreatedBy = "System", // TODO: 從認證取得使用者
                             Remarks = productSupplier.Remarks
                         };
-                        _context.ProductSuppliers.Add(newProductSupplier);
+                        context.ProductSuppliers.Add(newProductSupplier);
                     }
                     else
                     {
@@ -439,7 +467,7 @@ namespace ERPCore2.Services
                     }
                 }
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -453,6 +481,7 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var product = await GetByIdAsync(productId);
                 if (product == null)
                 {
@@ -462,7 +491,7 @@ namespace ERPCore2.Services
                 product.PrimarySupplierId = supplierId;
                 product.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -480,6 +509,7 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var product = await GetByIdAsync(productId);
                 if (product == null)
                 {
@@ -494,7 +524,7 @@ namespace ERPCore2.Services
                 product.CurrentStock = newStock;
                 product.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -508,6 +538,7 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var product = await GetByIdAsync(productId);
                 if (product == null)
                 {
@@ -523,7 +554,7 @@ namespace ERPCore2.Services
                 product.CurrentStock = newStock;
                 product.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 
                 _logger?.LogInformation("Stock adjusted for product {ProductId}: {Adjustment} (Reason: {Reason})", 
                     productId, adjustment, reason);
@@ -541,6 +572,7 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var product = await GetByIdAsync(productId);
                 if (product == null)
                 {
@@ -566,7 +598,7 @@ namespace ERPCore2.Services
                 product.MaxStockLevel = maxLevel;
                 product.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -584,6 +616,7 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var product = await GetByIdAsync(productId);
                 if (product == null)
                 {
@@ -604,7 +637,7 @@ namespace ERPCore2.Services
                 product.CostPrice = costPrice;
                 product.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -616,9 +649,11 @@ namespace ERPCore2.Services
 
         public async Task<ServiceResult> BatchUpdatePricesAsync(List<int> productIds, decimal? priceAdjustment, bool isPercentage)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                var products = await _dbSet
+                var products = await context.Products
                     .Where(p => productIds.Contains(p.Id) && !p.IsDeleted)
                     .ToListAsync();
 
@@ -654,7 +689,7 @@ namespace ERPCore2.Services
                     product.UpdatedAt = DateTime.UtcNow;
                 }
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -672,6 +707,7 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var product = await GetByIdAsync(productId);
                 if (product == null)
                 {
@@ -681,7 +717,7 @@ namespace ERPCore2.Services
                 product.IsActive = !product.IsActive;
                 product.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -693,9 +729,11 @@ namespace ERPCore2.Services
 
         public async Task<ServiceResult> BatchSetActiveStatusAsync(List<int> productIds, bool isActive)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                var products = await _dbSet
+                var products = await context.Products
                     .Where(p => productIds.Contains(p.Id) && !p.IsDeleted)
                     .ToListAsync();
 
@@ -710,7 +748,7 @@ namespace ERPCore2.Services
                     product.UpdatedAt = DateTime.UtcNow;
                 }
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)

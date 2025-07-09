@@ -64,3 +64,4 @@ namespace ERPCore2.Services
         ServiceResult<bool> ValidatePermissionCode(string permissionCode);
     }
 }
+

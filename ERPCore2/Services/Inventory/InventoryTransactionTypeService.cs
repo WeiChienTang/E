@@ -17,15 +17,15 @@ namespace ERPCore2.Services
         /// 完整建構子
         /// </summary>
         public InventoryTransactionTypeService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<InventoryTransactionType>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<InventoryTransactionType>> logger) : base(contextFactory, logger)
         {
         }
 
         /// <summary>
         /// 簡易建構子
         /// </summary>
-        public InventoryTransactionTypeService(AppDbContext context) : base(context)
+        public InventoryTransactionTypeService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 

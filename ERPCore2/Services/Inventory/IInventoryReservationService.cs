@@ -60,3 +60,4 @@ namespace ERPCore2.Services.Inventory
         Task<List<InventoryReservation>> GetReservationsForStockCheckAsync(int productId, int warehouseId);
     }
 }
+

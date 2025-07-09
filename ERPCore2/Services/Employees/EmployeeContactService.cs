@@ -15,12 +15,12 @@ namespace ERPCore2.Services
     public class EmployeeContactService : GenericManagementService<EmployeeContact>, IEmployeeContactService
     {
         public EmployeeContactService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<EmployeeContact>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<EmployeeContact>> logger) : base(contextFactory, logger)
         {
         }
 
-        public EmployeeContactService(AppDbContext context) : base(context)
+        public EmployeeContactService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
@@ -419,4 +419,5 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+
 

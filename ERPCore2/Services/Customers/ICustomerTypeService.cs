@@ -15,3 +15,4 @@ namespace ERPCore2.Services
         Task<(List<CustomerType> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize);
     }
 }
+

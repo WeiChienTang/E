@@ -52,3 +52,4 @@ namespace ERPCore2.Services
         ServiceResult EnsureUniquePrimaryContacts(List<CustomerContact> customerContacts);
     }
 }
+

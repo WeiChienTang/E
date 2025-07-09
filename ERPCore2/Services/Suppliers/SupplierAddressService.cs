@@ -17,17 +17,17 @@ namespace ERPCore2.Services
         /// 完整建構子（含Logger）
         /// </summary>
         public SupplierAddressService(
-            AppDbContext context, 
+            IDbContextFactory<AppDbContext> contextFactory, 
             ILogger<GenericManagementService<SupplierAddress>> logger) 
-            : base(context, logger)
+            : base(contextFactory, logger)
         {
         }
 
         /// <summary>
         /// 簡易建構子（不含Logger）
         /// </summary>
-        public SupplierAddressService(AppDbContext context) 
-            : base(context)
+        public SupplierAddressService(IDbContextFactory<AppDbContext> contextFactory) 
+            : base(contextFactory)
         {
         }
 
@@ -551,4 +551,5 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+
 

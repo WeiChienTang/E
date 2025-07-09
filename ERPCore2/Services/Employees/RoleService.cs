@@ -15,12 +15,12 @@ namespace ERPCore2.Services
     public class RoleService : GenericManagementService<Role>, IRoleService
     {
         public RoleService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<Role>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<Role>> logger) : base(contextFactory, logger)
         {
         }
 
-        public RoleService(AppDbContext context) : base(context)
+        public RoleService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
@@ -496,3 +496,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

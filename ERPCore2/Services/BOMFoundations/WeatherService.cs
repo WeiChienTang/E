@@ -10,12 +10,12 @@ namespace ERPCore2.Services
     public class WeatherService : GenericManagementService<Weather>, IWeatherService
     {
         public WeatherService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<Weather>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<Weather>> logger) : base(contextFactory, logger)
         {
         }
 
-        public WeatherService(AppDbContext context) : base(context)
+        public WeatherService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 

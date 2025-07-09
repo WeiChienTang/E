@@ -12,7 +12,7 @@ namespace ERPCore2.Services
     /// </summary>
     public class ErrorLogService : GenericManagementService<ErrorLog>, IErrorLogService
     {
-        public ErrorLogService(AppDbContext context) : base(context) { }
+        public ErrorLogService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory) { }
 
         /// <summary>
         /// 記錄錯誤並返回錯誤ID
@@ -422,3 +422,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

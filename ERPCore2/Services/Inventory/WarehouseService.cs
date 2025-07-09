@@ -17,15 +17,15 @@ namespace ERPCore2.Services
         /// 完整建構子 - 使用 ILogger
         /// </summary>
         public WarehouseService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<Warehouse>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<Warehouse>> logger) : base(contextFactory, logger)
         {
         }
 
         /// <summary>
         /// 簡易建構子 - 不使用 ILogger
         /// </summary>
-        public WarehouseService(AppDbContext context) : base(context)
+        public WarehouseService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 

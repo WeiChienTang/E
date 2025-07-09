@@ -19,15 +19,15 @@ namespace ERPCore2.Services
         /// 完整建構子 - 使用 ILogger
         /// </summary>
         public PermissionManagementService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<Permission>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<Permission>> logger) : base(contextFactory, logger)
         {
         }
 
         /// <summary>
         /// 簡易建構子 - 不使用 ILogger
         /// </summary>
-        public PermissionManagementService(AppDbContext context) : base(context)
+        public PermissionManagementService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
@@ -419,3 +419,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

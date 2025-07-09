@@ -73,3 +73,4 @@ namespace ERPCore2.Services
         Task<ServiceResult> SetAsPrimaryAsync(int employeeContactId);
     }
 }
+

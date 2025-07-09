@@ -77,3 +77,4 @@ namespace ERPCore2.Services
         Task<int> CleanupOldErrorsAsync(int daysToKeep = 30);
     }
 }
+

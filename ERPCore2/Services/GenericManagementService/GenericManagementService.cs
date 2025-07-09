@@ -15,23 +15,20 @@ namespace ERPCore2.Services.GenericManagementService
     public abstract class GenericManagementService<T> : IGenericManagementService<T> 
         where T : BaseEntity
     {
-    protected readonly AppDbContext _context;
-    protected readonly DbSet<T> _dbSet;
+    protected readonly IDbContextFactory<AppDbContext> _contextFactory;
     protected readonly ILogger<GenericManagementService<T>>? _logger;
 
         protected GenericManagementService(
-            AppDbContext context,
+            IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<T>> logger)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _dbSet = _context.Set<T>();
         }
 
-        protected GenericManagementService(AppDbContext context)
+        protected GenericManagementService(IDbContextFactory<AppDbContext> contextFactory)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            _dbSet = _context.Set<T>();
+            _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _logger = null;
         }
 
@@ -44,7 +41,10 @@ namespace ERPCore2.Services.GenericManagementService
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<T>();
+                
+                return await dbSet
                     .Where(x => !x.IsDeleted)
                     .OrderByDescending(x => x.CreatedAt)
                     .ToListAsync();
@@ -63,7 +63,10 @@ namespace ERPCore2.Services.GenericManagementService
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<T>();
+                
+                return await dbSet
                     .Where(x => !x.IsDeleted && x.Status == EntityStatus.Active)
                     .OrderByDescending(x => x.CreatedAt)
                     .ToListAsync();
@@ -82,7 +85,10 @@ namespace ERPCore2.Services.GenericManagementService
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<T>();
+                
+                return await dbSet
                     .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
             }
             catch (Exception ex)
@@ -116,8 +122,11 @@ namespace ERPCore2.Services.GenericManagementService
                     entity.Status = EntityStatus.Active;
                 }
 
-                _dbSet.Add(entity);
-                await _context.SaveChangesAsync();
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<T>();
+                
+                dbSet.Add(entity);
+                await context.SaveChangesAsync();
 
                 return ServiceResult<T>.Success(entity);
             }
@@ -135,8 +144,13 @@ namespace ERPCore2.Services.GenericManagementService
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<T>();
+                
                 // 檢查實體是否存在
-                var existingEntity = await GetByIdAsync(entity.Id);
+                var existingEntity = await dbSet
+                    .FirstOrDefaultAsync(x => x.Id == entity.Id && !x.IsDeleted);
+                    
                 if (existingEntity == null)
                 {
                     return ServiceResult<T>.Failure("找不到要更新的資料");
@@ -154,8 +168,8 @@ namespace ERPCore2.Services.GenericManagementService
                 entity.CreatedAt = existingEntity.CreatedAt; // 保持原建立時間
                 entity.CreatedBy = existingEntity.CreatedBy; // 保持原建立者
 
-                _context.Entry(existingEntity).CurrentValues.SetValues(entity);
-                await _context.SaveChangesAsync();
+                context.Entry(existingEntity).CurrentValues.SetValues(entity);
+                await context.SaveChangesAsync();
 
                 return ServiceResult<T>.Success(entity);
             }
@@ -173,7 +187,12 @@ namespace ERPCore2.Services.GenericManagementService
         {
             try
             {
-                var entity = await GetByIdAsync(id);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<T>();
+                
+                var entity = await dbSet
+                    .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+                    
                 if (entity == null)
                 {
                     return ServiceResult.Failure("找不到要刪除的資料");
@@ -182,7 +201,7 @@ namespace ERPCore2.Services.GenericManagementService
                 entity.IsDeleted = true;
                 entity.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -277,7 +296,10 @@ namespace ERPCore2.Services.GenericManagementService
         {
             try
             {
-                var entities = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<T>();
+                
+                var entities = await dbSet
                     .Where(x => ids.Contains(x.Id) && !x.IsDeleted)
                     .ToListAsync();
 
@@ -292,7 +314,7 @@ namespace ERPCore2.Services.GenericManagementService
                     entity.UpdatedAt = DateTime.UtcNow;
                 }
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -313,7 +335,10 @@ namespace ERPCore2.Services.GenericManagementService
         {
             try
             {
-                var query = _dbSet.Where(x => !x.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<T>();
+                
+                var query = dbSet.Where(x => !x.IsDeleted);
 
                 // 如果有搜尋條件，使用子類別的搜尋邏輯
                 if (!string.IsNullOrEmpty(searchTerm))
@@ -352,7 +377,10 @@ namespace ERPCore2.Services.GenericManagementService
         {
             try
             {
-                return await _dbSet.AnyAsync(x => x.Id == id && !x.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<T>();
+                
+                return await dbSet.AnyAsync(x => x.Id == id && !x.IsDeleted);
             }
             catch (Exception ex)
             {
@@ -368,7 +396,10 @@ namespace ERPCore2.Services.GenericManagementService
         {
             try
             {
-                return await _dbSet.CountAsync(x => !x.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<T>();
+                
+                return await dbSet.CountAsync(x => !x.IsDeleted);
             }
             catch (Exception ex)
             {
@@ -388,7 +419,12 @@ namespace ERPCore2.Services.GenericManagementService
         {
             try
             {
-                var entity = await GetByIdAsync(id);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<T>();
+                
+                var entity = await dbSet
+                    .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+                    
                 if (entity == null)
                 {
                     return ServiceResult.Failure("找不到指定的資料");
@@ -397,7 +433,7 @@ namespace ERPCore2.Services.GenericManagementService
                 entity.Status = status;
                 entity.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -414,7 +450,12 @@ namespace ERPCore2.Services.GenericManagementService
         {
             try
             {
-                var entity = await GetByIdAsync(id);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<T>();
+                
+                var entity = await dbSet
+                    .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+                    
                 if (entity == null)
                 {
                     return ServiceResult.Failure("找不到指定的資料");
@@ -426,7 +467,7 @@ namespace ERPCore2.Services.GenericManagementService
                     
                 entity.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -443,7 +484,10 @@ namespace ERPCore2.Services.GenericManagementService
         {
             try
             {
-                var entities = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<T>();
+                
+                var entities = await dbSet
                     .Where(x => ids.Contains(x.Id) && !x.IsDeleted)
                     .ToListAsync();
 
@@ -458,7 +502,7 @@ namespace ERPCore2.Services.GenericManagementService
                     entity.UpdatedAt = DateTime.UtcNow;
                 }
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)

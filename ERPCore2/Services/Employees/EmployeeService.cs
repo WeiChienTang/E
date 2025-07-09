@@ -19,15 +19,15 @@ namespace ERPCore2.Services
         /// 完整建構子 - 包含 Logger
         /// </summary>
         public EmployeeService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<Employee>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<Employee>> logger) : base(contextFactory, logger)
         {
         }
 
         /// <summary>
         /// 簡易建構子 - 不包含 Logger
         /// </summary>
-        public EmployeeService(AppDbContext context) : base(context)
+        public EmployeeService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
@@ -660,3 +660,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

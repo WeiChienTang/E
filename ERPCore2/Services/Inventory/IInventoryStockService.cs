@@ -51,3 +51,4 @@ namespace ERPCore2.Services.Inventory
         Task<ServiceResult> ValidateStockOperationAsync(int productId, int warehouseId, int quantity, bool isReduce);
     }
 }
+

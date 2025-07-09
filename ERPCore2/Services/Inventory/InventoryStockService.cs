@@ -14,13 +14,13 @@ namespace ERPCore2.Services.Inventory
     /// </summary>
     public class InventoryStockService : GenericManagementService<InventoryStock>, IInventoryStockService
     {
-        public InventoryStockService(AppDbContext context) : base(context)
+        public InventoryStockService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
         public InventoryStockService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<InventoryStock>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<InventoryStock>> logger) : base(contextFactory, logger)
         {
         }
 
@@ -815,3 +815,4 @@ namespace ERPCore2.Services.Inventory
         #endregion
     }
 }
+

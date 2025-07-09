@@ -20,7 +20,7 @@ namespace ERPCore2.Services
         private readonly IErrorLogService _errorLogService;
         private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(30);
 
-        public PermissionService(AppDbContext context, IMemoryCache cache, ILogger<PermissionService> logger, IErrorLogService errorLogService)
+        public PermissionService(IDbContextFactory<AppDbContext> contextFactory, IMemoryCache cache, ILogger<PermissionService> logger, IErrorLogService errorLogService)
         {
             _context = context;
             _cache = cache;
@@ -31,7 +31,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 簡易建構子 - 不包含 ILogger
         /// </summary>
-        public PermissionService(AppDbContext context, IMemoryCache cache, IErrorLogService errorLogService)
+        public PermissionService(IDbContextFactory<AppDbContext> contextFactory, IMemoryCache cache, IErrorLogService errorLogService)
         {
             _context = context;
             _cache = cache;
@@ -401,3 +401,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

@@ -15,12 +15,12 @@ namespace ERPCore2.Services
     public class ContactTypeService : GenericManagementService<ContactType>, IContactTypeService
     {
         public ContactTypeService(
-            AppDbContext context, 
-            ILogger<GenericManagementService<ContactType>> logger) : base(context, logger)
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<ContactType>> logger) : base(contextFactory, logger)
         {
         }
 
-        public ContactTypeService(AppDbContext context) : base(context)
+        public ContactTypeService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
@@ -219,3 +219,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

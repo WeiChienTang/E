@@ -112,3 +112,4 @@ namespace ERPCore2.Services
         Task<ServiceResult> UpdateEmployeeAddressesAsync(int employeeId, List<EmployeeAddress> addresses);
     }
 }
+

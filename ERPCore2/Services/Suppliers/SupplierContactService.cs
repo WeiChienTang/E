@@ -14,14 +14,14 @@ namespace ERPCore2.Services
     public class SupplierContactService : GenericManagementService<SupplierContact>, ISupplierContactService
     {
         public SupplierContactService(
-            AppDbContext context, 
+            IDbContextFactory<AppDbContext> contextFactory, 
             ILogger<GenericManagementService<SupplierContact>> logger, 
-            IErrorLogService errorLogService) : base(context, logger)
+            IErrorLogService errorLogService) : base(contextFactory, logger)
         {
         }
 
         // 簡易建構子
-        public SupplierContactService(AppDbContext context) : base(context)
+        public SupplierContactService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
@@ -523,3 +523,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+
