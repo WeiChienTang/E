@@ -36,7 +36,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.SupplierTypes
                     .Where(st => !st.IsDeleted)
                     .OrderBy(st => st.TypeName)
                     .ToListAsync();
@@ -57,7 +58,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.SupplierTypes
                     .Where(st => !st.IsDeleted &&
                                (st.TypeName.Contains(searchTerm) ||
                                 (st.Description != null && st.Description.Contains(searchTerm))))
@@ -159,7 +161,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(st => st.TypeName == typeName && !st.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.SupplierTypes.Where(st => st.TypeName == typeName && !st.IsDeleted);
                 
                 if (excludeId.HasValue)
                     query = query.Where(st => st.Id != excludeId.Value);
@@ -181,7 +184,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.SupplierTypes
                     .FirstOrDefaultAsync(st => st.TypeName == typeName && !st.IsDeleted);
             }
             catch (Exception ex)
@@ -198,8 +202,9 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 // 檢查是否有廠商使用此類型
-                var hasSuppliers = await _context.Suppliers
+                var hasSuppliers = await context.Suppliers
                     .AnyAsync(s => s.SupplierTypeId == supplierTypeId && !s.IsDeleted);
 
                 return !hasSuppliers;

@@ -33,7 +33,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.EmployeeContacts
                     .Include(ec => ec.Employee)
                     .Include(ec => ec.ContactType)
                     .Where(ec => !ec.IsDeleted &&
@@ -56,6 +57,7 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var errors = new List<string>();
 
                 // 基本驗證 - 員工ID
@@ -66,7 +68,7 @@ namespace ERPCore2.Services
                 else
                 {
                     // 檢查員工是否存在
-                    var employeeExists = await _context.Employees.AnyAsync(e => e.Id == entity.EmployeeId && !e.IsDeleted);
+                    var employeeExists = await context.Employees.AnyAsync(e => e.Id == entity.EmployeeId && !e.IsDeleted);
                     if (!employeeExists)
                     {
                         errors.Add("指定的員工不存在");
@@ -82,7 +84,7 @@ namespace ERPCore2.Services
                 // 聯絡類型驗證
                 if (entity.ContactTypeId.HasValue)
                 {
-                    var contactTypeExists = await _context.ContactTypes.AnyAsync(ct => ct.Id == entity.ContactTypeId.Value && !ct.IsDeleted);
+                    var contactTypeExists = await context.ContactTypes.AnyAsync(ct => ct.Id == entity.ContactTypeId.Value && !ct.IsDeleted);
                     if (!contactTypeExists)
                     {
                         errors.Add("指定的聯絡類型不存在");
@@ -90,7 +92,7 @@ namespace ERPCore2.Services
                 }
 
                 // 檢查是否重複（同一員工、同一聯絡類型、同一聯絡內容）
-                var duplicateExists = await _dbSet.AnyAsync(ec =>
+                var duplicateExists = await context.EmployeeContacts.AnyAsync(ec =>
                     ec.EmployeeId == entity.EmployeeId &&
                     ec.ContactTypeId == entity.ContactTypeId &&
                     ec.ContactValue == entity.ContactValue &&
@@ -115,7 +117,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.EmployeeContacts
                     .Include(ec => ec.Employee)
                     .Include(ec => ec.ContactType)
                     .Where(ec => !ec.IsDeleted)
@@ -134,7 +137,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.EmployeeContacts
                     .Include(ec => ec.Employee)
                     .Include(ec => ec.ContactType)
                     .FirstOrDefaultAsync(ec => ec.Id == id && !ec.IsDeleted);
@@ -334,7 +338,8 @@ namespace ERPCore2.Services
                 if (employeeId <= 0)
                     return ServiceResult<List<EmployeeContact>>.Failure("員工ID無效");
 
-                var contacts = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var contacts = await context.EmployeeContacts
                     .Include(ec => ec.ContactType)
                     .Where(ec => ec.EmployeeId == employeeId && !ec.IsDeleted)
                     .OrderBy(ec => ec.ContactType != null ? ec.ContactType.TypeName : string.Empty)
@@ -359,7 +364,8 @@ namespace ERPCore2.Services
                 if (contactTypeId <= 0)
                     return ServiceResult<List<EmployeeContact>>.Failure("聯絡類型ID無效");
 
-                var contacts = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var contacts = await context.EmployeeContacts
                     .Include(ec => ec.Employee)
                     .Where(ec => ec.ContactTypeId == contactTypeId && !ec.IsDeleted)
                     .OrderBy(ec => ec.Employee != null ? ec.Employee.EmployeeCode : string.Empty)
@@ -385,10 +391,12 @@ namespace ERPCore2.Services
                 if (contact == null)
                     return ServiceResult.Failure("找不到指定的員工聯絡資料");
 
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
                 // 將同一員工同一聯絡類型的其他聯絡方式設為非主要
                 if (contact.ContactTypeId.HasValue)
                 {
-                    var otherContacts = await _dbSet
+                    var otherContacts = await context.EmployeeContacts
                         .Where(ec => ec.EmployeeId == contact.EmployeeId &&
                                    ec.ContactTypeId == contact.ContactTypeId &&
                                    ec.Id != contact.Id &&
@@ -406,7 +414,7 @@ namespace ERPCore2.Services
                 contact.IsPrimary = true;
                 contact.UpdatedAt = DateTime.Now;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)

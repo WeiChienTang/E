@@ -27,7 +27,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Colors
                     .Where(c => !c.IsDeleted)
                     .OrderBy(c => c.Name)
                     .ToListAsync();
@@ -52,7 +53,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Colors
                     .Where(c => !c.IsDeleted &&
                                (c.Name.Contains(searchTerm) ||
                                 c.Code.Contains(searchTerm) ||
@@ -117,7 +119,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(c => c.Name == name && !c.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Colors.Where(c => c.Name == name && !c.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(c => c.Id != excludeId.Value);
@@ -143,7 +146,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(c => c.Code == code && !c.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Colors.Where(c => c.Code == code && !c.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(c => c.Id != excludeId.Value);
@@ -169,7 +173,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Colors
                     .Where(c => c.Code == code && !c.IsDeleted)
                     .FirstOrDefaultAsync();
             }
@@ -191,7 +196,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Colors
                     .Where(c => c.HexCode == hexCode && !c.IsDeleted)
                     .FirstOrDefaultAsync();
             }
@@ -213,7 +219,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(c => c.HexCode == hexCode && !c.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Colors.Where(c => c.HexCode == hexCode && !c.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(c => c.Id != excludeId.Value);

@@ -33,7 +33,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.CustomerContacts
                     .Include(cc => cc.Customer)
                     .Include(cc => cc.ContactType)
                     .Where(cc => !cc.IsDeleted &&
@@ -55,6 +56,7 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var errors = new List<string>();
 
                 // 基本驗證 - 客戶ID
@@ -65,7 +67,7 @@ namespace ERPCore2.Services
                 else
                 {
                     // 驗證客戶是否存在
-                    var customerExists = await _context.Customers
+                    var customerExists = await context.Customers
                         .AnyAsync(c => c.Id == entity.CustomerId && !c.IsDeleted);
                     if (!customerExists)
                     {
@@ -81,7 +83,7 @@ namespace ERPCore2.Services
                 else
                 {
                     // 驗證聯絡類型是否存在
-                    var contactTypeExists = await _context.ContactTypes
+                    var contactTypeExists = await context.ContactTypes
                         .AnyAsync(ct => ct.Id == entity.ContactTypeId && !ct.IsDeleted);
                     if (!contactTypeExists)
                     {
@@ -100,7 +102,7 @@ namespace ERPCore2.Services
                 }
 
                 // 檢查是否有重複的聯絡資料（同一客戶、同一聯絡類型）
-                var duplicateQuery = _context.CustomerContacts
+                var duplicateQuery = context.CustomerContacts
                     .Where(cc => cc.CustomerId == entity.CustomerId && 
                                cc.ContactTypeId == entity.ContactTypeId && 
                                !cc.IsDeleted);
@@ -135,7 +137,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.CustomerContacts
                     .Include(cc => cc.Customer)
                     .Include(cc => cc.ContactType)
                     .Where(cc => !cc.IsDeleted)
@@ -154,7 +157,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.CustomerContacts
                     .Include(cc => cc.Customer)
                     .Include(cc => cc.ContactType)
                     .FirstOrDefaultAsync(cc => cc.Id == id && !cc.IsDeleted);

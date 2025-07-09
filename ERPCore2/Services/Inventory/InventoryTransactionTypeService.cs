@@ -39,7 +39,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryTransactionTypes
                     .Where(t => !t.IsDeleted &&
                                (t.TypeName.Contains(searchTerm) ||
                                 t.TypeCode.Contains(searchTerm)))
@@ -62,7 +63,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(t => t.TypeCode == typeCode && !t.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.InventoryTransactionTypes.Where(t => t.TypeCode == typeCode && !t.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(t => t.Id != excludeId.Value);
@@ -86,7 +88,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryTransactionTypes
                     .Where(t => !t.IsDeleted && t.TransactionType == transactionType)
                     .OrderBy(t => t.TypeCode)
                     .ToListAsync();
@@ -107,7 +110,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryTransactionTypes
                     .Where(t => !t.IsDeleted && t.RequiresApproval)
                     .OrderBy(t => t.TypeCode)
                     .ToListAsync();
@@ -126,7 +130,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryTransactionTypes
                     .Where(t => !t.IsDeleted && t.AffectsCost)
                     .OrderBy(t => t.TypeCode)
                     .ToListAsync();
@@ -203,7 +208,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(t => t.TypeName == name && !t.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.InventoryTransactionTypes.Where(t => t.TypeName == name && !t.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(t => t.Id != excludeId.Value);

@@ -21,6 +21,7 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var errorId = GenerateErrorId();
                 
                 var errorLog = new ErrorLog
@@ -45,8 +46,8 @@ namespace ERPCore2.Services
                     UpdatedAt = DateTime.UtcNow
                 };
 
-                await _dbSet.AddAsync(errorLog);
-                await _context.SaveChangesAsync();
+                await context.ErrorLogs.AddAsync(errorLog);
+                await context.SaveChangesAsync();
                 
                 return errorId;
             }
@@ -71,7 +72,8 @@ namespace ERPCore2.Services
                     throw new ArgumentException("錯誤ID不能為空", nameof(errorId));
                 }
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ErrorLogs
                     .Where(x => x.ErrorId == errorId && !x.IsDeleted)
                     .FirstOrDefaultAsync();
             }
@@ -89,7 +91,8 @@ namespace ERPCore2.Services
         /// </summary>
         public async Task<List<ErrorLog>> GetByLevelAsync(ErrorLevel level)
         {
-            return await _dbSet
+            using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.ErrorLogs
                 .Where(x => x.Level == level && !x.IsDeleted)
                 .OrderByDescending(x => x.OccurredAt)
                 .ToListAsync();
@@ -100,7 +103,8 @@ namespace ERPCore2.Services
         /// </summary>
         public async Task<List<ErrorLog>> GetBySourceAsync(ErrorSource source)
         {
-            return await _dbSet
+            using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.ErrorLogs
                 .Where(x => x.Source == source && !x.IsDeleted)
                 .OrderByDescending(x => x.OccurredAt)
                 .ToListAsync();
@@ -111,7 +115,8 @@ namespace ERPCore2.Services
         /// </summary>
         public async Task<List<ErrorLog>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
-            return await _dbSet
+            using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.ErrorLogs
                 .Where(x => x.OccurredAt >= startDate && x.OccurredAt <= endDate && !x.IsDeleted)
                 .OrderByDescending(x => x.OccurredAt)
                 .ToListAsync();
@@ -122,7 +127,8 @@ namespace ERPCore2.Services
         /// </summary>
         public async Task<List<ErrorLog>> GetUnresolvedAsync()
         {
-            return await _dbSet
+            using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.ErrorLogs
                 .Where(x => !x.IsResolved && !x.IsDeleted)
                 .OrderByDescending(x => x.OccurredAt)
                 .ToListAsync();
@@ -133,6 +139,7 @@ namespace ERPCore2.Services
         /// </summary>
         public async Task<ServiceResult> MarkAsResolvedAsync(string errorId, string resolvedBy, string resolution)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
             var errorLog = await GetByErrorIdAsync(errorId);
             if (errorLog == null)
             {
@@ -145,7 +152,8 @@ namespace ERPCore2.Services
             errorLog.Resolution = resolution;
             errorLog.UpdatedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            context.ErrorLogs.Update(errorLog);
+            await context.SaveChangesAsync();
             return ServiceResult.Success();
         }
 
@@ -154,7 +162,8 @@ namespace ERPCore2.Services
         /// </summary>
         public async Task<ServiceResult> MarkBatchAsResolvedAsync(List<string> errorIds, string resolvedBy, string resolution)
         {
-            var errorLogs = await _dbSet
+            using var context = await _contextFactory.CreateDbContextAsync();
+            var errorLogs = await context.ErrorLogs
                 .Where(x => errorIds.Contains(x.ErrorId) && !x.IsDeleted)
                 .ToListAsync();
 
@@ -172,7 +181,7 @@ namespace ERPCore2.Services
                 errorLog.UpdatedAt = DateTime.UtcNow;
             }
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
             return ServiceResult.Success();
         }
 
@@ -181,16 +190,17 @@ namespace ERPCore2.Services
         /// </summary>
         public async Task<int> CleanupOldErrorsAsync(int daysToKeep = 30)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
             var cutoffDate = DateTime.UtcNow.AddDays(-daysToKeep);
             
-            var oldErrors = await _dbSet
+            var oldErrors = await context.ErrorLogs
                 .Where(x => x.OccurredAt < cutoffDate && x.IsResolved)
                 .ToListAsync();
 
             if (oldErrors.Any())
             {
-                _dbSet.RemoveRange(oldErrors);
-                await _context.SaveChangesAsync();
+                context.ErrorLogs.RemoveRange(oldErrors);
+                await context.SaveChangesAsync();
             }
 
             return oldErrors.Count;
@@ -324,12 +334,13 @@ namespace ERPCore2.Services
         /// </summary>
         public override async Task<List<ErrorLog>> SearchAsync(string searchTerm)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
             if (string.IsNullOrWhiteSpace(searchTerm))
             {
                 return await GetAllAsync();
             }
 
-            return await _dbSet
+            return await context.ErrorLogs
                 .Where(x => !x.IsDeleted && (
                     x.Message.Contains(searchTerm) ||
                     x.ErrorId.Contains(searchTerm) ||
@@ -346,6 +357,7 @@ namespace ERPCore2.Services
         /// </summary>
         public override async Task<ServiceResult> ValidateAsync(ErrorLog entity)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
             var errors = new List<string>();
 
             // 檢查必填欄位
@@ -361,7 +373,7 @@ namespace ERPCore2.Services
             // 檢查錯誤ID是否重複（排除自己）
             if (!string.IsNullOrWhiteSpace(entity.ErrorId))
             {
-                var exists = await _dbSet.AnyAsync(x => 
+                var exists = await context.ErrorLogs.AnyAsync(x => 
                     x.ErrorId == entity.ErrorId && 
                     x.Id != entity.Id && 
                     !x.IsDeleted);

@@ -39,7 +39,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.EmployeeAddresses
                     .Include(ea => ea.Employee)
                     .Include(ea => ea.AddressType)
                     .Where(ea => !ea.IsDeleted &&
@@ -73,8 +74,9 @@ namespace ERPCore2.Services
                 }
                 else
                 {
+                    using var context = await _contextFactory.CreateDbContextAsync();
                     // 檢查員工是否存在
-                    var employeeExists = await _context.Employees.AnyAsync(e => e.Id == entity.EmployeeId && !e.IsDeleted);
+                    var employeeExists = await context.Employees.AnyAsync(e => e.Id == entity.EmployeeId && !e.IsDeleted);
                     if (!employeeExists)
                     {
                         errors.Add("指定的員工不存在");
@@ -84,7 +86,8 @@ namespace ERPCore2.Services
                 // 地址類型驗證
                 if (entity.AddressTypeId.HasValue)
                 {
-                    var addressTypeExists = await _context.AddressTypes.AnyAsync(at => at.Id == entity.AddressTypeId.Value && !at.IsDeleted);
+                    using var context = await _contextFactory.CreateDbContextAsync();
+                    var addressTypeExists = await context.AddressTypes.AnyAsync(at => at.Id == entity.AddressTypeId.Value && !at.IsDeleted);
                     if (!addressTypeExists)
                     {
                         errors.Add("指定的地址類型不存在");
@@ -110,7 +113,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.EmployeeAddresses
                     .Include(ea => ea.Employee)
                     .Include(ea => ea.AddressType)
                     .Where(ea => !ea.IsDeleted)
@@ -129,7 +133,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.EmployeeAddresses
                     .Include(ea => ea.Employee)
                     .Include(ea => ea.AddressType)
                     .FirstOrDefaultAsync(ea => ea.Id == id && !ea.IsDeleted);
@@ -152,7 +157,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.EmployeeAddresses
                     .Include(ea => ea.AddressType)
                     .Where(ea => ea.EmployeeId == employeeId && !ea.IsDeleted)
                     .OrderBy(ea => ea.AddressType != null ? ea.AddressType.TypeName : string.Empty)
@@ -172,7 +178,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.EmployeeAddresses
                     .Include(ea => ea.AddressType)
                     .FirstOrDefaultAsync(ea => ea.EmployeeId == employeeId && ea.IsPrimary && !ea.IsDeleted);
             }
@@ -190,7 +197,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.EmployeeAddresses
                     .Include(ea => ea.Employee)
                     .Where(ea => ea.AddressTypeId == addressTypeId && !ea.IsDeleted)
                     .OrderBy(ea => ea.Employee != null ? ea.Employee.EmployeeCode : string.Empty)
@@ -214,14 +222,19 @@ namespace ERPCore2.Services
         {
             try
             {
-                var address = await GetByIdAsync(addressId);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var address = await context.EmployeeAddresses
+                    .Include(ea => ea.Employee)
+                    .Include(ea => ea.AddressType)
+                    .FirstOrDefaultAsync(ea => ea.Id == addressId && !ea.IsDeleted);
+                    
                 if (address == null)
                     return ServiceResult.Failure("找不到指定的員工地址");
 
                 // 將同一員工同一地址類型的其他地址設為非主要
                 if (address.AddressTypeId.HasValue)
                 {
-                    var otherAddresses = await _dbSet
+                    var otherAddresses = await context.EmployeeAddresses
                         .Where(ea => ea.EmployeeId == address.EmployeeId &&
                                    ea.AddressTypeId == address.AddressTypeId &&
                                    ea.Id != address.Id &&
@@ -239,7 +252,7 @@ namespace ERPCore2.Services
                 address.IsPrimary = true;
                 address.UpdatedAt = DateTime.Now;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -256,8 +269,9 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 // 檢查目標員工是否存在
-                var targetEmployeeExists = await _context.Employees.AnyAsync(e => e.Id == targetEmployeeId && !e.IsDeleted);
+                var targetEmployeeExists = await context.Employees.AnyAsync(e => e.Id == targetEmployeeId && !e.IsDeleted);
                 if (!targetEmployeeExists)
                     return ServiceResult<EmployeeAddress>.Failure("目標員工不存在");
 
@@ -301,7 +315,8 @@ namespace ERPCore2.Services
                     return ServiceResult.Success();
 
                 // 沒有主要地址，找第一個地址設為主要
-                var firstAddress = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var firstAddress = await context.EmployeeAddresses
                     .FirstOrDefaultAsync(ea => ea.EmployeeId == employeeId && !ea.IsDeleted);
 
                 if (firstAddress != null)
@@ -457,7 +472,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet.AnyAsync(ea =>
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.EmployeeAddresses.AnyAsync(ea =>
                     ea.EmployeeId == address.EmployeeId &&
                     ea.AddressTypeId == address.AddressTypeId &&
                     ea.PostalCode == address.PostalCode &&
@@ -516,7 +532,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(city))
                     return new List<EmployeeAddress>();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.EmployeeAddresses
                     .Include(ea => ea.Employee)
                     .Include(ea => ea.AddressType)
                     .Where(ea => ea.City == city && !ea.IsDeleted)
@@ -540,7 +557,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(district))
                     return new List<EmployeeAddress>();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.EmployeeAddresses
                     .Include(ea => ea.Employee)
                     .Include(ea => ea.AddressType)
                     .Where(ea => ea.District == district && !ea.IsDeleted)
@@ -564,7 +582,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(postalCode))
                     return new List<EmployeeAddress>();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.EmployeeAddresses
                     .Include(ea => ea.Employee)
                     .Include(ea => ea.AddressType)
                     .Where(ea => ea.PostalCode == postalCode && !ea.IsDeleted)

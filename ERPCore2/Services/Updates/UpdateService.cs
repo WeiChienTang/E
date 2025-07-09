@@ -1,4 +1,5 @@
 using ERPCore2.Models;
+using ERPCore2.Helpers;
 using System.Text.Json;
 
 namespace ERPCore2.Services
@@ -44,7 +45,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error reading updates data");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetUpdatesAsync), typeof(UpdateService), _logger);
                 return new List<UpdateRecord>();
             }
         }

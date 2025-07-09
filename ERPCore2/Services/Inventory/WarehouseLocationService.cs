@@ -32,7 +32,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _context.WarehouseLocations
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.WarehouseLocations
                     .Include(wl => wl.Warehouse)
                     .Where(wl => !wl.IsDeleted)
                     .OrderBy(wl => wl.Warehouse.WarehouseName)
@@ -56,7 +57,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _context.WarehouseLocations
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.WarehouseLocations
                     .Include(wl => wl.Warehouse)
                     .FirstOrDefaultAsync(wl => wl.Id == id && !wl.IsDeleted);
             }
@@ -77,7 +79,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var entities = await _context.WarehouseLocations
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var entities = await context.WarehouseLocations
                     .Include(wl => wl.Warehouse)
                     .Where(wl => wl.WarehouseId == warehouseId && !wl.IsDeleted)
                     .OrderBy(wl => wl.LocationCode)
@@ -102,8 +105,9 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 // 檢查在同一倉庫中庫位代碼是否重複
-                var exists = await _context.WarehouseLocations
+                var exists = await context.WarehouseLocations
                     .AnyAsync(wl => wl.WarehouseId == entity.WarehouseId && 
                                    wl.LocationCode == entity.LocationCode && 
                                    wl.Id != entity.Id && 
@@ -141,7 +145,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _context.WarehouseLocations
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.WarehouseLocations
                     .Include(wl => wl.Warehouse)
                     .Where(wl => !wl.IsDeleted && 
                                 (wl.LocationCode.Contains(searchTerm) || 

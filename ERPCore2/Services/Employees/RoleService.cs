@@ -29,7 +29,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Roles
                     .Include(r => r.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
                     .Where(r => !r.IsDeleted)
@@ -48,7 +49,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Roles
                     .Include(r => r.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
                     .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
@@ -70,7 +72,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(roleName))
                     return ServiceResult<Role>.Failure("角色名稱不能為空");
 
-                var role = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var role = await context.Roles
                     .Include(r => r.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
                     .FirstOrDefaultAsync(r => r.RoleName == roleName && !r.IsDeleted);
@@ -94,7 +97,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var roles = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var roles = await context.Roles
                     .Include(r => r.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
                     .Where(r => r.IsSystemRole && !r.IsDeleted)
@@ -117,7 +121,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var roles = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var roles = await context.Roles
                     .Include(r => r.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
                     .Where(r => !r.IsSystemRole && !r.IsDeleted)
@@ -143,7 +148,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(roleName))
                     return ServiceResult<bool>.Failure("角色名稱不能為空");
 
-                var query = _dbSet.Where(r => r.RoleName == roleName && !r.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Roles.Where(r => r.RoleName == roleName && !r.IsDeleted);
 
                 if (excludeRoleId.HasValue)
                     query = query.Where(r => r.Id != excludeRoleId.Value);
@@ -172,8 +178,9 @@ namespace ERPCore2.Services
                 if (role.IsSystemRole)
                     return ServiceResult.Failure("無法修改系統角色的權限");
 
+                using var context = await _contextFactory.CreateDbContextAsync();
                 // 檢查權限是否都存在
-                var validPermissions = await _context.Permissions
+                var validPermissions = await context.Permissions
                     .Where(p => permissionIds.Contains(p.Id) && !p.IsDeleted)
                     .Select(p => p.Id)
                     .ToListAsync();
@@ -182,11 +189,11 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("部分權限不存在或已被刪除");
 
                 // 先清除現有權限
-                var existingRolePermissions = await _context.RolePermissions
+                var existingRolePermissions = await context.RolePermissions
                     .Where(rp => rp.RoleId == roleId)
                     .ToListAsync();
 
-                _context.RolePermissions.RemoveRange(existingRolePermissions);
+                context.RolePermissions.RemoveRange(existingRolePermissions);
 
                 // 添加新權限
                 var newRolePermissions = permissionIds.Select(permissionId => new RolePermission
@@ -198,8 +205,8 @@ namespace ERPCore2.Services
                     Status = EntityStatus.Active
                 }).ToList();
 
-                await _context.RolePermissions.AddRangeAsync(newRolePermissions);
-                await _context.SaveChangesAsync();
+                await context.RolePermissions.AddRangeAsync(newRolePermissions);
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }
@@ -224,12 +231,13 @@ namespace ERPCore2.Services
                 if (role.IsSystemRole)
                     return ServiceResult.Failure("無法修改系統角色的權限");
 
-                var rolePermissionsToRemove = await _context.RolePermissions
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var rolePermissionsToRemove = await context.RolePermissions
                     .Where(rp => rp.RoleId == roleId && permissionIds.Contains(rp.PermissionId))
                     .ToListAsync();
 
-                _context.RolePermissions.RemoveRange(rolePermissionsToRemove);
-                await _context.SaveChangesAsync();
+                context.RolePermissions.RemoveRange(rolePermissionsToRemove);
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }
@@ -254,12 +262,13 @@ namespace ERPCore2.Services
                 if (role.IsSystemRole)
                     return ServiceResult.Failure("無法修改系統角色的權限");
 
-                var rolePermissions = await _context.RolePermissions
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var rolePermissions = await context.RolePermissions
                     .Where(rp => rp.RoleId == roleId)
                     .ToListAsync();
 
-                _context.RolePermissions.RemoveRange(rolePermissions);
-                await _context.SaveChangesAsync();
+                context.RolePermissions.RemoveRange(rolePermissions);
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }
@@ -314,7 +323,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var count = await _context.Employees
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var count = await context.Employees
                     .Where(e => e.RoleId == roleId && !e.IsDeleted)
                     .CountAsync();
 
@@ -365,7 +375,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return ServiceResult<List<Role>>.Success(await GetAllAsync());
 
-                var roles = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var roles = await context.Roles
                     .Include(r => r.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
                     .Where(r => !r.IsDeleted && 
@@ -390,7 +401,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var roles = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var roles = await context.Roles
                     .Where(r => !r.IsDeleted && r.Status == EntityStatus.Active)
                     .OrderBy(r => r.RoleName)
                     .ToListAsync();

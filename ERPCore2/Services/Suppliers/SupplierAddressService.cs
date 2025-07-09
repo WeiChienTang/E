@@ -37,7 +37,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.SupplierAddresses
                     .Include(sa => sa.Supplier)
                     .Include(sa => sa.AddressType)
                     .Where(sa => !sa.IsDeleted)
@@ -59,7 +60,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.SupplierAddresses
                     .Include(sa => sa.Supplier)
                     .Include(sa => sa.AddressType)
                     .Where(sa => !sa.IsDeleted &&
@@ -131,7 +133,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.SupplierAddresses
                     .Include(sa => sa.AddressType)
                     .Where(sa => sa.SupplierId == supplierId && !sa.IsDeleted)
                     .OrderBy(sa => sa.AddressType!.TypeName)
@@ -148,7 +151,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.SupplierAddresses
                     .Include(sa => sa.Supplier)
                     .Include(sa => sa.AddressType)
                     .Where(sa => sa.AddressTypeId == addressTypeId && !sa.IsDeleted)
@@ -166,7 +170,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.SupplierAddresses
                     .Include(sa => sa.AddressType)
                     .FirstOrDefaultAsync(sa => sa.SupplierId == supplierId && sa.IsPrimary && !sa.IsDeleted);
             }
@@ -181,7 +186,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.SupplierAddresses
                     .Include(sa => sa.AddressType)
                     .FirstOrDefaultAsync(sa => sa.SupplierId == supplierId && 
                                               sa.AddressTypeId == addressTypeId && 
@@ -202,6 +208,8 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
                 var address = await GetByIdAsync(addressId);
                 if (address == null)
                 {
@@ -209,7 +217,7 @@ namespace ERPCore2.Services
                 }
 
                 // 將同一廠商的其他地址設為非主要
-                var otherAddresses = await _dbSet
+                var otherAddresses = await context.SupplierAddresses
                     .Where(sa => sa.SupplierId == address.SupplierId && 
                                 sa.Id != addressId && 
                                 sa.IsPrimary && 
@@ -226,7 +234,7 @@ namespace ERPCore2.Services
                 address.IsPrimary = true;
                 address.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -268,13 +276,15 @@ namespace ERPCore2.Services
         {
             try
             {
-                var hasPrimaryAddress = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                var hasPrimaryAddress = await context.SupplierAddresses
                     .AnyAsync(sa => sa.SupplierId == supplierId && sa.IsPrimary && !sa.IsDeleted);
 
                 if (!hasPrimaryAddress)
                 {
                     // 找第一個可用的地址設為主要
-                    var firstAddress = await _dbSet
+                    var firstAddress = await context.SupplierAddresses
                         .Where(sa => sa.SupplierId == supplierId && !sa.IsDeleted)
                         .OrderBy(sa => sa.Id)
                         .FirstOrDefaultAsync();
@@ -283,7 +293,7 @@ namespace ERPCore2.Services
                     {
                         firstAddress.IsPrimary = true;
                         firstAddress.UpdatedAt = DateTime.UtcNow;
-                        await _context.SaveChangesAsync();
+                        await context.SaveChangesAsync();
                     }
                 }
 
@@ -321,8 +331,10 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
                 // 取得現有地址
-                var existingAddresses = await _dbSet
+                var existingAddresses = await context.SupplierAddresses
                     .Where(sa => sa.SupplierId == supplierId && !sa.IsDeleted)
                     .ToListAsync();
 
@@ -359,7 +371,7 @@ namespace ERPCore2.Services
                             CreatedBy = "System", // TODO: 從認證取得使用者
                             Remarks = address.Remarks
                         };
-                        _dbSet.Add(newAddress);
+                        context.SupplierAddresses.Add(newAddress);
                     }
                     else
                     {
@@ -378,7 +390,7 @@ namespace ERPCore2.Services
                     }
                 }
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)

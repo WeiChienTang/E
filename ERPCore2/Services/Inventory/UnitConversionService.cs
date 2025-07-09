@@ -25,7 +25,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _context.UnitConversions
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.UnitConversions
                     .Include(uc => uc.FromUnit)
                     .Include(uc => uc.ToUnit)
                     .Where(uc => !uc.IsDeleted)
@@ -46,7 +47,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _context.UnitConversions
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.UnitConversions
                     .Include(uc => uc.FromUnit)
                     .Include(uc => uc.ToUnit)
                     .FirstOrDefaultAsync(uc => uc.Id == id && !uc.IsDeleted);
@@ -65,7 +67,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var entities = await _context.UnitConversions
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var entities = await context.UnitConversions
                     .Include(uc => uc.FromUnit)
                     .Include(uc => uc.ToUnit)
                     .Where(uc => (uc.FromUnitId == unitId || uc.ToUnitId == unitId) && !uc.IsDeleted)
@@ -89,8 +92,9 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 // 直接轉換
-                var directConversion = await _context.UnitConversions
+                var directConversion = await context.UnitConversions
                     .FirstOrDefaultAsync(uc => uc.FromUnitId == fromUnitId && 
                                               uc.ToUnitId == toUnitId && 
                                               uc.IsActive && 
@@ -102,7 +106,7 @@ namespace ERPCore2.Services
                 }
 
                 // 反向轉換
-                var reverseConversion = await _context.UnitConversions
+                var reverseConversion = await context.UnitConversions
                     .FirstOrDefaultAsync(uc => uc.FromUnitId == toUnitId && 
                                               uc.ToUnitId == fromUnitId && 
                                               uc.IsActive && 
@@ -130,8 +134,9 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 // 檢查是否已存在相同的轉換關係
-                var exists = await _context.UnitConversions
+                var exists = await context.UnitConversions
                     .AnyAsync(uc => uc.FromUnitId == entity.FromUnitId && 
                                    uc.ToUnitId == entity.ToUnitId && 
                                    uc.Id != entity.Id && 
@@ -163,7 +168,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _context.UnitConversions
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.UnitConversions
                     .Include(uc => uc.FromUnit)
                     .Include(uc => uc.ToUnit)
                     .Where(uc => !uc.IsDeleted && 

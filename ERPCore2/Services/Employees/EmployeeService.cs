@@ -36,7 +36,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Employees
                     .Include(e => e.Role)
                     .Include(e => e.EmployeeContacts)
                         .ThenInclude(ec => ec.ContactType)
@@ -61,7 +62,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Employees
                     .Include(e => e.Role)
                     .Include(e => e.EmployeeContacts)
                         .ThenInclude(ec => ec.ContactType)
@@ -90,7 +92,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(username))
                     return ServiceResult<Employee>.Failure("使用者名稱不能為空");
 
-                var employee = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employee = await context.Employees
                     .Include(e => e.Role)
                     .FirstOrDefaultAsync(e => e.Username == username && !e.IsDeleted);
 
@@ -120,7 +123,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(employeeCode))
                     return ServiceResult<Employee>.Failure("員工編號不能為空");
 
-                var employee = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employee = await context.Employees
                     .Include(e => e.Role)
                     .FirstOrDefaultAsync(e => e.EmployeeCode == employeeCode && !e.IsDeleted);
 
@@ -150,7 +154,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(username))
                     return ServiceResult<bool>.Failure("使用者名稱不能為空");
 
-                var query = _dbSet.Where(e => e.Username == username && !e.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Employees.Where(e => e.Username == username && !e.IsDeleted);
 
                 if (excludeEmployeeId.HasValue)
                     query = query.Where(e => e.Id != excludeEmployeeId.Value);
@@ -180,7 +185,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(employeeCode))
                     return ServiceResult<bool>.Failure("員工編號不能為空");
 
-                var query = _dbSet.Where(e => e.EmployeeCode == employeeCode && !e.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Employees.Where(e => e.EmployeeCode == employeeCode && !e.IsDeleted);
 
                 if (excludeEmployeeId.HasValue)
                     query = query.Where(e => e.Id != excludeEmployeeId.Value);
@@ -210,7 +216,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return ServiceResult<List<Employee>>.Success(await GetAllAsync());
 
-                var employees = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employees = await context.Employees
                     .Include(e => e.Role)
                     .Where(e => !e.IsDeleted && 
                                ((e.FirstName != null && e.FirstName.Contains(searchTerm)) ||
@@ -241,7 +248,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var employees = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employees = await context.Employees
                     .Include(e => e.Role)
                     .Where(e => e.RoleId == roleId && !e.IsDeleted)
                     .OrderBy(e => e.EmployeeCode)
@@ -270,7 +278,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(department))
                     return ServiceResult<List<Employee>>.Failure("部門名稱不能為空");
 
-                var employees = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employees = await context.Employees
                     .Include(e => e.Role)
                     .Where(e => e.Department == department && !e.IsDeleted)
                     .OrderBy(e => e.EmployeeCode)
@@ -296,19 +305,20 @@ namespace ERPCore2.Services
         {
             try
             {
-                var employee = await GetByIdAsync(employeeId);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employee = await context.Employees.FirstOrDefaultAsync(e => e.Id == employeeId && !e.IsDeleted);
                 if (employee == null)
                     return ServiceResult.Failure("員工不存在");
 
                 // 檢查新角色是否存在
-                var roleExists = await _context.Roles.AnyAsync(r => r.Id == newRoleId && !r.IsDeleted);
+                var roleExists = await context.Roles.AnyAsync(r => r.Id == newRoleId && !r.IsDeleted);
                 if (!roleExists)
                     return ServiceResult.Failure("指定的角色不存在");
 
                 employee.RoleId = newRoleId;
                 employee.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }
@@ -353,7 +363,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var employees = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employees = await context.Employees
                     .Include(e => e.Role)
                     .Where(e => !e.IsDeleted && e.Status == EntityStatus.Active)
                     .OrderBy(e => e.EmployeeCode)
@@ -422,7 +433,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var lastEmployee = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var lastEmployee = await context.Employees
                     .Where(e => e.EmployeeCode.StartsWith(prefix))
                     .OrderByDescending(e => e.EmployeeCode)
                     .FirstOrDefaultAsync();
@@ -460,6 +472,7 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var errors = new List<string>();
 
                 // 檢查必要欄位
@@ -488,7 +501,7 @@ namespace ERPCore2.Services
                 // 檢查使用者名稱是否重複
                 if (!string.IsNullOrWhiteSpace(entity.Username))
                 {
-                    var isDuplicate = await _dbSet
+                    var isDuplicate = await context.Employees
                         .Where(e => e.Username == entity.Username && !e.IsDeleted)
                         .Where(e => e.Id != entity.Id) // 排除自己
                         .AnyAsync();
@@ -500,7 +513,7 @@ namespace ERPCore2.Services
                 // 檢查員工代碼是否重複
                 if (!string.IsNullOrWhiteSpace(entity.EmployeeCode))
                 {
-                    var isCodeDuplicate = await _dbSet
+                    var isCodeDuplicate = await context.Employees
                         .Where(e => e.EmployeeCode == entity.EmployeeCode && !e.IsDeleted)
                         .Where(e => e.Id != entity.Id) // 排除自己
                         .AnyAsync();
@@ -512,7 +525,7 @@ namespace ERPCore2.Services
                 // 檢查角色是否存在
                 if (entity.RoleId > 0)
                 {
-                    var roleExists = await _context.Roles
+                    var roleExists = await context.Roles
                         .AnyAsync(r => r.Id == entity.RoleId && !r.IsDeleted && r.Status == EntityStatus.Active);
 
                     if (!roleExists)
@@ -567,11 +580,12 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 // 移除現有的聯絡資料
-                var existingContacts = await _context.EmployeeContacts
+                var existingContacts = await context.EmployeeContacts
                     .Where(ec => ec.EmployeeId == employeeId)
                     .ToListAsync();
-                _context.EmployeeContacts.RemoveRange(existingContacts);
+                context.EmployeeContacts.RemoveRange(existingContacts);
 
                 // 新增新的聯絡資料
                 foreach (var contact in contacts.Where(c => !string.IsNullOrWhiteSpace(c.ContactValue)))
@@ -590,10 +604,10 @@ namespace ERPCore2.Services
                         CreatedBy = "System", // TODO: 從認證取得使用者
                         Remarks = contact.Remarks
                     };
-                    _context.EmployeeContacts.Add(newContact);
+                    context.EmployeeContacts.Add(newContact);
                 }
                 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -614,11 +628,12 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 // 移除現有的地址資料
-                var existingAddresses = await _context.EmployeeAddresses
+                var existingAddresses = await context.EmployeeAddresses
                     .Where(ea => ea.EmployeeId == employeeId)
                     .ToListAsync();
-                _context.EmployeeAddresses.RemoveRange(existingAddresses);
+                context.EmployeeAddresses.RemoveRange(existingAddresses);
 
                 // 新增新的地址資料
                 foreach (var address in addresses.Where(a => !string.IsNullOrWhiteSpace(a.Address) || !string.IsNullOrWhiteSpace(a.City)))
@@ -640,10 +655,10 @@ namespace ERPCore2.Services
                         CreatedBy = "System", // TODO: 從認證取得使用者
                         Remarks = address.Remarks
                     };
-                    _context.EmployeeAddresses.Add(newAddress);
+                    context.EmployeeAddresses.Add(newAddress);
                 }
                 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)

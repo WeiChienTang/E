@@ -35,7 +35,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductCategories
                     .Include(pc => pc.ParentCategory)
                     .Where(pc => !pc.IsDeleted)
                     .OrderBy(pc => pc.CategoryName)
@@ -52,7 +53,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductCategories
                     .Include(pc => pc.ParentCategory)
                     .Include(pc => pc.ChildCategories.Where(cc => !cc.IsDeleted))
                     .Include(pc => pc.Products.Where(p => !p.IsDeleted))
@@ -72,7 +74,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductCategories
                     .Include(pc => pc.ParentCategory)
                     .Where(pc => !pc.IsDeleted &&
                                (pc.CategoryName.Contains(searchTerm) ||
@@ -192,7 +195,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(pc => pc.CategoryName == categoryName && !pc.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.ProductCategories.Where(pc => pc.CategoryName == categoryName && !pc.IsDeleted);
                 
                 if (excludeId.HasValue)
                     query = query.Where(pc => pc.Id != excludeId.Value);
@@ -213,7 +217,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(pc => pc.CategoryCode == categoryCode && !pc.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.ProductCategories.Where(pc => pc.CategoryCode == categoryCode && !pc.IsDeleted);
                 
                 if (excludeId.HasValue)
                     query = query.Where(pc => pc.Id != excludeId.Value);
@@ -234,7 +239,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductCategories
                     .Include(pc => pc.ParentCategory)
                     .FirstOrDefaultAsync(pc => pc.CategoryName == categoryName && !pc.IsDeleted);
             }
@@ -251,7 +257,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductCategories
                     .Include(pc => pc.ParentCategory)
                     .FirstOrDefaultAsync(pc => pc.CategoryCode == categoryCode && !pc.IsDeleted);
             }
@@ -268,7 +275,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductCategories
                     .Where(pc => pc.ParentCategoryId == null && !pc.IsDeleted)
                     .OrderBy(pc => pc.CategoryName)
                     .ToListAsync();
@@ -284,7 +292,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductCategories
                     .Where(pc => pc.ParentCategoryId == parentCategoryId && !pc.IsDeleted)
                     .OrderBy(pc => pc.CategoryName)
                     .ToListAsync();
@@ -302,7 +311,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductCategories
                     .Include(pc => pc.ParentCategory)
                     .Include(pc => pc.ChildCategories.Where(cc => !cc.IsDeleted))
                     .Where(pc => !pc.IsDeleted)
@@ -320,15 +330,16 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 // 檢查是否有商品使用此分類
-                var hasProducts = await _context.Products
+                var hasProducts = await context.Products
                     .AnyAsync(p => p.ProductCategoryId == categoryId && !p.IsDeleted);
 
                 if (hasProducts)
                     return false;
 
                 // 檢查是否有子分類
-                var hasChildCategories = await _dbSet
+                var hasChildCategories = await context.ProductCategories
                     .AnyAsync(pc => pc.ParentCategoryId == categoryId && !pc.IsDeleted);
 
                 return !hasChildCategories;
@@ -346,8 +357,9 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 // 檢查是否會造成循環參考
-                var currentCategory = await _dbSet.FindAsync(parentCategoryId);
+                var currentCategory = await context.ProductCategories.FindAsync(parentCategoryId);
                 
                 while (currentCategory?.ParentCategoryId != null)
                 {
@@ -356,7 +368,7 @@ namespace ERPCore2.Services
                         return false; // 會造成循環參考
                     }
                     
-                    currentCategory = await _dbSet.FindAsync(currentCategory.ParentCategoryId);
+                    currentCategory = await context.ProductCategories.FindAsync(currentCategory.ParentCategoryId);
                 }
 
                 return true;

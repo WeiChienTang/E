@@ -26,7 +26,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Weathers
                     .Where(w => !w.IsDeleted)
                     .OrderBy(w => w.Name)
                     .ToListAsync();
@@ -51,7 +52,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Weathers
                     .Where(w => !w.IsDeleted &&
                                (w.Name.Contains(searchTerm) ||
                                 w.Code.Contains(searchTerm) ||
@@ -108,7 +110,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(w => w.Name == name && !w.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Weathers.Where(w => w.Name == name && !w.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(w => w.Id != excludeId.Value);
@@ -134,7 +137,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(w => w.Code == code && !w.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Weathers.Where(w => w.Code == code && !w.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(w => w.Id != excludeId.Value);
@@ -160,7 +164,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Weathers
                     .Where(w => w.Code == code && !w.IsDeleted)
                     .FirstOrDefaultAsync();
             }
@@ -182,7 +187,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Weathers
                     .Where(w => !w.IsDeleted &&
                                w.ReferenceTemperature.HasValue &&
                                w.ReferenceTemperature >= minTemperature &&

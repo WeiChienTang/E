@@ -30,7 +30,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.IndustryTypes
                     .Where(it => !it.IsDeleted)
                     .OrderBy(it => it.IndustryTypeName)
                     .ToListAsync();
@@ -49,8 +50,9 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var lowerSearchTerm = searchTerm.ToLower();
-                return await _dbSet
+                return await context.IndustryTypes
                     .Where(it => !it.IsDeleted &&
                                (it.IndustryTypeName.ToLower().Contains(lowerSearchTerm) ||
                                 (it.IndustryTypeCode != null && it.IndustryTypeCode.ToLower().Contains(lowerSearchTerm))))
@@ -69,6 +71,7 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var errors = new List<string>();
 
                 // 檢查必要欄位
@@ -85,7 +88,7 @@ namespace ERPCore2.Services
                 // 檢查名稱重複
                 if (!string.IsNullOrWhiteSpace(entity.IndustryTypeName))
                 {
-                    var isDuplicate = await _dbSet
+                    var isDuplicate = await context.IndustryTypes
                         .Where(it => it.IndustryTypeName == entity.IndustryTypeName && !it.IsDeleted)
                         .Where(it => it.Id != entity.Id) // 排除自己
                         .AnyAsync();
@@ -97,7 +100,7 @@ namespace ERPCore2.Services
                 // 檢查代碼重複
                 if (!string.IsNullOrWhiteSpace(entity.IndustryTypeCode))
                 {
-                    var isCodeDuplicate = await _dbSet
+                    var isCodeDuplicate = await context.IndustryTypes
                         .Where(it => it.IndustryTypeCode == entity.IndustryTypeCode && !it.IsDeleted)
                         .Where(it => it.Id != entity.Id) // 排除自己
                         .AnyAsync();
@@ -123,8 +126,9 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 // 檢查是否有關聯的客戶
-                var hasRelatedCustomers = await _context.Customers
+                var hasRelatedCustomers = await context.Customers
                     .AnyAsync(c => c.IndustryTypeId == entity.Id && !c.IsDeleted);
 
                 if (hasRelatedCustomers)
@@ -148,7 +152,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.IndustryTypes
                     .Where(it => it.IndustryTypeName == name && !it.IsDeleted);
 
                 if (excludeId.HasValue)
@@ -185,7 +190,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(industryTypeCode))
                     return false;
 
-                var query = _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.IndustryTypes
                     .Where(it => it.IndustryTypeCode == industryTypeCode && !it.IsDeleted);
 
                 if (excludeId.HasValue)

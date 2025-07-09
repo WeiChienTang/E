@@ -30,7 +30,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryStocks
                     .Include(i => i.Product)
                     .Include(i => i.Warehouse)
                     .Include(i => i.WarehouseLocation)
@@ -50,7 +51,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryStocks
                     .Include(i => i.Product)
                     .Include(i => i.Warehouse)
                     .Include(i => i.WarehouseLocation)
@@ -74,7 +76,8 @@ namespace ERPCore2.Services.Inventory
 
                 var term = searchTerm.ToLower();
                 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryStocks
                     .Include(i => i.Product)
                     .Include(i => i.Warehouse)
                     .Include(i => i.WarehouseLocation)
@@ -115,7 +118,8 @@ namespace ERPCore2.Services.Inventory
                     errors.Add("預留數量不能大於現有庫存");
 
                 // 檢查是否已存在相同的庫存記錄
-                var existing = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var existing = await context.InventoryStocks
                     .FirstOrDefaultAsync(i => i.ProductId == entity.ProductId && 
                                             i.WarehouseId == entity.WarehouseId &&
                                             i.WarehouseLocationId == entity.WarehouseLocationId &&
@@ -144,7 +148,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryStocks
                     .Include(i => i.Warehouse)
                     .Include(i => i.WarehouseLocation)
                     .Where(i => i.ProductId == productId && !i.IsDeleted)
@@ -162,7 +167,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryStocks
                     .Include(i => i.Product)
                     .Include(i => i.WarehouseLocation)
                     .Where(i => i.WarehouseId == warehouseId && !i.IsDeleted)
@@ -180,7 +186,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryStocks
                     .Include(i => i.Product)
                     .Include(i => i.Warehouse)
                     .Include(i => i.WarehouseLocation)
@@ -200,7 +207,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryStocks
                     .Include(i => i.Product)
                     .Include(i => i.Warehouse)
                     .Where(i => !i.IsDeleted && 
@@ -243,12 +251,17 @@ namespace ERPCore2.Services.Inventory
                 if (quantity <= 0)
                     return ServiceResult.Failure("數量必須大於0");
 
-                using var transaction = await _context.Database.BeginTransactionAsync();
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
 
                 try
                 {
                     // 取得或建立庫存記錄
-                    var stock = await GetByProductWarehouseAsync(productId, warehouseId, locationId);
+                    var stock = await context.InventoryStocks
+                        .FirstOrDefaultAsync(i => i.ProductId == productId && 
+                                                 i.WarehouseId == warehouseId &&
+                                                 i.WarehouseLocationId == locationId && 
+                                                 !i.IsDeleted);
                     
                     if (stock == null)
                     {
@@ -261,8 +274,8 @@ namespace ERPCore2.Services.Inventory
                             ReservedStock = 0,
                             Status = EntityStatus.Active
                         };
-                        await _dbSet.AddAsync(stock);
-                        await _context.SaveChangesAsync();
+                        await context.InventoryStocks.AddAsync(stock);
+                        await context.SaveChangesAsync();
                     }
 
                     var stockBefore = stock.CurrentStock;
@@ -302,8 +315,8 @@ namespace ERPCore2.Services.Inventory
                         Status = EntityStatus.Active
                     };
 
-                    await _context.InventoryTransactions.AddAsync(inventoryTransaction);
-                    await _context.SaveChangesAsync();
+                    await context.InventoryTransactions.AddAsync(inventoryTransaction);
+                    await context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
                     return ServiceResult.Success();
@@ -337,13 +350,21 @@ namespace ERPCore2.Services.Inventory
                 if (stock.AvailableStock < quantity)
                     return ServiceResult.Failure($"可用庫存不足，目前可用庫存：{stock.AvailableStock}");
 
-                using var transaction = await _context.Database.BeginTransactionAsync();
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
 
                 try
                 {
-                    var stockBefore = stock.CurrentStock;
-                    stock.CurrentStock -= quantity;
-                    stock.LastTransactionDate = DateTime.Now;
+                    // 重新取得庫存記錄以確保資料一致性
+                    var contextStock = await context.InventoryStocks
+                        .FirstOrDefaultAsync(i => i.Id == stock.Id && !i.IsDeleted);
+                    
+                    if (contextStock == null)
+                        return ServiceResult.Failure("找不到庫存記錄");
+
+                    var stockBefore = contextStock.CurrentStock;
+                    contextStock.CurrentStock -= quantity;
+                    contextStock.LastTransactionDate = DateTime.Now;
 
                     // 建立交易記錄
                     var inventoryTransaction = new InventoryTransaction
@@ -355,16 +376,16 @@ namespace ERPCore2.Services.Inventory
                         TransactionNumber = transactionNumber,
                         TransactionDate = DateTime.Now,
                         Quantity = -quantity, // 負數表示出庫
-                        UnitCost = stock.AverageCost,
+                        UnitCost = contextStock.AverageCost,
                         StockBefore = stockBefore,
-                        StockAfter = stock.CurrentStock,
+                        StockAfter = contextStock.CurrentStock,
                         TransactionRemarks = remarks,
-                        InventoryStockId = stock.Id,
+                        InventoryStockId = contextStock.Id,
                         Status = EntityStatus.Active
                     };
 
-                    await _context.InventoryTransactions.AddAsync(inventoryTransaction);
-                    await _context.SaveChangesAsync();
+                    await context.InventoryTransactions.AddAsync(inventoryTransaction);
+                    await context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
                     return ServiceResult.Success();
@@ -394,7 +415,8 @@ namespace ERPCore2.Services.Inventory
                 if (fromWarehouseId == toWarehouseId && fromLocationId == toLocationId)
                     return ServiceResult.Failure("來源和目標不能相同");
 
-                using var transaction = await _context.Database.BeginTransactionAsync();
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
 
                 try
                 {
@@ -480,7 +502,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                var query = _context.InventoryStocks
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.InventoryStocks
                     .Include(i => i.Product)
                         .ThenInclude(p => p.ProductCategory)
                     .Include(i => i.Product)
@@ -527,7 +550,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _context.InventoryStocks
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryStocks
                     .Include(i => i.Product)
                         .ThenInclude(p => p.ProductCategory)
                     .Include(i => i.Product)
@@ -557,34 +581,35 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var stats = new Dictionary<string, object>();
 
                 // 總商品數量
-                var totalProducts = await _context.InventoryStocks
+                var totalProducts = await context.InventoryStocks
                     .Where(i => !i.IsDeleted)
                     .Select(i => i.ProductId)
                     .Distinct()
                     .CountAsync();
 
                 // 總庫存價值
-                var totalInventoryValue = await _context.InventoryStocks
+                var totalInventoryValue = await context.InventoryStocks
                     .Where(i => !i.IsDeleted && i.AverageCost.HasValue)
                     .SumAsync(i => i.CurrentStock * (i.AverageCost ?? 0));
 
                 // 低庫存商品數量
-                var lowStockCount = await _context.InventoryStocks
+                var lowStockCount = await context.InventoryStocks
                     .Where(i => !i.IsDeleted &&
                                i.MinStockLevel.HasValue &&
                                i.CurrentStock <= i.MinStockLevel.Value)
                     .CountAsync();
 
                 // 零庫存商品數量
-                var zeroStockCount = await _context.InventoryStocks
+                var zeroStockCount = await context.InventoryStocks
                     .Where(i => !i.IsDeleted && i.CurrentStock == 0)
                     .CountAsync();
 
                 // 倉庫數量
-                var warehouseCount = await _context.Warehouses
+                var warehouseCount = await context.Warehouses
                     .Where(w => !w.IsDeleted && w.IsActive)
                     .CountAsync();
 
@@ -626,11 +651,17 @@ namespace ERPCore2.Services.Inventory
                 if (available < quantity)
                     return ServiceResult.Failure($"可用庫存不足，目前可用：{available}");
 
-                using var transaction = await _context.Database.BeginTransactionAsync();
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
 
                 try
                 {
-                    var stock = await GetByProductWarehouseAsync(productId, warehouseId, locationId);
+                    var stock = await context.InventoryStocks
+                        .FirstOrDefaultAsync(i => i.ProductId == productId && 
+                                                 i.WarehouseId == warehouseId &&
+                                                 i.WarehouseLocationId == locationId && 
+                                                 !i.IsDeleted);
+                    
                     if (stock == null)
                         return ServiceResult.Failure("找不到庫存記錄");
 
@@ -657,8 +688,8 @@ namespace ERPCore2.Services.Inventory
                         Status = EntityStatus.Active
                     };
 
-                    await _context.InventoryReservations.AddAsync(reservation);
-                    await _context.SaveChangesAsync();
+                    await context.InventoryReservations.AddAsync(reservation);
+                    await context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
                     return ServiceResult.Success();
@@ -680,7 +711,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                var reservation = await _context.InventoryReservations
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var reservation = await context.InventoryReservations
                     .Include(r => r.InventoryStock)
                     .FirstOrDefaultAsync(r => r.Id == reservationId && !r.IsDeleted);
 
@@ -695,7 +727,7 @@ namespace ERPCore2.Services.Inventory
                 if (toRelease <= 0 || toRelease > reservation.RemainingQuantity)
                     return ServiceResult.Failure("釋放數量不正確");
 
-                using var transaction = await _context.Database.BeginTransactionAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
 
                 try
                 {
@@ -713,7 +745,7 @@ namespace ERPCore2.Services.Inventory
                         reservation.InventoryStock.ReservedStock -= toRelease;
                     }
 
-                    await _context.SaveChangesAsync();
+                    await context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
                     return ServiceResult.Success();
@@ -748,7 +780,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _context.InventoryReservations
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryReservations
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)

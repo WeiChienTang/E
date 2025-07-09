@@ -29,7 +29,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryTransactions
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
@@ -48,7 +49,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryTransactions
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
@@ -67,7 +69,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryTransactions
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
@@ -86,7 +89,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryTransactions
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
@@ -105,7 +109,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryTransactions
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
@@ -124,7 +129,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryTransactions
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
@@ -146,7 +152,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryTransactions
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
@@ -168,7 +175,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryTransactions
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
@@ -189,7 +197,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                var query = _dbSet.Where(t => t.ProductId == productId && 
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.InventoryTransactions.Where(t => t.ProductId == productId && 
                                              t.Quantity > 0 && 
                                              !t.IsDeleted);
 
@@ -212,7 +221,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                var query = _dbSet.Where(t => t.ProductId == productId && 
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.InventoryTransactions.Where(t => t.ProductId == productId && 
                                              t.Quantity < 0 && 
                                              !t.IsDeleted);
 
@@ -235,7 +245,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryTransactions
                     .Where(t => t.TransactionDate >= startDate && 
                                t.TransactionDate <= endDate && 
                                !t.IsDeleted)
@@ -282,8 +293,9 @@ namespace ERPCore2.Services.Inventory
                 if (!validationResult.IsSuccess)
                     return validationResult;
 
-                await _dbSet.AddAsync(transaction);
-                await _context.SaveChangesAsync();
+                using var context = await _contextFactory.CreateDbContextAsync();
+                await context.InventoryTransactions.AddAsync(transaction);
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }
@@ -322,8 +334,9 @@ namespace ERPCore2.Services.Inventory
                 if (!validationResult.IsSuccess)
                     return validationResult;
 
-                await _dbSet.AddAsync(transaction);
-                await _context.SaveChangesAsync();
+                using var context = await _contextFactory.CreateDbContextAsync();
+                await context.InventoryTransactions.AddAsync(transaction);
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }
@@ -364,8 +377,9 @@ namespace ERPCore2.Services.Inventory
                 if (!validationResult.IsSuccess)
                     return validationResult;
 
-                await _dbSet.AddAsync(transaction);
-                await _context.SaveChangesAsync();
+                using var context = await _contextFactory.CreateDbContextAsync();
+                await context.InventoryTransactions.AddAsync(transaction);
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }
@@ -428,8 +442,9 @@ namespace ERPCore2.Services.Inventory
                 if (!inValidation.IsSuccess)
                     return inValidation;
 
-                await _dbSet.AddRangeAsync(outboundTransaction, inboundTransaction);
-                await _context.SaveChangesAsync();
+                using var context = await _contextFactory.CreateDbContextAsync();
+                await context.InventoryTransactions.AddRangeAsync(outboundTransaction, inboundTransaction);
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }
@@ -448,7 +463,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                var query = _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.InventoryTransactions
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
@@ -498,8 +514,9 @@ namespace ERPCore2.Services.Inventory
                 if (!validationResult.IsSuccess)
                     return validationResult;
 
-                await _dbSet.AddAsync(reverseTransaction);
-                await _context.SaveChangesAsync();
+                using var context = await _contextFactory.CreateDbContextAsync();
+                await context.InventoryTransactions.AddAsync(reverseTransaction);
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }
@@ -537,20 +554,22 @@ namespace ERPCore2.Services.Inventory
                 if (transaction.Quantity == 0)
                     errors.Add("異動數量不能為0");
 
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
                 // 檢查產品是否存在
-                var productExists = await _context.Products.AnyAsync(p => p.Id == transaction.ProductId && !p.IsDeleted);
+                var productExists = await context.Products.AnyAsync(p => p.Id == transaction.ProductId && !p.IsDeleted);
                 if (!productExists)
                     errors.Add("指定的產品不存在");
 
                 // 檢查倉庫是否存在
-                var warehouseExists = await _context.Warehouses.AnyAsync(w => w.Id == transaction.WarehouseId && !w.IsDeleted);
+                var warehouseExists = await context.Warehouses.AnyAsync(w => w.Id == transaction.WarehouseId && !w.IsDeleted);
                 if (!warehouseExists)
                     errors.Add("指定的倉庫不存在");
 
                 // 檢查倉庫位置是否存在（如果有指定）
                 if (transaction.WarehouseLocationId.HasValue)
                 {
-                    var locationExists = await _context.WarehouseLocations
+                    var locationExists = await context.WarehouseLocations
                         .AnyAsync(l => l.Id == transaction.WarehouseLocationId.Value && 
                                       l.WarehouseId == transaction.WarehouseId && 
                                       !l.IsDeleted);
@@ -574,7 +593,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                var query = _dbSet.Where(t => t.TransactionNumber == transactionNumber && !t.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.InventoryTransactions.Where(t => t.TransactionNumber == transactionNumber && !t.IsDeleted);
                 
                 if (excludeId.HasValue)
                     query = query.Where(t => t.Id != excludeId.Value);
@@ -596,7 +616,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryTransactions
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
@@ -615,7 +636,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryTransactions
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
@@ -632,7 +654,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryTransactions
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)

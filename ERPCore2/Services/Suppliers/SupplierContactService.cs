@@ -31,7 +31,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.SupplierContacts
                     .Include(sc => sc.Supplier)
                     .Include(sc => sc.ContactType)
                     .Where(sc => !sc.IsDeleted)
@@ -53,7 +54,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.SupplierContacts
                     .Include(sc => sc.Supplier)
                     .Include(sc => sc.ContactType)
                     .Where(sc => !sc.IsDeleted &&
@@ -99,7 +101,8 @@ namespace ERPCore2.Services
                     // 如果有聯絡類型，可以根據類型進行格式驗證
                     if (entity.ContactTypeId.HasValue)
                     {
-                        var contactType = await _context.ContactTypes.FindAsync(entity.ContactTypeId.Value);
+                        using var context = await _contextFactory.CreateDbContextAsync();
+                        var contactType = await context.ContactTypes.FindAsync(entity.ContactTypeId.Value);
                         if (contactType != null)
                         {
                             // 可以在這裡添加特定聯絡類型的格式驗證
@@ -127,7 +130,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.SupplierContacts
                     .Include(sc => sc.ContactType)
                     .Where(sc => sc.SupplierId == supplierId && !sc.IsDeleted)
                     .OrderBy(sc => sc.ContactType!.TypeName)
@@ -144,7 +148,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.SupplierContacts
                     .Include(sc => sc.Supplier)
                     .Include(sc => sc.ContactType)
                     .Where(sc => sc.ContactTypeId == contactTypeId && !sc.IsDeleted)
@@ -162,7 +167,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.SupplierContacts
                     .Include(sc => sc.ContactType)
                     .FirstOrDefaultAsync(sc => sc.SupplierId == supplierId && sc.IsPrimary && !sc.IsDeleted);
             }
@@ -177,7 +183,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.SupplierContacts
                     .Include(sc => sc.ContactType)
                     .FirstOrDefaultAsync(sc => sc.SupplierId == supplierId && 
                                               sc.ContactTypeId == contactTypeId && 
@@ -198,6 +205,7 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var contact = await GetByIdAsync(contactId);
                 if (contact == null)
                 {
@@ -205,7 +213,7 @@ namespace ERPCore2.Services
                 }
 
                 // 將同一廠商的其他聯絡方式設為非主要
-                var otherContacts = await _dbSet
+                var otherContacts = await context.SupplierContacts
                     .Where(sc => sc.SupplierId == contact.SupplierId && 
                                 sc.Id != contactId && 
                                 sc.IsPrimary && 
@@ -222,7 +230,7 @@ namespace ERPCore2.Services
                 contact.IsPrimary = true;
                 contact.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -261,13 +269,14 @@ namespace ERPCore2.Services
         {
             try
             {
-                var hasPrimary = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var hasPrimary = await context.SupplierContacts
                     .AnyAsync(sc => sc.SupplierId == supplierId && sc.IsPrimary && !sc.IsDeleted);
 
                 if (!hasPrimary)
                 {
                     // 找第一個可用的聯絡方式設為主要
-                    var firstContact = await _dbSet
+                    var firstContact = await context.SupplierContacts
                         .Where(sc => sc.SupplierId == supplierId && !sc.IsDeleted)
                         .OrderBy(sc => sc.Id)
                         .FirstOrDefaultAsync();
@@ -276,7 +285,7 @@ namespace ERPCore2.Services
                     {
                         firstContact.IsPrimary = true;
                         firstContact.UpdatedAt = DateTime.UtcNow;
-                        await _context.SaveChangesAsync();
+                        await context.SaveChangesAsync();
                     }
                 }
 
@@ -314,8 +323,9 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 // 取得現有聯絡方式
-                var existingContacts = await _dbSet
+                var existingContacts = await context.SupplierContacts
                     .Where(sc => sc.SupplierId == supplierId && !sc.IsDeleted)
                     .ToListAsync();
 
@@ -340,7 +350,7 @@ namespace ERPCore2.Services
                         // 新增
                         contact.CreatedAt = DateTime.UtcNow;
                         contact.UpdatedAt = DateTime.UtcNow;
-                        _dbSet.Add(contact);
+                        context.SupplierContacts.Add(contact);
                     }
                     else
                     {
@@ -356,7 +366,7 @@ namespace ERPCore2.Services
                     }
                 }
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)

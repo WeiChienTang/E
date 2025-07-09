@@ -28,7 +28,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Materials
                     .Include(m => m.Supplier)
                     .Where(m => !m.IsDeleted)
                     .OrderBy(m => m.Category)
@@ -52,7 +53,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Materials
                     .Include(m => m.Supplier)
                     .FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted);
             }
@@ -77,7 +79,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Materials
                     .Include(m => m.Supplier)
                     .Where(m => !m.IsDeleted &&
                                (m.Name.Contains(searchTerm) ||
@@ -125,7 +128,8 @@ namespace ERPCore2.Services
                 // 檢查供應商是否存在（如果有指定）
                 if (entity.SupplierId.HasValue)
                 {
-                    var supplierExists = await _context.Suppliers
+                    using var context = await _contextFactory.CreateDbContextAsync();
+                    var supplierExists = await context.Suppliers
                         .AnyAsync(s => s.Id == entity.SupplierId.Value && !s.IsDeleted);
                     
                     if (!supplierExists)
@@ -161,7 +165,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(m => m.Name == name && !m.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Materials.Where(m => m.Name == name && !m.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(m => m.Id != excludeId.Value);
@@ -187,7 +192,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(m => m.Code == code && !m.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Materials.Where(m => m.Code == code && !m.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(m => m.Id != excludeId.Value);
@@ -213,7 +219,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Materials
                     .Include(m => m.Supplier)
                     .Where(m => m.Code == code && !m.IsDeleted)
                     .FirstOrDefaultAsync();
@@ -236,7 +243,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Materials
                     .Include(m => m.Supplier)
                     .Where(m => !m.IsDeleted && m.Category == category)
                     .OrderBy(m => m.Name)
@@ -260,7 +268,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Materials
                     .Where(m => !m.IsDeleted && !string.IsNullOrEmpty(m.Category))
                     .Select(m => m.Category!)
                     .Distinct()
@@ -284,7 +293,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Materials
                     .Include(m => m.Supplier)
                     .Where(m => !m.IsDeleted && m.SupplierId == supplierId)
                     .OrderBy(m => m.Category)
@@ -309,7 +319,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Materials
                     .Include(m => m.Supplier)
                     .Where(m => !m.IsDeleted && m.IsEcoFriendly)
                     .OrderBy(m => m.Category)
@@ -333,7 +344,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Materials
                     .Include(m => m.Supplier)
                     .Where(m => !m.IsDeleted);
 
@@ -367,7 +379,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Materials
                     .Include(m => m.Supplier)
                     .Where(m => !m.IsDeleted);
 

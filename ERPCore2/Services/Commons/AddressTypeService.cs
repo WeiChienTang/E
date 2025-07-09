@@ -29,7 +29,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.AddressTypes
                     .Where(x => !x.IsDeleted)
                     .OrderBy(at => at.TypeName)
                     .ToListAsync();
@@ -46,7 +47,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.AddressTypes
                     .Where(x => !x.IsDeleted && x.Status == EntityStatus.Active)
                     .OrderBy(at => at.TypeName)
                     .ToListAsync();
@@ -93,7 +95,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.AddressTypes
                     .Where(at => !at.IsDeleted && 
                                (at.TypeName.Contains(searchTerm) || 
                                 (at.Description != null && at.Description.Contains(searchTerm))))
@@ -112,7 +115,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(at => at.TypeName == name && !at.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.AddressTypes.Where(at => at.TypeName == name && !at.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(at => at.Id != excludeId.Value);
@@ -145,7 +149,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(at => !at.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.AddressTypes.Where(at => !at.IsDeleted);
 
                 var totalCount = await query.CountAsync();
 
@@ -169,7 +174,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var hasRelatedAddresses = await _context.CustomerAddresses
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var hasRelatedAddresses = await context.CustomerAddresses
                     .AnyAsync(ca => ca.AddressTypeId == entity.Id && !ca.IsDeleted);
 
                 if (hasRelatedAddresses)

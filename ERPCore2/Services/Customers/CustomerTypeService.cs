@@ -39,7 +39,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.CustomerTypes
                     .Where(ct => !ct.IsDeleted &&
                                (ct.TypeName.Contains(searchTerm) ||
                                 (ct.Description != null && ct.Description.Contains(searchTerm))))
@@ -104,7 +105,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(ct => ct.TypeName == name && !ct.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.CustomerTypes.Where(ct => ct.TypeName == name && !ct.IsDeleted);
                 
                 if (excludeId.HasValue)
                 {
@@ -131,7 +133,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.CustomerTypes
                     .Where(ct => !ct.IsDeleted)
                     .OrderBy(ct => ct.TypeName)
                     .ToListAsync();
@@ -151,8 +154,12 @@ namespace ERPCore2.Services
                 if (entity == null)
                 {
                     return ServiceResult.Failure("找不到要刪除的客戶類型");
-                }                // 檢查是否有客戶使用此類型
-                var hasCustomers = await _context.Customers
+                }
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 檢查是否有客戶使用此類型
+                var hasCustomers = await context.Customers
                     .AnyAsync(c => c.CustomerTypeId == id && !c.IsDeleted);
 
                 if (hasCustomers)
@@ -163,7 +170,8 @@ namespace ERPCore2.Services
                 entity.IsDeleted = true;
                 entity.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                context.CustomerTypes.Update(entity);
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -186,7 +194,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(ct => ct.TypeName == typeName && !ct.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.CustomerTypes.Where(ct => ct.TypeName == typeName && !ct.IsDeleted);
                 
                 if (excludeId.HasValue)
                 {
@@ -210,7 +219,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(ct => !ct.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.CustomerTypes.Where(ct => !ct.IsDeleted);
 
                 var totalCount = await query.CountAsync();
                 
@@ -242,8 +252,12 @@ namespace ERPCore2.Services
                 if (ids == null || !ids.Any())
                 {
                     return ServiceResult.Failure("沒有指定要刪除的客戶類型");
-                }                // 檢查是否有客戶使用這些類型
-                var usedTypeIds = await _context.Customers
+                }
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 檢查是否有客戶使用這些類型
+                var usedTypeIds = await context.Customers
                     .Where(c => c.CustomerTypeId.HasValue && ids.Contains(c.CustomerTypeId.Value) && !c.IsDeleted)
                     .Select(c => c.CustomerTypeId!.Value)
                     .Distinct()
@@ -251,7 +265,7 @@ namespace ERPCore2.Services
 
                 if (usedTypeIds.Any())
                 {
-                    var usedTypeNames = await _context.CustomerTypes
+                    var usedTypeNames = await context.CustomerTypes
                         .Where(ct => usedTypeIds.Contains(ct.Id))
                         .Select(ct => ct.TypeName)
                         .ToListAsync();

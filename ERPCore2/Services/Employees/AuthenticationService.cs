@@ -15,7 +15,7 @@ namespace ERPCore2.Services
     /// </summary>
     public class AuthenticationService : IAuthenticationService
     {
-        private readonly AppDbContext _context;
+        private readonly IDbContextFactory<AppDbContext> _contextFactory;
         private readonly ILogger<AuthenticationService>? _logger;
 
         /// <summary>
@@ -23,7 +23,7 @@ namespace ERPCore2.Services
         /// </summary>
         public AuthenticationService(IDbContextFactory<AppDbContext> contextFactory, ILogger<AuthenticationService> logger)
         {
-            _context = context;
+            _contextFactory = contextFactory;
             _logger = logger;
         }
 
@@ -32,7 +32,7 @@ namespace ERPCore2.Services
         /// </summary>
         public AuthenticationService(IDbContextFactory<AppDbContext> contextFactory)
         {
-            _context = context;
+            _contextFactory = contextFactory;
         }
 
         /// <summary>
@@ -45,7 +45,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
                     return ServiceResult<Employee>.Failure("使用者名稱和密碼不能為空");
 
-                var employee = await _context.Employees
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employee = await context.Employees
                     .Include(e => e.Role)
                     .FirstOrDefaultAsync(e => e.Username == username && !e.IsDeleted);
 
@@ -80,7 +81,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var employee = await _context.Employees
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employee = await context.Employees
                     .FirstOrDefaultAsync(e => e.Id == employeeId && !e.IsDeleted);
 
                 if (employee == null)
@@ -105,7 +107,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var employee = await _context.Employees
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employee = await context.Employees
                     .FirstOrDefaultAsync(e => e.Id == employeeId && !e.IsDeleted);
 
                 if (employee == null)
@@ -121,7 +124,7 @@ namespace ERPCore2.Services
                 employee.PasswordHash = HashPassword(newPassword);
                 employee.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }
@@ -139,7 +142,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var employee = await _context.Employees
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employee = await context.Employees
                     .FirstOrDefaultAsync(e => e.Id == employeeId && !e.IsDeleted);
 
                 if (employee == null)
@@ -152,7 +156,7 @@ namespace ERPCore2.Services
                 employee.PasswordHash = HashPassword(newPassword);
                 employee.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }
@@ -244,7 +248,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var employee = await _context.Employees
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employee = await context.Employees
                     .FirstOrDefaultAsync(e => e.Id == employeeId && !e.IsDeleted);
 
                 if (employee == null)
@@ -253,7 +258,7 @@ namespace ERPCore2.Services
                 employee.LastLoginAt = DateTime.UtcNow;
                 employee.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }
@@ -271,7 +276,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var employee = await _context.Employees
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employee = await context.Employees
                     .FirstOrDefaultAsync(e => e.Id == employeeId && !e.IsDeleted);
 
                 if (employee == null)
@@ -293,7 +299,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var employee = await _context.Employees
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employee = await context.Employees
                     .FirstOrDefaultAsync(e => e.Id == employeeId && !e.IsDeleted);
 
                 if (employee == null)
@@ -302,7 +309,7 @@ namespace ERPCore2.Services
                 employee.IsLocked = true;
                 employee.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }
@@ -320,7 +327,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var employee = await _context.Employees
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employee = await context.Employees
                     .FirstOrDefaultAsync(e => e.Id == employeeId && !e.IsDeleted);
 
                 if (employee == null)
@@ -329,7 +337,7 @@ namespace ERPCore2.Services
                 employee.IsLocked = false;
                 employee.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }

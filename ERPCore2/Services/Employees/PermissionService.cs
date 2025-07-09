@@ -14,7 +14,7 @@ namespace ERPCore2.Services
     /// </summary>
     public class PermissionService : IPermissionService
     {
-        private readonly AppDbContext _context;
+        private readonly IDbContextFactory<AppDbContext> _contextFactory;
         private readonly IMemoryCache _cache;
         private readonly ILogger<PermissionService> _logger;
         private readonly IErrorLogService _errorLogService;
@@ -22,7 +22,7 @@ namespace ERPCore2.Services
 
         public PermissionService(IDbContextFactory<AppDbContext> contextFactory, IMemoryCache cache, ILogger<PermissionService> logger, IErrorLogService errorLogService)
         {
-            _context = context;
+            _contextFactory = contextFactory;
             _cache = cache;
             _logger = logger;
             _errorLogService = errorLogService;
@@ -33,7 +33,7 @@ namespace ERPCore2.Services
         /// </summary>
         public PermissionService(IDbContextFactory<AppDbContext> contextFactory, IMemoryCache cache, IErrorLogService errorLogService)
         {
-            _context = context;
+            _contextFactory = contextFactory;
             _cache = cache;
             _logger = null!; // 簡易建構子可以不提供 logger
             _errorLogService = errorLogService;
@@ -145,12 +145,14 @@ namespace ERPCore2.Services
         public async Task<ServiceResult<List<Permission>>> GetEmployeePermissionsAsync(int employeeId)
         {
             try
-            {                var cacheKey = $"employee_permissions_{employeeId}";
+            {
+                var cacheKey = $"employee_permissions_{employeeId}";
                 
                 if (_cache.TryGetValue(cacheKey, out List<Permission>? cachedPermissions) && cachedPermissions != null)
                     return ServiceResult<List<Permission>>.Success(cachedPermissions);
 
-                var employee = await _context.Employees
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employee = await context.Employees
                     .Include(e => e.Role)
                     .ThenInclude(r => r.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
@@ -228,7 +230,8 @@ namespace ERPCore2.Services
                 if (_cache.TryGetValue(cacheKey, out List<Permission>? cachedPermissions) && cachedPermissions != null)
                     return ServiceResult<List<Permission>>.Success(cachedPermissions);
 
-                var role = await _context.Roles
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var role = await context.Roles
                     .Include(r => r.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
                     .FirstOrDefaultAsync(r => r.Id == roleId && !r.IsDeleted);
@@ -272,7 +275,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(permissionCode))
                     return ServiceResult<bool>.Failure("權限代碼不能為空");
 
-                var exists = await _context.Permissions
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var exists = await context.Permissions
                     .AnyAsync(p => p.PermissionCode == permissionCode && !p.IsDeleted);
 
                 return ServiceResult<bool>.Success(exists);
@@ -349,7 +353,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(modulePrefix))
                     return ServiceResult<List<Permission>>.Failure("模組前綴不能為空");
 
-                var permissions = await _context.Permissions
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var permissions = await context.Permissions
                     .Where(p => p.PermissionCode.StartsWith(modulePrefix + ".") && !p.IsDeleted)
                     .OrderBy(p => p.PermissionCode)
                     .ToListAsync();

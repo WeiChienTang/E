@@ -31,7 +31,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.CustomerAddresses
                     .Include(ca => ca.Customer)
                     .Include(ca => ca.AddressType)
                     .Where(ca => !ca.IsDeleted)
@@ -53,7 +54,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.CustomerAddresses
                     .Include(ca => ca.Customer)
                     .Include(ca => ca.AddressType)
                     .Where(ca => !ca.IsDeleted &&
@@ -77,6 +79,7 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var errors = new List<string>();
 
                 // 檢查必要欄位
@@ -99,7 +102,7 @@ namespace ERPCore2.Services
                 // 檢查地址類型是否存在
                 if (entity.AddressTypeId.HasValue)
                 {
-                    var addressTypeExists = await _context.AddressTypes
+                    var addressTypeExists = await context.AddressTypes
                         .AnyAsync(at => at.Id == entity.AddressTypeId.Value && at.Status == EntityStatus.Active);
 
                     if (!addressTypeExists)
@@ -107,7 +110,7 @@ namespace ERPCore2.Services
                 }
 
                 // 檢查客戶是否存在
-                var customerExists = await _context.Customers
+                var customerExists = await context.Customers
                     .AnyAsync(c => c.Id == entity.CustomerId && !c.IsDeleted);
 
                 if (!customerExists)
@@ -133,7 +136,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.CustomerAddresses
                     .Include(ca => ca.AddressType)
                     .Where(ca => ca.CustomerId == customerId && !ca.IsDeleted)
                     .OrderBy(ca => ca.AddressType!.TypeName)
@@ -150,7 +154,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.CustomerAddresses
                     .Include(ca => ca.AddressType)
                     .FirstOrDefaultAsync(ca => ca.CustomerId == customerId && ca.IsPrimary && !ca.IsDeleted);
             }
@@ -165,7 +170,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.CustomerAddresses
                     .Include(ca => ca.Customer)
                     .Include(ca => ca.AddressType)
                     .Where(ca => ca.AddressTypeId == addressTypeId && !ca.IsDeleted)
@@ -187,14 +193,15 @@ namespace ERPCore2.Services
         {
             try
             {
-                var address = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var address = await context.CustomerAddresses
                     .FirstOrDefaultAsync(ca => ca.Id == addressId && !ca.IsDeleted);
 
                 if (address == null)
                     return ServiceResult.Failure("地址不存在");
 
                 // 將該客戶的其他地址設為非主要
-                var otherAddresses = await _dbSet
+                var otherAddresses = await context.CustomerAddresses
                     .Where(ca => ca.CustomerId == address.CustomerId && ca.Id != addressId && !ca.IsDeleted)
                     .ToListAsync();
 
@@ -210,7 +217,7 @@ namespace ERPCore2.Services
                 address.UpdatedAt = DateTime.UtcNow;
                 address.UpdatedBy = "System"; // TODO: 從認證取得使用者
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
                 _logger?.LogInformation("Successfully set primary address {AddressId} for customer {CustomerId}",
                     addressId, address.CustomerId);
@@ -228,8 +235,9 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 // 檢查目標客戶是否存在
-                var targetCustomerExists = await _context.Customers
+                var targetCustomerExists = await context.Customers
                     .AnyAsync(c => c.Id == targetCustomerId && !c.IsDeleted);
 
                 if (!targetCustomerExists)
@@ -255,8 +263,8 @@ namespace ERPCore2.Services
                 if (!validationResult.IsSuccess)
                     return ServiceResult<CustomerAddress>.Failure(validationResult.ErrorMessage!);
 
-                _dbSet.Add(newAddress);
-                await _context.SaveChangesAsync();
+                context.CustomerAddresses.Add(newAddress);
+                await context.SaveChangesAsync();
 
                 _logger?.LogInformation("Successfully copied address from customer {SourceCustomerId} to customer {TargetCustomerId}",
                     sourceAddress.CustomerId, targetCustomerId);
@@ -274,15 +282,16 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 // 檢查是否已有主要地址
-                var hasPrimaryAddress = await _dbSet
+                var hasPrimaryAddress = await context.CustomerAddresses
                     .AnyAsync(ca => ca.CustomerId == customerId && ca.IsPrimary && !ca.IsDeleted);
 
                 if (hasPrimaryAddress)
                     return ServiceResult.Success();
 
                 // 如果沒有主要地址，將第一個地址設為主要
-                var firstAddress = await _dbSet
+                var firstAddress = await context.CustomerAddresses
                     .Where(ca => ca.CustomerId == customerId && !ca.IsDeleted)
                     .OrderBy(ca => ca.CreatedAt)
                     .FirstOrDefaultAsync();
@@ -293,7 +302,7 @@ namespace ERPCore2.Services
                     firstAddress.UpdatedAt = DateTime.UtcNow;
                     firstAddress.UpdatedBy = "System"; // TODO: 從認證取得使用者
 
-                    await _context.SaveChangesAsync();
+                    await context.SaveChangesAsync();
 
                     _logger?.LogInformation("Set first address {AddressId} as primary for customer {CustomerId}",
                         firstAddress.Id, customerId);
@@ -343,20 +352,21 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 // 驗證客戶是否存在
-                var customerExists = await _context.Customers
+                var customerExists = await context.Customers
                     .AnyAsync(c => c.Id == customerId && !c.IsDeleted);
                 
                 if (!customerExists)
                     return ServiceResult.Failure("客戶不存在");
 
                 // 取得現有地址
-                var existingAddresses = await _dbSet
+                var existingAddresses = await context.CustomerAddresses
                     .Where(ca => ca.CustomerId == customerId)
                     .ToListAsync();
 
                 // 刪除現有地址
-                _context.CustomerAddresses.RemoveRange(existingAddresses);
+                context.CustomerAddresses.RemoveRange(existingAddresses);
                 
                 // 新增更新的地址
                 foreach (var address in addresses.Where(a => !string.IsNullOrWhiteSpace(a.Address) || 
@@ -378,10 +388,10 @@ namespace ERPCore2.Services
                         CreatedBy = "System", // TODO: 從認證取得使用者
                         Remarks = address.Remarks
                     };
-                    _context.CustomerAddresses.Add(newAddress);
+                    context.CustomerAddresses.Add(newAddress);
                 }
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
                 _logger?.LogInformation("Successfully updated addresses for customer {CustomerId}", customerId);
                 return ServiceResult.Success();

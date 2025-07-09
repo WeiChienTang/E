@@ -36,7 +36,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Warehouses
                     .Include(w => w.WarehouseLocations)
                     .Where(w => !w.IsDeleted)
                     .OrderBy(w => w.WarehouseCode)
@@ -59,7 +60,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Warehouses
                     .Include(w => w.WarehouseLocations)
                     .Where(w => !w.IsDeleted &&
                                (w.WarehouseName.Contains(searchTerm) ||
@@ -81,7 +83,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(w => w.WarehouseCode == warehouseCode && !w.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Warehouses.Where(w => w.WarehouseCode == warehouseCode && !w.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(w => w.Id != excludeId.Value);
@@ -102,7 +105,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Warehouses
                     .Include(w => w.WarehouseLocations)
                     .Where(w => !w.IsDeleted && w.WarehouseType == warehouseType)
                     .OrderBy(w => w.WarehouseCode)
@@ -122,7 +126,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Warehouses
                     .Include(w => w.WarehouseLocations)
                     .FirstOrDefaultAsync(w => !w.IsDeleted && w.IsDefault);
             }
@@ -140,15 +145,16 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 // 先取消所有倉庫的預設設定
-                var allWarehouses = await _dbSet.Where(w => !w.IsDeleted).ToListAsync();
+                var allWarehouses = await context.Warehouses.Where(w => !w.IsDeleted).ToListAsync();
                 foreach (var warehouse in allWarehouses)
                 {
                     warehouse.IsDefault = warehouse.Id == warehouseId;
                     warehouse.UpdatedAt = DateTime.Now;
                 }
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -165,7 +171,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Warehouses
                     .Include(w => w.WarehouseLocations.Where(l => !l.IsDeleted))
                     .FirstOrDefaultAsync(w => w.Id == warehouseId && !w.IsDeleted);
             }
@@ -210,7 +217,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(w => w.WarehouseName == name && !w.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Warehouses.Where(w => w.WarehouseName == name && !w.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(w => w.Id != excludeId.Value);

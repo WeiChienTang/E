@@ -29,7 +29,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryReservations
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
@@ -48,7 +49,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryReservations
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
@@ -67,7 +69,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryReservations
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
@@ -86,7 +89,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryReservations
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
@@ -105,7 +109,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryReservations
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
@@ -126,7 +131,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryReservations
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
@@ -152,7 +158,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                var query = _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.InventoryReservations
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
@@ -179,7 +186,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryReservations
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
@@ -201,7 +209,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryReservations
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
@@ -218,7 +227,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryReservations
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
@@ -244,7 +254,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                var query = _dbSet.Where(r => r.ProductId == productId && 
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.InventoryReservations.Where(r => r.ProductId == productId && 
                                              r.WarehouseId == warehouseId && 
                                              r.ReservationStatus == InventoryReservationStatus.Reserved && 
                                              !r.IsDeleted &&
@@ -266,8 +277,9 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 // 獲取庫存數量
-                var stockQuery = _context.InventoryStocks
+                var stockQuery = context.InventoryStocks
                     .Where(s => s.ProductId == productId && 
                                s.WarehouseId == warehouseId && 
                                !s.IsDeleted);
@@ -278,7 +290,7 @@ namespace ERPCore2.Services.Inventory
                 var totalStock = await stockQuery.SumAsync(s => s.CurrentStock);
 
                 // 獲取已預留數量
-                var reservedQuantity = await GetTotalReservedQuantityAsync(productId, warehouseId, locationId);
+                var reservedQuantity = await this.GetTotalReservedQuantityAsync(productId, warehouseId, locationId);
 
                 return Math.Max(0, totalStock - reservedQuantity);
             }
@@ -293,7 +305,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                var query = _dbSet.Where(r => !r.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.InventoryReservations.Where(r => !r.IsDeleted);
 
                 if (startDate.HasValue)
                     query = query.Where(r => r.ReservationDate >= startDate.Value);
@@ -326,7 +339,7 @@ namespace ERPCore2.Services.Inventory
                     return ServiceResult.Failure("預留數量必須大於0");
 
                 // 檢查是否有足夠庫存可預留
-                var canReserve = await CanReserveQuantityAsync(productId, warehouseId, quantity, locationId);
+                var canReserve = await this.CanReserveQuantityAsync(productId, warehouseId, quantity, locationId);
                 if (!canReserve)
                     return ServiceResult.Failure("庫存不足，無法進行預留");
 
@@ -348,12 +361,13 @@ namespace ERPCore2.Services.Inventory
                     IsDeleted = false
                 };
 
-                var validationResult = await ValidateReservationAsync(reservation);
+                var validationResult = await this.ValidateReservationAsync(reservation);
                 if (!validationResult.IsSuccess)
                     return validationResult;
 
-                await _dbSet.AddAsync(reservation);
-                await _context.SaveChangesAsync();
+                using var context = await _contextFactory.CreateDbContextAsync();
+                await context.InventoryReservations.AddAsync(reservation);
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }
@@ -369,7 +383,7 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                var reservation = await GetByIdAsync(reservationId);
+                var reservation = await this.GetByIdAsync(reservationId);
                 if (reservation == null)
                     return ServiceResult.Failure("找不到指定的預留記錄");
 
@@ -400,7 +414,9 @@ namespace ERPCore2.Services.Inventory
                         : $"{reservation.ReservationRemarks}; {remarks}";
                 }
 
-                await _context.SaveChangesAsync();
+                using var context = await _contextFactory.CreateDbContextAsync();
+                context.InventoryReservations.Update(reservation);
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }
@@ -415,7 +431,7 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                var reservation = await GetByIdAsync(reservationId);
+                var reservation = await this.GetByIdAsync(reservationId);
                 if (reservation == null)
                     return ServiceResult.Failure("找不到指定的預留記錄");
 
@@ -435,7 +451,9 @@ namespace ERPCore2.Services.Inventory
                         : $"{reservation.ReservationRemarks}; 取消原因: {reason}";
                 }
 
-                await _context.SaveChangesAsync();
+                using var context = await _contextFactory.CreateDbContextAsync();
+                context.InventoryReservations.Update(reservation);
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }
@@ -451,7 +469,7 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                var reservation = await GetByIdAsync(reservationId);
+                var reservation = await this.GetByIdAsync(reservationId);
                 if (reservation == null)
                     return ServiceResult.Failure("找不到指定的預留記錄");
 
@@ -474,7 +492,9 @@ namespace ERPCore2.Services.Inventory
                         : $"{reservation.ReservationRemarks}; 延長到期日: {remarks}";
                 }
 
-                await _context.SaveChangesAsync();
+                using var context = await _contextFactory.CreateDbContextAsync();
+                context.InventoryReservations.Update(reservation);
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }
@@ -493,7 +513,7 @@ namespace ERPCore2.Services.Inventory
                 if (releaseQuantity <= 0)
                     return ServiceResult.Failure("釋放數量必須大於0");
 
-                return await ReleaseReservationAsync(reservationId, releaseQuantity, remarks, employeeId);
+                return await this.ReleaseReservationAsync(reservationId, releaseQuantity, remarks, employeeId);
             }
             catch (Exception ex)
             {
@@ -510,12 +530,12 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                var expiredReservations = await GetExpiredReservationsAsync();
+                var expiredReservations = await this.GetExpiredReservationsAsync();
                 var processedCount = 0;
 
                 foreach (var reservation in expiredReservations)
                 {
-                    var releaseResult = await ReleaseReservationAsync(reservation.Id, null, "自動釋放過期預留", employeeId);
+                    var releaseResult = await this.ReleaseReservationAsync(reservation.Id, null, "自動釋放過期預留", employeeId);
                     if (releaseResult.IsSuccess)
                         processedCount++;
                 }
@@ -534,7 +554,7 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                var reservations = await GetByReferenceNumberAsync(referenceNumber);
+                var reservations = await this.GetByReferenceNumberAsync(referenceNumber);
                 var activeReservations = reservations.Where(r => r.ReservationStatus == InventoryReservationStatus.Reserved).ToList();
 
                 if (!activeReservations.Any())
@@ -544,7 +564,7 @@ namespace ERPCore2.Services.Inventory
 
                 foreach (var reservation in activeReservations)
                 {
-                    var releaseResult = await ReleaseReservationAsync(reservation.Id, null, remarks, employeeId);
+                    var releaseResult = await this.ReleaseReservationAsync(reservation.Id, null, remarks, employeeId);
                     if (releaseResult.IsSuccess)
                         processedCount++;
                 }
@@ -564,7 +584,7 @@ namespace ERPCore2.Services.Inventory
 
         public override async Task<ServiceResult> ValidateAsync(InventoryReservation reservation)
         {
-            return await ValidateReservationAsync(reservation);
+            return await this.ValidateReservationAsync(reservation);
         }
 
         public async Task<ServiceResult> ValidateReservationAsync(InventoryReservation reservation)
@@ -594,20 +614,22 @@ namespace ERPCore2.Services.Inventory
                 if (reservation.ExpiryDate.HasValue && reservation.ExpiryDate.Value <= reservation.ReservationDate)
                     errors.Add("到期日必須大於預留日期");
 
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
                 // 檢查產品是否存在
-                var productExists = await _context.Products.AnyAsync(p => p.Id == reservation.ProductId && !p.IsDeleted);
+                var productExists = await context.Products.AnyAsync(p => p.Id == reservation.ProductId && !p.IsDeleted);
                 if (!productExists)
                     errors.Add("指定的產品不存在");
 
                 // 檢查倉庫是否存在
-                var warehouseExists = await _context.Warehouses.AnyAsync(w => w.Id == reservation.WarehouseId && !w.IsDeleted);
+                var warehouseExists = await context.Warehouses.AnyAsync(w => w.Id == reservation.WarehouseId && !w.IsDeleted);
                 if (!warehouseExists)
                     errors.Add("指定的倉庫不存在");
 
                 // 檢查倉庫位置是否存在（如果有指定）
                 if (reservation.WarehouseLocationId.HasValue)
                 {
-                    var locationExists = await _context.WarehouseLocations
+                    var locationExists = await context.WarehouseLocations
                         .AnyAsync(l => l.Id == reservation.WarehouseLocationId.Value && 
                                       l.WarehouseId == reservation.WarehouseId && 
                                       !l.IsDeleted);
@@ -631,7 +653,7 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                var availableQuantity = await GetAvailableQuantityForReservationAsync(productId, warehouseId, locationId);
+                var availableQuantity = await this.GetAvailableQuantityForReservationAsync(productId, warehouseId, locationId);
                 return availableQuantity >= quantity;
             }
             catch (Exception ex)
@@ -645,7 +667,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                var query = _dbSet.Where(r => r.ReferenceNumber == referenceNumber && 
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.InventoryReservations.Where(r => r.ReferenceNumber == referenceNumber && 
                                              r.ReservationType == reservationType && 
                                              !r.IsDeleted);
 
@@ -670,7 +693,7 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                var reservation = await GetByIdAsync(reservationId);
+                var reservation = await this.GetByIdAsync(reservationId);
                 if (reservation == null)
                     return ServiceResult.Failure("找不到指定的預留記錄");
 
@@ -685,7 +708,7 @@ namespace ERPCore2.Services.Inventory
                     return ServiceResult.Failure("該預留記錄已完全釋放，無法轉換");
 
                 // 完全釋放預留
-                var releaseResult = await ReleaseReservationAsync(reservationId, null, 
+                var releaseResult = await this.ReleaseReservationAsync(reservationId, null, 
                     $"轉換為銷售出貨: {saleOrderNumber}", employeeId);
 
                 if (!releaseResult.IsSuccess)
@@ -704,7 +727,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryReservations
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
@@ -727,11 +751,12 @@ namespace ERPCore2.Services.Inventory
 
         #region Override Methods
 
-        public override async Task<List<InventoryReservation>> GetAllAsync()
+        public new async Task<List<InventoryReservation>> GetAllAsync()
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryReservations
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
@@ -746,11 +771,12 @@ namespace ERPCore2.Services.Inventory
             }
         }
 
-        public override async Task<InventoryReservation?> GetByIdAsync(int id)
+        public new async Task<InventoryReservation?> GetByIdAsync(int id)
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryReservations
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
@@ -767,7 +793,8 @@ namespace ERPCore2.Services.Inventory
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryReservations
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
@@ -788,4 +815,3 @@ namespace ERPCore2.Services.Inventory
         #endregion
     }
 }
-

@@ -31,7 +31,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Sizes
                     .Include(s => s.Products)
                     .Where(s => !s.IsDeleted)
                     .OrderBy(s => s.SizeName)
@@ -48,7 +49,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Sizes
                     .Include(s => s.Products)
                     .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
             }
@@ -68,7 +70,8 @@ namespace ERPCore2.Services
 
                 var lowerSearchTerm = searchTerm.ToLower();
                 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Sizes
                     .Include(s => s.Products)
                     .Where(s => !s.IsDeleted && 
                         (s.SizeCode.ToLower().Contains(lowerSearchTerm) ||
@@ -132,7 +135,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(sizeCode))
                     return null;
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Sizes
                     .Include(s => s.Products)
                     .FirstOrDefaultAsync(s => s.SizeCode == sizeCode && !s.IsDeleted);
             }
@@ -150,7 +154,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(sizeCode))
                     return false;
 
-                var query = _dbSet.Where(s => s.SizeCode == sizeCode && !s.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Sizes.Where(s => s.SizeCode == sizeCode && !s.IsDeleted);
                 
                 if (excludeId.HasValue)
                 {
@@ -170,7 +175,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Sizes
                     .Where(s => !s.IsDeleted && s.IsActive)
                     .OrderBy(s => s.SizeName)
                     .ToListAsync();
@@ -189,7 +195,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(sizeName))
                     return new List<Size>();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Sizes
                     .Include(s => s.Products)
                     .Where(s => !s.IsDeleted && s.SizeName.Contains(sizeName))
                     .OrderBy(s => s.SizeName)
@@ -210,7 +217,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var size = await GetByIdAsync(sizeId);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var size = await context.Sizes.FirstOrDefaultAsync(s => s.Id == sizeId && !s.IsDeleted);
                 if (size == null)
                 {
                     return ServiceResult.Failure("找不到指定的尺寸");
@@ -219,7 +227,7 @@ namespace ERPCore2.Services
                 size.IsActive = isActive;
                 size.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 
                 return ServiceResult.Success();
             }
@@ -234,7 +242,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var sizes = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var sizes = await context.Sizes
                     .Where(s => sizeIds.Contains(s.Id) && !s.IsDeleted)
                     .ToListAsync();
 
@@ -249,7 +258,7 @@ namespace ERPCore2.Services
                     size.UpdatedAt = DateTime.UtcNow;
                 }
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 
                 return ServiceResult.Success();
             }

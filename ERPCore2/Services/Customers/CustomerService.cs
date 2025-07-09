@@ -36,7 +36,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Customers
                     .Include(c => c.CustomerType)
                     .Include(c => c.IndustryType)
                     .Where(c => !c.IsDeleted)
@@ -54,7 +55,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Customers
                     .Include(c => c.CustomerType)
                     .Include(c => c.IndustryType)
                     .Include(c => c.CustomerContacts)
@@ -77,7 +79,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Customers
                     .Include(c => c.CustomerType)
                     .Include(c => c.IndustryType)
                     .Where(c => !c.IsDeleted && 
@@ -99,6 +102,7 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var errors = new List<string>();
 
                 // 檢查必要欄位
@@ -124,7 +128,7 @@ namespace ERPCore2.Services
                 // 檢查客戶代碼是否重複
                 if (!string.IsNullOrWhiteSpace(entity.CustomerCode))
                 {
-                    var isDuplicate = await _dbSet
+                    var isDuplicate = await context.Customers
                         .Where(c => c.CustomerCode == entity.CustomerCode && !c.IsDeleted)
                         .Where(c => c.Id != entity.Id) // 排除自己
                         .AnyAsync();
@@ -136,7 +140,7 @@ namespace ERPCore2.Services
                 // 檢查客戶類型是否存在
                 if (entity.CustomerTypeId.HasValue)
                 {
-                    var customerTypeExists = await _context.CustomerTypes
+                    var customerTypeExists = await context.CustomerTypes
                         .AnyAsync(ct => ct.Id == entity.CustomerTypeId.Value && ct.Status == EntityStatus.Active);
 
                     if (!customerTypeExists)
@@ -146,7 +150,7 @@ namespace ERPCore2.Services
                 // 檢查行業類型是否存在
                 if (entity.IndustryTypeId.HasValue)
                 {
-                    var industryTypeExists = await _context.IndustryTypes
+                    var industryTypeExists = await context.IndustryTypes
                         .AnyAsync(it => it.Id == entity.IndustryTypeId.Value && it.Status == EntityStatus.Active);
 
                     if (!industryTypeExists)
@@ -179,7 +183,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(customerCode))
                     return null;
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Customers
                     .Include(c => c.CustomerType)
                     .Include(c => c.IndustryType)
                     .FirstOrDefaultAsync(c => c.CustomerCode == customerCode && !c.IsDeleted);
@@ -198,7 +203,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(companyName))
                     return new List<Customer>();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Customers
                     .Include(c => c.CustomerType)
                     .Include(c => c.IndustryType)
                     .Where(c => c.CompanyName.Contains(companyName) && !c.IsDeleted)
@@ -219,7 +225,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(customerCode))
                     return false;
 
-                var query = _dbSet.Where(c => c.CustomerCode == customerCode && !c.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Customers.Where(c => c.CustomerCode == customerCode && !c.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(c => c.Id != excludeId.Value);
@@ -244,7 +251,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _context.CustomerTypes
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.CustomerTypes
                     .Where(ct => ct.Status == EntityStatus.Active)
                     .OrderBy(ct => ct.TypeName)
                     .ToListAsync();
@@ -260,7 +268,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _context.IndustryTypes
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.IndustryTypes
                     .Where(it => it.Status == EntityStatus.Active)
                     .OrderBy(it => it.IndustryTypeName)
                     .ToListAsync();
@@ -276,7 +285,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _context.ContactTypes
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ContactTypes
                     .Where(ct => ct.Status == EntityStatus.Active)
                     .OrderBy(ct => ct.TypeName)
                     .ToListAsync();
@@ -292,7 +302,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _context.AddressTypes
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.AddressTypes
                     .Where(at => at.Status == EntityStatus.Active)
                     .OrderBy(at => at.TypeName)
                     .ToListAsync();
@@ -310,8 +321,9 @@ namespace ERPCore2.Services
             {
                 if (string.IsNullOrWhiteSpace(keyword))
                     return new List<CustomerType>();
-                    
-                return await _context.CustomerTypes
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.CustomerTypes
                     .Where(ct => ct.Status == EntityStatus.Active && 
                                 ct.TypeName.Contains(keyword))
                     .OrderBy(ct => ct.TypeName)
@@ -331,8 +343,9 @@ namespace ERPCore2.Services
             {
                 if (string.IsNullOrWhiteSpace(keyword))
                     return new List<IndustryType>();
-                    
-                return await _context.IndustryTypes
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.IndustryTypes
                     .Where(it => it.Status == EntityStatus.Active && 
                                 it.IndustryTypeName.Contains(keyword))
                     .OrderBy(it => it.IndustryTypeName)
@@ -354,7 +367,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _context.CustomerContacts
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.CustomerContacts
                     .Include(cc => cc.ContactType)
                     .Where(cc => cc.CustomerId == customerId && !cc.IsDeleted)
                     .OrderBy(cc => cc.ContactType!.TypeName)
@@ -371,18 +385,20 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
                 // 驗證客戶是否存在
-                var customerExists = await _dbSet.AnyAsync(c => c.Id == customerId && !c.IsDeleted);
+                var customerExists = await context.Customers.AnyAsync(c => c.Id == customerId && !c.IsDeleted);
                 if (!customerExists)
                     return ServiceResult.Failure("客戶不存在");
 
                 // 取得現有聯絡資料
-                var existingContacts = await _context.CustomerContacts
+                var existingContacts = await context.CustomerContacts
                     .Where(cc => cc.CustomerId == customerId)
                     .ToListAsync();
 
                 // 刪除現有聯絡資料
-                _context.CustomerContacts.RemoveRange(existingContacts);
+                context.CustomerContacts.RemoveRange(existingContacts);
 
                 // 新增更新的聯絡資料
                 foreach (var contact in contacts.Where(c => !string.IsNullOrWhiteSpace(c.ContactValue)))
@@ -400,10 +416,10 @@ namespace ERPCore2.Services
                         CreatedBy = "System", // TODO: 從認證取得使用者
                         Remarks = contact.Remarks
                     };
-                    _context.CustomerContacts.Add(newContact);
+                    context.CustomerContacts.Add(newContact);
                 }
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }

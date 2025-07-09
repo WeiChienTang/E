@@ -31,7 +31,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductSuppliers
                     .Include(ps => ps.Product)
                     .Include(ps => ps.Supplier)
                     .Where(ps => !ps.IsDeleted)
@@ -53,7 +54,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductSuppliers
                     .Include(ps => ps.Product)
                     .Include(ps => ps.Supplier)
                     .Where(ps => !ps.IsDeleted &&
@@ -93,7 +95,8 @@ namespace ERPCore2.Services
                 // 檢查是否已存在相同的商品-供應商關聯
                 if (entity.ProductId > 0 && entity.SupplierId > 0)
                 {
-                    var exists = await _dbSet.AnyAsync(ps => 
+                    using var context = await _contextFactory.CreateDbContextAsync();
+                    var exists = await context.ProductSuppliers.AnyAsync(ps => 
                         ps.ProductId == entity.ProductId && 
                         ps.SupplierId == entity.SupplierId && 
                         ps.Id != entity.Id && 
@@ -142,7 +145,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductSuppliers
                     .Include(ps => ps.Supplier)
                     .Where(ps => ps.ProductId == productId && !ps.IsDeleted)
                     .OrderBy(ps => ps.Supplier.CompanyName)
@@ -159,7 +163,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductSuppliers
                     .Include(ps => ps.Product)
                     .Where(ps => ps.SupplierId == supplierId && !ps.IsDeleted)
                     .OrderBy(ps => ps.Product.ProductName)
@@ -176,7 +181,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductSuppliers
                     .Include(ps => ps.Supplier)
                     .FirstOrDefaultAsync(ps => ps.ProductId == productId && ps.IsPrimarySupplier && !ps.IsDeleted);
             }
@@ -191,7 +197,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductSuppliers
                     .Include(ps => ps.Product)
                     .Include(ps => ps.Supplier)
                     .FirstOrDefaultAsync(ps => ps.ProductId == productId && 
@@ -209,7 +216,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductSuppliers
                     .Include(ps => ps.Product)
                     .Include(ps => ps.Supplier)
                     .Where(ps => ps.IsPrimarySupplier && !ps.IsDeleted)
@@ -231,6 +239,7 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var productSupplier = await GetByIdAsync(productSupplierId);
                 if (productSupplier == null)
                 {
@@ -238,7 +247,7 @@ namespace ERPCore2.Services
                 }
 
                 // 將同一商品的其他供應商設為非主要
-                var otherSuppliers = await _dbSet
+                var otherSuppliers = await context.ProductSuppliers
                     .Where(ps => ps.ProductId == productSupplier.ProductId && 
                                 ps.Id != productSupplierId && 
                                 ps.IsPrimarySupplier && 
@@ -256,14 +265,14 @@ namespace ERPCore2.Services
                 productSupplier.UpdatedAt = DateTime.UtcNow;
 
                 // 同時更新商品的主要供應商ID
-                var product = await _context.Products.FindAsync(productSupplier.ProductId);
+                var product = await context.Products.FindAsync(productSupplier.ProductId);
                 if (product != null)
                 {
                     product.PrimarySupplierId = productSupplier.SupplierId;
                     product.UpdatedAt = DateTime.UtcNow;
                 }
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -277,8 +286,9 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 // 取得現有關聯
-                var existingRelations = await _dbSet
+                var existingRelations = await context.ProductSuppliers
                     .Where(ps => ps.ProductId == productId && !ps.IsDeleted)
                     .ToListAsync();
 
@@ -308,10 +318,10 @@ namespace ERPCore2.Services
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
                     };
-                    _dbSet.Add(newRelation);
+                    context.ProductSuppliers.Add(newRelation);
                 }
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -325,8 +335,9 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 // 取得現有關聯
-                var existingRelations = await _dbSet
+                var existingRelations = await context.ProductSuppliers
                     .Where(ps => ps.SupplierId == supplierId && !ps.IsDeleted)
                     .ToListAsync();
 
@@ -356,10 +367,10 @@ namespace ERPCore2.Services
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
                     };
-                    _dbSet.Add(newRelation);
+                    context.ProductSuppliers.Add(newRelation);
                 }
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -373,6 +384,7 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var productSupplier = await GetByIdAsync(productSupplierId);
                 if (productSupplier == null)
                 {
@@ -391,7 +403,7 @@ namespace ERPCore2.Services
                 }
                 productSupplier.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -405,6 +417,7 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var productSupplier = await GetByIdAsync(productSupplierId);
                 if (productSupplier == null)
                 {
@@ -425,7 +438,7 @@ namespace ERPCore2.Services
                 productSupplier.MinOrderQuantity = minOrderQuantity;
                 productSupplier.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -439,7 +452,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet.AnyAsync(ps => ps.ProductId == productId && !ps.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductSuppliers.AnyAsync(ps => ps.ProductId == productId && !ps.IsDeleted);
             }
             catch (Exception ex)
             {
@@ -452,7 +466,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet.AnyAsync(ps => ps.SupplierId == supplierId && !ps.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductSuppliers.AnyAsync(ps => ps.SupplierId == supplierId && !ps.IsDeleted);
             }
             catch (Exception ex)
             {
@@ -465,7 +480,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductSuppliers
                     .Include(ps => ps.Product)
                     .Where(ps => ps.SupplierId == supplierId && 
                                 ps.SupplierPrice.HasValue && 
@@ -484,7 +500,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductSuppliers
                     .Include(ps => ps.Supplier)
                     .Where(ps => ps.ProductId == productId && 
                                 ps.SupplierPrice.HasValue && 
@@ -507,7 +524,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet.CountAsync(ps => ps.ProductId == productId && !ps.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductSuppliers.CountAsync(ps => ps.ProductId == productId && !ps.IsDeleted);
             }
             catch (Exception ex)
             {
@@ -520,7 +538,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet.CountAsync(ps => ps.SupplierId == supplierId && !ps.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductSuppliers.CountAsync(ps => ps.SupplierId == supplierId && !ps.IsDeleted);
             }
             catch (Exception ex)
             {
@@ -533,7 +552,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var leadTimes = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var leadTimes = await context.ProductSuppliers
                     .Where(ps => ps.ProductId == productId && 
                                 ps.LeadTime.HasValue && 
                                 !ps.IsDeleted)
@@ -553,7 +573,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var prices = await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var prices = await context.ProductSuppliers
                     .Where(ps => ps.ProductId == productId && 
                                 ps.SupplierPrice.HasValue && 
                                 !ps.IsDeleted)

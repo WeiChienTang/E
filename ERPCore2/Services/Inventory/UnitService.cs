@@ -35,7 +35,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Units
                     .Include(u => u.FromUnitConversions)
                     .Include(u => u.ToUnitConversions)
                     .Where(u => !u.IsDeleted)
@@ -59,7 +60,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Units
                     .Include(u => u.FromUnitConversions)
                     .Include(u => u.ToUnitConversions)
                     .Where(u => !u.IsDeleted &&
@@ -84,7 +86,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(u => u.UnitCode == unitCode && !u.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Units.Where(u => u.UnitCode == unitCode && !u.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(u => u.Id != excludeId.Value);
@@ -106,7 +109,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Units
                     .Where(u => !u.IsDeleted && u.IsBaseUnit)
                     .OrderBy(u => u.UnitCode)
                     .ToListAsync();
@@ -125,7 +129,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _dbSet
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Units
                     .Include(u => u.FromUnitConversions.Where(c => !c.IsDeleted))
                         .ThenInclude(c => c.ToUnit)
                     .Include(u => u.ToUnitConversions.Where(c => !c.IsDeleted))
@@ -150,8 +155,10 @@ namespace ERPCore2.Services
                 if (fromUnitId == toUnitId)
                     return quantity;
 
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
                 // 直接轉換
-                var directConversion = await _context.Set<UnitConversion>()
+                var directConversion = await context.Set<UnitConversion>()
                     .FirstOrDefaultAsync(c => c.FromUnitId == fromUnitId && 
                                              c.ToUnitId == toUnitId && 
                                              !c.IsDeleted && 
@@ -161,7 +168,7 @@ namespace ERPCore2.Services
                     return quantity * directConversion.ConversionRate;
 
                 // 反向轉換
-                var reverseConversion = await _context.Set<UnitConversion>()
+                var reverseConversion = await context.Set<UnitConversion>()
                     .FirstOrDefaultAsync(c => c.FromUnitId == toUnitId && 
                                              c.ToUnitId == fromUnitId && 
                                              !c.IsDeleted && 
@@ -188,14 +195,15 @@ namespace ERPCore2.Services
         {
             try
             {
-                var convertibleUnitIds = await _context.Set<UnitConversion>()
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var convertibleUnitIds = await context.Set<UnitConversion>()
                     .Where(c => !c.IsDeleted && c.IsActive && 
                                (c.FromUnitId == unitId || c.ToUnitId == unitId))
                     .Select(c => c.FromUnitId == unitId ? c.ToUnitId : c.FromUnitId)
                     .Distinct()
                     .ToListAsync();
 
-                return await _dbSet
+                return await context.Units
                     .Where(u => !u.IsDeleted && convertibleUnitIds.Contains(u.Id))
                     .OrderBy(u => u.UnitCode)
                     .ToListAsync();
@@ -243,7 +251,8 @@ namespace ERPCore2.Services
         {
             try
             {
-                var query = _dbSet.Where(u => u.UnitName == name && !u.IsDeleted);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Units.Where(u => u.UnitName == name && !u.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(u => u.Id != excludeId.Value);
