@@ -78,8 +78,9 @@ else
                 return await NavigationPermissionService.CanAccessModuleAsync(RequiredModule);
             }
 
-            // 如果沒有指定任何權限要求，預設為允許
-            return true;
+            // 如果沒有指定任何權限要求，檢查用戶是否已認證
+            var employeeId = await NavigationPermissionService.GetCurrentEmployeeIdAsync();
+            return employeeId > 0;
         }
         catch (Exception ex)
         {

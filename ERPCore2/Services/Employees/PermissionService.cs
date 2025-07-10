@@ -168,7 +168,7 @@ namespace ERPCore2.Services
                     return ServiceResult<List<Permission>>.Success(new List<Permission>());
 
                 var permissions = employee.Role.RolePermissions
-                    .Where(rp => !rp.IsDeleted && rp.Permission != null && !rp.Permission.IsDeleted)
+                    .Where(rp => !rp.IsDeleted && rp.Status == EntityStatus.Active && rp.Permission != null && !rp.Permission.IsDeleted)
                     .Select(rp => rp.Permission)
                     .ToList();
 
