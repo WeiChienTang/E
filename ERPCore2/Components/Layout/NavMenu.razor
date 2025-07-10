@@ -31,7 +31,7 @@
         <NavMenuItem Text="首頁" IconClass="bi bi-house-door-fill-nav-menu" Url="/" />
 
         <!-- 通用參數設定 -->
-        <NavigationPermissionCheck AnyPermissions="new[] { \"System.Admin\", \"MasterData.Read\" }">
+        <NavigationPermissionCheck AnyPermissions='new[] { "System.Admin", "MasterData.Read" }'>
             <NavMenuItem Text="基礎資料" IconClass="bi-sliders nav-menu-bi">
                 <DropdownItems>
                     <NavSection Title="通用">
@@ -160,7 +160,7 @@
         </NavMenuItem> *@
 
         <!-- 系統管理 -->
-        <NavigationPermissionCheck AnyPermissions="new[] { \"System.Admin\", \"System.ViewLogs\" }">
+        <NavigationPermissionCheck AnyPermissions='new[] { "System.Admin", "System.ViewLogs" }'>
             <NavMenuItem Text="系統管理" IconClass="bi bi-gear-fill">
                 <DropdownItems>
                     <NavigationPermissionCheck Permission="System.ViewLogs">
