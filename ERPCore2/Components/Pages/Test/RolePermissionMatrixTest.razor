@@ -1,0 +1,66 @@
+@page "/test/role-permission-matrix"
+@using ERPCore2.Components.Shared.Details
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+
+<PageTitle>角色權限矩陣測試</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        角色權限矩陣測試
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <RolePermissionDisplayComponent RolePermissions="@GetTestRolePermissions()" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ICollection<RolePermission> GetTestRolePermissions()
+    {
+        // 建立測試資料
+        var permissions = new List<Permission>
+        {
+            new Permission { Id = 1, Module = "Customer", Action = "View", PermissionName = "檢視客戶", PermissionCode = "Customer.View" },
+            new Permission { Id = 2, Module = "Customer", Action = "Create", PermissionName = "建立客戶", PermissionCode = "Customer.Create" },
+            new Permission { Id = 3, Module = "Customer", Action = "Update", PermissionName = "修改客戶", PermissionCode = "Customer.Update" },
+            new Permission { Id = 4, Module = "Customer", Action = "Delete", PermissionName = "刪除客戶", PermissionCode = "Customer.Delete" },
+            
+            new Permission { Id = 5, Module = "Product", Action = "View", PermissionName = "檢視產品", PermissionCode = "Product.View" },
+            new Permission { Id = 6, Module = "Product", Action = "Create", PermissionName = "建立產品", PermissionCode = "Product.Create" },
+            new Permission { Id = 7, Module = "Product", Action = "Update", PermissionName = "修改產品", PermissionCode = "Product.Update" },
+            
+            new Permission { Id = 8, Module = "Order", Action = "View", PermissionName = "檢視訂單", PermissionCode = "Order.View" },
+            new Permission { Id = 9, Module = "Order", Action = "Create", PermissionName = "建立訂單", PermissionCode = "Order.Create" },
+            
+            new Permission { Id = 10, Module = "System", Action = "View", PermissionName = "檢視系統", PermissionCode = "System.View" },
+            new Permission { Id = 11, Module = "System", Action = "Manage", PermissionName = "管理系統", PermissionCode = "System.Manage" },
+        };
+
+        var rolePermissions = new List<RolePermission>();
+        
+        for (int i = 0; i < permissions.Count; i++)
+        {
+            rolePermissions.Add(new RolePermission
+            {
+                Id = i + 1,
+                RoleId = 1,
+                PermissionId = permissions[i].Id,
+                Permission = permissions[i],
+                Status = EntityStatus.Active,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            });
+        }
+
+        return rolePermissions;
+    }
+}

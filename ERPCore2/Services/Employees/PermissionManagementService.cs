@@ -178,12 +178,20 @@ namespace ERPCore2.Services
                         return ServiceResult.Failure($"權限代碼 '{permission.PermissionCode}' 已存在");
                 }
 
-                // 設定建立時間和狀態
+                // 設定建立時間和狀態，並自動解析 Module 和 Action
                 foreach (var permission in permissions)
                 {
                     permission.CreatedAt = DateTime.UtcNow;
                     permission.UpdatedAt = DateTime.UtcNow;
                     permission.Status = EntityStatus.Active;
+
+                    // 自動解析 Module 和 Action 從 PermissionCode
+                    var parts = permission.PermissionCode.Split('.');
+                    if (parts.Length == 2)
+                    {
+                        permission.Module = parts[0];
+                        permission.Action = parts[1];
+                    }
                 }
 
                 using var context = await _contextFactory.CreateDbContextAsync();
@@ -424,6 +432,52 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteAsync), GetType(), _logger, 
                     new { PermissionId = id });
                 return ServiceResult.Failure($"刪除權限時發生錯誤：{ex.Message}");
+            }
+        }
+
+        // 覆寫 CreateAsync 以自動解析 Module 和 Action
+        public override async Task<ServiceResult<Permission>> CreateAsync(Permission entity)
+        {
+            try
+            {
+                // 自動解析 Module 和 Action 從 PermissionCode
+                var parts = entity.PermissionCode.Split('.');
+                if (parts.Length == 2)
+                {
+                    entity.Module = parts[0];
+                    entity.Action = parts[1];
+                }
+
+                return await base.CreateAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CreateAsync), GetType(), _logger, 
+                    new { PermissionCode = entity?.PermissionCode });
+                return ServiceResult<Permission>.Failure($"建立權限時發生錯誤：{ex.Message}");
+            }
+        }
+
+        // 覆寫 UpdateAsync 以自動解析 Module 和 Action
+        public override async Task<ServiceResult<Permission>> UpdateAsync(Permission entity)
+        {
+            try
+            {
+                // 自動解析 Module 和 Action 從 PermissionCode
+                var parts = entity.PermissionCode.Split('.');
+                if (parts.Length == 2)
+                {
+                    entity.Module = parts[0];
+                    entity.Action = parts[1];
+                }
+
+                return await base.UpdateAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateAsync), GetType(), _logger, 
+                    new { PermissionCode = entity?.PermissionCode });
+                return ServiceResult<Permission>.Failure($"更新權限時發生錯誤：{ex.Message}");
             }
         }
     }

@@ -242,7 +242,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Username = "admin",
                     PasswordHash = SeedDataHelper.HashPassword("admin123"),
                     Department = "IT",
-                    // Position = "系統管理員", // 暫時移除，等職位資料建立後再關聯
                     RoleId = adminRole?.Id ?? 1,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
@@ -257,7 +256,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Username = "manager",
                     PasswordHash = SeedDataHelper.HashPassword("manager123"),
                     Department = "營運",
-                    // Position = "營運主管", // 暫時移除，等職位資料建立後再關聯
                     RoleId = managerRole?.Id ?? 2,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
@@ -272,7 +270,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Username = "sales",
                     PasswordHash = SeedDataHelper.HashPassword("sales123"),
                     Department = "銷售",
-                    // Position = "業務代表", // 暫時移除，等職位資料建立後再關聯
                     RoleId = salesRole?.Id ?? 4,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
@@ -287,7 +284,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Username = "purchasing",
                     PasswordHash = SeedDataHelper.HashPassword("purchasing123"),
                     Department = "採購",
-                    // Position = "採購專員", // 暫時移除，等職位資料建立後再關聯
                     RoleId = purchasingRole?.Id ?? 5,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
@@ -302,7 +298,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Username = "employee",
                     PasswordHash = SeedDataHelper.HashPassword("employee123"),
                     Department = "倉庫",
-                    // Position = "倉庫管理員", // 暫時移除，等職位資料建立後再關聯
                     RoleId = employeeRole?.Id ?? 3,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
@@ -317,7 +312,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Username = "testuser",
                     PasswordHash = SeedDataHelper.HashPassword("test123"),
                     Department = "測試",
-                    // Position = "測試人員", // 暫時移除，等職位資料建立後再關聯
                     RoleId = employeeRole?.Id ?? 3,
                     Status = EntityStatus.Inactive,
                     CreatedAt = DateTime.Now,
@@ -332,7 +326,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Username = "finance",
                     PasswordHash = SeedDataHelper.HashPassword("finance123"),
                     Department = "財務",
-                    // Position = "財務專員", // 暫時移除，等職位資料建立後再關聯
                     RoleId = employeeRole?.Id ?? 3,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
@@ -347,7 +340,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Username = "hr",
                     PasswordHash = SeedDataHelper.HashPassword("hr123"),
                     Department = "人力資源",
-                    // Position = "人資專員", // 暫時移除，等職位資料建立後再關聯
                     RoleId = employeeRole?.Id ?? 3,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
@@ -362,7 +354,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Username = "qc",
                     PasswordHash = SeedDataHelper.HashPassword("qc123"),
                     Department = "品質管制",
-                    // Position = "品管工程師", // 暫時移除，等職位資料建立後再關聯
                     RoleId = employeeRole?.Id ?? 3,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
@@ -377,7 +368,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Username = "customerservice",
                     PasswordHash = SeedDataHelper.HashPassword("cs123"),
                     Department = "客戶服務",
-                    // Position = "客服代表", // 暫時移除，等職位資料建立後再關聯
                     RoleId = salesRole?.Id ?? 4,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
@@ -392,7 +382,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Username = "research",
                     PasswordHash = SeedDataHelper.HashPassword("rd123"),
                     Department = "研發",
-                    // Position = "研發工程師", // 暫時移除，等職位資料建立後再關聯
                     RoleId = employeeRole?.Id ?? 3,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,

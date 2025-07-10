@@ -1,66 +1,88 @@
-@* 角色權限顯示組件 *@
+@* 角色權限顯示組件 - 使用權限矩陣表格 *@
+@using ERPCore2.Models
+@using ERPCore2.Components.Shared.Tables
 
 @if (RolePermissions?.Any() == true)
 {
-    @foreach (var moduleGroup in GetPermissionsByModule())
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">
+                <i class="fas fa-shield-alt text-primary me-2"></i>
+                角色權限矩陣
+            </h6>
+            <span class="badge bg-info">
+                共 @RolePermissions.Count 個權限，涵蓋 @GetModulePermissionMatrix().Count 個模組
+            </span>
+        </div>
+        
+        <GenericTableComponent TItem="ModulePermissionMatrix"
+                             Items="@GetModulePermissionMatrix()"
+                             ColumnDefinitions="@GetColumnDefinitions()"
+                             IsStriped="true"
+                             IsHoverable="true"
+                             Size="TableSize.Small"
+                             EmptyMessage="沒有權限資料" />
+    </div>
+    
+    @if (ShowDetailedView)
     {
-        <div class="card mb-4">
-            <div class="card-header bg-light">
-                <h6 class="mb-0">
-                    <i class="fas fa-cube text-primary me-2"></i>
-                    @GetModuleDisplayName(moduleGroup.Key) 模組
-                    <span class="badge bg-secondary ms-2">@moduleGroup.Count() 個權限</span>
-                </h6>
+        <div class="alert alert-info">
+            <div class="d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>權限詳細資訊</strong>
+                </span>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => ShowDetailedView = false)">
+                    <i class="fas fa-times me-1"></i>
+                    收起
+                </button>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 40%">權限名稱</th>
-                                <th style="width: 20%">操作類型</th>
-                                <th style="width: 25%">權限代碼</th>
-                                <th style="width: 15%">權限群組</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var rolePermission in moduleGroup.OrderBy(rp => rp.Permission!.Action))
-                            {
-                                <tr>
-                                    <td>
-                                        <i class="fas fa-key text-muted me-1"></i>
-                                        @rolePermission.Permission!.PermissionName
-                                    </td>
-                                    <td>
-                                        <span class="badge @GetActionBadgeClass(rolePermission.Permission.Action)">
-                                            @GetActionDisplayName(rolePermission.Permission.Action)
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <code class="text-muted small">@rolePermission.Permission.PermissionCode</code>
-                                    </td>
-                                    <td>
-                                        @if (!string.IsNullOrEmpty(rolePermission.Permission.PermissionGroup))
-                                        {
-                                            <span class="badge bg-light text-dark">@rolePermission.Permission.PermissionGroup</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">-</span>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+            <hr class="my-2">
+            <div class="row">
+                @foreach (var module in GetModulePermissionMatrix())
+                {
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-header bg-light py-2">
+                                <small class="fw-bold">@module.ModuleDisplayName</small>
+                            </div>
+                            <div class="card-body py-2">
+                                <div class="row g-2">
+                                    @foreach (var permissionName in module.PermissionNames.Take(5))
+                                    {
+                                        <div class="col-12">
+                                            <small class="text-muted">
+                                                <i class="fas fa-key me-1"></i>
+                                                @permissionName
+                                            </small>
+                                        </div>
+                                    }
+                                    @if (module.PermissionNames.Count > 5)
+                                    {
+                                        <div class="col-12">
+                                            <small class="text-muted">
+                                                <i class="fas fa-ellipsis-h me-1"></i>
+                                                還有 @(module.PermissionNames.Count - 5) 個權限...
+                                            </small>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
             </div>
         </div>
     }
-      <div class="alert alert-info">
-        <i class="fas fa-info-circle me-2"></i>
-        <strong>權限總計：</strong>共 @RolePermissions.Count 個權限，涵蓋 @GetPermissionsByModule().Count() 個模組
-    </div>
+    else
+    {
+        <div class="text-center">
+            <button class="btn btn-sm btn-outline-info" @onclick="@(() => ShowDetailedView = true)">
+                <i class="fas fa-eye me-1"></i>
+                顯示詳細權限資訊
+            </button>
+        </div>
+    }
 }
 else
 {
@@ -73,8 +95,186 @@ else
 
 @code {
     [Parameter] public ICollection<RolePermission>? RolePermissions { get; set; }
+    [Parameter] public bool ShowDetailedView { get; set; } = false;
 
-    // 取得按模組分組的權限
+    // 建立表格欄位定義
+    private List<TableColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<TableColumnDefinition>
+        {
+            new TableColumnDefinition
+            {
+                Title = "模組名稱",
+                PropertyName = nameof(ModulePermissionMatrix.ModuleDisplayName),
+                DataType = ColumnDataType.Text,
+                HeaderStyle = "width: 25%;",
+                CustomTemplate = item => builder =>
+                {
+                    var module = (ModulePermissionMatrix)item;
+                    builder.OpenElement(0, "div");
+                    builder.AddAttribute(1, "class", "d-flex align-items-center");
+                    
+                    builder.OpenElement(2, "i");
+                    builder.AddAttribute(3, "class", "fas fa-cube text-primary me-2");
+                    builder.CloseElement();
+                    
+                    builder.AddContent(4, module.ModuleDisplayName);
+                    
+                    if (module.TotalPermissions > 0)
+                    {
+                        builder.OpenElement(5, "span");
+                        builder.AddAttribute(6, "class", "badge bg-secondary ms-2");
+                        builder.AddContent(7, $"{module.TotalPermissions} 個");
+                        builder.CloseElement();
+                    }
+                    
+                    builder.CloseElement();
+                }
+            },
+            new TableColumnDefinition
+            {
+                Title = "檢視",
+                PropertyName = nameof(ModulePermissionMatrix.CanView),
+                DataType = ColumnDataType.Html,
+                HeaderStyle = "width: 15%; text-align: center;",
+                CellCssClass = "text-center",
+                CustomTemplate = item => builder =>
+                {
+                    var module = (ModulePermissionMatrix)item;
+                    if (module.CanView)
+                    {
+                        builder.OpenElement(0, "i");
+                        builder.AddAttribute(1, "class", "fas fa-check text-success fa-lg");
+                        builder.AddAttribute(2, "title", "有檢視權限");
+                        builder.CloseElement();
+                    }
+                    else
+                    {
+                        builder.OpenElement(0, "i");
+                        builder.AddAttribute(1, "class", "fas fa-times text-muted");
+                        builder.AddAttribute(2, "title", "無檢視權限");
+                        builder.CloseElement();
+                    }
+                }
+            },
+            new TableColumnDefinition
+            {
+                Title = "建立",
+                PropertyName = nameof(ModulePermissionMatrix.CanCreate),
+                DataType = ColumnDataType.Html,
+                HeaderStyle = "width: 15%; text-align: center;",
+                CellCssClass = "text-center",
+                CustomTemplate = item => builder =>
+                {
+                    var module = (ModulePermissionMatrix)item;
+                    if (module.CanCreate)
+                    {
+                        builder.OpenElement(0, "i");
+                        builder.AddAttribute(1, "class", "fas fa-check text-success fa-lg");
+                        builder.AddAttribute(2, "title", "有建立權限");
+                        builder.CloseElement();
+                    }
+                    else
+                    {
+                        builder.OpenElement(0, "i");
+                        builder.AddAttribute(1, "class", "fas fa-times text-muted");
+                        builder.AddAttribute(2, "title", "無建立權限");
+                        builder.CloseElement();
+                    }
+                }
+            },
+            new TableColumnDefinition
+            {
+                Title = "修改",
+                PropertyName = nameof(ModulePermissionMatrix.CanUpdate),
+                DataType = ColumnDataType.Html,
+                HeaderStyle = "width: 15%; text-align: center;",
+                CellCssClass = "text-center",
+                CustomTemplate = item => builder =>
+                {
+                    var module = (ModulePermissionMatrix)item;
+                    if (module.CanUpdate)
+                    {
+                        builder.OpenElement(0, "i");
+                        builder.AddAttribute(1, "class", "fas fa-check text-success fa-lg");
+                        builder.AddAttribute(2, "title", "有修改權限");
+                        builder.CloseElement();
+                    }
+                    else
+                    {
+                        builder.OpenElement(0, "i");
+                        builder.AddAttribute(1, "class", "fas fa-times text-muted");
+                        builder.AddAttribute(2, "title", "無修改權限");
+                        builder.CloseElement();
+                    }
+                }
+            },
+            new TableColumnDefinition
+            {
+                Title = "刪除",
+                PropertyName = nameof(ModulePermissionMatrix.CanDelete),
+                DataType = ColumnDataType.Html,
+                HeaderStyle = "width: 15%; text-align: center;",
+                CellCssClass = "text-center",
+                CustomTemplate = item => builder =>
+                {
+                    var module = (ModulePermissionMatrix)item;
+                    if (module.CanDelete)
+                    {
+                        builder.OpenElement(0, "i");
+                        builder.AddAttribute(1, "class", "fas fa-check text-success fa-lg");
+                        builder.AddAttribute(2, "title", "有刪除權限");
+                        builder.CloseElement();
+                    }
+                    else
+                    {
+                        builder.OpenElement(0, "i");
+                        builder.AddAttribute(1, "class", "fas fa-times text-muted");
+                        builder.AddAttribute(2, "title", "無刪除權限");
+                        builder.CloseElement();
+                    }
+                }
+            }
+        };
+    }
+
+    // 建立模組權限矩陣
+    private List<ModulePermissionMatrix> GetModulePermissionMatrix()
+    {
+        if (RolePermissions == null) return new List<ModulePermissionMatrix>();
+        
+        var moduleGroups = RolePermissions
+            .Where(rp => rp.Permission != null)
+            .GroupBy(rp => rp.Permission!.Module)
+            .OrderBy(g => g.Key);
+        
+        var result = new List<ModulePermissionMatrix>();
+        
+        foreach (var moduleGroup in moduleGroups)
+        {
+            var permissions = moduleGroup.Select(rp => rp.Permission!).ToList();
+            
+            var matrix = new ModulePermissionMatrix
+            {
+                ModuleName = moduleGroup.Key,
+                ModuleDisplayName = GetModuleDisplayName(moduleGroup.Key),
+                CanView = permissions.Any(p => p.Action.Equals("View", StringComparison.OrdinalIgnoreCase)),
+                CanCreate = permissions.Any(p => p.Action.Equals("Create", StringComparison.OrdinalIgnoreCase)),
+                CanUpdate = permissions.Any(p => p.Action.Equals("Update", StringComparison.OrdinalIgnoreCase) || 
+                                              p.Action.Equals("Edit", StringComparison.OrdinalIgnoreCase)),
+                CanDelete = permissions.Any(p => p.Action.Equals("Delete", StringComparison.OrdinalIgnoreCase)),
+                TotalPermissions = permissions.Count,
+                PermissionCodes = permissions.Select(p => p.PermissionCode).ToList(),
+                PermissionNames = permissions.Select(p => p.PermissionName).ToList()
+            };
+            
+            result.Add(matrix);
+        }
+        
+        return result;
+    }
+
+    // 取得按模組分組的權限（保留原有方法以向後相容）
     private IEnumerable<IGrouping<string, RolePermission>> GetPermissionsByModule()
     {
         if (RolePermissions == null) return Enumerable.Empty<IGrouping<string, RolePermission>>();
@@ -99,6 +299,8 @@ else
             "BOM" => "BOM管理",
             "System" => "系統管理",
             "Report" => "報表管理",
+            "Role" => "角色管理",
+            "Permission" => "權限管理",
             _ => module
         };
     }
@@ -110,6 +312,7 @@ else
             "View" => "查看",
             "Create" => "新增",
             "Update" => "修改", 
+            "Edit" => "修改",
             "Delete" => "刪除",
             "Export" => "匯出",
             "Import" => "匯入",
@@ -126,6 +329,7 @@ else
             "View" => "bg-info",
             "Create" => "bg-success",
             "Update" => "bg-warning", 
+            "Edit" => "bg-warning",
             "Delete" => "bg-danger",
             "Export" => "bg-primary",
             "Import" => "bg-primary",
