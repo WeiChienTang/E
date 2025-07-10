@@ -70,6 +70,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { PermissionCode = "ProductCategory.Delete", PermissionName = "刪除產品分類", Module = "ProductCategory", Action = "Delete", PermissionGroup = "產品管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 
                 // MasterData管理權限
+                new Permission { PermissionCode = "MasterData.Read", PermissionName = "檢視基礎資料", Module = "MasterData", Action = "Read", PermissionGroup = "基礎單位", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Material.Create", PermissionName = "建立材質", Module = "Material", Action = "Create", PermissionGroup = "基礎單位", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Material.Read", PermissionName = "檢視材質", Module = "Material", Action = "Read", PermissionGroup = "基礎單位", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Material.Update", PermissionName = "修改材質", Module = "Material", Action = "Update", PermissionGroup = "基礎單位", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
