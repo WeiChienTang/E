@@ -81,9 +81,9 @@ namespace ERPCore2.Data
             services.AddScoped<IEmployeeContactService, EmployeeContactService>();
             services.AddScoped<IEmployeeAddressService, EmployeeAddressService>();
             services.AddScoped<IEmployeePositionService, EmployeePositionService>();
-            services.AddScoped<IRoleService, RoleService>();
             services.AddScoped<IPermissionService, PermissionService>();
             services.AddScoped<IPermissionManagementService, PermissionManagementService>();
+            services.AddScoped<IRoleService, RoleService>();
             services.AddScoped<IAuthenticationService, AuthenticationService>();
 
             // 記憶體快取服務（用於權限快取）

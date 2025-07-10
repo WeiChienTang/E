@@ -14,14 +14,19 @@ namespace ERPCore2.Services
     /// </summary>
     public class RoleService : GenericManagementService<Role>, IRoleService
     {
+        private readonly IPermissionService _permissionService;
+
         public RoleService(
             IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<Role>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<Role>> logger,
+            IPermissionService permissionService) : base(contextFactory, logger)
         {
+            _permissionService = permissionService;
         }
 
-        public RoleService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+        public RoleService(IDbContextFactory<AppDbContext> contextFactory, IPermissionService permissionService) : base(contextFactory)
         {
+            _permissionService = permissionService;
         }
 
         // 覆寫 GetAllAsync 以載入相關資料
@@ -234,6 +239,9 @@ namespace ERPCore2.Services
                 await context.RolePermissions.AddRangeAsync(newRolePermissions);
                 await context.SaveChangesAsync();
 
+                // 清除該角色所有員工的權限快取
+                await ClearRoleEmployeePermissionCacheAsync(roleId);
+
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -265,6 +273,9 @@ namespace ERPCore2.Services
                 context.RolePermissions.RemoveRange(rolePermissionsToRemove);
                 await context.SaveChangesAsync();
 
+                // 清除該角色所有員工的權限快取
+                await ClearRoleEmployeePermissionCacheAsync(roleId);
+
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -295,6 +306,9 @@ namespace ERPCore2.Services
 
                 context.RolePermissions.RemoveRange(rolePermissions);
                 await context.SaveChangesAsync();
+
+                // 清除該角色所有員工的權限快取
+                await ClearRoleEmployeePermissionCacheAsync(roleId);
 
                 return ServiceResult.Success();
             }
@@ -530,6 +544,36 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteAsync), GetType(), _logger, new { RoleId = id });
                 return ServiceResult.Failure($"刪除角色時發生錯誤：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 清除指定角色所有員工的權限快取
+        /// </summary>
+        /// <param name="roleId">角色ID</param>
+        /// <returns>操作結果</returns>
+        private async Task<ServiceResult> ClearRoleEmployeePermissionCacheAsync(int roleId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employeeIds = await context.Employees
+                    .Where(e => e.RoleId == roleId && !e.IsDeleted)
+                    .Select(e => e.Id)
+                    .ToListAsync();
+
+                // 清除每個員工的權限快取
+                foreach (var employeeId in employeeIds)
+                {
+                    await _permissionService.RefreshEmployeePermissionCacheAsync(employeeId);
+                }
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ClearRoleEmployeePermissionCacheAsync), GetType(), _logger, new { RoleId = roleId });
+                return ServiceResult.Failure($"清除角色員工權限快取時發生錯誤：{ex.Message}");
             }
         }
     }

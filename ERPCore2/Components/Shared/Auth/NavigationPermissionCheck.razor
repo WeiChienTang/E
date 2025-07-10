@@ -17,6 +17,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        // 每次參數變更時重新檢查權限，避免快取問題
         isAuthorized = await CheckPermissionAsync();
     }
 
