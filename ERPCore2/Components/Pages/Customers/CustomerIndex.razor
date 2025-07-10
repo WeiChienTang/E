@@ -1,4 +1,6 @@
 @page "/customers"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @inject ICustomerService CustomerService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime

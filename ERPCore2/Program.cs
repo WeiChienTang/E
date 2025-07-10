@@ -4,6 +4,8 @@ using ERPCore2.Data.Context;
 using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using ERPCore2.Services.Auth;
+using Microsoft.AspNetCore.Authorization;
 
 // 檢查命令列參數
 var commandLineArgs = Environment.GetCommandLineArgs();
@@ -116,7 +118,18 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         };
     });
 
-builder.Services.AddAuthorization();
+// 加入授權服務
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("Permission", policy =>
+    {
+        policy.Requirements.Add(new PermissionRequirement(""));
+    });
+
+// 註冊授權處理器
+builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+
+// 註冊導航權限服務
+builder.Services.AddScoped<INavigationPermissionService, NavigationPermissionService>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents(options => 
@@ -164,6 +177,9 @@ if (app.Environment.IsDevelopment() || builder.Configuration["urls"]?.Contains("
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// 加入權限檢查中間件
+app.UseMiddleware<PermissionCheckMiddleware>();
 
 // 加入反偽造令牌中間件
 app.UseAntiforgery();
