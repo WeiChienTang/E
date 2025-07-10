@@ -69,7 +69,9 @@ namespace ERPCore2.Data
         {
             return new List<IDataSeeder>
             {
-                new AuthSeeder(),
+                new PermissionSeeder(),
+                new RoleSeeder(),
+                new RolePermissionSeeder(),
                 new BasicDataSeeder(),
                 new EmployeePositionSeeder(),
                 new ColorSeeder(),
@@ -81,7 +83,7 @@ namespace ERPCore2.Data
                 new SupplierSeeder(),
                 new ProductSeeder(),
                 new InventorySeeder(),
-                new InventoryStockSeeder(), // 新增庫存主檔資料
+                new InventoryStockSeeder(), 
                 new WeatherSeeder(),
                 new ErrorLogSeeder()
             };

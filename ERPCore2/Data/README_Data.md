@@ -124,7 +124,9 @@ private static IEnumerable<IDataSeeder> GetAllSeeders()
 {
     return new List<IDataSeeder>
     {
-        new AuthSeeder(),
+        new PermissionSeeder(),
+        new RoleSeeder(),
+        new RolePermissionSeeder(),
         new BasicDataSeeder(),
         new CustomerSeeder(),
         // ... 其他既有 Seeder

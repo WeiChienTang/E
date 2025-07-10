@@ -13,11 +13,13 @@ SeedDataManager/
 ├── Helpers/
 │   └── SeedDataHelper.cs       # 種子資料共用工具
 └── Seeders/
-    ├── AuthSeeder.cs           # 認證系統種子器 (Order: 0)
-    ├── BasicDataSeeder.cs      # 基礎資料種子器 (Order: 1)
-    ├── CustomerSeeder.cs       # 客戶資料種子器 (Order: 2)
-    ├── SupplierSeeder.cs       # 供應商資料種子器 (Order: 3)
-    └── ProductSeeder.cs        # 產品資料種子器 (Order: 4)
+    ├── PermissionSeeder.cs     # 權限種子器 (Order: 0)
+    ├── RoleSeeder.cs           # 角色種子器 (Order: 1)
+    ├── RolePermissionSeeder.cs # 角色權限關聯種子器 (Order: 2)
+    ├── BasicDataSeeder.cs      # 基礎資料種子器 (Order: 3)
+    ├── CustomerSeeder.cs       # 客戶資料種子器 (Order: 4)
+    ├── SupplierSeeder.cs       # 供應商資料種子器 (Order: 5)
+    └── ProductSeeder.cs        # 產品資料種子器 (Order: 6)
 ```
 
 ## 核心組件
@@ -61,9 +63,9 @@ public static class SeedDataHelper
 
 ## 種子器詳細說明
 
-### AuthSeeder (Order: 0) - 認證系統種子器
+### PermissionSeeder (Order: 0) - 權限種子器
 
-**職責：** 初始化認證與授權相關的基礎資料
+**職責：** 初始化系統所有功能權限定義
 
 **初始化內容：**
 - **權限資料 (Permissions)**：系統所有功能權限定義
@@ -71,19 +73,51 @@ public static class SeedDataHelper
   - 使用者管理權限 (CRUD)
   - 客戶管理權限 (CRUD)
   - 供應商管理權限 (CRUD)
+  - 員工管理權限 (CRUD)
   - 產品管理權限 (CRUD)
+  - 產品分類管理權限 (CRUD)
+  - 基礎資料管理權限 (材質、天氣、顏色、尺寸、單位等)
+  - 權限與角色管理權限 (CRUD)
+  - 倉庫管理權限 (CRUD)
+  - 庫存管理權限 (CRUD)
+  - 系統控制權限
 
-- **角色資料 (Roles)**：預設系統角色
-  - 系統管理員
-  - 一般使用者
+**執行順序考量：** 權限定義必須在角色建立之前完成，為最基礎的資料。
 
-- **角色權限關聯 (RolePermissions)**：角色與權限的對應關係
+### RoleSeeder (Order: 1) - 角色種子器
 
+**職責：** 初始化系統角色定義
+
+**初始化內容：**
+- **角色資料 (Roles)**：系統角色定義
+  - 系統管理員 (Administrator)
+
+**設計特點：**
+- 簡化角色結構，僅保留系統管理員角色
+- 檢查資料是否已存在，避免重複初始化
+- 使用統一的審計資訊設定
+
+**執行順序考量：** 依賴權限資料，在權限建立後、角色權限關聯前執行。
+
+### RolePermissionSeeder (Order: 2) - 角色權限關聯種子器
+
+**職責：** 建立角色與權限的關聯關係，並建立預設系統管理員帳號
+
+**初始化內容：**
+- **角色權限關聯 (RolePermissions)**：系統管理員擁有所有權限
 - **預設管理員帳號 (Users)**：系統初始管理員帳號
+  - 帳號：admin
+  - 密碼：admin123 (已雜湊)
+  - Email 聯絡資料
 
-**執行順序考量：** 放在最前面是因為其他模組可能需要依賴認證系統的基礎資料。
+**設計特點：**
+- 系統管理員自動獲得所有權限
+- 包含預設管理員帳號建立
+- 為管理員建立基本聯絡資料
 
-### BasicDataSeeder (Order: 1) - 基礎資料種子器
+**執行順序考量：** 必須在權限和角色都建立完成後執行，為認證系統的最後一步。
+
+### BasicDataSeeder (Order: 3) - 基礎資料種子器
 
 **職責：** 初始化系統運作所需的基礎主檔資料
 
@@ -99,7 +133,7 @@ public static class SeedDataHelper
 - 使用統一的審計資訊設定
 - 支援多語系描述
 
-### CustomerSeeder (Order: 2) - 客戶資料種子器
+### CustomerSeeder (Order: 4) - 客戶資料種子器
 
 **職責：** 初始化示例客戶資料供系統測試與展示使用
 
@@ -114,7 +148,7 @@ public static class SeedDataHelper
 - 提供真實的業務場景示例
 - 包含完整的客戶資訊結構
 
-### SupplierSeeder (Order: 3) - 供應商資料種子器
+### SupplierSeeder (Order: 5) - 供應商資料種子器
 
 **職責：** 初始化示例供應商資料
 
@@ -129,7 +163,7 @@ public static class SeedDataHelper
 - 支援供應商分類管理
 - 提供豐富的測試資料
 
-### ProductSeeder (Order: 4) - 產品資料種子器
+### ProductSeeder (Order: 6) - 產品資料種子器
 
 **職責：** 初始化產品相關資料（目前為預留結構）
 
@@ -164,11 +198,13 @@ await SeedData.InitializeAsync(app.Services);
 ### 3. 執行順序
 
 ```
-0. AuthSeeder      → 認證系統基礎資料
-1. BasicDataSeeder → 系統基礎主檔資料
-2. CustomerSeeder  → 客戶示例資料
-3. SupplierSeeder  → 供應商示例資料
-4. ProductSeeder   → 產品資料（預留）
+0. PermissionSeeder     → 權限定義
+1. RoleSeeder          → 角色定義
+2. RolePermissionSeeder → 角色權限關聯與預設管理員帳號
+3. BasicDataSeeder     → 系統基礎主檔資料
+4. CustomerSeeder      → 客戶示例資料
+5. SupplierSeeder      → 供應商示例資料
+6. ProductSeeder       → 產品資料（預留）
 ```
 
 ## 設計原則

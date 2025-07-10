@@ -11,7 +11,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
     /// </summary>
     public class BasicDataSeeder : IDataSeeder
     {
-        public int Order => 1;
+        public int Order => 3;
         public string Name => "基礎資料";
 
         public async Task SeedAsync(AppDbContext context)

@@ -295,7 +295,7 @@ RolePermissions
 
 ### Q1: 如何新增一個新的權限？
 
-**A**: 在 `AuthSeeder.cs` 中新增權限定義：
+**A**: 在 `PermissionSeeder.cs` 中新增權限定義：
 
 ```csharp
 new Permission 
