@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using ERPCore2.Services;
+using ERPCore2.Helpers;
 
 namespace ERPCore2.Services.Auth
 {
@@ -20,58 +21,72 @@ namespace ERPCore2.Services.Auth
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // 檢查是否為 Blazor 頁面路由
-            if (context.Request.Path.StartsWithSegments("/_blazor") || 
-                context.Request.Path.StartsWithSegments("/api") ||
-                context.Request.Path.StartsWithSegments("/auth"))
+            try
             {
-                await _next(context);
-                return;
-            }
-
-            // 檢查是否需要權限驗證的路由
-            var routePermissions = GetRoutePermissions(context.Request.Path);
-            if (routePermissions.Any())
-            {
-                var user = context.User;
-                if (!user.Identity?.IsAuthenticated ?? true)
+                // 檢查是否為 Blazor 頁面路由
+                if (context.Request.Path.StartsWithSegments("/_blazor") || 
+                    context.Request.Path.StartsWithSegments("/api") ||
+                    context.Request.Path.StartsWithSegments("/auth"))
                 {
-                    context.Response.Redirect("/auth/login");
+                    await _next(context);
                     return;
                 }
 
-                // 檢查權限
-                var employeeIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (int.TryParse(employeeIdClaim, out int employeeId))
+                // 檢查是否需要權限驗證的路由
+                var routePermissions = GetRoutePermissions(context.Request.Path);
+                if (routePermissions.Any())
                 {
-                    var serviceProvider = context.RequestServices;
-                    var permissionService = serviceProvider.GetRequiredService<IPermissionService>();
-
-                    bool hasPermission = false;
-                    foreach (var permission in routePermissions)
+                    var user = context.User;
+                    if (!user.Identity?.IsAuthenticated ?? true)
                     {
-                        var result = await permissionService.HasPermissionAsync(employeeId, permission);
-                        if (result.IsSuccess && result.Data)
-                        {
-                            hasPermission = true;
-                            break;
-                        }
+                        context.Response.Redirect("/auth/login");
+                        return;
                     }
 
-                    if (!hasPermission)
+                    // 檢查權限
+                    var employeeIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    if (int.TryParse(employeeIdClaim, out int employeeId))
                     {
-                        context.Response.Redirect("/access-denied");
+                        var serviceProvider = context.RequestServices;
+                        var permissionService = serviceProvider.GetRequiredService<IPermissionService>();
+
+                        bool hasPermission = false;
+                        foreach (var permission in routePermissions)
+                        {
+                            var result = await permissionService.HasPermissionAsync(employeeId, permission);
+                            if (result.IsSuccess && result.Data)
+                            {
+                                hasPermission = true;
+                                break;
+                            }
+                        }
+
+                        if (!hasPermission)
+                        {
+                            context.Response.Redirect("/access-denied");
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        context.Response.Redirect("/auth/login");
                         return;
                     }
                 }
-                else
-                {
-                    context.Response.Redirect("/auth/login");
-                    return;
-                }
-            }
 
-            await _next(context);
+                await _next(context);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(InvokeAsync), GetType(), _logger, new { 
+                    Method = nameof(InvokeAsync),
+                    ServiceType = GetType().Name,
+                    RequestPath = context.Request.Path.ToString(),
+                    EmployeeId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                });
+                // 發生錯誤時，重定向到登入頁面
+                context.Response.Redirect("/auth/login");
+            }
         }
 
         private List<string> GetRoutePermissions(PathString path)

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using ERPCore2.Services;
+using ERPCore2.Helpers;
 
 namespace ERPCore2.Services.Auth
 {
@@ -46,7 +47,12 @@ namespace ERPCore2.Services.Auth
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"權限檢查時發生錯誤: {requirement.Permission}");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(HandleRequirementAsync), GetType(), _logger, new { 
+                    Method = nameof(HandleRequirementAsync),
+                    ServiceType = GetType().Name,
+                    Permission = requirement.Permission,
+                    EmployeeId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                });
                 context.Fail();
             }
         }

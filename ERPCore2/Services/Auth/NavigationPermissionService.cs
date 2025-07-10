@@ -1,4 +1,5 @@
 using ERPCore2.Services;
+using ERPCore2.Helpers;
 using Microsoft.AspNetCore.Components.Authorization;
 using System.Security.Claims;
 
@@ -42,7 +43,11 @@ namespace ERPCore2.Services.Auth
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"檢查權限時發生錯誤: {permission}");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanAccessAsync), GetType(), _logger, new { 
+                    Method = nameof(CanAccessAsync),
+                    ServiceType = GetType().Name,
+                    Permission = permission 
+                });
                 return false;
             }
         }
@@ -59,7 +64,11 @@ namespace ERPCore2.Services.Auth
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"檢查模組權限時發生錯誤: {module}");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanAccessModuleAsync), GetType(), _logger, new { 
+                    Method = nameof(CanAccessModuleAsync),
+                    ServiceType = GetType().Name,
+                    Module = module 
+                });
                 return false;
             }
         }
@@ -82,7 +91,10 @@ namespace ERPCore2.Services.Auth
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "取得目前員工ID時發生錯誤");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCurrentEmployeeIdAsync), GetType(), _logger, new { 
+                    Method = nameof(GetCurrentEmployeeIdAsync),
+                    ServiceType = GetType().Name 
+                });
                 return 0;
             }
         }
