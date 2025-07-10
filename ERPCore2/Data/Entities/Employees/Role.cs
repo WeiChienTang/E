@@ -4,7 +4,9 @@ using ERPCore2.Data.Enums;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 角色實體 - 權限群組管理
+    /// 角色實體 - 系統權限群組管理
+    /// 用於控制員工在系統中的功能權限（如：管理員、財務人員、業務員等）
+    /// 注意：此為系統角色，與 EmployeePosition（組織職位）不同
     /// </summary>
     public class Role : BaseEntity
     {

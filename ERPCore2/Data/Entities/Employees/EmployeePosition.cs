@@ -4,7 +4,9 @@ using ERPCore2.Data.Enums;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 員工職位實體
+    /// 員工職位實體 - 組織架構職位管理
+    /// 用於定義員工在組織中的職位階層（如：部門經理、資深專員、助理等）
+    /// 注意：此為組織職位，與 Role（系統角色）不同
     /// </summary>
     public class EmployeePosition : BaseEntity
     {

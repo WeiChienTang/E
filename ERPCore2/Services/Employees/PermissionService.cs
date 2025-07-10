@@ -240,7 +240,7 @@ namespace ERPCore2.Services
                     return ServiceResult<List<Permission>>.Failure("角色不存在");
 
                 var permissions = role.RolePermissions
-                    .Where(rp => !rp.IsDeleted && rp.Permission != null && !rp.Permission.IsDeleted)
+                    .Where(rp => !rp.IsDeleted && rp.Status == EntityStatus.Active && rp.Permission != null && !rp.Permission.IsDeleted)
                     .Select(rp => rp.Permission)
                     .ToList();
 
@@ -327,9 +327,24 @@ namespace ERPCore2.Services
         {
             try
             {
-                // 簡單的實作：由於IMemoryCache沒有清除所有項目的直接方法
-                // 在實際應用中，可能需要使用自定義的快取鍵管理機制
-                // 這裡我們提供一個基本的實作，告知調用者可能需要重新啟動應用程式
+                // 由於IMemoryCache沒有提供清除所有項目的直接方法
+                // 這裡使用反射來清除，如果失敗就回傳成功（因為下次載入時會重新取得資料）
+                try
+                {
+                    if (_cache is MemoryCache memoryCache)
+                    {
+                        var fieldInfo = typeof(MemoryCache).GetField("_entries", 
+                            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                        if (fieldInfo?.GetValue(memoryCache) is System.Collections.IDictionary entries)
+                        {
+                            entries.Clear();
+                        }
+                    }
+                }
+                catch
+                {
+                    // 如果清除失敗，不影響主要功能，快取會自然過期
+                }
                 
                 return Task.FromResult(ServiceResult.Success());
             }
@@ -402,6 +417,32 @@ namespace ERPCore2.Services
                     new { EmployeeId = employeeId, ModulePrefix = modulePrefix });
                 
                 return ServiceResult<bool>.Failure($"檢查模組存取權限時發生錯誤：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 清除特定角色的權限快取
+        /// </summary>
+        /// <param name="roleId">角色ID</param>
+        /// <returns>操作結果</returns>
+        public Task<ServiceResult> ClearRolePermissionCacheAsync(int roleId)
+        {
+            try
+            {
+                var cacheKey = $"role_permissions_{roleId}";
+                _cache.Remove(cacheKey);
+                
+                return Task.FromResult(ServiceResult.Success());
+            }
+            catch (Exception ex)
+            {
+                var errorId = ErrorHandlingHelper.HandleServiceErrorSync(
+                    ex, 
+                    nameof(ClearRolePermissionCacheAsync), 
+                    GetType(), 
+                    _logger);
+                
+                return Task.FromResult(ServiceResult.Failure($"清除角色權限快取時發生錯誤：{ex.Message}"));
             }
         }
     }

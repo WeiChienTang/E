@@ -35,6 +35,7 @@
         <NavigationPermissionCheck AnyPermissions='new[] { "System.Admin", "MasterData.Read" }'>
             <NavMenuItem Text="基礎資料" IconClass="bi-sliders nav-menu-bi">
                 <DropdownItems>
+
                     <NavSection Title="通用">
                         <NavigationPermissionCheck Permission="MasterData.Read">
                             <NavDropdownItem Text="行業" Url="/industrytypes"/>
@@ -62,6 +63,9 @@
                         </NavigationPermissionCheck>
                         <NavigationPermissionCheck Permission="System.Admin">
                             <NavDropdownItem Text="權限" Url="/permissions"/>
+                        </NavigationPermissionCheck>
+                        <NavigationPermissionCheck Permission="System.Admin">
+                            <NavDropdownItem Text="角色權限管理" Url="/employees/role-permission-management"/>
                         </NavigationPermissionCheck>
                     </NavSection>
 

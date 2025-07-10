@@ -179,30 +179,56 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("無法修改系統角色的權限");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                // 檢查權限是否都存在
-                var validPermissions = await context.Permissions
-                    .Where(p => permissionIds.Contains(p.Id) && !p.IsDeleted)
+                
+                // 取得所有權限（包括要新增的權限）
+                var allPermissions = await context.Permissions
+                    .Where(p => !p.IsDeleted)
                     .Select(p => p.Id)
                     .ToListAsync();
 
-                if (validPermissions.Count != permissionIds.Count)
+                // 檢查選擇的權限是否都存在
+                var invalidPermissions = permissionIds.Except(allPermissions).ToList();
+                if (invalidPermissions.Any())
                     return ServiceResult.Failure("部分權限不存在或已被刪除");
 
-                // 先清除現有權限
+                // 取得現有的角色權限關聯
                 var existingRolePermissions = await context.RolePermissions
                     .Where(rp => rp.RoleId == roleId)
                     .ToListAsync();
 
-                context.RolePermissions.RemoveRange(existingRolePermissions);
+                var now = DateTime.UtcNow;
 
-                // 添加新權限
-                var newRolePermissions = permissionIds.Select(permissionId => new RolePermission
+                // 更新現有的角色權限狀態
+                foreach (var rolePermission in existingRolePermissions)
+                {
+                    if (permissionIds.Contains(rolePermission.PermissionId))
+                    {
+                        // 應該啟用的權限
+                        rolePermission.Status = EntityStatus.Active;
+                        rolePermission.IsDeleted = false;
+                        rolePermission.UpdatedAt = now;
+                    }
+                    else
+                    {
+                        // 應該停用的權限
+                        rolePermission.Status = EntityStatus.Inactive;
+                        rolePermission.IsDeleted = true;
+                        rolePermission.UpdatedAt = now;
+                    }
+                }
+
+                // 新增不存在的權限關聯
+                var existingPermissionIds = existingRolePermissions.Select(rp => rp.PermissionId).ToList();
+                var newPermissionIds = permissionIds.Except(existingPermissionIds).ToList();
+                
+                var newRolePermissions = newPermissionIds.Select(permissionId => new RolePermission
                 {
                     RoleId = roleId,
                     PermissionId = permissionId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    Status = EntityStatus.Active
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                    Status = EntityStatus.Active,
+                    IsDeleted = false
                 }).ToList();
 
                 await context.RolePermissions.AddRangeAsync(newRolePermissions);

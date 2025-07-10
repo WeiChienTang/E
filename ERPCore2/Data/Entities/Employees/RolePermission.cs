@@ -6,6 +6,8 @@ namespace ERPCore2.Data.Entities
 {
     /// <summary>
     /// 角色權限關聯實體 - 多對多關聯表
+    /// 用於建立系統角色(Role)與功能權限(Permission)之間的關聯
+    /// 例如：「財務人員」角色擁有「Customer.View」和「Invoice.Create」權限
     /// </summary>
     public class RolePermission : BaseEntity
     {

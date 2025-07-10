@@ -1,0 +1,568 @@
+@page "/employees/role-permission-management"
+@using ERPCore2.Helpers
+@using ERPCore2.Components.Shared.Tables
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@using ERPCore2.Services.Notifications
+@using Microsoft.AspNetCore.Components
+@inject IRoleService RoleService
+@inject IPermissionService PermissionService
+@inject IPermissionManagementService PermissionManagementService
+@inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>角色權限管理</PageTitle>
+
+<div class="container-fluid">
+    <!-- 頁面標題 -->
+    <GenericHeaderComponent Title="角色權限管理"
+                           Subtitle="管理系統角色的功能權限設定"
+                           IsPageHeader="true"
+                           BreadcrumbItems="@breadcrumbItems">
+    </GenericHeaderComponent>
+
+    <div class="row">
+        <!-- 左側：角色列表 -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-users me-2"></i>角色清單
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (isLoadingRoles)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">載入中...</span>
+                            </div>
+                            <p class="mt-2 text-muted">載入角色資料中...</p>
+                        </div>
+                    }
+                    else if (roles.Any())
+                    {
+                        <GenericTableComponent TItem="Role"
+                                             Items="@roles"
+                                             ColumnDefinitions="@roleColumnDefinitions"
+                                             ShowHeader="true"
+                                             ShowActions="false"
+                                             IsStriped="true"
+                                             IsHoverable="true"
+                                             EnableRowClick="true"
+                                             OnRowClick="@HandleRoleSelection"
+                                             GetRowCssClass="@(role => role.Id == selectedRole?.Id ? "table-primary" : "")"
+                                             EmptyMessage="沒有找到角色資料" />
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            尚未建立任何角色
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：權限設定 -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>權限設定
+                    </h5>
+                    @if (selectedRole != null)
+                    {
+                        <div class="d-flex gap-2">
+                            <GenericButtonComponent Text="全選"
+                                                  IconClass="fas fa-check-square"
+                                                  Variant="ButtonVariant.OutlineSecondary"
+                                                  Size="ButtonSize.Small"
+                                                  OnClick="SelectAllPermissions"
+                                                  IsDisabled="@isSaving" />
+                            <GenericButtonComponent Text="全清"
+                                                  IconClass="fas fa-square"
+                                                  Variant="ButtonVariant.OutlineSecondary"
+                                                  Size="ButtonSize.Small"
+                                                  OnClick="ClearAllPermissions"
+                                                  IsDisabled="@isSaving" />
+                            <GenericButtonComponent Text="儲存權限"
+                                                  IconClass="fas fa-save"
+                                                  Variant="ButtonVariant.Primary"
+                                                  Size="ButtonSize.Small"
+                                                  OnClick="SaveRolePermissions"
+                                                  IsDisabled="@isSaving"
+                                                  IsLoading="@isSaving" />
+                        </div>
+                    }
+                </div>
+                <div class="card-body">
+                    @if (selectedRole == null)
+                    {
+                        <div class="alert alert-info">
+                            <i class="fas fa-hand-point-left me-2"></i>
+                            請先選擇一個角色以管理其權限
+                        </div>
+                    }
+                    else if (selectedRole.IsSystemRole)
+                    {
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            系統角色的權限無法修改
+                        </div>
+                        @if (isLoadingPermissions)
+                        {
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">載入中...</span>
+                                </div>
+                                <p class="mt-2 text-muted">載入權限資料中...</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mt-3">
+                                @RenderPermissionTable(true)
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="alert alert-success">
+                            <i class="fas fa-info-circle me-2"></i>
+                            正在管理角色「<strong>@selectedRole.RoleName</strong>」的權限
+                        </div>
+                        
+                        @if (isLoadingPermissions)
+                        {
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">載入中...</span>
+                                </div>
+                                <p class="mt-2 text-muted">載入權限資料中...</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mt-3">
+                                @RenderPermissionTable(false)
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // 資料模型
+    private List<Role> roles = new();
+    private List<Permission> permissions = new();
+    private List<Permission> rolePermissions = new();
+    private Role? selectedRole;
+    private Dictionary<int, bool> permissionSelections = new();
+
+    // 載入狀態
+    private bool isLoadingRoles = true;
+    private bool isLoadingPermissions = false;
+    private bool isSaving = false;
+
+    // 表格欄位定義
+    private List<TableColumnDefinition> roleColumnDefinitions = new();
+    private List<TableColumnDefinition> permissionColumnDefinitions = new();
+
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeColumnDefinitions();
+            await LoadRolesAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType());
+        }
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("員工管理", "#"),
+            new("角色權限管理")
+        };
+    }
+
+    private void InitializeColumnDefinitions()
+    {
+        roleColumnDefinitions = new List<TableColumnDefinition>
+        {
+            new()
+            {
+                PropertyName = nameof(Role.RoleName),
+                Title = "角色名稱",
+                DataType = ColumnDataType.Text,
+                CellCssClass = "fw-bold"
+            },
+            new()
+            {
+                PropertyName = nameof(Role.Description),
+                Title = "說明",
+                DataType = ColumnDataType.Text,
+                CellCssClass = "text-muted"
+            },
+            new()
+            {
+                PropertyName = nameof(Role.IsSystemRole),
+                Title = "系統角色",
+                DataType = ColumnDataType.Boolean,
+                TrueText = "是",
+                FalseText = "否",
+                CellCssClass = "text-center"
+            }
+        };
+
+        permissionColumnDefinitions = new List<TableColumnDefinition>
+        {
+            new()
+            {
+                PropertyName = nameof(Permission.PermissionCode),
+                Title = "權限代碼",
+                DataType = ColumnDataType.Text,
+                CellCssClass = "font-monospace"
+            },
+            new()
+            {
+                PropertyName = nameof(Permission.PermissionName),
+                Title = "權限名稱",
+                DataType = ColumnDataType.Text
+            },
+            new()
+            {
+                PropertyName = nameof(Permission.Module),
+                Title = "模組",
+                DataType = ColumnDataType.Text,
+                CellCssClass = "badge bg-secondary"
+            }
+        };
+    }
+
+    private async Task LoadRolesAsync()
+    {
+        try
+        {
+            isLoadingRoles = true;
+            StateHasChanged();
+
+            var result = await RoleService.GetAllAsync();
+            if (result != null)
+            {
+                roles = result.OrderBy(r => r.RoleName).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadRolesAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入角色資料時發生錯誤", "錯誤");
+        }
+        finally
+        {
+            isLoadingRoles = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadPermissionsAsync()
+    {
+        try
+        {
+            isLoadingPermissions = true;
+            StateHasChanged();
+
+            // 載入所有權限
+            var allPermissions = await PermissionManagementService.GetAllAsync();
+            if (allPermissions != null)
+            {
+                permissions = allPermissions.OrderBy(p => p.PermissionCode).ToList();
+            }
+
+            // 載入角色已有的權限
+            if (selectedRole != null)
+            {
+                var rolePermissionResult = await PermissionService.GetRolePermissionsAsync(selectedRole.Id);
+                if (rolePermissionResult.IsSuccess && rolePermissionResult.Data != null)
+                {
+                    rolePermissions = rolePermissionResult.Data;
+                }
+                else
+                {
+                    rolePermissions = new List<Permission>();
+                }
+
+                // 初始化權限選擇狀態
+                permissionSelections.Clear();
+                foreach (var permission in permissions)
+                {
+                    permissionSelections[permission.Id] = rolePermissions.Any(rp => rp.Id == permission.Id);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPermissionsAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入權限資料時發生錯誤", "錯誤");
+        }
+        finally
+        {
+            isLoadingPermissions = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleRoleSelection(Role role)
+    {
+        try
+        {
+            selectedRole = role;
+            await LoadPermissionsAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleRoleSelection), GetType());
+        }
+    }
+
+    private void SelectAllPermissions()
+    {
+        foreach (var permission in permissions)
+        {
+            permissionSelections[permission.Id] = true;
+        }
+        StateHasChanged();
+    }
+
+    private void ClearAllPermissions()
+    {
+        foreach (var permission in permissions)
+        {
+            permissionSelections[permission.Id] = false;
+        }
+        StateHasChanged();
+    }
+
+    private async Task SaveRolePermissions()
+    {
+        if (selectedRole == null)
+        {
+            await NotificationService.ShowWarningAsync("請先選擇一個角色", "警告");
+            return;
+        }
+
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            var selectedPermissionIds = permissionSelections
+                .Where(kvp => kvp.Value)
+                .Select(kvp => kvp.Key)
+                .ToList();
+
+            // 調試資訊
+            await JSRuntime.InvokeVoidAsync("console.log", $"準備儲存角色 {selectedRole.RoleName} 的權限");
+            await JSRuntime.InvokeVoidAsync("console.log", $"選擇的權限ID: {string.Join(", ", selectedPermissionIds)}");
+
+            var result = await RoleService.AssignPermissionsToRoleAsync(selectedRole.Id, selectedPermissionIds);
+            
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync($"已成功更新角色「{selectedRole.RoleName}」的權限", "儲存成功");
+                
+                // 清除相關快取
+                await ClearPermissionCache();
+                
+                // 重新載入角色權限
+                await LoadPermissionsAsync();
+                
+                // 調試資訊
+                await JSRuntime.InvokeVoidAsync("console.log", "權限已成功更新並重新載入");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"儲存失敗：{result.ErrorMessage}", "儲存失敗");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveRolePermissions), GetType());
+            await NotificationService.ShowErrorAsync("儲存權限時發生錯誤", "錯誤");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ClearPermissionCache()
+    {
+        try
+        {
+            if (selectedRole != null)
+            {
+                // 清除特定角色的權限快取
+                var result = await PermissionService.ClearRolePermissionCacheAsync(selectedRole.Id);
+                if (result.IsSuccess)
+                {
+                    await JSRuntime.InvokeVoidAsync("console.log", $"角色 {selectedRole.Id} 的權限快取已清除");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("console.log", $"清除角色快取失敗: {result.ErrorMessage}");
+                }
+            }
+            
+            // 也清除所有快取以確保完全更新
+            var allResult = await PermissionService.ClearAllPermissionCacheAsync();
+            if (allResult.IsSuccess)
+            {
+                await JSRuntime.InvokeVoidAsync("console.log", "所有權限快取已清除");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("console.log", $"清除全部快取失敗: {allResult.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ClearPermissionCache), GetType());
+        }
+    }
+
+    private void OnPermissionSelectionChanged(int permissionId, bool isSelected)
+    {
+        permissionSelections[permissionId] = isSelected;
+        StateHasChanged();
+    }
+
+    private RenderFragment RenderPermissionTable(bool isReadOnly)
+    {
+        return builder =>
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "class", "table-responsive");
+            
+            builder.OpenElement(2, "table");
+            builder.AddAttribute(3, "class", "table table-hover");
+            
+            // 表格標題
+            builder.OpenElement(4, "thead");
+            builder.AddAttribute(5, "class", "table-header-primary");
+            builder.OpenElement(6, "tr");
+            
+            if (!isReadOnly)
+            {
+                builder.OpenElement(7, "th");
+                builder.AddAttribute(8, "scope", "col");
+                builder.AddAttribute(9, "class", "text-center");
+                builder.AddAttribute(10, "style", "width: 50px;");
+                builder.AddContent(11, "選擇");
+                builder.CloseElement();
+            }
+            
+            builder.OpenElement(12, "th");
+            builder.AddAttribute(13, "scope", "col");
+            builder.AddContent(14, "權限代碼");
+            builder.CloseElement();
+            
+            builder.OpenElement(15, "th");
+            builder.AddAttribute(16, "scope", "col");
+            builder.AddContent(17, "權限名稱");
+            builder.CloseElement();
+            
+            builder.OpenElement(18, "th");
+            builder.AddAttribute(19, "scope", "col");
+            builder.AddContent(20, "模組");
+            builder.CloseElement();
+            
+            builder.CloseElement(); // tr
+            builder.CloseElement(); // thead
+            
+            // 表格內容
+            builder.OpenElement(21, "tbody");
+            
+            if (permissions.Any())
+            {
+                int rowIndex = 22;
+                foreach (var permission in permissions)
+                {
+                    var isSelected = permissionSelections.GetValueOrDefault(permission.Id, false);
+                    var rowClass = isSelected ? "table-success" : "";
+                    
+                    builder.OpenElement(rowIndex++, "tr");
+                    builder.AddAttribute(rowIndex++, "class", rowClass);
+                    
+                    if (!isReadOnly)
+                    {
+                        builder.OpenElement(rowIndex++, "td");
+                        builder.AddAttribute(rowIndex++, "class", "text-center");
+                        
+                        builder.OpenElement(rowIndex++, "input");
+                        builder.AddAttribute(rowIndex++, "type", "checkbox");
+                        builder.AddAttribute(rowIndex++, "class", "form-check-input");
+                        builder.AddAttribute(rowIndex++, "checked", isSelected);
+                        builder.AddAttribute(rowIndex++, "onchange", 
+                            Microsoft.AspNetCore.Components.EventCallback.Factory.Create<Microsoft.AspNetCore.Components.ChangeEventArgs>(
+                                this, args => OnPermissionSelectionChanged(permission.Id, (bool)(args.Value ?? false))));
+                        builder.CloseElement();
+                        
+                        builder.CloseElement(); // td
+                    }
+                    
+                    builder.OpenElement(rowIndex++, "td");
+                    builder.AddAttribute(rowIndex++, "class", "font-monospace");
+                    builder.AddContent(rowIndex++, permission.PermissionCode);
+                    builder.CloseElement();
+                    
+                    builder.OpenElement(rowIndex++, "td");
+                    builder.AddContent(rowIndex++, permission.PermissionName);
+                    builder.CloseElement();
+                    
+                    builder.OpenElement(rowIndex++, "td");
+                    builder.OpenElement(rowIndex++, "span");
+                    builder.AddAttribute(rowIndex++, "class", "badge bg-secondary");
+                    builder.AddContent(rowIndex++, permission.Module);
+                    builder.CloseElement();
+                    builder.CloseElement();
+                    
+                    builder.CloseElement(); // tr
+                }
+            }
+            else
+            {
+                int emptyRowIndex = 22;
+                builder.OpenElement(emptyRowIndex++, "tr");
+                builder.OpenElement(emptyRowIndex++, "td");
+                builder.AddAttribute(emptyRowIndex++, "colspan", isReadOnly ? "3" : "4");
+                builder.AddAttribute(emptyRowIndex++, "class", "text-center py-4 text-muted");
+                builder.AddContent(emptyRowIndex++, "沒有找到權限資料");
+                builder.CloseElement();
+                builder.CloseElement();
+            }
+            
+            builder.CloseElement(); // tbody
+            builder.CloseElement(); // table
+            builder.CloseElement(); // div
+        };
+    }
+}

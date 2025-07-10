@@ -87,6 +87,13 @@ namespace ERPCore2.Services
         /// <param name="modulePrefix">模組前綴</param>
         /// <returns>存取檢查結果</returns>
         Task<ServiceResult<bool>> CanAccessModuleAsync(int employeeId, string modulePrefix);
+
+        /// <summary>
+        /// 清除特定角色的權限快取
+        /// </summary>
+        /// <param name="roleId">角色ID</param>
+        /// <returns>操作結果</returns>
+        Task<ServiceResult> ClearRolePermissionCacheAsync(int roleId);
     }
 }
 
