@@ -18,7 +18,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
         public async Task SeedAsync(AppDbContext context)
         {
             await SeedRolePermissionsAsync(context);
-            await SeedDefaultAdminAsync(context);
         }
 
         /// <summary>
@@ -49,57 +48,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             await context.RolePermissions.AddRangeAsync(rolePermissions);
             await context.SaveChangesAsync();
-        }
-
-        /// <summary>
-        /// 建立預設系統管理員帳號
-        /// </summary>
-        private static async Task SeedDefaultAdminAsync(AppDbContext context)
-        {
-            if (await context.Employees.AnyAsync())
-                return;
-
-            // 取得系統管理員角色
-            var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Administrator");
-
-            // 建立系統管理員帳號
-            var adminEmployee = new Employee
-            {
-                EmployeeCode = "ADMIN001",
-                FirstName = "系統",
-                LastName = "管理員",
-                Username = "admin",
-                PasswordHash = SeedDataHelper.HashPassword("admin123"),
-                Department = "IT",
-                RoleId = adminRole?.Id ?? 1,
-                Status = EntityStatus.Active,
-                CreatedAt = DateTime.Now,
-                CreatedBy = "System"
-            };
-
-            await context.Employees.AddAsync(adminEmployee);
-            await context.SaveChangesAsync();
-
-            // 為系統管理員添加Email聯絡資料
-            var emailContactType = await context.ContactTypes
-                .FirstOrDefaultAsync(ct => ct.TypeName == "Email");
-
-            if (emailContactType != null)
-            {
-                var emailContact = new EmployeeContact
-                {
-                    EmployeeId = adminEmployee.Id,
-                    ContactTypeId = emailContactType.Id,
-                    ContactValue = $"{adminEmployee.Username}@erpcore2.com",
-                    IsPrimary = true,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                };
-
-                await context.EmployeeContacts.AddAsync(emailContact);
-                await context.SaveChangesAsync();
-            }
         }
     }
 }

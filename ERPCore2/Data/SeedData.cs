@@ -72,6 +72,7 @@ namespace ERPCore2.Data
                 new PermissionSeeder(),
                 new RoleSeeder(),
                 new RolePermissionSeeder(),
+                new EmployeeSeeder(),
                 new BasicDataSeeder(),
                 new EmployeePositionSeeder(),
                 new ColorSeeder(),
