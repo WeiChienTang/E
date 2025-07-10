@@ -6,65 +6,93 @@
     box-shadow: var(--detail-tab-shadow);
     overflow: hidden;
     border: 1px solid var(--detail-tab-border);
+    background-color: var(--primary-blue-alt); /* 使用與導航選單相同的背景色 */
 }
 
 /* 標籤頁標題區域 */
 .detail-tabs-modern .card-header {
-    border-bottom: 1px solid var(--detail-tab-border);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding: 0;
+    background-color: var(--primary-blue-alt);
 }
 
 /* 標籤頁導航列表 */
 .detail-tabs-modern .nav-tabs {
     border-bottom: none;
     margin-bottom: 0;
+    background-color: var(--primary-blue-alt);
 }
 
-/* 標籤頁按鈕 */
-.detail-tabs-modern .nav-link {
+/* 標籤頁按鈕 - 使用與導航選單相同的配色方案 */
+.detail-tabs-modern .nav-link,
+.detail-tabs-modern .nav-link.nav-link,
+.detail-tabs-modern .nav-item .nav-link,
+.detail-tabs-modern .nav-tabs .nav-link,
+.detail-tabs-modern .nav-tabs .nav-item .nav-link {
     border: none;
-    border-radius: 0;
+    border-radius: var(--radius-lg);
     background-color: transparent;
-    color: var(--text-secondary);
+    color: var(--primary-white); /* 白色文字 */
     padding: 1rem 1.5rem;
     font-weight: 500;
     transition: all 0.2s ease-in-out;
     position: relative;
+    height: auto;
+    line-height: normal;
+    display: block;
+    width: auto;
+    cursor: pointer;
+    text-decoration: none;
+    box-sizing: border-box;
+    margin: 0.25rem;
 }
 
-/* 標籤頁按鈕 hover 效果 */
-.detail-tabs-modern .nav-link:hover {
-    background-color: var(--detail-tab-hover-bg);
-    color: var(--text-primary);
+/* 標籤頁按鈕 hover 效果 - 使用與導航選單相同的配色 */
+.detail-tabs-modern .nav-link:hover,
+.detail-tabs-modern .nav-link.nav-link:hover,
+.detail-tabs-modern .nav-item .nav-link:hover,
+.detail-tabs-modern .nav-tabs .nav-link:hover,
+.detail-tabs-modern .nav-tabs .nav-item .nav-link:hover {
+    background-color: var(--table-hover-bg); /* 淡黃色背景 */
+    color: var(--table-hover-text); /* 深褐色文字 */
     border-color: transparent;
+    transform: none;
 }
 
-/* 活躍標籤頁樣式 */
-.detail-tabs-modern .nav-link.active {
-    background-color: var(--detail-tab-active-bg);
-    color: var(--primary-blue);
+/* 活躍標籤頁樣式 - 使用與導航選單相同的hover配色 */
+.detail-tabs-modern .nav-link.active,
+.detail-tabs-modern .nav-link.nav-link.active,
+.detail-tabs-modern .nav-item .nav-link.active,
+.detail-tabs-modern .nav-tabs .nav-link.active,
+.detail-tabs-modern .nav-tabs .nav-item .nav-link.active {
+    background-color: var(--table-hover-bg); /* 淡黃色背景 */
+    color: var(--table-hover-text); /* 深褐色文字 */
     border-color: transparent;
     font-weight: 600;
 }
 
 /* 活躍標籤頁底部邊框 */
-.detail-tabs-modern .nav-link.active::after {
+.detail-tabs-modern .nav-link.active::after,
+.detail-tabs-modern .nav-link.nav-link.active::after,
+.detail-tabs-modern .nav-item .nav-link.active::after,
+.detail-tabs-modern .nav-tabs .nav-link.active::after,
+.detail-tabs-modern .nav-tabs .nav-item .nav-link.active::after {
     content: '';
     position: absolute;
-    bottom: -1px;
+    bottom: 0;
     left: 0;
     right: 0;
     height: 3px;
-    background-color: var(--detail-tab-active-border);
+    background-color: var(--table-hover-text); /* 深褐色底線 */
     border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 }
 
 /* 標籤頁內容區域 */
 .detail-tabs-modern .card-body {
-    background-color: var(--detail-tab-content-bg);
+    background-color: var(--bg-primary);
     padding: 2rem;
     min-height: 400px;
-    border-top: 1px solid var(--detail-tab-border);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: inset 0 1px 3px 0 rgb(0 0 0 / 0.05);
 }
 

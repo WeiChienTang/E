@@ -3,9 +3,6 @@
 /* 引入顏色變數 */
 @import url('./colors.css');
 
-/* 引入 Bootstrap Icons */
-@import url('./bootstrap-icons.css');
-
 /* ========================================= */
 /* Bootstrap 覆寫 - 全域必要的基礎樣式 */
 /* ========================================= */
@@ -189,4 +186,48 @@
   }
 }
 
-/* 注意：所有按鈕樣式(.btn-*)已移至 GenericButtonComponent.razor.css 統一管理 */
+/* ========================================= */
+/* 導航選單圖示樣式覆蓋 */
+/* ========================================= */
+
+/* 主要導航選單圖示 - 全域覆蓋 */
+.nav-menu-bi {
+    font-size: 1.25rem !important;
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+    line-height: 1 !important;
+    vertical-align: text-bottom !important;
+    margin-right: 0.5rem !important;
+    flex-shrink: 0 !important;
+    display: inline-block !important;
+}
+
+/* 直接覆蓋 Bootstrap Icons 的 ::before 偽元素 */
+.nav-menu-bi::before {
+    font-size: 1.25rem !important;
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+    line-height: 1 !important;
+}
+
+/* 下拉選單圖示 - 全域覆蓋 */
+.nav-dropdown-bi {
+    font-size: 1rem !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    line-height: 1 !important;
+    vertical-align: text-bottom !important;
+    margin-right: 0.5rem !important;
+    flex-shrink: 0 !important;
+    display: inline-block !important;
+}
+
+/* 直接覆蓋 Bootstrap Icons 的 ::before 偽元素 */
+.nav-dropdown-bi::before {
+    font-size: 1rem !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    line-height: 1 !important;
+}
+
+/* ========================================= */
