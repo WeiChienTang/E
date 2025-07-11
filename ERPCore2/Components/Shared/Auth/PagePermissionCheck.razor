@@ -61,6 +61,12 @@ else
     {
         try
         {
+            // 優先檢查是否有 System.Admin 權限
+            if (await NavigationPermissionService.CanAccessAsync("System.Admin"))
+            {
+                return true;
+            }
+
             // 如果指定了單一權限
             if (!string.IsNullOrEmpty(RequiredPermission))
             {

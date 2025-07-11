@@ -110,6 +110,17 @@ else if (!string.IsNullOrEmpty(UnauthorizedContent))
                     if (int.TryParse(employeeIdClaim, out int employeeId))
                     {
                         Console.WriteLine($"🔍 解析員工ID: {employeeId}");
+                        
+                        // 優先檢查是否有 System.Admin 權限
+                        var adminResult = await permissionService.HasPermissionAsync(employeeId, "System.Admin");
+                        if (adminResult.IsSuccess && adminResult.Data)
+                        {
+                            Console.WriteLine("✅ 使用者具有 System.Admin 權限，允許存取");
+                            isAuthorized = true;
+                            return;
+                        }
+                        
+                        // 檢查指定的權限
                         var result = await permissionService.HasPermissionAsync(employeeId, Permission);
                         isAuthorized = result.IsSuccess && result.Data;
                         Console.WriteLine($"🔍 權限檢查結果: IsSuccess={result.IsSuccess}, Data={result.Data}, isAuthorized={isAuthorized}");

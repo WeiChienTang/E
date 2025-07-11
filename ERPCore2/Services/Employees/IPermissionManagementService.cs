@@ -44,12 +44,6 @@ namespace ERPCore2.Services
         Task<ServiceResult> CreatePermissionsBatchAsync(List<Permission> permissions);
 
         /// <summary>
-        /// 初始化系統預設權限
-        /// </summary>
-        /// <returns>操作結果</returns>
-        Task<ServiceResult> InitializeDefaultPermissionsAsync();
-
-        /// <summary>
         /// 搜尋權限
         /// </summary>
         /// <param name="searchTerm">搜尋關鍵字</param>

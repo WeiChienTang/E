@@ -32,7 +32,7 @@
         <NavMenuItem Text="首頁" IconClass="bi bi-house-door-fill-nav-menu" Url="/" />
 
         <!-- 通用參數設定 -->
-        <NavigationPermissionCheck AnyPermissions='new[] { "System.Admin", "MasterData.Read" }'>
+        <NavigationPermissionCheck Module="MasterData">
             <NavMenuItem Text="基礎資料" IconClass="bi-sliders nav-menu-bi">
                 <DropdownItems>
 
@@ -84,23 +84,23 @@
                         <NavDropdownItem Text="員工維護" Url="/employees" />
                     </NavigationPermissionCheck>
 
-                    <NavigationPermissionCheck Permission="System.Admin">
+                    <NavigationPermissionCheck Permission="Role.Read">
                         <NavDropdownItem Text="員工角色" Url="/roles"/>
                     </NavigationPermissionCheck>
 
-                    <NavigationPermissionCheck Permission="System.Admin">
+                    <NavigationPermissionCheck Permission="Department.Read">
                         <NavDropdownItem Text="員工部門" Url="/departments"/>
                     </NavigationPermissionCheck>
 
-                    <NavigationPermissionCheck Permission="System.Admin">
+                    <NavigationPermissionCheck Permission="EmployeePosition.Read">
                         <NavDropdownItem Text="員工職位" Url="/employee-positions"/>
                     </NavigationPermissionCheck>                   
 
-                    <NavigationPermissionCheck Permission="System.Admin">
+                    <NavigationPermissionCheck Permission="Permission.Read">
                         <NavDropdownItem Text="員工權限" Url="/permissions"/>
                     </NavigationPermissionCheck>
 
-                    <NavigationPermissionCheck Permission="System.Admin">
+                    <NavigationPermissionCheck Permission="EmployeePermission.Read">
                         <NavDropdownItem Text="員工權限設定" Url="/employees/role-permission-management"/>
                     </NavigationPermissionCheck>
 
@@ -146,7 +146,8 @@
             </NavMenuItem>
         </NavigationPermissionCheck>
 
-        <NavigationPermissionCheck Permission="Warehouse.Read">
+        <!-- 庫存管理 -->
+        <NavigationPermissionCheck Module="Warehouse">
             <NavMenuItem Text="庫存管理" IconClass="bi-boxes nav-menu-bi">
                 <DropdownItems>
 
@@ -163,14 +164,13 @@
         </NavigationPermissionCheck>    
 
         <!-- BOM 管理下拉選單 -->
-        <NavMenuItem Text="BOM 管理 (開發中)" IconClass="bi bi-list-nested">
-            <DropdownItems>
+        <NavigationPermissionCheck Module="BOM">
+            <NavMenuItem Text="BOM 管理 (開發中)" IconClass="bi bi-list-nested">
 
-            </DropdownItems>
-        </NavMenuItem>
-
+            </NavMenuItem>
+        </NavigationPermissionCheck>
         <!-- 系統管理 -->
-        <NavigationPermissionCheck AnyPermissions='new[] { "System.Admin", "SystemControl.ViewErrorLog" }'>
+        <NavigationPermissionCheck Module="SystemControl">
             <NavMenuItem Text="系統管理" IconClass="bi bi-gear-fill">
                 <DropdownItems>
 
@@ -178,7 +178,7 @@
                         <NavDropdownItem Text="更新紀錄" Url="/updates" />
                     </NavigationPermissionCheck>
 
-                    <NavigationPermissionCheck Permission="System.Admin">
+                    <NavigationPermissionCheck Permission="ErrorLog.Read">
                         <NavDropdownItem Text="錯誤記錄" Url="/error-logs" />
                     </NavigationPermissionCheck>
 

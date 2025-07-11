@@ -35,7 +35,7 @@ namespace ERPCore2.Data.Entities
         public string Module { get; set; } = string.Empty;
 
         /// <summary>
-        /// 動作類型 (如: View, Create, Update, Delete)
+        /// 動作類型 (如: Read, Create, Update, Delete)
         /// </summary>
         [Display(Name = "動作")]
         [Required(ErrorMessage = "請輸入動作")]

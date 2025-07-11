@@ -25,6 +25,10 @@
     {
         try
         {
+            // 總是優先檢查 System.Admin 權限
+            if (await NavigationPermissionService.CanAccessAsync("System.Admin"))
+                return true;
+
             // 如果指定了模組，檢查模組權限
             if (!string.IsNullOrEmpty(Module))
             {
