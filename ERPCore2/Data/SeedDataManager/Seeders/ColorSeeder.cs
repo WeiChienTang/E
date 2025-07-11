@@ -12,7 +12,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
     /// </summary>
     public class ColorSeeder : IDataSeeder
     {
-        public int Order => 8; // 在天氣資料之後執行
+        public int Order => 10; // 在天氣資料之後執行
         public string Name => "顏色資料";
 
         public async Task SeedAsync(AppDbContext context)

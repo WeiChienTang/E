@@ -8,7 +8,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 {
     public class UnitSeeder : IDataSeeder
     {
-        public int Order => 4; // 在基礎資料之後，庫存管理之前
+        public int Order => 6; // 在基礎資料之後，庫存管理之前
         public string Name => "計量單位";
 
         public async Task SeedAsync(AppDbContext context)

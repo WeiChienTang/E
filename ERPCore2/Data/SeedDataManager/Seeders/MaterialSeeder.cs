@@ -12,7 +12,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
     /// </summary>
     public class MaterialSeeder : IDataSeeder
     {
-        public int Order => 7; // 在基礎資料之後執行
+        public int Order => 9; // 在基礎資料之後執行
         public string Name => "材質資料";
 
         public async Task SeedAsync(AppDbContext context)

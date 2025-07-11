@@ -12,7 +12,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
     /// </summary>
     public class ErrorLogSeeder : IDataSeeder
     {
-        public int Order => 10; // 在基礎資料之後執行
+        public int Order => 11; // 在基礎資料之後執行
         public string Name => "錯誤記錄資料";
 
         public async Task SeedAsync(AppDbContext context)
