@@ -9,6 +9,7 @@
 @inject IRoleService RoleService
 @inject IContactTypeService ContactTypeService
 @inject IAddressTypeService AddressTypeService
+@inject IDepartmentService DepartmentService
 @inject IAuthenticationService AuthenticationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -243,6 +244,7 @@
     // 選項清單
     private List<Role> roles = new();
     private List<EmployeePosition> employeePositions = new();
+    private List<Department> departments = new();
     private List<ContactType> contactTypes = new();
     private List<AddressType> addressTypes = new();
     
@@ -376,6 +378,9 @@
             var employeePositionsResult = await EmployeePositionService.GetAllAsync();
             employeePositions = employeePositionsResult ?? new List<EmployeePosition>();
             
+            var departmentsResult = await DepartmentService.GetAllAsync();
+            departments = departmentsResult ?? new List<Department>();
+            
             var contactTypesResult = await ContactTypeService.GetAllAsync();
             contactTypes = contactTypesResult ?? new List<ContactType>();
             
@@ -399,6 +404,8 @@
             
             // 初始化空列表以防止UI錯誤
             roles = new List<Role>();
+            employeePositions = new List<EmployeePosition>();
+            departments = new List<Department>();
             contactTypes = new List<ContactType>();
             addressTypes = new List<AddressType>();
             InitializeFormFields(); // 即使出錯也要初始化表單欄位
@@ -417,16 +424,19 @@
         {
             Text = r.RoleName,
             Value = r.Id.ToString()
-        }).ToList();
-
-        // 職位選項
+        }).ToList();        // 職位選項
         var positionOptions = employeePositions.Select(ep => new SelectOption
         {
             Text = ep.Name,
             Value = ep.Id.ToString()
         }).ToList();
 
-        basicFormFields = new List<FormFieldDefinition>
+        // 部門選項
+        var departmentOptions = departments.Select(d => new SelectOption
+        {
+            Text = d.Name,
+            Value = d.Id.ToString()
+        }).ToList();basicFormFields = new List<FormFieldDefinition>
         {
             new()
             {
@@ -475,11 +485,12 @@
             },
             new()
             {
-                PropertyName = nameof(Employee.Department),
+                PropertyName = nameof(Employee.DepartmentId),
                 Label = "部門",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入部門",
-                ContainerCssClass = "col-md-6"
+                FieldType = FormFieldType.Select,
+                Placeholder = "請選擇部門",
+                ContainerCssClass = "col-md-6",
+                Options = departmentOptions
             },
             new()
             {
@@ -499,7 +510,7 @@
             { nameof(Employee.LastName), "基本資訊" },
             { nameof(Employee.FirstName), "基本資訊" },
             { nameof(Employee.RoleId), "角色權限" },
-            { nameof(Employee.Department), "工作資訊" },
+            { nameof(Employee.DepartmentId), "工作資訊" },
             { nameof(Employee.EmployeePositionId), "工作資訊" }
         };
     }

@@ -35,13 +35,9 @@
         <NavigationPermissionCheck Module="MasterData">
             <NavMenuItem Text="基礎資料" IconClass="bi-sliders nav-menu-bi">
                 <DropdownItems>
-
-                    <NavSection Title="通用參數">
-                        <NavigationPermissionCheck Permission="IndustryType.Read">
-                            <NavDropdownItem Text="行業" Url="/industrytypes"/>
-                        </NavigationPermissionCheck>
-                    </NavSection>
-
+                    <NavigationPermissionCheck Permission="IndustryType.Read">
+                        <NavDropdownItem Text="行業" Url="/industrytypes"/>
+                    </NavigationPermissionCheck>
                 </DropdownItems>
             </NavMenuItem>
         </NavigationPermissionCheck>        
@@ -81,27 +77,27 @@
             <NavMenuItem Text="員工管理" IconClass="bi bi-person-badge-fill">
                 <DropdownItems>
                     <NavigationPermissionCheck Permission="Employee.Read">
-                        <NavDropdownItem Text="員工維護" Url="/employees" />
-                    </NavigationPermissionCheck>
-
-                    <NavigationPermissionCheck Permission="Role.Read">
-                        <NavDropdownItem Text="員工角色" Url="/roles"/>
+                        <NavDropdownItem Text="員工主檔" Url="/employees" />
                     </NavigationPermissionCheck>
 
                     <NavigationPermissionCheck Permission="Department.Read">
-                        <NavDropdownItem Text="員工部門" Url="/departments"/>
+                        <NavDropdownItem Text="部門設定" Url="/departments"/>
                     </NavigationPermissionCheck>
 
                     <NavigationPermissionCheck Permission="EmployeePosition.Read">
-                        <NavDropdownItem Text="員工職位" Url="/employee-positions"/>
-                    </NavigationPermissionCheck>                   
+                        <NavDropdownItem Text="職位設定" Url="/employee-positions"/>
+                    </NavigationPermissionCheck>          
+
+                    <NavigationPermissionCheck Permission="Role.Read">
+                        <NavDropdownItem Text="角色設定" Url="/roles"/>
+                    </NavigationPermissionCheck>         
 
                     <NavigationPermissionCheck Permission="Permission.Read">
-                        <NavDropdownItem Text="員工權限" Url="/permissions"/>
+                        <NavDropdownItem Text="權限設定" Url="/permissions"/>
                     </NavigationPermissionCheck>
 
                     <NavigationPermissionCheck Permission="EmployeePermission.Read">
-                        <NavDropdownItem Text="員工權限設定" Url="/employees/role-permission-management"/>
+                        <NavDropdownItem Text="角色權限設定" Url="/employees/role-permission-management"/>
                     </NavigationPermissionCheck>
 
                 </DropdownItems>
