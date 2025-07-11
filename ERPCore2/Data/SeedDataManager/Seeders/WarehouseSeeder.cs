@@ -11,7 +11,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
     /// </summary>
     public class WarehouseSeeder : IDataSeeder
     {
-        public int Order => 4; // 在基礎資料之後，庫存資料之前
+        public int Order => 6; // 在基礎資料之後，庫存資料之前
         public string Name => "倉庫管理";
 
         public async Task SeedAsync(AppDbContext context)

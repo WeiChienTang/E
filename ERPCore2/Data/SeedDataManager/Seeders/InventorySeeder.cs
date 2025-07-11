@@ -8,7 +8,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 {
     public class InventorySeeder : IDataSeeder
     {
-        public int Order => 7; // 在單位資料之後
+        public int Order => 8; // 在單位資料之後
         public string Name => "庫存異動管理";
 
         public async Task SeedAsync(AppDbContext context)

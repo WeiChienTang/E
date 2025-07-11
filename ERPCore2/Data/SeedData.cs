@@ -72,17 +72,17 @@ namespace ERPCore2.Data
                 new PermissionSeeder(),
                 new RoleSeeder(),
                 new RolePermissionSeeder(),
+                new BasicDataSeeder(),          // 必須在 CustomerSeeder 和 SupplierSeeder 之前
                 new EmployeeSeeder(),
-                new BasicDataSeeder(),
                 new EmployeePositionSeeder(),
                 new DepartmentSeeder(),
                 new ColorSeeder(),
                 new MaterialSeeder(),
                 new UnitSeeder(),
                 new SizeSeeder(),
-                new WarehouseSeeder(), 
-                new CustomerSeeder(),
-                new SupplierSeeder(),
+                new WarehouseSeeder(),
+                new CustomerSeeder(),           // 依賴 CustomerTypes (在 BasicDataSeeder 中)
+                new SupplierSeeder(),           // 依賴 SupplierTypes (在 BasicDataSeeder 中)
                 new ProductSeeder(),
                 new InventorySeeder(),
                 new InventoryStockSeeder(), 

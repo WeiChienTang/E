@@ -12,7 +12,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
     /// </summary>
     public class CustomerSeeder : IDataSeeder
     {
-        public int Order => 2;
+        public int Order => 4; // 在 BasicDataSeeder 之後執行，因為需要 CustomerTypes
         public string Name => "客戶資料";
 
         public async Task SeedAsync(AppDbContext context)
