@@ -1,4 +1,6 @@
 @page "/customer-types/detail/{customerTypeId:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Details
 @using ERPCore2.Components.Shared.Badges
@@ -13,25 +15,25 @@
 @rendermode InteractiveServer
 
 <PageTitle>客戶類型詳細資料</PageTitle>
-
-<GenericDetailPageComponent TEntity="CustomerType" 
-                           TService="ICustomerTypeService"
-                           EntityId="@CustomerTypeId"
-                           Entity="@customerType"
-                           Service="@CustomerTypeService"
-                           EntityName="客戶類型"
-                           EntityNamePlural="客戶類型"
-                           IndexRoute="/customer-types"
-                           EditRoute="/customer-types/edit"
-                           LoadingText="載入客戶類型資料中..."
-                           BreadcrumbItems="@breadcrumbItems"
-                           DataLoader="@LoadCustomerTypeDataAsync"
-                           EntityTitleSelector="@(ct => ct.TypeName)"
-                           EntitySubtitleSelector="@(ct => $"描述：{ct.Description ?? "未設定"}")"                           EntityDisplayNameSelector="@(ct => ct.TypeName)"
-                           OnDataLoaded="@OnCustomerTypeDataLoaded"                           UseTabLayout="true"
-                           TabSections="@GetTabSections()">
-</GenericDetailPageComponent>
-
+<PagePermissionCheck RequiredPermission="CustomerType.Read">
+    <GenericDetailPageComponent TEntity="CustomerType" 
+                            TService="ICustomerTypeService"
+                            EntityId="@CustomerTypeId"
+                            Entity="@customerType"
+                            Service="@CustomerTypeService"
+                            EntityName="客戶類型"
+                            EntityNamePlural="客戶類型"
+                            IndexRoute="/customer-types"
+                            EditRoute="/customer-types/edit"
+                            LoadingText="載入客戶類型資料中..."
+                            BreadcrumbItems="@breadcrumbItems"
+                            DataLoader="@LoadCustomerTypeDataAsync"
+                            EntityTitleSelector="@(ct => ct.TypeName)"
+                            EntitySubtitleSelector="@(ct => $"描述：{ct.Description ?? "未設定"}")"                           EntityDisplayNameSelector="@(ct => ct.TypeName)"
+                            OnDataLoaded="@OnCustomerTypeDataLoaded"                           UseTabLayout="true"
+                            TabSections="@GetTabSections()">
+    </GenericDetailPageComponent>
+</PagePermissionCheck>
 @code {
     [Parameter] public int CustomerTypeId { get; set; }
 

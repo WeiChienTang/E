@@ -1,5 +1,7 @@
 @page "/warehouses/edit"
 @page "/warehouses/edit/{id:int?}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @inject IWarehouseService WarehouseService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -10,25 +12,25 @@
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯倉庫" : "新增倉庫")</PageTitle>
-
-<GenericEditPageComponent TEntity="Warehouse" 
-                         TService="IWarehouseService"
-                         Id="@Id"
-                         Entity="@warehouse"
-                         Service="@WarehouseService"
-                         EntityName="倉庫"
-                         EntityNamePlural="倉庫"
-                         FormTitle="基本資料"
-                         FormSubtitle="倉庫的基本資訊"
-                         IndexRoute="/warehouses"
-                         UseGenericForm="true"
-                         FormFields="@formFields"
-                         FormSections="@formSections"
-                         BreadcrumbItems="@breadcrumbItems"
-                         DataLoader="@LoadWarehouseData"
-                         SaveHandler="@SaveWarehouse"
-                         @ref="editComponent" />
-
+<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Warehouse.Update" : "Warehouse.Create")">
+    <GenericEditPageComponent TEntity="Warehouse" 
+                            TService="IWarehouseService"
+                            Id="@Id"
+                            Entity="@warehouse"
+                            Service="@WarehouseService"
+                            EntityName="倉庫"
+                            EntityNamePlural="倉庫"
+                            FormTitle="基本資料"
+                            FormSubtitle="倉庫的基本資訊"
+                            IndexRoute="/warehouses"
+                            UseGenericForm="true"
+                            FormFields="@formFields"
+                            FormSections="@formSections"
+                            BreadcrumbItems="@breadcrumbItems"
+                            DataLoader="@LoadWarehouseData"
+                            SaveHandler="@SaveWarehouse"
+                            @ref="editComponent" />
+</PagePermissionCheck>
 @code {
     [Parameter] public int? Id { get; set; }
     

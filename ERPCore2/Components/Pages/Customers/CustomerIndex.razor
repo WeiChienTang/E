@@ -1,5 +1,7 @@
 @page "/customers"
 @using Microsoft.AspNetCore.Authorization
+@using ERPCore2.Components.Shared.Auth
+@using ERPCore2.Services.Auth
 @attribute [Authorize]
 @inject ICustomerService CustomerService
 @inject NavigationManager Navigation
@@ -10,7 +12,8 @@
 
 <PageTitle>客戶維護</PageTitle>
 
-<GenericIndexPageComponent TEntity="Customer" 
+<PagePermissionCheck RequiredPermission="Customer.Read">
+    <GenericIndexPageComponent TEntity="Customer" 
                           TService="ICustomerService"
                           Service="@CustomerService"
                           EntityBasePath="/customers"
@@ -25,6 +28,7 @@
                           FilterApplier="@ApplyCustomerFilters"
                           GetEntityDisplayName="@(customer => customer.CompanyName)"
                           @ref="indexComponent" />
+</PagePermissionCheck>
 
 @code {
     // 組件參考

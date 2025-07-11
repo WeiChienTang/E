@@ -1,5 +1,7 @@
 @page "/permissions"
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Helpers
+@attribute [Authorize]
 @inject IPermissionManagementService PermissionService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
@@ -9,6 +11,7 @@
 
 <PageTitle>權限維護</PageTitle>
 
+<PagePermissionCheck RequiredPermission="Permission.Read">
 <GenericIndexPageComponent TEntity="Permission" 
                           TService="IPermissionManagementService"
                           Service="@PermissionService"
@@ -23,6 +26,7 @@
                           FilterApplier="@ApplyPermissionFilters"
                           GetEntityDisplayName="@(permission => permission.PermissionName)"
                           @ref="indexComponent" />
+</PagePermissionCheck>
 
 @code {
     // 組件參考

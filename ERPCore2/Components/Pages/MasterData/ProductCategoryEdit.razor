@@ -1,5 +1,7 @@
 @page "/product-categories/edit"
 @page "/product-categories/edit/{id:int?}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @inject IProductCategoryService ProductCategoryService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -7,27 +9,27 @@
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯商品分類" : "新增商品分類")</PageTitle>
-
-<GenericEditPageComponent TEntity="ProductCategory" 
-                         TService="IProductCategoryService"
-                         @ref="editComponent"
-                         Id="@Id"
-                         Service="@ProductCategoryService"
-                         EntityName="商品分類"
-                         EntityNamePlural="商品分類"
-                         IndexRoute="/product-categories"
-                         FormTitle="基本資料"
-                         FormSubtitle="商品分類的基本資訊與階層設定"
-                         UseGenericForm="true"
-                         FormFields="@GetFormFields()"
-                         FormSections="@formSections"
-                         BreadcrumbItems="@breadcrumbItems"
-                         DataLoader="@LoadProductCategoryData"
-                         UseGenericSave="true"
-                         SaveSuccessMessage="@(Id.HasValue ? "商品分類更新成功" : "商品分類新增成功")"
-                         SaveFailureMessage="商品分類儲存失敗"
- />
-
+<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "ProductCategory.Update" : "ProductCategory.Create")">
+    <GenericEditPageComponent TEntity="ProductCategory" 
+                            TService="IProductCategoryService"
+                            @ref="editComponent"
+                            Id="@Id"
+                            Service="@ProductCategoryService"
+                            EntityName="商品分類"
+                            EntityNamePlural="商品分類"
+                            IndexRoute="/product-categories"
+                            FormTitle="基本資料"
+                            FormSubtitle="商品分類的基本資訊與階層設定"
+                            UseGenericForm="true"
+                            FormFields="@GetFormFields()"
+                            FormSections="@formSections"
+                            BreadcrumbItems="@breadcrumbItems"
+                            DataLoader="@LoadProductCategoryData"
+                            UseGenericSave="true"
+                            SaveSuccessMessage="@(Id.HasValue ? "商品分類更新成功" : "商品分類新增成功")"
+                            SaveFailureMessage="商品分類儲存失敗"
+    />
+</PagePermissionCheck>
 @code {
     [Parameter] public int? Id { get; set; }
     

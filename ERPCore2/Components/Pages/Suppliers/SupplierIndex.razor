@@ -1,5 +1,7 @@
 @page "/suppliers"
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Helpers
+@attribute [Authorize]
 @inject ISupplierService SupplierService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -7,23 +9,25 @@
 @inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
-<PageTitle>廠商維護</PageTitle>
+<PagePermissionCheck RequiredPermission="Supplier.Read">
+    <PageTitle>廠商維護</PageTitle>
 
-<GenericIndexPageComponent TEntity="Supplier" 
-                          TService="ISupplierService"
-                          Service="@SupplierService"
-                          EntityBasePath="/suppliers"                          
-                          PageTitle="廠商維護"
-                          PageSubtitle="管理所有廠商資料與聯絡資訊"
-                          EntityName="廠商"
-                          BreadcrumbItems="@breadcrumbItems"
-                          FilterDefinitions="@filterDefinitions"
-                          ColumnDefinitions="@columnDefinitions"
-                          DataLoader="@LoadSuppliersAsync"
-                          InitializeBasicData="@LoadBasicDataAsync"
-                          FilterApplier="@ApplySupplierFilters"
-                          GetEntityDisplayName="@(supplier => supplier.CompanyName)"
-                          @ref="indexComponent" />
+    <GenericIndexPageComponent TEntity="Supplier" 
+                              TService="ISupplierService"
+                              Service="@SupplierService"
+                              EntityBasePath="/suppliers"                          
+                              PageTitle="廠商維護"
+                              PageSubtitle="管理所有廠商資料與聯絡資訊"
+                              EntityName="廠商"
+                              BreadcrumbItems="@breadcrumbItems"
+                              FilterDefinitions="@filterDefinitions"
+                              ColumnDefinitions="@columnDefinitions"
+                              DataLoader="@LoadSuppliersAsync"
+                              InitializeBasicData="@LoadBasicDataAsync"
+                              FilterApplier="@ApplySupplierFilters"
+                              GetEntityDisplayName="@(supplier => supplier.CompanyName)"
+                              @ref="indexComponent" />
+</PagePermissionCheck>
 
 @code {
     // 組件參考

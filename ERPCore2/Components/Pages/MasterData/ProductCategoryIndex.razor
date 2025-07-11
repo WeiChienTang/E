@@ -1,4 +1,6 @@
 @page "/product-categories"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services
 @using ERPCore2.Components.Shared
@@ -11,33 +13,33 @@
 @rendermode InteractiveServer
 
 <PageTitle>商品分類</PageTitle>
-
-<GenericIndexPageComponent TEntity="ProductCategory" 
-                          TService="IProductCategoryService"
-                          Service="@ProductCategoryService"
-                          EntityBasePath="/product-categories"                          
-                          PageTitle="商品分類"
-                          PageSubtitle="管理所有商品分類資料與階層結構"
-                          AddButtonText="新增商品分類"
-                          AddButtonTitle="新增商品分類資料"
-                          SearchSectionTitle="商品分類搜尋與管理"
-                          EmptyMessage="沒有找到符合條件的商品分類資料"                          
-                          DataLoader="@LoadDataAsync"
-                          FilterApplier="@ApplyProductCategoryFilters"
-                          BreadcrumbItems="@breadcrumbItems"
-                          FilterDefinitions="@filterDefinitions"
-                          ColumnDefinitions="@columnDefinitions"
-                          EntityName="商品分類"
-                          GetEntityDisplayName="@(category => category.CategoryName)"
-                          DeleteSuccessMessage="商品分類刪除成功"
-                          DeleteConfirmMessage="確定要刪除商品分類「{0}」嗎？"
-                          EnableStandardActions="true"
-                          ShowViewButton="true"
-                          ShowEditButton="true"
-                          ShowDeleteButton="true"
-                          @ref="indexComponent">
-</GenericIndexPageComponent>
-
+<PagePermissionCheck RequiredPermission="ProductCategory.Read">
+    <GenericIndexPageComponent TEntity="ProductCategory" 
+                            TService="IProductCategoryService"
+                            Service="@ProductCategoryService"
+                            EntityBasePath="/product-categories"                          
+                            PageTitle="商品分類"
+                            PageSubtitle="管理所有商品分類資料與階層結構"
+                            AddButtonText="新增商品分類"
+                            AddButtonTitle="新增商品分類資料"
+                            SearchSectionTitle="商品分類搜尋與管理"
+                            EmptyMessage="沒有找到符合條件的商品分類資料"                          
+                            DataLoader="@LoadDataAsync"
+                            FilterApplier="@ApplyProductCategoryFilters"
+                            BreadcrumbItems="@breadcrumbItems"
+                            FilterDefinitions="@filterDefinitions"
+                            ColumnDefinitions="@columnDefinitions"
+                            EntityName="商品分類"
+                            GetEntityDisplayName="@(category => category.CategoryName)"
+                            DeleteSuccessMessage="商品分類刪除成功"
+                            DeleteConfirmMessage="確定要刪除商品分類「{0}」嗎？"
+                            EnableStandardActions="true"
+                            ShowViewButton="true"
+                            ShowEditButton="true"
+                            ShowDeleteButton="true"
+                            @ref="indexComponent">
+    </GenericIndexPageComponent>
+</PagePermissionCheck>
 @code {
     private GenericIndexPageComponent<ProductCategory, IProductCategoryService> indexComponent = default!;
     

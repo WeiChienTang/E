@@ -1,4 +1,6 @@
 @page "/roles/detail/{roleId:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using ERPCore2.Helpers
 @inject IRoleService RoleService
 @inject IJSRuntime JSRuntime
@@ -6,28 +8,28 @@
 @rendermode InteractiveServer
 
 <PageTitle>角色詳細資料</PageTitle>
-
-<GenericDetailPageComponent TEntity="Role" 
-                           TService="IRoleService"
-                           EntityId="@RoleId"
-                           Entity="@role"
-                           Service="@RoleService"
-                           EntityName="角色"
-                           EntityNamePlural="角色"
-                           IndexRoute="/roles"
-                           EditRoute="/roles/edit"
-                           LoadingText="載入角色資料中..."
-                           BreadcrumbItems="@breadcrumbItems"
-                           DataLoader="@LoadRoleDataAsync"
-                           AdditionalDataLoader="@LoadAdditionalDataAsync"
-                           EntityTitleSelector="@(r => r.RoleName)"
-                           EntitySubtitleSelector="@(r => $"權限數量：{r.RolePermissions?.Count ?? 0} 個")"
-                           EntityDisplayNameSelector="@(r => r.RoleName)"
-                           OnDataLoaded="@OnRoleDataLoaded"
-                           UseTabLayout="true"
-                           TabSections="@GetTabSections()">
-</GenericDetailPageComponent>
-
+<PagePermissionCheck RequiredPermission="Role.Read">
+    <GenericDetailPageComponent TEntity="Role" 
+                            TService="IRoleService"
+                            EntityId="@RoleId"
+                            Entity="@role"
+                            Service="@RoleService"
+                            EntityName="角色"
+                            EntityNamePlural="角色"
+                            IndexRoute="/roles"
+                            EditRoute="/roles/edit"
+                            LoadingText="載入角色資料中..."
+                            BreadcrumbItems="@breadcrumbItems"
+                            DataLoader="@LoadRoleDataAsync"
+                            AdditionalDataLoader="@LoadAdditionalDataAsync"
+                            EntityTitleSelector="@(r => r.RoleName)"
+                            EntitySubtitleSelector="@(r => $"權限數量：{r.RolePermissions?.Count ?? 0} 個")"
+                            EntityDisplayNameSelector="@(r => r.RoleName)"
+                            OnDataLoaded="@OnRoleDataLoaded"
+                            UseTabLayout="true"
+                            TabSections="@GetTabSections()">
+    </GenericDetailPageComponent>
+</PagePermissionCheck>
 @code {
     [Parameter] public int RoleId { get; set; }
 

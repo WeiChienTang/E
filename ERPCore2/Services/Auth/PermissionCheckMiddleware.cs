@@ -93,32 +93,18 @@ namespace ERPCore2.Services.Auth
         {
             var permissions = new List<string>();
             
-            // 定義路由權限對應表
+            // 簡化版：只定義需要特殊處理的系統管理頁面
+            // 一般業務頁面的權限由 PagePermissionCheck 處理
             var routePermissionMap = new Dictionary<string, string[]>
             {
-                { "/customers", new[] { "Customer.Read" } },
-                { "/customers/create", new[] { "Customer.Create" } },
-                { "/customers/edit/", new[] { "Customer.Update" } },
-                { "/customers/detail/", new[] { "Customer.Read" } },
-                
-                { "/suppliers", new[] { "Supplier.Read" } },
-                { "/suppliers/create", new[] { "Supplier.Create" } },
-                { "/suppliers/edit/", new[] { "Supplier.Update" } },
-                { "/suppliers/detail/", new[] { "Supplier.Read" } },
-                
-                { "/employees", new[] { "Employee.Read" } },
-                { "/employees/create", new[] { "Employee.Create" } },
-                { "/employees/edit/", new[] { "Employee.Update" } },
-                { "/employees/detail/", new[] { "Employee.Read" } },
-                
-                { "/products", new[] { "Product.Read" } },
-                { "/products/create", new[] { "Product.Create" } },
-                { "/products/edit/", new[] { "Product.Update" } },
-                { "/products/detail/", new[] { "Product.Read" } },
-                
+                // 系統管理頁面 - 需要高權限
                 { "/permissions", new[] { "System.Admin" } },
                 { "/roles", new[] { "System.Admin" } },
-                { "/error-logs", new[] { "System.Admin" } }
+                { "/error-logs", new[] { "System.Admin" } },
+                { "/role-permission-management", new[] { "System.Admin" } },
+                
+                // 可以加入其他需要中間件層級保護的特殊頁面
+                // 一般的 CRUD 頁面建議使用 PagePermissionCheck 處理
             };
 
             var pathString = path.ToString().ToLower();
@@ -130,7 +116,7 @@ namespace ERPCore2.Services.Auth
             }
             else
             {
-                // 檢查部分匹配（例如 /customers/edit/123）
+                // 檢查部分匹配
                 foreach (var kvp in routePermissionMap)
                 {
                     if (kvp.Key.EndsWith("/") && pathString.StartsWith(kvp.Key))

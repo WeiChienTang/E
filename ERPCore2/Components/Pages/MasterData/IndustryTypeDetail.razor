@@ -1,4 +1,6 @@
 @page "/industrytypes/detail/{industryTypeId:int}"
+@page "/your-page"
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Details
 @using ERPCore2.Components.Shared.Badges
@@ -14,28 +16,28 @@
 @rendermode InteractiveServer
 
 <PageTitle>行業類型詳細資料</PageTitle>
-
-<GenericDetailPageComponent TEntity="IndustryType" 
-                           TService="IIndustryTypeService"
-                           EntityId="@IndustryTypeId"
-                           Entity="@industryType"
-                           Service="@IndustryTypeService"
-                           EntityName="行業類型"
-                           EntityNamePlural="行業類型"
-                           IndexRoute="/industrytypes"
-                           EditRoute="/industrytypes/edit"
-                           LoadingText="載入行業類型資料中..."
-                           BreadcrumbItems="@breadcrumbItems"
-                           DataLoader="@LoadIndustryTypeDataAsync"
-                           AdditionalDataLoader="@LoadAdditionalDataAsync"
-                           EntityTitleSelector="@(it => it.IndustryTypeName)"
-                           EntitySubtitleSelector="@(it => $"代碼：{it.IndustryTypeCode ?? "未設定"}")"
-                           EntityDisplayNameSelector="@(it => it.IndustryTypeName)"
-                           OnDataLoaded="@OnIndustryTypeDataLoaded"
-                           UseTabLayout="true"
-                           TabSections="@GetTabSections()">
-</GenericDetailPageComponent>
-
+<PagePermissionCheck RequiredPermission="IndustryType.Read">
+    <GenericDetailPageComponent TEntity="IndustryType" 
+                            TService="IIndustryTypeService"
+                            EntityId="@IndustryTypeId"
+                            Entity="@industryType"
+                            Service="@IndustryTypeService"
+                            EntityName="行業類型"
+                            EntityNamePlural="行業類型"
+                            IndexRoute="/industrytypes"
+                            EditRoute="/industrytypes/edit"
+                            LoadingText="載入行業類型資料中..."
+                            BreadcrumbItems="@breadcrumbItems"
+                            DataLoader="@LoadIndustryTypeDataAsync"
+                            AdditionalDataLoader="@LoadAdditionalDataAsync"
+                            EntityTitleSelector="@(it => it.IndustryTypeName)"
+                            EntitySubtitleSelector="@(it => $"代碼：{it.IndustryTypeCode ?? "未設定"}")"
+                            EntityDisplayNameSelector="@(it => it.IndustryTypeName)"
+                            OnDataLoaded="@OnIndustryTypeDataLoaded"
+                            UseTabLayout="true"
+                            TabSections="@GetTabSections()">
+    </GenericDetailPageComponent>
+</PagePermissionCheck>
 @code {
     [Parameter] public int IndustryTypeId { get; set; }
 

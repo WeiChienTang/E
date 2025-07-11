@@ -1,4 +1,6 @@
 @page "/permissions/detail/{permissionId:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using ERPCore2.Helpers
 @inject IPermissionManagementService PermissionService
 @inject IJSRuntime JSRuntime
@@ -6,28 +8,28 @@
 @rendermode InteractiveServer
 
 <PageTitle>權限詳細資料</PageTitle>
-
-<GenericDetailPageComponent TEntity="Permission" 
-                           TService="IPermissionManagementService"
-                           EntityId="@PermissionId"
-                           Entity="@permission"
-                           Service="@PermissionService"
-                           EntityName="權限"
-                           EntityNamePlural="權限"
-                           IndexRoute="/permissions"
-                           EditRoute="/permissions/edit"
-                           LoadingText="載入權限資料中..."
-                           BreadcrumbItems="@breadcrumbItems"
-                           DataLoader="@LoadPermissionDataAsync"
-                           AdditionalDataLoader="@LoadAdditionalDataAsync"
-                           EntityTitleSelector="@(p => p.PermissionName)"
-                           EntitySubtitleSelector="@(p => $"代碼：{p.PermissionCode}")"
-                           EntityDisplayNameSelector="@(p => p.PermissionName)"
-                           OnDataLoaded="@OnPermissionDataLoaded"
-                           UseTabLayout="true"
-                           TabSections="@GetTabSections()">
-</GenericDetailPageComponent>
-
+<PagePermissionCheck RequiredPermission="Permission.Read">
+    <GenericDetailPageComponent TEntity="Permission" 
+                            TService="IPermissionManagementService"
+                            EntityId="@PermissionId"
+                            Entity="@permission"
+                            Service="@PermissionService"
+                            EntityName="權限"
+                            EntityNamePlural="權限"
+                            IndexRoute="/permissions"
+                            EditRoute="/permissions/edit"
+                            LoadingText="載入權限資料中..."
+                            BreadcrumbItems="@breadcrumbItems"
+                            DataLoader="@LoadPermissionDataAsync"
+                            AdditionalDataLoader="@LoadAdditionalDataAsync"
+                            EntityTitleSelector="@(p => p.PermissionName)"
+                            EntitySubtitleSelector="@(p => $"代碼：{p.PermissionCode}")"
+                            EntityDisplayNameSelector="@(p => p.PermissionName)"
+                            OnDataLoaded="@OnPermissionDataLoaded"
+                            UseTabLayout="true"
+                            TabSections="@GetTabSections()">
+    </GenericDetailPageComponent>
+</PagePermissionCheck>
 @code {
     [Parameter] public int PermissionId { get; set; }
 

@@ -1,4 +1,6 @@
 @page "/employee-positions/detail/{positionId:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
@@ -14,28 +16,28 @@
 @rendermode InteractiveServer
 
 <PageTitle>員工職位詳細資料</PageTitle>
-
-<GenericDetailPageComponent TEntity="EmployeePosition" 
-                           TService="IEmployeePositionService"
-                           EntityId="@PositionId"
-                           Entity="@position"
-                           Service="@EmployeePositionService"
-                           EntityName="員工職位"
-                           EntityNamePlural="員工職位"
-                           IndexRoute="/employee-positions"
-                           EditRoute="/employee-positions/edit"
-                           LoadingText="載入員工職位資料中..."
-                           BreadcrumbItems="@breadcrumbItems"
-                           DataLoader="@LoadPositionDataAsync"
-                           AdditionalDataLoader="@LoadAdditionalDataAsync"
-                           EntityTitleSelector="@(p => p.Name)"
-                           EntitySubtitleSelector="@(p => $"職位代碼：{p.Code ?? "未設定"} | 等級：{p.Level?.ToString() ?? "未設定"}")"
-                           EntityDisplayNameSelector="@(p => p.Name)"
-                           OnDataLoaded="@OnPositionDataLoaded"
-                           UseTabLayout="true"
-                           TabSections="@GetTabSections()">
-</GenericDetailPageComponent>
-
+<PagePermissionCheck RequiredPermission="EmployeePosition.Read">
+    <GenericDetailPageComponent TEntity="EmployeePosition" 
+                            TService="IEmployeePositionService"
+                            EntityId="@PositionId"
+                            Entity="@position"
+                            Service="@EmployeePositionService"
+                            EntityName="員工職位"
+                            EntityNamePlural="員工職位"
+                            IndexRoute="/employee-positions"
+                            EditRoute="/employee-positions/edit"
+                            LoadingText="載入員工職位資料中..."
+                            BreadcrumbItems="@breadcrumbItems"
+                            DataLoader="@LoadPositionDataAsync"
+                            AdditionalDataLoader="@LoadAdditionalDataAsync"
+                            EntityTitleSelector="@(p => p.Name)"
+                            EntitySubtitleSelector="@(p => $"職位代碼：{p.Code ?? "未設定"} | 等級：{p.Level?.ToString() ?? "未設定"}")"
+                            EntityDisplayNameSelector="@(p => p.Name)"
+                            OnDataLoaded="@OnPositionDataLoaded"
+                            UseTabLayout="true"
+                            TabSections="@GetTabSections()">
+    </GenericDetailPageComponent>
+</PagePermissionCheck>
 @code {
     [Parameter] public int PositionId { get; set; }
 

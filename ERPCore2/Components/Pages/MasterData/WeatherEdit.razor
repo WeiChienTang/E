@@ -1,5 +1,7 @@
 @page "/weather/edit"
 @page "/weather/edit/{id:int?}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @inject IWeatherService WeatherService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
@@ -10,6 +12,7 @@
 
 <PageTitle>@(Id.HasValue ? "編輯天氣" : "新增天氣")</PageTitle>
 
+<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Weather.Update" : "Weather.Create")">
 <GenericEditPageComponent TEntity="Weather" 
                          TService="IWeatherService"
                          @ref="editComponent"
@@ -27,6 +30,7 @@
                          UseGenericSave="true"
                          SaveSuccessMessage="@(Id.HasValue ? "天氣更新成功" : "天氣新增成功")"
                          SaveFailureMessage="天氣儲存失敗"/>
+</PagePermissionCheck>
 
 @code {
     [Parameter] public int? Id { get; set; }

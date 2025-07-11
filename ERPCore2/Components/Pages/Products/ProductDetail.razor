@@ -1,4 +1,5 @@
 @page "/products/detail/{productId:int}"
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Details
 @using ERPCore2.Components.Shared.Badges
@@ -6,6 +7,7 @@
 @using ERPCore2.Services
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Helpers
+@attribute [Authorize]
 @inject IProductService ProductService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -13,28 +15,30 @@
 @inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
-<PageTitle>商品詳細資料</PageTitle>
+<PagePermissionCheck RequiredPermission="Product.Read">
+    <PageTitle>商品詳細資料</PageTitle>
 
-<GenericDetailPageComponent TEntity="Product" 
-                           TService="IProductService"
-                           EntityId="@ProductId"
-                           Entity="@product"
-                           Service="@ProductService"
-                           EntityName="商品"
-                           EntityNamePlural="商品"
-                           IndexRoute="/products"
-                           EditRoute="/products/edit"
-                           LoadingText="載入商品資料中..."
-                           BreadcrumbItems="@breadcrumbItems"
-                           DataLoader="@LoadProductDataAsync"
-                           AdditionalDataLoader="@LoadAdditionalDataAsync"
+    <GenericDetailPageComponent TEntity="Product" 
+                               TService="IProductService"
+                               EntityId="@ProductId"
+                               Entity="@product"
+                               Service="@ProductService"
+                               EntityName="商品"
+                               EntityNamePlural="商品"
+                               IndexRoute="/products"
+                               EditRoute="/products/edit"
+                               LoadingText="載入商品資料中..."
+                               BreadcrumbItems="@breadcrumbItems"
+                               DataLoader="@LoadProductDataAsync"
+                               AdditionalDataLoader="@LoadAdditionalDataAsync"
                            EntityTitleSelector="@(p => p.ProductName)"
                            EntitySubtitleSelector="@(p => $"商品代碼：{p.ProductCode}")"
                            EntityDisplayNameSelector="@(p => p.ProductName)"
                            OnDataLoaded="@OnProductDataLoaded"
                            UseTabLayout="true"
                            TabSections="@GetTabSections()">
-</GenericDetailPageComponent>
+    </GenericDetailPageComponent>
+</PagePermissionCheck>
 
 @code {
     [Parameter] public int ProductId { get; set; }

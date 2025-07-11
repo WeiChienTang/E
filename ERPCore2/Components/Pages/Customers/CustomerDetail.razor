@@ -1,4 +1,8 @@
 @page "/customers/detail/{customerId:int}"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using ERPCore2.Components.Shared.Auth
+@using ERPCore2.Services.Auth
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Details
 @using ERPCore2.Components.Shared.Badges
@@ -17,7 +21,8 @@
 
 <PageTitle>客戶詳細資料</PageTitle>
 
-<GenericDetailPageComponent TEntity="Customer" 
+<PagePermissionCheck RequiredPermission="Customer.Read">
+    <GenericDetailPageComponent TEntity="Customer" 
                            TService="ICustomerService"
                            EntityId="@CustomerId"
                            Entity="@customer"
@@ -37,6 +42,7 @@
                            UseTabLayout="true"
                            TabSections="@GetTabSections()">
 </GenericDetailPageComponent>
+</PagePermissionCheck>
 
 @code {
     [Parameter] public int CustomerId { get; set; }

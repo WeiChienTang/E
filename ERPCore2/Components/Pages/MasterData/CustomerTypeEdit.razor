@@ -1,5 +1,7 @@
 @page "/customer-types/edit"
 @page "/customer-types/edit/{id:int?}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Data.Entities
@@ -17,27 +19,28 @@
 
 <PageTitle>@GetPageTitle()</PageTitle>
 
-<GenericEditPageComponent TEntity="CustomerType" 
-                         TService="ICustomerTypeService"
-                         Id="@Id"
-                         Entity="@customerType"
-                         Service="@CustomerTypeService"
-                         EntityName="客戶類型"
-                         EntityNamePlural="客戶類型"                         
-                         FormTitle="基本資料"
-                         FormSubtitle="客戶類型的基本設定資訊"
-                         IndexRoute="/customer-types"
-                         UseGenericForm="true"
-                         FormFields="@formFields"
-                         FormSections="@formSections"                         
-                         BreadcrumbItems="@breadcrumbItems"
-                         DataLoader="@LoadCustomerTypeData"
-                         UseGenericSave="true"
-                         CustomValidator="@ValidateCustomerType"
-                         SaveSuccessMessage="@(Id.HasValue ? "客戶類型更新成功" : "客戶類型新增成功")"
-                         SaveFailureMessage="客戶類型儲存失敗">
-</GenericEditPageComponent>
-
+<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "CustomerType.Update" : "CustomerType.Create")">
+    <GenericEditPageComponent TEntity="CustomerType" 
+                            TService="ICustomerTypeService"
+                            Id="@Id"
+                            Entity="@customerType"
+                            Service="@CustomerTypeService"
+                            EntityName="客戶類型"
+                            EntityNamePlural="客戶類型"                         
+                            FormTitle="基本資料"
+                            FormSubtitle="客戶類型的基本設定資訊"
+                            IndexRoute="/customer-types"
+                            UseGenericForm="true"
+                            FormFields="@formFields"
+                            FormSections="@formSections"                         
+                            BreadcrumbItems="@breadcrumbItems"
+                            DataLoader="@LoadCustomerTypeData"
+                            UseGenericSave="true"
+                            CustomValidator="@ValidateCustomerType"
+                            SaveSuccessMessage="@(Id.HasValue ? "客戶類型更新成功" : "客戶類型新增成功")"
+                            SaveFailureMessage="客戶類型儲存失敗">
+    </GenericEditPageComponent>
+</PagePermissionCheck>
 @code {
     [Parameter] public int? Id { get; set; }
     

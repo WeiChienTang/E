@@ -1,4 +1,6 @@
 @page "/supplier-types/detail/{supplierTypeId:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Details
 @using ERPCore2.Components.Shared.Badges
@@ -13,27 +15,27 @@
 @rendermode InteractiveServer
 
 <PageTitle>廠商類型詳細資料</PageTitle>
-
-<GenericDetailPageComponent TEntity="SupplierType" 
-                           TService="ISupplierTypeService"
-                           EntityId="@SupplierTypeId"
-                           Entity="@supplierType"
-                           Service="@SupplierTypeService"
-                           EntityName="廠商類型"
-                           EntityNamePlural="廠商類型"
-                           IndexRoute="/supplier-types"
-                           EditRoute="/supplier-types/edit"
-                           LoadingText="載入廠商類型資料中..."
-                           BreadcrumbItems="@breadcrumbItems"
-                           DataLoader="@LoadSupplierTypeDataAsync"
-                           EntityTitleSelector="@(st => st.TypeName)"
-                           EntitySubtitleSelector="@(st => $"描述：{st.Description ?? "未設定"}")"                           
-                           EntityDisplayNameSelector="@(st => st.TypeName)"
-                           OnDataLoaded="@OnSupplierTypeDataLoaded"                           
-                           UseTabLayout="true"
-                           TabSections="@GetTabSections()">
-</GenericDetailPageComponent>
-
+<PagePermissionCheck RequiredPermission="SupplierType.Read">
+    <GenericDetailPageComponent TEntity="SupplierType" 
+                            TService="ISupplierTypeService"
+                            EntityId="@SupplierTypeId"
+                            Entity="@supplierType"
+                            Service="@SupplierTypeService"
+                            EntityName="廠商類型"
+                            EntityNamePlural="廠商類型"
+                            IndexRoute="/supplier-types"
+                            EditRoute="/supplier-types/edit"
+                            LoadingText="載入廠商類型資料中..."
+                            BreadcrumbItems="@breadcrumbItems"
+                            DataLoader="@LoadSupplierTypeDataAsync"
+                            EntityTitleSelector="@(st => st.TypeName)"
+                            EntitySubtitleSelector="@(st => $"描述：{st.Description ?? "未設定"}")"                           
+                            EntityDisplayNameSelector="@(st => st.TypeName)"
+                            OnDataLoaded="@OnSupplierTypeDataLoaded"                           
+                            UseTabLayout="true"
+                            TabSections="@GetTabSections()">
+    </GenericDetailPageComponent>
+</PagePermissionCheck>
 @code {
     [Parameter] public int SupplierTypeId { get; set; }
 

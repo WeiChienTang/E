@@ -1,11 +1,13 @@
 @page "/error-logs/detail/{errorLogId:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @inject IErrorLogService ErrorLogService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 <PageTitle>錯誤記錄詳細資料</PageTitle>
-
+<PagePermissionCheck RequiredPermission="ystemControl.ViewErrorLog">
 @* 警告訊息區域 *@
 <AlertComponent 
     Message="@alertMessage" 
@@ -218,7 +220,7 @@
         </div>
     }
 </div>
-
+</PagePermissionCheck>
 @code {
     [Parameter] public int ErrorLogId { get; set; }
 

@@ -1,5 +1,7 @@
 @page "/employee-positions/edit"
 @page "/employee-positions/edit/{id:int?}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
@@ -13,27 +15,27 @@
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯員工職位" : "新增員工職位")</PageTitle>
-
-<GenericEditPageComponent TEntity="EmployeePosition" 
-                         TService="IEmployeePositionService"
-                         @ref="editComponent"
-                         Id="@Id"
-                         Service="@EmployeePositionService"
-                         EntityName="員工職位"
-                         EntityNamePlural="員工職位"
-                         IndexRoute="/employee-positions"
-                         FormTitle="基本資料"
-                         FormSubtitle="員工職位的基本資訊"
-                         UseGenericForm="true"
-                         FormFields="@GetFormFields()"
-                         FormSections="@formSections"
-                         BreadcrumbItems="@breadcrumbItems"
-                         DataLoader="@LoadEmployeePositionData"
-                         UseGenericSave="true"
-                         SaveSuccessMessage="@(Id.HasValue ? "員工職位更新成功" : "員工職位新增成功")"
-                         SaveFailureMessage="員工職位儲存失敗"
- />
-
+<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "EmployeePosition.Update" : "EmployeePosition.Create")">
+    <GenericEditPageComponent TEntity="EmployeePosition" 
+                            TService="IEmployeePositionService"
+                            @ref="editComponent"
+                            Id="@Id"
+                            Service="@EmployeePositionService"
+                            EntityName="員工職位"
+                            EntityNamePlural="員工職位"
+                            IndexRoute="/employee-positions"
+                            FormTitle="基本資料"
+                            FormSubtitle="員工職位的基本資訊"
+                            UseGenericForm="true"
+                            FormFields="@GetFormFields()"
+                            FormSections="@formSections"
+                            BreadcrumbItems="@breadcrumbItems"
+                            DataLoader="@LoadEmployeePositionData"
+                            UseGenericSave="true"
+                            SaveSuccessMessage="@(Id.HasValue ? "員工職位更新成功" : "員工職位新增成功")"
+                            SaveFailureMessage="員工職位儲存失敗"
+    />
+</PagePermissionCheck>
 @code {
     [Parameter] public int? Id { get; set; }
     

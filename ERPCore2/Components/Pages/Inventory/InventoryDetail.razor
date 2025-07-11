@@ -1,4 +1,5 @@
 @page "/inventory/detail/{productId:int}"
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
@@ -11,6 +12,7 @@
 @using ERPCore2.Components.Shared.Badges
 @using ERPCore2.Components.Shared.Cards
 @using Microsoft.AspNetCore.Components.Web
+@attribute [Authorize]
 @inject IInventoryStockService InventoryStockService
 @inject IInventoryTransactionService InventoryTransactionService
 @inject IInventoryReservationService InventoryReservationService
@@ -23,79 +25,80 @@
 
 @rendermode InteractiveServer
 
-<PageTitle>@GetPageTitle()</PageTitle>
+<PagePermissionCheck RequiredPermission="Inventory.Read">
+    <PageTitle>@GetPageTitle()</PageTitle>
 
-<GenericHeaderComponent 
-    Title="@GetPageTitle()" 
-    Subtitle="@GetPageSubtitle()"
-    HeadingLevel="h1"
-    BreadcrumbItems="@breadcrumbItems"
-    ShowDivider="true"
-    IsLoading="@isLoading"
-    LoadingText="載入庫存資料中...">
-    
-    <ActionButtons>
-        <div class="btn-group" role="group">
-            <button type="button" class="btn btn-outline-secondary" @onclick="NavigateToInventoryOverview">
-                <i class="fas fa-arrow-left me-2"></i>返回總覽
-            </button>
-            @if (product != null)
-            {
-                <button type="button" class="btn btn-outline-primary" @onclick="NavigateToProductDetail">
-                    <i class="fas fa-box me-2"></i>商品詳情
+    <GenericHeaderComponent 
+        Title="@GetPageTitle()" 
+        Subtitle="@GetPageSubtitle()"
+        HeadingLevel="h1"
+        BreadcrumbItems="@breadcrumbItems"
+        ShowDivider="true"
+        IsLoading="@isLoading"
+        LoadingText="載入庫存資料中...">
+        
+        <ActionButtons>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-secondary" @onclick="NavigateToInventoryOverview">
+                    <i class="fas fa-arrow-left me-2"></i>返回總覽
                 </button>
-                <button type="button" class="btn btn-outline-info" @onclick="ShowTransactionHistory">
-                    <i class="fas fa-history me-2"></i>異動歷史
-                </button>
-            }
-        </div>
-    </ActionButtons>
-</GenericHeaderComponent>
-
-@if (isLoading)
-{
-    <div class="text-center py-5">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">載入中...</span>
-        </div>
-        <p class="mt-3 text-muted">載入庫存資料中...</p>
-    </div>
-}
-else if (product == null)
-{
-    <div class="alert alert-warning" role="alert">
-        <i class="fas fa-exclamation-triangle me-2"></i>
-        找不到指定的商品資料，請檢查商品是否存在。
-    </div>
-}
-else
-{
-    <div class="container-fluid">
-        <!-- 商品基本資訊卡片 -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <BasicInfoDisplayComponent 
-                    Title="商品基本資訊"
-                    IconClass="fas fa-box"
-                    IconColor="text-white"
-                    Fields="@GetProductBasicInfoFields()"
-                    HeaderClass="bg-primary text-white"
-                    CardClass="shadow" />
+                @if (product != null)
+                {
+                    <button type="button" class="btn btn-outline-primary" @onclick="NavigateToProductDetail">
+                        <i class="fas fa-box me-2"></i>商品詳情
+                    </button>
+                    <button type="button" class="btn btn-outline-info" @onclick="ShowTransactionHistory">
+                        <i class="fas fa-history me-2"></i>異動歷史
+                    </button>
+                }
             </div>
+        </ActionButtons>
+    </GenericHeaderComponent>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">載入中...</span>
+            </div>
+            <p class="mt-3 text-muted">載入庫存資料中...</p>
         </div>
+    }
+    else if (product == null)
+    {
+        <div class="alert alert-warning" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            找不到指定的商品資料，請檢查商品是否存在。
+        </div>
+    }
+    else
+    {
+        <div class="container-fluid">
+            <!-- 商品基本資訊卡片 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <BasicInfoDisplayComponent 
+                        Title="商品基本資訊"
+                        IconClass="fas fa-box"
+                        IconColor="text-white"
+                        Fields="@GetProductBasicInfoFields()"
+                        HeaderClass="bg-primary text-white"
+                        CardClass="shadow" />
+                </div>
+            </div>
 
-        <!-- 庫存統計卡片 -->
-        <StatisticsCardContainer>
-            <StatisticsCard Title="總庫存量"
-                           Value="@totalStock"
-                           IconClass="fas fa-boxes"
-                           BorderColor="primary"
-                           TextColor="primary" />
+            <!-- 庫存統計卡片 -->
+            <StatisticsCardContainer>
+                <StatisticsCard Title="總庫存量"
+                               Value="@totalStock"
+                               IconClass="fas fa-boxes"
+                               BorderColor="primary"
+                               TextColor="primary" />
 
-            <StatisticsCard Title="可用庫存"
-                           Value="@availableStock"
-                           IconClass="fas fa-check-circle"
-                           BorderColor="success"
+                <StatisticsCard Title="可用庫存"
+                               Value="@availableStock"
+                               IconClass="fas fa-check-circle"
+                               BorderColor="success"
                            TextColor="success" />
 
             <StatisticsCard Title="預留庫存"
@@ -236,11 +239,11 @@ else
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>                </div>
             </div>
         </div>
-    </div>
-}
+    }
+</PagePermissionCheck>
 
 @code {
     [Parameter] public int ProductId { get; set; }

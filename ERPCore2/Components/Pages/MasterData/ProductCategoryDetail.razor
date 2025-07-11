@@ -1,4 +1,6 @@
 @page "/product-categories/detail/{productCategoryId:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Details
 @using ERPCore2.Components.Shared.Badges
@@ -12,28 +14,28 @@
 @rendermode InteractiveServer
 
 <PageTitle>商品分類詳細資料</PageTitle>
-
-<GenericDetailPageComponent TEntity="ProductCategory" 
-                           TService="IProductCategoryService"
-                           EntityId="@ProductCategoryId"
-                           Entity="@productCategory"
-                           Service="@ProductCategoryService"
-                           EntityName="商品分類"
-                           EntityNamePlural="商品分類"
-                           IndexRoute="/product-categories"
-                           EditRoute="/product-categories/edit"
-                           LoadingText="載入商品分類資料中..."
-                           BreadcrumbItems="@breadcrumbItems"
-                           DataLoader="@LoadProductCategoryDataAsync"
-                           AdditionalDataLoader="@LoadAdditionalDataAsync"
-                           EntityTitleSelector="@(c => c.CategoryName)"
-                           EntitySubtitleSelector="@(c => $"分類代碼：{c.CategoryCode ?? "未設定"}")"
-                           EntityDisplayNameSelector="@(c => c.CategoryName)"
-                           OnDataLoaded="@OnProductCategoryDataLoaded"
-                           UseTabLayout="true"
-                           TabSections="@GetTabSections()">
-</GenericDetailPageComponent>
-
+<PagePermissionCheck RequiredPermission="ProductCategory.Read">
+    <GenericDetailPageComponent TEntity="ProductCategory" 
+                            TService="IProductCategoryService"
+                            EntityId="@ProductCategoryId"
+                            Entity="@productCategory"
+                            Service="@ProductCategoryService"
+                            EntityName="商品分類"
+                            EntityNamePlural="商品分類"
+                            IndexRoute="/product-categories"
+                            EditRoute="/product-categories/edit"
+                            LoadingText="載入商品分類資料中..."
+                            BreadcrumbItems="@breadcrumbItems"
+                            DataLoader="@LoadProductCategoryDataAsync"
+                            AdditionalDataLoader="@LoadAdditionalDataAsync"
+                            EntityTitleSelector="@(c => c.CategoryName)"
+                            EntitySubtitleSelector="@(c => $"分類代碼：{c.CategoryCode ?? "未設定"}")"
+                            EntityDisplayNameSelector="@(c => c.CategoryName)"
+                            OnDataLoaded="@OnProductCategoryDataLoaded"
+                            UseTabLayout="true"
+                            TabSections="@GetTabSections()">
+    </GenericDetailPageComponent>
+</PagePermissionCheck>
 @code {
     [Parameter] public int ProductCategoryId { get; set; }
 

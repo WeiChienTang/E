@@ -1,4 +1,6 @@
 @page "/error-logs"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
@@ -15,7 +17,7 @@
 @rendermode InteractiveServer
 
 <PageTitle>錯誤記錄管理</PageTitle>
-
+<PagePermissionCheck RequiredPermission="ystemControl.ViewErrorLog">
 @* 警告訊息區域 *@
 <AlertComponent 
     Message="@alertMessage" 
@@ -102,7 +104,7 @@ else
         </div>
     </div>
 }
-
+</PagePermissionCheck>
 @code {
     // 資料
     private List<ErrorLog> allErrorLogs = new();

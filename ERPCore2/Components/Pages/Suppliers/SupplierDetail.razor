@@ -1,10 +1,12 @@
 @page "/suppliers/detail/{supplierId:int}"
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Details
 @using ERPCore2.Components.Shared.Badges
 @using ERPCore2.Components.Shared.Buttons
 @using ERPCore2.Extensions
 @using ERPCore2.Helpers
+@attribute [Authorize]
 @inject ISupplierService SupplierService
 @inject ISupplierContactService SupplierContactService
 @inject ISupplierAddressService SupplierAddressService
@@ -14,26 +16,28 @@
 @inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
-<PageTitle>廠商詳細資料</PageTitle>
+<PagePermissionCheck RequiredPermission="Supplier.Read">
+    <PageTitle>廠商詳細資料</PageTitle>
 
-<GenericDetailPageComponent TEntity="Supplier" 
-                           TService="ISupplierService"
-                           EntityId="@SupplierId"
-                           Entity="@supplier"
-                           Service="@SupplierService"
-                           EntityName="廠商"
-                           EntityNamePlural="廠商"
-                           IndexRoute="/suppliers"
-                           EditRoute="/suppliers/edit"
-                           LoadingText="載入廠商資料中..."
-                           BreadcrumbItems="@breadcrumbItems"
-                           DataLoader="@LoadSupplierDataAsync"
+    <GenericDetailPageComponent TEntity="Supplier" 
+                               TService="ISupplierService"
+                               EntityId="@SupplierId"
+                               Entity="@supplier"
+                               Service="@SupplierService"
+                               EntityName="廠商"
+                               EntityNamePlural="廠商"
+                               IndexRoute="/suppliers"
+                               EditRoute="/suppliers/edit"
+                               LoadingText="載入廠商資料中..."
+                               BreadcrumbItems="@breadcrumbItems"
+                               DataLoader="@LoadSupplierDataAsync"
                            AdditionalDataLoader="@LoadAdditionalDataAsync"
                            EntityTitleSelector="@(s => s.CompanyName)"
                            EntitySubtitleSelector="@(s => $"廠商編號：{s.SupplierCode}")"                           EntityDisplayNameSelector="@(s => s.CompanyName)"                           OnDataLoaded="@OnSupplierDataLoaded"
                            UseTabLayout="true"
                            TabSections="@GetTabSections()">
-</GenericDetailPageComponent>
+    </GenericDetailPageComponent>
+</PagePermissionCheck>
 
 @code {
     [Parameter] public int SupplierId { get; set; }

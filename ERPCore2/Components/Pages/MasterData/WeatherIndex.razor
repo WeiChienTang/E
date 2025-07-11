@@ -1,8 +1,10 @@
 @page "/weather"
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services
 @using ERPCore2.Components.Shared
 @using ERPCore2.Helpers
+@attribute [Authorize]
 @inject IWeatherService WeatherService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -12,6 +14,7 @@
 
 <PageTitle>天氣</PageTitle>
 
+<PagePermissionCheck RequiredPermission="Weather.Read">
 <GenericIndexPageComponent TEntity="Weather" 
                           TService="IWeatherService"
                           Service="@WeatherService"
@@ -34,6 +37,7 @@
                           DeleteConfirmMessage="確定要刪除天氣「{0}」嗎？"
                           @ref="indexComponent">
 </GenericIndexPageComponent>
+</PagePermissionCheck>
 
 
 @code {

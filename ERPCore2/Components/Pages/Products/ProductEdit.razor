@@ -1,9 +1,11 @@
 @page "/products/edit"
 @page "/products/edit/{id:int?}"
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services
 @using ERPCore2.Data.Enums
 @using ERPCore2.Components.Shared.SubCollections
+@attribute [Authorize]
 @inject IProductService ProductService
 @inject IProductCategoryService ProductCategoryService
 @inject ISupplierService SupplierService
@@ -12,22 +14,23 @@
 
 @rendermode InteractiveServer
 
-<PageTitle>@GetPageTitle()</PageTitle>
+<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Product.Update" : "Product.Create")">
+    <PageTitle>@GetPageTitle()</PageTitle>
 
-<GenericEditPageComponent TEntity="Product" 
-                         TService="IProductService"
-                         Id="@Id"
-                         Entity="@product"
-                         Service="@ProductService"
-                         EntityName="產品"
-                         EntityNamePlural="產品"                         
-                         FormTitle="基本資料"
-                         FormSubtitle="產品的基本資訊"
-                         IndexRoute="/products"
-                         BreadcrumbItems="@breadcrumbItems"
-                         FormFields="@GetFormFields()"                         
-                         FormSections="@GetFormSections()"
-                         DataLoader="LoadProductData"
+    <GenericEditPageComponent TEntity="Product" 
+                             TService="IProductService"
+                             Id="@Id"
+                             Entity="@product"
+                             Service="@ProductService"
+                             EntityName="產品"
+                             EntityNamePlural="產品"                         
+                             FormTitle="基本資料"
+                             FormSubtitle="產品的基本資訊"
+                             IndexRoute="/products"
+                             BreadcrumbItems="@breadcrumbItems"
+                             FormFields="@GetFormFields()"                         
+                             FormSections="@GetFormSections()"
+                             DataLoader="LoadProductData"
                          SaveHandler="SaveProduct"
                          UseGenericForm="true">
       <AdditionalSections>
@@ -59,6 +62,7 @@
         }
     </AdditionalSections>
 </GenericEditPageComponent>
+</PagePermissionCheck>
 
 @* 移除舊的 Modal 代碼 *@
 

@@ -1,5 +1,7 @@
 @page "/employees/edit"
 @page "/employees/edit/{id:int?}"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
 @inject IEmployeeService EmployeeService
 @inject IEmployeeContactService EmployeeContactService
 @inject IEmployeeAddressService EmployeeAddressService
@@ -19,217 +21,217 @@
 @implements IDisposable
 
 <PageTitle>@GetPageTitle()</PageTitle>
+<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Employee.Update" : "Employee.Create")">
+    <GenericEditPageComponent TEntity="Employee" 
+                            TService="IEmployeeService"
+                            Id="@Id"
+                            Entity="@employee"
+                            Service="@EmployeeService"
+                            EntityName="員工"
+                            EntityNamePlural="員工"                         
+                            FormTitle="基本資料"
+                            FormSubtitle="員工的基本資訊"
+                            IndexRoute="/employees"
+                            UseGenericForm="true"
+                            FormFields="@basicFormFields"
+                            FormSections="@basicFormSections"
+                            BreadcrumbItems="@breadcrumbItems"
+                            DataLoader="@LoadEmployeeData"
+                            SaveHandler="@SaveEmployee"
+                            AdditionalDataLoader="@LoadAdditionalData">
 
-<GenericEditPageComponent TEntity="Employee" 
-                         TService="IEmployeeService"
-                         Id="@Id"
-                         Entity="@employee"
-                         Service="@EmployeeService"
-                         EntityName="員工"
-                         EntityNamePlural="員工"                         
-                         FormTitle="基本資料"
-                         FormSubtitle="員工的基本資訊"
-                         IndexRoute="/employees"
-                         UseGenericForm="true"
-                         FormFields="@basicFormFields"
-                         FormSections="@basicFormSections"
-                         BreadcrumbItems="@breadcrumbItems"
-                         DataLoader="@LoadEmployeeData"
-                         SaveHandler="@SaveEmployee"
-                         AdditionalDataLoader="@LoadAdditionalData">
-
-    <AdditionalSections>
-        @* 密碼設定區塊（僅新增模式） *@
-        @if (!Id.HasValue)
-        {
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-key me-2"></i>
-                        密碼設定
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="password" class="form-label">密碼 <span class="text-danger">*</span></label>
-                                <input type="password" @bind="password" class="form-control" id="password" />
-                                <div class="form-text">密碼長度至少 8 個字元，需包含大小寫字母和數字</div>
-                                @if (!string.IsNullOrEmpty(passwordValidationMessage))
-                                {
-                                    <div class="text-danger small">@passwordValidationMessage</div>
-                                }
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="confirmPassword" class="form-label">確認密碼 <span class="text-danger">*</span></label>
-                                <input type="password" @bind="confirmPassword" class="form-control" id="confirmPassword" />
-                                @if (!string.IsNullOrEmpty(confirmPasswordValidationMessage))
-                                {
-                                    <div class="text-danger small">@confirmPasswordValidationMessage</div>
-                                }
-                            </div>
-                        </div>
+        <AdditionalSections>
+            @* 密碼設定區塊（僅新增模式） *@
+            @if (!Id.HasValue)
+            {
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-key me-2"></i>
+                            密碼設定
+                        </h5>
                     </div>
-                </div>
-            </div>
-        }
-
-        @* 帳號設定區塊（僅編輯模式） *@
-        @if (Id.HasValue && employee != null)
-        {
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-gear me-2"></i>
-                        帳號設定
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">帳號狀態</label>
-                                <div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="status" id="statusActive" 
-                                               checked="@(employee.Status == EntityStatus.Active)" 
-                                               @onchange="@(() => employee.Status = EntityStatus.Active)">
-                                        <label class="form-check-label" for="statusActive">啟用</label>
-                                    </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="status" id="statusInactive" 
-                                               checked="@(employee.Status == EntityStatus.Inactive)" 
-                                               @onchange="@(() => employee.Status = EntityStatus.Inactive)">
-                                        <label class="form-check-label" for="statusInactive">停用</label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="isLocked" 
-                                           checked="@employee.IsLocked" 
-                                           @onchange="@((ChangeEventArgs e) => employee.IsLocked = (bool)e.Value!)">
-                                    <label class="form-check-label" for="isLocked">鎖定帳號</label>
-                                </div>
-                                <div class="form-text">勾選此項將阻止使用者登入</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    @if (employee.FailedLoginAttempts > 0)
-                    {
+                    <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">失敗登入次數</label>
-                                    <div class="fw-bold @(employee.FailedLoginAttempts >= 3 ? "text-danger" : "text-warning")">
-                                        @employee.FailedLoginAttempts
-                                    </div>
-                                    <GenericButtonComponent Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small"
-                                                           Text="重設登入失敗次數" OnClick="ResetFailedAttempts" 
-                                                           CssClass="mt-1" />
+                                    <label for="password" class="form-label">密碼 <span class="text-danger">*</span></label>
+                                    <input type="password" @bind="password" class="form-control" id="password" />
+                                    <div class="form-text">密碼長度至少 8 個字元，需包含大小寫字母和數字</div>
+                                    @if (!string.IsNullOrEmpty(passwordValidationMessage))
+                                    {
+                                        <div class="text-danger small">@passwordValidationMessage</div>
+                                    }
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="confirmPassword" class="form-label">確認密碼 <span class="text-danger">*</span></label>
+                                    <input type="password" @bind="confirmPassword" class="form-control" id="confirmPassword" />
+                                    @if (!string.IsNullOrEmpty(confirmPasswordValidationMessage))
+                                    {
+                                        <div class="text-danger small">@confirmPasswordValidationMessage</div>
+                                    }
                                 </div>
                             </div>
                         </div>
-                    }
+                    </div>
+                </div>
+            }
 
-                    <div class="row">
-                        <div class="col-12">
-                            <GenericButtonComponent Variant="ButtonVariant.Warning" Text="重設密碼" 
-                                                   IconClass="bi-key me-1" OnClick="ShowPasswordResetDialog" />
+            @* 帳號設定區塊（僅編輯模式） *@
+            @if (Id.HasValue && employee != null)
+            {
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-gear me-2"></i>
+                            帳號設定
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">帳號狀態</label>
+                                    <div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="status" id="statusActive" 
+                                                checked="@(employee.Status == EntityStatus.Active)" 
+                                                @onchange="@(() => employee.Status = EntityStatus.Active)">
+                                            <label class="form-check-label" for="statusActive">啟用</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="status" id="statusInactive" 
+                                                checked="@(employee.Status == EntityStatus.Inactive)" 
+                                                @onchange="@(() => employee.Status = EntityStatus.Inactive)">
+                                            <label class="form-check-label" for="statusInactive">停用</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="isLocked" 
+                                            checked="@employee.IsLocked" 
+                                            @onchange="@((ChangeEventArgs e) => employee.IsLocked = (bool)e.Value!)">
+                                        <label class="form-check-label" for="isLocked">鎖定帳號</label>
+                                    </div>
+                                    <div class="form-text">勾選此項將阻止使用者登入</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        @if (employee.FailedLoginAttempts > 0)
+                        {
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">失敗登入次數</label>
+                                        <div class="fw-bold @(employee.FailedLoginAttempts >= 3 ? "text-danger" : "text-warning")">
+                                            @employee.FailedLoginAttempts
+                                        </div>
+                                        <GenericButtonComponent Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small"
+                                                            Text="重設登入失敗次數" OnClick="ResetFailedAttempts" 
+                                                            CssClass="mt-1" />
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <div class="row">
+                            <div class="col-12">
+                                <GenericButtonComponent Variant="ButtonVariant.Warning" Text="重設密碼" 
+                                                    IconClass="bi-key me-1" OnClick="ShowPasswordResetDialog" />
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        }
+            }
 
-        @* 密碼重設模態對話框 *@
-        @if (showPasswordResetModal)
-        {
-            <div class="modal fade show" style="display: block; background: rgba(0,0,0,0.5);">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">
-                                <i class="bi-key me-2"></i>
-                                重設密碼 - @employee?.Username
-                            </h5>
-                            <GenericButtonComponent Variant="ButtonVariant.Secondary" CssClass="btn-close" OnClick="ClosePasswordResetDialog" 
-                                                   Title="關閉" />
-                        </div>
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                <label for="newPassword" class="form-label">新密碼 <span class="text-danger">*</span></label>
-                                <input type="password" @bind="newPassword" class="form-control" id="newPassword" 
-                                       placeholder="請輸入新密碼" />
-                                <div class="form-text">密碼長度至少 8 個字元，建議包含大小寫字母、數字和特殊字符</div>
-                                @if (!string.IsNullOrEmpty(newPasswordValidationMessage))
-                                {
-                                    <div class="text-danger small mt-1">@newPasswordValidationMessage</div>
-                                }
+            @* 密碼重設模態對話框 *@
+            @if (showPasswordResetModal)
+            {
+                <div class="modal fade show" style="display: block; background: rgba(0,0,0,0.5);">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="bi-key me-2"></i>
+                                    重設密碼 - @employee?.Username
+                                </h5>
+                                <GenericButtonComponent Variant="ButtonVariant.Secondary" CssClass="btn-close" OnClick="ClosePasswordResetDialog" 
+                                                    Title="關閉" />
                             </div>
-                            <div class="mb-3">
-                                <label for="confirmNewPassword" class="form-label">確認新密碼 <span class="text-danger">*</span></label>
-                                <input type="password" @bind="confirmNewPassword" class="form-control" id="confirmNewPassword" 
-                                       placeholder="請再次輸入新密碼" />
-                                @if (!string.IsNullOrEmpty(confirmNewPasswordValidationMessage))
-                                {
-                                    <div class="text-danger small mt-1">@confirmNewPasswordValidationMessage</div>
-                                }
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="newPassword" class="form-label">新密碼 <span class="text-danger">*</span></label>
+                                    <input type="password" @bind="newPassword" class="form-control" id="newPassword" 
+                                        placeholder="請輸入新密碼" />
+                                    <div class="form-text">密碼長度至少 8 個字元，建議包含大小寫字母、數字和特殊字符</div>
+                                    @if (!string.IsNullOrEmpty(newPasswordValidationMessage))
+                                    {
+                                        <div class="text-danger small mt-1">@newPasswordValidationMessage</div>
+                                    }
+                                </div>
+                                <div class="mb-3">
+                                    <label for="confirmNewPassword" class="form-label">確認新密碼 <span class="text-danger">*</span></label>
+                                    <input type="password" @bind="confirmNewPassword" class="form-control" id="confirmNewPassword" 
+                                        placeholder="請再次輸入新密碼" />
+                                    @if (!string.IsNullOrEmpty(confirmNewPasswordValidationMessage))
+                                    {
+                                        <div class="text-danger small mt-1">@confirmNewPasswordValidationMessage</div>
+                                    }
+                                </div>
                             </div>
-                        </div>
-                        <div class="modal-footer">
-                            <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="取消" OnClick="ClosePasswordResetDialog" />
-                            <GenericButtonComponent Variant="ButtonVariant.Warning" Text="確定重設" OnClick="ConfirmPasswordReset" />
+                            <div class="modal-footer">
+                                <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="取消" OnClick="ClosePasswordResetDialog" />
+                                <GenericButtonComponent Variant="ButtonVariant.Warning" Text="確定重設" OnClick="ConfirmPasswordReset" />
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        }
+            }
 
-        @* 聯絡方式管理 *@
-        <ContactManagerComponent TContactEntity="EmployeeContact"
-                               TParentEntity="Employee"
-                               Items="@employeeContacts"
-                               Options="@(contactTypes.Cast<ERPCore2.Data.BaseEntity>().ToList())"
-                               ParentEntityId="@(employee?.Id ?? 0)"
-                               GetIsPrimary="@(c => c.IsPrimary)"
-                               GetTypeId="@(c => c.ContactTypeId)"
-                               GetContactValue="@(c => c.ContactValue)"
-                               SetIsPrimary="@((c, isPrimary) => c.IsPrimary = isPrimary)"
-                               SetTypeId="@((c, typeId) => c.ContactTypeId = typeId)"
-                               SetContactValue="@((c, value) => c.ContactValue = value)"
-                               SetParentId="@((c, parentId) => c.EmployeeId = parentId)"
-                               ItemsChanged="@OnEmployeeContactsChanged" />
+            @* 聯絡方式管理 *@
+            <ContactManagerComponent TContactEntity="EmployeeContact"
+                                TParentEntity="Employee"
+                                Items="@employeeContacts"
+                                Options="@(contactTypes.Cast<ERPCore2.Data.BaseEntity>().ToList())"
+                                ParentEntityId="@(employee?.Id ?? 0)"
+                                GetIsPrimary="@(c => c.IsPrimary)"
+                                GetTypeId="@(c => c.ContactTypeId)"
+                                GetContactValue="@(c => c.ContactValue)"
+                                SetIsPrimary="@((c, isPrimary) => c.IsPrimary = isPrimary)"
+                                SetTypeId="@((c, typeId) => c.ContactTypeId = typeId)"
+                                SetContactValue="@((c, value) => c.ContactValue = value)"
+                                SetParentId="@((c, parentId) => c.EmployeeId = parentId)"
+                                ItemsChanged="@OnEmployeeContactsChanged" />
 
-        @* 地址管理 *@
-        <AddressManagerComponent TAddressEntity="EmployeeAddress"
-                               TParentEntity="Employee"
-                               Items="@employeeAddresses"
-                               Options="@(addressTypes.Cast<ERPCore2.Data.BaseEntity>().ToList())"
-                               ParentEntityId="@(employee?.Id ?? 0)"
-                               GetIsPrimary="@(a => a.IsPrimary)"
-                               GetTypeId="@(a => a.AddressTypeId)"
-                               GetPostalCode="@(a => a.PostalCode)"
-                               GetCity="@(a => a.City)"
-                               GetDistrict="@(a => a.District)"
-                               GetAddress="@(a => a.Address)"
-                               SetIsPrimary="@((a, isPrimary) => a.IsPrimary = isPrimary)"
-                               SetTypeId="@((a, typeId) => a.AddressTypeId = typeId)"
-                               SetPostalCode="@((a, postalCode) => a.PostalCode = postalCode)"
-                               SetCity="@((a, city) => a.City = city)"
-                               SetDistrict="@((a, district) => a.District = district)"
-                               SetAddress="@((a, address) => a.Address = address)"
-                               SetParentId="@((a, parentId) => a.EmployeeId = parentId)"
-                               ItemsChanged="@OnEmployeeAddressesChanged" />
-    </AdditionalSections>
-</GenericEditPageComponent>
-
+            @* 地址管理 *@
+            <AddressManagerComponent TAddressEntity="EmployeeAddress"
+                                TParentEntity="Employee"
+                                Items="@employeeAddresses"
+                                Options="@(addressTypes.Cast<ERPCore2.Data.BaseEntity>().ToList())"
+                                ParentEntityId="@(employee?.Id ?? 0)"
+                                GetIsPrimary="@(a => a.IsPrimary)"
+                                GetTypeId="@(a => a.AddressTypeId)"
+                                GetPostalCode="@(a => a.PostalCode)"
+                                GetCity="@(a => a.City)"
+                                GetDistrict="@(a => a.District)"
+                                GetAddress="@(a => a.Address)"
+                                SetIsPrimary="@((a, isPrimary) => a.IsPrimary = isPrimary)"
+                                SetTypeId="@((a, typeId) => a.AddressTypeId = typeId)"
+                                SetPostalCode="@((a, postalCode) => a.PostalCode = postalCode)"
+                                SetCity="@((a, city) => a.City = city)"
+                                SetDistrict="@((a, district) => a.District = district)"
+                                SetAddress="@((a, address) => a.Address = address)"
+                                SetParentId="@((a, parentId) => a.EmployeeId = parentId)"
+                                ItemsChanged="@OnEmployeeAddressesChanged" />
+        </AdditionalSections>
+    </GenericEditPageComponent>
+</PagePermissionCheck>
 @code {
     [Parameter] public int? Id { get; set; }
     

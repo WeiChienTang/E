@@ -1,4 +1,6 @@
 @page "/warehouses"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using ERPCore2.Helpers
 @inject IWarehouseService WarehouseService
 @inject NavigationManager Navigation
@@ -6,22 +8,22 @@
 @rendermode InteractiveServer
 
 <PageTitle>倉庫維護</PageTitle>
-
-<GenericIndexPageComponent TEntity="Warehouse" 
-                          TService="IWarehouseService"
-                          Service="@WarehouseService"
-                          EntityBasePath="/warehouses"
-                          PageTitle="倉庫維護"
-                          PageSubtitle="管理所有倉庫資料與基本資訊"
-                          EntityName="倉庫"
-                          BreadcrumbItems="@breadcrumbItems"
-                          FilterDefinitions="@filterDefinitions"
-                          ColumnDefinitions="@columnDefinitions"
-                          DataLoader="@LoadWarehousesAsync"
-                          FilterApplier="@ApplyWarehouseFilters"
-                          GetEntityDisplayName="@(warehouse => warehouse.WarehouseName)"
-                          @ref="indexComponent" />
-
+<PagePermissionCheck RequiredPermission="Warehouse.Read">
+    <GenericIndexPageComponent TEntity="Warehouse" 
+                            TService="IWarehouseService"
+                            Service="@WarehouseService"
+                            EntityBasePath="/warehouses"
+                            PageTitle="倉庫維護"
+                            PageSubtitle="管理所有倉庫資料與基本資訊"
+                            EntityName="倉庫"
+                            BreadcrumbItems="@breadcrumbItems"
+                            FilterDefinitions="@filterDefinitions"
+                            ColumnDefinitions="@columnDefinitions"
+                            DataLoader="@LoadWarehousesAsync"
+                            FilterApplier="@ApplyWarehouseFilters"
+                            GetEntityDisplayName="@(warehouse => warehouse.WarehouseName)"
+                            @ref="indexComponent" />
+</PagePermissionCheck>
 @code {
     // 組件參考
     private GenericIndexPageComponent<Warehouse, IWarehouseService> indexComponent = default!;

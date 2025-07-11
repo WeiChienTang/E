@@ -1,4 +1,6 @@
 @page "/warehouses/detail/{warehouseId:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using ERPCore2.Helpers
 @inject IWarehouseService WarehouseService
 @inject IErrorLogService ErrorLogService
@@ -8,27 +10,27 @@
 @rendermode InteractiveServer
 
 <PageTitle>倉庫詳細資料</PageTitle>
-
-<GenericDetailPageComponent TEntity="Warehouse" 
-                           TService="IWarehouseService"
-                           EntityId="@WarehouseId"
-                           Entity="@warehouse"
-                           Service="@WarehouseService"
-                           EntityName="倉庫"
-                           EntityNamePlural="倉庫"
-                           IndexRoute="/warehouses"
-                           EditRoute="/warehouses/edit"
-                           LoadingText="載入倉庫資料中..."
-                           BreadcrumbItems="@breadcrumbItems"
-                           DataLoader="@LoadWarehouseDataAsync"
-                           EntityTitleSelector="@(w => w.WarehouseName)"
-                           EntitySubtitleSelector="@(w => $"倉庫代碼：{w.WarehouseCode}")"
-                           EntityDisplayNameSelector="@(w => w.WarehouseName)"
-                           OnDataLoaded="@OnWarehouseDataLoaded"
-                           UseTabLayout="true"
-                           TabSections="@GetTabSections()">
-</GenericDetailPageComponent>
-
+<PagePermissionCheck RequiredPermission="Warehouse.Read">
+    <GenericDetailPageComponent TEntity="Warehouse" 
+                            TService="IWarehouseService"
+                            EntityId="@WarehouseId"
+                            Entity="@warehouse"
+                            Service="@WarehouseService"
+                            EntityName="倉庫"
+                            EntityNamePlural="倉庫"
+                            IndexRoute="/warehouses"
+                            EditRoute="/warehouses/edit"
+                            LoadingText="載入倉庫資料中..."
+                            BreadcrumbItems="@breadcrumbItems"
+                            DataLoader="@LoadWarehouseDataAsync"
+                            EntityTitleSelector="@(w => w.WarehouseName)"
+                            EntitySubtitleSelector="@(w => $"倉庫代碼：{w.WarehouseCode}")"
+                            EntityDisplayNameSelector="@(w => w.WarehouseName)"
+                            OnDataLoaded="@OnWarehouseDataLoaded"
+                            UseTabLayout="true"
+                            TabSections="@GetTabSections()">
+    </GenericDetailPageComponent>
+</PagePermissionCheck>
 @code {
     [Parameter] public int WarehouseId { get; set; }
 

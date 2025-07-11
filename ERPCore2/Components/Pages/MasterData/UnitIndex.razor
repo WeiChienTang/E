@@ -1,10 +1,12 @@
 @page "/units"
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
 @using ERPCore2.Helpers
+@attribute [Authorize]
 @inject IUnitService UnitService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -14,6 +16,7 @@
 
 <PageTitle>單位維護</PageTitle>
 
+<PagePermissionCheck RequiredPermission="Unit.Read">
 <GenericIndexPageComponent TEntity="Unit" 
                           TService="IUnitService"
                           Service="@UnitService"
@@ -28,6 +31,7 @@
                           FilterApplier="@ApplyUnitFilters"
                           GetEntityDisplayName="@(unit => unit.UnitName)"
                           @ref="indexComponent" />
+</PagePermissionCheck>
 
 @code {
     // 組件參考

@@ -1,5 +1,7 @@
 @page "/sizes/detail/{sizeId:int}"
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Helpers
+@attribute [Authorize]
 @inject ISizeService SizeService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -7,6 +9,7 @@
 
 <PageTitle>尺寸詳細資料</PageTitle>
 
+<PagePermissionCheck RequiredPermission="Size.Read">
 <GenericDetailPageComponent TEntity="Size" 
                            TService="ISizeService"
                            EntityId="@SizeId"
@@ -27,6 +30,7 @@
                            UseTabLayout="true"
                            TabSections="@GetTabSections()">
 </GenericDetailPageComponent>
+</PagePermissionCheck>
 
 @code {
     [Parameter] public int SizeId { get; set; }

@@ -1,5 +1,7 @@
 @page "/industrytypes/edit"
 @page "/industrytypes/edit/{id:int?}"
+@page "/your-page"
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services
 @using ERPCore2.Services.Notifications
@@ -15,7 +17,7 @@
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯行業類型" : "新增行業類型")</PageTitle>
-
+<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "IndustryType.Update" : "IndustryType.Create")">
 <GenericEditPageComponent TEntity="IndustryType" 
                          TService="IIndustryTypeService"
                          Id="@Id"
@@ -33,7 +35,7 @@
                          DataLoader="@LoadIndustryTypeData"
                          SaveHandler="@SaveIndustryType"
                          @ref="editComponent" />
-
+</PagePermissionCheck>
 @code {
     [Parameter] public int? Id { get; set; }
     

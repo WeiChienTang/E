@@ -1,5 +1,9 @@
 @page "/customers/edit"
 @page "/customers/edit/{id:int?}"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using ERPCore2.Components.Shared.Auth
+@using ERPCore2.Services.Auth
 @inject ICustomerService CustomerService
 @inject ICustomerAddressService CustomerAddressService
 @inject ICustomerContactService CustomerContactService
@@ -13,7 +17,8 @@
 
 <PageTitle>@(Id.HasValue ? "編輯客戶" : "新增客戶")</PageTitle>
 
-<GenericEditPageComponent TEntity="Customer" 
+<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Customer.Update" : "Customer.Create")">
+    <GenericEditPageComponent TEntity="Customer" 
                          TService="ICustomerService"
                          Id="@Id"
                          Entity="@customer"
@@ -80,6 +85,7 @@
                                 ItemsChanged="@OnAddressesChanged" />
     </AdditionalSections>
 </GenericEditPageComponent>
+</PagePermissionCheck>
 
 @code {
     [Parameter] public int? Id { get; set; }

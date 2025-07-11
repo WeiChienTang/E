@@ -1,4 +1,6 @@
 @page "/colors/detail/{colorId:int}"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Details
 @using ERPCore2.Components.Shared.Badges
@@ -12,28 +14,28 @@
 @rendermode InteractiveServer
 
 <PageTitle>顏色詳細資料</PageTitle>
-
-<GenericDetailPageComponent TEntity="Color" 
-                           TService="IColorService"
-                           EntityId="@ColorId"
-                           Entity="@color"
-                           Service="@ColorService"
-                           EntityName="顏色"
-                           EntityNamePlural="顏色"
-                           IndexRoute="/colors"
-                           EditRoute="/colors/edit"
-                           LoadingText="載入顏色資料中..."
-                           BreadcrumbItems="@breadcrumbItems"
-                           DataLoader="@LoadColorDataAsync"
-                           AdditionalDataLoader="@LoadAdditionalDataAsync"
-                           EntityTitleSelector="@(c => c.Name)"
-                           EntitySubtitleSelector="@(c => $"顏色代碼：{c.Code ?? "未設定"}")"
-                           EntityDisplayNameSelector="@(c => c.Name)"
-                           OnDataLoaded="@OnColorDataLoaded"
-                           UseTabLayout="true"
-                           TabSections="@GetTabSections()">
-</GenericDetailPageComponent>
-
+    <PagePermissionCheck RequiredPermission="Color.Read">
+    <GenericDetailPageComponent TEntity="Color" 
+                            TService="IColorService"
+                            EntityId="@ColorId"
+                            Entity="@color"
+                            Service="@ColorService"
+                            EntityName="顏色"
+                            EntityNamePlural="顏色"
+                            IndexRoute="/colors"
+                            EditRoute="/colors/edit"
+                            LoadingText="載入顏色資料中..."
+                            BreadcrumbItems="@breadcrumbItems"
+                            DataLoader="@LoadColorDataAsync"
+                            AdditionalDataLoader="@LoadAdditionalDataAsync"
+                            EntityTitleSelector="@(c => c.Name)"
+                            EntitySubtitleSelector="@(c => $"顏色代碼：{c.Code ?? "未設定"}")"
+                            EntityDisplayNameSelector="@(c => c.Name)"
+                            OnDataLoaded="@OnColorDataLoaded"
+                            UseTabLayout="true"
+                            TabSections="@GetTabSections()">
+    </GenericDetailPageComponent>
+</PagePermissionCheck>
 @code {
     [Parameter] public int ColorId { get; set; }
 

@@ -1,5 +1,7 @@
 @page "/supplier-types/edit"
 @page "/supplier-types/edit/{id:int?}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Data.Entities
@@ -15,7 +17,7 @@
 @implements IDisposable
 
 <PageTitle>@GetPageTitle()</PageTitle>
-
+<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "SupplierType.Update" : "SupplierType.Create")">
 <GenericEditPageComponent TEntity="SupplierType" 
                          TService="ISupplierTypeService"
                          Id="@Id"
@@ -36,7 +38,7 @@
                          SaveSuccessMessage="@(Id.HasValue ? "廠商類型更新成功" : "廠商類型新增成功")"
                          SaveFailureMessage="廠商類型儲存失敗">
 </GenericEditPageComponent>
-
+</PagePermissionCheck>
 @code {
     [Parameter] public int? Id { get; set; }
     

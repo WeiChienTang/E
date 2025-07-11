@@ -1,4 +1,6 @@
 @page "/employee-positions"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
@@ -13,33 +15,33 @@
 @rendermode InteractiveServer
 
 <PageTitle>員工職位</PageTitle>
-
-<GenericIndexPageComponent TEntity="EmployeePosition" 
-                          TService="IEmployeePositionService"
-                          Service="@EmployeePositionService"
-                          EntityBasePath="/employee-positions"                          
-                          PageTitle="員工職位"
-                          PageSubtitle="管理所有員工職位資料與職位層級"
-                          AddButtonText="新增職位"
-                          AddButtonTitle="新增員工職位資料"
-                          SearchSectionTitle="職位搜尋與管理"
-                          EmptyMessage="沒有找到符合條件的職位資料"                          
-                          DataLoader="@LoadDataAsync"
-                          FilterApplier="@ApplyEmployeePositionFilters"
-                          BreadcrumbItems="@breadcrumbItems"
-                          FilterDefinitions="@filterDefinitions"
-                          ColumnDefinitions="@columnDefinitions"
-                          EntityName="員工職位"
-                          GetEntityDisplayName="@(position => position.Name)"
-                          DeleteSuccessMessage="職位刪除成功"
-                          DeleteConfirmMessage="確定要刪除職位「{0}」嗎？"
-                          EnableStandardActions="true"
-                          ShowViewButton="true"
-                          ShowEditButton="true"
-                          ShowDeleteButton="true"
-                          @ref="indexComponent">
-</GenericIndexPageComponent>
-
+<PagePermissionCheck RequiredPermission="EmployeePosition.Read">
+    <GenericIndexPageComponent TEntity="EmployeePosition" 
+                            TService="IEmployeePositionService"
+                            Service="@EmployeePositionService"
+                            EntityBasePath="/employee-positions"                          
+                            PageTitle="員工職位"
+                            PageSubtitle="管理所有員工職位資料與職位層級"
+                            AddButtonText="新增職位"
+                            AddButtonTitle="新增員工職位資料"
+                            SearchSectionTitle="職位搜尋與管理"
+                            EmptyMessage="沒有找到符合條件的職位資料"                          
+                            DataLoader="@LoadDataAsync"
+                            FilterApplier="@ApplyEmployeePositionFilters"
+                            BreadcrumbItems="@breadcrumbItems"
+                            FilterDefinitions="@filterDefinitions"
+                            ColumnDefinitions="@columnDefinitions"
+                            EntityName="員工職位"
+                            GetEntityDisplayName="@(position => position.Name)"
+                            DeleteSuccessMessage="職位刪除成功"
+                            DeleteConfirmMessage="確定要刪除職位「{0}」嗎？"
+                            EnableStandardActions="true"
+                            ShowViewButton="true"
+                            ShowEditButton="true"
+                            ShowDeleteButton="true"
+                            @ref="indexComponent">
+    </GenericIndexPageComponent>
+</PagePermissionCheck>
 @code {
     private GenericIndexPageComponent<EmployeePosition, IEmployeePositionService> indexComponent = default!;
     

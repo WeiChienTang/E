@@ -1,11 +1,14 @@
 @page "/inventoryoverview"
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services
 @using ERPCore2.Services.Inventory
 @using ERPCore2.Helpers
 @using ERPCore2.Components.Shared.Forms
 @using ERPCore2.Components.Shared.Tables
+@using ERPCore2.Components.Shared.Auth
 @using Microsoft.AspNetCore.Components.Web
+@attribute [Authorize]
 @inject IInventoryStockService InventoryStockService
 @inject IProductService ProductService
 @inject IWarehouseService WarehouseService
@@ -15,71 +18,73 @@
 
 @rendermode InteractiveServer
 
-<PageTitle>庫存查詢總覽</PageTitle>
+<PagePermissionCheck RequiredPermission="Inventory.Overview">
+    <PageTitle>庫存查詢總覽</PageTitle>
 
-<GenericHeaderComponent 
-    Title="庫存查詢總覽" 
-    Subtitle="即時查看所有商品的庫存狀況與警戒提醒"
-    HeadingLevel="h1"
-    BreadcrumbItems="@breadcrumbItems"
-    ShowDivider="true"
-    ActionButtons="@actionButtons" />
+    <GenericHeaderComponent 
+        Title="庫存查詢總覽" 
+        Subtitle="即時查看所有商品的庫存狀況與警戒提醒"
+        HeadingLevel="h1"
+        BreadcrumbItems="@breadcrumbItems"
+        ShowDivider="true"
+        ActionButtons="@actionButtons" />
 
-<div class="container-fluid">
-    <!-- 統計卡片 -->
-    <InventoryStatisticsCards Statistics="statistics" 
-                            OnLowStockClick="ShowLowStockOnly" 
-                            OnZeroStockClick="ShowZeroStockOnly" />
+    <div class="container-fluid">
+        <!-- 統計卡片 -->
+        <InventoryStatisticsCards Statistics="statistics" 
+                                OnLowStockClick="ShowLowStockOnly" 
+                                OnZeroStockClick="ShowZeroStockOnly" />
 
-    <!-- 篩選區 -->
-    <GenericSearchFilterComponent TModel="SearchFilterModel"
-                                FilterDefinitions="@filterDefinitions"
-                                FilterModel="@searchModel"
-                                OnSearch="@HandleSearch"
-                                OnFilterChanged="@HandleFilterChanged"
-                                AutoSearch="true"
-                                ShowSearchButton="false" />
+        <!-- 篩選區 -->
+        <GenericSearchFilterComponent TModel="SearchFilterModel"
+                                    FilterDefinitions="@filterDefinitions"
+                                    FilterModel="@searchModel"
+                                    OnSearch="@HandleSearch"
+                                    OnFilterChanged="@HandleFilterChanged"
+                                    AutoSearch="true"
+                                    ShowSearchButton="false" />
 
-    <!-- 庫存清單 -->
-    <div class="card shadow">
-        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-            <h6 class="m-0 font-weight-bold text-primary">庫存清單</h6>
-            <span class="badge bg-primary">共 @filteredInventoryStocks.Count 筆資料</span>
-        </div>
-        <div class="card-body p-0">
-            @if (isLoading)
-            {
-                <div class="text-center p-4">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">載入中...</span>
+        <!-- 庫存清單 -->
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">庫存清單</h6>
+                <span class="badge bg-primary">共 @filteredInventoryStocks.Count 筆資料</span>
+            </div>
+            <div class="card-body p-0">
+                @if (isLoading)
+                {
+                    <div class="text-center p-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">載入中...</span>
+                        </div>
+                        <p class="mt-2 text-muted">載入庫存資料中...</p>
                     </div>
-                    <p class="mt-2 text-muted">載入庫存資料中...</p>
-                </div>
-            }
-            else
-            {
-                <GenericTableComponent TItem="InventoryStock"
-                                     Items="@pagedInventoryStocks"
-                                     ColumnDefinitions="@columnDefinitions"
-                                     EmptyMessage="沒有找到符合條件的庫存資料"
-                                     ShowHeader="true"
-                                     IsStriped="true"
-                                     IsHoverable="true"
-                                     GetRowCssClass="@GetRowCssClass"
-                                     EnableRowClick="true"
-                                     OnRowClick="@OnRowClick"
-                                     EnablePagination="true"
-                                     CurrentPage="@currentPage"
-                                     PageSize="@pageSize"
-                                     TotalItems="@filteredInventoryStocks.Count"
-                                     OnPageChanged="@OnPageChanged"
-                                     OnPageSizeChanged="@OnPageSizeChanged"
-                                     ShowPageSizeSelector="true"
-                                     PageSizeOptions="@pageSizeOptions" />
-            }
+                }
+                else
+                {
+                    <GenericTableComponent TItem="InventoryStock"
+                                         Items="@pagedInventoryStocks"
+                                         ColumnDefinitions="@columnDefinitions"
+                                         EmptyMessage="沒有找到符合條件的庫存資料"
+                                         ShowHeader="true"
+                                         IsStriped="true"
+                                         IsHoverable="true"
+                                         GetRowCssClass="@GetRowCssClass"
+                                         EnableRowClick="true"
+                                         OnRowClick="@OnRowClick"
+                                         EnablePagination="true"
+                                         CurrentPage="@currentPage"
+                                         PageSize="@pageSize"
+                                         TotalItems="@filteredInventoryStocks.Count"
+                                         OnPageChanged="@OnPageChanged"
+                                         OnPageSizeChanged="@OnPageSizeChanged"
+                                         ShowPageSizeSelector="true"
+                                         PageSizeOptions="@pageSizeOptions" />
+                }
+            </div>
         </div>
     </div>
-</div>
+</PagePermissionCheck>
 
 @code {
     // 資料相關

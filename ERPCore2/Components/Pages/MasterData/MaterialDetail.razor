@@ -1,4 +1,6 @@
 @page "/materials/detail/{materialId:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Details
 @using ERPCore2.Components.Shared.Badges
@@ -14,7 +16,7 @@
 @rendermode InteractiveServer
 
 <PageTitle>材質詳細資料</PageTitle>
-
+<PagePermissionCheck RequiredPermission="Material.Read">
 <GenericDetailPageComponent TEntity="Material" 
                            TService="IMaterialService"
                            EntityId="@MaterialId"
@@ -35,7 +37,7 @@
                            UseTabLayout="true"
                            TabSections="@GetTabSections()">
 </GenericDetailPageComponent>
-
+</PagePermissionCheck>
 @code {
     [Parameter] public int MaterialId { get; set; }
 

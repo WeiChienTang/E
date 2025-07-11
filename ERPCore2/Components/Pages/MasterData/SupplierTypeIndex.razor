@@ -1,10 +1,12 @@
 @page "/supplier-types"
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
 @using ERPCore2.Helpers
+@attribute [Authorize]
 @inject ISupplierTypeService SupplierTypeService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -12,6 +14,7 @@
 
 <PageTitle>廠商類型</PageTitle>
 
+<PagePermissionCheck RequiredPermission="SupplierType.Read">
 <GenericIndexPageComponent TEntity="SupplierType" 
                           TService="ISupplierTypeService"
                           Service="@SupplierTypeService"
@@ -39,6 +42,7 @@
                           ShowEditButton="true"
                           ShowDeleteButton="true"
                           @ref="indexComponent" />
+</PagePermissionCheck>
 
 @code {
     // 組件參考

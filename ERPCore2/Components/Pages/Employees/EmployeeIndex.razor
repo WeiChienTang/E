@@ -1,6 +1,6 @@
 @page "/employees"
-@using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
 @inject IEmployeeService EmployeeService
 @inject IRoleService RoleService
 @inject NavigationManager Navigation
@@ -10,35 +10,37 @@
 
 <PageTitle>員工維護</PageTitle>
 
-<GenericIndexPageComponent TEntity="Employee" 
-                          TService="IEmployeeService"
-                          Service="@EmployeeService"
-                          EntityBasePath="/employees"                          PageTitle="員工維護"
-                          PageSubtitle="管理所有員工資料與權限設定"
-                          AddButtonText="新增員工"
-                          AddButtonTitle="新增員工資料"
-                          SearchSectionTitle="員工搜尋與管理"
-                          EmptyMessage="沒有找到符合條件的員工資料"
-                          BreadcrumbItems="@breadcrumbItems"
-                          FilterDefinitions="@filterDefinitions"
-                          ColumnDefinitions="@columnDefinitions"
-                          DataLoader="@LoadEmployeesAsync"
-                          InitializeBasicData="@LoadBasicDataAsync"
-                          FilterApplier="@ApplyEmployeeFilters"
-                          AutoSearch="true"
-                          ShowSearchButton="true"
-                          SearchDelayMs="500"
-                          EntityName="員工"
-                          GetEntityDisplayName="@(employee => $"{employee.FirstName} {employee.LastName}".Trim())"
-                          DeleteSuccessMessage="員工刪除成功"
-                          DeleteConfirmMessage="確定要刪除員工「{0}」嗎？"
-                          EnableStandardActions="true"
-                          ShowViewButton="true"
-                          ShowEditButton="true"
-                          ShowDeleteButton="true"
-                          CustomActionsTemplate="@EmployeeCustomActions"
-                          @ref="indexComponent" />
-
+<PagePermissionCheck RequiredPermission="Employee.Read">
+    <GenericIndexPageComponent TEntity="Employee" 
+                            TService="IEmployeeService"
+                            Service="@EmployeeService"
+                            EntityBasePath="/employees"                          
+                            PageTitle="員工維護"
+                            PageSubtitle="管理所有員工資料與權限設定"
+                            AddButtonText="新增員工"
+                            AddButtonTitle="新增員工資料"
+                            SearchSectionTitle="員工搜尋與管理"
+                            EmptyMessage="沒有找到符合條件的員工資料"
+                            BreadcrumbItems="@breadcrumbItems"
+                            FilterDefinitions="@filterDefinitions"
+                            ColumnDefinitions="@columnDefinitions"
+                            DataLoader="@LoadEmployeesAsync"
+                            InitializeBasicData="@LoadBasicDataAsync"
+                            FilterApplier="@ApplyEmployeeFilters"
+                            AutoSearch="true"
+                            ShowSearchButton="true"
+                            SearchDelayMs="500"
+                            EntityName="員工"
+                            GetEntityDisplayName="@(employee => $"{employee.FirstName} {employee.LastName}".Trim())"
+                            DeleteSuccessMessage="員工刪除成功"
+                            DeleteConfirmMessage="確定要刪除員工「{0}」嗎？"
+                            EnableStandardActions="true"
+                            ShowViewButton="true"
+                            ShowEditButton="true"
+                            ShowDeleteButton="true"
+                            CustomActionsTemplate="@EmployeeCustomActions"
+                            @ref="indexComponent" />
+</PagePermissionCheck>
 @code {
     // 組件參考
     private GenericIndexPageComponent<Employee, IEmployeeService> indexComponent = default!;

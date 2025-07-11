@@ -1,5 +1,7 @@
 @page "/sizes"
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Helpers
+@attribute [Authorize]
 @inject ISizeService SizeService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -7,6 +9,7 @@
 
 <PageTitle>尺寸維護</PageTitle>
 
+<PagePermissionCheck RequiredPermission="Size.Read">
 <GenericIndexPageComponent TEntity="Size" 
                           TService="ISizeService"
                           Service="@SizeService"
@@ -22,6 +25,7 @@
                           FilterApplier="@ApplySizeFilters"
                           GetEntityDisplayName="@(size => size.SizeName)"
                           @ref="indexComponent" />
+</PagePermissionCheck>
 
 @code {
     // 組件參考

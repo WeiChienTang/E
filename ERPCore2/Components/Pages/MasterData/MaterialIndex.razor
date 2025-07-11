@@ -1,6 +1,8 @@
 @page "/materials"
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Components.Shared
 @using ERPCore2.Helpers
+@attribute [Authorize]
 @inject IMaterialService MaterialService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
@@ -9,6 +11,7 @@
 
 <PageTitle>材質</PageTitle>
 
+<PagePermissionCheck RequiredPermission="Material.Read">
 <GenericIndexPageComponent TEntity="Material" 
                           TService="IMaterialService"
                           Service="@MaterialService"
@@ -36,6 +39,7 @@
                           ShowEditButton="true"
                           ShowDeleteButton="true"
                           @ref="indexComponent" />
+</PagePermissionCheck>
 
 @code {
     // 組件參考

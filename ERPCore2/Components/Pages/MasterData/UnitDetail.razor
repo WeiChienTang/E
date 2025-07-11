@@ -1,4 +1,6 @@
 @page "/units/detail/{unitId:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using ERPCore2.Helpers
 @inject IUnitService UnitService
 @inject IJSRuntime JSRuntime
@@ -6,7 +8,7 @@
 @rendermode InteractiveServer
 
 <PageTitle>單位詳細資料</PageTitle>
-
+<PagePermissionCheck RequiredPermission="Unit.Read">
 <GenericDetailPageComponent TEntity="Unit" 
                            TService="IUnitService"
                            EntityId="@UnitId"
@@ -27,7 +29,7 @@
                            UseTabLayout="true"
                            TabSections="@GetTabSections()">
 </GenericDetailPageComponent>
-
+</PagePermissionCheck>
 @code {
     [Parameter] public int UnitId { get; set; }
 

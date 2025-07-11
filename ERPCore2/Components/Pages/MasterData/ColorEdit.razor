@@ -1,5 +1,7 @@
 @page "/colors/edit"
 @page "/colors/edit/{id:int?}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @inject IColorService ColorService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -8,26 +10,27 @@
 
 <PageTitle>@(Id.HasValue ? "編輯顏色" : "新增顏色")</PageTitle>
 
-<GenericEditPageComponent TEntity="Color" 
-                         TService="IColorService"
-                         @ref="editComponent"
-                         Id="@Id"
-                         Service="@ColorService"
-                         EntityName="顏色"
-                         EntityNamePlural="顏色"
-                         IndexRoute="/colors"
-                         FormTitle="基本資料"
-                         FormSubtitle="顏色的基本資訊"
-                         UseGenericForm="true"
-                         FormFields="@GetFormFields()"
-                         FormSections="@formSections"
-                         BreadcrumbItems="@breadcrumbItems"
-                         DataLoader="@LoadColorData"
-                         UseGenericSave="true"
-                         SaveSuccessMessage="@(Id.HasValue ? "顏色更新成功" : "顏色新增成功")"
-                         SaveFailureMessage="顏色儲存失敗"
- />
-
+<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Color.Update" : "Color.Create")">
+    <GenericEditPageComponent TEntity="Color" 
+                            TService="IColorService"
+                            @ref="editComponent"
+                            Id="@Id"
+                            Service="@ColorService"
+                            EntityName="顏色"
+                            EntityNamePlural="顏色"
+                            IndexRoute="/colors"
+                            FormTitle="基本資料"
+                            FormSubtitle="顏色的基本資訊"
+                            UseGenericForm="true"
+                            FormFields="@GetFormFields()"
+                            FormSections="@formSections"
+                            BreadcrumbItems="@breadcrumbItems"
+                            DataLoader="@LoadColorData"
+                            UseGenericSave="true"
+                            SaveSuccessMessage="@(Id.HasValue ? "顏色更新成功" : "顏色新增成功")"
+                            SaveFailureMessage="顏色儲存失敗"
+    />
+</PagePermissionCheck>
 @code {
     [Parameter] public int? Id { get; set; }
     

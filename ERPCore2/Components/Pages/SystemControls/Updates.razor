@@ -1,11 +1,13 @@
 @page "/updates"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using ERPCore2.Models
 @using ERPCore2.Services
 @using ERPCore2.Components.Shared.Tables
 @using ERPCore2.Components.Shared.Headers
 @inject IUpdateService UpdateService
 @inject IJSRuntime JSRuntime
-
+<PagePermissionCheck RequiredPermission="SystemControl.ViewUpdates">
 <div class="container-fluid">
     <GenericHeaderComponent Title="系統更新紀錄"
                           Subtitle="@($"最後更新：{DateTime.Now:yyyy-MM-dd}")"
@@ -139,9 +141,7 @@
         </div>
     }
 </div>
-
-
-
+</PagePermissionCheck>
 @code {
     private List<UpdateRecord> updates = new();
     private UpdateRecord? selectedUpdate = null;

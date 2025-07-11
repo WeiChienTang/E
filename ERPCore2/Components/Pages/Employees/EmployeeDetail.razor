@@ -1,4 +1,6 @@
 @page "/employees/detail/{employeeId:int}"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Details
 @using ERPCore2.Components.Shared.Badges
@@ -15,28 +17,28 @@
 @rendermode InteractiveServer
 
 <PageTitle>員工詳細資料</PageTitle>
-
-<GenericDetailPageComponent TEntity="Employee" 
-                           TService="IEmployeeService"
-                           EntityId="@EmployeeId"
-                           Entity="@employee"
-                           Service="@EmployeeService"
-                           EntityName="員工"
-                           EntityNamePlural="員工"
-                           IndexRoute="/employees"
-                           EditRoute="/employees/edit"
-                           LoadingText="載入員工資料中..."
-                           BreadcrumbItems="@breadcrumbItems"
-                           DataLoader="@LoadEmployeeDataAsync"
-                           AdditionalDataLoader="@LoadAdditionalDataAsync"
-                           EntityTitleSelector="@(e => GetFullName())"
-                           EntitySubtitleSelector="@(e => $"員工代碼：{e.EmployeeCode}")"
-                           EntityDisplayNameSelector="@(e => GetFullName())"
-                           OnDataLoaded="@OnEmployeeDataLoaded"
-                           UseTabLayout="true"
-                           TabSections="@GetTabSections()">
-</GenericDetailPageComponent>
-
+<PagePermissionCheck RequiredPermission="Employee.Read">
+    <GenericDetailPageComponent TEntity="Employee" 
+                            TService="IEmployeeService"
+                            EntityId="@EmployeeId"
+                            Entity="@employee"
+                            Service="@EmployeeService"
+                            EntityName="員工"
+                            EntityNamePlural="員工"
+                            IndexRoute="/employees"
+                            EditRoute="/employees/edit"
+                            LoadingText="載入員工資料中..."
+                            BreadcrumbItems="@breadcrumbItems"
+                            DataLoader="@LoadEmployeeDataAsync"
+                            AdditionalDataLoader="@LoadAdditionalDataAsync"
+                            EntityTitleSelector="@(e => GetFullName())"
+                            EntitySubtitleSelector="@(e => $"員工代碼：{e.EmployeeCode}")"
+                            EntityDisplayNameSelector="@(e => GetFullName())"
+                            OnDataLoaded="@OnEmployeeDataLoaded"
+                            UseTabLayout="true"
+                            TabSections="@GetTabSections()">
+    </GenericDetailPageComponent>
+</PagePermissionCheck>
 @code {
     [Parameter] public int EmployeeId { get; set; }
 

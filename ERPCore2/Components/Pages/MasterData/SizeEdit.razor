@@ -1,6 +1,8 @@
 @page "/sizes/edit"
 @page "/sizes/edit/{id:int?}"
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Helpers
+@attribute [Authorize]
 @inject ISizeService SizeService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
@@ -9,6 +11,7 @@
 
 <PageTitle>@(Id.HasValue ? "編輯尺寸" : "新增尺寸")</PageTitle>
 
+<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Size.Update" : "Size.Create")">
 <GenericEditPageComponent TEntity="Size" 
                          TService="ISizeService"
                          Id="@Id"
@@ -28,6 +31,7 @@
                          AdditionalDataLoader="@LoadAdditionalData"
                          @ref="editComponent">
 </GenericEditPageComponent>
+</PagePermissionCheck>
 
 @code {
     [Parameter] public int? Id { get; set; }

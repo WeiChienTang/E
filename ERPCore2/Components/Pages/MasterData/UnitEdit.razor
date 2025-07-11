@@ -1,11 +1,13 @@
 @page "/units/edit"
 @page "/units/edit/{id:int?}"
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
 @using ERPCore2.Helpers
+@attribute [Authorize]
 @inject IUnitService UnitService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
@@ -14,6 +16,7 @@
 
 <PageTitle>@(Id.HasValue ? "編輯單位" : "新增單位")</PageTitle>
 
+<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Unit.Update" : "Unit.Create")">
 <GenericEditPageComponent TEntity="Unit" 
                          TService="IUnitService"
                          Id="@Id"
@@ -31,6 +34,7 @@
                          DataLoader="@LoadUnitData"
                          SaveHandler="@SaveUnit"
                          @ref="editComponent" />
+</PagePermissionCheck>
 
 @code {
     [Parameter] public int? Id { get; set; }

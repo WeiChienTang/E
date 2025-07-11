@@ -1,6 +1,8 @@
 @page "/roles/edit"
 @page "/roles/edit/{id:int?}"
+@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Helpers
+@attribute [Authorize]
 @inject IRoleService RoleService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -8,6 +10,7 @@
 
 <PageTitle>@(Id.HasValue ? "編輯角色" : "新增角色")</PageTitle>
 
+<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Role.Update" : "Role.Create")">
 <GenericEditPageComponent TEntity="Role" 
                          TService="IRoleService"
                          Id="@Id"
@@ -27,6 +30,7 @@
                          AdditionalDataLoader="@LoadAdditionalData"
                          @ref="editComponent">
 </GenericEditPageComponent>
+</PagePermissionCheck>
 
 @code {
     [Parameter] public int? Id { get; set; }

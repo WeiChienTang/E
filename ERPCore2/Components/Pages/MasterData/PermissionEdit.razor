@@ -1,5 +1,7 @@
 @page "/permissions/edit"
 @page "/permissions/edit/{id:int?}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using ERPCore2.Helpers
 @inject IPermissionManagementService PermissionService
 @inject INotificationService NotificationService
@@ -8,27 +10,27 @@
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯權限" : "新增權限")</PageTitle>
-
-<GenericEditPageComponent TEntity="Permission" 
-                         TService="IPermissionManagementService"
-                         Id="@Id"
-                         Entity="@permission"
-                         Service="@PermissionService"
-                         EntityName="權限"
-                         EntityNamePlural="權限"
-                         FormTitle="基本資料"
-                         FormSubtitle="權限的基本資訊與設定"
-                         IndexRoute="/permissions"
-                         UseGenericForm="true"
-                         FormFields="@basicFormFields"
-                         FormSections="@basicFormSections"
-                         BreadcrumbItems="@breadcrumbItems"
-                         DataLoader="@LoadPermissionData"
-                         SaveHandler="@SavePermission"
-                         AdditionalDataLoader="@LoadAdditionalData"
-                         @ref="editComponent">
-</GenericEditPageComponent>
-
+<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Permission.Update" : "Permission.Create")">
+    <GenericEditPageComponent TEntity="Permission" 
+                            TService="IPermissionManagementService"
+                            Id="@Id"
+                            Entity="@permission"
+                            Service="@PermissionService"
+                            EntityName="權限"
+                            EntityNamePlural="權限"
+                            FormTitle="基本資料"
+                            FormSubtitle="權限的基本資訊與設定"
+                            IndexRoute="/permissions"
+                            UseGenericForm="true"
+                            FormFields="@basicFormFields"
+                            FormSections="@basicFormSections"
+                            BreadcrumbItems="@breadcrumbItems"
+                            DataLoader="@LoadPermissionData"
+                            SaveHandler="@SavePermission"
+                            AdditionalDataLoader="@LoadAdditionalData"
+                            @ref="editComponent">
+    </GenericEditPageComponent>
+</PagePermissionCheck>
 @code {
     [Parameter] public int? Id { get; set; }
     
