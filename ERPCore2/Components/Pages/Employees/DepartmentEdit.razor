@@ -1,0 +1,241 @@
+@page "/departments/edit"
+@page "/departments/edit/{id:int?}"
+@using Microsoft.AspNetCore.Authorization
+@using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Auth
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.PageModels
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Helpers
+@attribute [Authorize]
+@inject IDepartmentService DepartmentService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService 
+@rendermode InteractiveServer
+
+<PageTitle>@(Id.HasValue ? "編輯部門" : "新增部門")</PageTitle>
+
+<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Department.Update" : "Department.Create")">
+    <GenericEditPageComponent TEntity="Department" 
+                            TService="IDepartmentService"
+                            @ref="editComponent"
+                            Id="@Id"
+                            Service="@DepartmentService"
+                            EntityName="部門"
+                            EntityNamePlural="部門"
+                            IndexRoute="/departments"
+                            FormTitle="基本資料"
+                            FormSubtitle="部門的基本資訊與組織架構"
+                            UseGenericForm="true"
+                            FormFields="@GetFormFields()"
+                            FormSections="@formSections"
+                            BreadcrumbItems="@breadcrumbItems"
+                            DataLoader="@LoadDepartmentData"
+                            AdditionalDataLoader="@LoadOptionsData"
+                            UseGenericSave="true"
+                            SaveSuccessMessage="@(Id.HasValue ? "部門更新成功" : "部門新增成功")"
+                            SaveFailureMessage="部門儲存失敗"
+    />
+</PagePermissionCheck>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    
+    private GenericEditPageComponent<Department, IDepartmentService>? editComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<Department> departmentOptions = new();
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeFormFields();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitialized), GetType(), NotificationService);
+        }
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("員工管理", "#"),
+                new("部門管理", "/departments"),
+                new(Id.HasValue ? "編輯部門" : "新增部門")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType(), NotificationService);
+        }
+    }
+
+    private void InitializeFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                // 基本資訊區段
+                new()
+                {
+                    PropertyName = nameof(Department.DepartmentCode),
+                    Label = "部門代碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入部門代碼",
+                    IsRequired = true,
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(Department.Name),
+                    Label = "部門名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入部門名稱",
+                    IsRequired = true,
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(Department.ParentDepartmentId),
+                    Label = "上級部門",
+                    FieldType = FormFieldType.Select,
+                    Options = new List<SelectOption>(), // 將在 LoadOptionsData 中填充
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(Department.SortOrder),
+                    Label = "排序順序",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入排序順序",
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(Department.Status),
+                    Label = "狀態",
+                    FieldType = FormFieldType.Select,
+                    Options = new List<SelectOption>
+                    {
+                        new() { Text = "啟用", Value = "Active" },
+                        new() { Text = "停用", Value = "Inactive" }
+                    },
+                    ContainerCssClass = "col-md-6"
+                },
+                // 描述區段
+                new()
+                {
+                    PropertyName = nameof(Department.Description),
+                    Label = "部門描述",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入部門描述",
+                    Rows = 3,
+                    ContainerCssClass = "col-12"
+                }
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(Department.DepartmentCode), "基本資訊" },
+                { nameof(Department.Name), "基本資訊" },
+                { nameof(Department.ParentDepartmentId), "組織架構" },
+                { nameof(Department.SortOrder), "設定" },
+                { nameof(Department.Status), "設定" },
+                { nameof(Department.Description), "詳細資訊" }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, "初始化表單欄位時發生錯誤", GetType(), NotificationService);
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        try
+        {
+            // 更新上級部門選項
+            var parentDepartmentField = formFields.FirstOrDefault(f => f.PropertyName == nameof(Department.ParentDepartmentId));
+            if (parentDepartmentField != null)
+            {
+                parentDepartmentField.Options = new List<SelectOption>
+                {
+                    new() { Text = "無上級部門", Value = "" }
+                };
+                parentDepartmentField.Options.AddRange(
+                    departmentOptions
+                        .Where(d => !Id.HasValue || d.Id != Id.Value) // 排除自己
+                        .Select(d => new SelectOption 
+                        { 
+                            Text = d.Name, 
+                            Value = d.Id.ToString() 
+                        })
+                );
+            }
+
+            return formFields;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, "取得表單欄位時發生錯誤", GetType(), NotificationService);
+            return new List<FormFieldDefinition>();
+        }
+    }
+
+    private async Task<Department?> LoadDepartmentData()
+    {
+        try
+        {
+            if (!Id.HasValue) 
+            {
+                return new Department
+                {
+                    Status = EntityStatus.Active,
+                    SortOrder = 0
+                };
+            }
+
+            var department = await DepartmentService.GetByIdAsync(Id.Value);            
+            
+            if (department == null)
+            {
+                await NotificationService.ShowErrorAsync("找不到指定的部門資料");
+                Navigation.NavigateTo("/departments");
+                return null;
+            }
+            return department;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDepartmentData), GetType());
+            Navigation.NavigateTo("/departments");
+            return null;
+        }
+    }
+
+    private async Task LoadOptionsData()
+    {
+        try
+        {
+            // 載入部門選項（用於上級部門下拉選單）
+            departmentOptions = await DepartmentService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadOptionsData), GetType());
+            departmentOptions = new List<Department>();
+        }
+    }
+}

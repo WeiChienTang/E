@@ -54,6 +54,12 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { PermissionCode = "Employee.Update", PermissionName = "修改員工", Module = "Employee", Action = "Update", PermissionGroup = "員工管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Employee.Delete", PermissionName = "刪除員工", Module = "Employee", Action = "Delete", PermissionGroup = "員工管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
 
+                // 部門管理權限
+                new Permission { PermissionCode = "Department.Create", PermissionName = "建立部門", Module = "Department", Action = "Create", PermissionGroup = "員工管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "Department.Read", PermissionName = "檢視部門", Module = "Department", Action = "Read", PermissionGroup = "員工管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "Department.Update", PermissionName = "修改部門", Module = "Department", Action = "Update", PermissionGroup = "員工管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "Department.Delete", PermissionName = "刪除部門", Module = "Department", Action = "Delete", PermissionGroup = "員工管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+
                 // 產品管理權限
                 new Permission { PermissionCode = "Product.Create", PermissionName = "建立產品", Module = "Product", Action = "Create", PermissionGroup = "產品管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Product.Read", PermissionName = "檢視產品", Module = "Product", Action = "Read", PermissionGroup = "產品管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },

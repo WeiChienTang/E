@@ -1,0 +1,222 @@
+@page "/departments"
+@using Microsoft.AspNetCore.Authorization
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Auth
+@using ERPCore2.Components.Shared.Index
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Tables
+@using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Data.Enums
+@using ERPCore2.Helpers
+@attribute [Authorize]
+@inject IDepartmentService DepartmentService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
+
+@rendermode InteractiveServer
+
+<PageTitle>部門管理</PageTitle>
+
+<PagePermissionCheck RequiredPermission="Department.Read">
+    <GenericIndexPageComponent TEntity="Department" 
+                            TService="IDepartmentService"
+                            Service="@DepartmentService"
+                            EntityBasePath="/departments"                          
+                            PageTitle="部門管理"
+                            PageSubtitle="管理公司組織架構與部門資訊"
+                            AddButtonText="新增部門"
+                            AddButtonTitle="新增部門資料"
+                            SearchSectionTitle="部門搜尋與管理"
+                            EmptyMessage="沒有找到符合條件的部門資料"                          
+                            DataLoader="@LoadDataAsync"
+                            FilterApplier="@ApplyDepartmentFilters"
+                            BreadcrumbItems="@breadcrumbItems"
+                            FilterDefinitions="@filterDefinitions"
+                            ColumnDefinitions="@columnDefinitions"
+                            EntityName="部門"
+                            GetEntityDisplayName="@(dept => dept.Name)"
+                            DeleteSuccessMessage="部門刪除成功"
+                            DeleteConfirmMessage="確定要刪除部門「{0}」嗎？"
+                            EnableStandardActions="true"
+                            ShowViewButton="true"
+                            ShowEditButton="true"
+                            ShowDeleteButton="true"
+                            @ref="indexComponent">
+    </GenericIndexPageComponent>
+</PagePermissionCheck>
+
+@code {
+    private GenericIndexPageComponent<Department, IDepartmentService> indexComponent = default!;
+    
+    // 設定選項
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await InitializeBreadcrumbs();
+            await InitializeFilters();
+            await InitializeTableColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(OnInitializedAsync),
+                GetType(),
+                additionalData: "初始化部門頁面失敗"
+            );
+        }
+    }
+
+    private async Task InitializeBreadcrumbs()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("員工管理", "#"),
+                new("部門管理")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeBreadcrumbs),
+                GetType()
+            );
+        }
+    }
+
+    private async Task InitializeFilters()
+    {
+        try
+        {
+            // 準備狀態選項
+            var statusOptions = new List<SelectOption>
+            {
+                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
+                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
+            };
+
+            // 建立篩選定義
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("Name", "部門名稱", "輸入部門名稱搜尋")
+                .AddText("DepartmentCode", "部門代碼", "輸入部門代碼搜尋")
+                .AddText("Description", "部門描述", "輸入部門描述搜尋")
+                .AddSelect("Status", "狀態", statusOptions)            
+                .Build();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeFilters),
+                GetType(),
+                additionalData: "初始化篩選器失敗"
+            );
+        }
+    }
+
+    private async Task InitializeTableColumns()
+    {
+        try
+        {
+            columnDefinitions = new List<TableColumnDefinition>
+            {
+                TableColumnDefinition.Text("部門代碼", nameof(Department.DepartmentCode)),
+                TableColumnDefinition.Text("部門名稱", nameof(Department.Name)),
+                TableColumnDefinition.Text("上級部門", "ParentDepartment.Name"),
+                TableColumnDefinition.Text("部門描述", nameof(Department.Description)),
+                TableColumnDefinition.Number("排序順序", nameof(Department.SortOrder)),
+                TableColumnDefinition.Status("狀態", nameof(Department.Status), new Dictionary<object, string>
+                {
+                    { EntityStatus.Inactive, "bg-secondary" }
+                }),
+                TableColumnDefinition.Date("建立日期", nameof(Department.CreatedAt), "yyyy/MM/dd")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeTableColumns),
+                GetType(),
+                additionalData: "初始化表格欄位失敗"
+            );
+        }
+    }
+
+    // 資料載入委派
+    private async Task<List<Department>> LoadDataAsync()
+    {
+        try
+        {
+            return await DepartmentService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadDataAsync),
+                GetType(),
+                additionalData: "載入部門資料失敗"
+            );
+            return new List<Department>();
+        }
+    }
+
+    // 篩選邏輯委派
+    private IQueryable<Department> ApplyDepartmentFilters(SearchFilterModel searchModel, IQueryable<Department> query)
+    {
+        try
+        {
+            // 部門名稱篩選
+            var nameFilter = searchModel.GetFilterValue("Name")?.ToString();
+            if (!string.IsNullOrWhiteSpace(nameFilter))
+            {
+                query = query.Where(d => d.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 部門代碼篩選
+            var codeFilter = searchModel.GetFilterValue("DepartmentCode")?.ToString();
+            if (!string.IsNullOrWhiteSpace(codeFilter))
+            {
+                query = query.Where(d => d.DepartmentCode.Contains(codeFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 部門描述篩選
+            var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
+            if (!string.IsNullOrWhiteSpace(descriptionFilter))
+            {
+                query = query.Where(d => d.Description != null && d.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 狀態篩選
+            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
+            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
+            {
+                query = query.Where(d => d.Status == status);
+            }
+
+            return query.OrderBy(d => d.SortOrder).ThenBy(d => d.Name);
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ApplyDepartmentFilters),
+                GetType()
+            );
+            return query.OrderBy(d => d.SortOrder).ThenBy(d => d.Name);
+        }
+    }
+}
