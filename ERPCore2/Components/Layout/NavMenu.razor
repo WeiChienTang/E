@@ -36,57 +36,12 @@
             <NavMenuItem Text="基礎資料" IconClass="bi-sliders nav-menu-bi">
                 <DropdownItems>
 
-                    <NavSection Title="通用">
+                    <NavSection Title="通用參數">
                         <NavigationPermissionCheck Permission="IndustryType.Read">
                             <NavDropdownItem Text="行業" Url="/industrytypes"/>
                         </NavigationPermissionCheck>
                     </NavSection>
 
-                    <NavSection Title="廠商">
-                        <NavigationPermissionCheck Permission="SupplierType.Read">
-                            <NavDropdownItem Text="廠商類型" Url="/supplier-types"/>
-                        </NavigationPermissionCheck>
-                    </NavSection>
-
-                    <NavSection Title="客戶">
-                        <NavigationPermissionCheck Permission="CustomerType.Read">
-                            <NavDropdownItem Text="客戶類型" Url="/customer-types"/>
-                        </NavigationPermissionCheck>
-                    </NavSection>
-
-                    <NavSection Title="員工">
-                        <NavigationPermissionCheck Permission="System.Admin">
-                            <NavDropdownItem Text="角色" Url="/roles"/>
-                        </NavigationPermissionCheck>
-                        <NavigationPermissionCheck Permission="System.Admin">
-                            <NavDropdownItem Text="職位" Url="/employee-positions"/>
-                        </NavigationPermissionCheck>
-                        <NavigationPermissionCheck Permission="System.Admin">
-                            <NavDropdownItem Text="權限" Url="/permissions"/>
-                        </NavigationPermissionCheck>
-
-                    </NavSection>
-
-                    <NavSection Title="產品">
-                        <NavigationPermissionCheck Permission="ProductCategory.Read">
-                            <NavDropdownItem Text="類型" Url="/product-categories"/>
-                        </NavigationPermissionCheck>
-                        <NavigationPermissionCheck Permission="Size.Read">
-                            <NavDropdownItem Text="尺寸" Url="/sizes" />
-                        </NavigationPermissionCheck>
-                        <NavigationPermissionCheck Permission="Color.Read">
-                            <NavDropdownItem Text="顏色" Url="/colors" />
-                        </NavigationPermissionCheck>
-                        <NavigationPermissionCheck Permission="Weather.Read">
-                            <NavDropdownItem Text="天氣" Url="/weather" />
-                        </NavigationPermissionCheck>
-                        <NavigationPermissionCheck Permission="Material.Read">
-                            <NavDropdownItem Text="材質" Url="/materials" />
-                        </NavigationPermissionCheck>
-                        <NavigationPermissionCheck Permission="Unit.Read">
-                            <NavDropdownItem Text="單位" Url="/units"/>
-                        </NavigationPermissionCheck>
-                    </NavSection>     
                 </DropdownItems>
             </NavMenuItem>
         </NavigationPermissionCheck>        
@@ -97,6 +52,10 @@
                 <DropdownItems>
                     <NavigationPermissionCheck Permission="Customer.Read">
                         <NavDropdownItem Text="客戶維護" Url="/customers"/>
+                    </NavigationPermissionCheck>
+
+                    <NavigationPermissionCheck Permission="CustomerType.Read">
+                        <NavDropdownItem Text="客戶類型" Url="/customer-types"/>
                     </NavigationPermissionCheck>                
                 </DropdownItems>
             </NavMenuItem>
@@ -109,6 +68,10 @@
                     <NavigationPermissionCheck Permission="Supplier.Read">
                         <NavDropdownItem Text="廠商維護" Url="/suppliers" />
                     </NavigationPermissionCheck>
+
+                    <NavigationPermissionCheck Permission="SupplierType.Read">
+                        <NavDropdownItem Text="廠商類型" Url="/supplier-types"/>
+                    </NavigationPermissionCheck>
                 </DropdownItems>
             </NavMenuItem>
         </NavigationPermissionCheck>
@@ -120,9 +83,23 @@
                     <NavigationPermissionCheck Permission="Employee.Read">
                         <NavDropdownItem Text="員工維護" Url="/employees" />
                     </NavigationPermissionCheck>
+
                     <NavigationPermissionCheck Permission="System.Admin">
-                        <NavDropdownItem Text="角色權限維護" Url="/employees/role-permission-management"/>
+                        <NavDropdownItem Text="員工角色" Url="/roles"/>
                     </NavigationPermissionCheck>
+
+                    <NavigationPermissionCheck Permission="System.Admin">
+                        <NavDropdownItem Text="員工職位" Url="/employee-positions"/>
+                    </NavigationPermissionCheck>                   
+
+                    <NavigationPermissionCheck Permission="System.Admin">
+                        <NavDropdownItem Text="員工權限" Url="/permissions"/>
+                    </NavigationPermissionCheck>
+
+                    <NavigationPermissionCheck Permission="System.Admin">
+                        <NavDropdownItem Text="員工權限設定" Url="/employees/role-permission-management"/>
+                    </NavigationPermissionCheck>
+
                 </DropdownItems>
             </NavMenuItem>
         </NavigationPermissionCheck>
@@ -131,9 +108,29 @@
         <NavigationPermissionCheck Module="Product">
             <NavMenuItem Text="產品管理" IconClass="bi bi-box-seam-fill">
                 <DropdownItems>
+
                     <NavigationPermissionCheck Permission="Product.Read">
                         <NavDropdownItem Text="產品維護" Url="/products" />
                     </NavigationPermissionCheck>
+
+                    <NavigationPermissionCheck Permission="ProductCategory.Read">
+                            <NavDropdownItem Text="產品類型" Url="/product-categories"/>
+                        </NavigationPermissionCheck>
+                        <NavigationPermissionCheck Permission="Size.Read">
+                            <NavDropdownItem Text="產品尺寸" Url="/sizes" />
+                        </NavigationPermissionCheck>
+                        <NavigationPermissionCheck Permission="Color.Read">
+                            <NavDropdownItem Text="產品顏色" Url="/colors" />
+                        </NavigationPermissionCheck>
+                        <NavigationPermissionCheck Permission="Weather.Read">
+                            <NavDropdownItem Text="天氣" Url="/weather" />
+                        </NavigationPermissionCheck>
+                        <NavigationPermissionCheck Permission="Material.Read">
+                            <NavDropdownItem Text="產品材質" Url="/materials" />
+                        </NavigationPermissionCheck>
+                        <NavigationPermissionCheck Permission="Unit.Read">
+                            <NavDropdownItem Text="產品單位" Url="/units"/>
+                        </NavigationPermissionCheck>
                 </DropdownItems>
             </NavMenuItem>
         </NavigationPermissionCheck>       
@@ -148,12 +145,15 @@
         <NavigationPermissionCheck Permission="Warehouse.Read">
             <NavMenuItem Text="庫存管理" IconClass="bi-boxes nav-menu-bi">
                 <DropdownItems>
+
                     <NavigationPermissionCheck Permission="Inventory.Read">
                         <NavDropdownItem Text="庫存概覽" Url="/inventoryoverview" />
                     </NavigationPermissionCheck>
+
                     <NavigationPermissionCheck Permission="Warehouse.Read">
                         <NavDropdownItem Text="倉庫維護" Url="/warehouses" />
                     </NavigationPermissionCheck>
+
                 </DropdownItems>
             </NavMenuItem>
         </NavigationPermissionCheck>    
@@ -166,15 +166,19 @@
         </NavMenuItem>
 
         <!-- 系統管理 -->
-        <NavigationPermissionCheck AnyPermissions='new[] { "System.Admin", "System.ViewLogs" }'>
+        <NavigationPermissionCheck AnyPermissions='new[] { "System.Admin", "SystemControl.ViewErrorLog" }'>
             <NavMenuItem Text="系統管理" IconClass="bi bi-gear-fill">
                 <DropdownItems>
-                    <NavigationPermissionCheck Permission="System.ViewLogs">
+
+                    <NavigationPermissionCheck Permission="SystemControl.ViewErrorLog">
                         <NavDropdownItem Text="更新紀錄" Url="/updates" />
                     </NavigationPermissionCheck>
+
                     <NavigationPermissionCheck Permission="System.Admin">
                         <NavDropdownItem Text="錯誤記錄" Url="/error-logs" />
                     </NavigationPermissionCheck>
+
+
                 </DropdownItems>
             </NavMenuItem>
         </NavigationPermissionCheck>

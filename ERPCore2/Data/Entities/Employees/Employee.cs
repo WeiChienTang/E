@@ -50,11 +50,11 @@ namespace ERPCore2.Data.Entities
         public string PasswordHash { get; set; } = string.Empty;
 
         /// <summary>
-        /// 部門
+        /// 部門ID
         /// </summary>
         [Display(Name = "部門")]
-        [MaxLength(50, ErrorMessage = "部門不可超過50個字元")]
-        public string? Department { get; set; }
+        [ForeignKey(nameof(Department))]
+        public int? DepartmentId { get; set; }
 
         /// <summary>
         /// 職位ID
@@ -93,6 +93,7 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "鎖定時間")]
         public DateTime? LockedAt { get; set; }        // 導航屬性
         public Role Role { get; set; } = null!;
+        public Department? Department { get; set; }
         public EmployeePosition? EmployeePosition { get; set; }
         public ICollection<EmployeeContact> EmployeeContacts { get; set; } = new List<EmployeeContact>();
         public ICollection<EmployeeAddress> EmployeeAddresses { get; set; } = new List<EmployeeAddress>();

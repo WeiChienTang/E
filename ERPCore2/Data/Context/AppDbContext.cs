@@ -20,6 +20,7 @@ namespace ERPCore2.Data.Context
       public DbSet<EmployeePosition> EmployeePositions { get; set; }
       public DbSet<EmployeeContact> EmployeeContacts { get; set; }
       public DbSet<EmployeeAddress> EmployeeAddresses { get; set; }
+      public DbSet<Department> Departments { get; set; }
       public DbSet<Role> Roles { get; set; }
       public DbSet<Permission> Permissions { get; set; }
       public DbSet<RolePermission> RolePermissions { get; set; }
@@ -174,6 +175,22 @@ namespace ERPCore2.Data.Context
                         entity.HasOne(e => e.EmployeePosition)
                         .WithMany(ep => ep.Employees)
                         .OnDelete(DeleteBehavior.SetNull);
+                        
+                        entity.HasOne(e => e.Department)
+                        .WithMany(d => d.Employees)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
+                  
+                  modelBuilder.Entity<Department>(entity =>
+                  {
+                        // 欄位對應                        
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        
+                        // 關聯設定 - 自我參考（上下級部門）
+                        entity.HasOne(d => d.ParentDepartment)
+                        .WithMany(d => d.ChildDepartments)
+                        .HasForeignKey(d => d.ParentDepartmentId)
+                        .OnDelete(DeleteBehavior.Restrict);
                   });
                   
                   modelBuilder.Entity<EmployeePosition>(entity =>

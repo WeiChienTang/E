@@ -40,7 +40,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 LastName = "管理員",
                 Username = "admin",
                 PasswordHash = SeedDataHelper.HashPassword("admin123"),
-                Department = "IT",
+                DepartmentId = null, // 先設為 null，部門建立後再更新
                 RoleId = adminRole?.Id ?? 1,
                 Status = EntityStatus.Active,
                 CreatedAt = DateTime.Now,

@@ -219,12 +219,13 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var employees = await context.Employees
                     .Include(e => e.Role)
+                    .Include(e => e.Department)
                     .Where(e => !e.IsDeleted && 
                                ((e.FirstName != null && e.FirstName.Contains(searchTerm)) ||
                                 (e.LastName != null && e.LastName.Contains(searchTerm)) ||
                                 e.EmployeeCode.Contains(searchTerm) ||
                                 e.Username.Contains(searchTerm) ||
-                                (e.Department != null && e.Department.Contains(searchTerm))))
+                                (e.Department != null && e.Department.Name.Contains(searchTerm))))
                     .OrderBy(e => e.EmployeeCode)
                     .ToListAsync();
 
@@ -281,7 +282,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var employees = await context.Employees
                     .Include(e => e.Role)
-                    .Where(e => e.Department == department && !e.IsDeleted)
+                    .Include(e => e.Department)
+                    .Where(e => e.Department != null && e.Department.Name == department && !e.IsDeleted)
                     .OrderBy(e => e.EmployeeCode)
                     .ToListAsync();
 

@@ -362,8 +362,8 @@
             if (!string.IsNullOrWhiteSpace(departmentFilter))
             {
                 query = query.Where(e => 
-                    !string.IsNullOrEmpty(e.Department) && 
-                    e.Department.Contains(departmentFilter, StringComparison.OrdinalIgnoreCase));
+                    e.Department != null && !string.IsNullOrEmpty(e.Department.Name) && 
+                    e.Department.Name.Contains(departmentFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 職位篩選
