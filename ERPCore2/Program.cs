@@ -15,15 +15,12 @@ bool isSetupMode = commandLineArgs.Contains("--setup"); // 完整設定模式
 
 if (isMigrationMode || isSeedDataMode || isSetupMode)
 {
-    Console.WriteLine("Running Entity Framework database migrations...");
-    
     var migrationBuilder = WebApplication.CreateBuilder(args);
     
     // 設定資料庫連接
     var connectionString = migrationBuilder.Configuration.GetConnectionString("DefaultConnection");
     if (string.IsNullOrEmpty(connectionString))
     {
-        Console.WriteLine("Error: No database connection string found.");
         Environment.Exit(1);
     }
     
@@ -39,22 +36,14 @@ if (isMigrationMode || isSeedDataMode || isSetupMode)
         using var scope = migrationApp.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         
-        Console.WriteLine("Applying database migrations...");
         await context.Database.MigrateAsync();
-        
-        Console.WriteLine("Database migrations completed successfully.");
-        Console.WriteLine("Initializing seed data...");
         
         // 初始化種子資料
         await SeedData.InitializeAsync(scope.ServiceProvider);
-        
-        Console.WriteLine("Seed data initialization completed.");
         Environment.Exit(0);
     }
-    catch (Exception ex)
+    catch (Exception)
     {
-        Console.WriteLine($"Error during migration: {ex.Message}");
-        Console.WriteLine($"Stack trace: {ex.StackTrace}");
         Environment.Exit(1);
     }
 }

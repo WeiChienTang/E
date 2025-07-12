@@ -27,12 +27,9 @@ else if (!string.IsNullOrEmpty(UnauthorizedContent))
     
     private bool isAuthorized = false;    protected override async Task OnParametersSetAsync()
     {
-        Console.WriteLine($"🔐 PermissionCheck 開始檢查，權限: '{Permission}', 角色: '{Role}', 員工ID: {EmployeeId}");
-        
         // 如果有提供 EmployeeId 參數，直接使用它進行權限檢查（測試模式）
         if (EmployeeId.HasValue && !string.IsNullOrEmpty(Permission))
         {
-            Console.WriteLine($"🧪 測試模式：使用指定的員工ID ({EmployeeId}) 檢查權限");
             try
             {
                 using var scope = ServiceProvider.CreateScope();
@@ -40,24 +37,16 @@ else if (!string.IsNullOrEmpty(UnauthorizedContent))
                 
                 if (permissionService != null)
                 {
-                    Console.WriteLine("✅ PermissionService 注入成功");
                     var result = await permissionService.HasPermissionAsync(EmployeeId.Value, Permission);
                     isAuthorized = result.IsSuccess && result.Data;
-                    Console.WriteLine($"🔍 權限檢查結果: IsSuccess={result.IsSuccess}, Data={result.Data}, isAuthorized={isAuthorized}");
-                    if (!result.IsSuccess)
-                    {
-                        Console.WriteLine($"❌ 權限檢查錯誤: {result.ErrorMessage}");
-                    }
                 }
                 else
                 {
-                    Console.WriteLine("❌ PermissionService 注入失敗");
                     isAuthorized = false;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"💥 權限檢查例外: {ex.Message}");
                 isAuthorized = false;
             }
             return;
@@ -66,7 +55,6 @@ else if (!string.IsNullOrEmpty(UnauthorizedContent))
         // 原本的認證邏輯
         if (AuthenticationState is null)
         {
-            Console.WriteLine("❌ AuthenticationState 為 null");
             isAuthorized = false;
             return;
         }
@@ -74,12 +62,8 @@ else if (!string.IsNullOrEmpty(UnauthorizedContent))
         var authState = await AuthenticationState;
         var user = authState.User;
 
-        Console.WriteLine($"🔍 使用者認證狀態: {user.Identity?.IsAuthenticated}");
-        Console.WriteLine($"🔍 使用者名稱: {user.Identity?.Name}");
-
         if (!user.Identity?.IsAuthenticated ?? true)
         {
-            Console.WriteLine("❌ 使用者未認證");
             isAuthorized = false;
             return;
         }
@@ -88,14 +72,12 @@ else if (!string.IsNullOrEmpty(UnauthorizedContent))
         if (!string.IsNullOrEmpty(Role))
         {
             isAuthorized = user.IsInRole(Role);
-            Console.WriteLine($"🔍 角色檢查 '{Role}': {isAuthorized}");
             return;
         }
 
         // 檢查特定權限
         if (!string.IsNullOrEmpty(Permission))
         {
-            Console.WriteLine($"🔍 開始檢查特定權限: '{Permission}'");
             try
             {
                 using var scope = ServiceProvider.CreateScope();
@@ -103,19 +85,14 @@ else if (!string.IsNullOrEmpty(UnauthorizedContent))
                 
                 if (permissionService != null)
                 {
-                    Console.WriteLine("✅ PermissionService 注入成功");
                     var employeeIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                    Console.WriteLine($"🔍 員工ID Claim: '{employeeIdClaim}'");
                     
                     if (int.TryParse(employeeIdClaim, out int employeeId))
                     {
-                        Console.WriteLine($"🔍 解析員工ID: {employeeId}");
-                        
                         // 優先檢查是否有 System.Admin 權限
                         var adminResult = await permissionService.HasPermissionAsync(employeeId, "System.Admin");
                         if (adminResult.IsSuccess && adminResult.Data)
                         {
-                            Console.WriteLine("✅ 使用者具有 System.Admin 權限，允許存取");
                             isAuthorized = true;
                             return;
                         }
@@ -123,32 +100,17 @@ else if (!string.IsNullOrEmpty(UnauthorizedContent))
                         // 檢查指定的權限
                         var result = await permissionService.HasPermissionAsync(employeeId, Permission);
                         isAuthorized = result.IsSuccess && result.Data;
-                        Console.WriteLine($"🔍 權限檢查結果: IsSuccess={result.IsSuccess}, Data={result.Data}, isAuthorized={isAuthorized}");
-                        if (!result.IsSuccess)
-                        {
-                            Console.WriteLine($"❌ 權限檢查錯誤: {result.ErrorMessage}");
-                        }
                     }
-                    else
-                    {
-                        Console.WriteLine("❌ 無法解析員工ID");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("❌ PermissionService 注入失敗");
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"💥 權限檢查例外: {ex.Message}");
                 isAuthorized = false;
             }
             return;
         }
 
         // 如果沒有特定權限要求，只要已登入就允許
-        Console.WriteLine("✅ 沒有特定權限要求，允許存取");
         isAuthorized = true;
     }
 }

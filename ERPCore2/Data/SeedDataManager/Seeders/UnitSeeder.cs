@@ -18,11 +18,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             if (hasData)
             {
-                Console.WriteLine("🔄 計量單位資料已存在，跳過種子資料建立");
                 return;
             }
-
-            Console.WriteLine("🌱 開始建立計量單位種子資料...");
 
             // 建立計量單位
             var units = new List<Unit>
@@ -200,9 +197,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             await context.UnitConversions.AddRangeAsync(unitConversions);
             await context.SaveChangesAsync();
 
-            Console.WriteLine("✅ 計量單位種子資料建立完成");
-            Console.WriteLine($"   - 建立了 {units.Count} 個計量單位");
-            Console.WriteLine($"   - 建立了 {unitConversions.Count} 個單位轉換關係");
         }
     }
 }

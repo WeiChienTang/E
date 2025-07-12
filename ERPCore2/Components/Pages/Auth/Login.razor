@@ -101,7 +101,6 @@
             // 記錄已登入用戶資訊以便調試
             var userName = httpContext.User.Identity.Name;
             var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            Console.WriteLine($"用戶已登入: {userName} (ID: {userId})");
             
             Navigation.NavigateTo(ReturnUrl ?? "/", true);
             return;
@@ -109,14 +108,6 @@
         else
         {
             // 記錄未認證狀態以便調試
-            Console.WriteLine($"用戶未登入，Cookie 數量: {httpContext?.Request.Cookies.Count ?? 0}");
-            if (httpContext?.Request.Cookies != null)
-            {
-                foreach (var cookie in httpContext.Request.Cookies)
-                {
-                    Console.WriteLine($"Cookie: {cookie.Key} = {cookie.Value}");
-                }
-            }
         }
 
         // 從查詢參數顯示錯誤訊息

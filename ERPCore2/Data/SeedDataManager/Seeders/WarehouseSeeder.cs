@@ -17,15 +17,12 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
         public async Task SeedAsync(AppDbContext context)
         {
             // 檢查是否已有倉庫資料
-            bool hasWarehouseData = await context.Warehouses.AnyAsync();
+            bool hasWarehouse = await context.Warehouses.AnyAsync();
 
-            if (hasWarehouseData)
+            if (hasWarehouse)
             {
-                Console.WriteLine("🔄 倉庫資料已存在，跳過種子資料建立");
                 return;
             }
-
-            Console.WriteLine("🌱 開始建立倉庫種子資料...");
 
             // 建立倉庫資料
             var warehouses = new List<Warehouse>
@@ -110,15 +107,10 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 }
             };
 
-            await context.Warehouses.AddRangeAsync(warehouses);
-            await context.SaveChangesAsync();
-
-            Console.WriteLine($"✅ 成功建立 {warehouses.Count} 筆倉庫資料");
+            await context.Warehouses.AddRangeAsync(warehouses);            await context.SaveChangesAsync();
 
             // 建立庫位資料
             await CreateWarehouseLocations(context, warehouses);
-
-            Console.WriteLine("✅ 倉庫種子資料建立完成");
         }
 
         /// <summary>
@@ -231,8 +223,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             await context.WarehouseLocations.AddRangeAsync(warehouseLocations);
             await context.SaveChangesAsync();
-
-            Console.WriteLine($"✅ 成功建立 {warehouseLocations.Count} 筆庫位資料");
         }
     }
 }

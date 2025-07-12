@@ -18,11 +18,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             if (hasData)
             {
-                Console.WriteLine("🔄 庫存異動管理資料已存在，跳過種子資料建立");
                 return;
             }
-
-            Console.WriteLine("🌱 開始建立庫存異動管理種子資料...");
 
             // 建立異動類型
             var transactionTypes = new List<InventoryTransactionType>
@@ -130,8 +127,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             await context.InventoryTransactionTypes.AddRangeAsync(transactionTypes);
             await context.SaveChangesAsync();
 
-            Console.WriteLine("✅ 庫存異動管理種子資料建立完成");
-            Console.WriteLine($"   - 建立了 {transactionTypes.Count} 個異動類型");
         }
     }
 }

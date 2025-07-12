@@ -70,10 +70,9 @@
             var employeeId = await NavigationPermissionService.GetCurrentEmployeeIdAsync();
             return employeeId > 0;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // 記錄錯誤，但不顯示給使用者
-            Console.WriteLine($"權限檢查錯誤: {ex.Message}");
             return false;
         }
     }

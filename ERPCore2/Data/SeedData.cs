@@ -21,11 +21,8 @@ namespace ERPCore2.Data
 
             try
             {
-                Console.WriteLine("正在檢查並初始化資料庫...");
-                
                 // 確保資料庫存在並執行遷移
                 await context.Database.MigrateAsync();
-                Console.WriteLine("資料庫遷移完成");
 
                 // 開始交易
                 using var transaction = await context.Database.BeginTransactionAsync();
@@ -37,26 +34,21 @@ namespace ERPCore2.Data
 
                     foreach (var seeder in seeders)
                     {
-                        Console.WriteLine($"正在初始化 {seeder.Name} 資料...");
                         await seeder.SeedAsync(context);
-                        Console.WriteLine($"{seeder.Name} 資料初始化完成");
                     }
 
                     // 提交交易
                     await transaction.CommitAsync();
-                    Console.WriteLine("所有種子資料初始化完成");
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     // 回滾交易
                     await transaction.RollbackAsync();
-                    Console.WriteLine($"種子資料初始化失敗，已回滾：{ex.Message}");
                     throw;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"種子資料初始化過程中發生錯誤：{ex.Message}");
                 throw;
             }
         }
