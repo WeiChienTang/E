@@ -8,14 +8,14 @@
 @inject INotificationService NotificationService
 @rendermode InteractiveServer
 
-<PageTitle>角色維護</PageTitle>
+<PageTitle>角色設定</PageTitle>
 
 <PagePermissionCheck RequiredPermission="Role.Read">
 <GenericIndexPageComponent TEntity="Role" 
                           TService="IRoleService"
                           Service="@RoleService"
                           EntityBasePath="/roles"
-                          PageTitle="角色維護"
+                          PageTitle="角色設定"
                           PageSubtitle="管理系統角色與權限設定"
                           EntityName="角色"
                           BreadcrumbItems="@breadcrumbItems"
@@ -63,7 +63,7 @@
             {
                 new("首頁", "/"),
                 new("基礎資料", "#"),
-                new("角色維護")
+                new("角色設定")
             };
         }
         catch (Exception ex)

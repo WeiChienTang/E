@@ -9,17 +9,17 @@
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
-<PageTitle>@(Id.HasValue ? "編輯角色權限" : "新增角色權限")</PageTitle>
+<PageTitle>@(Id.HasValue ? "編輯權限" : "新增權限")</PageTitle>
 <PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Permission.Update" : "Permission.Create")">
     <GenericEditPageComponent TEntity="Permission" 
                             TService="IPermissionManagementService"
                             Id="@Id"
                             Entity="@permission"
                             Service="@PermissionService"
-                            EntityName="角色權限"
-                            EntityNamePlural="角色權限"
+                            EntityName="權限"
+                            EntityNamePlural="權限"
                             FormTitle="基本資料"
-                            FormSubtitle="角色權限的基本資訊與設定"
+                            FormSubtitle="權限的基本資訊與設定"
                             IndexRoute="/permissions"
                             UseGenericForm="true"
                             FormFields="@basicFormFields"
@@ -71,8 +71,8 @@
             {
                 new("首頁", "/"),
                 new("基礎資料", "#"),
-                new("角色權限維護", "/permissions"),
-                new(Id.HasValue ? "編輯角色權限" : "新增角色權限")
+                new("權限維護", "/permissions"),
+                new(Id.HasValue ? "編輯權限" : "新增權限")
             };
         }
         catch (Exception ex)
@@ -95,7 +95,7 @@
             // 預設的動作類型
             availableActions = new List<string> { "Read", "Create", "Update", "Delete"};
             
-            // 預設的角色權限群組
+            // 預設的權限群組
             availableGroups = new List<string> { "基礎資料", "業務管理", "系統管理", "報表", "設定" };
 
             // 更新表單欄位的選項
@@ -125,7 +125,7 @@
                 actionField.Options = availableActions.Select(a => new SelectOption { Text = a, Value = a }).ToList();
             }
 
-            // 更新角色權限群組選項
+            // 更新權限群組選項
             var groupField = basicFormFields.FirstOrDefault(f => f.PropertyName == nameof(Permission.PermissionGroup));
             if (groupField != null)
             {
@@ -147,7 +147,7 @@
                 new FormFieldDefinition
                 {
                     PropertyName = nameof(Permission.PermissionCode),
-                    Label = "角色權限代碼",
+                    Label = "權限代碼",
                     IsRequired = true,
                     Placeholder = "例如：Customer.View, Product.Create",
                     FieldType = FormFieldType.Text,
@@ -157,12 +157,12 @@
                 new FormFieldDefinition
                 {
                     PropertyName = nameof(Permission.PermissionName),
-                    Label = "角色權限名稱",
+                    Label = "權限名稱",
                     IsRequired = true,
-                    Placeholder = "請輸入角色權限名稱",
+                    Placeholder = "請輸入權限名稱",
                     FieldType = FormFieldType.Text,
                     MaxLength = 100,
-                    HelpText = "使用者友善的角色權限名稱"
+                    HelpText = "使用者友善的權限名稱"
                 },
                 new FormFieldDefinition
                 {
@@ -187,9 +187,9 @@
                 new FormFieldDefinition
                 {
                     PropertyName = nameof(Permission.PermissionGroup),
-                    Label = "角色權限群組",
+                    Label = "權限群組",
                     IsRequired = false,
-                    Placeholder = "請選擇角色權限群組",
+                    Placeholder = "請選擇權限群組",
                     FieldType = FormFieldType.Select,
                     MaxLength = 50,
                     HelpText = "用於UI分組顯示",
@@ -242,15 +242,15 @@
     {
         try
         {
-            // 驗證角色權限代碼格式
+            // 驗證權限代碼格式
             var codeValidationResult = PermissionService.ValidatePermissionCode(entity.PermissionCode);
             if (!codeValidationResult.IsSuccess)
             {
-                await NotificationService.ShowErrorAsync($"角色權限代碼格式不正確：{codeValidationResult.ErrorMessage}", "驗證失敗");
+                await NotificationService.ShowErrorAsync($"權限代碼格式不正確：{codeValidationResult.ErrorMessage}", "驗證失敗");
                 return false;
             }
 
-            // 檢查角色權限代碼是否重複
+            // 檢查權限代碼是否重複
             var codeCheckResult = await PermissionService.IsPermissionCodeExistsAsync(entity.PermissionCode, entity.Id);
             if (!codeCheckResult.IsSuccess)
             {
@@ -260,11 +260,11 @@
 
             if (codeCheckResult.Data)
             {
-                await NotificationService.ShowErrorAsync("角色權限代碼已存在", "驗證失敗");
+                await NotificationService.ShowErrorAsync("權限代碼已存在", "驗證失敗");
                 return false;
             }
 
-            // 儲存角色權限基本資料
+            // 儲存權限基本資料
             ServiceResult result;
             if (entity.Id == 0)
             {
@@ -281,7 +281,7 @@
                 return false;
             }
 
-            await NotificationService.ShowSuccessAsync($"角色權限「{entity.PermissionName}」已成功儲存", "儲存成功");
+            await NotificationService.ShowSuccessAsync($"權限「{entity.PermissionName}」已成功儲存", "儲存成功");
             return true;
         }
         catch (Exception ex)

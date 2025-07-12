@@ -273,7 +273,7 @@
                         builder.AddContent(0, emailValue);
                     };
                 }),
-                TableColumnDefinition.Text("部門", nameof(Employee.Department)),
+                TableColumnDefinition.Text("部門", "Department.Name"),
                 TableColumnDefinition.Text("職位", "EmployeePosition.Name"),
                 TableColumnDefinition.Text("角色", "Role.RoleName"),
                 TableColumnDefinition.Date("最後登入", nameof(Employee.LastLoginAt), "yyyy/MM/dd HH:mm"),

@@ -14,16 +14,16 @@
 
 @rendermode InteractiveServer
 
-<PageTitle>員工職位</PageTitle>
+<PageTitle>職位設定</PageTitle>
 <PagePermissionCheck RequiredPermission="EmployeePosition.Read">
     <GenericIndexPageComponent TEntity="EmployeePosition" 
                             TService="IEmployeePositionService"
                             Service="@EmployeePositionService"
                             EntityBasePath="/employee-positions"                          
-                            PageTitle="員工職位"
-                            PageSubtitle="管理所有員工職位資料與職位層級"
+                            PageTitle="職位設定"
+                            PageSubtitle="管理所有職位設定資料與職位層級"
                             AddButtonText="新增職位"
-                            AddButtonTitle="新增員工職位資料"
+                            AddButtonTitle="新增職位設定資料"
                             SearchSectionTitle="職位搜尋與管理"
                             EmptyMessage="沒有找到符合條件的職位資料"                          
                             DataLoader="@LoadDataAsync"
@@ -31,7 +31,7 @@
                             BreadcrumbItems="@breadcrumbItems"
                             FilterDefinitions="@filterDefinitions"
                             ColumnDefinitions="@columnDefinitions"
-                            EntityName="員工職位"
+                            EntityName="職位設定"
                             GetEntityDisplayName="@(position => position.Name)"
                             DeleteSuccessMessage="職位刪除成功"
                             DeleteConfirmMessage="確定要刪除職位「{0}」嗎？"
@@ -64,7 +64,7 @@
                 ex,
                 nameof(OnInitializedAsync),
                 GetType(),
-                additionalData: "初始化員工職位頁面失敗"
+                additionalData: "初始化職位設定頁面失敗"
             );
         }
     }
@@ -77,7 +77,7 @@
             {
                 new("首頁", "/"),
                 new("基礎資料", "#"),
-                new("員工職位管理")
+                new("職位設定管理")
             };
         }
         catch (Exception ex)
@@ -164,7 +164,7 @@
                 ex,
                 nameof(LoadDataAsync),
                 GetType(),
-                additionalData: "載入員工職位資料失敗"
+                additionalData: "載入職位設定資料失敗"
             );
             return new List<EmployeePosition>();
         }

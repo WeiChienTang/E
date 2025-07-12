@@ -17,15 +17,15 @@
 
 @rendermode InteractiveServer
 
-<PageTitle>部門管理</PageTitle>
+<PageTitle>部門設定</PageTitle>
 
 <PagePermissionCheck RequiredPermission="Department.Read">
     <GenericIndexPageComponent TEntity="Department" 
                             TService="IDepartmentService"
                             Service="@DepartmentService"
                             EntityBasePath="/departments"                          
-                            PageTitle="部門管理"
-                            PageSubtitle="管理公司組織架構與部門資訊"
+                            PageTitle="部門設定"
+                            PageSubtitle="設定公司組織架構與部門資訊"
                             AddButtonText="新增部門"
                             AddButtonTitle="新增部門資料"
                             SearchSectionTitle="部門搜尋與管理"
@@ -82,7 +82,7 @@
             {
                 new("首頁", "/"),
                 new("員工管理", "#"),
-                new("部門管理")
+                new("部門設定")
             };
         }
         catch (Exception ex)

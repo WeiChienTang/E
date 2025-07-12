@@ -14,26 +14,26 @@
 @inject INotificationService NotificationService 
 @rendermode InteractiveServer
 
-<PageTitle>@(Id.HasValue ? "編輯員工職位" : "新增員工職位")</PageTitle>
+<PageTitle>@(Id.HasValue ? "編輯職位設定" : "新增職位設定")</PageTitle>
 <PagePermissionCheck RequiredPermission="@(Id.HasValue ? "EmployeePosition.Update" : "EmployeePosition.Create")">
     <GenericEditPageComponent TEntity="EmployeePosition" 
                             TService="IEmployeePositionService"
                             @ref="editComponent"
                             Id="@Id"
                             Service="@EmployeePositionService"
-                            EntityName="員工職位"
-                            EntityNamePlural="員工職位"
+                            EntityName="職位設定"
+                            EntityNamePlural="職位設定"
                             IndexRoute="/employee-positions"
                             FormTitle="基本資料"
-                            FormSubtitle="員工職位的基本資訊"
+                            FormSubtitle="職位設定的基本資訊"
                             UseGenericForm="true"
                             FormFields="@GetFormFields()"
                             FormSections="@formSections"
                             BreadcrumbItems="@breadcrumbItems"
                             DataLoader="@LoadEmployeePositionData"
                             UseGenericSave="true"
-                            SaveSuccessMessage="@(Id.HasValue ? "員工職位更新成功" : "員工職位新增成功")"
-                            SaveFailureMessage="員工職位儲存失敗"
+                            SaveSuccessMessage="@(Id.HasValue ? "職位設定更新成功" : "職位設定新增成功")"
+                            SaveFailureMessage="職位設定儲存失敗"
     />
 </PagePermissionCheck>
 @code {
@@ -65,8 +65,8 @@
             {
                 new("首頁", "/"),
                 new("基礎資料", "#"),
-                new("員工職位管理", "/employee-positions"),
-                new(Id.HasValue ? "編輯員工職位" : "新增員工職位")
+                new("職位設定管理", "/employee-positions"),
+                new(Id.HasValue ? "編輯職位設定" : "新增職位設定")
             };
         }
         catch (Exception ex)
@@ -200,7 +200,7 @@
             
             if (position == null)
             {
-                await NotificationService.ShowErrorAsync("找不到指定的員工職位資料");
+                await NotificationService.ShowErrorAsync("找不到指定的職位設定資料");
                 Navigation.NavigateTo("/employee-positions");
                 return null;
             }

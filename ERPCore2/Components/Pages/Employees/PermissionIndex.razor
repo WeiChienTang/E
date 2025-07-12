@@ -9,16 +9,16 @@
 
 @rendermode InteractiveServer
 
-<PageTitle>角色權限維護</PageTitle>
+<PageTitle>權限維護</PageTitle>
 
 <PagePermissionCheck RequiredPermission="Permission.Read">
 <GenericIndexPageComponent TEntity="Permission" 
                           TService="IPermissionManagementService"
                           Service="@PermissionService"
                           EntityBasePath="/permissions"
-                          PageTitle="角色權限維護"
-                          PageSubtitle="管理系統功能角色權限設定"
-                          EntityName="角色權限"
+                          PageTitle="權限維護"
+                          PageSubtitle="管理系統功能權限設定"
+                          EntityName="權限"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
@@ -48,7 +48,7 @@
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitialized), GetType(),
-                additionalData: "角色權限頁面初始化失敗"
+                additionalData: "權限頁面初始化失敗"
             );
         }
     }
@@ -61,7 +61,7 @@
             {
                 new("首頁", "/"),
                 new("基礎資料", "#"),
-                new("角色權限維護")
+                new("權限維護")
             };
         }
         catch (Exception ex)
@@ -72,7 +72,7 @@
         }
     }
 
-    // 載入角色權限資料
+    // 載入權限資料
     private async Task<List<Permission>> LoadPermissionsAsync()
     {
         try
@@ -82,9 +82,9 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPermissionsAsync), GetType(),
-                additionalData: "載入角色權限資料失敗"
+                additionalData: "載入權限資料失敗"
             );
-            await NotificationService.ShowErrorAsync("載入角色權限資料失敗");
+            await NotificationService.ShowErrorAsync("載入權限資料失敗");
             return new List<Permission>();
         }
     }
@@ -95,11 +95,11 @@
         {
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("PermissionName", "角色權限名稱", "輸入角色權限名稱搜尋")
-                .AddText("PermissionCode", "角色權限代碼", "輸入角色權限代碼搜尋")
+                .AddText("PermissionName", "權限名稱", "輸入權限名稱搜尋")
+                .AddText("PermissionCode", "權限代碼", "輸入權限代碼搜尋")
                 .AddText("Module", "模組", "輸入模組名稱搜尋")
                 .AddText("Action", "動作", "輸入動作名稱搜尋")
-                .AddText("PermissionGroup", "角色權限群組", "輸入角色權限群組搜尋")
+                .AddText("PermissionGroup", "權限群組", "輸入權限群組搜尋")
                 .Build();
         }
         catch (Exception ex)
@@ -116,11 +116,11 @@
         {
             columnDefinitions = new List<TableColumnDefinition>
             {
-                TableColumnDefinition.Text("角色權限代碼", nameof(Permission.PermissionCode)),
-                TableColumnDefinition.Text("角色權限名稱", nameof(Permission.PermissionName)),
+                TableColumnDefinition.Text("權限代碼", nameof(Permission.PermissionCode)),
+                TableColumnDefinition.Text("權限名稱", nameof(Permission.PermissionName)),
                 TableColumnDefinition.Text("模組", nameof(Permission.Module)),
                 TableColumnDefinition.Text("動作", nameof(Permission.Action)),
-                TableColumnDefinition.Text("角色權限群組", nameof(Permission.PermissionGroup)),
+                TableColumnDefinition.Text("權限群組", nameof(Permission.PermissionGroup)),
                 TableColumnDefinition.Date("建立日期", nameof(Permission.CreatedAt), "yyyy/MM/dd")
             };
         }
@@ -137,7 +137,7 @@
     {
         try
         {
-            // 角色權限名稱篩選
+            // 權限名稱篩選
             var permissionNameFilter = searchModel.GetFilterValue("PermissionName")?.ToString();
             if (!string.IsNullOrWhiteSpace(permissionNameFilter))
             {
@@ -145,7 +145,7 @@
                     p.PermissionName.Contains(permissionNameFilter, StringComparison.OrdinalIgnoreCase));
             }
 
-            // 角色權限代碼篩選
+            // 權限代碼篩選
             var permissionCodeFilter = searchModel.GetFilterValue("PermissionCode")?.ToString();
             if (!string.IsNullOrWhiteSpace(permissionCodeFilter))
             {
@@ -169,7 +169,7 @@
                     p.Action.Contains(actionFilter, StringComparison.OrdinalIgnoreCase));
             }
 
-            // 角色權限群組篩選
+            // 權限群組篩選
             var permissionGroupFilter = searchModel.GetFilterValue("PermissionGroup")?.ToString();
             if (!string.IsNullOrWhiteSpace(permissionGroupFilter))
             {

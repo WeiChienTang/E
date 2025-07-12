@@ -77,7 +77,7 @@
             <NavMenuItem Text="員工管理" IconClass="bi bi-person-badge-fill">
                 <DropdownItems>
                     <NavigationPermissionCheck Permission="Employee.Read">
-                        <NavDropdownItem Text="員工主檔" Url="/employees" />
+                        <NavDropdownItem Text="員工維護" Url="/employees" />
                     </NavigationPermissionCheck>
 
                     <NavigationPermissionCheck Permission="Department.Read">
@@ -88,6 +88,8 @@
                         <NavDropdownItem Text="職位設定" Url="/employee-positions"/>
                     </NavigationPermissionCheck>          
 
+                    
+                    
                     <NavigationPermissionCheck Permission="Role.Read">
                         <NavDropdownItem Text="角色設定" Url="/roles"/>
                     </NavigationPermissionCheck>         

@@ -39,6 +39,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Employees
                     .Include(e => e.Role)
+                    .Include(e => e.Department)
+                    .Include(e => e.EmployeePosition)
                     .Include(e => e.EmployeeContacts)
                         .ThenInclude(ec => ec.ContactType)
                     .Include(e => e.EmployeeAddresses)
@@ -65,6 +67,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Employees
                     .Include(e => e.Role)
+                    .Include(e => e.Department)
+                    .Include(e => e.EmployeePosition)
                     .Include(e => e.EmployeeContacts)
                         .ThenInclude(ec => ec.ContactType)
                     .Include(e => e.EmployeeAddresses)
@@ -95,6 +99,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var employee = await context.Employees
                     .Include(e => e.Role)
+                    .Include(e => e.Department)
+                    .Include(e => e.EmployeePosition)
                     .FirstOrDefaultAsync(e => e.Username == username && !e.IsDeleted);
 
                 if (employee == null)
@@ -126,6 +132,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var employee = await context.Employees
                     .Include(e => e.Role)
+                    .Include(e => e.Department)
+                    .Include(e => e.EmployeePosition)
                     .FirstOrDefaultAsync(e => e.EmployeeCode == employeeCode && !e.IsDeleted);
 
                 if (employee == null)
@@ -220,6 +228,7 @@ namespace ERPCore2.Services
                 var employees = await context.Employees
                     .Include(e => e.Role)
                     .Include(e => e.Department)
+                    .Include(e => e.EmployeePosition)
                     .Where(e => !e.IsDeleted && 
                                ((e.FirstName != null && e.FirstName.Contains(searchTerm)) ||
                                 (e.LastName != null && e.LastName.Contains(searchTerm)) ||
@@ -252,6 +261,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var employees = await context.Employees
                     .Include(e => e.Role)
+                    .Include(e => e.Department)
+                    .Include(e => e.EmployeePosition)
                     .Where(e => e.RoleId == roleId && !e.IsDeleted)
                     .OrderBy(e => e.EmployeeCode)
                     .ToListAsync();
@@ -283,6 +294,7 @@ namespace ERPCore2.Services
                 var employees = await context.Employees
                     .Include(e => e.Role)
                     .Include(e => e.Department)
+                    .Include(e => e.EmployeePosition)
                     .Where(e => e.Department != null && e.Department.Name == department && !e.IsDeleted)
                     .OrderBy(e => e.EmployeeCode)
                     .ToListAsync();
@@ -368,6 +380,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var employees = await context.Employees
                     .Include(e => e.Role)
+                    .Include(e => e.Department)
+                    .Include(e => e.EmployeePosition)
                     .Where(e => !e.IsDeleted && e.Status == EntityStatus.Active)
                     .OrderBy(e => e.EmployeeCode)
                     .ToListAsync();
