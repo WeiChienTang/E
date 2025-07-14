@@ -28,11 +28,12 @@
 
 <div class="nav-scrollable">    
     <nav class="nav flex-column">
+
         <!-- 首頁 -->
         <NavMenuItem Text="首頁" IconClass="bi bi-house-door-fill-nav-menu" Url="/" />
 
-        <!-- 通用參數設定 -->
-        <NavigationPermissionCheck Module="MasterData">
+        <!-- 基礎資料下拉選單 -->
+        <NavigationPermissionCheck AnyPermissions="@(new[] {"IndustryType.Read", "Material.Read", "Weather.Read", "Color.Read", "Size.Read", "Unit.Read", "SupplierType.Read", "CustomerType.Read", "EmployeePosition.Read"})">
             <NavMenuItem Text="基礎資料" IconClass="bi-sliders nav-menu-bi">
                 <DropdownItems>
                     <NavigationPermissionCheck Permission="IndustryType.Read">
@@ -43,7 +44,7 @@
         </NavigationPermissionCheck>        
 
         <!-- 客戶管理下拉選單 -->
-        <NavigationPermissionCheck Module="Customer">
+        <NavigationPermissionCheck AnyPermissions="@(new[] {"Customer.Read", "Customer.Create", "Customer.Update", "Customer.Delete", "CustomerType.Read", "CustomerType.Create", "CustomerType.Update", "CustomerType.Delete"})">
             <NavMenuItem Text="客戶管理" IconClass="bi bi-people-fill">
                 <DropdownItems>
                     <NavigationPermissionCheck Permission="Customer.Read">
@@ -57,8 +58,8 @@
             </NavMenuItem>
         </NavigationPermissionCheck>
 
-          <!-- 廠商管理 -->
-        <NavigationPermissionCheck Module="Supplier">
+          <!-- 廠商管理下拉選單 -->
+        <NavigationPermissionCheck AnyPermissions="@(new[] {"Supplier.Read", "Supplier.Create", "Supplier.Update", "Supplier.Delete", "SupplierType.Read", "SupplierType.Create", "SupplierType.Update", "SupplierType.Delete"})">
             <NavMenuItem Text="廠商管理" IconClass="bi bi-building-gear">
                 <DropdownItems>
                     <NavigationPermissionCheck Permission="Supplier.Read">
@@ -72,8 +73,8 @@
             </NavMenuItem>
         </NavigationPermissionCheck>
 
-        <!-- 員工管理 -->
-        <NavigationPermissionCheck Module="Employee">
+        <!-- 員工管理下拉選單 -->
+        <NavigationPermissionCheck AnyPermissions="@(new[] {"Employee.Read", "Employee.Create", "Employee.Update", "Employee.Delete", "Department.Read", "Department.Create", "Department.Update", "Department.Delete", "EmployeePosition.Read", "EmployeePosition.Create", "EmployeePosition.Update", "EmployeePosition.Delete", "Role.Read", "Role.Create", "Role.Update", "Role.Delete", "Permission.Read", "Permission.Create", "Permission.Update", "Permission.Delete"})">
             <NavMenuItem Text="員工管理" IconClass="bi bi-person-badge-fill">
                 <DropdownItems>
                     <NavigationPermissionCheck Permission="Employee.Read">
@@ -98,7 +99,7 @@
                         <NavDropdownItem Text="權限設定" Url="/permissions"/>
                     </NavigationPermissionCheck>
 
-                    <NavigationPermissionCheck Permission="EmployeePermission.Read">
+                    <NavigationPermissionCheck Permission="Role.Read">
                         <NavDropdownItem Text="角色權限設定" Url="/employees/role-permission-management"/>
                     </NavigationPermissionCheck>
 
@@ -107,7 +108,7 @@
         </NavigationPermissionCheck>
 
         <!-- 產品管理下拉選單 -->
-        <NavigationPermissionCheck Module="Product">
+        <NavigationPermissionCheck AnyPermissions="@(new[] {"Product.Read", "Product.Create", "Product.Update", "Product.Delete", "Product.ViewCost", "Product.ManageStock", "Product.ManageSupplier", "ProductCategory.Read", "ProductCategory.Create", "ProductCategory.Update", "ProductCategory.Delete", "Size.Read", "Size.Create", "Size.Update", "Size.Delete", "Color.Read", "Color.Create", "Color.Update", "Color.Delete", "Weather.Read", "Weather.Create", "Weather.Update", "Weather.Delete", "Material.Read", "Material.Create", "Material.Update", "Material.Delete", "Unit.Read", "Unit.Create", "Unit.Update", "Unit.Delete"})">
             <NavMenuItem Text="產品管理" IconClass="bi bi-box-seam-fill">
                 <DropdownItems>
 
@@ -137,15 +138,14 @@
             </NavMenuItem>
         </NavigationPermissionCheck>       
 
-        <!-- 銷貨管理 (開發中) -->
-        <NavigationPermissionCheck Module="Sales">
-            <NavMenuItem Text="銷貨管理 (開發中)" IconClass="bi bi-cart-fill">
+        <!-- 銷貨管理下拉選單 (開發中) -->
+        @* 暫時移除權限檢查，因為尚未定義相關權限 *@
+        <NavMenuItem Text="銷貨管理 (開發中)" IconClass="bi bi-cart-fill">
 
-            </NavMenuItem>
-        </NavigationPermissionCheck>
+        </NavMenuItem>
 
-        <!-- 庫存管理 -->
-        <NavigationPermissionCheck Module="Warehouse">
+        <!-- 庫存管理下拉選單 -->
+        <NavigationPermissionCheck AnyPermissions="@(new[] {"Warehouse.Read", "Warehouse.Create", "Warehouse.Update", "Warehouse.Delete", "Inventory.Read", "Inventory.Create", "Inventory.Update", "Inventory.Delete", "Inventory.Overview"})">
             <NavMenuItem Text="庫存管理" IconClass="bi-boxes nav-menu-bi">
                 <DropdownItems>
 
@@ -162,13 +162,12 @@
         </NavigationPermissionCheck>    
 
         <!-- BOM 管理下拉選單 -->
-        <NavigationPermissionCheck Module="BOM">
-            <NavMenuItem Text="BOM 管理 (開發中)" IconClass="bi bi-list-nested">
+        @* 暫時移除權限檢查，因為尚未定義相關權限 *@
+        <NavMenuItem Text="BOM 管理 (開發中)" IconClass="bi bi-list-nested">
 
-            </NavMenuItem>
-        </NavigationPermissionCheck>
-        <!-- 系統管理 -->
-        <NavigationPermissionCheck Module="SystemControl">
+        </NavMenuItem>
+        <!-- 系統管理下拉選單 -->
+        <NavigationPermissionCheck AnyPermissions="@(new[] {"SystemControl.ViewErrorLog", "SystemControl.ViewUpdates"})">
             <NavMenuItem Text="系統管理" IconClass="bi bi-gear-fill">
                 <DropdownItems>
 
@@ -176,7 +175,7 @@
                         <NavDropdownItem Text="更新紀錄" Url="/updates" />
                     </NavigationPermissionCheck>
 
-                    <NavigationPermissionCheck Permission="ErrorLog.Read">
+                    <NavigationPermissionCheck Permission="SystemControl.ViewErrorLog">
                         <NavDropdownItem Text="錯誤記錄" Url="/error-logs" />
                     </NavigationPermissionCheck>
 
