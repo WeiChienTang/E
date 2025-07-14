@@ -884,10 +884,17 @@
                 // 更新員工資料以儲存狀態變更
                 await EmployeeService.UpdateAsync(employee);
                 
+                // 強制重新載入員工資料以確保密碼已更新
+                var updatedEmployee = await EmployeeService.GetByIdAsync(employee.Id);
+                if (updatedEmployee != null)
+                {
+                    employee = updatedEmployee;
+                }
+                
                 // 關閉對話框
                 ClosePasswordResetDialog();
                 
-                await NotificationService.ShowSuccessAsync("密碼重設成功！");
+                await NotificationService.ShowSuccessAsync("密碼重設成功！請使用新密碼登入。");
                 StateHasChanged();
             }
             else
