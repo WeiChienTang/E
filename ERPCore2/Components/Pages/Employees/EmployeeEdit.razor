@@ -37,6 +37,7 @@
                             BreadcrumbItems="@breadcrumbItems"
                             DataLoader="@LoadEmployeeData"
                             UseGenericSave="true"
+                            CustomValidator="@ValidateEmployeeData"
                             AfterSave="@AfterSaveEmployee"
                             SaveSuccessMessage="@(Id.HasValue ? "員工更新成功" : "員工新增成功")"
                             SaveFailureMessage="員工儲存失敗"
@@ -196,6 +197,66 @@
                 </div>
             }
 
+            @* 軟刪除衝突處理對話框 *@
+            @if (showSoftDeletedConflictModal && softDeletedEmployee != null)
+            {
+                <div class="modal fade show" style="display: block; background: rgba(0,0,0,0.5);">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="bi-exclamation-triangle me-2 text-warning"></i>
+                                    發現已刪除的員工資料
+                                </h5>
+                                <GenericButtonComponent Variant="ButtonVariant.Secondary" CssClass="btn-close" OnClick="CloseSoftDeletedConflictDialog" 
+                                                    Title="關閉" />
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-warning">
+                                    <i class="bi-info-circle me-2"></i>
+                                    系統發現之前已有相同的@GetConflictDescription()，但該員工已被刪除。您可以選擇以下操作：
+                                </div>
+                                
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">已刪除的員工資料</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <strong>員工代碼：</strong> @softDeletedEmployee.EmployeeCode
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>帳號：</strong> @softDeletedEmployee.Username
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>姓名：</strong> @($"{softDeletedEmployee.LastName}{softDeletedEmployee.FirstName}")
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>角色：</strong> @softDeletedEmployee.Role?.RoleName
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>部門：</strong> @softDeletedEmployee.Department?.Name
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>職位：</strong> @softDeletedEmployee.EmployeePosition?.Name
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="取消" OnClick="CloseSoftDeletedConflictDialog" 
+                                                    IsDisabled="isProcessingSoftDeletedRestore" />
+                                <GenericButtonComponent Variant="ButtonVariant.Success" Text="復原並載入資料" IconClass="bi-arrow-clockwise me-1"
+                                                    OnClick="HandleSoftDeletedRestore" 
+                                                    IsDisabled="isProcessingSoftDeletedRestore" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
             @* 聯絡方式管理 *@
             <ContactManagerComponent TContactEntity="EmployeeContact"
                                 TParentEntity="Employee"
@@ -265,6 +326,12 @@
     private string confirmNewPassword = string.Empty;
     private string newPasswordValidationMessage = string.Empty;
     private string confirmNewPasswordValidationMessage = string.Empty;
+    
+    // 軟刪除衝突處理對話框
+    private bool showSoftDeletedConflictModal = false;
+    private Employee? softDeletedEmployee = null;
+    private string conflictType = string.Empty;
+    private bool isProcessingSoftDeletedRestore = false;
     
     // 防止重複載入
     private bool _isLoadingData = false;
@@ -616,6 +683,53 @@
         return Id.HasValue ? "編輯員工" : "新增員工";
     }
 
+    // 員工資料驗證（包含軟刪除衝突檢查和密碼驗證）
+    private async Task<bool> ValidateEmployeeData(Employee entity)
+    {
+        try
+        {
+            Console.WriteLine($"[ValidateEmployeeData] 開始驗證 ID={entity.Id}");
+            
+            // 只在新增模式進行軟刪除衝突檢查
+            if (!Id.HasValue)
+            {
+                Console.WriteLine($"[ValidateEmployeeData] 新增模式，檢查軟刪除衝突");
+                
+                // 檢查軟刪除衝突
+                var checkResult = await EmployeeService.CheckSoftDeletedConflictAsync(entity.Username, entity.EmployeeCode);
+                if (checkResult.IsSuccess && checkResult.Data != null && checkResult.Data.HasSoftDeletedEmployee)
+                {
+                    Console.WriteLine($"[ValidateEmployeeData] 發現軟刪除衝突，顯示對話框");
+                    
+                    softDeletedEmployee = checkResult.Data.SoftDeletedEmployee;
+                    conflictType = checkResult.Data.ConflictType;
+                    showSoftDeletedConflictModal = true;
+                    StateHasChanged();
+                    
+                    // 返回 false 以阻止儲存繼續進行，但不顯示錯誤訊息
+                    return false;
+                }
+                
+                // 驗證密碼（新增模式）
+                if (!ValidatePassword())
+                {
+                    Console.WriteLine($"[ValidateEmployeeData] 密碼驗證失敗");
+                    return false;
+                }
+            }
+            
+            Console.WriteLine($"[ValidateEmployeeData] 驗證完成");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ValidateEmployeeData] 發生異常: {ex.Message}");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ValidateEmployeeData), GetType(),
+                additionalData: new { EmployeeId = entity.Id, Username = entity.Username, EmployeeCode = entity.EmployeeCode });
+            return false;
+        }
+    }
+
     // 員工儲存後的額外處理（處理聯絡方式、地址和密碼設定）
     private async Task AfterSaveEmployee(Employee entity)
     {
@@ -907,6 +1021,143 @@
 
     #endregion
     
+    #region 軟刪除衝突處理
+
+    private async Task CheckForSoftDeletedConflict()
+    {
+        try
+        {
+            if (Id.HasValue || employee == null) return; // 只在新增模式檢查
+
+            if (string.IsNullOrWhiteSpace(employee.Username) && string.IsNullOrWhiteSpace(employee.EmployeeCode))
+                return;
+
+            var checkResult = await EmployeeService.CheckSoftDeletedConflictAsync(employee.Username, employee.EmployeeCode);
+            if (checkResult.IsSuccess && checkResult.Data != null && checkResult.Data.HasSoftDeletedEmployee)
+            {
+                softDeletedEmployee = checkResult.Data.SoftDeletedEmployee;
+                conflictType = checkResult.Data.ConflictType;
+                showSoftDeletedConflictModal = true;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(CheckForSoftDeletedConflict), 
+                GetType(),
+                additionalData: new { 
+                    PageName = "EmployeeEdit",
+                    Action = "CheckForSoftDeletedConflict",
+                    Username = employee?.Username,
+                    EmployeeCode = employee?.EmployeeCode
+                });
+        }
+    }
+
+    private string GetConflictDescription()
+    {
+        return conflictType switch
+        {
+            "Username" => "帳號",
+            "EmployeeCode" => "員工代碼",
+            "Username, EmployeeCode" => "帳號和員工代碼",
+            _ => "資料"
+        };
+    }
+
+    private void CloseSoftDeletedConflictDialog()
+    {
+        showSoftDeletedConflictModal = false;
+        softDeletedEmployee = null;
+        conflictType = string.Empty;
+        isProcessingSoftDeletedRestore = false;
+        StateHasChanged();
+    }
+
+    private async Task HandleSoftDeletedRestore()
+    {
+        try
+        {
+            if (softDeletedEmployee == null) return;
+
+            isProcessingSoftDeletedRestore = true;
+            StateHasChanged();
+
+            Console.WriteLine($"[HandleSoftDeletedRestore] 開始處理軟刪除復原");
+            Console.WriteLine($"[HandleSoftDeletedRestore] 軟刪除員工ID: {softDeletedEmployee.Id}");
+            Console.WriteLine($"[HandleSoftDeletedRestore] 軟刪除員工IsDeleted: {softDeletedEmployee.IsDeleted}");
+
+            // 正確做法：只復原軟刪除狀態，不更新其他資料
+            var restoreResult = await EmployeeService.RestoreSoftDeletedEmployeeAsync(softDeletedEmployee.Id);
+            if (!restoreResult.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync($"復原員工失敗：{restoreResult.ErrorMessage}");
+                return;
+            }
+
+            Console.WriteLine($"[HandleSoftDeletedRestore] 員工復原成功");
+
+            // 載入已復原的員工資料到編輯頁面
+            var loadedEmployee = await EmployeeService.GetByIdAsync(softDeletedEmployee.Id);
+            if (loadedEmployee == null)
+            {
+                await NotificationService.ShowErrorAsync("復原成功，但無法載入員工資料");
+                return;
+            }
+
+            // 更新頁面上的員工資料為已復原的員工資料
+            employee = loadedEmployee;
+            Id = loadedEmployee.Id;
+            
+            // 載入相關資料（聯絡資料和地址已包含在 GetByIdAsync 中）
+            employeeContacts = loadedEmployee.EmployeeContacts?.ToList() ?? new List<EmployeeContact>();
+            employeeAddresses = loadedEmployee.EmployeeAddresses?.ToList() ?? new List<EmployeeAddress>();
+
+            // 設定密碼（如果有輸入）
+            if (!string.IsNullOrWhiteSpace(password))
+            {
+                var passwordResult = await AuthenticationService.ResetPasswordAsync(loadedEmployee.Id, password);
+                if (!passwordResult.IsSuccess)
+                {
+                    await NotificationService.ShowWarningAsync($"員工復原成功，但密碼設定失敗：{passwordResult.ErrorMessage}");
+                }
+                else
+                {
+                    Console.WriteLine($"[HandleSoftDeletedRestore] 密碼設定成功");
+                }
+            }
+
+            CloseSoftDeletedConflictDialog();
+            await NotificationService.ShowSuccessAsync("員工已成功復原！現在您可以編輯員工資料。");
+            
+            // 強制重新渲染頁面以顯示復原的資料
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[HandleSoftDeletedRestore] 發生異常：{ex.Message}");
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(HandleSoftDeletedRestore), 
+                GetType(),
+                additionalData: new { 
+                    PageName = "EmployeeEdit",
+                    Action = "HandleSoftDeletedRestore",
+                    SoftDeletedEmployeeId = softDeletedEmployee?.Id
+                });
+            await NotificationService.ShowErrorAsync("處理軟刪除復原時發生錯誤，請稍後再試。");
+        }
+        finally
+        {
+            isProcessingSoftDeletedRestore = false;
+            StateHasChanged();
+        }
+    }
+
+    #endregion
+
     #region UI 事件處理方法
     
     private void OnStatusChange(EntityStatus newStatus)

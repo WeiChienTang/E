@@ -688,6 +688,294 @@ namespace ERPCore2.Services
         }
 
         #endregion
+
+        #region 軟刪除員工管理
+
+        /// <summary>
+        /// 檢查軟刪除的員工資料
+        /// </summary>
+        public async Task<ServiceResult<Employee?>> GetSoftDeletedEmployeeAsync(string username, string employeeCode)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(username) && string.IsNullOrWhiteSpace(employeeCode))
+                    return ServiceResult<Employee?>.Failure("使用者名稱和員工編號不能都為空");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                var query = context.Employees
+                    .Include(e => e.Role)
+                    .Include(e => e.Department)
+                    .Include(e => e.EmployeePosition)
+                    .Where(e => e.IsDeleted);
+
+                if (!string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(employeeCode))
+                {
+                    query = query.Where(e => e.Username == username || e.EmployeeCode == employeeCode);
+                }
+                else if (!string.IsNullOrWhiteSpace(username))
+                {
+                    query = query.Where(e => e.Username == username);
+                }
+                else
+                {
+                    query = query.Where(e => e.EmployeeCode == employeeCode);
+                }
+
+                var employee = await query.FirstOrDefaultAsync();
+                return ServiceResult<Employee?>.Success(employee);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetSoftDeletedEmployeeAsync), GetType(), _logger, new { 
+                    Method = nameof(GetSoftDeletedEmployeeAsync),
+                    ServiceType = GetType().Name,
+                    Username = username,
+                    EmployeeCode = employeeCode
+                });
+                return ServiceResult<Employee?>.Failure($"檢查軟刪除員工時發生錯誤：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 檢查新增員工時是否與軟刪除員工衝突
+        /// </summary>
+        public async Task<ServiceResult<IEmployeeService.SoftDeletedEmployeeCheckResult>> CheckSoftDeletedConflictAsync(string username, string employeeCode)
+        {
+            try
+            {
+                var result = new IEmployeeService.SoftDeletedEmployeeCheckResult();
+
+                if (string.IsNullOrWhiteSpace(username) && string.IsNullOrWhiteSpace(employeeCode))
+                    return ServiceResult<IEmployeeService.SoftDeletedEmployeeCheckResult>.Success(result);
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                Employee? softDeletedEmployee = null;
+                var conflictTypes = new List<string>();
+
+                // 檢查使用者名稱衝突
+                if (!string.IsNullOrWhiteSpace(username))
+                {
+                    var usernameConflict = await context.Employees
+                        .Include(e => e.Role)
+                        .Include(e => e.Department)
+                        .Include(e => e.EmployeePosition)
+                        .FirstOrDefaultAsync(e => e.Username == username && e.IsDeleted);
+                    
+                    if (usernameConflict != null)
+                    {
+                        softDeletedEmployee = usernameConflict;
+                        conflictTypes.Add("Username");
+                    }
+                }
+
+                // 檢查員工編號衝突
+                if (!string.IsNullOrWhiteSpace(employeeCode))
+                {
+                    var codeConflict = await context.Employees
+                        .Include(e => e.Role)
+                        .Include(e => e.Department)
+                        .Include(e => e.EmployeePosition)
+                        .FirstOrDefaultAsync(e => e.EmployeeCode == employeeCode && e.IsDeleted);
+                    
+                    if (codeConflict != null)
+                    {
+                        // 如果是同一個員工，優先使用這個
+                        if (softDeletedEmployee == null || softDeletedEmployee.Id == codeConflict.Id)
+                        {
+                            softDeletedEmployee = codeConflict;
+                            if (!conflictTypes.Contains("Username"))
+                                conflictTypes.Add("EmployeeCode");
+                        }
+                        else
+                        {
+                            // 不同員工有不同的衝突，這種情況比較複雜
+                            conflictTypes.Add("EmployeeCode");
+                        }
+                    }
+                }
+
+                if (softDeletedEmployee != null)
+                {
+                    result.HasSoftDeletedEmployee = true;
+                    result.SoftDeletedEmployee = softDeletedEmployee;
+                    result.ConflictType = string.Join(", ", conflictTypes);
+                }
+
+                return ServiceResult<IEmployeeService.SoftDeletedEmployeeCheckResult>.Success(result);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CheckSoftDeletedConflictAsync), GetType(), _logger, new { 
+                    Method = nameof(CheckSoftDeletedConflictAsync),
+                    ServiceType = GetType().Name,
+                    Username = username,
+                    EmployeeCode = employeeCode
+                });
+                return ServiceResult<IEmployeeService.SoftDeletedEmployeeCheckResult>.Failure($"檢查軟刪除衝突時發生錯誤：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 復原軟刪除的員工
+        /// </summary>
+        public async Task<ServiceResult> RestoreSoftDeletedEmployeeAsync(int employeeId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                Console.WriteLine($"[RestoreSoftDeletedEmployeeAsync] 查詢員工ID: {employeeId}");
+                
+                // 先查詢所有符合ID的員工（不管是否已刪除）以便調試
+                var allEmployees = await context.Employees.Where(e => e.Id == employeeId).ToListAsync();
+                Console.WriteLine($"[RestoreSoftDeletedEmployeeAsync] 找到 {allEmployees.Count} 個符合ID的員工");
+                
+                foreach (var emp in allEmployees)
+                {
+                    Console.WriteLine($"[RestoreSoftDeletedEmployeeAsync] 員工ID: {emp.Id}, IsDeleted: {emp.IsDeleted}, Username: {emp.Username}");
+                }
+                
+                var employee = await context.Employees.FirstOrDefaultAsync(e => e.Id == employeeId && e.IsDeleted);
+                if (employee == null)
+                {
+                    Console.WriteLine($"[RestoreSoftDeletedEmployeeAsync] 找不到符合條件的軟刪除員工");
+                    return ServiceResult.Failure("找不到要復原的員工資料");
+                }
+
+                Console.WriteLine($"[RestoreSoftDeletedEmployeeAsync] 找到軟刪除員工: {employee.Username}");
+
+                // 復原員工
+                employee.IsDeleted = false;
+                employee.Status = EntityStatus.Active; // 復原時預設為啟用狀態
+                employee.IsLocked = false; // 解除鎖定
+                employee.FailedLoginAttempts = 0; // 重設失敗次數
+                employee.UpdatedAt = DateTime.Now;
+
+                await context.SaveChangesAsync();
+                Console.WriteLine($"[RestoreSoftDeletedEmployeeAsync] 員工復原成功");
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(RestoreSoftDeletedEmployeeAsync), GetType(), _logger, new { 
+                    Method = nameof(RestoreSoftDeletedEmployeeAsync),
+                    ServiceType = GetType().Name,
+                    EmployeeId = employeeId
+                });
+                return ServiceResult.Failure($"復原員工失敗：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 復原軟刪除的員工並更新資料
+        /// </summary>
+        public async Task<ServiceResult<Employee>> RestoreAndUpdateSoftDeletedEmployeeAsync(int employeeId, Employee updateData)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                Console.WriteLine($"[RestoreAndUpdateSoftDeletedEmployeeAsync] 查詢員工ID: {employeeId}");
+                
+                var employee = await context.Employees.FirstOrDefaultAsync(e => e.Id == employeeId && e.IsDeleted);
+                if (employee == null)
+                {
+                    Console.WriteLine($"[RestoreAndUpdateSoftDeletedEmployeeAsync] 找不到符合條件的軟刪除員工");
+                    return ServiceResult<Employee>.Failure("找不到要復原的員工資料");
+                }
+
+                Console.WriteLine($"[RestoreAndUpdateSoftDeletedEmployeeAsync] 找到軟刪除員工: {employee.Username}，開始驗證相關資料");
+
+                // 驗證角色是否存在且有效
+                if (updateData.RoleId > 0)
+                {
+                    var roleExists = await context.Roles
+                        .AnyAsync(r => r.Id == updateData.RoleId && !r.IsDeleted && r.Status == EntityStatus.Active);
+                    
+                    if (!roleExists)
+                    {
+                        Console.WriteLine($"[RestoreAndUpdateSoftDeletedEmployeeAsync] 角色ID {updateData.RoleId} 不存在或已停用");
+                        return ServiceResult<Employee>.Failure($"指定的角色(ID: {updateData.RoleId})不存在或已停用");
+                    }
+                }
+
+                // 驗證部門是否存在且有效（如果有指定）
+                if (updateData.DepartmentId.HasValue && updateData.DepartmentId > 0)
+                {
+                    var departmentExists = await context.Departments
+                        .AnyAsync(d => d.Id == updateData.DepartmentId && !d.IsDeleted && d.Status == EntityStatus.Active);
+                    
+                    if (!departmentExists)
+                    {
+                        Console.WriteLine($"[RestoreAndUpdateSoftDeletedEmployeeAsync] 部門ID {updateData.DepartmentId} 不存在或已停用");
+                        return ServiceResult<Employee>.Failure($"指定的部門(ID: {updateData.DepartmentId})不存在或已停用");
+                    }
+                }
+
+                // 驗證職位是否存在且有效（如果有指定）
+                if (updateData.EmployeePositionId.HasValue && updateData.EmployeePositionId > 0)
+                {
+                    var positionExists = await context.EmployeePositions
+                        .AnyAsync(p => p.Id == updateData.EmployeePositionId && !p.IsDeleted && p.Status == EntityStatus.Active);
+                    
+                    if (!positionExists)
+                    {
+                        Console.WriteLine($"[RestoreAndUpdateSoftDeletedEmployeeAsync] 職位ID {updateData.EmployeePositionId} 不存在或已停用");
+                        return ServiceResult<Employee>.Failure($"指定的職位(ID: {updateData.EmployeePositionId})不存在或已停用");
+                    }
+                }
+
+                Console.WriteLine($"[RestoreAndUpdateSoftDeletedEmployeeAsync] 驗證通過，開始復原並更新");
+
+                // 復原員工並更新資料
+                employee.IsDeleted = false;
+                employee.Status = EntityStatus.Active;
+                employee.IsLocked = false;
+                employee.FailedLoginAttempts = 0;
+                employee.UpdatedAt = DateTime.Now;
+                
+                // 更新業務資料
+                employee.EmployeeCode = updateData.EmployeeCode;
+                employee.Username = updateData.Username;
+                employee.FirstName = updateData.FirstName;
+                employee.LastName = updateData.LastName;
+                employee.RoleId = updateData.RoleId;
+                employee.DepartmentId = updateData.DepartmentId;
+                employee.EmployeePositionId = updateData.EmployeePositionId;
+
+                await context.SaveChangesAsync();
+                Console.WriteLine($"[RestoreAndUpdateSoftDeletedEmployeeAsync] 員工復原並更新成功");
+                
+                // 重新載入員工資料以包含相關資料
+                var updatedEmployee = await context.Employees
+                    .Include(e => e.Role)
+                    .Include(e => e.Department)
+                    .Include(e => e.EmployeePosition)
+                    .FirstOrDefaultAsync(e => e.Id == employeeId);
+
+                return ServiceResult<Employee>.Success(updatedEmployee!);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(RestoreAndUpdateSoftDeletedEmployeeAsync), GetType(), _logger, new { 
+                    Method = nameof(RestoreAndUpdateSoftDeletedEmployeeAsync),
+                    ServiceType = GetType().Name,
+                    EmployeeId = employeeId,
+                    UpdateData = new { 
+                        updateData.Username, 
+                        updateData.EmployeeCode, 
+                        updateData.RoleId, 
+                        updateData.DepartmentId, 
+                        updateData.EmployeePositionId 
+                    }
+                });
+                return ServiceResult<Employee>.Failure($"復原並更新員工失敗：{ex.Message}");
+            }
+        }
+
+        #endregion
     }
 }
 
