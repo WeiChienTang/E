@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Components.Server;
 using System.Security.Claims;
 using ERPCore2.Helpers;
 
-namespace ERPCore2.Services.Auth
+namespace ERPCore2.Services
 {    /// <summary>
     /// 自定義認證狀態提供者，確保 Blazor Server 組件能正確讀取 Cookie 認證狀態
     /// </summary>

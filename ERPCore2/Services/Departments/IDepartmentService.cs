@@ -1,5 +1,4 @@
 using ERPCore2.Data.Entities;
-using ERPCore2.Services.GenericManagementService;
 using ERPCore2.Models;
 
 namespace ERPCore2.Services

@@ -1,7 +1,9 @@
 @page "/employees/edit"
 @page "/employees/edit/{id:int?}"
-@attribute [Authorize]
 @using Microsoft.AspNetCore.Authorization
+@using ERPCore2.Services.Employees
+@using ERPCore2.Components.Shared.SubCollections
+@attribute [Authorize]
 @inject IEmployeeService EmployeeService
 @inject IEmployeeContactService EmployeeContactService
 @inject IEmployeeAddressService EmployeeAddressService
@@ -14,10 +16,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
-@using ERPCore2.Services.Employees
-@using ERPCore2.Components.Shared.SubCollections
-@using ERPCore2.Components.Shared.Buttons
-@using ERPCore2.Services.Notifications
+
 @rendermode InteractiveServer
 @implements IDisposable
 
@@ -97,15 +96,15 @@
                                     <label class="form-label">帳號狀態</label>
                                     <div>
                                         <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="status" id="statusActive" 
-                                                checked="@(employee.Status == EntityStatus.Active)" 
-                                                @onchange="@(() => employee.Status = EntityStatus.Active)">
+                                            <input class="form-check-input" type="radio" id="statusActive" name="employeeStatus"
+                                                   checked="@(employee.Status == EntityStatus.Active)" 
+                                                   @onchange="@(() => OnStatusChange(EntityStatus.Active))" />
                                             <label class="form-check-label" for="statusActive">啟用</label>
                                         </div>
                                         <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="status" id="statusInactive" 
-                                                checked="@(employee.Status == EntityStatus.Inactive)" 
-                                                @onchange="@(() => employee.Status = EntityStatus.Inactive)">
+                                            <input class="form-check-input" type="radio" id="statusInactive" name="employeeStatus"
+                                                   checked="@(employee.Status == EntityStatus.Inactive)" 
+                                                   @onchange="@(() => OnStatusChange(EntityStatus.Inactive))" />
                                             <label class="form-check-label" for="statusInactive">停用</label>
                                         </div>
                                     </div>
@@ -115,11 +114,11 @@
                                 <div class="mb-3">
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" id="isLocked" 
-                                            checked="@employee.IsLocked" 
-                                            @onchange="@((ChangeEventArgs e) => employee.IsLocked = (bool)e.Value!)">
+                                               checked="@employee.IsLocked" 
+                                               @onchange="@OnIsLockedChange" />
                                         <label class="form-check-label" for="isLocked">鎖定帳號</label>
+                                        <div class="form-text">勾選此項將阻止使用者登入</div>
                                     </div>
-                                    <div class="form-text">勾選此項將阻止使用者登入</div>
                                 </div>
                             </div>
                         </div>
@@ -436,7 +435,16 @@
         {
             Text = d.Name,
             Value = d.Id.ToString()
-        }).ToList();basicFormFields = new List<FormFieldDefinition>
+        }).ToList();
+
+        // 帳號狀態選項
+        var statusOptions = new List<SelectOption>
+        {
+            new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
+            new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
+        };
+
+        basicFormFields = new List<FormFieldDefinition>
         {
             new()
             {
@@ -610,6 +618,9 @@
     {
         try
         {
+            // 調試：記錄開始儲存的狀態
+            Console.WriteLine($"[SaveEmployee] 開始儲存員工 ID={entity.Id}, Status={entity.Status}, IsLocked={entity.IsLocked}");
+            
             // 基本驗證 - 使用通知服務
             if (string.IsNullOrWhiteSpace(entity.EmployeeCode))
             {
@@ -656,6 +667,9 @@
             
             if (Id.HasValue)
             {
+                // 調試：記錄更新前的狀態
+                Console.WriteLine($"[SaveEmployee] 準備更新員工，當前狀態: Status={entity.Status}, IsLocked={entity.IsLocked}");
+                
                 // 更新現有員工 - 檢查帳號重複（排除自己）
                 try
                 {
@@ -679,12 +693,28 @@
                     return false;
                 }
                 
+                // 調試：記錄即將送到服務的實體狀態
+                Console.WriteLine($"[SaveEmployee] 即將呼叫 EmployeeService.UpdateAsync，實體狀態: ID={entity.Id}, Status={entity.Status}, IsLocked={entity.IsLocked}, FailedLoginAttempts={entity.FailedLoginAttempts}");
+                
                 result = await EmployeeService.UpdateAsync(entity);
+                
+                // 調試：記錄更新結果
+                Console.WriteLine($"[SaveEmployee] EmployeeService.UpdateAsync 結果: IsSuccess={result.IsSuccess}, ErrorMessage={result.ErrorMessage}");
+                if (result.Data != null)
+                {
+                    Console.WriteLine($"[SaveEmployee] 更新後的實體狀態: ID={result.Data.Id}, Status={result.Data.Status}, IsLocked={result.Data.IsLocked}, FailedLoginAttempts={result.Data.FailedLoginAttempts}");
+                }
+                
                 if (result.IsSuccess)
                 {
+                    // 調試：記錄聯絡方式和地址更新
+                    Console.WriteLine($"[SaveEmployee] 開始更新聯絡方式 ({employeeContacts.Count} 筆) 和地址 ({employeeAddresses.Count} 筆)");
+                    
                     // 更新聯絡方式和地址資料
                     await EmployeeService.UpdateEmployeeContactsAsync(entity.Id, employeeContacts);
                     await EmployeeService.UpdateEmployeeAddressesAsync(entity.Id, employeeAddresses);
+                    
+                    Console.WriteLine($"[SaveEmployee] 聯絡方式和地址更新完成");
                 }
             }
             else
@@ -726,11 +756,18 @@
                 }
             }
 
+            // 調試：記錄最終結果
+            Console.WriteLine($"[SaveEmployee] 最終儲存結果: IsSuccess={result.IsSuccess}");
+            
             // 讓 GenericEditPageComponent 處理通用的成功/失敗訊息
             return result.IsSuccess;
         }
         catch (Exception ex)
         {
+            // 調試：記錄異常
+            Console.WriteLine($"[SaveEmployee] 發生異常: {ex.Message}");
+            Console.WriteLine($"[SaveEmployee] 異常堆疊: {ex.StackTrace}");
+            
             // 檢查是否為重複帳號錯誤
             if (ex.Message.Contains("duplicate key") && ex.Message.Contains("IX_Employees_Username"))
             {
@@ -866,29 +903,58 @@
         {
             if (employee == null) return;
 
+            Console.WriteLine($"[ConfirmPasswordReset] 開始重設密碼，員工ID={employee.Id}, Username={employee.Username}");
+
             // 驗證新密碼
             if (!ValidateNewPassword())
             {
+                Console.WriteLine($"[ConfirmPasswordReset] 密碼驗證失敗");
                 StateHasChanged();
                 return;
             }
 
+            Console.WriteLine($"[ConfirmPasswordReset] 密碼驗證通過，準備重設密碼");
+
             // 執行密碼重設
             var resetResult = await AuthenticationService.ResetPasswordAsync(employee.Id, newPassword);
+            Console.WriteLine($"[ConfirmPasswordReset] AuthenticationService.ResetPasswordAsync 結果: IsSuccess={resetResult.IsSuccess}");
+            
             if (resetResult.IsSuccess)
             {
+                Console.WriteLine($"[ConfirmPasswordReset] 密碼重設成功，準備更新員工狀態");
+                Console.WriteLine($"[ConfirmPasswordReset] 重設前：FailedLoginAttempts={employee.FailedLoginAttempts}, IsLocked={employee.IsLocked}");
+                
                 // 重設登入失敗次數和帳號鎖定狀態
                 employee.FailedLoginAttempts = 0;
                 employee.IsLocked = false;
                 
-                // 更新員工資料以儲存狀態變更
-                await EmployeeService.UpdateAsync(employee);
+                Console.WriteLine($"[ConfirmPasswordReset] 重設後：FailedLoginAttempts={employee.FailedLoginAttempts}, IsLocked={employee.IsLocked}");
                 
-                // 強制重新載入員工資料以確保密碼已更新
-                var updatedEmployee = await EmployeeService.GetByIdAsync(employee.Id);
-                if (updatedEmployee != null)
+                // 更新員工資料以儲存狀態變更
+                Console.WriteLine($"[ConfirmPasswordReset] 準備呼叫 EmployeeService.UpdateAsync");
+                var updateResult = await EmployeeService.UpdateAsync(employee);
+                Console.WriteLine($"[ConfirmPasswordReset] EmployeeService.UpdateAsync 結果: IsSuccess={updateResult.IsSuccess}");
+                
+                if (updateResult.IsSuccess)
                 {
-                    employee = updatedEmployee;
+                    Console.WriteLine($"[ConfirmPasswordReset] 員工狀態更新成功");
+                    
+                    // 強制重新載入員工資料以確保密碼已更新
+                    Console.WriteLine($"[ConfirmPasswordReset] 重新載入員工資料");
+                    var updatedEmployee = await EmployeeService.GetByIdAsync(employee.Id);
+                    if (updatedEmployee != null)
+                    {
+                        employee = updatedEmployee;
+                        Console.WriteLine($"[ConfirmPasswordReset] 重新載入完成：FailedLoginAttempts={employee.FailedLoginAttempts}, IsLocked={employee.IsLocked}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[ConfirmPasswordReset] 重新載入失敗：找不到員工資料");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"[ConfirmPasswordReset] 員工狀態更新失敗：{updateResult.ErrorMessage}");
                 }
                 
                 // 關閉對話框
@@ -899,11 +965,15 @@
             }
             else
             {
+                Console.WriteLine($"[ConfirmPasswordReset] 密碼重設失敗：{resetResult.ErrorMessage}");
                 await NotificationService.ShowErrorAsync($"重設密碼失敗：{resetResult.ErrorMessage}");
             }
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"[ConfirmPasswordReset] 發生異常：{ex.Message}");
+            Console.WriteLine($"[ConfirmPasswordReset] 異常堆疊：{ex.StackTrace}");
+            
             await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(ConfirmPasswordReset), 
@@ -967,6 +1037,27 @@
         return Task.CompletedTask;
     }
 
+    #endregion
+    
+    #region UI 事件處理方法
+    
+    private void OnStatusChange(EntityStatus newStatus)
+    {
+        Console.WriteLine($"UI Event - Status changing from {employee.Status} to {newStatus}");
+        employee.Status = newStatus;
+        Console.WriteLine($"UI Event - Status changed to {employee.Status}");
+        StateHasChanged();
+    }
+    
+    private void OnIsLockedChange(ChangeEventArgs e)
+    {
+        var newValue = (bool)e.Value!;
+        Console.WriteLine($"UI Event - IsLocked changing from {employee.IsLocked} to {newValue}");
+        employee.IsLocked = newValue;
+        Console.WriteLine($"UI Event - IsLocked changed to {employee.IsLocked}");
+        StateHasChanged();
+    }
+    
     #endregion
     
     public void Dispose()

@@ -6,7 +6,7 @@ using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
 
-namespace ERPCore2.Services.GenericManagementService
+namespace ERPCore2.Services
 {
     /// <summary>
     /// 通用管理服務抽象基底類別

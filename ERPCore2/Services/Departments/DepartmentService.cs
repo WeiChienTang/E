@@ -2,7 +2,6 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
-using ERPCore2.Services.GenericManagementService;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERPCore2.Services

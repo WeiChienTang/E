@@ -3,7 +3,6 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Helpers;
 using ERPCore2.Services;
-using ERPCore2.Services.GenericManagementService;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;

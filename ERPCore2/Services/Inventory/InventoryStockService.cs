@@ -3,11 +3,10 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Helpers;
 using ERPCore2.Services;
-using ERPCore2.Services.GenericManagementService;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace ERPCore2.Services.Inventory
+namespace ERPCore2.Services
 {
     /// <summary>
     /// 庫存管理服務實作

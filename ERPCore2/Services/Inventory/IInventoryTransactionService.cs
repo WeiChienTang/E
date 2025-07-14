@@ -2,7 +2,7 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 
-namespace ERPCore2.Services.Inventory
+namespace ERPCore2.Services
 {
     /// <summary>
     /// 庫存異動服務接口

@@ -1,7 +1,7 @@
 using Microsoft.JSInterop;
 using ERPCore2.Services;
 
-namespace ERPCore2.Services.Notifications
+namespace ERPCore2.Services
 {
     /// <summary>
     /// 通知服務實作 - 使用 Toast 通知替代 alert

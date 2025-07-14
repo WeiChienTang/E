@@ -1,6 +1,6 @@
 using ERPCore2.Services;
 
-namespace ERPCore2.Services.Notifications
+namespace ERPCore2.Services
 {
     /// <summary>
     /// 通知服務介面 - 提供統一的訊息通知功能

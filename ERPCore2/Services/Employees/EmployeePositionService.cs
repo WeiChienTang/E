@@ -1,11 +1,10 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
-using ERPCore2.Services.GenericManagementService;
 using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace ERPCore2.Services.Employees
+namespace ERPCore2.Services
 {
     public class EmployeePositionService : GenericManagementService<EmployeePosition>, IEmployeePositionService
     {
