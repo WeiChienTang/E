@@ -1,8 +1,5 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Services;
-using ERPCore2.Services.Employees;
-using ERPCore2.Services.Inventory;
-using ERPCore2.Services.Notifications;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERPCore2.Data

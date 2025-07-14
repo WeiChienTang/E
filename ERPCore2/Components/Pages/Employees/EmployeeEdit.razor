@@ -1,7 +1,6 @@
 @page "/employees/edit"
 @page "/employees/edit/{id:int?}"
 @using Microsoft.AspNetCore.Authorization
-@using ERPCore2.Services.Employees
 @using ERPCore2.Components.Shared.SubCollections
 @attribute [Authorize]
 @inject IEmployeeService EmployeeService
@@ -37,7 +36,10 @@
                             FormSections="@basicFormSections"
                             BreadcrumbItems="@breadcrumbItems"
                             DataLoader="@LoadEmployeeData"
-                            SaveHandler="@SaveEmployee"
+                            UseGenericSave="true"
+                            AfterSave="@AfterSaveEmployee"
+                            SaveSuccessMessage="@(Id.HasValue ? "員工更新成功" : "員工新增成功")"
+                            SaveFailureMessage="員工儲存失敗"
                             AdditionalDataLoader="@LoadAdditionalData">
 
         <AdditionalSections>
@@ -614,181 +616,47 @@
         return Id.HasValue ? "編輯員工" : "新增員工";
     }
 
-    private async Task<bool> SaveEmployee(Employee entity)
+    // 員工儲存後的額外處理（處理聯絡方式、地址和密碼設定）
+    private async Task AfterSaveEmployee(Employee entity)
     {
         try
         {
-            // 調試：記錄開始儲存的狀態
-            Console.WriteLine($"[SaveEmployee] 開始儲存員工 ID={entity.Id}, Status={entity.Status}, IsLocked={entity.IsLocked}");
+            Console.WriteLine($"[AfterSaveEmployee] 開始處理員工後續作業 ID={entity.Id}");
             
-            // 基本驗證 - 使用通知服務
-            if (string.IsNullOrWhiteSpace(entity.EmployeeCode))
+            // 更新聯絡方式和地址資料
+            if (employeeContacts.Any() || employeeAddresses.Any())
             {
-                await NotificationService.ShowErrorAsync("員工代碼為必填");
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(entity.Username))
-            {
-                await NotificationService.ShowErrorAsync("帳號為必填");
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(entity.LastName))
-            {
-                await NotificationService.ShowErrorAsync("姓氏為必填");
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(entity.FirstName))
-            {
-                await NotificationService.ShowErrorAsync("名字為必填");
-                return false;
-            }
-
-            // 新增模式時驗證密碼
-            if (!Id.HasValue)
-            {
-                if (!ValidatePassword())
-                {
-                    return false;
-                }
+                Console.WriteLine($"[AfterSaveEmployee] 更新聯絡方式 ({employeeContacts.Count} 筆) 和地址 ({employeeAddresses.Count} 筆)");
                 
-                // 檢查帳號是否已存在
-                var usernameExistsResult = await EmployeeService.IsUsernameExistsAsync(entity.Username);
-                if (usernameExistsResult.IsSuccess && usernameExistsResult.Data == true)
-                {
-                    await NotificationService.ShowErrorAsync($"帳號 '{entity.Username}' 已經被其他員工使用，請選擇其他帳號名稱");
-                    return false;
-                }
+                await EmployeeService.UpdateEmployeeContactsAsync(entity.Id, employeeContacts);
+                await EmployeeService.UpdateEmployeeAddressesAsync(entity.Id, employeeAddresses);
+                
+                Console.WriteLine($"[AfterSaveEmployee] 聯絡方式和地址更新完成");
             }
 
-            ServiceResult<Employee> result;
+            // 新增模式時設定初始密碼
+            if (!Id.HasValue && !string.IsNullOrWhiteSpace(password))
+            {
+                Console.WriteLine($"[AfterSaveEmployee] 為新員工設定密碼");
+                
+                var passwordResult = await AuthenticationService.ResetPasswordAsync(entity.Id, password);
+                if (!passwordResult.IsSuccess)
+                {
+                    await NotificationService.ShowErrorAsync($"員工建立成功，但密碼設定失敗：{passwordResult.ErrorMessage}");
+                }
+                else
+                {
+                    Console.WriteLine($"[AfterSaveEmployee] 密碼設定成功");
+                }
+            }
             
-            if (Id.HasValue)
-            {
-                // 調試：記錄更新前的狀態
-                Console.WriteLine($"[SaveEmployee] 準備更新員工，當前狀態: Status={entity.Status}, IsLocked={entity.IsLocked}");
-                
-                // 更新現有員工 - 檢查帳號重複（排除自己）
-                try
-                {
-                    var usernameExistsResult = await EmployeeService.IsUsernameExistsAsync(entity.Username, entity.Id);
-                    
-                    if (!usernameExistsResult.IsSuccess)
-                    {
-                        await NotificationService.ShowErrorAsync($"檢查帳號時發生錯誤：{usernameExistsResult.ErrorMessage}");
-                        return false;
-                    }
-                    
-                    if (usernameExistsResult.Data == true)
-                    {
-                        await NotificationService.ShowErrorAsync($"帳號 '{entity.Username}' 已經被其他員工使用，請選擇其他帳號名稱");
-                        return false;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    await NotificationService.ShowErrorAsync($"檢查帳號時發生異常：{ex.Message}");
-                    return false;
-                }
-                
-                // 調試：記錄即將送到服務的實體狀態
-                Console.WriteLine($"[SaveEmployee] 即將呼叫 EmployeeService.UpdateAsync，實體狀態: ID={entity.Id}, Status={entity.Status}, IsLocked={entity.IsLocked}, FailedLoginAttempts={entity.FailedLoginAttempts}");
-                
-                result = await EmployeeService.UpdateAsync(entity);
-                
-                // 調試：記錄更新結果
-                Console.WriteLine($"[SaveEmployee] EmployeeService.UpdateAsync 結果: IsSuccess={result.IsSuccess}, ErrorMessage={result.ErrorMessage}");
-                if (result.Data != null)
-                {
-                    Console.WriteLine($"[SaveEmployee] 更新後的實體狀態: ID={result.Data.Id}, Status={result.Data.Status}, IsLocked={result.Data.IsLocked}, FailedLoginAttempts={result.Data.FailedLoginAttempts}");
-                }
-                
-                if (result.IsSuccess)
-                {
-                    // 調試：記錄聯絡方式和地址更新
-                    Console.WriteLine($"[SaveEmployee] 開始更新聯絡方式 ({employeeContacts.Count} 筆) 和地址 ({employeeAddresses.Count} 筆)");
-                    
-                    // 更新聯絡方式和地址資料
-                    await EmployeeService.UpdateEmployeeContactsAsync(entity.Id, employeeContacts);
-                    await EmployeeService.UpdateEmployeeAddressesAsync(entity.Id, employeeAddresses);
-                    
-                    Console.WriteLine($"[SaveEmployee] 聯絡方式和地址更新完成");
-                }
-            }
-            else
-            {
-                // 新增員工
-                result = await EmployeeService.CreateAsync(entity);
-                if (result.IsSuccess && result.Data != null)
-                {
-                    // 設定密碼 - 加強錯誤檢查
-                    if (!string.IsNullOrWhiteSpace(password))
-                    {
-                        var passwordResult = await AuthenticationService.ResetPasswordAsync(result.Data.Id, password);
-                        if (!passwordResult.IsSuccess)
-                        {
-                            await NotificationService.ShowErrorAsync($"員工建立成功，但密碼設定失敗：{passwordResult.ErrorMessage}");
-                            // 仍然繼續處理聯絡方式和地址，因為員工已經建立成功
-                        }
-                        else
-                        {
-                            await NotificationService.ShowInfoAsync("密碼設定成功");
-                        }
-                    }
-                    
-                    // 更新聯絡方式的員工ID
-                    foreach (var contact in employeeContacts)
-                    {
-                        contact.EmployeeId = result.Data.Id;
-                    }
-                    
-                    // 更新地址的員工ID
-                    foreach (var address in employeeAddresses)
-                    {
-                        address.EmployeeId = result.Data.Id;
-                    }
-                    
-                    // 儲存聯絡方式和地址
-                    await EmployeeService.UpdateEmployeeContactsAsync(result.Data.Id, employeeContacts);
-                    await EmployeeService.UpdateEmployeeAddressesAsync(result.Data.Id, employeeAddresses);
-                }
-            }
-
-            // 調試：記錄最終結果
-            Console.WriteLine($"[SaveEmployee] 最終儲存結果: IsSuccess={result.IsSuccess}");
-            
-            // 讓 GenericEditPageComponent 處理通用的成功/失敗訊息
-            return result.IsSuccess;
+            Console.WriteLine($"[AfterSaveEmployee] 員工後續作業完成");
         }
         catch (Exception ex)
         {
-            // 調試：記錄異常
-            Console.WriteLine($"[SaveEmployee] 發生異常: {ex.Message}");
-            Console.WriteLine($"[SaveEmployee] 異常堆疊: {ex.StackTrace}");
-            
-            // 檢查是否為重複帳號錯誤
-            if (ex.Message.Contains("duplicate key") && ex.Message.Contains("IX_Employees_Username"))
-            {
-                await NotificationService.ShowErrorAsync("此帳號已經被其他員工使用，請選擇其他帳號名稱");
-                return false;
-            }
-            
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex, 
-                nameof(SaveEmployee), 
-                GetType(),
-                additionalData: new { 
-                    PageName = "EmployeeEdit",
-                    Action = "SaveEmployee",
-                    EmployeeId = entity.Id,
-                    IsNewEmployee = !Id.HasValue,
-                    Username = entity.Username,
-                    Password = !string.IsNullOrEmpty(password) ? "***" : "空值"
-                });
-            
-            return false;
+            Console.WriteLine($"[AfterSaveEmployee] 發生異常: {ex.Message}");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(AfterSaveEmployee), GetType(),
+                additionalData: new { EmployeeId = entity.Id, HasContacts = employeeContacts.Any(), HasAddresses = employeeAddresses.Any() });
         }
     }
 
@@ -921,40 +789,40 @@
             
             if (resetResult.IsSuccess)
             {
-                Console.WriteLine($"[ConfirmPasswordReset] 密碼重設成功，準備更新員工狀態");
-                Console.WriteLine($"[ConfirmPasswordReset] 重設前：FailedLoginAttempts={employee.FailedLoginAttempts}, IsLocked={employee.IsLocked}");
+                Console.WriteLine($"[ConfirmPasswordReset] 密碼重設成功");
                 
-                // 重設登入失敗次數和帳號鎖定狀態
+                // 重設登入失敗次數和帳號鎖定狀態（但不更新到資料庫，避免覆蓋密碼）
                 employee.FailedLoginAttempts = 0;
                 employee.IsLocked = false;
                 
-                Console.WriteLine($"[ConfirmPasswordReset] 重設後：FailedLoginAttempts={employee.FailedLoginAttempts}, IsLocked={employee.IsLocked}");
+                Console.WriteLine($"[ConfirmPasswordReset] 重設後狀態：FailedLoginAttempts={employee.FailedLoginAttempts}, IsLocked={employee.IsLocked}");
                 
-                // 更新員工資料以儲存狀態變更
-                Console.WriteLine($"[ConfirmPasswordReset] 準備呼叫 EmployeeService.UpdateAsync");
-                var updateResult = await EmployeeService.UpdateAsync(employee);
-                Console.WriteLine($"[ConfirmPasswordReset] EmployeeService.UpdateAsync 結果: IsSuccess={updateResult.IsSuccess}");
-                
-                if (updateResult.IsSuccess)
+                // 重新載入員工資料以確保密碼已更新，並保持狀態重設
+                Console.WriteLine($"[ConfirmPasswordReset] 重新載入員工資料");
+                var updatedEmployee = await EmployeeService.GetByIdAsync(employee.Id);
+                if (updatedEmployee != null)
                 {
-                    Console.WriteLine($"[ConfirmPasswordReset] 員工狀態更新成功");
+                    // 保持 UI 中的狀態重設，但使用資料庫中的最新資料（包含新密碼）
+                    updatedEmployee.FailedLoginAttempts = 0;
+                    updatedEmployee.IsLocked = false;
                     
-                    // 強制重新載入員工資料以確保密碼已更新
-                    Console.WriteLine($"[ConfirmPasswordReset] 重新載入員工資料");
-                    var updatedEmployee = await EmployeeService.GetByIdAsync(employee.Id);
-                    if (updatedEmployee != null)
+                    // 更新員工資料以儲存狀態變更（此時員工對象已包含正確的密碼雜湊）
+                    var statusUpdateResult = await EmployeeService.UpdateAsync(updatedEmployee);
+                    if (statusUpdateResult.IsSuccess)
                     {
                         employee = updatedEmployee;
-                        Console.WriteLine($"[ConfirmPasswordReset] 重新載入完成：FailedLoginAttempts={employee.FailedLoginAttempts}, IsLocked={employee.IsLocked}");
+                        Console.WriteLine($"[ConfirmPasswordReset] 員工狀態更新成功：FailedLoginAttempts={employee.FailedLoginAttempts}, IsLocked={employee.IsLocked}");
                     }
                     else
                     {
-                        Console.WriteLine($"[ConfirmPasswordReset] 重新載入失敗：找不到員工資料");
+                        Console.WriteLine($"[ConfirmPasswordReset] 員工狀態更新失敗：{statusUpdateResult.ErrorMessage}");
+                        // 即使狀態更新失敗，密碼已經重設成功，所以仍使用更新後的員工資料
+                        employee = updatedEmployee;
                     }
                 }
                 else
                 {
-                    Console.WriteLine($"[ConfirmPasswordReset] 員工狀態更新失敗：{updateResult.ErrorMessage}");
+                    Console.WriteLine($"[ConfirmPasswordReset] 重新載入失敗：找不到員工資料");
                 }
                 
                 // 關閉對話框

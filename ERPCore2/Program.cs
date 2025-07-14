@@ -4,7 +4,7 @@ using ERPCore2.Data.Context;
 using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using ERPCore2.Services.Auth;
+using ERPCore2.Services;
 using Microsoft.AspNetCore.Authorization;
 
 // 檢查命令列參數
@@ -138,9 +138,9 @@ builder.Services.AddScoped<ERPCore2.Services.IUpdateService, ERPCore2.Services.U
 builder.Services.AddCascadingAuthenticationState();
 
 // 註冊自定義認證狀態提供者
-builder.Services.AddScoped<ERPCore2.Services.Auth.CustomRevalidatingServerAuthenticationStateProvider>();
+builder.Services.AddScoped<CustomRevalidatingServerAuthenticationStateProvider>();
 builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider>(provider => 
-    provider.GetRequiredService<ERPCore2.Services.Auth.CustomRevalidatingServerAuthenticationStateProvider>());
+    provider.GetRequiredService<CustomRevalidatingServerAuthenticationStateProvider>());
 
 var app = builder.Build();
 

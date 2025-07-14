@@ -3,7 +3,7 @@ using System.Security.Claims;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
 
-namespace ERPCore2.Services.Auth
+namespace ERPCore2.Services
 {
     /// <summary>
     /// 權限檢查中間件

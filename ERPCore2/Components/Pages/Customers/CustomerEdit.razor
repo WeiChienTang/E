@@ -3,7 +3,6 @@
 @attribute [Authorize]
 @using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Components.Shared.Auth
-@using ERPCore2.Services.Auth
 @inject ICustomerService CustomerService
 @inject ICustomerAddressService CustomerAddressService
 @inject ICustomerContactService CustomerContactService
@@ -12,7 +11,6 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @using ERPCore2.Components.Shared.SubCollections
-@using ERPCore2.Services.Notifications
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯客戶" : "新增客戶")</PageTitle>

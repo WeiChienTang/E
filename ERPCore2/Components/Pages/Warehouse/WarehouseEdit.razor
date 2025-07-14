@@ -3,12 +3,13 @@
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @inject IWarehouseService WarehouseService
+@inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@inject INotificationService NotificationService
-@using ERPCore2.Services.Notifications
+
 @using ERPCore2.Data.Entities
 @using ERPCore2.Helpers
+@using ERPCore2.Services
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯倉庫" : "新增倉庫")</PageTitle>

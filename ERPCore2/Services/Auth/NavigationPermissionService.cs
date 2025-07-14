@@ -3,7 +3,7 @@ using ERPCore2.Helpers;
 using Microsoft.AspNetCore.Components.Authorization;
 using System.Security.Claims;
 
-namespace ERPCore2.Services.Auth
+namespace ERPCore2.Services
 {
     /// <summary>
     /// 導航權限檢查服務

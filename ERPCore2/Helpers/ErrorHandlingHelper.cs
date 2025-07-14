@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
 using ERPCore2.Services;
-using ERPCore2.Services.Notifications;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ERPCore2.Helpers
