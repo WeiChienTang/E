@@ -177,27 +177,15 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(password))
                     return ServiceResult<bool>.Failure("密碼不能為空");
 
-                if (password.Length < 8)
-                    return ServiceResult<bool>.Failure("密碼長度不能少於8個字元");
+                if (password.Length < 4)
+                    return ServiceResult<bool>.Failure("密碼長度不能少於4個字元");
 
                 if (password.Length > 128)
                     return ServiceResult<bool>.Failure("密碼長度不能超過128個字元");
 
-                // 檢查是否包含大寫字母
-                if (!Regex.IsMatch(password, @"[A-Z]"))
-                    return ServiceResult<bool>.Failure("密碼必須包含至少一個大寫字母");
-
-                // 檢查是否包含小寫字母
-                if (!Regex.IsMatch(password, @"[a-z]"))
-                    return ServiceResult<bool>.Failure("密碼必須包含至少一個小寫字母");
-
-                // 檢查是否包含數字
-                if (!Regex.IsMatch(password, @"[0-9]"))
-                    return ServiceResult<bool>.Failure("密碼必須包含至少一個數字");
-
-                // 檢查是否包含特殊字元
-                if (!Regex.IsMatch(password, @"[!@#$%^&*()_+\-=\[\]{};':""\\|,.<>\/?]"))
-                    return ServiceResult<bool>.Failure("密碼必須包含至少一個特殊字元");
+                // 檢查是否只包含有效字元（數字、大寫字母、小寫字母、特殊字元）
+                if (!Regex.IsMatch(password, @"^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':""\\|,.<>\/?]+$"))
+                    return ServiceResult<bool>.Failure("密碼只能包含英文字母、數字和特殊字元");
 
                 return ServiceResult<bool>.Success(true);
             }

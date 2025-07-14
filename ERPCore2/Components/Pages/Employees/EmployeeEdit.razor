@@ -58,7 +58,7 @@
                                 <div class="mb-3">
                                     <label for="password" class="form-label">密碼 <span class="text-danger">*</span></label>
                                     <input type="password" @bind="password" class="form-control" id="password" />
-                                    <div class="form-text">密碼長度至少 8 個字元，需包含大小寫字母和數字</div>
+                                    <div class="form-text">密碼長度至少 4 個字元，可包含數字、文字或符號</div>
                                     @if (!string.IsNullOrEmpty(passwordValidationMessage))
                                     {
                                         <div class="text-danger small">@passwordValidationMessage</div>
@@ -170,7 +170,7 @@
                                     <label for="newPassword" class="form-label">新密碼 <span class="text-danger">*</span></label>
                                     <input type="password" @bind="newPassword" class="form-control" id="newPassword" 
                                         placeholder="請輸入新密碼" />
-                                    <div class="form-text">密碼長度至少 8 個字元，建議包含大小寫字母、數字和特殊字符</div>
+                                    <div class="form-text">密碼長度至少 4 個字元，可包含數字、文字或符號</div>
                                     @if (!string.IsNullOrEmpty(newPasswordValidationMessage))
                                     {
                                         <div class="text-danger small mt-1">@newPasswordValidationMessage</div>
@@ -452,7 +452,7 @@
                 PropertyName = nameof(Employee.Username),
                 Label = "帳號",
                 FieldType = FormFieldType.Text,
-                Placeholder = "請輸入帳號",
+                Placeholder = "請輸入帳號（用於登入系統）",
                 IsRequired = true,
                 ContainerCssClass = "col-md-6"
             },
@@ -642,13 +642,43 @@
                 {
                     return false;
                 }
+                
+                // 檢查帳號是否已存在
+                var usernameExistsResult = await EmployeeService.IsUsernameExistsAsync(entity.Username);
+                if (usernameExistsResult.IsSuccess && usernameExistsResult.Data == true)
+                {
+                    await NotificationService.ShowErrorAsync($"帳號 '{entity.Username}' 已經被其他員工使用，請選擇其他帳號名稱");
+                    return false;
+                }
             }
 
             ServiceResult<Employee> result;
             
             if (Id.HasValue)
             {
-                // 更新現有員工
+                // 更新現有員工 - 檢查帳號重複（排除自己）
+                try
+                {
+                    var usernameExistsResult = await EmployeeService.IsUsernameExistsAsync(entity.Username, entity.Id);
+                    
+                    if (!usernameExistsResult.IsSuccess)
+                    {
+                        await NotificationService.ShowErrorAsync($"檢查帳號時發生錯誤：{usernameExistsResult.ErrorMessage}");
+                        return false;
+                    }
+                    
+                    if (usernameExistsResult.Data == true)
+                    {
+                        await NotificationService.ShowErrorAsync($"帳號 '{entity.Username}' 已經被其他員工使用，請選擇其他帳號名稱");
+                        return false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await NotificationService.ShowErrorAsync($"檢查帳號時發生異常：{ex.Message}");
+                    return false;
+                }
+                
                 result = await EmployeeService.UpdateAsync(entity);
                 if (result.IsSuccess)
                 {
@@ -663,10 +693,19 @@
                 result = await EmployeeService.CreateAsync(entity);
                 if (result.IsSuccess && result.Data != null)
                 {
-                    // 設定密碼
+                    // 設定密碼 - 加強錯誤檢查
                     if (!string.IsNullOrWhiteSpace(password))
                     {
-                        await AuthenticationService.ResetPasswordAsync(result.Data.Id, password);
+                        var passwordResult = await AuthenticationService.ResetPasswordAsync(result.Data.Id, password);
+                        if (!passwordResult.IsSuccess)
+                        {
+                            await NotificationService.ShowErrorAsync($"員工建立成功，但密碼設定失敗：{passwordResult.ErrorMessage}");
+                            // 仍然繼續處理聯絡方式和地址，因為員工已經建立成功
+                        }
+                        else
+                        {
+                            await NotificationService.ShowInfoAsync("密碼設定成功");
+                        }
                     }
                     
                     // 更新聯絡方式的員工ID
@@ -692,6 +731,13 @@
         }
         catch (Exception ex)
         {
+            // 檢查是否為重複帳號錯誤
+            if (ex.Message.Contains("duplicate key") && ex.Message.Contains("IX_Employees_Username"))
+            {
+                await NotificationService.ShowErrorAsync("此帳號已經被其他員工使用，請選擇其他帳號名稱");
+                return false;
+            }
+            
             await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(SaveEmployee), 
@@ -700,7 +746,9 @@
                     PageName = "EmployeeEdit",
                     Action = "SaveEmployee",
                     EmployeeId = entity.Id,
-                    IsNewEmployee = !Id.HasValue
+                    IsNewEmployee = !Id.HasValue,
+                    Username = entity.Username,
+                    Password = !string.IsNullOrEmpty(password) ? "***" : "空值"
                 });
             
             return false;
@@ -718,9 +766,9 @@
             return false;
         }
 
-        if (password.Length < 8)
+        if (password.Length < 4)
         {
-            passwordValidationMessage = "密碼長度至少需要 8 個字元";
+            passwordValidationMessage = "密碼長度至少需要 4 個字元";
             return false;
         }
 
@@ -873,9 +921,9 @@
             return false;
         }
 
-        if (newPassword.Length < 8)
+        if (newPassword.Length < 4)
         {
-            newPasswordValidationMessage = "密碼長度至少需要 8 個字元";
+            newPasswordValidationMessage = "密碼長度至少需要 4 個字元";
             return false;
         }
 
