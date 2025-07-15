@@ -24,14 +24,21 @@
                        IsLoading="@IsLoading"
                        LoadingText="載入中..."
                        ShowDivider="true">
-    <ActionButtons>                          
-        <IndexActionButtonsComponent 
-            AddButtonText="@GetAddButtonText()"
-            AddButtonTitle="@GetAddButtonTitle()"
-            OnAddClick="@HandleAddClick"
-            OnRefreshClick="@RefreshData"
-            IsLoading="@IsLoading"
-            LoadingOnRefresh="true" />
+    <ActionButtons>
+        @if (ShowDefaultActions && CustomActionButtons == null)
+        {
+            <IndexActionButtonsComponent 
+                AddButtonText="@GetAddButtonText()"
+                AddButtonTitle="@GetAddButtonTitle()"
+                OnAddClick="@HandleAddClick"
+                OnRefreshClick="@RefreshData"
+                IsLoading="@IsLoading"
+                LoadingOnRefresh="true" />
+        }
+        else if (CustomActionButtons != null)
+        {
+            @CustomActionButtons
+        }
     </ActionButtons>
 </GenericHeaderComponent>
 
@@ -106,6 +113,10 @@
     [Parameter] public string SearchSectionTitle { get; set; } = "";
     [Parameter] public string EmptyMessage { get; set; } = "";
     [Parameter] public string ActionsHeader { get; set; } = "操作";
+    
+    // 動作按鈕顯示控制
+    [Parameter] public bool ShowDefaultActions { get; set; } = true;
+    [Parameter] public RenderFragment? CustomActionButtons { get; set; }
     
     // 麵包屑導航
     [Parameter] public List<GenericHeaderComponent.BreadcrumbItem> BreadcrumbItems { get; set; } = new();
