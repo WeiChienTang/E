@@ -5,6 +5,7 @@
 @using ERPCore2.Components.Shared.Tables
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Components.Shared.Cards
 @using ERPCore2.Data.Enums
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
@@ -33,6 +34,17 @@
             LoadingOnRefresh="true" />
     </ActionButtons>
 </GenericHeaderComponent>
+
+@* 統計卡片區域 - 條件顯示 *@
+@if (ShowStatisticsCards && StatisticsCardConfigs != null && StatisticsCardConfigs.Any())
+{
+    <div class="row mb-4">
+        <div class="col-12">
+            <GenericStatisticsCards CardConfigs="@StatisticsCardConfigs" 
+                                   Statistics="@StatisticsData" />
+        </div>
+    </div>
+}
 
 @* 主要內容區域 *@
 <div class="row">
@@ -97,6 +109,12 @@
     
     // 麵包屑導航
     [Parameter] public List<GenericHeaderComponent.BreadcrumbItem> BreadcrumbItems { get; set; } = new();
+    
+    // 統計卡片相關參數
+    [Parameter] public bool ShowStatisticsCards { get; set; } = false;
+    [Parameter] public List<GenericStatisticsCards.StatisticsCardConfig>? StatisticsCardConfigs { get; set; }
+    [Parameter] public Dictionary<string, object> StatisticsData { get; set; } = new();
+    [Parameter] public Func<Task<Dictionary<string, object>>>? StatisticsDataLoader { get; set; }
     
     // 導航URL設定 - 新增的參數
     [Parameter] public string EntityBasePath { get; set; } = "";
@@ -406,6 +424,12 @@
                 await InitializeBasicData();
             }
             
+            // 載入統計資料
+            if (ShowStatisticsCards && StatisticsDataLoader != null)
+            {
+                StatisticsData = await StatisticsDataLoader();
+            }
+            
             // 載入主要資料
             await LoadDataAsync();
         }
@@ -509,6 +533,12 @@
     
     private async Task RefreshData()
     {
+        // 重新載入統計資料
+        if (ShowStatisticsCards && StatisticsDataLoader != null)
+        {
+            StatisticsData = await StatisticsDataLoader();
+        }
+        
         await LoadDataAsync();
         StateHasChanged();
     }
