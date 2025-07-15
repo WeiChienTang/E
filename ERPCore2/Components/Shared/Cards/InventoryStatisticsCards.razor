@@ -1,39 +1,8 @@
-@* 庫存統計卡片組元件 *@
+@* 庫存統計卡片組元件 - 使用通用組件重構版本 *@
+@using ERPCore2.Components.Shared.Cards
 
-<StatisticsCardContainer>
-    <StatisticsCard Title="總商品數量"
-                   Value="@(Convert.ToDecimal(Statistics.GetValueOrDefault("TotalProducts", 0)))"
-                   IconClass="fas fa-boxes"
-                   BorderColor="primary"
-                   TextColor="primary"
-                   IsClickable="@OnTotalProductsClick.HasDelegate"
-                   OnClick="OnTotalProductsClick" />
-
-    <StatisticsCard Title="總庫存價值"
-                   Value="@(Convert.ToDecimal(Statistics.GetValueOrDefault("TotalInventoryValue", 0m)))"
-                   IconClass="fas fa-dollar-sign"
-                   BorderColor="success"
-                   TextColor="success"
-                   IsCurrency="true"
-                   IsClickable="@OnTotalValueClick.HasDelegate"
-                   OnClick="OnTotalValueClick" />
-
-    <StatisticsCard Title="低庫存警戒"
-                   Value="@(Convert.ToDecimal(Statistics.GetValueOrDefault("LowStockCount", 0)))"
-                   IconClass="fas fa-exclamation-triangle"
-                   BorderColor="warning"
-                   TextColor="warning"
-                   IsClickable="@OnLowStockClick.HasDelegate"
-                   OnClick="OnLowStockClick" />
-
-    <StatisticsCard Title="零庫存商品"
-                   Value="@(Convert.ToDecimal(Statistics.GetValueOrDefault("ZeroStockCount", 0)))"
-                   IconClass="fas fa-ban"
-                   BorderColor="danger"
-                   TextColor="danger"
-                   IsClickable="@OnZeroStockClick.HasDelegate"
-                   OnClick="OnZeroStockClick" />
-</StatisticsCardContainer>
+<GenericStatisticsCards CardConfigs="@cardConfigs" 
+                       Statistics="@Statistics" />
 
 @code {
     /// <summary>
@@ -65,4 +34,17 @@
     /// </summary>
     [Parameter] 
     public EventCallback OnZeroStockClick { get; set; }
+
+    private List<GenericStatisticsCards.StatisticsCardConfig> cardConfigs = new();
+
+    protected override void OnParametersSet()
+    {
+        // 使用預設配置，並傳入點擊事件
+        cardConfigs = StatisticsCardConfigProvider.InventoryConfigs(
+            onTotalProductsClick: OnTotalProductsClick,
+            onTotalValueClick: OnTotalValueClick,
+            onLowStockClick: OnLowStockClick,
+            onZeroStockClick: OnZeroStockClick
+        );
+    }
 }

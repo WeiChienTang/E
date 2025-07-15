@@ -1,0 +1,99 @@
+@* 通用統計卡片套裝組件 - 可配置的統計卡片組合 *@
+@using ERPCore2.Components.Shared.Cards
+
+<StatisticsCardContainer>
+    @foreach (var cardConfig in CardConfigs)
+    {
+        <StatisticsCard Title="@cardConfig.Title"
+                       Value="@GetCardValue(cardConfig)"
+                       IconClass="@cardConfig.IconClass"
+                       BorderColor="@cardConfig.BorderColor"
+                       TextColor="@cardConfig.TextColor"
+                       IsCurrency="@cardConfig.IsCurrency"
+                       IsClickable="@(cardConfig.OnClick.HasDelegate)"
+                       OnClick="@cardConfig.OnClick" />
+    }
+</StatisticsCardContainer>
+
+@code {
+    /// <summary>
+    /// 統計卡片配置清單
+    /// </summary>
+    [Parameter, EditorRequired]
+    public List<StatisticsCardConfig> CardConfigs { get; set; } = new();
+
+    /// <summary>
+    /// 統計資料來源
+    /// </summary>
+    [Parameter, EditorRequired]
+    public Dictionary<string, object> Statistics { get; set; } = new();
+
+    /// <summary>
+    /// 取得卡片顯示值
+    /// </summary>
+    private decimal GetCardValue(StatisticsCardConfig config)
+    {
+        if (config.ValueCalculator != null)
+        {
+            return config.ValueCalculator(Statistics);
+        }
+
+        if (!string.IsNullOrEmpty(config.DataKey))
+        {
+            return Convert.ToDecimal(Statistics.GetValueOrDefault(config.DataKey, config.DefaultValue));
+        }
+
+        return config.DefaultValue;
+    }
+
+    /// <summary>
+    /// 統計卡片配置類別
+    /// </summary>
+    public class StatisticsCardConfig
+    {
+        /// <summary>
+        /// 卡片標題
+        /// </summary>
+        public string Title { get; set; } = "";
+
+        /// <summary>
+        /// 資料索引鍵 (用於從 Statistics 字典取值)
+        /// </summary>
+        public string? DataKey { get; set; }
+
+        /// <summary>
+        /// 自訂值計算器 (優先於 DataKey)
+        /// </summary>
+        public Func<Dictionary<string, object>, decimal>? ValueCalculator { get; set; }
+
+        /// <summary>
+        /// 預設值 (當找不到資料時使用)
+        /// </summary>
+        public decimal DefaultValue { get; set; } = 0;
+
+        /// <summary>
+        /// 圖示 CSS 類別
+        /// </summary>
+        public string IconClass { get; set; } = "fas fa-chart-bar";
+
+        /// <summary>
+        /// 邊框顏色
+        /// </summary>
+        public string BorderColor { get; set; } = "primary";
+
+        /// <summary>
+        /// 文字顏色
+        /// </summary>
+        public string TextColor { get; set; } = "primary";
+
+        /// <summary>
+        /// 是否為貨幣格式
+        /// </summary>
+        public bool IsCurrency { get; set; } = false;
+
+        /// <summary>
+        /// 點擊事件
+        /// </summary>
+        public EventCallback OnClick { get; set; }
+    }
+}

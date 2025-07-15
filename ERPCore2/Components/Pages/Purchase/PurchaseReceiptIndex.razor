@@ -69,10 +69,9 @@
                         </div>
                         <div class="card-body">
                             <GenericSearchFilterComponent TModel="PurchaseReceiptSearchModel"
-                                SearchModel="@searchModel"
+                                FilterModel="@filterModel"
                                 FilterDefinitions="@filterDefinitions"
-                                OnFilterChanged="@HandleFilterChanged"
-                                ContainerCssClass="@filterContainerCssClass" />
+                                OnFilterChanged="@HandleFilterChanged" />
                         </div>
                     </div>
                 </div>
@@ -260,8 +259,8 @@
 
     // 篩選相關
     private PurchaseReceiptSearchModel searchModel = new();
+    private SearchFilterModel filterModel = new();
     private List<SearchFilterDefinition> filterDefinitions = new();
-    private string filterContainerCssClass = "row g-3";
 
     // 表格相關
     private List<TableColumnDefinition> columnDefinitions = new();
@@ -396,8 +395,6 @@
                     FilterType = SearchFilterType.DateRange
                 }
             };
-
-            SetFilterContainerCssClasses();
         }
         catch (Exception ex)
         {
@@ -547,12 +544,11 @@
             };
 
             // 處理日期範圍
-            var dateRange = filterModel.GetFilterValue("ReceiptDateRange");
+            var dateRange = filterModel.GetFilterValue("ReceiptDateRange") as DateRange;
             if (dateRange != null)
             {
-                // 這裡需要根據實際的日期範圍格式進行處理
-                searchModel.ReceiptDateFrom = null;
-                searchModel.ReceiptDateTo = null;
+                searchModel.ReceiptDateFrom = dateRange.StartDate;
+                searchModel.ReceiptDateTo = dateRange.EndDate;
             }
             
             currentPage = 1; // 重設為第一頁
@@ -651,11 +647,6 @@
                 additionalData: "更新分頁失敗"
             );
         }
-    }
-
-    private void SetFilterContainerCssClasses()
-    {
-        filterContainerCssClass = "row g-3";
     }
 
     // 事件處理
