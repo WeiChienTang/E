@@ -78,6 +78,7 @@ namespace ERPCore2.Data
                 new ProductSeeder(),
                 new InventorySeeder(),
                 new InventoryStockSeeder(), 
+                // PurchaseSeeder 已移除 - 改為手動新增測試資料
                 new WeatherSeeder(),
                 new ErrorLogSeeder()
             };

@@ -44,6 +44,12 @@ namespace ERPCore2.Data.Context
       public DbSet<UnitConversion> UnitConversions { get; set; }
       public DbSet<InventoryTransactionType> InventoryTransactionTypes { get; set; }
       
+      // Purchase Management
+      public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
+      public DbSet<PurchaseOrderDetail> PurchaseOrderDetails { get; set; }
+      public DbSet<PurchaseReceipt> PurchaseReceipts { get; set; }
+      public DbSet<PurchaseReceiptDetail> PurchaseReceiptDetails { get; set; }
+      
       // BOM Foundations
       public DbSet<Material> Materials { get; set; }
       public DbSet<Weather> Weathers { get; set; }
@@ -354,6 +360,91 @@ namespace ERPCore2.Data.Context
                         entity.HasOne(std => std.WarehouseLocation)
                         .WithMany()
                         .HasForeignKey(std => std.WarehouseLocationId)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  // 採購相關
+                  modelBuilder.Entity<PurchaseOrder>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        
+                        // 關聯設定
+                        entity.HasOne(po => po.Supplier)
+                        .WithMany()
+                        .HasForeignKey(po => po.SupplierId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(po => po.Warehouse)
+                        .WithMany()
+                        .HasForeignKey(po => po.WarehouseId)
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasOne(po => po.ApprovedByUser)
+                        .WithMany()
+                        .HasForeignKey(po => po.ApprovedBy)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  modelBuilder.Entity<PurchaseOrderDetail>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        
+                        // 關聯設定
+                        entity.HasOne(pod => pod.PurchaseOrder)
+                        .WithMany(po => po.PurchaseOrderDetails)
+                        .HasForeignKey(pod => pod.PurchaseOrderId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                        entity.HasOne(pod => pod.Product)
+                        .WithMany()
+                        .HasForeignKey(pod => pod.ProductId)
+                        .OnDelete(DeleteBehavior.Restrict);
+                  });
+
+                  modelBuilder.Entity<PurchaseReceipt>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        
+                        // 關聯設定
+                        entity.HasOne(pr => pr.PurchaseOrder)
+                        .WithMany(po => po.PurchaseReceipts)
+                        .HasForeignKey(pr => pr.PurchaseOrderId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(pr => pr.Warehouse)
+                        .WithMany()
+                        .HasForeignKey(pr => pr.WarehouseId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(pr => pr.ConfirmedByUser)
+                        .WithMany()
+                        .HasForeignKey(pr => pr.ConfirmedBy)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  modelBuilder.Entity<PurchaseReceiptDetail>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        
+                        // 關聯設定
+                        entity.HasOne(prd => prd.PurchaseReceipt)
+                        .WithMany(pr => pr.PurchaseReceiptDetails)
+                        .HasForeignKey(prd => prd.PurchaseReceiptId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                        entity.HasOne(prd => prd.PurchaseOrderDetail)
+                        .WithMany(pod => pod.PurchaseReceiptDetails)
+                        .HasForeignKey(prd => prd.PurchaseOrderDetailId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(prd => prd.Product)
+                        .WithMany()
+                        .HasForeignKey(prd => prd.ProductId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(prd => prd.WarehouseLocation)
+                        .WithMany()
+                        .HasForeignKey(prd => prd.WarehouseLocationId)
                         .OnDelete(DeleteBehavior.SetNull);
                   });
             }

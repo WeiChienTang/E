@@ -1,0 +1,675 @@
+@page "/purchase/reports"
+@using Microsoft.AspNetCore.Authorization
+@using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.Tables
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Auth
+@using ERPCore2.Services
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Helpers
+@using ERPCore2.Models
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+@attribute [Authorize]
+@inject IPurchaseOrderService PurchaseOrderService
+@inject IPurchaseReceiptService PurchaseReceiptService
+@inject ISupplierService SupplierService
+@inject IWarehouseService WarehouseService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>採購報表</PageTitle>
+
+<PagePermissionCheck RequiredPermission="Purchase.Report">
+    <GenericHeaderComponent 
+        Title="採購報表" 
+        Subtitle="採購統計分析與報表檢視"
+        HeadingLevel="h1"
+        BreadcrumbItems="@breadcrumbItems"
+        ShowDivider="true"
+        IsLoading="@isLoading"
+        LoadingText="載入採購報表資料中...">
+        
+        <ActionButtons>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-success" @onclick="ExportMonthlyReport">
+                    <i class="fas fa-file-excel me-2"></i>匯出月報表
+                </button>
+                <button type="button" class="btn btn-outline-info" @onclick="ExportSupplierReport">
+                    <i class="fas fa-file-pdf me-2"></i>供應商報表
+                </button>
+                <button type="button" class="btn btn-outline-primary" @onclick="RefreshData">
+                    <i class="fas fa-sync me-2"></i>重新整理
+                </button>
+            </div>
+        </ActionButtons>
+    </GenericHeaderComponent>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">載入中...</span>
+            </div>
+            <p class="mt-3 text-muted">載入報表資料中...</p>
+        </div>
+    }
+    else
+    {
+        <div class="container-fluid">
+            <!-- 報表篩選器 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">
+                                <i class="fas fa-chart-bar me-2"></i>報表篩選條件
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">報表類型</label>
+                                    <select class="form-select" @bind="selectedReportType">
+                                        <option value="Monthly">月報表</option>
+                                        <option value="Supplier">供應商報表</option>
+                                        <option value="Product">產品採購報表</option>
+                                        <option value="Warehouse">倉庫進貨報表</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">起始日期</label>
+                                    <input type="date" class="form-control" @bind="startDate" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">結束日期</label>
+                                    <input type="date" class="form-control" @bind="endDate" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">&nbsp;</label>
+                                    <div>
+                                        <button type="button" class="btn btn-primary" @onclick="GenerateReport">
+                                            <i class="fas fa-chart-line me-2"></i>產生報表
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 統計概要 -->
+            <div class="row mb-4">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        期間採購訂單
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">@totalOrders</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        期間進貨單數
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">@totalReceipts</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-box fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        採購總金額
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">@FormatCurrency(totalPurchaseAmount)</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        進貨總金額
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">@FormatCurrency(totalReceiptAmount)</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-coins fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 圖表區域 -->
+            <div class="row mb-4">
+                <div class="col-lg-6">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">月度採購趨勢</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-area">
+                                <canvas id="monthlyChart" style="height: 300px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">供應商採購分佈</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-pie">
+                                <canvas id="supplierChart" style="height: 300px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 詳細報表 -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                            <h6 class="m-0 font-weight-bold text-primary">
+                                <i class="fas fa-table me-2"></i>@GetReportTitle() (共 @reportData.Count 筆)
+                            </h6>
+                            <div class="d-flex align-items-center">
+                                <button type="button" class="btn btn-sm btn-outline-success" @onclick="ExportCurrentReport">
+                                    <i class="fas fa-download me-1"></i>匯出
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            @if (selectedReportType == "Monthly")
+                            {
+                                <GenericTableComponent TItem="MonthlyPurchaseReport"
+                                                      Items="@monthlyReportData"
+                                                      ColumnDefinitions="@monthlyColumnDefinitions"
+                                                      ShowActions="false"
+                                                      IsStriped="true"
+                                                      IsHoverable="true"
+                                                      EmptyMessage="沒有找到報表資料" />
+                            }
+                            else if (selectedReportType == "Supplier")
+                            {
+                                <GenericTableComponent TItem="SupplierPurchaseReport"
+                                                      Items="@supplierReportData"
+                                                      ColumnDefinitions="@supplierColumnDefinitions"
+                                                      ShowActions="false"
+                                                      IsStriped="true"
+                                                      IsHoverable="true"
+                                                      EmptyMessage="沒有找到報表資料" />
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</PagePermissionCheck>
+
+@code {
+    // 報表設定
+    private string selectedReportType = "Monthly";
+    private DateTime startDate = DateTime.Now.AddMonths(-3);
+    private DateTime endDate = DateTime.Now;
+
+    // 統計資料
+    private int totalOrders = 0;
+    private int totalReceipts = 0;
+    private decimal totalPurchaseAmount = 0;
+    private decimal totalReceiptAmount = 0;
+
+    // 報表資料
+    private List<object> reportData = new();
+    private List<MonthlyPurchaseReport> monthlyReportData = new();
+    private List<SupplierPurchaseReport> supplierReportData = new();
+    private List<TableColumnDefinition> monthlyColumnDefinitions = new();
+    private List<TableColumnDefinition> supplierColumnDefinitions = new();
+
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    // 狀態管理
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 設定麵包屑
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new() { Text = "首頁", Href = "/" },
+                new() { Text = "採購管理", Href = "/purchase" },
+                new() { Text = "採購報表", Href = "/purchase/reports" }
+            };
+
+            // 初始化表格欄位
+            InitializeColumns();
+            
+            // 載入預設報表
+            await GenerateReport();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                "頁面初始化", 
+                GetType(), 
+                Navigation
+            );
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void InitializeColumns()
+    {
+        try
+        {
+            // 月報表欄位
+            monthlyColumnDefinitions = new List<TableColumnDefinition>
+            {
+                new TableColumnDefinition
+                {
+                    Title = "年月",
+                    PropertyName = "YearMonth",
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 100px;"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "採購訂單數",
+                    PropertyName = "OrderCount",
+                    DataType = ColumnDataType.Number,
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "進貨單數",
+                    PropertyName = "ReceiptCount",
+                    DataType = ColumnDataType.Number,
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "採購金額",
+                    PropertyName = "PurchaseAmount",
+                    DataType = ColumnDataType.Currency,
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "進貨金額",
+                    PropertyName = "ReceiptAmount",
+                    DataType = ColumnDataType.Currency,
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "完成率",
+                    PropertyName = "CompletionRate",
+                    DataType = ColumnDataType.Number,
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end"
+                }
+            };
+
+            // 供應商報表欄位
+            supplierColumnDefinitions = new List<TableColumnDefinition>
+            {
+                new TableColumnDefinition
+                {
+                    Title = "供應商",
+                    PropertyName = "SupplierName",
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 200px;"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "採購訂單數",
+                    PropertyName = "OrderCount",
+                    DataType = ColumnDataType.Number,
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "進貨單數",
+                    PropertyName = "ReceiptCount",
+                    DataType = ColumnDataType.Number,
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "採購金額",
+                    PropertyName = "PurchaseAmount",
+                    DataType = ColumnDataType.Currency,
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "進貨金額",
+                    PropertyName = "ReceiptAmount",
+                    DataType = ColumnDataType.Currency,
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "平均交期",
+                    PropertyName = "AverageDeliveryDays",
+                    DataType = ColumnDataType.Number,
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end",
+                    Format = "N1"
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeColumns),
+                GetType(),
+                additionalData: "初始化欄位定義失敗"
+            );
+        }
+    }
+
+    private async Task GenerateReport()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // 載入統計資料
+            await LoadStatistics();
+
+            // 根據報表類型載入資料
+            switch (selectedReportType)
+            {
+                case "Monthly":
+                    await LoadMonthlyReport();
+                    break;
+                case "Supplier":
+                    await LoadSupplierReport();
+                    break;
+                // TODO: 實作其他報表類型
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(GenerateReport),
+                GetType()
+            );
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadStatistics()
+    {
+        try
+        {
+            var orders = await PurchaseOrderService.GetByDateRangeAsync(startDate, endDate);
+            var receipts = await PurchaseReceiptService.GetByDateRangeAsync(startDate, endDate);
+
+            totalOrders = orders.Count;
+            totalReceipts = receipts.Count;
+            totalPurchaseAmount = orders.Sum(o => o.TotalAmount);
+            totalReceiptAmount = receipts.Sum(r => r.TotalAmount);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadStatistics),
+                GetType()
+            );
+        }
+    }
+
+    private async Task LoadMonthlyReport()
+    {
+        try
+        {
+            var orders = await PurchaseOrderService.GetByDateRangeAsync(startDate, endDate);
+            var receipts = await PurchaseReceiptService.GetByDateRangeAsync(startDate, endDate);
+
+            var monthlyData = orders
+                .GroupBy(o => new { o.OrderDate.Year, o.OrderDate.Month })
+                .Select(g => new MonthlyPurchaseReport
+                {
+                    YearMonth = $"{g.Key.Year:0000}-{g.Key.Month:00}",
+                    OrderCount = g.Count(),
+                    PurchaseAmount = g.Sum(o => o.TotalAmount),
+                    ReceiptCount = receipts.Count(r => r.ReceiptDate.Year == g.Key.Year && r.ReceiptDate.Month == g.Key.Month),
+                    ReceiptAmount = receipts.Where(r => r.ReceiptDate.Year == g.Key.Year && r.ReceiptDate.Month == g.Key.Month).Sum(r => r.TotalAmount)
+                })
+                .OrderBy(m => m.YearMonth)
+                .ToList();
+
+            // 計算完成率
+            foreach (var item in monthlyData)
+            {
+                item.CompletionRate = item.PurchaseAmount > 0 ? (item.ReceiptAmount / item.PurchaseAmount) : 0;
+            }
+
+            monthlyReportData = monthlyData;
+            reportData = monthlyData.Cast<object>().ToList();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadMonthlyReport),
+                GetType()
+            );
+        }
+    }
+
+    private async Task LoadSupplierReport()
+    {
+        try
+        {
+            var orders = await PurchaseOrderService.GetByDateRangeAsync(startDate, endDate);
+            var receipts = await PurchaseReceiptService.GetByDateRangeAsync(startDate, endDate);
+
+            var supplierData = orders
+                .GroupBy(o => new { o.SupplierId, o.Supplier.CompanyName })
+                .Select(g => new SupplierPurchaseReport
+                {
+                    SupplierId = g.Key.SupplierId,
+                    SupplierName = g.Key.CompanyName,
+                    OrderCount = g.Count(),
+                    PurchaseAmount = g.Sum(o => o.TotalAmount),
+                    ReceiptCount = receipts.Count(r => r.PurchaseOrder.SupplierId == g.Key.SupplierId),
+                    ReceiptAmount = receipts.Where(r => r.PurchaseOrder.SupplierId == g.Key.SupplierId).Sum(r => r.TotalAmount),
+                    AverageDeliveryDays = CalculateAverageDeliveryDays(g.ToList(), receipts.ToList())
+                })
+                .OrderByDescending(s => s.PurchaseAmount)
+                .ToList();
+
+            supplierReportData = supplierData;
+            reportData = supplierData.Cast<object>().ToList();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadSupplierReport),
+                GetType()
+            );
+        }
+    }
+
+    private double CalculateAverageDeliveryDays(List<PurchaseOrder> orders, List<PurchaseReceipt> receipts)
+    {
+        var deliveryDays = orders
+            .Where(o => o.ExpectedDeliveryDate.HasValue)
+            .Select(o => {
+                var receipt = receipts.FirstOrDefault(r => r.PurchaseOrderId == o.Id);
+                if (receipt != null)
+                {
+                    return (receipt.ReceiptDate - o.OrderDate).Days;
+                }
+                return (double?)null;
+            })
+            .Where(d => d.HasValue)
+            .Select(d => d!.Value)
+            .ToList();
+
+        return deliveryDays.Any() ? deliveryDays.Average() : 0;
+    }
+
+    private string GetReportTitle()
+    {
+        return selectedReportType switch
+        {
+            "Monthly" => "月度採購報表",
+            "Supplier" => "供應商採購報表",
+            "Product" => "產品採購報表",
+            "Warehouse" => "倉庫進貨報表",
+            _ => "採購報表"
+        };
+    }
+
+    private async Task RefreshData()
+    {
+        await GenerateReport();
+    }
+
+    private async Task ExportMonthlyReport()
+    {
+        try
+        {
+            // TODO: 實作月報表匯出
+            await JSRuntime.InvokeVoidAsync("alert", "月報表匯出功能開發中...");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ExportMonthlyReport),
+                GetType()
+            );
+        }
+    }
+
+    private async Task ExportSupplierReport()
+    {
+        try
+        {
+            // TODO: 實作供應商報表匯出
+            await JSRuntime.InvokeVoidAsync("alert", "供應商報表匯出功能開發中...");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ExportSupplierReport),
+                GetType()
+            );
+        }
+    }
+
+    private async Task ExportCurrentReport()
+    {
+        try
+        {
+            // TODO: 實作當前報表匯出
+            await JSRuntime.InvokeVoidAsync("alert", "報表匯出功能開發中...");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ExportCurrentReport),
+                GetType()
+            );
+        }
+    }
+
+    // 輔助方法
+    private static string FormatCurrency(decimal amount)
+    {
+        return amount.ToString("C0");
+    }
+
+    // 報表資料模型
+    public class MonthlyPurchaseReport
+    {
+        public string YearMonth { get; set; } = string.Empty;
+        public int OrderCount { get; set; }
+        public int ReceiptCount { get; set; }
+        public decimal PurchaseAmount { get; set; }
+        public decimal ReceiptAmount { get; set; }
+        public decimal CompletionRate { get; set; }
+    }
+
+    public class SupplierPurchaseReport
+    {
+        public int SupplierId { get; set; }
+        public string SupplierName { get; set; } = string.Empty;
+        public int OrderCount { get; set; }
+        public int ReceiptCount { get; set; }
+        public decimal PurchaseAmount { get; set; }
+        public decimal ReceiptAmount { get; set; }
+        public double AverageDeliveryDays { get; set; }
+    }
+}

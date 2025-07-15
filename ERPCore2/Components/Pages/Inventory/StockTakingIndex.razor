@@ -151,6 +151,20 @@
                         </select>
                     </div>
                 </div>
+                
+                <div class="row g-3 mt-2">
+                    <div class="col-md-3">
+                        <label class="form-label">開始日期</label>
+                        <input type="date" class="form-control" value="@(startDate?.ToString("yyyy-MM-dd"))" 
+                               @onchange="(e) => OnStartDateChanged(e.Value?.ToString())" />
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label">結束日期</label>
+                        <input type="date" class="form-control" value="@(endDate?.ToString("yyyy-MM-dd"))" 
+                               @onchange="(e) => OnEndDateChanged(e.Value?.ToString())" />
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -473,6 +487,32 @@
     private void OnTypeChanged(string? value)
     {
         selectedType = value ?? "";
+        ApplyFilters();
+    }
+
+    private void OnStartDateChanged(string? value)
+    {
+        if (DateTime.TryParse(value, out var date))
+        {
+            startDate = date;
+        }
+        else
+        {
+            startDate = null;
+        }
+        ApplyFilters();
+    }
+
+    private void OnEndDateChanged(string? value)
+    {
+        if (DateTime.TryParse(value, out var date))
+        {
+            endDate = date;
+        }
+        else
+        {
+            endDate = null;
+        }
         ApplyFilters();
     }
 

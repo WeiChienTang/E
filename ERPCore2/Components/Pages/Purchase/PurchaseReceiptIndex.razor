@@ -1,0 +1,894 @@
+@page "/purchase/receipts"
+@using Microsoft.AspNetCore.Authorization
+@using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.Tables
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Auth
+@using ERPCore2.Services
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Helpers
+@using ERPCore2.Models
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+@attribute [Authorize]
+@inject IPurchaseReceiptService PurchaseReceiptService
+@inject IPurchaseOrderService PurchaseOrderService
+@inject IWarehouseService WarehouseService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>進貨管理</PageTitle>
+
+<PagePermissionCheck RequiredPermission="Purchase.Receipt">
+    <GenericHeaderComponent 
+        Title="進貨管理" 
+        Subtitle="管理採購進貨與驗收作業"
+        HeadingLevel="h1"
+        BreadcrumbItems="@breadcrumbItems"
+        ShowDivider="true"
+        IsLoading="@isLoading"
+        LoadingText="載入進貨資料中...">
+        
+        <ActionButtons>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-primary" @onclick="NavigateToCreate">
+                    <i class="fas fa-plus me-2"></i>新增進貨單
+                </button>
+                <button type="button" class="btn btn-outline-info" @onclick="RefreshData">
+                    <i class="fas fa-sync me-2"></i>重新整理
+                </button>
+                <button type="button" class="btn btn-outline-success" @onclick="ExportData">
+                    <i class="fas fa-file-excel me-2"></i>匯出資料
+                </button>
+            </div>
+        </ActionButtons>
+    </GenericHeaderComponent>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">載入中...</span>
+            </div>
+            <p class="mt-3 text-muted">載入進貨資料中...</p>
+        </div>
+    }
+    else
+    {
+        <div class="container-fluid">
+            <!-- 篩選器 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">
+                                <i class="fas fa-filter me-2"></i>篩選條件
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <GenericSearchFilterComponent TModel="PurchaseReceiptSearchModel"
+                                SearchModel="@searchModel"
+                                FilterDefinitions="@filterDefinitions"
+                                OnFilterChanged="@HandleFilterChanged"
+                                ContainerCssClass="@filterContainerCssClass" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 統計卡片 -->
+            <div class="row mb-4">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        總進貨單數
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">@filteredItems.Count</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-file-invoice fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        待驗收進貨
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        @filteredItems.Count(r => r.ReceiptStatus == PurchaseReceiptStatus.Draft)
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-clock fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        已完成進貨
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        @filteredItems.Count(r => r.ReceiptStatus == PurchaseReceiptStatus.Received)
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        進貨總金額
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        @FormatCurrency(filteredItems.Sum(r => r.TotalAmount))
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 資料表格 -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                            <h6 class="m-0 font-weight-bold text-primary">
+                                <i class="fas fa-table me-2"></i>進貨單清單 (共 @pagedItems.Count 筆)
+                            </h6>
+                            <div class="d-flex align-items-center">
+                                <label class="me-2 mb-0">每頁顯示：</label>
+                                <select class="form-select form-select-sm" style="width: auto;" @onchange="OnPageSizeChanged">
+                                    @foreach (var size in pageSizeOptions)
+                                    {
+                                        <option value="@size" selected="@(size == pageSize)">@size</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <GenericTableComponent TItem="PurchaseReceipt"
+                                                  Items="@pagedItems"
+                                                  ColumnDefinitions="@columnDefinitions"
+                                                  ShowActions="true"
+                                                  IsStriped="true"
+                                                  IsHoverable="true"
+                                                  EnableSorting="false"
+                                                  EmptyMessage="沒有找到進貨資料">
+                                <ActionsTemplate Context="item">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-primary btn-sm" 
+                                                @onclick="() => HandleView(item)" title="檢視">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                                @onclick="() => HandleEdit(item)" title="編輯">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        @if (((PurchaseReceipt)item).ReceiptStatus == PurchaseReceiptStatus.Draft)
+                                        {
+                                            <button type="button" class="btn btn-outline-success btn-sm" 
+                                                    @onclick="() => HandleConfirm(item)" title="確認驗收">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        }
+                                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                @onclick="() => HandleDelete(item)" title="刪除">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </ActionsTemplate>
+                            </GenericTableComponent>
+                        </div>
+                        
+                        @if (filteredItems.Count > pageSize)
+                        {
+                            <div class="card-footer">
+                                <nav aria-label="分頁導航">
+                                    <ul class="pagination justify-content-center mb-0">
+                                        <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                            <button class="page-link" @onclick="() => GoToPage(currentPage - 1)" disabled="@(currentPage == 1)">
+                                                <i class="fas fa-chevron-left"></i>
+                                            </button>
+                                        </li>
+                                        
+                                        @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                                        {
+                                            var page = i;
+                                            <li class="page-item @(page == currentPage ? "active" : "")">
+                                                <button class="page-link" @onclick="() => GoToPage(page)">@((page))</button>
+                                            </li>
+                                        }
+                                        
+                                        <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                                            <button class="page-link" @onclick="() => GoToPage(currentPage + 1)" disabled="@(currentPage == totalPages)">
+                                                <i class="fas fa-chevron-right"></i>
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</PagePermissionCheck>
+
+@code {
+    // 資料模型
+    private List<PurchaseReceipt> items = new();
+    private List<PurchaseReceipt> filteredItems = new();
+    private List<PurchaseReceipt> pagedItems = new();
+
+    // 選項清單
+    private List<SelectOption> purchaseOrderOptions = new();
+    private List<SelectOption> warehouseOptions = new();
+    private List<SelectOption> statusOptions = new();
+
+    // 篩選相關
+    private PurchaseReceiptSearchModel searchModel = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private string filterContainerCssClass = "row g-3";
+
+    // 表格相關
+    private List<TableColumnDefinition> columnDefinitions = new();
+
+    // 分頁相關
+    private int currentPage = 1;
+    private int pageSize = 20;
+    private int totalPages => (int)Math.Ceiling((double)filteredItems.Count / pageSize);
+    private List<int> pageSizeOptions = new() { 10, 20, 50, 100 };
+
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    // 狀態管理
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 設定麵包屑
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new() { Text = "首頁", Href = "/" },
+                new() { Text = "採購管理", Href = "/purchase" },
+                new() { Text = "進貨管理", Href = "/purchase/receipts" }
+            };
+
+            // 載入選項資料
+            await LoadOptionsAsync();
+            
+            // 初始化篩選器
+            InitializeFilters();
+            
+            // 初始化表格欄位
+            InitializeColumns();
+            
+            // 載入主要資料
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                "頁面初始化", 
+                GetType(), 
+                Navigation
+            );
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadOptionsAsync()
+    {
+        try
+        {
+            // 載入採購訂單選項
+            var purchaseOrders = await PurchaseOrderService.GetAllAsync();
+            purchaseOrderOptions = purchaseOrders.Select(p => new SelectOption
+            {
+                Text = $"{p.PurchaseOrderNumber} - {p.Supplier.CompanyName}",
+                Value = p.Id.ToString()
+            }).ToList();
+
+            // 載入倉庫選項
+            var warehouses = await WarehouseService.GetAllAsync();
+            warehouseOptions = warehouses.Select(w => new SelectOption
+            {
+                Text = $"{w.WarehouseCode} - {w.WarehouseName}",
+                Value = w.Id.ToString()
+            }).ToList();
+
+            // 載入狀態選項
+            statusOptions = Enum.GetValues<PurchaseReceiptStatus>()
+                .Select(s => new SelectOption
+                {
+                    Text = GetStatusDisplayName(s),
+                    Value = ((int)s).ToString()
+                }).ToList();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadOptionsAsync),
+                GetType()
+            );
+        }
+    }
+
+    private void InitializeFilters()
+    {
+        try
+        {
+            filterDefinitions = new List<SearchFilterDefinition>
+            {
+                new SearchFilterDefinition
+                {
+                    Name = "SearchTerm",
+                    Label = "搜尋",
+                    FilterType = SearchFilterType.Text,
+                    Placeholder = "請輸入進貨單號、採購單號..."
+                },
+                new SearchFilterDefinition
+                {
+                    Name = "PurchaseOrderId",
+                    Label = "採購訂單",
+                    FilterType = SearchFilterType.Select,
+                    Options = purchaseOrderOptions
+                },
+                new SearchFilterDefinition
+                {
+                    Name = "WarehouseId",
+                    Label = "倉庫",
+                    FilterType = SearchFilterType.Select,
+                    Options = warehouseOptions
+                },
+                new SearchFilterDefinition
+                {
+                    Name = "ReceiptStatus",
+                    Label = "進貨狀態",
+                    FilterType = SearchFilterType.Select,
+                    Options = statusOptions
+                },
+                new SearchFilterDefinition
+                {
+                    Name = "ReceiptDateRange",
+                    Label = "進貨日期",
+                    FilterType = SearchFilterType.DateRange
+                }
+            };
+
+            SetFilterContainerCssClasses();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeFilters),
+                GetType(),
+                additionalData: "初始化篩選器失敗"
+            );
+        }
+    }
+
+    private void InitializeColumns()
+    {
+        try
+        {
+            columnDefinitions = new List<TableColumnDefinition>
+            {
+                new TableColumnDefinition
+                {
+                    Title = "進貨單號",
+                    PropertyName = "ReceiptNumber",
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 120px;",
+                    IsSortable = true
+                },
+                new TableColumnDefinition
+                {
+                    Title = "進貨日期",
+                    PropertyName = "ReceiptDate",
+                    DataType = ColumnDataType.Date,
+                    HeaderStyle = "width: 100px;",
+                    IsSortable = true
+                },
+                new TableColumnDefinition
+                {
+                    Title = "採購訂單",
+                    PropertyName = "PurchaseOrder.PurchaseOrderNumber",
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 120px;"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "供應商",
+                    PropertyName = "PurchaseOrder.Supplier.CompanyName",
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 150px;"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "倉庫",
+                    PropertyName = "Warehouse.WarehouseName",
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 100px;"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "進貨狀態",
+                    PropertyName = "ReceiptStatus",
+                    DataType = ColumnDataType.Html,
+                    HeaderStyle = "width: 100px;",
+                    CustomTemplate = item => builder =>
+                    {
+                        var receipt = (PurchaseReceipt)item;
+                        var statusClass = GetStatusClass(receipt.ReceiptStatus);
+                        builder.OpenElement(0, "span");
+                        builder.AddAttribute(1, "class", $"badge {statusClass}");
+                        builder.AddContent(2, GetStatusDisplayName(receipt.ReceiptStatus));
+                        builder.CloseElement();
+                    }
+                },
+                new TableColumnDefinition
+                {
+                    Title = "進貨金額",
+                    PropertyName = "TotalAmount",
+                    DataType = ColumnDataType.Currency,
+                    HeaderStyle = "width: 120px;",
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "稅額",
+                    PropertyName = "TaxAmount",
+                    DataType = ColumnDataType.Currency,
+                    HeaderStyle = "width: 100px;",
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "驗收人員",
+                    PropertyName = "InspectionPersonnel",
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 100px;",
+                    NullDisplayText = "-"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "確認時間",
+                    PropertyName = "ConfirmedAt",
+                    DataType = ColumnDataType.DateTime,
+                    HeaderStyle = "width: 120px;",
+                    NullDisplayText = "-"
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeColumns),
+                GetType(),
+                additionalData: "初始化欄位定義失敗"
+            );
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            items = await PurchaseReceiptService.GetAllAsync();
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadDataAsync),
+                GetType()
+            );
+        }
+    }
+
+    private void HandleFilterChanged(SearchFilterModel filterModel)
+    {
+        try
+        {
+            // 將 SearchFilterModel 轉換為 PurchaseReceiptSearchModel
+            searchModel = new PurchaseReceiptSearchModel
+            {
+                SearchTerm = filterModel.GetFilterValue("SearchTerm") as string,
+                PurchaseOrderId = int.TryParse(filterModel.GetFilterValue("PurchaseOrderId")?.ToString(), out var orderId) ? (int?)orderId : null,
+                WarehouseId = int.TryParse(filterModel.GetFilterValue("WarehouseId")?.ToString(), out var warehouseId) ? (int?)warehouseId : null,
+                ReceiptStatus = Enum.TryParse<PurchaseReceiptStatus>(filterModel.GetFilterValue("ReceiptStatus")?.ToString(), out var status) ? (PurchaseReceiptStatus?)status : null
+            };
+
+            // 處理日期範圍
+            var dateRange = filterModel.GetFilterValue("ReceiptDateRange");
+            if (dateRange != null)
+            {
+                // 這裡需要根據實際的日期範圍格式進行處理
+                searchModel.ReceiptDateFrom = null;
+                searchModel.ReceiptDateTo = null;
+            }
+            
+            currentPage = 1; // 重設為第一頁
+            ApplyFilters();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(HandleFilterChanged),
+                GetType(),
+                additionalData: "處理篩選變更失敗"
+            );
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        try
+        {
+            filteredItems = items.AsQueryable().ToList();
+
+            // 文字搜尋
+            if (!string.IsNullOrWhiteSpace(searchModel.SearchTerm))
+            {
+                var searchTerm = searchModel.SearchTerm.ToLower();
+                filteredItems = filteredItems.Where(r =>
+                    r.ReceiptNumber.ToLower().Contains(searchTerm) ||
+                    r.PurchaseOrder.PurchaseOrderNumber.ToLower().Contains(searchTerm) ||
+                    (r.InspectionPersonnel?.ToLower().Contains(searchTerm) ?? false) ||
+                    (r.ReceiptRemarks?.ToLower().Contains(searchTerm) ?? false)
+                ).ToList();
+            }
+
+            // 採購訂單篩選
+            if (searchModel.PurchaseOrderId.HasValue)
+            {
+                filteredItems = filteredItems.Where(r => r.PurchaseOrderId == searchModel.PurchaseOrderId.Value).ToList();
+            }
+
+            // 倉庫篩選
+            if (searchModel.WarehouseId.HasValue)
+            {
+                filteredItems = filteredItems.Where(r => r.WarehouseId == searchModel.WarehouseId.Value).ToList();
+            }
+
+            // 狀態篩選
+            if (searchModel.ReceiptStatus.HasValue)
+            {
+                filteredItems = filteredItems.Where(r => r.ReceiptStatus == searchModel.ReceiptStatus.Value).ToList();
+            }
+
+            // 日期範圍篩選
+            if (searchModel.ReceiptDateFrom.HasValue)
+            {
+                filteredItems = filteredItems.Where(r => r.ReceiptDate >= searchModel.ReceiptDateFrom.Value).ToList();
+            }
+            if (searchModel.ReceiptDateTo.HasValue)
+            {
+                filteredItems = filteredItems.Where(r => r.ReceiptDate <= searchModel.ReceiptDateTo.Value).ToList();
+            }
+
+            UpdatePagination();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ApplyFilters),
+                GetType(),
+                additionalData: "套用篩選失敗"
+            );
+        }
+    }
+
+    private void UpdatePagination()
+    {
+        try
+        {
+            var totalCount = filteredItems.Count;
+            var maxPage = totalCount == 0 ? 1 : (int)Math.Ceiling((double)totalCount / pageSize);
+            currentPage = Math.Min(currentPage, Math.Max(1, maxPage));
+
+            pagedItems = filteredItems
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(UpdatePagination),
+                GetType(),
+                additionalData: "更新分頁失敗"
+            );
+        }
+    }
+
+    private void SetFilterContainerCssClasses()
+    {
+        filterContainerCssClass = "row g-3";
+    }
+
+    // 事件處理
+    private void NavigateToCreate()
+    {
+        try
+        {
+            Navigation.NavigateTo("/purchase/receipts/create");
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(NavigateToCreate),
+                GetType()
+            );
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(RefreshData),
+                GetType()
+            );
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExportData()
+    {
+        try
+        {
+            // TODO: 實作匯出功能
+            await JSRuntime.InvokeVoidAsync("alert", "匯出功能開發中...");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ExportData),
+                GetType()
+            );
+        }
+    }
+
+    private void HandleView(object item)
+    {
+        try
+        {
+            var receipt = (PurchaseReceipt)item;
+            Navigation.NavigateTo($"/purchase/receipts/{receipt.Id}");
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(HandleView),
+                GetType()
+            );
+        }
+    }
+
+    private void HandleEdit(object item)
+    {
+        try
+        {
+            var receipt = (PurchaseReceipt)item;
+            Navigation.NavigateTo($"/purchase/receipts/{receipt.Id}/edit");
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(HandleEdit),
+                GetType()
+            );
+        }
+    }
+
+    private async Task HandleConfirm(object item)
+    {
+        try
+        {
+            var receipt = (PurchaseReceipt)item;
+            
+            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"確定要確認進貨單 {receipt.ReceiptNumber} 的驗收嗎？");
+            if (confirmed)
+            {
+                var result = await PurchaseReceiptService.ConfirmReceiptAsync(receipt.Id, 1); // TODO: 使用實際的當前使用者ID
+                if (result.IsSuccess)
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "驗收確認成功！");
+                    await RefreshData();
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", $"驗收確認失敗：{result.ErrorMessage}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(HandleConfirm),
+                GetType()
+            );
+        }
+    }
+
+    private async Task HandleDelete(object item)
+    {
+        try
+        {
+            var receipt = (PurchaseReceipt)item;
+            
+            // 檢查是否可以刪除
+            var canDelete = await PurchaseReceiptService.CanDeleteAsync(receipt.Id);
+            if (!canDelete)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "此進貨單已確認或已有庫存異動，無法刪除！");
+                return;
+            }
+            
+            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"確定要刪除進貨單 {receipt.ReceiptNumber} 嗎？");
+            if (confirmed)
+            {
+                var result = await PurchaseReceiptService.DeleteAsync(receipt.Id);
+                if (result.IsSuccess)
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "刪除成功！");
+                    await RefreshData();
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{result.ErrorMessage}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(HandleDelete),
+                GetType()
+            );
+        }
+    }
+
+    private async Task OnPageSizeChanged(ChangeEventArgs e)
+    {
+        try
+        {
+            if (int.TryParse(e.Value?.ToString(), out var newSize))
+            {
+                pageSize = newSize;
+                currentPage = 1;
+                UpdatePagination();
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(OnPageSizeChanged),
+                GetType()
+            );
+        }
+    }
+
+    private void GoToPage(int page)
+    {
+        try
+        {
+            if (page >= 1 && page <= totalPages)
+            {
+                currentPage = page;
+                UpdatePagination();
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(GoToPage),
+                GetType()
+            );
+        }
+    }
+
+    // 輔助方法
+    private static string FormatCurrency(decimal amount)
+    {
+        return amount.ToString("C0");
+    }
+
+    private static string GetStatusDisplayName(PurchaseReceiptStatus status)
+    {
+        return status switch
+        {
+            PurchaseReceiptStatus.Draft => "草稿",
+            PurchaseReceiptStatus.Confirmed => "已確認", 
+            PurchaseReceiptStatus.Received => "已入庫",
+            PurchaseReceiptStatus.Cancelled => "已取消",
+            _ => status.ToString()
+        };
+    }
+
+    private static string GetStatusClass(PurchaseReceiptStatus status)
+    {
+        return status switch
+        {
+            PurchaseReceiptStatus.Draft => "bg-warning",
+            PurchaseReceiptStatus.Confirmed => "bg-info",
+            PurchaseReceiptStatus.Received => "bg-success",
+            PurchaseReceiptStatus.Cancelled => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}

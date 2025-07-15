@@ -94,12 +94,22 @@
                 <NavDropdownItem Text="產品單位" Url="/units" RequiredPermission="Unit.Read" ParentMenuKey="product_management"/>
                         
             </DropdownItems>
-        </NavMenuItem>       
-
-        <!-- 銷貨管理下拉選單 (開發中) -->
-        @* 暫時移除權限檢查，因為尚未定義相關權限 *@
+        </NavMenuItem>           
+        
+        <!-- 銷貨管理下拉選單 -->
         <NavMenuItem Text="銷貨管理 (開發中)" IconClass="bi bi-cart-fill">
 
+        </NavMenuItem>
+
+        <!-- 採購管理下拉選單 -->
+        <NavMenuItem Text="採購管理" IconClass="bi bi-truck" MenuKey="purchase_management">
+            <DropdownItems>
+                <NavDropdownItem Text="採購訂單" Url="/purchase/orders" RequiredPermission="Purchase.Read" ParentMenuKey="purchase_management" />
+
+                <NavDropdownItem Text="進貨管理" Url="/purchase/receipts" RequiredPermission="Purchase.Receipt" ParentMenuKey="purchase_management" />
+
+                <NavDropdownItem Text="採購報表" Url="/purchase/reports" RequiredPermission="Purchase.Report" ParentMenuKey="purchase_management" />
+            </DropdownItems>
         </NavMenuItem>
 
         <!-- 庫存管理下拉選單 -->
