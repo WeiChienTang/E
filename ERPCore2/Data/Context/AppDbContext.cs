@@ -38,9 +38,11 @@ namespace ERPCore2.Data.Context
       public DbSet<InventoryStock> InventoryStocks { get; set; }
       public DbSet<InventoryTransaction> InventoryTransactions { get; set; }
       public DbSet<InventoryReservation> InventoryReservations { get; set; }
+      public DbSet<StockTaking> StockTakings { get; set; }
+      public DbSet<StockTakingDetail> StockTakingDetails { get; set; }
       public DbSet<Unit> Units { get; set; }
       public DbSet<UnitConversion> UnitConversions { get; set; }
-      public DbSet<Entities.InventoryTransactionType> InventoryTransactionTypes { get; set; }
+      public DbSet<InventoryTransactionType> InventoryTransactionTypes { get; set; }
       
       // BOM Foundations
       public DbSet<Material> Materials { get; set; }
@@ -304,6 +306,54 @@ namespace ERPCore2.Data.Context
                         entity.HasOne(m => m.Supplier)
                         .WithMany()
                         .HasForeignKey(m => m.SupplierId)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  // 庫存盤點相關
+                  modelBuilder.Entity<StockTaking>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        
+                        // 關聯設定
+                        entity.HasOne(st => st.Warehouse)
+                        .WithMany()
+                        .HasForeignKey(st => st.WarehouseId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(st => st.WarehouseLocation)
+                        .WithMany()
+                        .HasForeignKey(st => st.WarehouseLocationId)
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasOne(st => st.ApprovedByUser)
+                        .WithMany()
+                        .HasForeignKey(st => st.ApprovedBy)
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasMany(st => st.StockTakingDetails)
+                        .WithOne(std => std.StockTaking)
+                        .HasForeignKey(std => std.StockTakingId)
+                        .OnDelete(DeleteBehavior.Cascade);
+                  });
+
+                  modelBuilder.Entity<StockTakingDetail>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        
+                        // 關聯設定
+                        entity.HasOne(std => std.StockTaking)
+                        .WithMany(st => st.StockTakingDetails)
+                        .HasForeignKey(std => std.StockTakingId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                        entity.HasOne(std => std.Product)
+                        .WithMany()
+                        .HasForeignKey(std => std.ProductId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(std => std.WarehouseLocation)
+                        .WithMany()
+                        .HasForeignKey(std => std.WarehouseLocationId)
                         .OnDelete(DeleteBehavior.SetNull);
                   });
             }

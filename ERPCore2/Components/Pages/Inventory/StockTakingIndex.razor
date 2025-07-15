@@ -1,0 +1,761 @@
+@page "/stock-taking"
+@using Microsoft.AspNetCore.Authorization
+@using ERPCore2.Components.Shared.Auth
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Services
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Helpers
+@attribute [Authorize]
+@inject IStockTakingService StockTakingService
+@inject IWarehouseService WarehouseService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>庫存盤點管理</PageTitle>
+
+<PagePermissionCheck RequiredPermission="StockTaking.Read">
+    <GenericHeaderComponent 
+        PageTitle="庫存盤點管理" 
+        ShowCreateButton="true"
+        CreateButtonText="建立盤點"
+        CreatePermission="StockTaking.Create" />
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">載入中...</span>
+            </div>
+            <p class="mt-2">載入盤點資料中...</p>
+        </div>
+    }
+    else
+    {
+        <!-- 統計卡片 -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-primary">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                    總盤點數
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@totalCount</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-warning">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    進行中
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@inProgressCount</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clock fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                    已完成
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@completedCount</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-info">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                    待審核
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@pendingApprovalCount</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-hourglass-half fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 搜尋篩選器 -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">搜尋</label>
+                        <input type="text" class="form-control" @bind="searchTerm" @bind:event="oninput" 
+                               placeholder="請輸入盤點單號或備註..." />
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label">倉庫</label>
+                        <select class="form-select" @onchange="(e) => OnWarehouseChanged(e.Value?.ToString())">
+                            <option value="">請選擇倉庫</option>
+                            @foreach (var warehouse in warehouses)
+                            {
+                                <option value="@warehouse.Id">@warehouse.WarehouseName</option>
+                            }
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label">狀態</label>
+                        <select class="form-select" @onchange="(e) => OnStatusChanged(e.Value?.ToString())">
+                            <option value="">全部狀態</option>
+                            @foreach (var status in Enum.GetValues<StockTakingStatusEnum>())
+                            {
+                                <option value="@status">@GetStatusDisplayName(status)</option>
+                            }
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label">類型</label>
+                        <select class="form-select" @onchange="(e) => OnTypeChanged(e.Value?.ToString())">
+                            <option value="">全部類型</option>
+                            @foreach (var type in Enum.GetValues<StockTakingTypeEnum>())
+                            {
+                                <option value="@type">@GetTypeDisplayName(type)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 資料表格 -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-table me-2"></i>
+                    盤點清單 (@filteredItems.Count 筆)
+                </h6>
+            </div>
+            <div class="card-body">
+                @if (!pagedItems.Any())
+                {
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">尚無盤點記錄</h5>
+                        <p class="text-muted">點擊「建立盤點」開始新的庫存盤點作業</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>盤點單號</th>
+                                    <th>盤點日期</th>
+                                    <th>倉庫</th>
+                                    <th>盤點類型</th>
+                                    <th class="text-center">狀態</th>
+                                    <th class="text-center">完成率</th>
+                                    <th class="text-center">總項目</th>
+                                    <th class="text-center">差異項目</th>
+                                    <th class="text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in pagedItems)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a href="/stock-taking/@item.Id" class="text-decoration-none">
+                                                @item.TakingNumber
+                                            </a>
+                                        </td>
+                                        <td>@item.TakingDate.ToString("yyyy/MM/dd")</td>
+                                        <td>@item.Warehouse?.WarehouseName</td>
+                                        <td>@GetTypeDisplayName(item.TakingType)</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-@GetStatusBadgeColor(item.TakingStatus)">
+                                                @GetStatusDisplayName(item.TakingStatus)
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="progress" style="height: 20px; width: 80px;">
+                                                <div class="progress-bar bg-@GetProgressColor(item.CompletionRate)" 
+                                                     style="width: @(item.CompletionRate)%;">
+                                                    @(item.CompletionRate.ToString("F0"))%
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">@item.TotalItems</td>
+                                        <td class="text-center">
+                                            @if (item.DifferenceItems > 0)
+                                            {
+                                                <span class="badge bg-warning">@item.DifferenceItems</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">0</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="/stock-taking/@item.Id" class="btn btn-outline-primary" title="查看詳細">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                @if (CanEdit(item))
+                                                {
+                                                    <a href="/stock-taking/@item.Id/edit" class="btn btn-outline-secondary" title="編輯">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                }
+                                                @if (CanShowReport(item))
+                                                {
+                                                    <a href="/stock-taking/report/@item.Id" class="btn btn-outline-info" title="差異報告">
+                                                        <i class="fas fa-chart-bar"></i>
+                                                    </a>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 分頁控制 -->
+                    @if (filteredItems.Count > pageSize)
+                    {
+                        <nav class="mt-3">
+                            <ul class="pagination justify-content-center">
+                                @{
+                                    var totalPages = (int)Math.Ceiling((double)filteredItems.Count / pageSize);
+                                }
+                                
+                                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                    <a class="page-link" @onclick="() => HandlePageChanged(currentPage - 1)">上一頁</a>
+                                </li>
+                                
+                                @for (int i = 1; i <= totalPages; i++)
+                                {
+                                    var pageNum = i;
+                                    <li class="page-item @(currentPage == pageNum ? "active" : "")">
+                                        <a class="page-link" @onclick="() => HandlePageChanged(pageNum)">@pageNum</a>
+                                    </li>
+                                }
+                                
+                                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                                    <a class="page-link" @onclick="() => HandlePageChanged(currentPage + 1)">下一頁</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    }
+                }
+            </div>
+        </div>
+    }
+
+    <!-- 建立盤點模態框 -->
+    <div class="modal fade" id="createStockTakingModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">建立庫存盤點</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">盤點日期 <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" @bind="newStockTaking.TakingDate" />
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">倉庫 <span class="text-danger">*</span></label>
+                        <select class="form-select" @bind="newStockTaking.WarehouseId">
+                            <option value="">請選擇倉庫</option>
+                            @foreach (var warehouse in warehouses)
+                            {
+                                <option value="@warehouse.Id">@warehouse.WarehouseName</option>
+                            }
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">盤點類型 <span class="text-danger">*</span></label>
+                        <select class="form-select" @bind="newStockTaking.TakingType">
+                            <option value="@StockTakingTypeEnum.Full">全盤</option>
+                            <option value="@StockTakingTypeEnum.Cycle">循環盤點</option>
+                            <option value="@StockTakingTypeEnum.Sample">抽樣盤點</option>
+                            <option value="@StockTakingTypeEnum.Specific">特定商品盤點</option>
+                            <option value="@StockTakingTypeEnum.Location">特定位置盤點</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">備註</label>
+                        <textarea class="form-control" rows="3" @bind="newStockTaking.TakingRemarks" placeholder="請輸入盤點備註..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" @onclick="CreateStockTaking" disabled="@isCreating">
+                        @if (isCreating)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        建立盤點
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</PagePermissionCheck>
+
+@code {
+    // Define BreadcrumbItem class locally
+    public class BreadcrumbItem
+    {
+        public string Text { get; set; } = "";
+        public string? Href { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    // 資料清單
+    private List<StockTaking> items = new();
+    private List<StockTaking> filteredItems = new();
+    private List<StockTaking> pagedItems = new();
+    private List<Warehouse> warehouses = new();
+
+    // 搜尋篩選
+    private string searchTerm = "";
+    private string selectedWarehouseId = "";
+    private string selectedStatus = "";
+    private string selectedType = "";
+    private DateTime? startDate;
+    private DateTime? endDate;
+
+    // 分頁
+    private int currentPage = 1;
+    private int pageSize = 20;
+
+    // 統計資料
+    private int totalCount = 0;
+    private int inProgressCount = 0;
+    private int completedCount = 0;
+    private int pendingApprovalCount = 0;
+
+    // 狀態
+    private bool isLoading = true;
+    private bool isCreating = false;
+
+    // 頁面資訊
+    private List<BreadcrumbItem> breadcrumbItems = new();
+
+    // 建立盤點
+    private StockTaking newStockTaking = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 設定麵包屑
+            breadcrumbItems = new List<BreadcrumbItem>
+            {
+                new() { Text = "首頁", Href = "/" },
+                new() { Text = "庫存管理", Href = "/inventory" },
+                new() { Text = "庫存盤點", IsActive = true }
+            };
+
+            // 初始化新盤點物件
+            InitializeNewStockTaking();
+
+            // 載入基礎資料
+            await LoadBasicDataAsync();
+
+            // 載入主要資料
+            await LoadDataAsync();
+
+            // 計算統計
+            CalculateStatistics();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(OnInitializedAsync),
+                GetType(),
+                Navigation
+            );
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void InitializeNewStockTaking()
+    {
+        try
+        {
+            newStockTaking = new StockTaking
+            {
+                TakingDate = DateTime.Today,
+                TakingType = StockTakingTypeEnum.Full,
+                TakingStatus = StockTakingStatusEnum.Draft
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeNewStockTaking),
+                GetType(),
+                additionalData: "初始化新盤點物件失敗"
+            );
+        }
+    }
+
+    private async Task LoadBasicDataAsync()
+    {
+        try
+        {
+            warehouses = await WarehouseService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadBasicDataAsync),
+                GetType(),
+                additionalData: "載入基礎資料失敗"
+            );
+        }
+    }
+
+    private void OnWarehouseChanged(string? value)
+    {
+        selectedWarehouseId = value ?? "";
+        ApplyFilters();
+    }
+
+    private void OnStatusChanged(string? value)
+    {
+        selectedStatus = value ?? "";
+        ApplyFilters();
+    }
+
+    private void OnTypeChanged(string? value)
+    {
+        selectedType = value ?? "";
+        ApplyFilters();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            items = await StockTakingService.GetAllAsync();
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadDataAsync),
+                GetType(),
+                additionalData: "載入盤點資料失敗"
+            );
+        }
+    }
+
+    private void CalculateStatistics()
+    {
+        try
+        {
+            totalCount = items.Count;
+            inProgressCount = items.Count(i => i.TakingStatus == StockTakingStatusEnum.InProgress);
+            completedCount = items.Count(i => i.TakingStatus == StockTakingStatusEnum.Completed || 
+                                             i.TakingStatus == StockTakingStatusEnum.Approved);
+            pendingApprovalCount = items.Count(i => i.TakingStatus == StockTakingStatusEnum.PendingApproval);
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(CalculateStatistics),
+                GetType(),
+                additionalData: "計算統計資料失敗"
+            );
+        }
+    }
+
+    private void HandleFilterChanged()
+    {
+        try
+        {
+            currentPage = 1;
+            ApplyFilters();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(HandleFilterChanged),
+                GetType(),
+                additionalData: "處理篩選變更失敗"
+            );
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        try
+        {
+            filteredItems = items.ToList();
+
+            // 搜尋條件
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                filteredItems = filteredItems.Where(i => 
+                    i.TakingNumber.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    (i.TakingRemarks != null && i.TakingRemarks.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                ).ToList();
+            }
+
+            // 倉庫篩選
+            if (!string.IsNullOrWhiteSpace(selectedWarehouseId) && int.TryParse(selectedWarehouseId, out var warehouseId))
+            {
+                filteredItems = filteredItems.Where(i => i.WarehouseId == warehouseId).ToList();
+            }
+
+            // 狀態篩選
+            if (!string.IsNullOrWhiteSpace(selectedStatus) && Enum.TryParse<StockTakingStatusEnum>(selectedStatus, out var status))
+            {
+                filteredItems = filteredItems.Where(i => i.TakingStatus == status).ToList();
+            }
+
+            // 類型篩選
+            if (!string.IsNullOrWhiteSpace(selectedType) && Enum.TryParse<StockTakingTypeEnum>(selectedType, out var type))
+            {
+                filteredItems = filteredItems.Where(i => i.TakingType == type).ToList();
+            }
+
+            // 日期範圍篩選
+            if (startDate.HasValue)
+            {
+                filteredItems = filteredItems.Where(i => i.TakingDate >= startDate.Value).ToList();
+            }
+            if (endDate.HasValue)
+            {
+                filteredItems = filteredItems.Where(i => i.TakingDate <= endDate.Value).ToList();
+            }
+
+            UpdatePagination();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ApplyFilters),
+                GetType(),
+                additionalData: "套用篩選條件失敗"
+            );
+        }
+    }
+
+    private void UpdatePagination()
+    {
+        try
+        {
+            var totalPages = (int)Math.Ceiling((double)filteredItems.Count / pageSize);
+            if (totalPages == 0) totalPages = 1;
+            currentPage = Math.Min(currentPage, Math.Max(1, totalPages));
+            
+            pagedItems = filteredItems
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(UpdatePagination),
+                GetType(),
+                additionalData: "更新分頁失敗"
+            );
+        }
+    }
+
+    private void HandlePageChanged(int newPage)
+    {
+        try
+        {
+            currentPage = newPage;
+            UpdatePagination();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(HandlePageChanged),
+                GetType(),
+                additionalData: "處理頁面變更失敗"
+            );
+        }
+    }
+
+    private async Task ShowCreateModal()
+    {
+        try
+        {
+            InitializeNewStockTaking();
+            var element = await JSRuntime.InvokeAsync<IJSObjectReference>("document.getElementById", "createStockTakingModal");
+            var modal = await JSRuntime.InvokeAsync<IJSObjectReference>("bootstrap.Modal.getOrCreateInstance", element);
+            await modal.InvokeVoidAsync("show");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ShowCreateModal),
+                GetType(),
+                additionalData: "顯示建立模態框失敗"
+            );
+        }
+    }
+
+    private async Task CreateStockTaking()
+    {
+        try
+        {
+            if (newStockTaking.WarehouseId == 0)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "請選擇倉庫");
+                return;
+            }
+
+            isCreating = true;
+
+            var result = await StockTakingService.CreateAsync(newStockTaking);
+            
+            if (result.IsSuccess)
+            {
+                var element = await JSRuntime.InvokeAsync<IJSObjectReference>("document.getElementById", "createStockTakingModal");
+                var modal = await JSRuntime.InvokeAsync<IJSObjectReference>("bootstrap.Modal.getInstance", element);
+                await modal.InvokeVoidAsync("hide");
+                
+                await LoadDataAsync();
+                CalculateStatistics();
+                StateHasChanged();
+
+                await JSRuntime.InvokeVoidAsync("alert", "盤點建立成功");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "建立失敗：" + result.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(CreateStockTaking),
+                GetType(),
+                additionalData: "建立盤點失敗"
+            );
+            await JSRuntime.InvokeVoidAsync("alert", "建立失敗，請稍後再試");
+        }
+        finally
+        {
+            isCreating = false;
+        }
+    }
+
+    private bool CanEdit(StockTaking stockTaking)
+    {
+        return stockTaking.TakingStatus == StockTakingStatusEnum.Draft || 
+               stockTaking.TakingStatus == StockTakingStatusEnum.InProgress;
+    }
+
+    private bool CanShowReport(StockTaking stockTaking)
+    {
+        return stockTaking.TakingStatus == StockTakingStatusEnum.Completed ||
+               stockTaking.TakingStatus == StockTakingStatusEnum.PendingApproval ||
+               stockTaking.TakingStatus == StockTakingStatusEnum.Approved;
+    }
+
+    private static string GetStatusDisplayName(StockTakingStatusEnum status)
+    {
+        return status switch
+        {
+            StockTakingStatusEnum.Draft => "草稿",
+            StockTakingStatusEnum.InProgress => "進行中",
+            StockTakingStatusEnum.Completed => "已完成",
+            StockTakingStatusEnum.PendingApproval => "待審核",
+            StockTakingStatusEnum.Approved => "已審核",
+            StockTakingStatusEnum.Cancelled => "已取消",
+            _ => status.ToString()
+        };
+    }
+
+    private static string GetTypeDisplayName(StockTakingTypeEnum type)
+    {
+        return type switch
+        {
+            StockTakingTypeEnum.Full => "全盤",
+            StockTakingTypeEnum.Cycle => "循環盤點",
+            StockTakingTypeEnum.Sample => "抽樣盤點",
+            StockTakingTypeEnum.Specific => "特定商品",
+            StockTakingTypeEnum.Location => "特定位置",
+            _ => type.ToString()
+        };
+    }
+
+    private static string GetStatusBadgeColor(StockTakingStatusEnum status)
+    {
+        return status switch
+        {
+            StockTakingStatusEnum.Draft => "secondary",
+            StockTakingStatusEnum.InProgress => "warning",
+            StockTakingStatusEnum.Completed => "info",
+            StockTakingStatusEnum.PendingApproval => "warning",
+            StockTakingStatusEnum.Approved => "success",
+            StockTakingStatusEnum.Cancelled => "danger",
+            _ => "secondary"
+        };
+    }
+
+    private static string GetProgressColor(decimal rate)
+    {
+        return rate >= 100 ? "success" : rate >= 50 ? "warning" : "danger";
+    }
+}

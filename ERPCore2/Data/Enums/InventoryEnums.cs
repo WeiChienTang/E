@@ -103,4 +103,70 @@ namespace ERPCore2.Data.Enums
         [Description("隔離區")]
         Quarantine = 8
     }
+
+    /// <summary>
+    /// 庫存盤點類型
+    /// </summary>
+    public enum StockTakingTypeEnum
+    {
+        [Description("全盤")]
+        Full = 1,
+        
+        [Description("循環盤點")]
+        Cycle = 2,
+        
+        [Description("抽樣盤點")]
+        Sample = 3,
+        
+        [Description("特定商品盤點")]
+        Specific = 4,
+        
+        [Description("特定位置盤點")]
+        Location = 5
+    }
+
+    /// <summary>
+    /// 庫存盤點狀態
+    /// </summary>
+    public enum StockTakingStatusEnum
+    {
+        [Description("草稿")]
+        Draft = 1,
+        
+        [Description("進行中")]
+        InProgress = 2,
+        
+        [Description("已完成")]
+        Completed = 3,
+        
+        [Description("待審核")]
+        PendingApproval = 4,
+        
+        [Description("已審核")]
+        Approved = 5,
+        
+        [Description("已取消")]
+        Cancelled = 6
+    }
+
+    /// <summary>
+    /// 庫存盤點明細狀態
+    /// </summary>
+    public enum StockTakingDetailStatusEnum
+    {
+        [Description("待盤點")]
+        Pending = 1,
+        
+        [Description("已盤點")]
+        Counted = 2,
+        
+        [Description("重新盤點")]
+        Recounted = 3,
+        
+        [Description("確認無誤")]
+        Confirmed = 4,
+        
+        [Description("跳過")]
+        Skipped = 5
+    }
 }

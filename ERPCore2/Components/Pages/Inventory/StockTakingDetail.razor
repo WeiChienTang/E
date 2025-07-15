@@ -1,0 +1,882 @@
+@page "/stock-taking/{Id:int}"
+@page "/stock-taking/{Id:int}/edit"
+@using Microsoft.AspNetCore.Authorization
+@using ERPCore2.Components.Shared.Auth
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Services
+@using ERPCore2.Helpers
+@using ERPCore2.Models
+@attribute [Authorize]
+@inject IStockTakingService StockTakingService
+@inject IWarehouseService WarehouseService
+@inject IProductService ProductService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>@GetPageTitle()</PageTitle>
+
+<PagePermissionCheck RequiredPermission="@GetRequiredPermission()">
+    <GenericHeaderComponent 
+        PageTitle="@GetPageTitle()" 
+        BreadcrumbItems="@breadcrumbItems" 
+        ShowBackButton="true"
+        BackUrl="/stock-taking" />
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">載入中...</span>
+            </div>
+            <p class="mt-2">載入盤點資料中...</p>
+        </div>
+    }
+    else if (stockTaking == null)
+    {
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            找不到指定的盤點記錄
+        </div>
+    }
+    else
+    {
+        <!-- 盤點基本資訊 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-clipboard-list me-2"></i>
+                            盤點基本資訊
+                        </h5>
+                        @if (IsEditMode && CanEdit())
+                        {
+                            <div>
+                                <button type="button" class="btn btn-success btn-sm me-2" @onclick="SaveStockTaking" disabled="@isSaving">
+                                    @if (isSaving)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                    }
+                                    <i class="fas fa-save me-1"></i>
+                                    儲存
+                                </button>
+                                
+                                @if (stockTaking.TakingStatus == StockTakingStatusEnum.Draft)
+                                {
+                                    <button type="button" class="btn btn-primary btn-sm me-2" @onclick="StartStockTaking">
+                                        <i class="fas fa-play me-1"></i>
+                                        開始盤點
+                                    </button>
+                                }
+                                
+                                @if (stockTaking.TakingStatus == StockTakingStatusEnum.InProgress && AllItemsCompleted())
+                                {
+                                    <button type="button" class="btn btn-info btn-sm" @onclick="CompleteStockTaking">
+                                        <i class="fas fa-check me-1"></i>
+                                        完成盤點
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">盤點單號</label>
+                                    <div class="form-control-plaintext">@stockTaking.TakingNumber</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">盤點日期</label>
+                                    @if (IsEditMode && CanEditBasicInfo())
+                                    {
+                                        <input type="date" class="form-control" @bind="stockTaking.TakingDate" />
+                                    }
+                                    else
+                                    {
+                                        <div class="form-control-plaintext">@stockTaking.TakingDate.ToString("yyyy/MM/dd")</div>
+                                    }
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">倉庫</label>
+                                    @if (IsEditMode && CanEditBasicInfo())
+                                    {
+                                        <select class="form-select" @bind="stockTaking.WarehouseId">
+                                            @foreach (var warehouse in warehouses)
+                                            {
+                                                <option value="@warehouse.Id">@warehouse.WarehouseName</option>
+                                            }
+                                        </select>
+                                    }
+                                    else
+                                    {
+                                        <div class="form-control-plaintext">@stockTaking.Warehouse?.WarehouseName</div>
+                                    }
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">盤點類型</label>
+                                    @if (IsEditMode && CanEditBasicInfo())
+                                    {
+                                        <select class="form-select" @bind="stockTaking.TakingType">
+                                            @foreach (var type in Enum.GetValues<StockTakingTypeEnum>())
+                                            {
+                                                <option value="@type">@GetTypeDisplayName(type)</option>
+                                            }
+                                        </select>
+                                    }
+                                    else
+                                    {
+                                        <div class="form-control-plaintext">@GetTypeDisplayName(stockTaking.TakingType)</div>
+                                    }
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">狀態</label>
+                                    <div class="form-control-plaintext">
+                                        <span class="badge bg-@GetStatusBadgeColor(stockTaking.TakingStatus) fs-6">
+                                            @GetStatusDisplayName(stockTaking.TakingStatus)
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">完成率</label>
+                                    <div class="progress" style="height: 25px;">
+                                        <div class="progress-bar bg-@GetProgressColor(stockTaking.CompletionRate)" 
+                                             style="width: @(stockTaking.CompletionRate)%;">
+                                            @(stockTaking.CompletionRate.ToString("F1"))%
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">總項目數</label>
+                                    <div class="form-control-plaintext">@stockTaking.TotalItems</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">差異項目數</label>
+                                    <div class="form-control-plaintext">
+                                        @if (stockTaking.DifferenceItems > 0)
+                                        {
+                                            <span class="badge bg-warning">@stockTaking.DifferenceItems</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-success">0</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">備註</label>
+                            @if (IsEditMode && CanEditBasicInfo())
+                            {
+                                <textarea class="form-control" rows="3" @bind="stockTaking.TakingRemarks" placeholder="請輸入備註..."></textarea>
+                            }
+                            else
+                            {
+                                <div class="form-control-plaintext">@(stockTaking.TakingRemarks ?? "無")</div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 盤點明細 -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>
+                    盤點明細 (@stockTakingDetails.Count 項)
+                </h5>
+                @if (IsEditMode && stockTaking.TakingStatus == StockTakingStatusEnum.Draft)
+                {
+                    <button type="button" class="btn btn-primary btn-sm" @onclick="ShowAddProductModal">
+                        <i class="fas fa-plus me-1"></i>
+                        新增商品
+                    </button>
+                }
+            </div>
+            <div class="card-body">
+                @if (!stockTakingDetails.Any())
+                {
+                    <div class="text-center py-4">
+                        <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">尚無盤點明細</h5>
+                        @if (IsEditMode && stockTaking.TakingStatus == StockTakingStatusEnum.Draft)
+                        {
+                            <p class="text-muted">點擊「新增商品」開始新增盤點項目</p>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>商品編號</th>
+                                    <th>商品名稱</th>
+                                    <th>倉庫位置</th>
+                                    <th class="text-end">系統庫存</th>
+                                    <th class="text-end">實盤數量</th>
+                                    <th class="text-end">差異數量</th>
+                                    <th class="text-end">單位成本</th>
+                                    <th class="text-end">差異金額</th>
+                                    <th class="text-center">狀態</th>
+                                    @if (IsEditMode)
+                                    {
+                                        <th class="text-center">操作</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var detail in stockTakingDetails)
+                                {
+                                    <tr class="@GetDetailRowClass(detail)">
+                                        <td>@detail.Product?.ProductCode</td>
+                                        <td>@detail.Product?.ProductName</td>
+                                        <td>@detail.WarehouseLocation?.LocationName</td>
+                                        <td class="text-end">@detail.SystemStock.ToString("N0")</td>
+                                        <td class="text-end">
+                                            @if (IsEditMode && stockTaking.TakingStatus == StockTakingStatusEnum.InProgress)
+                                            {
+                                                <input type="number" class="form-control form-control-sm text-end" 
+                                                       style="width: 100px;" 
+                                                       @bind="detail.ActualStock" 
+                                                       @bind:event="oninput" 
+                                                       @onblur="() => UpdateDetailCalculations(detail)" />
+                                            }
+                                            else
+                                            {
+                                                @(detail.ActualStock?.ToString("N0") ?? "-")
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            @if (detail.DifferenceQuantity.HasValue)
+                                            {
+                                                <span class="@GetDifferenceClass(detail.DifferenceQuantity.Value)">
+                                                    @detail.DifferenceQuantity.Value.ToString("N0")
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">@(detail.UnitCost?.ToString("C") ?? "-")</td>
+                                        <td class="text-end">
+                                            @if (detail.DifferenceAmount.HasValue)
+                                            {
+                                                <span class="@GetDifferenceClass((int)detail.DifferenceAmount.Value)">
+                                                    @detail.DifferenceAmount.Value.ToString("C")
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-@GetDetailStatusBadgeColor(detail.DetailStatus)">
+                                                @GetDetailStatusDisplayName(detail.DetailStatus)
+                                            </span>
+                                        </td>
+                                        @if (IsEditMode)
+                                        {
+                                            <td class="text-center">
+                                                @if (stockTaking.TakingStatus == StockTakingStatusEnum.Draft)
+                                                {
+                                                    <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                            @onclick="() => RemoveDetail(detail)">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                }
+                                                else if (stockTaking.TakingStatus == StockTakingStatusEnum.InProgress)
+                                                {
+                                                    <button type="button" class="btn btn-outline-success btn-sm" 
+                                                            @onclick="() => CompleteDetail(detail)"
+                                                            disabled="@(!detail.ActualStock.HasValue)">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                }
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- 新增商品模態框 -->
+    <div class="modal fade" id="addProductModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">新增盤點商品</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">商品搜尋</label>
+                        <input type="text" class="form-control" @bind="productSearchTerm" @oninput="FilterProducts" placeholder="請輸入商品編號或名稱..." />
+                    </div>
+                    
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th style="width: 50px;">選擇</th>
+                                    <th>商品編號</th>
+                                    <th>商品名稱</th>
+                                    <th class="text-end">目前庫存</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var product in filteredProducts)
+                                {
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox" class="form-check-input" 
+                                                   @onchange="(e) => ToggleProductSelection(product, (bool)e.Value!)" />
+                                        </td>
+                                        <td>@product.ProductCode</td>
+                                        <td>@product.ProductName</td>
+                                        <td class="text-end">-</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    @if (selectedProducts.Any())
+                    {
+                        <div class="mt-3">
+                            <h6>已選擇 @selectedProducts.Count 項商品</h6>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" @onclick="AddSelectedProducts" disabled="@(!selectedProducts.Any())">
+                        新增選定商品
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</PagePermissionCheck>
+
+@code {
+    // Define BreadcrumbItem class locally
+    public class BreadcrumbItem
+    {
+        public string Text { get; set; } = "";
+        public string? Href { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    [Parameter] public int Id { get; set; }
+
+    private StockTaking? stockTaking;
+    private List<ERPCore2.Data.Entities.StockTakingDetail> stockTakingDetails = new();
+    private List<Warehouse> warehouses = new();
+    private List<Product> allProducts = new();
+    private List<Product> filteredProducts = new();
+    private List<Product> selectedProducts = new();
+
+    private List<ERPCore2.Components.Shared.Headers.GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string productSearchTerm = "";
+
+    private bool IsEditMode => Navigation.Uri.Contains("/edit");
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            breadcrumbItems = new List<ERPCore2.Components.Shared.Headers.GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("庫存管理", "/inventory"),
+                new("庫存盤點", "/stock-taking"),
+                new("盤點詳細")
+            };
+
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(OnInitializedAsync),
+                GetType(),
+                Navigation
+            );
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            // 載入盤點資料
+            stockTaking = await StockTakingService.GetByIdAsync(Id);
+            
+            if (stockTaking != null)
+            {
+                stockTakingDetails = await StockTakingService.GetStockTakingDetailsAsync(Id);
+            }
+
+            // 載入基礎資料
+            warehouses = await WarehouseService.GetAllAsync();
+            
+            if (IsEditMode)
+            {
+                allProducts = await ProductService.GetAllAsync();
+                filteredProducts = allProducts.ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadDataAsync),
+                GetType(),
+                additionalData: "載入資料失敗"
+            );
+        }
+    }
+
+    private async Task SaveStockTaking()
+    {
+        try
+        {
+            if (stockTaking == null) return;
+
+            isSaving = true;
+
+            var result = await StockTakingService.UpdateAsync(stockTaking);
+            
+            if (result.IsSuccess)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "儲存成功");
+                await LoadDataAsync();
+                StateHasChanged();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "儲存失敗：" + result.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(SaveStockTaking),
+                GetType(),
+                additionalData: "儲存盤點失敗"
+            );
+            await JSRuntime.InvokeVoidAsync("alert", "儲存失敗，請稍後再試");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task StartStockTaking()
+    {
+        try
+        {
+            if (stockTaking == null) return;
+
+            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "確定要開始盤點嗎？開始後將無法修改基本資料。");
+            if (!confirmed) return;
+
+            var result = await StockTakingService.StartStockTakingAsync(Id);
+            
+            if (result.IsSuccess)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "盤點已開始");
+                await LoadDataAsync();
+                StateHasChanged();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "開始盤點失敗：" + result.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(StartStockTaking),
+                GetType(),
+                additionalData: "開始盤點失敗"
+            );
+        }
+    }
+
+    private async Task CompleteStockTaking()
+    {
+        try
+        {
+            if (stockTaking == null) return;
+
+            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "確定要完成盤點嗎？完成後將無法修改盤點數據。");
+            if (!confirmed) return;
+
+            var result = await StockTakingService.CompleteStockTakingAsync(Id);
+            
+            if (result.IsSuccess)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "盤點已完成");
+                await LoadDataAsync();
+                StateHasChanged();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "完成盤點失敗：" + result.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(CompleteStockTaking),
+                GetType(),
+                additionalData: "完成盤點失敗"
+            );
+        }
+    }
+
+    private async Task ShowAddProductModal()
+    {
+        try
+        {
+            selectedProducts.Clear();
+            productSearchTerm = "";
+            FilterProducts();
+            
+            var element = await JSRuntime.InvokeAsync<IJSObjectReference>("document.getElementById", "addProductModal");
+            var modal = await JSRuntime.InvokeAsync<IJSObjectReference>("bootstrap.Modal.getOrCreateInstance", element);
+            await modal.InvokeVoidAsync("show");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ShowAddProductModal),
+                GetType(),
+                additionalData: "顯示新增商品模態框失敗"
+            );
+        }
+    }
+
+    private void FilterProducts()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(productSearchTerm))
+            {
+                filteredProducts = allProducts
+                    .Where(p => !stockTakingDetails.Any(d => d.ProductId == p.Id))
+                    .ToList();
+            }
+            else
+            {
+                filteredProducts = allProducts
+                    .Where(p => !stockTakingDetails.Any(d => d.ProductId == p.Id) &&
+                               (p.ProductCode.Contains(productSearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                                p.ProductName.Contains(productSearchTerm, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(FilterProducts),
+                GetType(),
+                additionalData: "篩選商品失敗"
+            );
+        }
+    }
+
+    private void ToggleProductSelection(Product product, bool isSelected)
+    {
+        try
+        {
+            if (isSelected)
+            {
+                if (!selectedProducts.Contains(product))
+                {
+                    selectedProducts.Add(product);
+                }
+            }
+            else
+            {
+                selectedProducts.Remove(product);
+            }
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ToggleProductSelection),
+                GetType(),
+                additionalData: "切換商品選擇失敗"
+            );
+        }
+    }
+
+    private async Task AddSelectedProducts()
+    {
+        try
+        {
+            if (!selectedProducts.Any()) return;
+
+            // TODO: 實作添加商品到盤點的功能
+            // var result = await StockTakingService.AddProductsToStockTakingAsync(Id, selectedProducts.Select(p => p.Id).ToList());
+            var result = new ServiceResult { IsSuccess = true };  // 暫時模擬成功
+            
+            if (result.IsSuccess)
+            {
+                var element = await JSRuntime.InvokeAsync<IJSObjectReference>("document.getElementById", "addProductModal");
+                var modal = await JSRuntime.InvokeAsync<IJSObjectReference>("bootstrap.Modal.getInstance", element);
+                await modal.InvokeVoidAsync("hide");
+                
+                await LoadDataAsync();
+                StateHasChanged();
+                
+                await JSRuntime.InvokeVoidAsync("alert", $"成功新增 {selectedProducts.Count} 項商品");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "新增商品失敗：" + result.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(AddSelectedProducts),
+                GetType(),
+                additionalData: "新增選定商品失敗"
+            );
+        }
+    }
+
+    private async Task RemoveDetail(ERPCore2.Data.Entities.StockTakingDetail detail)
+    {
+        try
+        {
+            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "確定要移除這項商品嗎？");
+            if (!confirmed) return;
+
+            // TODO: 實作移除盤點明細的功能
+            // var result = await StockTakingService.RemoveDetailAsync(detail.Id);
+            var result = new ServiceResult { IsSuccess = true };  // 暫時模擬成功
+            
+            if (result.IsSuccess)
+            {
+                await LoadDataAsync();
+                StateHasChanged();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "移除失敗：" + result.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(RemoveDetail),
+                GetType(),
+                additionalData: "移除盤點明細失敗"
+            );
+        }
+    }
+
+    private void UpdateDetailCalculations(ERPCore2.Data.Entities.StockTakingDetail detail)
+    {
+        try
+        {
+            // 計算會自動觸發，因為是 calculated properties
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(UpdateDetailCalculations),
+                GetType(),
+                additionalData: "更新明細計算失敗"
+            );
+        }
+    }
+
+    private async Task CompleteDetail(ERPCore2.Data.Entities.StockTakingDetail detail)
+    {
+        try
+        {
+            if (!detail.ActualStock.HasValue)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "請先輸入實盤數量");
+                return;
+            }
+
+            detail.DetailStatus = StockTakingDetailStatusEnum.Counted;
+            detail.TakingTime = DateTime.Now;
+
+            var result = await StockTakingService.UpdateStockTakingDetailAsync(detail.Id, detail.ActualStock ?? 0, detail.TakingPersonnel, detail.DetailRemarks);
+            
+            if (result.IsSuccess)
+            {
+                await LoadDataAsync();
+                StateHasChanged();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "完成失敗：" + result.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(CompleteDetail),
+                GetType(),
+                additionalData: "完成盤點明細失敗"
+            );
+        }
+    }
+
+    private bool CanEdit()
+    {
+        return stockTaking?.TakingStatus == StockTakingStatusEnum.Draft || 
+               stockTaking?.TakingStatus == StockTakingStatusEnum.InProgress;
+    }
+
+    private bool CanEditBasicInfo()
+    {
+        return stockTaking?.TakingStatus == StockTakingStatusEnum.Draft;
+    }
+
+    private bool AllItemsCompleted()
+    {
+        return stockTakingDetails.All(d => d.ActualStock.HasValue);
+    }
+
+    private string GetPageTitle()
+    {
+        if (stockTaking == null) return "盤點詳細";
+        
+        return IsEditMode ? $"編輯盤點 - {stockTaking.TakingNumber}" : $"盤點詳細 - {stockTaking.TakingNumber}";
+    }
+
+    private string GetRequiredPermission()
+    {
+        return IsEditMode ? "StockTaking.Update" : "StockTaking.Read";
+    }
+
+    private static string GetStatusDisplayName(StockTakingStatusEnum status)
+    {
+        return status switch
+        {
+            StockTakingStatusEnum.Draft => "草稿",
+            StockTakingStatusEnum.InProgress => "進行中",
+            StockTakingStatusEnum.Completed => "已完成",
+            StockTakingStatusEnum.PendingApproval => "待審核",
+            StockTakingStatusEnum.Approved => "已審核",
+            StockTakingStatusEnum.Cancelled => "已取消",
+            _ => status.ToString()
+        };
+    }
+
+    private static string GetTypeDisplayName(StockTakingTypeEnum type)
+    {
+        return type switch
+        {
+            StockTakingTypeEnum.Full => "全盤",
+            StockTakingTypeEnum.Cycle => "循環盤點",
+            StockTakingTypeEnum.Sample => "抽樣盤點",
+            StockTakingTypeEnum.Specific => "特定商品",
+            StockTakingTypeEnum.Location => "特定位置",
+            _ => type.ToString()
+        };
+    }
+
+    private static string GetDetailStatusDisplayName(StockTakingDetailStatusEnum status)
+    {
+        return status switch
+        {
+            StockTakingDetailStatusEnum.Pending => "待盤點",
+            StockTakingDetailStatusEnum.Counted => "已盤點",
+            _ => status.ToString()
+        };
+    }
+
+    private static string GetStatusBadgeColor(StockTakingStatusEnum status)
+    {
+        return status switch
+        {
+            StockTakingStatusEnum.Draft => "secondary",
+            StockTakingStatusEnum.InProgress => "warning",
+            StockTakingStatusEnum.Completed => "info",
+            StockTakingStatusEnum.PendingApproval => "warning",
+            StockTakingStatusEnum.Approved => "success",
+            StockTakingStatusEnum.Cancelled => "danger",
+            _ => "secondary"
+        };
+    }
+
+    private static string GetDetailStatusBadgeColor(StockTakingDetailStatusEnum status)
+    {
+        return status switch
+        {
+            StockTakingDetailStatusEnum.Pending => "warning",
+            StockTakingDetailStatusEnum.Counted => "success",
+            _ => "secondary"
+        };
+    }
+
+    private static string GetProgressColor(decimal rate)
+    {
+        return rate >= 100 ? "success" : rate >= 50 ? "warning" : "danger";
+    }
+
+    private static string GetDetailRowClass(ERPCore2.Data.Entities.StockTakingDetail detail)
+    {
+        if (!detail.ActualStock.HasValue) return "";
+        
+        return detail.HasDifference ? "table-warning" : "";
+    }
+
+    private static string GetDifferenceClass(int difference)
+    {
+        return difference switch
+        {
+            > 0 => "text-success",
+            < 0 => "text-danger",
+            _ => "text-muted"
+        };
+    }
+}

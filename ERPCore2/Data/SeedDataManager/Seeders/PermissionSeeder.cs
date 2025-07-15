@@ -140,6 +140,13 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { PermissionCode = "Inventory.Overview", PermissionName = "庫存總覽", Module = "Inventory", Action = "Overview", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Inventory.TransactionHistory", PermissionName = "庫存異動歷史", Module = "Inventory", Action = "TransactionHistory", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 
+                // 庫存盤點權限
+                new Permission { PermissionCode = "StockTaking.Create", PermissionName = "建立盤點", Module = "StockTaking", Action = "Create", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "StockTaking.Read", PermissionName = "檢視盤點", Module = "StockTaking", Action = "Read", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "StockTaking.Update", PermissionName = "執行盤點", Module = "StockTaking", Action = "Update", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "StockTaking.Approve", PermissionName = "審核盤點", Module = "StockTaking", Action = "Approve", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "StockTaking.Report", PermissionName = "盤點報告", Module = "StockTaking", Action = "Report", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                
                 // 系統控制權限
                 new Permission { PermissionCode = "SystemControl.ViewErrorLog", PermissionName = "檢視錯誤記錄", Module = "SystemControl", Action = "ViewErrorLog", PermissionGroup = "系統管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "SystemControl.ViewUpdates", PermissionName = "檢視更新記錄", Module = "SystemControl", Action = "ViewUpdates", PermissionGroup = "系統管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" }

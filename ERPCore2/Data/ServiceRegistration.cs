@@ -67,6 +67,7 @@ namespace ERPCore2.Data
             services.AddScoped<IInventoryStockService, InventoryStockService>();
             services.AddScoped<IInventoryTransactionService, InventoryTransactionService>();
             services.AddScoped<IInventoryReservationService, InventoryReservationService>();
+            services.AddScoped<IStockTakingService, StockTakingService>();
 
             // BOM基礎資料表服務
             services.AddScoped<IWeatherService, WeatherService>();
