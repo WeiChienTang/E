@@ -33,110 +33,68 @@
         <NavMenuItem Text="首頁" IconClass="bi bi-house-door-fill-nav-menu" Url="/" />
 
         <!-- 基礎資料下拉選單 -->
-        <NavigationPermissionCheck AnyPermissions="@(new[] {"IndustryType.Read", "Material.Read", "Weather.Read", "Color.Read", "Size.Read", "Unit.Read", "SupplierType.Read", "CustomerType.Read", "EmployeePosition.Read"})">
-            <NavMenuItem Text="基礎資料" IconClass="bi-sliders nav-menu-bi">
-                <DropdownItems>
-                    <NavigationPermissionCheck Permission="IndustryType.Read">
-                        <NavDropdownItem Text="行業" Url="/industrytypes"/>
-                    </NavigationPermissionCheck>
-                </DropdownItems>
-            </NavMenuItem>
-        </NavigationPermissionCheck>        
+        <NavMenuItem Text="基礎資料" IconClass="bi-sliders nav-menu-bi" MenuKey="basic_data">
+            <DropdownItems>
+                <NavDropdownItem Text="行業" Url="/industrytypes" RequiredPermission="IndustryType.Read" ParentMenuKey="basic_data"/>
+            </DropdownItems>
+        </NavMenuItem>        
 
         <!-- 客戶管理下拉選單 -->
-        <NavigationPermissionCheck AnyPermissions="@(new[] {"Customer.Read", "Customer.Create", "Customer.Update", "Customer.Delete", "CustomerType.Read", "CustomerType.Create", "CustomerType.Update", "CustomerType.Delete"})">
-            <NavMenuItem Text="客戶管理" IconClass="bi bi-people-fill">
-                <DropdownItems>
-                    <NavigationPermissionCheck Permission="Customer.Read">
-                        <NavDropdownItem Text="客戶維護" Url="/customers"/>
-                    </NavigationPermissionCheck>
+        <NavMenuItem Text="客戶管理" IconClass="bi bi-people-fill" MenuKey="customer_management">
+            <DropdownItems>
+                <NavDropdownItem Text="客戶維護" Url="/customers" RequiredPermission="Customer.Read" ParentMenuKey="customer_management"/>
 
-                    <NavigationPermissionCheck Permission="CustomerType.Read">
-                        <NavDropdownItem Text="客戶類型" Url="/customer-types"/>
-                    </NavigationPermissionCheck>                
-                </DropdownItems>
-            </NavMenuItem>
-        </NavigationPermissionCheck>
+                <NavDropdownItem Text="客戶類型" Url="/customer-types" RequiredPermission="CustomerType.Read" ParentMenuKey="customer_management"/>               
+            </DropdownItems>
+        </NavMenuItem>
 
           <!-- 廠商管理下拉選單 -->
-        <NavigationPermissionCheck AnyPermissions="@(new[] {"Supplier.Read", "Supplier.Create", "Supplier.Update", "Supplier.Delete", "SupplierType.Read", "SupplierType.Create", "SupplierType.Update", "SupplierType.Delete"})">
-            <NavMenuItem Text="廠商管理" IconClass="bi bi-building-gear">
-                <DropdownItems>
-                    <NavigationPermissionCheck Permission="Supplier.Read">
-                        <NavDropdownItem Text="廠商維護" Url="/suppliers" />
-                    </NavigationPermissionCheck>
+        <NavMenuItem Text="廠商管理" IconClass="bi bi-building-gear" MenuKey="supplier_management">
+            <DropdownItems>
+                <NavDropdownItem Text="廠商維護" Url="/suppliers" RequiredPermission="Supplier.Read" ParentMenuKey="supplier_management" />
 
-                    <NavigationPermissionCheck Permission="SupplierType.Read">
-                        <NavDropdownItem Text="廠商類型" Url="/supplier-types"/>
-                    </NavigationPermissionCheck>
-                </DropdownItems>
-            </NavMenuItem>
-        </NavigationPermissionCheck>
+                <NavDropdownItem Text="廠商類型" Url="/supplier-types" RequiredPermission="SupplierType.Read" ParentMenuKey="supplier_management"/>
+            </DropdownItems>
+        </NavMenuItem>
 
         <!-- 員工管理下拉選單 -->
-        <NavigationPermissionCheck AnyPermissions="@(new[] {"Employee.Read", "Employee.Create", "Employee.Update", "Employee.Delete", "Department.Read", "Department.Create", "Department.Update", "Department.Delete", "EmployeePosition.Read", "EmployeePosition.Create", "EmployeePosition.Update", "EmployeePosition.Delete", "Role.Read", "Role.Create", "Role.Update", "Role.Delete", "Permission.Read", "Permission.Create", "Permission.Update", "Permission.Delete"})">
-            <NavMenuItem Text="員工管理" IconClass="bi bi-person-badge-fill">
-                <DropdownItems>
-                    <NavigationPermissionCheck Permission="Employee.Read">
-                        <NavDropdownItem Text="員工維護" Url="/employees" />
-                    </NavigationPermissionCheck>
+        <NavMenuItem Text="員工管理" IconClass="bi bi-person-badge-fill" MenuKey="employee_management">
+            <DropdownItems>
+                <NavDropdownItem Text="員工維護" Url="/employees" RequiredPermission="Employee.Read" ParentMenuKey="employee_management" />
 
-                    <NavigationPermissionCheck Permission="Department.Read">
-                        <NavDropdownItem Text="部門設定" Url="/departments"/>
-                    </NavigationPermissionCheck>
+                <NavDropdownItem Text="部門設定" Url="/departments" RequiredPermission="Department.Read" ParentMenuKey="employee_management"/>
 
-                    <NavigationPermissionCheck Permission="EmployeePosition.Read">
-                        <NavDropdownItem Text="職位設定" Url="/employee-positions"/>
-                    </NavigationPermissionCheck>          
+                <NavDropdownItem Text="職位設定" Url="/employee-positions" RequiredPermission="EmployeePosition.Read" ParentMenuKey="employee_management"/>          
 
-                    
-                    
-                    <NavigationPermissionCheck Permission="Role.Read">
-                        <NavDropdownItem Text="角色設定" Url="/roles"/>
-                    </NavigationPermissionCheck>         
+                <NavDropdownItem Text="角色設定" Url="/roles" RequiredPermission="Role.Read" ParentMenuKey="employee_management"/>         
 
-                    <NavigationPermissionCheck Permission="Permission.Read">
-                        <NavDropdownItem Text="權限設定" Url="/permissions"/>
-                    </NavigationPermissionCheck>
+                <NavDropdownItem Text="權限設定" Url="/permissions" RequiredPermission="Permission.Read" ParentMenuKey="employee_management"/>
 
-                    <NavigationPermissionCheck Permission="Role.Read">
-                        <NavDropdownItem Text="角色權限設定" Url="/employees/role-permission-management"/>
-                    </NavigationPermissionCheck>
+                <NavDropdownItem Text="角色權限設定" Url="/employees/role-permission-management" RequiredPermission="Role.Read" ParentMenuKey="employee_management"/>
 
-                </DropdownItems>
-            </NavMenuItem>
-        </NavigationPermissionCheck>
+            </DropdownItems>
+        </NavMenuItem>
 
         <!-- 產品管理下拉選單 -->
-        <NavigationPermissionCheck AnyPermissions="@(new[] {"Product.Read", "Product.Create", "Product.Update", "Product.Delete", "Product.ViewCost", "Product.ManageStock", "Product.ManageSupplier", "ProductCategory.Read", "ProductCategory.Create", "ProductCategory.Update", "ProductCategory.Delete", "Size.Read", "Size.Create", "Size.Update", "Size.Delete", "Color.Read", "Color.Create", "Color.Update", "Color.Delete", "Weather.Read", "Weather.Create", "Weather.Update", "Weather.Delete", "Material.Read", "Material.Create", "Material.Update", "Material.Delete", "Unit.Read", "Unit.Create", "Unit.Update", "Unit.Delete"})">
-            <NavMenuItem Text="產品管理" IconClass="bi bi-box-seam-fill">
-                <DropdownItems>
+        <NavMenuItem Text="產品管理" IconClass="bi bi-box-seam-fill" MenuKey="product_management">
+            <DropdownItems>
 
-                    <NavigationPermissionCheck Permission="Product.Read">
-                        <NavDropdownItem Text="產品維護" Url="/products" />
-                    </NavigationPermissionCheck>
+                <NavDropdownItem Text="產品維護" Url="/products" RequiredPermission="Product.Read" ParentMenuKey="product_management" />
 
-                    <NavigationPermissionCheck Permission="ProductCategory.Read">
-                            <NavDropdownItem Text="產品類型" Url="/product-categories"/>
-                        </NavigationPermissionCheck>
-                        <NavigationPermissionCheck Permission="Size.Read">
-                            <NavDropdownItem Text="產品尺寸" Url="/sizes" />
-                        </NavigationPermissionCheck>
-                        <NavigationPermissionCheck Permission="Color.Read">
-                            <NavDropdownItem Text="產品顏色" Url="/colors" />
-                        </NavigationPermissionCheck>
-                        <NavigationPermissionCheck Permission="Weather.Read">
-                            <NavDropdownItem Text="天氣" Url="/weather" />
-                        </NavigationPermissionCheck>
-                        <NavigationPermissionCheck Permission="Material.Read">
-                            <NavDropdownItem Text="產品材質" Url="/materials" />
-                        </NavigationPermissionCheck>
-                        <NavigationPermissionCheck Permission="Unit.Read">
-                            <NavDropdownItem Text="產品單位" Url="/units"/>
-                        </NavigationPermissionCheck>
-                </DropdownItems>
-            </NavMenuItem>
-        </NavigationPermissionCheck>       
+                <NavDropdownItem Text="產品類型" Url="/product-categories" RequiredPermission="ProductCategory.Read" ParentMenuKey="product_management"/>
+                        
+                <NavDropdownItem Text="產品尺寸" Url="/sizes" RequiredPermission="Size.Read" ParentMenuKey="product_management" />
+                        
+                <NavDropdownItem Text="產品顏色" Url="/colors" RequiredPermission="Color.Read" ParentMenuKey="product_management" />
+                        
+                <NavDropdownItem Text="天氣" Url="/weather" RequiredPermission="Weather.Read" ParentMenuKey="product_management" />
+                        
+                <NavDropdownItem Text="產品材質" Url="/materials" RequiredPermission="Material.Read" ParentMenuKey="product_management" />
+                        
+                <NavDropdownItem Text="產品單位" Url="/units" RequiredPermission="Unit.Read" ParentMenuKey="product_management"/>
+                        
+            </DropdownItems>
+        </NavMenuItem>       
 
         <!-- 銷貨管理下拉選單 (開發中) -->
         @* 暫時移除權限檢查，因為尚未定義相關權限 *@
@@ -145,21 +103,15 @@
         </NavMenuItem>
 
         <!-- 庫存管理下拉選單 -->
-        <NavigationPermissionCheck AnyPermissions="@(new[] {"Warehouse.Read", "Warehouse.Create", "Warehouse.Update", "Warehouse.Delete", "Inventory.Read", "Inventory.Create", "Inventory.Update", "Inventory.Delete", "Inventory.Overview"})">
-            <NavMenuItem Text="庫存管理" IconClass="bi-boxes nav-menu-bi">
-                <DropdownItems>
+        <NavMenuItem Text="庫存管理" IconClass="bi-boxes nav-menu-bi" MenuKey="inventory_management">
+            <DropdownItems>
 
-                    <NavigationPermissionCheck Permission="Inventory.Read">
-                        <NavDropdownItem Text="庫存概覽" Url="/inventoryoverview" />
-                    </NavigationPermissionCheck>
+                <NavDropdownItem Text="庫存概覽" Url="/inventoryoverview" RequiredPermission="Inventory.Read" ParentMenuKey="inventory_management" />
 
-                    <NavigationPermissionCheck Permission="Warehouse.Read">
-                        <NavDropdownItem Text="倉庫維護" Url="/warehouses" />
-                    </NavigationPermissionCheck>
+                <NavDropdownItem Text="倉庫維護" Url="/warehouses" RequiredPermission="Warehouse.Read" ParentMenuKey="inventory_management" />
 
-                </DropdownItems>
-            </NavMenuItem>
-        </NavigationPermissionCheck>    
+            </DropdownItems>
+        </NavMenuItem>    
 
         <!-- BOM 管理下拉選單 -->
         @* 暫時移除權限檢查，因為尚未定義相關權限 *@
@@ -167,22 +119,15 @@
 
         </NavMenuItem>
         <!-- 系統管理下拉選單 -->
-        <NavigationPermissionCheck AnyPermissions="@(new[] {"SystemControl.ViewErrorLog", "SystemControl.ViewUpdates"})">
-            <NavMenuItem Text="系統管理" IconClass="bi bi-gear-fill">
-                <DropdownItems>
+        <NavMenuItem Text="系統管理" IconClass="bi bi-gear-fill" MenuKey="system_management">
+            <DropdownItems>
 
-                    <NavigationPermissionCheck Permission="SystemControl.ViewErrorLog">
-                        <NavDropdownItem Text="更新紀錄" Url="/updates" />
-                    </NavigationPermissionCheck>
+                <NavDropdownItem Text="更新紀錄" Url="/updates" RequiredPermission="SystemControl.ViewUpdates" ParentMenuKey="system_management" />
 
-                    <NavigationPermissionCheck Permission="SystemControl.ViewErrorLog">
-                        <NavDropdownItem Text="錯誤記錄" Url="/error-logs" />
-                    </NavigationPermissionCheck>
+                <NavDropdownItem Text="錯誤記錄" Url="/error-logs" RequiredPermission="SystemControl.ViewErrorLog" ParentMenuKey="system_management" />
 
-
-                </DropdownItems>
-            </NavMenuItem>
-        </NavigationPermissionCheck>
+            </DropdownItems>
+        </NavMenuItem>
 
         <!-- UI 設計範例 -->
         @* <NavMenuItem Text="UI 設計範例" IconClass="bi bi-palette-fill">

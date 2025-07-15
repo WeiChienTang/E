@@ -44,10 +44,19 @@
             // 如果指定了多個權限，根據 RequireAll 決定檢查邏輯
             if (AnyPermissions != null && AnyPermissions.Any())
             {
+                // 過濾掉特殊的無權限標記
+                var validPermissions = AnyPermissions.Where(p => p != "___NO_PERMISSIONS___").ToArray();
+                
+                if (!validPermissions.Any())
+                {
+                    // 如果沒有有效權限，拒絕存取
+                    return false;
+                }
+
                 if (RequireAll)
                 {
                     // 需要所有權限
-                    foreach (var permission in AnyPermissions)
+                    foreach (var permission in validPermissions)
                     {
                         if (!await NavigationPermissionService.CanAccessAsync(permission))
                             return false;
@@ -57,7 +66,7 @@
                 else
                 {
                     // 只需要任一權限
-                    foreach (var permission in AnyPermissions)
+                    foreach (var permission in validPermissions)
                     {
                         if (await NavigationPermissionService.CanAccessAsync(permission))
                             return true;

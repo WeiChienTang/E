@@ -1,15 +1,32 @@
 @* 下拉選單項目元件 *@
+@using ERPCore2.Components.Shared.Auth
+@using ERPCore2.Services
+@inject INavigationPermissionCollector PermissionCollector
+@inject ILogger<NavDropdownItem> Logger
 
-<a class="nav-dropdown-item" href="@Url">
-    <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span> @Text
-</a>
+@if (!string.IsNullOrEmpty(RequiredPermission))
+{
+    <NavigationPermissionCheck Permission="@RequiredPermission">
+        <a class="nav-dropdown-item" href="@Url">
+            <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span> @Text
+        </a>
+    </NavigationPermissionCheck>
+}
+else
+{
+    <a class="nav-dropdown-item" href="@Url">
+        <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span> @Text
+    </a>
+}
 
 
 @code {
     /// <summary>
     /// 下拉選單項目顯示的文字
     /// </summary>
-    [Parameter] public string Text { get; set; } = "";    /// <summary>
+    [Parameter] public string Text { get; set; } = "";
+
+    /// <summary>
     /// 圖示的 CSS 類別（例如 "bi bi-person-lines-fill"）
     /// </summary>
     [Parameter] public string IconClass { get; set; } = "";
@@ -18,4 +35,48 @@
     /// 連結的 URL
     /// </summary>
     [Parameter] public string Url { get; set; } = "";
+
+    /// <summary>
+    /// 此菜單項目需要的權限（可選）
+    /// </summary>
+    [Parameter] public string? RequiredPermission { get; set; }
+
+    /// <summary>
+    /// 父菜單識別鍵，用於權限收集
+    /// </summary>
+    [Parameter] public string? ParentMenuKey { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Logger.LogInformation("NavDropdownItem 初始化: Text={Text}, RequiredPermission={RequiredPermission}, ParentMenuKey={ParentMenuKey}", 
+            Text, RequiredPermission, ParentMenuKey);
+        
+        // 在組件初始化時就註冊權限，確保父組件能及時收集到
+        RegisterPermission();
+    }
+
+    protected override void OnParametersSet()
+    {
+        Logger.LogInformation("NavDropdownItem 參數設定: Text={Text}, RequiredPermission={RequiredPermission}, ParentMenuKey={ParentMenuKey}", 
+            Text, RequiredPermission, ParentMenuKey);
+            
+        // 參數變更時重新註冊權限
+        RegisterPermission();
+    }
+
+    private void RegisterPermission()
+    {
+        // 如果有權限要求且有父菜單鍵，註冊到權限收集器
+        if (!string.IsNullOrEmpty(RequiredPermission) && !string.IsNullOrEmpty(ParentMenuKey))
+        {
+            Logger.LogInformation("註冊權限到收集器: ParentMenuKey={ParentMenuKey}, RequiredPermission={RequiredPermission}", 
+                ParentMenuKey, RequiredPermission);
+            PermissionCollector.RegisterPermission(ParentMenuKey, RequiredPermission);
+        }
+        else
+        {
+            Logger.LogWarning("無法註冊權限: Text={Text}, RequiredPermission={RequiredPermission}, ParentMenuKey={ParentMenuKey}", 
+                Text, RequiredPermission, ParentMenuKey);
+        }
+    }
 }
