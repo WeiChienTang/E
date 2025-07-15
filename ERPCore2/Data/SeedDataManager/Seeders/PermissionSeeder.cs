@@ -138,6 +138,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { PermissionCode = "Inventory.Update", PermissionName = "修改庫存", Module = "Inventory", Action = "Update", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Inventory.Delete", PermissionName = "刪除庫存", Module = "Inventory", Action = "Delete", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Inventory.Overview", PermissionName = "庫存總覽", Module = "Inventory", Action = "Overview", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "Inventory.TransactionHistory", PermissionName = "庫存異動歷史", Module = "Inventory", Action = "TransactionHistory", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 
                 // 系統控制權限
                 new Permission { PermissionCode = "SystemControl.ViewErrorLog", PermissionName = "檢視錯誤記錄", Module = "SystemControl", Action = "ViewErrorLog", PermissionGroup = "系統管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
