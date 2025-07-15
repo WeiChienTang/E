@@ -6,6 +6,8 @@
 @using ERPCore2.Components.Shared.Forms
 @using ERPCore2.Components.Shared.Tables
 @using ERPCore2.Components.Shared.Auth
+@using ERPCore2.Components.Shared.PageModels
+@using ERPCore2.Models
 @using Microsoft.AspNetCore.Components.Web
 @attribute [Authorize]
 @inject IInventoryStockService InventoryStockService
@@ -20,100 +22,40 @@
 <PagePermissionCheck RequiredPermission="Inventory.Overview">
     <PageTitle>庫存查詢總覽</PageTitle>
 
-    <GenericHeaderComponent 
-        Title="庫存查詢總覽" 
-        Subtitle="即時查看所有商品的庫存狀況與警戒提醒"
-        HeadingLevel="h1"
-        BreadcrumbItems="@breadcrumbItems"
-        ShowDivider="true"
-        ActionButtons="@actionButtons" />
-
-    <div class="container-fluid">
-        <!-- 統計卡片 -->
-        <InventoryStatisticsCards Statistics="statistics" 
-                                OnLowStockClick="ShowLowStockOnly" 
-                                OnZeroStockClick="ShowZeroStockOnly" />
-
-        <!-- 篩選區 -->
-        <GenericSearchFilterComponent TModel="SearchFilterModel"
-                                    FilterDefinitions="@filterDefinitions"
-                                    FilterModel="@searchModel"
-                                    OnSearch="@HandleSearch"
-                                    OnFilterChanged="@HandleFilterChanged"
-                                    AutoSearch="true"
-                                    ShowSearchButton="false" />
-
-        <!-- 庫存清單 -->
-        <div class="card shadow">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">庫存清單</h6>
-                <span class="badge bg-primary">共 @filteredInventoryStocks.Count 筆資料</span>
-            </div>
-            <div class="card-body p-0">
-                @if (isLoading)
-                {
-                    <div class="text-center p-4">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">載入中...</span>
-                        </div>
-                        <p class="mt-2 text-muted">載入庫存資料中...</p>
-                    </div>
-                }
-                else
-                {
-                    <GenericTableComponent TItem="InventoryStock"
-                                         Items="@pagedInventoryStocks"
-                                         ColumnDefinitions="@columnDefinitions"
-                                         EmptyMessage="沒有找到符合條件的庫存資料"
-                                         ShowHeader="true"
-                                         IsStriped="true"
-                                         IsHoverable="true"
-                                         GetRowCssClass="@GetRowCssClass"
-                                         EnableRowClick="true"
-                                         OnRowClick="@OnRowClick"
-                                         EnablePagination="true"
-                                         CurrentPage="@currentPage"
-                                         PageSize="@pageSize"
-                                         TotalItems="@filteredInventoryStocks.Count"
-                                         OnPageChanged="@OnPageChanged"
-                                         OnPageSizeChanged="@OnPageSizeChanged"
-                                         ShowPageSizeSelector="true"
-                                         PageSizeOptions="@pageSizeOptions" />
-                }
-            </div>
-        </div>
-    </div>
+    <GenericIndexPageComponent TEntity="InventoryStock" 
+                               TService="IInventoryStockService"
+                               PageTitle="庫存查詢總覽"
+                               PageSubtitle="即時查看所有商品的庫存狀況與警戒提醒"
+                               EntityName="庫存資料"
+                               BreadcrumbItems="@breadcrumbItems"
+                               Service="@InventoryStockService"
+                               DataLoader="@LoadInventoryDataAsync"
+                               InitializeBasicData="@LoadBasicDataAsync"
+                               FilterDefinitions="@filterDefinitions"
+                               ColumnDefinitions="@columnDefinitions"
+                               FilterApplier="@ApplyCustomFilters"
+                               ShowStatisticsCards="true"
+                               StatisticsCardConfigs="@statisticsCardConfigs"
+                               StatisticsDataLoader="@LoadStatisticsAsync"
+                               OnRowClick="@HandleRowClick"
+                               ShowDefaultActions="false"
+                               CustomActionButtons="@customActionButtons"
+                               EnableRowClick="true"
+                               ShowActions="false" />
 </PagePermissionCheck>
 
 @code {
-    // 資料相關
-    private List<InventoryStock> inventoryStocks = new();
-    private List<InventoryStock> filteredInventoryStocks = new();
-    private List<InventoryStock> pagedInventoryStocks = new();
-    private Dictionary<string, object> statistics = new();
-    
-    // 選項清單
+    // ===== 資料服務和選項清單 =====
     private List<Warehouse> warehouses = new();
     private List<ProductCategory> productCategories = new();
     private List<WarehouseLocation> warehouseLocations = new();
-    private List<WarehouseLocation> filteredLocations = new();
     
-    // 篩選相關 - 使用通用篩選組件
-    private SearchFilterModel searchModel = new();
+    // ===== GenericIndexPageComponent 必要屬性 =====
     private List<SearchFilterDefinition> filterDefinitions = new();
-    
-    // 表格相關
     private List<TableColumnDefinition> columnDefinitions = new();
-    private List<int> pageSizeOptions = new() { 10, 20, 50, 100 };
+    private List<StatisticsCardConfig> statisticsCardConfigs = new();
     
-    // 分頁相關
-    private int currentPage = 1;
-    private int pageSize = 20;
-    
-    // 狀態
-    private bool isLoading = true;
-    
-    // GenericHeaderComponent 相關
+    // ===== 頁面設定 =====
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
     {
         new("首頁", "/"),
@@ -121,43 +63,278 @@
         new("庫存查詢總覽")
     };
     
-    private RenderFragment actionButtons => __builder =>
+    // ===== 自訂動作按鈕 =====
+    private RenderFragment customActionButtons => __builder =>
     {
         <div class="btn-toolbar" role="toolbar">
             <div class="btn-group me-2" role="group">
                 <button type="button" class="btn btn-outline-success" @onclick="ExportToExcel">
                     <i class="fas fa-file-excel me-1"></i>匯出Excel
                 </button>
-                <button type="button" class="btn btn-outline-primary" @onclick="RefreshData">
-                    <i class="fas fa-sync-alt me-1"></i>重新整理
-                </button>
             </div>
         </div>
     };
 
-    protected override async Task OnInitializedAsync()
+    // ===== 生命週期 =====
+    protected override Task OnInitializedAsync()
+    {
+        InitializeStatisticsCards();
+        InitializeColumns();
+        return Task.CompletedTask;
+    }
+
+    // ===== 資料載入方法 (供 GenericIndexPageComponent 使用) =====
+    
+    /// <summary>
+    /// 載入基礎資料 - 供 GenericIndexPageComponent 的 InitializeBasicData 使用
+    /// </summary>
+    private async Task LoadBasicDataAsync()
     {
         try
         {
-            // 依序載入，避免並發問題
-            await LoadBasicDataAsync();
+            // 依序載入基礎資料，避免 DbContext 衝突
+            warehouses = await WarehouseService.GetAllAsync();
+            productCategories = await ProductService.GetProductCategoriesAsync();
+            warehouseLocations = await WarehouseLocationService.GetAllAsync();
+            
+            // 載入完基礎資料後初始化篩選器
             InitializeFilters();
-            InitializeColumns();
-            await LoadInventoryDataAsync();
-            await LoadStatisticsAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadBasicDataAsync),
+                GetType(),
+                Navigation
+            );
+        }
+    }
+
+    /// <summary>
+    /// 載入庫存資料 - 供 GenericIndexPageComponent 的 DataLoader 使用
+    /// </summary>
+    private async Task<List<InventoryStock>> LoadInventoryDataAsync()
+    {
+        try
+        {
+            // 直接取得所有庫存資料，篩選邏輯交給 ApplyCustomFilters
+            return await InventoryStockService.GetInventoryOverviewAsync(null, null, null);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadInventoryDataAsync),
+                GetType(),
+                Navigation
+            );
+            return new List<InventoryStock>();
+        }
+    }
+
+    /// <summary>
+    /// 載入統計資料 - 供 GenericIndexPageComponent 的 StatisticsDataLoader 使用
+    /// </summary>
+    private async Task<Dictionary<string, object>> LoadStatisticsAsync()
+    {
+        try
+        {
+            return await InventoryStockService.GetInventoryStatisticsAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadStatisticsAsync),
+                GetType(),
+                Navigation
+            );
+            return new Dictionary<string, object>();
+        }
+    }
+
+    // ===== 篩選邏輯 =====
+    
+    /// <summary>
+    /// 自訂篩選邏輯 - 供 GenericIndexPageComponent 的 FilterApplier 使用
+    /// </summary>
+    private IQueryable<InventoryStock> ApplyCustomFilters(SearchFilterModel searchModel, IQueryable<InventoryStock> query)
+    {
+        try
+        {
+            // 倉庫篩選
+            var warehouseId = GetSelectedId(searchModel, "WarehouseId");
+            if (warehouseId.HasValue)
+            {
+                query = query.Where(i => i.WarehouseId == warehouseId.Value);
+            }
+
+            // 商品分類篩選
+            var categoryId = GetSelectedId(searchModel, "CategoryId");
+            if (categoryId.HasValue)
+            {
+                query = query.Where(i => i.Product.ProductCategoryId == categoryId.Value);
+            }
+
+            // 搜尋篩選
+            var searchTerm = searchModel.GetFilterValue("SearchTerm")?.ToString();
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var term = searchTerm.Trim().ToLower();
+                query = query.Where(i =>
+                    i.Product.ProductCode.ToLower().Contains(term) ||
+                    i.Product.ProductName.ToLower().Contains(term)
+                );
+            }
+
+            // 庫存狀態篩選
+            var stockStatusFilter = searchModel.GetFilterValue("StockStatus")?.ToString();
+            switch (stockStatusFilter)
+            {
+                case "low":
+                    query = query.Where(i =>
+                        i.MinStockLevel.HasValue && 
+                        i.CurrentStock <= i.MinStockLevel.Value && 
+                        i.CurrentStock > 0
+                    );
+                    break;
+                case "zero":
+                    query = query.Where(i => i.CurrentStock == 0);
+                    break;
+                case "normal":
+                    query = query.Where(i =>
+                        !i.MinStockLevel.HasValue || 
+                        i.CurrentStock > i.MinStockLevel.Value
+                    );
+                    break;
+            }
+
+            return query;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ApplyCustomFilters),
+                GetType(),
+                additionalData: "套用自訂篩選失敗"
+            );
+            return query;
+        }
+    }
+
+    private int? GetSelectedId(SearchFilterModel searchModel, string filterName)
+    {
+        try
+        {
+            var value = searchModel.GetFilterValue(filterName)?.ToString();
+            return int.TryParse(value, out var id) ? id : null;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(GetSelectedId),
+                GetType(),
+                additionalData: $"取得篩選ID失敗，篩選名稱：{filterName}"
+            );
+            return null;
+        }
+    }
+
+    // ===== 事件處理 =====
+    
+    /// <summary>
+    /// 處理行點擊事件
+    /// </summary>
+    private Task HandleRowClick(InventoryStock item)
+    {
+        try
+        {
+            Navigation.NavigateTo($"/inventory/detail/{item.ProductId}");
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            return ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(HandleRowClick),
+                GetType(),
+                additionalData: $"跳轉到庫存詳細頁面失敗，商品ID：{item.ProductId}"
+            );
+        }
+    }
+
+    private async Task ExportToExcel()
+    {
+        try
+        {
+            // 這裡可以實作 Excel 匯出功能
+            await JSRuntime.InvokeVoidAsync("alert", "Excel 匯出功能開發中...");
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
-                "庫存總覽頁面初始化", 
+                "匯出Excel", 
                 GetType(), 
                 Navigation
             );
         }
-        finally
+    }
+
+    // ===== 初始化方法 =====
+    
+    private void InitializeStatisticsCards()
+    {
+        try
         {
-            isLoading = false;
+            statisticsCardConfigs = new List<StatisticsCardConfig>
+            {
+                new StatisticsCardConfig
+                {
+                    DataKey = "TotalItems",
+                    Title = "總庫存項目",
+                    IconClass = "bi bi-box-seam",
+                    BorderColor = "primary",
+                    TextColor = "primary"
+                },
+                new StatisticsCardConfig
+                {
+                    DataKey = "LowStockItems", 
+                    Title = "低庫存警戒",
+                    IconClass = "bi bi-exclamation-triangle",
+                    BorderColor = "warning",
+                    TextColor = "warning"
+                },
+                new StatisticsCardConfig
+                {
+                    DataKey = "ZeroStockItems",
+                    Title = "零庫存項目", 
+                    IconClass = "bi bi-x-circle",
+                    BorderColor = "danger",
+                    TextColor = "danger"
+                },
+                new StatisticsCardConfig
+                {
+                    DataKey = "TotalValue",
+                    Title = "總庫存價值",
+                    IconClass = "bi bi-currency-dollar",
+                    BorderColor = "success",
+                    TextColor = "success",
+                    IsCurrency = true
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeStatisticsCards),
+                GetType(),
+                additionalData: "初始化統計卡片失敗"
+            );
         }
     }
 
@@ -215,613 +392,259 @@
         }
     }
 
-    private void HandleSearch(SearchFilterModel filterModel)
-    {
-        try
-        {
-            searchModel = filterModel;
-            currentPage = 1; // 重設為第一頁
-            ApplyFilters();
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(HandleSearch),
-                GetType(),
-                additionalData: "處理搜尋失敗"
-            );
-        }
-    }
-
-    private void HandleFilterChanged(SearchFilterModel filterModel)
-    {
-        try
-        {
-            searchModel = filterModel;
-            currentPage = 1; // 重設為第一頁
-            ApplyFilters();
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(HandleFilterChanged),
-                GetType(),
-                additionalData: "處理篩選變更失敗"
-            );
-        }
-    }
-
-    private async Task LoadBasicDataAsync()
-    {
-        try
-        {
-            // 依序載入基礎資料，避免 DbContext 衝突
-            warehouses = await WarehouseService.GetAllAsync();
-            productCategories = await ProductService.GetProductCategoriesAsync();
-            warehouseLocations = await WarehouseLocationService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(LoadBasicDataAsync),
-                GetType(),
-                Navigation
-            );
-        }
-    }
-
-    private async Task LoadInventoryDataAsync()
-    {
-        try
-        {
-            // 取得篩選值
-            var selectedWarehouseId = GetSelectedId("WarehouseId");
-            var selectedCategoryId = GetSelectedId("CategoryId");
-            
-            inventoryStocks = await InventoryStockService.GetInventoryOverviewAsync(
-                selectedWarehouseId, 
-                selectedCategoryId, 
-                null // 暫時不支援庫位篩選
-            );
-            ApplyFilters();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(LoadInventoryDataAsync),
-                GetType(),
-                Navigation
-            );
-        }
-    }
-
-    private int? GetSelectedId(string filterName)
-    {
-        try
-        {
-            var value = searchModel.GetFilterValue(filterName)?.ToString();
-            return int.TryParse(value, out var id) ? id : null;
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(GetSelectedId),
-                GetType(),
-                additionalData: $"取得篩選ID失敗，篩選名稱：{filterName}"
-            );
-            return null;
-        }
-    }
-
-    private void ApplyFilters()
-    {
-        try
-        {
-            filteredInventoryStocks = inventoryStocks.ToList();
-
-            // 搜尋篩選
-            var searchTerm = searchModel.GetFilterValue("SearchTerm")?.ToString();
-            if (!string.IsNullOrWhiteSpace(searchTerm))
-            {
-                var term = searchTerm.Trim().ToLower();
-                filteredInventoryStocks = filteredInventoryStocks.Where(i =>
-                    i.Product.ProductCode.ToLower().Contains(term) ||
-                    i.Product.ProductName.ToLower().Contains(term)
-                ).ToList();
-            }
-
-            // 庫存狀態篩選
-            var stockStatusFilter = searchModel.GetFilterValue("StockStatus")?.ToString();
-            switch (stockStatusFilter)
-            {
-                case "low":
-                    filteredInventoryStocks = filteredInventoryStocks.Where(i =>
-                        i.MinStockLevel.HasValue && i.CurrentStock <= i.MinStockLevel.Value && i.CurrentStock > 0
-                    ).ToList();
-                    break;
-                case "zero":
-                    filteredInventoryStocks = filteredInventoryStocks.Where(i => i.CurrentStock == 0).ToList();
-                    break;
-                case "normal":
-                    filteredInventoryStocks = filteredInventoryStocks.Where(i =>
-                        !i.MinStockLevel.HasValue || i.CurrentStock > i.MinStockLevel.Value
-                    ).ToList();
-                    break;
-            }
-
-            UpdatePagination();
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(ApplyFilters),
-                GetType(),
-                additionalData: "套用篩選失敗"
-            );
-        }
-    }
-
-    private void UpdatePagination()
-    {
-        try
-        {
-            // 確保當前頁面在有效範圍內
-            var totalPages = (int)Math.Ceiling((double)filteredInventoryStocks.Count / pageSize);
-            if (totalPages == 0) totalPages = 1; // 避免除零錯誤
-            currentPage = Math.Min(currentPage, Math.Max(1, totalPages));
-            
-            // 計算當前頁面要顯示的資料
-            pagedInventoryStocks = filteredInventoryStocks
-                .Skip((currentPage - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(UpdatePagination),
-                GetType(),
-                additionalData: "更新分頁失敗"
-            );
-        }
-    }
-
-    private async Task OnFilterChanged()
-    {
-        isLoading = true;
-        StateHasChanged();
-        
-        try
-        {
-            // 更新庫位選項
-            var selectedWarehouseId = GetSelectedId("WarehouseId");
-            if (selectedWarehouseId.HasValue)
-            {
-                filteredLocations = warehouseLocations.Where(l => l.WarehouseId == selectedWarehouseId.Value).ToList();
-            }
-            else
-            {
-                filteredLocations = warehouseLocations;
-                searchModel.SetFilterValue("LocationId", "");
-            }
-
-            await LoadInventoryDataAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(OnFilterChanged),
-                GetType(),
-                Navigation
-            );
-        }
-        finally
-        {
-            isLoading = false;
-        }
-    }
-
-    private void OnSearchKeyPress(KeyboardEventArgs e)
-    {
-        try
-        {
-            if (e.Key == "Enter")
-            {
-                HandleFilterChanged(searchModel);
-            }
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(OnSearchKeyPress),
-                GetType(),
-                additionalData: "處理搜尋按鍵失敗"
-            );
-        }
-    }
-
-    private void ShowLowStockOnly()
-    {
-        try
-        {
-            searchModel.SetFilterValue("StockStatus", "low");
-            currentPage = 1; // 重設為第一頁
-            HandleFilterChanged(searchModel);
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(ShowLowStockOnly),
-                GetType(),
-                additionalData: "顯示低庫存失敗"
-            );
-        }
-    }
-
-    private void ShowZeroStockOnly()
-    {
-        try
-        {
-            searchModel.SetFilterValue("StockStatus", "zero");
-            currentPage = 1; // 重設為第一頁
-            HandleFilterChanged(searchModel);
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(ShowZeroStockOnly),
-                GetType(),
-                additionalData: "顯示零庫存失敗"
-            );
-        }
-    }
-
-    private void ClearFilters()
-    {
-        try
-        {
-            searchModel = new SearchFilterModel();
-            currentPage = 1;
-            
-            HandleFilterChanged(searchModel);
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(ClearFilters),
-                GetType(),
-                additionalData: "清除篩選失敗"
-            );
-        }
-    }
-
-    private async Task RefreshData()
-    {
-        isLoading = true;
-        StateHasChanged();
-        
-        try
-        {
-            await LoadInventoryDataAsync();
-            await LoadStatisticsAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(RefreshData),
-                GetType(),
-                Navigation
-            );
-        }
-        finally
-        {
-            isLoading = false;
-        }
-    }
-
-    private async Task ExportToExcel()
-    {
-        try
-        {
-            // 這裡可以實作 Excel 匯出功能
-            await JSRuntime.InvokeVoidAsync("alert", "Excel 匯出功能開發中...");
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex, 
-                "匯出Excel", 
-                GetType(), 
-                Navigation
-            );
-        }
-    }
-
-    private async Task LoadStatisticsAsync()
-    {
-        try
-        {
-            statistics = await InventoryStockService.GetInventoryStatisticsAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(LoadStatisticsAsync),
-                GetType(),
-                Navigation
-            );
-        }
-    }
-
     private void InitializeColumns()
     {
         try
         {
             columnDefinitions = new List<TableColumnDefinition>
-        {
-            // 商品代碼
-            new TableColumnDefinition
             {
-                Title = "商品代碼",
-                PropertyName = "Product.ProductCode",
-                DataType = ColumnDataType.Html,
-                HeaderStyle = "width: 120px;",
-                CustomTemplate = item => builder =>
+                // 商品代碼
+                new TableColumnDefinition
                 {
-                    var inventoryStock = (InventoryStock)item;
-                    builder.OpenElement(0, "code");
-                    builder.AddContent(1, inventoryStock.Product.ProductCode);
-                    builder.CloseElement();
-                }
-            },
-
-            // 商品名稱
-            new TableColumnDefinition
-            {
-                Title = "商品名稱",
-                PropertyName = "Product.ProductName",
-                DataType = ColumnDataType.Html,
-                CustomTemplate = item => builder =>
-                {
-                    var inventoryStock = (InventoryStock)item;
-                    builder.OpenElement(0, "div");
-                    
-                    builder.OpenElement(1, "strong");
-                    builder.AddContent(2, inventoryStock.Product.ProductName);
-                    builder.CloseElement();
-                    
-                    if (!string.IsNullOrEmpty(inventoryStock.Product.Description))
+                    Title = "商品代碼",
+                    PropertyName = "Product.ProductCode",
+                    DataType = ColumnDataType.Html,
+                    HeaderStyle = "width: 120px;",
+                    CustomTemplate = item => builder =>
                     {
-                        builder.OpenElement(3, "br");
-                        builder.CloseElement();
-                        builder.OpenElement(4, "small");
-                        builder.AddAttribute(5, "class", "text-muted");
-                        builder.AddContent(6, inventoryStock.Product.Description);
+                        var inventoryStock = (InventoryStock)item;
+                        builder.OpenElement(0, "code");
+                        builder.AddContent(1, inventoryStock.Product.ProductCode);
                         builder.CloseElement();
                     }
-                    
-                    builder.CloseElement();
-                }
-            },
+                },
 
-            // 分類
-            new TableColumnDefinition
-            {
-                Title = "分類",
-                PropertyName = "Product.ProductCategory.CategoryName",
-                DataType = ColumnDataType.Text,
-                HeaderStyle = "width: 100px;",
-                NullDisplayText = "-"
-            },
-
-            // 單位
-            new TableColumnDefinition
-            {
-                Title = "單位",
-                PropertyName = "Product.Unit.UnitName",
-                DataType = ColumnDataType.Text,
-                HeaderStyle = "width: 80px;",
-                NullDisplayText = "-"
-            },
-
-            // 倉庫
-            new TableColumnDefinition
-            {
-                Title = "倉庫",
-                PropertyName = "Warehouse.WarehouseName",
-                DataType = ColumnDataType.Html,
-                HeaderStyle = "width: 120px;",
-                CustomTemplate = item => builder =>
+                // 商品名稱
+                new TableColumnDefinition
                 {
-                    var inventoryStock = (InventoryStock)item;
-                    builder.OpenElement(0, "span");
-                    builder.AddAttribute(1, "class", "badge bg-info");
-                    builder.AddContent(2, inventoryStock.Warehouse.WarehouseName);
-                    builder.CloseElement();
-                }
-            },
-
-            // 庫位
-            new TableColumnDefinition
-            {
-                Title = "庫位",
-                PropertyName = "WarehouseLocation.LocationCode",
-                DataType = ColumnDataType.Html,
-                HeaderStyle = "width: 100px;",
-                CustomTemplate = item => builder =>
-                {
-                    var inventoryStock = (InventoryStock)item;
-                    if (inventoryStock.WarehouseLocation != null)
+                    Title = "商品名稱",
+                    PropertyName = "Product.ProductName",
+                    DataType = ColumnDataType.Html,
+                    CustomTemplate = item => builder =>
                     {
+                        var inventoryStock = (InventoryStock)item;
+                        builder.OpenElement(0, "div");
+                        
+                        builder.OpenElement(1, "strong");
+                        builder.AddContent(2, inventoryStock.Product.ProductName);
+                        builder.CloseElement();
+                        
+                        if (!string.IsNullOrEmpty(inventoryStock.Product.Description))
+                        {
+                            builder.OpenElement(3, "br");
+                            builder.CloseElement();
+                            builder.OpenElement(4, "small");
+                            builder.AddAttribute(5, "class", "text-muted");
+                            builder.AddContent(6, inventoryStock.Product.Description);
+                            builder.CloseElement();
+                        }
+                        
+                        builder.CloseElement();
+                    }
+                },
+
+                // 分類
+                new TableColumnDefinition
+                {
+                    Title = "分類",
+                    PropertyName = "Product.ProductCategory.CategoryName",
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 100px;",
+                    NullDisplayText = "-"
+                },
+
+                // 單位
+                new TableColumnDefinition
+                {
+                    Title = "單位",
+                    PropertyName = "Product.Unit.UnitName",
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 80px;",
+                    NullDisplayText = "-"
+                },
+
+                // 倉庫
+                new TableColumnDefinition
+                {
+                    Title = "倉庫",
+                    PropertyName = "Warehouse.WarehouseName",
+                    DataType = ColumnDataType.Html,
+                    HeaderStyle = "width: 120px;",
+                    CustomTemplate = item => builder =>
+                    {
+                        var inventoryStock = (InventoryStock)item;
                         builder.OpenElement(0, "span");
-                        builder.AddAttribute(1, "class", "badge bg-secondary");
-                        builder.AddContent(2, inventoryStock.WarehouseLocation.LocationCode);
+                        builder.AddAttribute(1, "class", "badge bg-info");
+                        builder.AddContent(2, inventoryStock.Warehouse.WarehouseName);
                         builder.CloseElement();
                     }
-                    else
+                },
+
+                // 庫位
+                new TableColumnDefinition
+                {
+                    Title = "庫位",
+                    PropertyName = "WarehouseLocation.LocationCode",
+                    DataType = ColumnDataType.Html,
+                    HeaderStyle = "width: 100px;",
+                    CustomTemplate = item => builder =>
                     {
+                        var inventoryStock = (InventoryStock)item;
+                        if (inventoryStock.WarehouseLocation != null)
+                        {
+                            builder.OpenElement(0, "span");
+                            builder.AddAttribute(1, "class", "badge bg-secondary");
+                            builder.AddContent(2, inventoryStock.WarehouseLocation.LocationCode);
+                            builder.CloseElement();
+                        }
+                        else
+                        {
+                            builder.OpenElement(0, "span");
+                            builder.AddAttribute(1, "class", "text-muted");
+                            builder.AddContent(2, "-");
+                            builder.CloseElement();
+                        }
+                    }
+                },
+
+                // 現有庫存
+                new TableColumnDefinition
+                {
+                    Title = "現有庫存",
+                    PropertyName = "CurrentStock",
+                    DataType = ColumnDataType.Html,
+                    HeaderStyle = "width: 80px;",
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end",
+                    CustomTemplate = item => builder =>
+                    {
+                        var inventoryStock = (InventoryStock)item;
+                        var isZeroStock = inventoryStock.CurrentStock == 0;
+                        var isLowStock = inventoryStock.MinStockLevel.HasValue && inventoryStock.CurrentStock <= inventoryStock.MinStockLevel.Value;
+                        var cssClass = isZeroStock ? "text-danger" : isLowStock ? "text-warning" : "text-success";
+                        
+                        builder.OpenElement(0, "strong");
+                        builder.AddAttribute(1, "class", cssClass);
+                        builder.AddContent(2, inventoryStock.CurrentStock.ToString("N0"));
+                        builder.CloseElement();
+                    }
+                },
+
+                // 預留庫存
+                new TableColumnDefinition
+                {
+                    Title = "預留庫存",
+                    PropertyName = "ReservedStock",
+                    DataType = ColumnDataType.Number,
+                    Format = "N0",
+                    HeaderStyle = "width: 80px;",
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end"
+                },
+
+                // 可用庫存
+                new TableColumnDefinition
+                {
+                    Title = "可用庫存",
+                    PropertyName = "AvailableStock",
+                    DataType = ColumnDataType.Html,
+                    HeaderStyle = "width: 80px;",
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end",
+                    CustomTemplate = item => builder =>
+                    {
+                        var inventoryStock = (InventoryStock)item;
+                        builder.OpenElement(0, "strong");
+                        builder.AddContent(1, inventoryStock.AvailableStock.ToString("N0"));
+                        builder.CloseElement();
+                    }
+                },
+
+                // 警戒線
+                new TableColumnDefinition
+                {
+                    Title = "警戒線",
+                    PropertyName = "MinStockLevel",
+                    DataType = ColumnDataType.Number,
+                    Format = "N0",
+                    HeaderStyle = "width: 80px;",
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end",
+                    NullDisplayText = "-"
+                },
+
+                // 狀態
+                new TableColumnDefinition
+                {
+                    Title = "狀態",
+                    PropertyName = "CurrentStock",
+                    DataType = ColumnDataType.Html,
+                    HeaderStyle = "width: 100px;",
+                    HeaderCssClass = "text-center",
+                    CellCssClass = "text-center",
+                    CustomTemplate = item => builder =>
+                    {
+                        var inventoryStock = (InventoryStock)item;
+                        var isZeroStock = inventoryStock.CurrentStock == 0;
+                        var isLowStock = inventoryStock.MinStockLevel.HasValue && inventoryStock.CurrentStock <= inventoryStock.MinStockLevel.Value;
+                        
                         builder.OpenElement(0, "span");
-                        builder.AddAttribute(1, "class", "text-muted");
-                        builder.AddContent(2, "-");
+                        if (isZeroStock)
+                        {
+                            builder.AddAttribute(1, "class", "badge bg-danger");
+                            builder.AddContent(2, "零庫存");
+                        }
+                        else if (isLowStock)
+                        {
+                            builder.AddAttribute(1, "class", "badge bg-warning");
+                            builder.AddContent(2, "低庫存");
+                        }
+                        else
+                        {
+                            builder.AddAttribute(1, "class", "badge bg-success");
+                            builder.AddContent(2, "正常");
+                        }
                         builder.CloseElement();
                     }
-                }
-            },
+                },
 
-            // 現有庫存
-            new TableColumnDefinition
-            {
-                Title = "現有庫存",
-                PropertyName = "CurrentStock",
-                DataType = ColumnDataType.Html,
-                HeaderStyle = "width: 80px;",
-                HeaderCssClass = "text-end",
-                CellCssClass = "text-end",
-                CustomTemplate = item => builder =>
+                // 平均成本
+                new TableColumnDefinition
                 {
-                    var inventoryStock = (InventoryStock)item;
-                    var isZeroStock = inventoryStock.CurrentStock == 0;
-                    var isLowStock = inventoryStock.MinStockLevel.HasValue && inventoryStock.CurrentStock <= inventoryStock.MinStockLevel.Value;
-                    var cssClass = isZeroStock ? "text-danger" : isLowStock ? "text-warning" : "text-success";
-                    
-                    builder.OpenElement(0, "strong");
-                    builder.AddAttribute(1, "class", cssClass);
-                    builder.AddContent(2, inventoryStock.CurrentStock.ToString("N0"));
-                    builder.CloseElement();
-                }
-            },
+                    Title = "平均成本",
+                    PropertyName = "AverageCost",
+                    DataType = ColumnDataType.Html,
+                    HeaderStyle = "width: 120px;",
+                    HeaderCssClass = "text-end",
+                    CellCssClass = "text-end",
+                    CustomTemplate = item => builder =>
+                    {
+                        var inventoryStock = (InventoryStock)item;
+                        builder.OpenElement(0, "span");
+                        if (inventoryStock.AverageCost.HasValue)
+                        {
+                            builder.AddContent(1, $"${inventoryStock.AverageCost.Value:N2}");
+                        }
+                        else
+                        {
+                            builder.AddAttribute(1, "class", "text-muted");
+                            builder.AddContent(2, "-");
+                        }
+                        builder.CloseElement();
+                    }
+                },
 
-            // 預留庫存
-            new TableColumnDefinition
-            {
-                Title = "預留庫存",
-                PropertyName = "ReservedStock",
-                DataType = ColumnDataType.Number,
-                Format = "N0",
-                HeaderStyle = "width: 80px;",
-                HeaderCssClass = "text-end",
-                CellCssClass = "text-end"
-            },
-
-            // 可用庫存
-            new TableColumnDefinition
-            {
-                Title = "可用庫存",
-                PropertyName = "AvailableStock",
-                DataType = ColumnDataType.Html,
-                HeaderStyle = "width: 80px;",
-                HeaderCssClass = "text-end",
-                CellCssClass = "text-end",
-                CustomTemplate = item => builder =>
+                // 最後異動
+                new TableColumnDefinition
                 {
-                    var inventoryStock = (InventoryStock)item;
-                    builder.OpenElement(0, "strong");
-                    builder.AddContent(1, inventoryStock.AvailableStock.ToString("N0"));
-                    builder.CloseElement();
+                    Title = "最後異動",
+                    PropertyName = "LastTransactionDate",
+                    DataType = ColumnDataType.Date,
+                    Format = "yyyy/MM/dd",
+                    HeaderStyle = "width: 120px;",
+                    NullDisplayText = "-"
                 }
-            },
-
-            // 警戒線
-            new TableColumnDefinition
-            {
-                Title = "警戒線",
-                PropertyName = "MinStockLevel",
-                DataType = ColumnDataType.Number,
-                Format = "N0",
-                HeaderStyle = "width: 80px;",
-                HeaderCssClass = "text-end",
-                CellCssClass = "text-end",
-                NullDisplayText = "-"
-            },
-
-            // 狀態
-            new TableColumnDefinition
-            {
-                Title = "狀態",
-                PropertyName = "CurrentStock", // 用於狀態判斷
-                DataType = ColumnDataType.Html,
-                HeaderStyle = "width: 100px;",
-                HeaderCssClass = "text-center",
-                CellCssClass = "text-center",
-                CustomTemplate = item => builder =>
-                {
-                    var inventoryStock = (InventoryStock)item;
-                    var isZeroStock = inventoryStock.CurrentStock == 0;
-                    var isLowStock = inventoryStock.MinStockLevel.HasValue && inventoryStock.CurrentStock <= inventoryStock.MinStockLevel.Value;
-                    
-                    builder.OpenElement(0, "span");
-                    if (isZeroStock)
-                    {
-                        builder.AddAttribute(1, "class", "badge bg-danger");
-                        builder.AddContent(2, "零庫存");
-                    }
-                    else if (isLowStock)
-                    {
-                        builder.AddAttribute(1, "class", "badge bg-warning");
-                        builder.AddContent(2, "低庫存");
-                    }
-                    else
-                    {
-                        builder.AddAttribute(1, "class", "badge bg-success");
-                        builder.AddContent(2, "正常");
-                    }
-                    builder.CloseElement();
-                }
-            },
-
-            // 平均成本
-            new TableColumnDefinition
-            {
-                Title = "平均成本",
-                PropertyName = "AverageCost",
-                DataType = ColumnDataType.Html,
-                HeaderStyle = "width: 120px;",
-                HeaderCssClass = "text-end",
-                CellCssClass = "text-end",
-                CustomTemplate = item => builder =>
-                {
-                    var inventoryStock = (InventoryStock)item;
-                    builder.OpenElement(0, "span");
-                    if (inventoryStock.AverageCost.HasValue)
-                    {
-                        builder.AddContent(1, $"${inventoryStock.AverageCost.Value:N2}");
-                    }
-                    else
-                    {
-                        builder.AddAttribute(1, "class", "text-muted");
-                        builder.AddContent(2, "-");
-                    }
-                    builder.CloseElement();
-                }
-            },
-
-            // 最後異動
-            new TableColumnDefinition
-            {
-                Title = "最後異動",
-                PropertyName = "LastTransactionDate",
-                DataType = ColumnDataType.Date,
-                Format = "yyyy/MM/dd",
-                HeaderStyle = "width: 120px;",
-                NullDisplayText = "-"
-            }
-        };
+            };
         }
         catch (Exception ex)
         {
@@ -830,92 +653,6 @@
                 nameof(InitializeColumns),
                 GetType(),
                 additionalData: "初始化欄位定義失敗"
-            );
-        }
-    }
-
-    // 取得列的 CSS 類別
-    private string GetRowCssClass(InventoryStock item)
-    {
-        try
-        {
-            var isZeroStock = item.CurrentStock == 0;
-            var isLowStock = item.MinStockLevel.HasValue && item.CurrentStock <= item.MinStockLevel.Value;
-            
-            if (isZeroStock) return "table-danger";
-            if (isLowStock) return "table-warning";
-            return "";
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(GetRowCssClass),
-                GetType(),
-                additionalData: "取得列樣式失敗"
-            );
-            return "";
-        }
-    }
-
-    // 分頁事件處理
-    private Task OnPageChanged(int newPage)
-    {
-        try
-        {
-            currentPage = newPage;
-            UpdatePagination();
-            StateHasChanged();
-            return Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(OnPageChanged),
-                GetType(),
-                additionalData: $"變更頁面失敗，目標頁面：{newPage}"
-            );
-            return Task.CompletedTask;
-        }
-    }
-
-    private Task OnPageSizeChanged(int newPageSize)
-    {
-        try
-        {
-            pageSize = newPageSize;
-            currentPage = 1; // 重設為第一頁
-            UpdatePagination();
-            StateHasChanged();
-            return Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(OnPageSizeChanged),
-                GetType(),
-                additionalData: $"變更頁面大小失敗，目標大小：{newPageSize}"
-            );
-            return Task.CompletedTask;
-        }
-    }
-
-    // 行點擊事件處理 - 跳轉到庫存詳細頁面
-    private void OnRowClick(InventoryStock item)
-    {
-        try
-        {
-            Navigation.NavigateTo($"/inventory/detail/{item.ProductId}");
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(OnRowClick),
-                GetType(),
-                additionalData: $"跳轉到庫存詳細頁面失敗，商品ID：{item.ProductId}"
             );
         }
     }

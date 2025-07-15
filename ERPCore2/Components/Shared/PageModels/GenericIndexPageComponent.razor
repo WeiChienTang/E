@@ -7,6 +7,8 @@
 @using ERPCore2.Components.Shared.Buttons
 @using ERPCore2.Components.Shared.Cards
 @using ERPCore2.Data.Enums
+@using ERPCore2.Services
+@using ERPCore2.Models
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
 @using Microsoft.AspNetCore.Components
@@ -47,7 +49,7 @@
 {
     <div class="row mb-4">
         <div class="col-12">
-            <GenericStatisticsCards CardConfigs="@StatisticsCardConfigs" 
+            <ERPCore2.Components.Shared.Cards.GenericStatisticsCards CardConfigs="@StatisticsCardConfigs" 
                                    Statistics="@StatisticsData" />
         </div>
     </div>
@@ -123,7 +125,7 @@
     
     // 統計卡片相關參數
     [Parameter] public bool ShowStatisticsCards { get; set; } = false;
-    [Parameter] public List<GenericStatisticsCards.StatisticsCardConfig>? StatisticsCardConfigs { get; set; }
+    [Parameter] public List<StatisticsCardConfig>? StatisticsCardConfigs { get; set; }
     [Parameter] public Dictionary<string, object> StatisticsData { get; set; } = new();
     [Parameter] public Func<Task<Dictionary<string, object>>>? StatisticsDataLoader { get; set; }
     
@@ -492,7 +494,47 @@
         // 重置分頁到第一頁
         currentPage = 1;
         
+        // 自動更新統計資料
+        if (ShowStatisticsCards && StatisticsCardConfigs != null && StatisticsCardConfigs.Any())
+        {
+            UpdateStatisticsData();
+        }
+        
         await Task.CompletedTask;
+    }
+    
+    /// <summary>
+    /// 自動更新統計資料
+    /// </summary>
+    private void UpdateStatisticsData()
+    {
+        try
+        {
+            StatisticsData = StatisticsData ?? new Dictionary<string, object>();
+            
+            // 自動計算基本統計
+            StatisticsData["TotalItems"] = filteredItems.Count;
+            StatisticsData["TotalOrders"] = filteredItems.Count;
+            
+            // 如果是採購訂單，計算特定統計
+            if (typeof(TEntity).Name == "PurchaseOrder")
+            {
+                var orders = filteredItems.Cast<dynamic>().ToList();
+                
+                StatisticsData["PendingOrders"] = orders.Count(o => 
+                    o.OrderStatus.ToString() == "Approved" || 
+                    o.OrderStatus.ToString() == "PartialReceived");
+                    
+                StatisticsData["CompletedOrders"] = orders.Count(o => 
+                    o.OrderStatus.ToString() == "Completed");
+                    
+                StatisticsData["TotalAmount"] = orders.Sum(o => (decimal)o.TotalAmount);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"更新統計資料失敗: {ex.Message}");
+        }
     }
     
     private List<TEntity> GetPagedItems()

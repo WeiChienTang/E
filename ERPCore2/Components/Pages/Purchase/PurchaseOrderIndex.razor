@@ -5,6 +5,7 @@
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Components.Shared.Auth
 @using ERPCore2.Components.Shared.Cards
+@using ERPCore2.Components.Shared.PageModels
 @using ERPCore2.Services
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
@@ -18,129 +19,56 @@
 @inject IWarehouseService WarehouseService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 @rendermode InteractiveServer
 
 <PageTitle>採購訂單管理</PageTitle>
 
 <PagePermissionCheck RequiredPermission="Purchase.Read">
-    <GenericHeaderComponent 
-        Title="採購訂單管理" 
-        Subtitle="管理採購訂單與供應商進貨作業"
-        HeadingLevel="h1"
-        BreadcrumbItems="@breadcrumbItems"
-        ShowDivider="true"
-        IsLoading="@isLoading"
-        LoadingText="載入採購訂單資料中...">
+    <GenericIndexPageComponent @ref="indexPageRef"
+                              TEntity="PurchaseOrder"
+                              TService="IPurchaseOrderService"
+                              Service="@PurchaseOrderService"
+                              PageTitle="採購訂單管理"
+                              PageSubtitle="管理採購訂單與供應商進貨作業"
+                              EntityName="採購訂單"
+                              EntityBasePath="/purchase/orders"
+                              CreateUrl="/purchase/orders/create"
+                              DetailUrl="/purchase/orders/{id}"
+                              EditUrl="/purchase/orders/{id}/edit"
+                              BreadcrumbItems="@breadcrumbItems"
+                              FilterDefinitions="@filterDefinitions"
+                              ColumnDefinitions="@columnDefinitions"
+                              DataLoader="@LoadDataAsync"
+                              InitializeBasicData="@InitializeBasicDataAsync"
+                              FilterApplier="@ApplyFilters"
+                              GetEntityDisplayName="@GetEntityDisplayName"
+                              ShowStatisticsCards="true"
+                              StatisticsCardConfigs="@statisticsCardConfigs"
+                              StatisticsDataLoader="@LoadStatisticsDataAsync"
+                              EnableRowClick="true"
+                              ShowDeleteButton="true">
         
-        <ActionButtons>
+        <CustomActionButtons>
             <div class="btn-group" role="group">
-                <button type="button" class="btn btn-primary" @onclick="NavigateToCreate">
+                <button type="button" class="btn btn-primary" @onclick="() => indexPageRef.NavigateToCreate()">
                     <i class="fas fa-plus me-2"></i>新增採購訂單
                 </button>
-                <button type="button" class="btn btn-outline-info" @onclick="RefreshData">
+                <button type="button" class="btn btn-outline-info" @onclick="() => indexPageRef.Refresh()">
                     <i class="fas fa-sync me-2"></i>重新整理
                 </button>
                 <button type="button" class="btn btn-outline-success" @onclick="ExportData">
                     <i class="fas fa-file-excel me-2"></i>匯出資料
                 </button>
             </div>
-        </ActionButtons>
-    </GenericHeaderComponent>
-
-    @if (isLoading)
-    {
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">載入中...</span>
-            </div>
-            <p class="mt-3 text-muted">載入採購訂單資料中...</p>
-        </div>
-    }
-    else
-    {
-        <div class="container-fluid">
-            <!-- 篩選器 -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card shadow">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">
-                                <i class="fas fa-filter me-2"></i>篩選條件
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <GenericSearchFilterComponent TModel="PurchaseOrderSearchModel"
-                                FilterModel="@filterModel"
-                                FilterDefinitions="@filterDefinitions"
-                                OnFilterChanged="@HandleFilterChanged" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 統計卡片 -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <GenericStatisticsCards CardConfigs="@statisticsCardConfigs" 
-                                          Statistics="@statisticsData" />
-                </div>
-            </div>
-
-            <!-- 資料表格 -->
-            <div class="row">
-                <div class="col-12">
-                    <div class="card shadow">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">
-                                <i class="fas fa-table me-2"></i>採購訂單清單
-                            </h6>
-                        </div>
-                        <div class="card-body p-0">
-                            <GenericTableComponent TItem="PurchaseOrder"
-                                                  Items="@filteredItems"
-                                                  ColumnDefinitions="@columnDefinitions"
-                                                  ShowActions="true"
-                                                  IsStriped="true"
-                                                  IsHoverable="true"
-                                                  EnableSorting="false"
-                                                  EnablePagination="true"
-                                                  CurrentPage="@currentPage"
-                                                  PageSize="@pageSize"
-                                                  TotalItems="@filteredItems.Count"
-                                                  OnPageChanged="@HandlePageChanged"
-                                                  OnPageSizeChanged="@HandlePageSizeChanged"
-                                                  ShowPageSizeSelector="true"
-                                                  PageSizeOptions="@pageSizeOptions"
-                                                  EmptyMessage="沒有找到採購訂單資料">
-                                <ActionsTemplate Context="item">
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <button type="button" class="btn btn-outline-primary btn-sm" 
-                                                @onclick="() => HandleView(item)" title="檢視">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" 
-                                                @onclick="() => HandleEdit(item)" title="編輯">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-outline-danger btn-sm" 
-                                                @onclick="() => HandleDelete(item)" title="刪除">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </ActionsTemplate>
-                            </GenericTableComponent>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
+        </CustomActionButtons>
+        
+    </GenericIndexPageComponent>
 </PagePermissionCheck>
 
 @code {
-    // 資料模型
-    private List<PurchaseOrder> items = new();
-    private List<PurchaseOrder> filteredItems = new();
+    // 組件引用
+    private GenericIndexPageComponent<PurchaseOrder, IPurchaseOrderService> indexPageRef = default!;
 
     // 選項清單
     private List<SelectOption> supplierOptions = new();
@@ -148,28 +76,11 @@
     private List<SelectOption> statusOptions = new();
     private List<SelectOption> typeOptions = new();
 
-    // 篩選相關
-    private PurchaseOrderSearchModel searchModel = new();
-    private SearchFilterModel filterModel = new();
+    // 組件配置
     private List<SearchFilterDefinition> filterDefinitions = new();
-
-    // 表格相關
     private List<TableColumnDefinition> columnDefinitions = new();
-
-    // 分頁相關
-    private int currentPage = 1;
-    private int pageSize = 20;
-    private List<int> pageSizeOptions = new() { 10, 20, 50, 100 };
-
-    // 麵包屑導航
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
-
-    // 狀態管理
-    private bool isLoading = true;
-
-    // 統計卡片配置
-    private List<GenericStatisticsCards.StatisticsCardConfig> statisticsCardConfigs = new();
-    private Dictionary<string, object> statisticsData = new();
+    private List<StatisticsCardConfig> statisticsCardConfigs = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -183,20 +94,11 @@
                 new() { Text = "採購訂單", Href = "/purchase/orders" }
             };
 
-            // 載入選項資料
-            await LoadOptionsAsync();
-            
-            // 初始化篩選器
-            InitializeFilters();
-            
             // 初始化表格欄位
             InitializeColumns();
             
             // 初始化統計卡片
             InitializeStatisticsCards();
-            
-            // 載入主要資料
-            await LoadDataAsync();
         }
         catch (Exception ex)
         {
@@ -207,10 +109,129 @@
                 Navigation
             );
         }
-        finally
+    }
+
+    /// <summary>
+    /// 初始化基礎資料 - 由 GenericIndexPageComponent 調用
+    /// </summary>
+    private async Task InitializeBasicDataAsync()
+    {
+        await LoadOptionsAsync();
+        InitializeFilters();
+    }
+
+    /// <summary>
+    /// 載入資料 - 由 GenericIndexPageComponent 調用
+    /// </summary>
+    private async Task<List<PurchaseOrder>> LoadDataAsync()
+    {
+        return await PurchaseOrderService.GetAllAsync();
+    }
+
+    /// <summary>
+    /// 載入統計資料 - 由 GenericIndexPageComponent 調用
+    /// </summary>
+    private async Task<Dictionary<string, object>> LoadStatisticsDataAsync()
+    {
+        // 這裡可以放置更複雜的統計邏輯，目前返回空字典，由篩選後自動計算
+        await Task.CompletedTask;
+        return new Dictionary<string, object>();
+    }
+
+    /// <summary>
+    /// 套用篩選 - 由 GenericIndexPageComponent 調用
+    /// </summary>
+    private IQueryable<PurchaseOrder> ApplyFilters(SearchFilterModel filterModel, IQueryable<PurchaseOrder> query)
+    {
+        try
         {
-            isLoading = false;
+            // 將 SearchFilterModel 轉換為 PurchaseOrderSearchModel
+            var searchModel = new PurchaseOrderSearchModel
+            {
+                SearchTerm = filterModel.GetFilterValue("SearchTerm") as string,
+                SupplierId = int.TryParse(filterModel.GetFilterValue("SupplierId")?.ToString(), out var supplierId) ? (int?)supplierId : null,
+                WarehouseId = int.TryParse(filterModel.GetFilterValue("WarehouseId")?.ToString(), out var warehouseId) ? (int?)warehouseId : null,
+                OrderStatus = Enum.TryParse<PurchaseOrderStatus>(filterModel.GetFilterValue("OrderStatus")?.ToString(), out var status) ? (PurchaseOrderStatus?)status : null,
+                PurchaseType = Enum.TryParse<PurchaseType>(filterModel.GetFilterValue("PurchaseType")?.ToString(), out var type) ? (PurchaseType?)type : null
+            };
+
+            // 處理日期範圍
+            var dateRange = filterModel.GetFilterValue("OrderDateRange") as DateRange;
+            if (dateRange != null)
+            {
+                searchModel.OrderDateFrom = dateRange.StartDate;
+                searchModel.OrderDateTo = dateRange.EndDate;
+            }
+
+            // 套用篩選邏輯
+            var filteredQuery = query;
+
+            // 文字搜尋
+            if (!string.IsNullOrWhiteSpace(searchModel.SearchTerm))
+            {
+                var searchTerm = searchModel.SearchTerm.ToLower();
+                filteredQuery = filteredQuery.Where(o =>
+                    o.PurchaseOrderNumber.ToLower().Contains(searchTerm) ||
+                    o.Supplier.CompanyName.ToLower().Contains(searchTerm) ||
+                    (o.PurchasePersonnel != null && o.PurchasePersonnel.ToLower().Contains(searchTerm)) ||
+                    (o.OrderRemarks != null && o.OrderRemarks.ToLower().Contains(searchTerm))
+                );
+            }
+
+            // 供應商篩選
+            if (searchModel.SupplierId.HasValue)
+            {
+                filteredQuery = filteredQuery.Where(o => o.SupplierId == searchModel.SupplierId.Value);
+            }
+
+            // 倉庫篩選
+            if (searchModel.WarehouseId.HasValue)
+            {
+                filteredQuery = filteredQuery.Where(o => o.WarehouseId == searchModel.WarehouseId.Value);
+            }
+
+            // 狀態篩選
+            if (searchModel.OrderStatus.HasValue)
+            {
+                filteredQuery = filteredQuery.Where(o => o.OrderStatus == searchModel.OrderStatus.Value);
+            }
+
+            // 類型篩選
+            if (searchModel.PurchaseType.HasValue)
+            {
+                filteredQuery = filteredQuery.Where(o => o.PurchaseType == searchModel.PurchaseType.Value);
+            }
+
+            // 日期範圍篩選
+            if (searchModel.OrderDateFrom.HasValue)
+            {
+                filteredQuery = filteredQuery.Where(o => o.OrderDate >= searchModel.OrderDateFrom.Value);
+            }
+            if (searchModel.OrderDateTo.HasValue)
+            {
+                filteredQuery = filteredQuery.Where(o => o.OrderDate <= searchModel.OrderDateTo.Value);
+            }
+
+            return filteredQuery;
         }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ApplyFilters),
+                GetType(),
+                additionalData: "套用篩選失敗"
+            );
+            return query;
+        }
+    }
+
+    /// <summary>
+    /// 取得實體顯示名稱 - 由 GenericIndexPageComponent 調用
+    /// </summary>
+    private string GetEntityDisplayName(PurchaseOrder entity)
+    {
+        return entity.PurchaseOrderNumber;
     }
 
     private async Task LoadOptionsAsync()
@@ -439,9 +460,9 @@
     {
         try
         {
-            statisticsCardConfigs = new List<GenericStatisticsCards.StatisticsCardConfig>
+            statisticsCardConfigs = new List<StatisticsCardConfig>
             {
-                new GenericStatisticsCards.StatisticsCardConfig
+                new StatisticsCardConfig
                 {
                     Title = "總訂單數",
                     DataKey = "TotalOrders",
@@ -450,7 +471,7 @@
                     TextColor = "primary",
                     IsCurrency = false
                 },
-                new GenericStatisticsCards.StatisticsCardConfig
+                new StatisticsCardConfig
                 {
                     Title = "待進貨訂單",
                     DataKey = "PendingOrders",
@@ -459,7 +480,7 @@
                     TextColor = "warning",
                     IsCurrency = false
                 },
-                new GenericStatisticsCards.StatisticsCardConfig
+                new StatisticsCardConfig
                 {
                     Title = "已完成訂單",
                     DataKey = "CompletedOrders",
@@ -468,7 +489,7 @@
                     TextColor = "success",
                     IsCurrency = false
                 },
-                new GenericStatisticsCards.StatisticsCardConfig
+                new StatisticsCardConfig
                 {
                     Title = "訂單總金額",
                     DataKey = "TotalAmount",
@@ -490,225 +511,7 @@
         }
     }
 
-    private async Task LoadDataAsync()
-    {
-        try
-        {
-            items = await PurchaseOrderService.GetAllAsync();
-            ApplyFilters();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(LoadDataAsync),
-                GetType()
-            );
-        }
-    }
-
-    private void HandleFilterChanged(SearchFilterModel filterModel)
-    {
-        try
-        {
-            // 將 SearchFilterModel 轉換為 PurchaseOrderSearchModel
-            searchModel = new PurchaseOrderSearchModel
-            {
-                SearchTerm = filterModel.GetFilterValue("SearchTerm") as string,
-                SupplierId = int.TryParse(filterModel.GetFilterValue("SupplierId")?.ToString(), out var supplierId) ? (int?)supplierId : null,
-                WarehouseId = int.TryParse(filterModel.GetFilterValue("WarehouseId")?.ToString(), out var warehouseId) ? (int?)warehouseId : null,
-                OrderStatus = Enum.TryParse<PurchaseOrderStatus>(filterModel.GetFilterValue("OrderStatus")?.ToString(), out var status) ? (PurchaseOrderStatus?)status : null,
-                PurchaseType = Enum.TryParse<PurchaseType>(filterModel.GetFilterValue("PurchaseType")?.ToString(), out var type) ? (PurchaseType?)type : null
-            };
-
-            // 處理日期範圍
-            var dateRange = filterModel.GetFilterValue("OrderDateRange") as DateRange;
-            if (dateRange != null)
-            {
-                searchModel.OrderDateFrom = dateRange.StartDate;
-                searchModel.OrderDateTo = dateRange.EndDate;
-            }
-            
-            currentPage = 1; // 重設為第一頁
-            ApplyFilters();
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(HandleFilterChanged),
-                GetType(),
-                additionalData: "處理篩選變更失敗"
-            );
-        }
-    }
-
-    private void ApplyFilters()
-    {
-        try
-        {
-            filteredItems = items.AsQueryable().ToList();
-
-            // 文字搜尋
-            if (!string.IsNullOrWhiteSpace(searchModel.SearchTerm))
-            {
-                var searchTerm = searchModel.SearchTerm.ToLower();
-                filteredItems = filteredItems.Where(o =>
-                    o.PurchaseOrderNumber.ToLower().Contains(searchTerm) ||
-                    o.Supplier.CompanyName.ToLower().Contains(searchTerm) ||
-                    (o.PurchasePersonnel?.ToLower().Contains(searchTerm) ?? false) ||
-                    (o.OrderRemarks?.ToLower().Contains(searchTerm) ?? false)
-                ).ToList();
-            }
-
-            // 供應商篩選
-            if (searchModel.SupplierId.HasValue)
-            {
-                filteredItems = filteredItems.Where(o => o.SupplierId == searchModel.SupplierId.Value).ToList();
-            }
-
-            // 倉庫篩選
-            if (searchModel.WarehouseId.HasValue)
-            {
-                filteredItems = filteredItems.Where(o => o.WarehouseId == searchModel.WarehouseId.Value).ToList();
-            }
-
-            // 狀態篩選
-            if (searchModel.OrderStatus.HasValue)
-            {
-                filteredItems = filteredItems.Where(o => o.OrderStatus == searchModel.OrderStatus.Value).ToList();
-            }
-
-            // 類型篩選
-            if (searchModel.PurchaseType.HasValue)
-            {
-                filteredItems = filteredItems.Where(o => o.PurchaseType == searchModel.PurchaseType.Value).ToList();
-            }
-
-            // 日期範圍篩選
-            if (searchModel.OrderDateFrom.HasValue)
-            {
-                filteredItems = filteredItems.Where(o => o.OrderDate >= searchModel.OrderDateFrom.Value).ToList();
-            }
-            if (searchModel.OrderDateTo.HasValue)
-            {
-                filteredItems = filteredItems.Where(o => o.OrderDate <= searchModel.OrderDateTo.Value).ToList();
-            }
-
-            UpdateStatisticsData();
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(ApplyFilters),
-                GetType(),
-                additionalData: "套用篩選失敗"
-            );
-        }
-    }
-
-    private void UpdateStatisticsData()
-    {
-        try
-        {
-            statisticsData = new Dictionary<string, object>
-            {
-                ["TotalOrders"] = filteredItems.Count,
-                ["PendingOrders"] = filteredItems.Count(o => o.OrderStatus == PurchaseOrderStatus.Approved || 
-                                                           o.OrderStatus == PurchaseOrderStatus.PartialReceived),
-                ["CompletedOrders"] = filteredItems.Count(o => o.OrderStatus == PurchaseOrderStatus.Completed),
-                ["TotalAmount"] = filteredItems.Sum(o => o.TotalAmount)
-            };
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(UpdateStatisticsData),
-                GetType(),
-                additionalData: "更新統計資料失敗"
-            );
-        }
-    }
-
-    // 分頁事件處理
-    private async Task HandlePageChanged(int newPage)
-    {
-        try
-        {
-            currentPage = newPage;
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(HandlePageChanged),
-                GetType()
-            );
-        }
-    }
-
-    private async Task HandlePageSizeChanged(int newPageSize)
-    {
-        try
-        {
-            pageSize = newPageSize;
-            currentPage = 1; // 重設為第一頁
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(HandlePageSizeChanged),
-                GetType()
-            );
-        }
-    }
-
-    // 事件處理
-    private void NavigateToCreate()
-    {
-        try
-        {
-            Navigation.NavigateTo("/purchase/orders/create");
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(NavigateToCreate),
-                GetType()
-            );
-        }
-    }
-
-    private async Task RefreshData()
-    {
-        try
-        {
-            isLoading = true;
-            StateHasChanged();
-            await LoadDataAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(RefreshData),
-                GetType()
-            );
-        }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
-        }
-    }
-
+    // 自訂事件處理
     private async Task ExportData()
     {
         try
@@ -726,85 +529,7 @@
         }
     }
 
-    private void HandleView(object item)
-    {
-        try
-        {
-            var order = (PurchaseOrder)item;
-            Navigation.NavigateTo($"/purchase/orders/{order.Id}");
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(HandleView),
-                GetType()
-            );
-        }
-    }
-
-    private void HandleEdit(object item)
-    {
-        try
-        {
-            var order = (PurchaseOrder)item;
-            Navigation.NavigateTo($"/purchase/orders/{order.Id}/edit");
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(HandleEdit),
-                GetType()
-            );
-        }
-    }
-
-    private async Task HandleDelete(object item)
-    {
-        try
-        {
-            var order = (PurchaseOrder)item;
-            
-            // 檢查是否可以刪除
-            var canDelete = await PurchaseOrderService.CanDeleteAsync(order.Id);
-            if (!canDelete)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", "此採購訂單已有進貨記錄或已核准，無法刪除！");
-                return;
-            }
-            
-            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"確定要刪除採購訂單 {order.PurchaseOrderNumber} 嗎？");
-            if (confirmed)
-            {
-                var result = await PurchaseOrderService.DeleteAsync(order.Id);
-                if (result.IsSuccess)
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", "刪除成功！");
-                    await RefreshData();
-                }
-                else
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", $"刪除失敗：{result.ErrorMessage}");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(HandleDelete),
-                GetType()
-            );
-        }
-    }
-
     // 輔助方法
-    private static string FormatCurrency(decimal amount)
-    {
-        return amount.ToString("C0");
-    }
-
     private static string GetStatusDisplayName(PurchaseOrderStatus status)
     {
         return status switch

@@ -1,5 +1,6 @@
 using ERPCore2.Components.Shared.Cards;
 using Microsoft.AspNetCore.Components;
+using ERPCore2.Models;
 
 namespace ERPCore2.Components.Shared.Cards
 {
@@ -11,7 +12,7 @@ namespace ERPCore2.Components.Shared.Cards
         /// <summary>
         /// 庫存管理統計卡片配置
         /// </summary>
-        public static List<GenericStatisticsCards.StatisticsCardConfig> InventoryConfigs(
+        public static List<StatisticsCardConfig> InventoryConfigs(
             EventCallback? onTotalProductsClick = null,
             EventCallback? onTotalValueClick = null,
             EventCallback? onLowStockClick = null,
@@ -59,7 +60,7 @@ namespace ERPCore2.Components.Shared.Cards
         /// <summary>
         /// 採購訂單統計卡片配置
         /// </summary>
-        public static List<GenericStatisticsCards.StatisticsCardConfig> PurchaseOrderConfigs(
+        public static List<StatisticsCardConfig> PurchaseOrderConfigs(
             EventCallback? onTotalOrdersClick = null,
             EventCallback? onPendingOrdersClick = null,
             EventCallback? onCompletedOrdersClick = null,
@@ -107,7 +108,7 @@ namespace ERPCore2.Components.Shared.Cards
         /// <summary>
         /// 進貨單統計卡片配置
         /// </summary>
-        public static List<GenericStatisticsCards.StatisticsCardConfig> PurchaseReceiptConfigs(
+        public static List<StatisticsCardConfig> PurchaseReceiptConfigs(
             EventCallback? onTotalReceiptsClick = null,
             EventCallback? onPendingReceiptsClick = null,
             EventCallback? onCompletedReceiptsClick = null,
@@ -155,7 +156,7 @@ namespace ERPCore2.Components.Shared.Cards
         /// <summary>
         /// 盤點統計卡片配置
         /// </summary>
-        public static List<GenericStatisticsCards.StatisticsCardConfig> StockTakingConfigs(
+        public static List<StatisticsCardConfig> StockTakingConfigs(
             EventCallback? onTotalStockTakingClick = null,
             EventCallback? onInProgressClick = null,
             EventCallback? onCompletedClick = null,
@@ -202,7 +203,7 @@ namespace ERPCore2.Components.Shared.Cards
         /// <summary>
         /// 庫存異動統計卡片配置
         /// </summary>
-        public static List<GenericStatisticsCards.StatisticsCardConfig> InventoryTransactionConfigs(
+        public static List<StatisticsCardConfig> InventoryTransactionConfigs(
             EventCallback? onTotalTransactionsClick = null,
             EventCallback? onInTransactionsClick = null,
             EventCallback? onOutTransactionsClick = null,
@@ -249,7 +250,7 @@ namespace ERPCore2.Components.Shared.Cards
         /// <summary>
         /// 通用財務統計卡片配置
         /// </summary>
-        public static List<GenericStatisticsCards.StatisticsCardConfig> FinancialConfigs(
+        public static List<StatisticsCardConfig> FinancialConfigs(
             string totalCountKey = "TotalCount",
             string totalAmountKey = "TotalAmount",
             string avgAmountKey = "AverageAmount",
