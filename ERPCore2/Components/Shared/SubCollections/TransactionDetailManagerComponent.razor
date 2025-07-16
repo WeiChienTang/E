@@ -1,0 +1,138 @@
+@using ERPCore2.Data.Entities
+@using ERPCore2.Models
+@inject IJSRuntime JS
+@typeparam TDetailEntity where TDetailEntity : class, new()
+@typeparam TParentEntity where TParentEntity : class
+@typeparam TProductEntity where TProductEntity : class
+
+<h4>@Config.Title</h4>
+
+<div class="row mb-3">
+    <div class="col-12">
+        <button type="button" class="btn btn-primary" @onclick="ShowProductSelectionModal">
+            @Config.AddButtonText
+        </button>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>產品代碼</th>
+                <th>產品名稱</th>
+                <th>數量</th>
+                <th>單價</th>
+                <th>小計</th>
+                <th>備註</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Details != null)
+            {
+                @foreach (var detail in Details)
+                {
+                    <tr>
+                        <td>@GetProductCode(detail)</td>
+                        <td>@GetProductName(detail)</td>
+                        <td>@GetQuantity(detail)</td>
+                        <td>@GetUnitPrice(detail).ToString("F2")</td>
+                        <td>@GetSubtotal(detail).ToString("F2")</td>
+                        <td>@GetRemarks(detail)</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveDetail(detail)">
+                                移除
+                            </button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- 產品選擇 Modal -->
+<div class="modal fade" id="productSelectionModal" tabindex="-1" aria-labelledby="productSelectionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productSelectionModalLabel">選擇產品</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>代碼</th>
+                                <th>名稱</th>
+                                <th>單價</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Products != null)
+                            {
+                                @foreach (var product in Products)
+                                {
+                                    <tr>
+                                        <td>@GetProductCodeFromProduct(product)</td>
+                                        <td>@GetProductNameFromProduct(product)</td>
+                                        <td>@GetProductPrice(product).ToString("F2")</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-primary" @onclick="() => SelectProduct(product)">
+                                                選擇
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public IList<TDetailEntity>? Details { get; set; }
+    [Parameter] public IList<TProductEntity>? Products { get; set; }
+    [Parameter] public TransactionDetailConfig Config { get; set; } = new();
+    
+    // Getter functions - 從 detail entity 取得值
+    [Parameter] public Func<TDetailEntity, string> GetProductCode { get; set; } = _ => "";
+    [Parameter] public Func<TDetailEntity, string> GetProductName { get; set; } = _ => "";
+    [Parameter] public Func<TDetailEntity, decimal> GetQuantity { get; set; } = _ => 0;
+    [Parameter] public Func<TDetailEntity, decimal> GetUnitPrice { get; set; } = _ => 0;
+    [Parameter] public Func<TDetailEntity, decimal> GetSubtotal { get; set; } = _ => 0;
+    [Parameter] public Func<TDetailEntity, string> GetRemarks { get; set; } = _ => "";
+    
+    // Product getter functions - 從 product entity 取得值
+    [Parameter] public Func<TProductEntity, string> GetProductCodeFromProduct { get; set; } = _ => "";
+    [Parameter] public Func<TProductEntity, string> GetProductNameFromProduct { get; set; } = _ => "";
+    [Parameter] public Func<TProductEntity, decimal> GetProductPrice { get; set; } = _ => 0;
+    
+    // Actions
+    [Parameter] public Action<TDetailEntity> OnDetailRemoved { get; set; } = _ => { };
+    [Parameter] public Func<TProductEntity, decimal, TDetailEntity> CreateDetailFromProduct { get; set; } = (_, _) => new TDetailEntity();
+    [Parameter] public Action<TDetailEntity> OnDetailAdded { get; set; } = _ => { };
+    
+    private async Task ShowProductSelectionModal()
+    {
+        await JS.InvokeVoidAsync("showModal", "productSelectionModal");
+    }
+
+    private async Task SelectProduct(TProductEntity product)
+    {
+        var detail = CreateDetailFromProduct(product, 1);
+        OnDetailAdded(detail);
+        await JS.InvokeVoidAsync("hideModal", "productSelectionModal");
+    }
+
+    private void RemoveDetail(TDetailEntity detail)
+    {
+        OnDetailRemoved(detail);
+    }
+}
