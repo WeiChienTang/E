@@ -688,19 +688,13 @@
     {
         try
         {
-            Console.WriteLine($"[ValidateEmployeeData] 開始驗證 ID={entity.Id}");
-            
             // 只在新增模式進行軟刪除衝突檢查
             if (!Id.HasValue)
             {
-                Console.WriteLine($"[ValidateEmployeeData] 新增模式，檢查軟刪除衝突");
-                
                 // 檢查軟刪除衝突
                 var checkResult = await EmployeeService.CheckSoftDeletedConflictAsync(entity.Username, entity.EmployeeCode);
                 if (checkResult.IsSuccess && checkResult.Data != null && checkResult.Data.HasSoftDeletedEmployee)
                 {
-                    Console.WriteLine($"[ValidateEmployeeData] 發現軟刪除衝突，顯示對話框");
-                    
                     softDeletedEmployee = checkResult.Data.SoftDeletedEmployee;
                     conflictType = checkResult.Data.ConflictType;
                     showSoftDeletedConflictModal = true;
@@ -713,17 +707,14 @@
                 // 驗證密碼（新增模式）
                 if (!ValidatePassword())
                 {
-                    Console.WriteLine($"[ValidateEmployeeData] 密碼驗證失敗");
                     return false;
                 }
             }
             
-            Console.WriteLine($"[ValidateEmployeeData] 驗證完成");
             return true;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ValidateEmployeeData] 發生異常: {ex.Message}");
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ValidateEmployeeData), GetType(),
                 additionalData: new { EmployeeId = entity.Id, Username = entity.Username, EmployeeCode = entity.EmployeeCode });
             return false;
@@ -735,40 +726,25 @@
     {
         try
         {
-            Console.WriteLine($"[AfterSaveEmployee] 開始處理員工後續作業 ID={entity.Id}");
-            
             // 更新聯絡方式和地址資料
             if (employeeContacts.Any() || employeeAddresses.Any())
             {
-                Console.WriteLine($"[AfterSaveEmployee] 更新聯絡方式 ({employeeContacts.Count} 筆) 和地址 ({employeeAddresses.Count} 筆)");
-                
                 await EmployeeService.UpdateEmployeeContactsAsync(entity.Id, employeeContacts);
                 await EmployeeService.UpdateEmployeeAddressesAsync(entity.Id, employeeAddresses);
-                
-                Console.WriteLine($"[AfterSaveEmployee] 聯絡方式和地址更新完成");
             }
 
             // 新增模式時設定初始密碼
             if (!Id.HasValue && !string.IsNullOrWhiteSpace(password))
             {
-                Console.WriteLine($"[AfterSaveEmployee] 為新員工設定密碼");
-                
                 var passwordResult = await AuthenticationService.ResetPasswordAsync(entity.Id, password);
                 if (!passwordResult.IsSuccess)
                 {
                     await NotificationService.ShowErrorAsync($"員工建立成功，但密碼設定失敗：{passwordResult.ErrorMessage}");
                 }
-                else
-                {
-                    Console.WriteLine($"[AfterSaveEmployee] 密碼設定成功");
-                }
             }
-            
-            Console.WriteLine($"[AfterSaveEmployee] 員工後續作業完成");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AfterSaveEmployee] 發生異常: {ex.Message}");
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(AfterSaveEmployee), GetType(),
                 additionalData: new { EmployeeId = entity.Id, HasContacts = employeeContacts.Any(), HasAddresses = employeeAddresses.Any() });
         }
@@ -885,34 +861,23 @@
         {
             if (employee == null) return;
 
-            Console.WriteLine($"[ConfirmPasswordReset] 開始重設密碼，員工ID={employee.Id}, Username={employee.Username}");
-
             // 驗證新密碼
             if (!ValidateNewPassword())
             {
-                Console.WriteLine($"[ConfirmPasswordReset] 密碼驗證失敗");
                 StateHasChanged();
                 return;
             }
 
-            Console.WriteLine($"[ConfirmPasswordReset] 密碼驗證通過，準備重設密碼");
-
             // 執行密碼重設
             var resetResult = await AuthenticationService.ResetPasswordAsync(employee.Id, newPassword);
-            Console.WriteLine($"[ConfirmPasswordReset] AuthenticationService.ResetPasswordAsync 結果: IsSuccess={resetResult.IsSuccess}");
             
             if (resetResult.IsSuccess)
             {
-                Console.WriteLine($"[ConfirmPasswordReset] 密碼重設成功");
-                
                 // 重設登入失敗次數和帳號鎖定狀態（但不更新到資料庫，避免覆蓋密碼）
                 employee.FailedLoginAttempts = 0;
                 employee.IsLocked = false;
                 
-                Console.WriteLine($"[ConfirmPasswordReset] 重設後狀態：FailedLoginAttempts={employee.FailedLoginAttempts}, IsLocked={employee.IsLocked}");
-                
                 // 重新載入員工資料以確保密碼已更新，並保持狀態重設
-                Console.WriteLine($"[ConfirmPasswordReset] 重新載入員工資料");
                 var updatedEmployee = await EmployeeService.GetByIdAsync(employee.Id);
                 if (updatedEmployee != null)
                 {
@@ -925,18 +890,12 @@
                     if (statusUpdateResult.IsSuccess)
                     {
                         employee = updatedEmployee;
-                        Console.WriteLine($"[ConfirmPasswordReset] 員工狀態更新成功：FailedLoginAttempts={employee.FailedLoginAttempts}, IsLocked={employee.IsLocked}");
                     }
                     else
                     {
-                        Console.WriteLine($"[ConfirmPasswordReset] 員工狀態更新失敗：{statusUpdateResult.ErrorMessage}");
                         // 即使狀態更新失敗，密碼已經重設成功，所以仍使用更新後的員工資料
                         employee = updatedEmployee;
                     }
-                }
-                else
-                {
-                    Console.WriteLine($"[ConfirmPasswordReset] 重新載入失敗：找不到員工資料");
                 }
                 
                 // 關閉對話框
@@ -947,14 +906,11 @@
             }
             else
             {
-                Console.WriteLine($"[ConfirmPasswordReset] 密碼重設失敗：{resetResult.ErrorMessage}");
                 await NotificationService.ShowErrorAsync($"重設密碼失敗：{resetResult.ErrorMessage}");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ConfirmPasswordReset] 發生異常：{ex.Message}");
-            Console.WriteLine($"[ConfirmPasswordReset] 異常堆疊：{ex.StackTrace}");
             
             await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
@@ -1085,10 +1041,6 @@
             isProcessingSoftDeletedRestore = true;
             StateHasChanged();
 
-            Console.WriteLine($"[HandleSoftDeletedRestore] 開始處理軟刪除復原");
-            Console.WriteLine($"[HandleSoftDeletedRestore] 軟刪除員工ID: {softDeletedEmployee.Id}");
-            Console.WriteLine($"[HandleSoftDeletedRestore] 軟刪除員工IsDeleted: {softDeletedEmployee.IsDeleted}");
-
             // 正確做法：只復原軟刪除狀態，不更新其他資料
             var restoreResult = await EmployeeService.RestoreSoftDeletedEmployeeAsync(softDeletedEmployee.Id);
             if (!restoreResult.IsSuccess)
@@ -1096,8 +1048,6 @@
                 await NotificationService.ShowErrorAsync($"復原員工失敗：{restoreResult.ErrorMessage}");
                 return;
             }
-
-            Console.WriteLine($"[HandleSoftDeletedRestore] 員工復原成功");
 
             // 載入已復原的員工資料到編輯頁面
             var loadedEmployee = await EmployeeService.GetByIdAsync(softDeletedEmployee.Id);
@@ -1123,10 +1073,6 @@
                 {
                     await NotificationService.ShowWarningAsync($"員工復原成功，但密碼設定失敗：{passwordResult.ErrorMessage}");
                 }
-                else
-                {
-                    Console.WriteLine($"[HandleSoftDeletedRestore] 密碼設定成功");
-                }
             }
 
             CloseSoftDeletedConflictDialog();
@@ -1137,7 +1083,6 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[HandleSoftDeletedRestore] 發生異常：{ex.Message}");
             await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(HandleSoftDeletedRestore), 
@@ -1162,18 +1107,14 @@
     
     private void OnStatusChange(EntityStatus newStatus)
     {
-        Console.WriteLine($"UI Event - Status changing from {employee.Status} to {newStatus}");
         employee.Status = newStatus;
-        Console.WriteLine($"UI Event - Status changed to {employee.Status}");
         StateHasChanged();
     }
     
     private void OnIsLockedChange(ChangeEventArgs e)
     {
         var newValue = (bool)e.Value!;
-        Console.WriteLine($"UI Event - IsLocked changing from {employee.IsLocked} to {newValue}");
         employee.IsLocked = newValue;
-        Console.WriteLine($"UI Event - IsLocked changed to {employee.IsLocked}");
         StateHasChanged();
     }
     

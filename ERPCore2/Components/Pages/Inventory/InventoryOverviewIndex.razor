@@ -80,6 +80,7 @@
     {
         InitializeStatisticsCards();
         InitializeColumns();
+        InitializeFilters(); // 初始化篩選器設定
         return Task.CompletedTask;
     }
 
@@ -97,8 +98,8 @@
             productCategories = await ProductService.GetProductCategoriesAsync();
             warehouseLocations = await WarehouseLocationService.GetAllAsync();
             
-            // 載入完基礎資料後初始化篩選器
-            InitializeFilters();
+            // 載入完基礎資料後更新篩選器的選項
+            UpdateFilterOptions();
         }
         catch (Exception ex)
         {
@@ -342,21 +343,7 @@
     {
         try
         {
-            // 準備倉庫選項
-            var warehouseOptions = warehouses.Select(w => new SelectOption
-            {
-                Text = w.WarehouseName,
-                Value = w.Id.ToString()
-            }).ToList();
-
-            // 準備商品分類選項
-            var categoryOptions = productCategories.Select(c => new SelectOption
-            {
-                Text = c.CategoryName,
-                Value = c.Id.ToString()
-            }).ToList();
-
-            // 準備庫存狀態選項
+            // 準備庫存狀態選項（不依賴資料庫載入）
             var stockStatusOptions = new List<SelectOption>
             {
                 new() { Text = "正常庫存", Value = "normal" },
@@ -364,10 +351,10 @@
                 new() { Text = "零庫存", Value = "zero" }
             };
 
-            // 建立篩選定義
+            // 建立基本篩選定義（下拉選單選項稍後在 LoadBasicDataAsync 中更新）
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddSelect("WarehouseId", "倉庫", warehouseOptions)
-                .AddSelect("CategoryId", "商品分類", categoryOptions)
+                .AddSelect("WarehouseId", "倉庫", new List<SelectOption>()) // 空的選項，稍後載入
+                .AddSelect("CategoryId", "商品分類", new List<SelectOption>()) // 空的選項，稍後載入
                 .AddSelect("StockStatus", "庫存狀態", stockStatusOptions)
                 .AddText("SearchTerm", "搜尋", "輸入商品代碼或名稱...")
                 .Build();
@@ -388,6 +375,51 @@
                 nameof(InitializeFilters),
                 GetType(),
                 additionalData: "初始化篩選器失敗"
+            );
+        }
+    }
+
+    /// <summary>
+    /// 更新篩選器選項 - 在載入基礎資料後呼叫
+    /// </summary>
+    private void UpdateFilterOptions()
+    {
+        try
+        {
+            // 準備倉庫選項
+            var warehouseOptions = warehouses.Select(w => new SelectOption
+            {
+                Text = w.WarehouseName,
+                Value = w.Id.ToString()
+            }).ToList();
+
+            // 準備商品分類選項
+            var categoryOptions = productCategories.Select(c => new SelectOption
+            {
+                Text = c.CategoryName,
+                Value = c.Id.ToString()
+            }).ToList();
+
+            // 更新已存在的篩選器選項
+            var warehouseFilter = filterDefinitions.FirstOrDefault(f => f.Name == "WarehouseId");
+            if (warehouseFilter != null)
+            {
+                warehouseFilter.Options = warehouseOptions;
+            }
+
+            var categoryFilter = filterDefinitions.FirstOrDefault(f => f.Name == "CategoryId");
+            if (categoryFilter != null)
+            {
+                categoryFilter.Options = categoryOptions;
+            }
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(UpdateFilterOptions),
+                GetType(),
+                additionalData: "更新篩選器選項失敗"
             );
         }
     }

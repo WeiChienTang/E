@@ -19,20 +19,15 @@ namespace ERPCore2.Controllers
         [HttpPost("/auth/signin")]
         public async Task<IActionResult> SignIn(string username, string password, bool rememberMe = false, string? returnUrl = null)
         {
-            // 詳細記錄登入參數以便調試
-            _logger.LogInformation($"用戶登入嘗試: Username={username}, RememberMe={rememberMe}");
-            
             // 檢查 Request.Form 中的值來確認表單資料
             if (Request.Form.ContainsKey("rememberMe"))
             {
                 var formValues = Request.Form["rememberMe"];
-                _logger.LogInformation($"表單中的 rememberMe 值: {string.Join(", ", formValues.ToArray())}");
                 
                 // 如果表單中包含 "true" 值，強制設定 rememberMe 為 true
                 if (formValues.Contains("true"))
                 {
                     rememberMe = true;
-                    _logger.LogInformation($"根據表單資料修正 rememberMe 為: {rememberMe}");
                 }
             }
             
@@ -78,9 +73,6 @@ namespace ERPCore2.Controllers
                         : DateTimeOffset.UtcNow.AddHours(8),
                     IssuedUtc = DateTimeOffset.UtcNow
                 };
-                
-                // 記錄 Cookie 設定以便調試
-                _logger.LogInformation($"Cookie 設定: IsPersistent={authProperties.IsPersistent}, ExpiresUtc={authProperties.ExpiresUtc}");
 
                 // 執行登入
                 await HttpContext.SignInAsync(

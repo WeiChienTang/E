@@ -94,6 +94,9 @@
                 new() { Text = "採購訂單", Href = "/purchase/orders" }
             };
 
+            // 初始化基本篩選器結構
+            InitializeBasicFilters();
+            
             // 初始化表格欄位
             InitializeColumns();
             
@@ -117,7 +120,7 @@
     private async Task InitializeBasicDataAsync()
     {
         await LoadOptionsAsync();
-        InitializeFilters();
+        await InitializeFiltersAsync();
     }
 
     /// <summary>
@@ -276,6 +279,68 @@
                 ex,
                 nameof(LoadOptionsAsync),
                 GetType()
+            );
+        }
+    }
+
+    private void InitializeBasicFilters()
+    {
+        try
+        {
+            // 建立基本篩選定義（不包含下拉選單選項，這些將在 InitializeFiltersAsync 中載入）
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("SearchTerm", "搜尋", "請輸入採購單號、供應商名稱...")
+                .AddSelect("SupplierId", "供應商", new List<SelectOption>()) // 空的選項，稍後載入
+                .AddSelect("WarehouseId", "倉庫", new List<SelectOption>()) // 空的選項，稍後載入
+                .AddSelect("OrderStatus", "訂單狀態", new List<SelectOption>()) // 空的選項，稍後載入
+                .AddSelect("PurchaseType", "採購類型", new List<SelectOption>()) // 空的選項，稍後載入
+                .AddDateRange("OrderDateRange", "訂單日期")
+                .Build();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeBasicFilters),
+                GetType(),
+                additionalData: "初始化基本篩選器失敗"
+            );
+            
+            // 設定安全的預設值
+            filterDefinitions = new List<SearchFilterDefinition>();
+        }
+    }
+
+    private async Task InitializeFiltersAsync()
+    {
+        try
+        {
+            // 重新建立篩選定義，包含載入的選項
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("SearchTerm", "搜尋", "請輸入採購單號、供應商名稱...")
+                .AddSelect("SupplierId", "供應商", supplierOptions)
+                .AddSelect("WarehouseId", "倉庫", warehouseOptions)
+                .AddSelect("OrderStatus", "訂單狀態", statusOptions)
+                .AddSelect("PurchaseType", "採購類型", typeOptions)
+                .AddDateRange("OrderDateRange", "訂單日期")
+                .Build();
+
+            // 通知組件狀態已改變
+            StateHasChanged();
+            
+            // 如果組件已經初始化，刷新組件以更新篩選器
+            if (indexPageRef != null)
+            {
+                await indexPageRef.Refresh();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeFiltersAsync),
+                GetType(),
+                additionalData: "初始化篩選器失敗"
             );
         }
     }

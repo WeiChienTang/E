@@ -1,0 +1,727 @@
+@page "/purchase/orders/edit"
+@page "/purchase/orders/edit/{id:int?}"
+@using Microsoft.AspNetCore.Authorization
+@using ERPCore2.Components.Shared.Auth
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.PageModels
+@using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.Tables
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Services
+@using ERPCore2.Helpers
+@using ERPCore2.Models
+@attribute [Authorize]
+@inject IPurchaseOrderService PurchaseOrderService
+@inject ISupplierService SupplierService
+@inject IWarehouseService WarehouseService
+@inject IProductService ProductService
+@inject INotificationService NotificationService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>@(Id.HasValue ? "編輯採購訂單" : "新增採購訂單")</PageTitle>
+
+<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Purchase.Update" : "Purchase.Create")">
+    <GenericEditPageComponent TEntity="PurchaseOrder" 
+                             TService="IPurchaseOrderService"
+                             Id="@Id"
+                             Entity="@purchaseOrder"
+                             Service="@PurchaseOrderService"
+                             EntityName="採購訂單"
+                             EntityNamePlural="採購訂單"
+                             FormTitle="基本資料"
+                             FormSubtitle="採購訂單的基本資訊"
+                             IndexRoute="/purchase/orders"
+                             UseGenericForm="true"
+                             FormFields="@formFields"
+                             FormSections="@formSections"
+                             BreadcrumbItems="@breadcrumbItems"
+                             DataLoader="@LoadPurchaseOrderData"
+                             SaveHandler="@SavePurchaseOrder"
+                             AdditionalDataLoader="@LoadAdditionalData"
+                             @ref="editComponent">
+        
+        <AdditionalSections>
+            <!-- 採購明細區段 -->
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>採購明細
+                    </h5>
+                    <button type="button" class="btn btn-primary btn-sm" @onclick="ShowAddProductModal">
+                        <i class="fas fa-plus me-1"></i>新增商品
+                    </button>
+                </div>
+                <div class="card-body">
+                    @if (purchaseOrderDetails.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 150px;">商品編號</th>
+                                        <th>商品名稱</th>
+                                        <th style="width: 80px;">單位</th>
+                                        <th style="width: 100px;" class="text-end">訂購數量</th>
+                                        <th style="width: 120px;" class="text-end">單價</th>
+                                        <th style="width: 120px;" class="text-end">小計</th>
+                                        <th style="width: 120px;">預計到貨</th>
+                                        <th style="width: 100px;" class="text-center">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var detail in purchaseOrderDetails.Where(d => d.Status == EntityStatus.Active))
+                                    {
+                                        <tr>
+                                            <td>@detail.Product?.ProductCode</td>
+                                            <td>@detail.Product?.ProductName</td>
+                                            <td>@detail.Product?.Unit?.UnitName</td>
+                                            <td class="text-end">
+                                                <input type="number" class="form-control form-control-sm text-end" 
+                                                       @bind="detail.OrderQuantity" 
+                                                       @oninput="() => UpdateDetailSubtotal(detail)"
+                                                       min="1" />
+                                            </td>
+                                            <td class="text-end">
+                                                <input type="number" class="form-control form-control-sm text-end" 
+                                                       @bind="detail.UnitPrice" 
+                                                       @oninput="() => UpdateDetailSubtotal(detail)"
+                                                       step="0.01" min="0" />
+                                            </td>
+                                            <td class="text-end">
+                                                <span class="fw-bold">@detail.SubtotalAmount.ToString("N2")</span>
+                                            </td>
+                                            <td>
+                                                <input type="date" class="form-control form-control-sm" 
+                                                       @bind="detail.ExpectedDeliveryDate" />
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm">
+                                                    <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                            @onclick="() => RemoveDetail(detail)" title="移除">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="5" class="text-end fw-bold">總計金額：</td>
+                                        <td class="text-end fw-bold fs-5 text-primary">@totalAmount.ToString("N2")</td>
+                                        <td colspan="2"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                            <p>尚未新增採購商品</p>
+                            <button type="button" class="btn btn-primary" @onclick="ShowAddProductModal">
+                                <i class="fas fa-plus me-1"></i>新增第一個商品
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </AdditionalSections>
+    </GenericEditPageComponent>
+</PagePermissionCheck>
+
+<!-- 新增商品模態框 -->
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增採購商品</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">商品搜尋</label>
+                    <input type="text" class="form-control" @bind="productSearchTerm" 
+                           @oninput="FilterProducts" placeholder="請輸入商品編號或名稱..." />
+                </div>
+                
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-hover">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th style="width: 50px;">選擇</th>
+                                <th>商品編號</th>
+                                <th>商品名稱</th>
+                                <th>單位</th>
+                                <th class="text-end">單價</th>
+                                <th class="text-end">庫存</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var product in filteredProducts)
+                            {
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input" 
+                                               @onchange="(e) => ToggleProductSelection(product, (bool)e.Value!)" />
+                                    </td>
+                                    <td>@product.ProductCode</td>
+                                    <td>@product.ProductName</td>
+                                    <td>@product.Unit?.UnitName</td>
+                                    <td class="text-end">@(product.UnitPrice?.ToString("N2") ?? "0.00")</td>
+                                    <td class="text-end">@product.CurrentStock</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                
+                @if (selectedProducts.Any())
+                {
+                    <div class="mt-3">
+                        <h6>已選擇 @selectedProducts.Count 項商品</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">預設訂購數量</label>
+                                <input type="number" class="form-control" @bind="defaultQuantity" min="1" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">預計到貨日期</label>
+                                <input type="date" class="form-control" @bind="defaultDeliveryDate" />
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" @onclick="AddSelectedProducts" 
+                        disabled="@(!selectedProducts.Any())">
+                    <i class="fas fa-plus me-1"></i>新增選定商品
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    
+    // 組件參考
+    private GenericEditPageComponent<PurchaseOrder, IPurchaseOrderService> editComponent = default!;
+    
+    // 資料模型
+    private PurchaseOrder purchaseOrder = new();
+    private List<Data.Entities.PurchaseOrderDetail> purchaseOrderDetails = new();
+    
+    // 選項清單
+    private List<Supplier> suppliers = new();
+    private List<Warehouse> warehouses = new();
+    private List<Product> allProducts = new();
+    private List<Product> filteredProducts = new();
+    
+    // 表單欄位定義
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    
+    // 商品選擇相關
+    private List<Product> selectedProducts = new();
+    private string productSearchTerm = "";
+    private int defaultQuantity = 1;
+    private DateTime? defaultDeliveryDate;
+    
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    
+    // 計算屬性
+    private decimal totalAmount => purchaseOrderDetails.Where(d => d.Status == EntityStatus.Active).Sum(d => d.SubtotalAmount);
+    
+    protected override void OnInitialized()
+    {
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeDefaultValues();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(OnInitialized), 
+                GetType()
+            );
+        }
+    }
+    
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new() { Text = "首頁", Href = "/" },
+            new() { Text = "採購管理", Href = "/purchase" },
+            new() { Text = "採購訂單", Href = "/purchase/orders" },
+            new() { Text = Id.HasValue ? "編輯採購訂單" : "新增採購訂單" }
+        };
+    }
+    
+    private void InitializeDefaultValues()
+    {
+        if (!Id.HasValue)
+        {
+            purchaseOrder.OrderDate = DateTime.Today;
+            purchaseOrder.OrderStatus = PurchaseOrderStatus.Draft;
+            purchaseOrder.PurchaseType = PurchaseType.Normal;
+            defaultDeliveryDate = DateTime.Today.AddDays(7);
+        }
+    }
+    
+    private async Task LoadAdditionalData()
+    {
+        try
+        {
+            // 載入供應商
+            suppliers = await SupplierService.GetAllAsync();
+            
+            // 載入倉庫
+            warehouses = await WarehouseService.GetAllAsync();
+            
+            // 載入商品
+            allProducts = await ProductService.GetAllAsync();
+            filteredProducts = allProducts.ToList();
+            
+            // 初始化表單欄位
+            InitializeFormFields();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadAdditionalData),
+                GetType()
+            );
+        }
+    }
+    
+    private void InitializeFormFields()
+    {
+        try
+        {
+            // 供應商選項
+            var supplierOptions = suppliers.Select(s => new SelectOption
+            {
+                Text = $"{s.SupplierCode} - {s.CompanyName}",
+                Value = s.Id.ToString()
+            }).Prepend(new SelectOption { Value = "", Text = "請選擇供應商" }).ToList();
+            
+            // 倉庫選項
+            var warehouseOptions = warehouses.Select(w => new SelectOption
+            {
+                Text = $"{w.WarehouseCode} - {w.WarehouseName}",
+                Value = w.Id.ToString()
+            }).Prepend(new SelectOption { Value = "", Text = "請選擇倉庫" }).ToList();
+            
+            // 採購類型選項
+            var purchaseTypeOptions = Enum.GetValues<PurchaseType>()
+                .Select(t => new SelectOption
+                {
+                    Text = GetPurchaseTypeDisplayName(t),
+                    Value = ((int)t).ToString()
+                }).ToList();
+            
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(PurchaseOrder.PurchaseOrderNumber),
+                    Label = "採購單號",
+                    FieldType = FormFieldType.Text,
+                    IsRequired = true,
+                    Placeholder = "系統自動產生或手動輸入",
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseOrder.OrderDate),
+                    Label = "訂單日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseOrder.SupplierId),
+                    Label = "供應商",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = supplierOptions,
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseOrder.WarehouseId),
+                    Label = "倉庫",
+                    FieldType = FormFieldType.Select,
+                    Options = warehouseOptions,
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseOrder.PurchaseType),
+                    Label = "採購類型",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = purchaseTypeOptions,
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseOrder.ExpectedDeliveryDate),
+                    Label = "預計到貨日期",
+                    FieldType = FormFieldType.Date,
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseOrder.PurchasePersonnel),
+                    Label = "採購人員",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入採購人員姓名",
+                    ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseOrder.OrderRemarks),
+                    Label = "訂單備註",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入訂單相關備註",
+                    Rows = 3,
+                    ContainerCssClass = "col-12"
+                }
+            };
+            
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(PurchaseOrder.PurchaseOrderNumber), "基本資訊" },
+                { nameof(PurchaseOrder.OrderDate), "基本資訊" },
+                { nameof(PurchaseOrder.SupplierId), "基本資訊" },
+                { nameof(PurchaseOrder.WarehouseId), "基本資訊" },
+                { nameof(PurchaseOrder.PurchaseType), "採購設定" },
+                { nameof(PurchaseOrder.ExpectedDeliveryDate), "採購設定" },
+                { nameof(PurchaseOrder.PurchasePersonnel), "採購設定" },
+                { nameof(PurchaseOrder.OrderRemarks), "備註資訊" }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeFormFields),
+                GetType()
+            );
+        }
+    }
+    
+    private async Task<PurchaseOrder?> LoadPurchaseOrderData()
+    {
+        try
+        {
+            if (Id.HasValue)
+            {
+                var order = await PurchaseOrderService.GetByIdAsync(Id.Value);
+                if (order != null)
+                {
+                    purchaseOrder = order;
+                    purchaseOrderDetails = order.PurchaseOrderDetails?.Where(d => d.Status == EntityStatus.Active).ToList() ?? new List<Data.Entities.PurchaseOrderDetail>();
+                    return order;
+                }
+            }
+            else
+            {
+                // 新增模式 - 產生採購單號
+                purchaseOrder.PurchaseOrderNumber = await PurchaseOrderService.GenerateOrderNumberAsync();
+            }
+            
+            return purchaseOrder;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadPurchaseOrderData),
+                GetType()
+            );
+            return null;
+        }
+    }
+    
+    private async Task<bool> SavePurchaseOrder(PurchaseOrder entity)
+    {
+        try
+        {
+            // 更新訂單總金額
+            entity.TotalAmount = totalAmount;
+            
+            // 設定明細的採購訂單ID
+            foreach (var detail in purchaseOrderDetails.Where(d => d.Status == EntityStatus.Active))
+            {
+                detail.PurchaseOrderId = entity.Id;
+            }
+            
+            // 先儲存主檔
+            ServiceResult result;
+            if (Id.HasValue)
+            {
+                result = await PurchaseOrderService.UpdateAsync(entity);
+            }
+            else
+            {
+                var createResult = await PurchaseOrderService.CreateAsync(entity);
+                result = new ServiceResult 
+                { 
+                    IsSuccess = createResult.IsSuccess, 
+                    ErrorMessage = createResult.ErrorMessage 
+                };
+                
+                if (createResult.IsSuccess && createResult.Data != null)
+                {
+                    purchaseOrder = createResult.Data;
+                    Id = purchaseOrder.Id;
+                }
+            }
+            
+            if (result.IsSuccess && purchaseOrder.Id > 0)
+            {
+                // 儲存明細
+                await SaveOrderDetails();
+                return true;
+            }
+            
+            return false;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(SavePurchaseOrder),
+                GetType()
+            );
+            return false;
+        }
+    }
+    
+    private async Task SaveOrderDetails()
+    {
+        try
+        {
+            foreach (var detail in purchaseOrderDetails)
+            {
+                detail.PurchaseOrderId = purchaseOrder.Id;
+                
+                if (detail.Id == 0 && detail.Status == EntityStatus.Active)
+                {
+                    // 新增明細
+                    await PurchaseOrderService.AddOrderDetailAsync(detail);
+                }
+                else if (detail.Id > 0 && detail.Status == EntityStatus.Deleted)
+                {
+                    // 刪除明細
+                    await PurchaseOrderService.DeleteOrderDetailAsync(detail.Id);
+                }
+                else if (detail.Id > 0 && detail.Status == EntityStatus.Active)
+                {
+                    // 更新明細
+                    await PurchaseOrderService.UpdateOrderDetailAsync(detail);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(SaveOrderDetails),
+                GetType()
+            );
+        }
+    }
+    
+    // 商品選擇相關方法
+    private async Task ShowAddProductModal()
+    {
+        try
+        {
+            selectedProducts.Clear();
+            productSearchTerm = "";
+            filteredProducts = allProducts.Where(p => 
+                !purchaseOrderDetails.Any(d => d.ProductId == p.Id && d.Status == EntityStatus.Active)
+            ).ToList();
+            
+            await JSRuntime.InvokeVoidAsync("eval", "$('#addProductModal').modal('show')");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ShowAddProductModal),
+                GetType()
+            );
+        }
+    }
+    
+    private void FilterProducts()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(productSearchTerm))
+            {
+                filteredProducts = allProducts.Where(p => 
+                    !purchaseOrderDetails.Any(d => d.ProductId == p.Id && d.Status == EntityStatus.Active)
+                ).ToList();
+            }
+            else
+            {
+                var searchTerm = productSearchTerm.ToLower();
+                filteredProducts = allProducts.Where(p => 
+                    !purchaseOrderDetails.Any(d => d.ProductId == p.Id && d.Status == EntityStatus.Active) &&
+                    (p.ProductCode.ToLower().Contains(searchTerm) ||
+                     p.ProductName.ToLower().Contains(searchTerm))
+                ).ToList();
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(FilterProducts),
+                GetType()
+            );
+        }
+    }
+    
+    private void ToggleProductSelection(Product product, bool isSelected)
+    {
+        try
+        {
+            if (isSelected)
+            {
+                if (!selectedProducts.Contains(product))
+                {
+                    selectedProducts.Add(product);
+                }
+            }
+            else
+            {
+                selectedProducts.Remove(product);
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ToggleProductSelection),
+                GetType()
+            );
+        }
+    }
+    
+    private async Task AddSelectedProducts()
+    {
+        try
+        {
+            if (!selectedProducts.Any()) return;
+            
+            foreach (var product in selectedProducts)
+            {
+                var detail = new Data.Entities.PurchaseOrderDetail
+                {
+                    PurchaseOrderId = purchaseOrder.Id,
+                    ProductId = product.Id,
+                    Product = product,
+                    OrderQuantity = defaultQuantity,
+                    UnitPrice = product.UnitPrice ?? 0,
+                    ExpectedDeliveryDate = defaultDeliveryDate,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now
+                };
+                
+                purchaseOrderDetails.Add(detail);
+            }
+            
+            selectedProducts.Clear();
+            await JSRuntime.InvokeVoidAsync("eval", "$('#addProductModal').modal('hide')");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(AddSelectedProducts),
+                GetType()
+            );
+        }
+    }
+    
+    private void UpdateDetailSubtotal(Data.Entities.PurchaseOrderDetail detail)
+    {
+        try
+        {
+            // 明細的 SubtotalAmount 是計算屬性，會自動更新
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(UpdateDetailSubtotal),
+                GetType()
+            );
+        }
+    }
+    
+    private void RemoveDetail(Data.Entities.PurchaseOrderDetail detail)
+    {
+        try
+        {
+            if (detail.Id > 0)
+            {
+                // 已存在的明細標記為刪除
+                detail.Status = EntityStatus.Deleted;
+            }
+            else
+            {
+                // 未儲存的明細直接移除
+                purchaseOrderDetails.Remove(detail);
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(RemoveDetail),
+                GetType()
+            );
+        }
+    }
+    
+    // 輔助方法
+    private static string GetPurchaseTypeDisplayName(PurchaseType type)
+    {
+        return type switch
+        {
+            PurchaseType.Normal => "一般採購",
+            PurchaseType.Urgent => "緊急採購",
+            PurchaseType.Replenishment => "補貨採購",
+            PurchaseType.Project => "專案採購",
+            _ => type.ToString()
+        };
+    }
+}

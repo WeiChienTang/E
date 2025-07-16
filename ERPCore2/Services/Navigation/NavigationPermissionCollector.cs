@@ -29,8 +29,6 @@ namespace ERPCore2.Services
                 return;
             }
 
-            _logger.LogInformation("註冊權限: menuKey={MenuKey}, permission={Permission}", menuKey, permission);
-
             _menuPermissions.AddOrUpdate(
                 menuKey,
                 new HashSet<string> { permission },
@@ -40,8 +38,6 @@ namespace ERPCore2.Services
                     return existing;
                 }
             );
-
-            _logger.LogInformation("權限註冊完成，menuKey={MenuKey} 目前有 {Count} 個權限", menuKey, _menuPermissions[menuKey].Count);
         }
 
         /// <summary>
@@ -59,9 +55,6 @@ namespace ERPCore2.Services
                 ? permissions.ToArray()
                 : new string[0];
 
-            _logger.LogInformation("取得權限: menuKey={MenuKey}, 找到 {Count} 個權限: [{Permissions}]", 
-                menuKey, result.Length, string.Join(", ", result));
-
             return result;
         }
 
@@ -73,8 +66,6 @@ namespace ERPCore2.Services
             if (!string.IsNullOrEmpty(menuKey))
             {
                 var removed = _menuPermissions.TryRemove(menuKey, out var removedPermissions);
-                _logger.LogInformation("清除權限: menuKey={MenuKey}, 是否成功={Success}, 清除了 {Count} 個權限", 
-                    menuKey, removed, removedPermissions?.Count ?? 0);
             }
         }
     }

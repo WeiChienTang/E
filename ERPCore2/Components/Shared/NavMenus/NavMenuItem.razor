@@ -96,7 +96,6 @@
         if (AutoDetectPermissions && HasDropdownItems)
         {
             // 清除舊的權限記錄
-            Logger.LogInformation("清除菜單 {MenuText} 的權限記錄", Text);
             PermissionCollector.ClearPermissions(GeneratedMenuKey);
         }
     }
@@ -105,15 +104,11 @@
     {
         if (firstRender && AutoDetectPermissions && HasDropdownItems)
         {
-            Logger.LogInformation("NavMenuItem OnAfterRenderAsync: {MenuText}, firstRender={FirstRender}", Text, firstRender);
-            
             // 等待一小段時間確保所有子組件都已註冊權限
             await Task.Delay(200);
             
             // 在首次渲染後重新檢查權限並更新UI
             await InvokeAsync(StateHasChanged);
-            
-            Logger.LogInformation("NavMenuItem OnAfterRenderAsync 完成: {MenuText}", Text);
         }
     }
 
@@ -130,9 +125,6 @@
     {
         var permissions = PermissionCollector.GetPermissions(GeneratedMenuKey);
         var result = permissions.Length > 0 ? permissions : new[] { "___NO_PERMISSIONS___" };
-        
-        Logger.LogInformation("菜單 {MenuText} (MenuKey: {MenuKey}) 取得權限: {Permissions}", 
-            Text, GeneratedMenuKey, string.Join(", ", result));
             
         return result;
     }

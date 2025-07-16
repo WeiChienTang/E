@@ -826,25 +826,11 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                Console.WriteLine($"[RestoreSoftDeletedEmployeeAsync] 查詢員工ID: {employeeId}");
-                
-                // 先查詢所有符合ID的員工（不管是否已刪除）以便調試
-                var allEmployees = await context.Employees.Where(e => e.Id == employeeId).ToListAsync();
-                Console.WriteLine($"[RestoreSoftDeletedEmployeeAsync] 找到 {allEmployees.Count} 個符合ID的員工");
-                
-                foreach (var emp in allEmployees)
-                {
-                    Console.WriteLine($"[RestoreSoftDeletedEmployeeAsync] 員工ID: {emp.Id}, IsDeleted: {emp.IsDeleted}, Username: {emp.Username}");
-                }
-                
                 var employee = await context.Employees.FirstOrDefaultAsync(e => e.Id == employeeId && e.IsDeleted);
                 if (employee == null)
                 {
-                    Console.WriteLine($"[RestoreSoftDeletedEmployeeAsync] 找不到符合條件的軟刪除員工");
                     return ServiceResult.Failure("找不到要復原的員工資料");
                 }
-
-                Console.WriteLine($"[RestoreSoftDeletedEmployeeAsync] 找到軟刪除員工: {employee.Username}");
 
                 // 復原員工
                 employee.IsDeleted = false;
@@ -854,7 +840,6 @@ namespace ERPCore2.Services
                 employee.UpdatedAt = DateTime.Now;
 
                 await context.SaveChangesAsync();
-                Console.WriteLine($"[RestoreSoftDeletedEmployeeAsync] 員工復原成功");
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -877,16 +862,11 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                Console.WriteLine($"[RestoreAndUpdateSoftDeletedEmployeeAsync] 查詢員工ID: {employeeId}");
-                
                 var employee = await context.Employees.FirstOrDefaultAsync(e => e.Id == employeeId && e.IsDeleted);
                 if (employee == null)
                 {
-                    Console.WriteLine($"[RestoreAndUpdateSoftDeletedEmployeeAsync] 找不到符合條件的軟刪除員工");
                     return ServiceResult<Employee>.Failure("找不到要復原的員工資料");
                 }
-
-                Console.WriteLine($"[RestoreAndUpdateSoftDeletedEmployeeAsync] 找到軟刪除員工: {employee.Username}，開始驗證相關資料");
 
                 // 驗證角色是否存在且有效
                 if (updateData.RoleId > 0)
@@ -896,7 +876,6 @@ namespace ERPCore2.Services
                     
                     if (!roleExists)
                     {
-                        Console.WriteLine($"[RestoreAndUpdateSoftDeletedEmployeeAsync] 角色ID {updateData.RoleId} 不存在或已停用");
                         return ServiceResult<Employee>.Failure($"指定的角色(ID: {updateData.RoleId})不存在或已停用");
                     }
                 }
@@ -909,7 +888,6 @@ namespace ERPCore2.Services
                     
                     if (!departmentExists)
                     {
-                        Console.WriteLine($"[RestoreAndUpdateSoftDeletedEmployeeAsync] 部門ID {updateData.DepartmentId} 不存在或已停用");
                         return ServiceResult<Employee>.Failure($"指定的部門(ID: {updateData.DepartmentId})不存在或已停用");
                     }
                 }
@@ -922,12 +900,9 @@ namespace ERPCore2.Services
                     
                     if (!positionExists)
                     {
-                        Console.WriteLine($"[RestoreAndUpdateSoftDeletedEmployeeAsync] 職位ID {updateData.EmployeePositionId} 不存在或已停用");
                         return ServiceResult<Employee>.Failure($"指定的職位(ID: {updateData.EmployeePositionId})不存在或已停用");
                     }
                 }
-
-                Console.WriteLine($"[RestoreAndUpdateSoftDeletedEmployeeAsync] 驗證通過，開始復原並更新");
 
                 // 復原員工並更新資料
                 employee.IsDeleted = false;
@@ -946,7 +921,6 @@ namespace ERPCore2.Services
                 employee.EmployeePositionId = updateData.EmployeePositionId;
 
                 await context.SaveChangesAsync();
-                Console.WriteLine($"[RestoreAndUpdateSoftDeletedEmployeeAsync] 員工復原並更新成功");
                 
                 // 重新載入員工資料以包含相關資料
                 var updatedEmployee = await context.Employees

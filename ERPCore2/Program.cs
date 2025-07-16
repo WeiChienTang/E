@@ -89,18 +89,10 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         {
             OnValidatePrincipal = context =>
             {
-                // 只在特定情況下記錄，避免過多日誌
-                if (context.Principal?.Identity?.IsAuthenticated != true)
-                {
-                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                    logger.LogInformation($"Cookie 驗證失敗");
-                }
                 return Task.CompletedTask;
             },
             OnRedirectToLogin = context =>
             {
-                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogInformation($"重新導向到登入頁面: Path={context.Request.Path}");
                 context.Response.Redirect(context.RedirectUri);
                 return Task.CompletedTask;
             }

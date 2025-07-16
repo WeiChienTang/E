@@ -1,0 +1,752 @@
+@page "/purchase/orders/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@using ERPCore2.Components.Shared.Auth
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Cards
+@using ERPCore2.Components.Shared.Tables
+@using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Services
+@using ERPCore2.Helpers
+@using ERPCore2.Models
+@attribute [Authorize]
+@inject IPurchaseOrderService PurchaseOrderService
+@inject IPurchaseReceiptService PurchaseReceiptService
+@inject INotificationService NotificationService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>採購訂單詳細 - @(purchaseOrder?.PurchaseOrderNumber ?? "")</PageTitle>
+
+<PagePermissionCheck RequiredPermission="Purchase.Read">
+    <div class="container-fluid">
+        <!-- 頁面標題 -->
+        <GenericHeaderComponent Title="@($"採購訂單詳細 - {purchaseOrder?.PurchaseOrderNumber}")"
+                               Subtitle="檢視採購訂單完整資訊與相關記錄"
+                               HeadingLevel="h1"
+                               BreadcrumbItems="@breadcrumbItems"
+                               IsLoading="@isLoading"
+                               LoadingText="載入中..."
+                               ShowDivider="true">
+            <ActionButtons>
+                @if (purchaseOrder != null)
+                {
+                    <div class="btn-group" role="group">
+                        @if (CanEdit())
+                        {
+                            <button type="button" class="btn btn-primary" @onclick="() => NavigateToEdit()">
+                                <i class="fas fa-edit me-2"></i>編輯
+                            </button>
+                        }
+                        
+                        @if (CanSubmit())
+                        {
+                            <button type="button" class="btn btn-success" @onclick="() => SubmitOrder()">
+                                <i class="fas fa-paper-plane me-2"></i>送出
+                            </button>
+                        }
+                        
+                        @if (CanApprove())
+                        {
+                            <button type="button" class="btn btn-info" @onclick="() => ApproveOrder()">
+                                <i class="fas fa-check me-2"></i>核准
+                            </button>
+                        }
+                        
+                        @if (CanCancel())
+                        {
+                            <button type="button" class="btn btn-outline-danger" @onclick="() => ShowCancelModal()">
+                                <i class="fas fa-times me-2"></i>取消
+                            </button>
+                        }
+                        
+                        <button type="button" class="btn btn-outline-secondary" @onclick='() => Navigation.NavigateTo("/purchase/orders")'>
+                            <i class="fas fa-arrow-left me-2"></i>返回列表
+                        </button>
+                    </div>
+                }
+            </ActionButtons>
+        </GenericHeaderComponent>
+        
+        @if (isLoading)
+        {
+            <div class="d-flex justify-content-center align-items-center py-5">
+                <div class="spinner-border text-primary me-3" role="status"></div>
+                <span>載入採購訂單資料中...</span>
+            </div>
+        }
+        else if (purchaseOrder == null)
+        {
+            <div class="alert alert-warning" role="alert">
+                <h6 class="alert-heading">找不到資料</h6>
+                找不到指定的採購訂單，可能已被刪除或您沒有檢視權限。
+            </div>
+        }
+        else
+        {
+            <div class="row">
+                <!-- 左側：基本資訊 -->
+                <div class="col-lg-8">
+                    <!-- 基本資訊卡片 -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-info-circle me-2"></i>基本資訊
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td class="fw-bold" style="width: 120px;">採購單號：</td>
+                                            <td>@purchaseOrder.PurchaseOrderNumber</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">訂單日期：</td>
+                                            <td>@purchaseOrder.OrderDate.ToString("yyyy/MM/dd")</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">供應商：</td>
+                                            <td>@purchaseOrder.Supplier?.CompanyName</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">倉庫：</td>
+                                            <td>@(purchaseOrder.Warehouse?.WarehouseName ?? "-")</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td class="fw-bold" style="width: 120px;">採購類型：</td>
+                                            <td>
+                                                <span class="badge @GetTypeClass(purchaseOrder.PurchaseType)">
+                                                    @GetTypeDisplayName(purchaseOrder.PurchaseType)
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">訂單狀態：</td>
+                                            <td>
+                                                <span class="badge @GetStatusClass(purchaseOrder.OrderStatus)">
+                                                    @GetStatusDisplayName(purchaseOrder.OrderStatus)
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">預計到貨：</td>
+                                            <td>@(purchaseOrder.ExpectedDeliveryDate?.ToString("yyyy/MM/dd") ?? "-")</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">採購人員：</td>
+                                            <td>@(purchaseOrder.PurchasePersonnel ?? "-")</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            @if (!string.IsNullOrEmpty(purchaseOrder.OrderRemarks))
+                            {
+                                <div class="mt-3">
+                                    <strong>訂單備註：</strong>
+                                    <p class="text-muted mt-1">@purchaseOrder.OrderRemarks</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    
+                    <!-- 採購明細 -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-list me-2"></i>採購明細
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            @if (purchaseOrderDetails.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>商品編號</th>
+                                                <th>商品名稱</th>
+                                                <th>單位</th>
+                                                <th class="text-end">訂購數量</th>
+                                                <th class="text-end">已進貨</th>
+                                                <th class="text-end">待進貨</th>
+                                                <th class="text-end">單價</th>
+                                                <th class="text-end">小計</th>
+                                                <th>預計到貨</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var detail in purchaseOrderDetails)
+                                            {
+                                                <tr>
+                                                    <td>@detail.Product?.ProductCode</td>
+                                                    <td>@detail.Product?.ProductName</td>
+                                                    <td>@detail.Product?.Unit?.UnitName</td>
+                                                    <td class="text-end">@detail.OrderQuantity.ToString("N0")</td>
+                                                    <td class="text-end">
+                                                        <span class="@(detail.ReceivedQuantity > 0 ? "text-success" : "text-muted")">
+                                                            @detail.ReceivedQuantity.ToString("N0")
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <span class="@(detail.PendingQuantity > 0 ? "text-warning" : "text-muted")">
+                                                            @detail.PendingQuantity.ToString("N0")
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-end">@detail.UnitPrice.ToString("N2")</td>
+                                                    <td class="text-end fw-bold">@detail.SubtotalAmount.ToString("N2")</td>
+                                                    <td>@(detail.ExpectedDeliveryDate?.ToString("yyyy/MM/dd") ?? "-")</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                        <tfoot class="table-light">
+                                            <tr>
+                                                <td colspan="7" class="text-end fw-bold">總計金額：</td>
+                                                <td class="text-end fw-bold fs-5 text-primary">@purchaseOrder.TotalAmount.ToString("C")</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center py-4 text-muted">
+                                    <i class="fas fa-inbox fa-2x mb-2"></i>
+                                    <p>此採購訂單尚未新增商品明細</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    
+                    <!-- 進貨記錄 -->
+                    @if (purchaseReceipts.Any())
+                    {
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-truck me-2"></i>進貨記錄
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>進貨單號</th>
+                                                <th>進貨日期</th>
+                                                <th class="text-end">進貨金額</th>
+                                                <th>進貨狀態</th>
+                                                <th>驗收人員</th>
+                                                <th class="text-center">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var receipt in purchaseReceipts)
+                                            {
+                                                <tr>
+                                                    <td>@receipt.ReceiptNumber</td>
+                                                    <td>@receipt.ReceiptDate.ToString("yyyy/MM/dd")</td>
+                                                    <td class="text-end">@receipt.TotalAmount.ToString("N2")</td>
+                                                    <td>
+                                                        <span class="badge @GetReceiptStatusClass(receipt.ReceiptStatus)">
+                                                            @GetReceiptStatusDisplayName(receipt.ReceiptStatus)
+                                                        </span>
+                                                    </td>
+                                                    <td>@(receipt.InspectionPersonnel ?? "-")</td>
+                                                    <td class="text-center">
+                                                        <button type="button" class="btn btn-outline-primary btn-sm" 
+                                                                @onclick="() => NavigateToReceipt(receipt.Id)">
+                                                            <i class="fas fa-eye"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                
+                <!-- 右側：統計資訊 -->
+                <div class="col-lg-4">
+                    <!-- 訂單統計 -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>訂單統計
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6 mb-3">
+                                    <div class="border-end">
+                                        <h4 class="text-primary mb-1">@purchaseOrder.TotalAmount.ToString("C")</h4>
+                                        <small class="text-muted">訂單總額</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <h4 class="text-success mb-1">@purchaseOrder.ReceivedAmount.ToString("C")</h4>
+                                    <small class="text-muted">已進貨金額</small>
+                                </div>
+                                <div class="col-6">
+                                    <div class="border-end">
+                                        <h5 class="text-info mb-1">@purchaseOrderDetails.Count</h5>
+                                        <small class="text-muted">商品項目</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <h5 class="text-warning mb-1">@purchaseOrderDetails.Sum(d => d.OrderQuantity)</h5>
+                                    <small class="text-muted">總訂購數量</small>
+                                </div>
+                            </div>
+                            
+                            <!-- 進度條 -->
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <small>進貨進度</small>
+                                    <small>@GetReceiptPercentage().ToString("F1")%</small>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar @GetProgressBarClass()" role="progressbar" 
+                                         style="width: @GetReceiptPercentage().ToString("F1")%" 
+                                         aria-valuenow="@GetReceiptPercentage()" aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 重要日期 -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-calendar me-2"></i>重要日期
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <strong>訂單建立：</strong>
+                                    <br><small class="text-muted">@purchaseOrder.CreatedAt.ToString("yyyy/MM/dd HH:mm")</small>
+                                </li>
+                                
+                                @if (purchaseOrder.ApprovedAt.HasValue)
+                                {
+                                    <li class="mb-2">
+                                        <strong>訂單核准：</strong>
+                                        <br><small class="text-muted">@purchaseOrder.ApprovedAt.Value.ToString("yyyy/MM/dd HH:mm")</small>
+                                    </li>
+                                }
+                                
+                                @if (purchaseOrder.ExpectedDeliveryDate.HasValue)
+                                {
+                                    <li class="mb-2">
+                                        <strong>預計到貨：</strong>
+                                        <br><small class="text-muted">@purchaseOrder.ExpectedDeliveryDate.Value.ToString("yyyy/MM/dd")</small>
+                                    </li>
+                                }
+                                
+                                @if (purchaseOrder.UpdatedAt.HasValue)
+                                {
+                                    <li class="mb-2">
+                                        <strong>最後更新：</strong>
+                                        <br><small class="text-muted">@purchaseOrder.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</small>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- 快速操作 -->
+                    @if (CanPerformQuickActions())
+                    {
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-bolt me-2"></i>快速操作
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    @if (CanCreateReceipt())
+                                    {
+                                        <button type="button" class="btn btn-outline-success btn-sm">
+                                            <i class="fas fa-plus me-1"></i>建立進貨單
+                                        </button>
+                                    }
+                                    
+                                    <button type="button" class="btn btn-outline-info btn-sm">
+                                        <i class="fas fa-print me-1"></i>列印採購單
+                                    </button>
+                                    
+                                    <button type="button" class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-download me-1"></i>匯出PDF
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</PagePermissionCheck>
+
+<!-- 取消訂單模態框 -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">取消採購訂單</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">取消原因 <span class="text-danger">*</span></label>
+                    <textarea class="form-control" @bind="cancelReason" rows="3" 
+                              placeholder="請輸入取消此採購訂單的原因..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" @onclick="CancelOrder" 
+                        disabled="@(string.IsNullOrWhiteSpace(cancelReason))">
+                    <i class="fas fa-times me-1"></i>確認取消訂單
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    
+    // 資料模型
+    private PurchaseOrder? purchaseOrder;
+    private List<Data.Entities.PurchaseOrderDetail> purchaseOrderDetails = new();
+    private List<PurchaseReceipt> purchaseReceipts = new();
+    
+    // 頁面狀態
+    private bool isLoading = true;
+    private string cancelReason = "";
+    
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            InitializeBreadcrumbs();
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(OnInitializedAsync),
+                GetType(),
+                Navigation
+            );
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+    
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new() { Text = "首頁", Href = "/" },
+            new() { Text = "採購管理", Href = "/purchase" },
+            new() { Text = "採購訂單", Href = "/purchase/orders" },
+            new() { Text = "訂單詳細" }
+        };
+    }
+    
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            // 載入採購訂單
+            purchaseOrder = await PurchaseOrderService.GetByIdAsync(Id);
+            
+            if (purchaseOrder != null)
+            {
+                // 載入採購明細
+                var detailsResult = await PurchaseOrderService.GetOrderDetailsAsync(Id);
+                purchaseOrderDetails = detailsResult ?? new List<Data.Entities.PurchaseOrderDetail>();
+                
+                // 載入進貨記錄
+                purchaseReceipts = await PurchaseReceiptService.GetByPurchaseOrderIdAsync(Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadDataAsync),
+                GetType()
+            );
+        }
+    }
+    
+    // 權限檢查方法
+    private bool CanEdit()
+    {
+        return purchaseOrder?.OrderStatus == PurchaseOrderStatus.Draft;
+    }
+    
+    private bool CanSubmit()
+    {
+        return purchaseOrder?.OrderStatus == PurchaseOrderStatus.Draft && 
+               purchaseOrderDetails.Any();
+    }
+    
+    private bool CanApprove()
+    {
+        return purchaseOrder?.OrderStatus == PurchaseOrderStatus.Submitted;
+    }
+    
+    private bool CanCancel()
+    {
+        return purchaseOrder?.OrderStatus is PurchaseOrderStatus.Draft or 
+               PurchaseOrderStatus.Submitted or PurchaseOrderStatus.Approved;
+    }
+    
+    private bool CanCreateReceipt()
+    {
+        return purchaseOrder?.OrderStatus is PurchaseOrderStatus.Approved or 
+               PurchaseOrderStatus.PartialReceived;
+    }
+    
+    private bool CanPerformQuickActions()
+    {
+        return purchaseOrder?.OrderStatus != PurchaseOrderStatus.Cancelled &&
+               purchaseOrder?.OrderStatus != PurchaseOrderStatus.Closed;
+    }
+    
+    // 操作方法
+    private void NavigateToEdit()
+    {
+        Navigation.NavigateTo($"/purchase/orders/edit/{Id}");
+    }
+    
+    private void NavigateToReceipt(int receiptId)
+    {
+        Navigation.NavigateTo($"/purchase/receipts/{receiptId}");
+    }
+    
+    private async Task SubmitOrder()
+    {
+        try
+        {
+            var result = await PurchaseOrderService.SubmitOrderAsync(Id);
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("採購訂單已成功送出");
+                await LoadDataAsync();
+                StateHasChanged();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"送出採購訂單失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(SubmitOrder),
+                GetType()
+            );
+        }
+    }
+    
+    private async Task ApproveOrder()
+    {
+        try
+        {
+            var result = await PurchaseOrderService.ApproveOrderAsync(Id, 1); // TODO: 取得當前使用者ID
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("採購訂單已成功核准");
+                await LoadDataAsync();
+                StateHasChanged();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"核准採購訂單失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ApproveOrder),
+                GetType()
+            );
+        }
+    }
+    
+    private async Task ShowCancelModal()
+    {
+        try
+        {
+            cancelReason = "";
+            await JSRuntime.InvokeVoidAsync("eval", "$('#cancelModal').modal('show')");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ShowCancelModal),
+                GetType()
+            );
+        }
+    }
+    
+    private async Task CancelOrder()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(cancelReason))
+            {
+                await NotificationService.ShowWarningAsync("請輸入取消原因");
+                return;
+            }
+            
+            var result = await PurchaseOrderService.CancelOrderAsync(Id, cancelReason);
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("採購訂單已成功取消");
+                await JSRuntime.InvokeVoidAsync("eval", "$('#cancelModal').modal('hide')");
+                await LoadDataAsync();
+                StateHasChanged();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"取消採購訂單失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(CancelOrder),
+                GetType()
+            );
+        }
+    }
+    
+    // 顯示輔助方法
+    private double GetReceiptPercentage()
+    {
+        if (purchaseOrder?.TotalAmount <= 0) return 0;
+        return (double)(purchaseOrder!.ReceivedAmount / purchaseOrder.TotalAmount * 100);
+    }
+    
+    private string GetProgressBarClass()
+    {
+        var percentage = GetReceiptPercentage();
+        return percentage switch
+        {
+            >= 100 => "bg-success",
+            >= 50 => "bg-info",
+            >= 25 => "bg-warning",
+            _ => "bg-danger"
+        };
+    }
+    
+    // 狀態顯示方法
+    private static string GetStatusDisplayName(PurchaseOrderStatus status)
+    {
+        return status switch
+        {
+            PurchaseOrderStatus.Draft => "草稿",
+            PurchaseOrderStatus.Submitted => "已送出",
+            PurchaseOrderStatus.Approved => "已核准",
+            PurchaseOrderStatus.PartialReceived => "部分進貨",
+            PurchaseOrderStatus.Completed => "已完成",
+            PurchaseOrderStatus.Cancelled => "已取消",
+            PurchaseOrderStatus.Closed => "已關閉",
+            _ => status.ToString()
+        };
+    }
+    
+    private static string GetStatusClass(PurchaseOrderStatus status)
+    {
+        return status switch
+        {
+            PurchaseOrderStatus.Draft => "bg-secondary",
+            PurchaseOrderStatus.Submitted => "bg-info",
+            PurchaseOrderStatus.Approved => "bg-primary",
+            PurchaseOrderStatus.PartialReceived => "bg-warning",
+            PurchaseOrderStatus.Completed => "bg-success",
+            PurchaseOrderStatus.Cancelled => "bg-danger",
+            PurchaseOrderStatus.Closed => "bg-dark",
+            _ => "bg-secondary"
+        };
+    }
+    
+    private static string GetTypeDisplayName(PurchaseType type)
+    {
+        return type switch
+        {
+            PurchaseType.Normal => "一般採購",
+            PurchaseType.Urgent => "緊急採購",
+            PurchaseType.Replenishment => "補貨採購",
+            PurchaseType.Project => "專案採購",
+            _ => type.ToString()
+        };
+    }
+    
+    private static string GetTypeClass(PurchaseType type)
+    {
+        return type switch
+        {
+            PurchaseType.Normal => "bg-primary",
+            PurchaseType.Urgent => "bg-danger",
+            PurchaseType.Replenishment => "bg-warning",
+            PurchaseType.Project => "bg-info",
+            _ => "bg-secondary"
+        };
+    }
+    
+    private static string GetReceiptStatusDisplayName(PurchaseReceiptStatus status)
+    {
+        return status switch
+        {
+            PurchaseReceiptStatus.Draft => "草稿",
+            PurchaseReceiptStatus.Confirmed => "已確認",
+            PurchaseReceiptStatus.Received => "已入庫",
+            PurchaseReceiptStatus.Cancelled => "已取消",
+            _ => status.ToString()
+        };
+    }
+    
+    private static string GetReceiptStatusClass(PurchaseReceiptStatus status)
+    {
+        return status switch
+        {
+            PurchaseReceiptStatus.Draft => "bg-secondary",
+            PurchaseReceiptStatus.Confirmed => "bg-info",
+            PurchaseReceiptStatus.Received => "bg-success",
+            PurchaseReceiptStatus.Cancelled => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}
