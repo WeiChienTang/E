@@ -2,6 +2,7 @@
 @page "/purchase/orders/edit/{id:int?}"
 @page "/purchase/orders/create"
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using ERPCore2.Components.Shared.Auth
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Components.Shared.PageModels
@@ -19,6 +20,7 @@
 @inject IWarehouseService WarehouseService
 @inject IProductService ProductService
 @inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
@@ -98,19 +100,19 @@
     // 計算屬性
     private decimal totalAmount => purchaseOrderDetails.Where(d => d.Status == EntityStatus.Active).Sum(d => d.SubtotalAmount);
     
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         try
         {
             InitializeBreadcrumbs();
-            InitializeDefaultValues();
+            await InitializeDefaultValues();
             InitializeBasicFormFields(); // 先初始化基本表單欄位
         }
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
-                nameof(OnInitialized), 
+                nameof(OnInitializedAsync), 
                 GetType()
             );
             
@@ -119,10 +121,10 @@
             {
                 breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
                 {
-                    new("首頁", "/"),
-                    new("採購管理", "/purchase"),
-                    new("採購訂單", "/purchase/orders"),
-                    new(Id.HasValue ? "編輯採購訂單" : "新增採購訂單")
+                    new() { Text = "首頁", Href = "/" },
+                    new() { Text = "採購管理", Href = "/purchase" },
+                    new() { Text = "採購訂單", Href = "/purchase/orders" },
+                    new() { Text = Id.HasValue ? "編輯採購訂單" : "新增採購訂單" }
                 };
                 formFields = new List<FormFieldDefinition>();
                 formSections = new Dictionary<string, string>();
@@ -162,7 +164,7 @@
         }
     }
     
-    private void InitializeDefaultValues()
+    private async Task InitializeDefaultValues()
     {
         try
         {
@@ -171,6 +173,9 @@
                 purchaseOrder.OrderDate = DateTime.Today;
                 purchaseOrder.OrderStatus = PurchaseOrderStatus.Draft;
                 purchaseOrder.PurchaseType = PurchaseType.Normal;
+                
+                // 設定採購人員為當前登入使用者
+                await SetCurrentUserAsPurchasePersonnel();
             }
         }
         catch (Exception ex)
@@ -180,6 +185,31 @@
                 nameof(InitializeDefaultValues), 
                 GetType()
             );
+        }
+    }
+    
+    private async Task SetCurrentUserAsPurchasePersonnel(PurchaseOrder? order = null)
+    {
+        try
+        {
+            var targetOrder = order ?? purchaseOrder;
+            var personnelName = await CurrentUserHelper.GetCurrentUserFullNameAsync(AuthenticationStateProvider);
+            targetOrder.PurchasePersonnel = personnelName;
+            
+            Console.WriteLine($"Debug - Set PurchasePersonnel to: '{personnelName}'");
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(SetCurrentUserAsPurchasePersonnel), 
+                GetType()
+            );
+            
+            // 如果發生錯誤，至少設定一個預設值
+            var targetOrder = order ?? purchaseOrder;
+            targetOrder.PurchasePersonnel = "系統使用者";
+            Console.WriteLine("Debug - Error occurred, set to '系統使用者'");
         }
     }
     
@@ -219,7 +249,7 @@
                     PropertyName = nameof(PurchaseOrder.PurchasePersonnel),
                     Label = "採購人員",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入採購人員姓名",
+                    IsReadOnly = true,
                     ContainerCssClass = "col-md-6"
                 },
                 new()
@@ -412,6 +442,10 @@
                     PurchaseType = PurchaseType.Normal,
                     Status = EntityStatus.Active
                 };
+                
+                // 設定採購人員為當前登入使用者
+                await SetCurrentUserAsPurchasePersonnel(newOrder);
+                
                 purchaseOrder = newOrder;
                 purchaseOrderDetails = new List<Data.Entities.PurchaseOrderDetail>();
                 return newOrder;
