@@ -1,8 +1,6 @@
 @page "/permissions/edit"
 @page "/permissions/edit/{id:int?}"
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
-@using ERPCore2.Helpers
+
 @inject IPermissionManagementService PermissionService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation

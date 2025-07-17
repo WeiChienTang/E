@@ -1,7 +1,5 @@
 @page "/permissions/detail/{permissionId:int}"
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
-@using ERPCore2.Helpers
+
 @inject IPermissionManagementService PermissionService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation

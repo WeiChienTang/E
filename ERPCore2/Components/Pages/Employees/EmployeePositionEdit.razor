@@ -1,12 +1,6 @@
 @page "/employee-positions/edit"
 @page "/employee-positions/edit/{id:int?}"
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
-@using ERPCore2.Data.Entities
-@using ERPCore2.Data.Enums
-@using ERPCore2.Services
-@using ERPCore2.Components.Shared
-@using ERPCore2.Helpers
+
 @inject IEmployeePositionService EmployeePositionService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime

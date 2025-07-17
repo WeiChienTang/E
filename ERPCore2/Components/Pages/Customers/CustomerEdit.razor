@@ -1,8 +1,5 @@
 @page "/customers/edit"
 @page "/customers/edit/{id:int?}"
-@attribute [Authorize]
-@using Microsoft.AspNetCore.Authorization
-@using ERPCore2.Components.Shared.Auth
 @inject ICustomerService CustomerService
 @inject ICustomerAddressService CustomerAddressService
 @inject ICustomerContactService CustomerContactService

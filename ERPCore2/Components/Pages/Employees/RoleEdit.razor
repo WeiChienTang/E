@@ -1,8 +1,6 @@
 @page "/roles/edit"
 @page "/roles/edit/{id:int?}"
-@using Microsoft.AspNetCore.Authorization
-@using ERPCore2.Helpers
-@attribute [Authorize]
+
 @inject IRoleService RoleService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime

@@ -1,14 +1,5 @@
 @page "/employees/detail/{employeeId:int}"
-@attribute [Authorize]
-@using Microsoft.AspNetCore.Authorization
-@using ERPCore2.Components.Shared
-@using ERPCore2.Components.Shared.Details
-@using ERPCore2.Components.Shared.Badges
-@using ERPCore2.Components.Shared.Headers
-@using ERPCore2.Data.Entities
-@using ERPCore2.Data.Enums
-@using ERPCore2.Extensions
-@using ERPCore2.Helpers
+
 @inject IEmployeeService EmployeeService
 @inject IErrorLogService ErrorLogService
 @inject INotificationService NotificationService

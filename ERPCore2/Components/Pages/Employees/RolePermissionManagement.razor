@@ -1,13 +1,4 @@
 @page "/employees/role-permission-management"
-@attribute [Authorize]
-@using Microsoft.AspNetCore.Authorization
-@using ERPCore2.Helpers
-@using ERPCore2.Components.Shared.Tables
-@using ERPCore2.Components.Shared.Headers
-@using ERPCore2.Components.Shared.Buttons
-@using ERPCore2.Data.Entities
-@using ERPCore2.Services
-@using Microsoft.AspNetCore.Components
 @inject IRoleService RoleService
 @inject IPermissionService PermissionService
 @inject IPermissionManagementService PermissionManagementService

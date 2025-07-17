@@ -1,8 +1,6 @@
 @page "/employees/edit"
 @page "/employees/edit/{id:int?}"
-@using Microsoft.AspNetCore.Authorization
-@using ERPCore2.Components.Shared.SubCollections
-@attribute [Authorize]
+
 @inject IEmployeeService EmployeeService
 @inject IEmployeeContactService EmployeeContactService
 @inject IEmployeeAddressService EmployeeAddressService

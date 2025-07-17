@@ -1,16 +1,5 @@
 @page "/customers/detail/{customerId:int}"
 @attribute [Authorize]
-@using Microsoft.AspNetCore.Authorization
-@using ERPCore2.Components.Shared.Auth
-@using ERPCore2.Services
-@using ERPCore2.Components.Shared
-@using ERPCore2.Components.Shared.Details
-@using ERPCore2.Components.Shared.Badges
-@using ERPCore2.Data.Entities
-@using ERPCore2.Data.Enums
-@using ERPCore2.Components.Shared.Headers
-@using ERPCore2.Extensions
-@using ERPCore2.Helpers
 @inject ICustomerService CustomerService
 @inject ICustomerContactService CustomerContactService
 @inject ICustomerAddressService CustomerAddressService
