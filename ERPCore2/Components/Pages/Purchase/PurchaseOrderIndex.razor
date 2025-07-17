@@ -22,8 +22,6 @@
 @inject INotificationService NotificationService
 @rendermode InteractiveServer
 
-<PageTitle>採購訂單管理</PageTitle>
-
 <PagePermissionCheck RequiredPermission="Purchase.Read">
     <GenericIndexPageComponent @ref="indexPageRef"
                               TEntity="PurchaseOrder"
@@ -45,8 +43,7 @@
                               GetEntityDisplayName="@GetEntityDisplayName"
                               ShowStatisticsCards="true"
                               StatisticsCardConfigs="@statisticsCardConfigs"
-                              StatisticsDataLoader="@LoadStatisticsDataAsync"
-                              EnableRowClick="true">
+                              StatisticsDataLoader="@LoadStatisticsDataAsync">
         
         <CustomActionButtons>
             <div class="btn-group" role="group">

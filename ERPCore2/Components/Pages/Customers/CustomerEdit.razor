@@ -13,8 +13,6 @@
 @using ERPCore2.Components.Shared.SubCollections
 @rendermode InteractiveServer
 
-<PageTitle>@(Id.HasValue ? "編輯客戶" : "新增客戶")</PageTitle>
-
 <PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Customer.Update" : "Customer.Create")">
     <GenericEditPageComponent TEntity="Customer" 
                          TService="ICustomerService"

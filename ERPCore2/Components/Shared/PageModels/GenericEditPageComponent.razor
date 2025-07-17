@@ -4,11 +4,16 @@
 @using ERPCore2.Services
 @using ERPCore2.Components.Shared.Forms
 @using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Components.Shared.Headers
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @typeparam TEntity where TEntity : BaseEntity, new()
 @typeparam TService
+
+@* 設置瀏覽器標題 *@
+<PageTitle>@GetPageTitle()</PageTitle>
 
 @* 頁面標題 *@
 <GenericHeaderComponent Title="@GetPageTitle()"

@@ -7,7 +7,6 @@
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-<PageTitle>權限詳細資料</PageTitle>
 <PagePermissionCheck RequiredPermission="Permission.Read">
     <GenericDetailPageComponent TEntity="Permission" 
                             TService="IPermissionManagementService"
@@ -30,6 +29,7 @@
                             TabSections="@GetTabSections()">
     </GenericDetailPageComponent>
 </PagePermissionCheck>
+
 @code {
     [Parameter] public int PermissionId { get; set; }
 
@@ -112,85 +112,88 @@
         try
         {
             return new List<GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection>
-        {            new GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection
             {
-                Id = "basic",
-                Title = "基本資料",
-                Content = @<div>
-                    <BasicInfoDisplayComponent 
-                        Title="權限基本資訊"
-                        IconClass="fas fa-key"
-                        IconColor="text-primary"
-                        Fields="@GetPermissionBasicFields()"
-                        ShowFieldCount="false" />
-                </div>
-            },
+                new GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div>
+                        <BasicInfoDisplayComponent 
+                            Title="權限基本資訊"
+                            IconClass="fas fa-key"
+                            IconColor="text-primary"
+                            Fields="@GetPermissionBasicFields()"
+                            ShowFieldCount="false" />
+                    </div>
+                },
 
-            new GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection
-            {
-                Id = "roles",
-                Title = "使用角色",
-                Content = @<div>
-                    @if (permission?.RolePermissions?.Any() == true)
-                    {
-                        <div class="row">
-                            @foreach (var rolePermission in permission.RolePermissions.OrderBy(rp => rp.Role.RoleName))
-                            {
-                                <div class="col-md-6 mb-3">
-                                    <div class="card">
-                                        <div class="card-body">
-                                            <h6 class="card-title">
-                                                <i class="fas fa-user-tag text-primary me-2"></i>
-                                                @rolePermission.Role.RoleName
-                                            </h6>
-                                            <p class="card-text">
-                                                @if (!string.IsNullOrEmpty(rolePermission.Role.Description))
+                new GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection
+                {
+                    Id = "roles",
+                    Title = "使用角色",
+                    Content = @<div>
+                        @if (permission?.RolePermissions?.Any() == true)
+                        {
+                            <div class="row">
+                                @foreach (var rolePermission in permission.RolePermissions.OrderBy(rp => rp.Role.RoleName))
+                                {
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6 class="card-title">
+                                                    <i class="fas fa-user-tag text-primary me-2"></i>
+                                                    @rolePermission.Role.RoleName
+                                                </h6>
+                                                <p class="card-text">
+                                                    @if (!string.IsNullOrEmpty(rolePermission.Role.Description))
+                                                    {
+                                                        <small class="text-muted">@rolePermission.Role.Description</small>
+                                                    }
+                                                    else
+                                                    {
+                                                        <small class="text-muted">無描述</small>
+                                                    }
+                                                </p>
+                                                @if (rolePermission.Role.IsSystemRole)
                                                 {
-                                                    <small class="text-muted">@rolePermission.Role.Description</small>
+                                                    <span class="badge bg-primary">系統角色</span>
                                                 }
                                                 else
                                                 {
-                                                    <small class="text-muted">無描述</small>
+                                                    <span class="badge bg-secondary">自訂角色</span>
                                                 }
-                                            </p>
-                                            @if (rolePermission.Role.IsSystemRole)
-                                            {
-                                                <span class="badge bg-primary">系統角色</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge bg-secondary">自訂角色</span>
-                                            }
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-muted p-3 text-center">
-                            <i class="fas fa-user-tag fa-2x mb-2 d-block"></i>
-                            尚無角色使用此權限
-                        </div>
-                    }
-                </div>
-            },            new GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection
-            {
-                Id = "system",
-                Title = "系統資訊",
-                Content = @<div>
-                    <SystemInfoDisplayComponent 
-                        CreatedAt="@(permission?.CreatedAt ?? DateTime.MinValue)"
-                        UpdatedAt="@permission?.UpdatedAt"
-                        CreatedBy="@permission?.CreatedBy"
-                        UpdatedBy="@permission?.UpdatedBy"
-                        Remarks="@permission?.Remarks"
-                        ShowTimeline="true"
-                        ShowRemarks="true" />
-                </div>
-            }
-        };
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-muted p-3 text-center">
+                                <i class="fas fa-user-tag fa-2x mb-2 d-block"></i>
+                                尚無角色使用此權限
+                            </div>
+                        }
+                    </div>
+                },
+                
+                new GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection
+                {
+                    Id = "system",
+                    Title = "系統資訊",
+                    Content = @<div>
+                        <SystemInfoDisplayComponent 
+                            CreatedAt="@(permission?.CreatedAt ?? DateTime.MinValue)"
+                            UpdatedAt="@permission?.UpdatedAt"
+                            CreatedBy="@permission?.CreatedBy"
+                            UpdatedBy="@permission?.UpdatedBy"
+                            Remarks="@permission?.Remarks"
+                            ShowTimeline="true"
+                            ShowRemarks="true" />
+                    </div>
+                }
+            };
         }
         catch (Exception ex)
         {
@@ -206,53 +209,53 @@
         try
         {
             return new List<BasicInfoDisplayComponent.BasicInfoField>
-        {
-            new()
             {
-                Label = "權限代碼",
-                Value = permission?.PermissionCode,
-                IsPrimary = true,
-                ValueBold = true,
-                IconClass = "fas fa-key",
-                IconBgClass = "bg-primary bg-opacity-10",
-                IconTextClass = "text-primary"
-            },
-            new()
-            {
-                Label = "權限名稱",
-                Value = permission?.PermissionName,
-                ValueBold = true,
-                IconClass = "fas fa-tag",
-                IconBgClass = "bg-info bg-opacity-10",
-                IconTextClass = "text-info"
-            },
-            new()
-            {
-                Label = "模組",
-                Value = permission?.Module,
-                IconClass = "fas fa-cube",
-                IconBgClass = "bg-success bg-opacity-10",
-                IconTextClass = "text-success"
-            },
-            new()
-            {
-                Label = "動作",
-                Value = permission?.Action,
-                IconClass = "fas fa-cog",
-                IconBgClass = "bg-warning bg-opacity-10",
-                IconTextClass = "text-warning"
-            },
-            new()
-            {
-                Label = "權限群組",
-                Value = permission?.PermissionGroup,
-                EmptyText = "未分組",
-                IconClass = "fas fa-layer-group",
-                IconBgClass = "bg-secondary bg-opacity-10",
-                IconTextClass = "text-secondary",
-                ColSize = 12
-            }
-        };
+                new()
+                {
+                    Label = "權限代碼",
+                    Value = permission?.PermissionCode,
+                    IsPrimary = true,
+                    ValueBold = true,
+                    IconClass = "fas fa-key",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary"
+                },
+                new()
+                {
+                    Label = "權限名稱",
+                    Value = permission?.PermissionName,
+                    ValueBold = true,
+                    IconClass = "fas fa-tag",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info"
+                },
+                new()
+                {
+                    Label = "模組",
+                    Value = permission?.Module,
+                    IconClass = "fas fa-cube",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success"
+                },
+                new()
+                {
+                    Label = "動作",
+                    Value = permission?.Action,
+                    IconClass = "fas fa-cog",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning"
+                },
+                new()
+                {
+                    Label = "權限群組",
+                    Value = permission?.PermissionGroup,
+                    EmptyText = "未分組",
+                    IconClass = "fas fa-layer-group",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    IconTextClass = "text-secondary",
+                    ColSize = 12
+                }
+            };
         }
         catch (Exception ex)
         {

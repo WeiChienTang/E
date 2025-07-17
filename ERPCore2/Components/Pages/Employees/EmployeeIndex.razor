@@ -8,8 +8,6 @@
 @inject INotificationService NotificationService
 @rendermode InteractiveServer
 
-<PageTitle>員工維護</PageTitle>
-
 <PagePermissionCheck RequiredPermission="Employee.Read">
     <GenericIndexPageComponent TEntity="Employee" 
                             TService="IEmployeeService"

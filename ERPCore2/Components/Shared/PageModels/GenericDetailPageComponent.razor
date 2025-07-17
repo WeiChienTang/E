@@ -10,6 +10,9 @@
 @typeparam TEntity where TEntity : BaseEntity
 @typeparam TService
 
+@* 設置瀏覽器標題 *@
+<PageTitle>@GetPageTitle()</PageTitle>
+
 @* 警告訊息區域 *@
 <AlertComponent 
     Message="@alertMessage" 
