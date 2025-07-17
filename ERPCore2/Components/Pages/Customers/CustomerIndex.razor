@@ -1,8 +1,5 @@
 @page "/customers"
-@using Microsoft.AspNetCore.Authorization
-@using ERPCore2.Components.Shared.Auth
 @using ERPCore2.Services
-@attribute [Authorize]
 @inject ICustomerService CustomerService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -10,23 +7,22 @@
 @using ERPCore2.Helpers
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Customer.Read">
-    <GenericIndexPageComponent TEntity="Customer" 
-                          TService="ICustomerService"
-                          Service="@CustomerService"
-                          EntityBasePath="/customers"
-                          PageTitle="客戶維護"
-                          PageSubtitle="管理所有客戶資料與聯絡資訊"
-                          EntityName="客戶"
-                          BreadcrumbItems="@breadcrumbItems"
-                          FilterDefinitions="@filterDefinitions"
-                          ColumnDefinitions="@columnDefinitions"
-                          DataLoader="@LoadCustomersAsync"
-                          InitializeBasicData="@LoadBasicDataAsync"
-                          FilterApplier="@ApplyCustomerFilters"
-                          GetEntityDisplayName="@(customer => customer.CompanyName)"
-                          @ref="indexComponent" />
-</PagePermissionCheck>
+<GenericIndexPageComponent TEntity="Customer" 
+                      TService="ICustomerService"
+                      Service="@CustomerService"
+                      EntityBasePath="/customers"
+                      PageTitle="客戶維護"
+                      PageSubtitle="管理所有客戶資料與聯絡資訊"
+                      EntityName="客戶"
+                      BreadcrumbItems="@breadcrumbItems"
+                      FilterDefinitions="@filterDefinitions"
+                      ColumnDefinitions="@columnDefinitions"
+                      DataLoader="@LoadCustomersAsync"
+                      InitializeBasicData="@LoadBasicDataAsync"
+                      FilterApplier="@ApplyCustomerFilters"
+                      GetEntityDisplayName="@(customer => customer.CompanyName)"
+                      RequiredPermission="Customer.Read"
+                      @ref="indexComponent" />
 
 @code {
     // 組件參考

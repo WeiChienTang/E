@@ -1,15 +1,12 @@
 @page "/departments"
-@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services
 @using ERPCore2.Components.Shared
-@using ERPCore2.Components.Shared.Auth
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Components.Shared.Tables
 @using ERPCore2.Components.Shared.Forms
 @using ERPCore2.Data.Enums
 @using ERPCore2.Helpers
-@attribute [Authorize]
 @inject IDepartmentService DepartmentService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -17,23 +14,22 @@
 
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Department.Read">
-    <GenericIndexPageComponent TEntity="Department" 
-                            TService="IDepartmentService"
-                            Service="@DepartmentService"
-                            EntityBasePath="/departments"                          
-                            PageTitle="部門設定"
-                            PageSubtitle="設定公司組織架構與部門資訊"
-                            DataLoader="@LoadDataAsync"
-                            FilterApplier="@ApplyDepartmentFilters"
-                            BreadcrumbItems="@breadcrumbItems"
-                            FilterDefinitions="@filterDefinitions"
-                            ColumnDefinitions="@columnDefinitions"
-                            EntityName="部門"
-                            GetEntityDisplayName="@(dept => dept.Name)"
-                            @ref="indexComponent">
-    </GenericIndexPageComponent>
-</PagePermissionCheck>
+<GenericIndexPageComponent TEntity="Department" 
+                        TService="IDepartmentService"
+                        Service="@DepartmentService"
+                        EntityBasePath="/departments"                          
+                        PageTitle="部門設定"
+                        PageSubtitle="設定公司組織架構與部門資訊"
+                        DataLoader="@LoadDataAsync"
+                        FilterApplier="@ApplyDepartmentFilters"
+                        BreadcrumbItems="@breadcrumbItems"
+                        FilterDefinitions="@filterDefinitions"
+                        ColumnDefinitions="@columnDefinitions"
+                        EntityName="部門"
+                        GetEntityDisplayName="@(dept => dept.Name)"
+                        RequiredPermission="Department.Read"
+                        @ref="indexComponent">
+</GenericIndexPageComponent>
 
 @code {
     private GenericIndexPageComponent<Department, IDepartmentService> indexComponent = default!;

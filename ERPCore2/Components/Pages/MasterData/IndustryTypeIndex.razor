@@ -1,6 +1,5 @@
 @page "/industrytypes"
 @page "/your-page"
-@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services
 @using ERPCore2.Data.Enums
@@ -15,25 +14,22 @@
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="IndustryType.Read">
-    <GenericIndexPageComponent TEntity="IndustryType" 
-                            TService="IIndustryTypeService"
-                            Service="@IndustryTypeService"
-                            EntityBasePath="/industrytypes"                          
-                            PageTitle="行業類型維護"
-                            PageSubtitle="管理所有行業類型分類與相關設定"
-                            BreadcrumbItems="@breadcrumbItems"
-                            FilterDefinitions="@filterDefinitions"
-                            ColumnDefinitions="@columnDefinitions"
-                            DataLoader="@LoadIndustryTypesAsync"
-                            FilterApplier="@ApplyIndustryTypeFilters"
-                            AutoSearch="true"
-                            ShowSearchButton="true"
-                            SearchDelayMs="500"
-                            EntityName="行業類型"
-                            GetEntityDisplayName="@(industryType => industryType.IndustryTypeName)"
-                            @ref="indexComponent" />
-</PagePermissionCheck>
+<GenericIndexPageComponent TEntity="IndustryType" 
+                        TService="IIndustryTypeService"
+                        Service="@IndustryTypeService"
+                        EntityBasePath="/industrytypes"                          
+                        PageTitle="行業類型維護"
+                        PageSubtitle="管理所有行業類型分類與相關設定"
+                        BreadcrumbItems="@breadcrumbItems"
+                        FilterDefinitions="@filterDefinitions"
+                        ColumnDefinitions="@columnDefinitions"
+                        DataLoader="@LoadIndustryTypesAsync"
+                        FilterApplier="@ApplyIndustryTypeFilters"
+                        EntityName="行業類型"
+                        GetEntityDisplayName="@(industryType => industryType.IndustryTypeName)"
+                        RequiredPermission="IndustryType.Read"
+                        @ref="indexComponent" />
+
 @code {
     // 組件參考
     private GenericIndexPageComponent<IndustryType, IIndustryTypeService> indexComponent = default!;

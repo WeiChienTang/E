@@ -1,14 +1,11 @@
 @page "/roles"
-@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Helpers
-@attribute [Authorize]
 @inject IRoleService RoleService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Role.Read">
 <GenericIndexPageComponent TEntity="Role" 
                           TService="IRoleService"
                           Service="@RoleService"
@@ -22,8 +19,8 @@
                           DataLoader="@LoadRolesAsync"
                           FilterApplier="@ApplyRoleFilters"
                           GetEntityDisplayName="@(role => role.RoleName)"
+                          RequiredPermission="Role.Read"
                           @ref="indexComponent" />
-</PagePermissionCheck>
 
 @code {
     // 組件參考

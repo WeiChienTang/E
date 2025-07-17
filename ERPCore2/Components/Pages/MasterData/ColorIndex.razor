@@ -1,33 +1,30 @@
 @page "/colors"
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
 @inject IColorService ColorService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Color.Read">
-    <GenericIndexPageComponent TEntity="Color" 
-                            TService="IColorService"
-                            Service="@ColorService"
-                            EntityBasePath="/colors"                          
-                            PageTitle="顏色"
-                            PageSubtitle="管理所有顏色資料與色彩資訊"
-                            AddButtonText="新增顏色"
-                            AddButtonTitle="新增顏色資料"
-                            SearchSectionTitle="顏色搜尋與管理"
-                            EmptyMessage="沒有找到符合條件的顏色資料"                          
-                            DataLoader="@LoadDataAsync"
-                            FilterApplier="@ApplyColorFilters"
-                            BreadcrumbItems="@breadcrumbItems"
-                            FilterDefinitions="@filterDefinitions"
-                            ColumnDefinitions="@columnDefinitions"
-                            EntityName="顏色"
-                            GetEntityDisplayName="@(color => color.Name)"
-                            @ref="indexComponent">
-    </GenericIndexPageComponent>
-</PagePermissionCheck>
+<GenericIndexPageComponent TEntity="Color" 
+                        TService="IColorService"
+                        Service="@ColorService"
+                        EntityBasePath="/colors"                          
+                        PageTitle="顏色"
+                        PageSubtitle="管理所有顏色資料與色彩資訊"
+                        AddButtonText="新增顏色"
+                        AddButtonTitle="新增顏色資料"
+                        SearchSectionTitle="顏色搜尋與管理"
+                        EmptyMessage="沒有找到符合條件的顏色資料"                          
+                        DataLoader="@LoadDataAsync"
+                        FilterApplier="@ApplyColorFilters"
+                        BreadcrumbItems="@breadcrumbItems"
+                        FilterDefinitions="@filterDefinitions"
+                        ColumnDefinitions="@columnDefinitions"
+                        EntityName="顏色"
+                        GetEntityDisplayName="@(color => color.Name)"
+                        RequiredPermission="Color.Read"
+                        @ref="indexComponent">
+</GenericIndexPageComponent>
 
 @code {
     private GenericIndexPageComponent<Color, IColorService> indexComponent = default!;

@@ -1,5 +1,4 @@
 @page "/inventoryoverview"
-@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services
 @using ERPCore2.Helpers
@@ -9,7 +8,6 @@
 @using ERPCore2.Components.Shared.PageModels
 @using ERPCore2.Models
 @using Microsoft.AspNetCore.Components.Web
-@attribute [Authorize]
 @inject IInventoryStockService InventoryStockService
 @inject IProductService ProductService
 @inject IWarehouseService WarehouseService
@@ -19,20 +17,20 @@
 
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Inventory.Overview">
-    <PageTitle>庫存查詢總覽</PageTitle>
+<PageTitle>庫存查詢總覽</PageTitle>
 
-    <GenericIndexPageComponent TEntity="InventoryStock" 
-                               TService="IInventoryStockService"
-                               PageTitle="庫存查詢總覽"
-                               PageSubtitle="即時查看所有商品的庫存狀況與警戒提醒"
-                               EntityName="庫存資料"
-                               BreadcrumbItems="@breadcrumbItems"
-                               Service="@InventoryStockService"
-                               DataLoader="@LoadInventoryDataAsync"
-                               InitializeBasicData="@LoadBasicDataAsync"
-                               FilterDefinitions="@filterDefinitions"
-                               ColumnDefinitions="@columnDefinitions"
+<GenericIndexPageComponent TEntity="InventoryStock" 
+                           TService="IInventoryStockService"
+                           PageTitle="庫存查詢總覽"
+                           PageSubtitle="即時查看所有商品的庫存狀況與警戒提醒"
+                           EntityName="庫存資料"
+                           BreadcrumbItems="@breadcrumbItems"
+                           Service="@InventoryStockService"
+                           DataLoader="@LoadInventoryDataAsync"
+                           InitializeBasicData="@LoadBasicDataAsync"
+                           FilterDefinitions="@filterDefinitions"
+                           ColumnDefinitions="@columnDefinitions"
+                           RequiredPermission="Inventory.Overview"
                                FilterApplier="@ApplyCustomFilters"
                                ShowStatisticsCards="true"
                                StatisticsCardConfigs="@statisticsCardConfigs"
@@ -42,7 +40,6 @@
                                CustomActionButtons="@customActionButtons"
                                EnableRowClick="true"
                                ShowActions="false" />
-</PagePermissionCheck>
 
 @code {
     // ===== 資料服務和選項清單 =====

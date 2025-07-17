@@ -1,6 +1,4 @@
 @page "/employee-positions"
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
@@ -13,23 +11,22 @@
 
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="EmployeePosition.Read">
-    <GenericIndexPageComponent TEntity="EmployeePosition" 
-                            TService="IEmployeePositionService"
-                            Service="@EmployeePositionService"
-                            EntityBasePath="/employee-positions"                          
-                            PageTitle="職位設定"
-                            PageSubtitle="管理所有職位設定資料與職位層級"
-                            DataLoader="@LoadDataAsync"
-                            FilterApplier="@ApplyEmployeePositionFilters"
-                            BreadcrumbItems="@breadcrumbItems"
-                            FilterDefinitions="@filterDefinitions"
-                            ColumnDefinitions="@columnDefinitions"
-                            EntityName="職位設定"
-                            GetEntityDisplayName="@(position => position.Name)"
-                            @ref="indexComponent">
-    </GenericIndexPageComponent>
-</PagePermissionCheck>
+<GenericIndexPageComponent TEntity="EmployeePosition" 
+                        TService="IEmployeePositionService"
+                        Service="@EmployeePositionService"
+                        EntityBasePath="/employee-positions"                          
+                        PageTitle="職位設定"
+                        PageSubtitle="管理所有職位設定資料與職位層級"
+                        DataLoader="@LoadDataAsync"
+                        FilterApplier="@ApplyEmployeePositionFilters"
+                        BreadcrumbItems="@breadcrumbItems"
+                        FilterDefinitions="@filterDefinitions"
+                        ColumnDefinitions="@columnDefinitions"
+                        EntityName="職位設定"
+                        GetEntityDisplayName="@(position => position.Name)"
+                        RequiredPermission="EmployeePosition.Read"
+                        @ref="indexComponent">
+</GenericIndexPageComponent>
 @code {
     private GenericIndexPageComponent<EmployeePosition, IEmployeePositionService> indexComponent = default!;
     

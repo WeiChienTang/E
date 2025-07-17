@@ -1,15 +1,12 @@
 @page "/materials"
-@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Components.Shared
 @using ERPCore2.Helpers
-@attribute [Authorize]
 @inject IMaterialService MaterialService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Material.Read">
 <GenericIndexPageComponent TEntity="Material" 
                           TService="IMaterialService"
                           Service="@MaterialService"
@@ -21,13 +18,10 @@
                           ColumnDefinitions="@columnDefinitions"
                           DataLoader="@LoadMaterialsAsync"
                           FilterApplier="@ApplyMaterialFilters"
-                          AutoSearch="true"
-                          ShowSearchButton="true"
-                          SearchDelayMs="500"
                           EntityName="材質"
                           GetEntityDisplayName="@(material => material.Name)"
+                          RequiredPermission="Material.Read"
                           @ref="indexComponent" />
-</PagePermissionCheck>
 
 @code {
     // 組件參考

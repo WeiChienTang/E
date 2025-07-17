@@ -1,6 +1,4 @@
 @page "/employees"
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
 @inject IEmployeeService EmployeeService
 @inject IRoleService RoleService
 @inject NavigationManager Navigation
@@ -8,27 +6,26 @@
 @inject INotificationService NotificationService
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Employee.Read">
-    <GenericIndexPageComponent TEntity="Employee" 
-                            TService="IEmployeeService"
-                            Service="@EmployeeService"
-                            EntityBasePath="/employees"                          
-                            PageTitle="員工維護"
-                            PageSubtitle="管理員工資料與權限設定"
-                            BreadcrumbItems="@breadcrumbItems"
-                            FilterDefinitions="@filterDefinitions"
-                            ColumnDefinitions="@columnDefinitions"
-                            DataLoader="@LoadEmployeesAsync"
-                            InitializeBasicData="@LoadBasicDataAsync"
-                            FilterApplier="@ApplyEmployeeFilters"
-                            AutoSearch="true"
-                            ShowSearchButton="true"
-                            SearchDelayMs="500"
-                            EntityName="員工"
-                            GetEntityDisplayName="@(employee => $"{employee.FirstName} {employee.LastName}".Trim())"
-                            CustomActionsTemplate="@EmployeeCustomActions"
-                            @ref="indexComponent" />
-</PagePermissionCheck>
+<GenericIndexPageComponent TEntity="Employee" 
+                        TService="IEmployeeService"
+                        Service="@EmployeeService"
+                        EntityBasePath="/employees"                          
+                        PageTitle="員工維護"
+                        PageSubtitle="管理員工資料與權限設定"
+                        BreadcrumbItems="@breadcrumbItems"
+                        FilterDefinitions="@filterDefinitions"
+                        ColumnDefinitions="@columnDefinitions"
+                        DataLoader="@LoadEmployeesAsync"
+                        InitializeBasicData="@LoadBasicDataAsync"
+                        FilterApplier="@ApplyEmployeeFilters"
+                        AutoSearch="true"
+                        ShowSearchButton="true"
+                        SearchDelayMs="500"
+                        EntityName="員工"
+                        GetEntityDisplayName="@(employee => $"{employee.FirstName} {employee.LastName}".Trim())"
+                        CustomActionsTemplate="@EmployeeCustomActions"
+                        RequiredPermission="Employee.Read"
+                        @ref="indexComponent" />
 @code {
     // 組件參考
     private GenericIndexPageComponent<Employee, IEmployeeService> indexComponent = default!;

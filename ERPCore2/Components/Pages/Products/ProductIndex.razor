@@ -1,30 +1,27 @@
 @page "/products"
-@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Components.Shared
-@attribute [Authorize]
 @inject IProductService ProductService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Product.Read">
-    <GenericIndexPageComponent TEntity="Product" 
-                              TService="IProductService"
-                              Service="@ProductService"
-                              EntityBasePath="/products"
-                              PageTitle="產品維護"                          
-                              PageSubtitle="管理所有產品資料與庫存資訊"
-                              EntityName="產品"
-                              BreadcrumbItems="@breadcrumbItems"
-                              FilterDefinitions="@filterDefinitions"
-                              ColumnDefinitions="@columnDefinitions"
-                              DataLoader="@LoadProductsAsync"
-                              InitializeBasicData="@LoadBasicDataAsync"
-                              FilterApplier="@ApplyProductFilters"
-                              GetEntityDisplayName="@(product => product.ProductName)"
-                              @ref="indexComponent" />
-</PagePermissionCheck>
+<GenericIndexPageComponent TEntity="Product" 
+                          TService="IProductService"
+                          Service="@ProductService"
+                          EntityBasePath="/products"
+                          PageTitle="產品維護"                          
+                          PageSubtitle="管理所有產品資料與庫存資訊"
+                          EntityName="產品"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadProductsAsync"
+                          InitializeBasicData="@LoadBasicDataAsync"
+                          FilterApplier="@ApplyProductFilters"
+                          GetEntityDisplayName="@(product => product.ProductName)"
+                          RequiredPermission="Product.Read"
+                          @ref="indexComponent" />
 
 @code {
     // 組件參考

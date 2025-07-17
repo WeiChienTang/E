@@ -1,36 +1,30 @@
 @page "/customer-types"
-@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Services
 @using ERPCore2.Helpers
-@attribute [Authorize]
 @inject ICustomerTypeService CustomerTypeService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="CustomerType.Read">
-    <GenericIndexPageComponent TEntity="CustomerType" 
-                            TService="ICustomerTypeService"
-                            Service="@CustomerTypeService"
-                            EntityBasePath="/customer-types"                          
-                            PageTitle="客戶類型"
-                            PageSubtitle="管理客戶分類類型設定"
-                            BreadcrumbItems="@breadcrumbItems"
-                            FilterDefinitions="@filterDefinitions"
-                            ColumnDefinitions="@columnDefinitions"
-                            DataLoader="@LoadCustomerTypesAsync"
-                            FilterApplier="@ApplyCustomerTypeFilters"
-                            AutoSearch="true"
-                            ShowSearchButton="true"
-                            SearchDelayMs="500"
-                            EntityName="客戶類型"
-                            GetEntityDisplayName="@(customerType => customerType.TypeName)"
-                            @ref="indexComponent" />
-</PagePermissionCheck>
+<GenericIndexPageComponent TEntity="CustomerType" 
+                        TService="ICustomerTypeService"
+                        Service="@CustomerTypeService"
+                        EntityBasePath="/customer-types"                          
+                        PageTitle="客戶類型"
+                        PageSubtitle="管理客戶分類類型設定"
+                        BreadcrumbItems="@breadcrumbItems"
+                        FilterDefinitions="@filterDefinitions"
+                        ColumnDefinitions="@columnDefinitions"
+                        DataLoader="@LoadCustomerTypesAsync"
+                        FilterApplier="@ApplyCustomerTypeFilters"
+                        EntityName="客戶類型"
+                        GetEntityDisplayName="@(customerType => customerType.TypeName)"
+                        RequiredPermission="CustomerType.Read"
+                        @ref="indexComponent" />
 
 @code {
     // 組件參考

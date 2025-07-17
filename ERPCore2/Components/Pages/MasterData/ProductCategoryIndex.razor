@@ -1,10 +1,11 @@
 @page "/product-categories"
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services
 @using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.PageModels
 @using ERPCore2.Helpers
+@using ERPCore2.Models
+@using Microsoft.JSInterop
 @inject IProductCategoryService ProductCategoryService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -12,23 +13,22 @@
 
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="ProductCategory.Read">
-    <GenericIndexPageComponent TEntity="ProductCategory" 
-                            TService="IProductCategoryService"
-                            Service="@ProductCategoryService"
-                            EntityBasePath="/product-categories"                          
-                            PageTitle="商品類型"
-                            PageSubtitle="管理所有商品類型資料與階層結構"
-                            DataLoader="@LoadDataAsync"
-                            FilterApplier="@ApplyProductCategoryFilters"
-                            BreadcrumbItems="@breadcrumbItems"
-                            FilterDefinitions="@filterDefinitions"
-                            ColumnDefinitions="@columnDefinitions"
-                            EntityName="商品類型"
-                            GetEntityDisplayName="@(category => category.CategoryName)"
-                            @ref="indexComponent">
-    </GenericIndexPageComponent>
-</PagePermissionCheck>
+<GenericIndexPageComponent TEntity="ProductCategory" 
+                        TService="IProductCategoryService"
+                        Service="@ProductCategoryService"
+                        EntityBasePath="/product-categories"                          
+                        PageTitle="商品類型"
+                        PageSubtitle="管理所有商品類型資料與階層結構"
+                        DataLoader="@LoadDataAsync"
+                        FilterApplier="@ApplyProductCategoryFilters"
+                        BreadcrumbItems="@breadcrumbItems"
+                        FilterDefinitions="@filterDefinitions"
+                        ColumnDefinitions="@columnDefinitions"
+                        EntityName="商品類型"
+                        GetEntityDisplayName="@(category => category.CategoryName)"
+                        RequiredPermission="ProductCategory.Read"
+                        @ref="indexComponent">
+</GenericIndexPageComponent>
 @code {
     private GenericIndexPageComponent<ProductCategory, IProductCategoryService> indexComponent = default!;
     

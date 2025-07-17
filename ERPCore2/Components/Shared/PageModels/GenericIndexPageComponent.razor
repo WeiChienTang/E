@@ -12,6 +12,9 @@
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
 @using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Authorization
+@using ERPCore2.Components.Shared.Auth
+@attribute [Authorize]
 @typeparam TEntity where TEntity : BaseEntity
 @typeparam TService
 @inject NavigationManager Navigation
@@ -20,6 +23,8 @@
 
 @* 設置瀏覽器標題 *@
 <PageTitle>@PageTitle</PageTitle>
+
+<PagePermissionCheck RequiredPermission="@RequiredPermission">
 
 @* 頁面標題 *@
 <GenericHeaderComponent Title="@PageTitle"
@@ -108,9 +113,15 @@
         </div>
     </div>
 </div>
+</PagePermissionCheck>
 
 @code {
-    // ===== 參數 =====    // 頁面基本設定
+    // ===== 參數 =====    
+    
+    // 權限檢查參數
+    [Parameter] public string RequiredPermission { get; set; } = "";
+    
+    // 頁面基本設定
     [Parameter] public string PageTitle { get; set; } = "資料管理";
     [Parameter] public string PageSubtitle { get; set; } = "管理資料";
     [Parameter] public string AddButtonText { get; set; } = "";
@@ -611,3 +622,4 @@
         StateHasChanged();
     }
 }
+

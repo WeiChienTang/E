@@ -1,9 +1,7 @@
 @page "/purchase/orders"
-@using Microsoft.AspNetCore.Authorization
 @using ERPCore2.Components.Shared.Forms
 @using ERPCore2.Components.Shared.Tables
 @using ERPCore2.Components.Shared.Headers
-@using ERPCore2.Components.Shared.Auth
 @using ERPCore2.Components.Shared.Cards
 @using ERPCore2.Components.Shared.PageModels
 @using ERPCore2.Services
@@ -13,7 +11,6 @@
 @using ERPCore2.Models
 @using System.ComponentModel.DataAnnotations
 @using System.Reflection
-@attribute [Authorize]
 @inject IPurchaseOrderService PurchaseOrderService
 @inject ISupplierService SupplierService
 @inject IWarehouseService WarehouseService
@@ -22,45 +19,44 @@
 @inject INotificationService NotificationService
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Purchase.Read">
-    <GenericIndexPageComponent @ref="indexPageRef"
-                              TEntity="PurchaseOrder"
-                              TService="IPurchaseOrderService"
-                              Service="@PurchaseOrderService"
-                              PageTitle="採購訂單管理"
-                              PageSubtitle="管理採購訂單與供應商進貨作業"
-                              EntityName="採購訂單"
-                              EntityBasePath="/purchase/orders"
-                              CreateUrl="/purchase/orders/create"
-                              DetailUrl="/purchase/orders/{id}"
-                              EditUrl="/purchase/orders/{id}/edit"
-                              BreadcrumbItems="@breadcrumbItems"
-                              FilterDefinitions="@filterDefinitions"
-                              ColumnDefinitions="@columnDefinitions"
-                              DataLoader="@LoadDataAsync"
-                              InitializeBasicData="@InitializeBasicDataAsync"
-                              FilterApplier="@ApplyFilters"
-                              GetEntityDisplayName="@GetEntityDisplayName"
-                              ShowStatisticsCards="true"
-                              StatisticsCardConfigs="@statisticsCardConfigs"
-                              StatisticsDataLoader="@LoadStatisticsDataAsync">
-        
-        <CustomActionButtons>
-            <div class="btn-group" role="group">
-                <button type="button" class="btn btn-primary" @onclick="() => indexPageRef.NavigateToCreate()">
-                    <i class="fas fa-plus me-2"></i>新增採購訂單
-                </button>
-                <button type="button" class="btn btn-outline-info" @onclick="() => indexPageRef.Refresh()">
-                    <i class="fas fa-sync me-2"></i>重新整理
-                </button>
-                <button type="button" class="btn btn-outline-success" @onclick="ExportData">
-                    <i class="fas fa-file-excel me-2"></i>匯出資料
-                </button>
-            </div>
-        </CustomActionButtons>
-        
-    </GenericIndexPageComponent>
-</PagePermissionCheck>
+<GenericIndexPageComponent @ref="indexPageRef"
+                          TEntity="PurchaseOrder"
+                          TService="IPurchaseOrderService"
+                          Service="@PurchaseOrderService"
+                          PageTitle="採購訂單管理"
+                          PageSubtitle="管理採購訂單與供應商進貨作業"
+                          EntityName="採購訂單"
+                          EntityBasePath="/purchase/orders"
+                          CreateUrl="/purchase/orders/create"
+                          DetailUrl="/purchase/orders/{id}"
+                          EditUrl="/purchase/orders/{id}/edit"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadDataAsync"
+                          InitializeBasicData="@InitializeBasicDataAsync"
+                          FilterApplier="@ApplyFilters"
+                          GetEntityDisplayName="@GetEntityDisplayName"
+                          ShowStatisticsCards="true"
+                          StatisticsCardConfigs="@statisticsCardConfigs"
+                          StatisticsDataLoader="@LoadStatisticsDataAsync"
+                          RequiredPermission="Purchase.Read">
+    
+    <CustomActionButtons>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-primary" @onclick="() => indexPageRef.NavigateToCreate()">
+                <i class="fas fa-plus me-2"></i>新增採購訂單
+            </button>
+            <button type="button" class="btn btn-outline-info" @onclick="() => indexPageRef.Refresh()">
+                <i class="fas fa-sync me-2"></i>重新整理
+            </button>
+            <button type="button" class="btn btn-outline-success" @onclick="ExportData">
+                <i class="fas fa-file-excel me-2"></i>匯出資料
+            </button>
+        </div>
+    </CustomActionButtons>
+    
+</GenericIndexPageComponent>
 
 @code {
     // 組件引用
