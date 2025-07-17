@@ -15,15 +15,14 @@
 @rendermode InteractiveServer
 @implements IDisposable
 
-<PageTitle>@GetPageTitle()</PageTitle>
-
     <GenericEditPageComponent TEntity="Employee" 
                             TService="IEmployeeService"
                             Id="@Id"
                             Entity="@employee"
                             Service="@EmployeeService"
                             EntityName="員工"
-                            EntityNamePlural="員工"                         
+                            EntityNamePlural="員工"
+                            PageTitle="@GetPageTitle()"
                             FormTitle="基本資料"
                             FormSubtitle="員工的基本資訊"
                             IndexRoute="/employees"

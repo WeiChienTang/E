@@ -8,8 +8,6 @@
 
 @rendermode InteractiveServer
 
-<PageTitle>@(Id.HasValue ? "編輯倉庫" : "新增倉庫")</PageTitle>
-
 <GenericEditPageComponent TEntity="Warehouse" 
                         TService="IWarehouseService"
                         Id="@Id"
@@ -17,6 +15,7 @@
                         Service="@WarehouseService"
                         EntityName="倉庫"
                         EntityNamePlural="倉庫"
+                        PageTitle="@(Id.HasValue ? "編輯倉庫" : "新增倉庫")"
                         FormTitle="基本資料"
                         FormSubtitle="倉庫的基本資訊"
                         IndexRoute="/warehouses"

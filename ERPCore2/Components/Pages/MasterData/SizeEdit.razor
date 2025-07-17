@@ -7,9 +7,6 @@
 
 @rendermode InteractiveServer
 
-<PageTitle>@(Id.HasValue ? "編輯尺寸" : "新增尺寸")</PageTitle>
-
-
 <GenericEditPageComponent TEntity="Size" 
                          TService="ISizeService"
                          Id="@Id"
@@ -17,6 +14,7 @@
                          Service="@SizeService"
                          EntityName="尺寸"
                          EntityNamePlural="尺寸"
+                         PageTitle="@(Id.HasValue ? "編輯尺寸" : "新增尺寸")"
                          FormTitle="基本資料"
                          FormSubtitle="尺寸規格的基本設定資訊"
                          IndexRoute="/sizes"

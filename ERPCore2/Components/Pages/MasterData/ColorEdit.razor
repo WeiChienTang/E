@@ -5,9 +5,6 @@
 @inject INotificationService NotificationService 
 @rendermode InteractiveServer
 
-<PageTitle>@(Id.HasValue ? "編輯顏色" : "新增顏色")</PageTitle>
-
-
     <GenericEditPageComponent TEntity="Color" 
                             TService="IColorService"
                             @ref="editComponent"
@@ -15,6 +12,7 @@
                             Service="@ColorService"
                             EntityName="顏色"
                             EntityNamePlural="顏色"
+                            PageTitle="@(Id.HasValue ? "編輯顏色" : "新增顏色")"
                             IndexRoute="/colors"
                             FormTitle="基本資料"
                             FormSubtitle="顏色的基本資訊"

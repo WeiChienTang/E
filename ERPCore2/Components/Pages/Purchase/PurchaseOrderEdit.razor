@@ -11,8 +11,6 @@
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-<PageTitle>@(Id.HasValue ? "編輯採購訂單" : "新增採購訂單")</PageTitle>
-
 <GenericEditPageComponent TEntity="PurchaseOrder" 
                          TService="IPurchaseOrderService"
                          Id="@Id"
@@ -20,6 +18,7 @@
                          Service="@PurchaseOrderService"
                          EntityName="採購訂單"
                          EntityNamePlural="採購訂單"
+                         PageTitle="@(Id.HasValue ? "編輯採購訂單" : "新增採購訂單")"
                          FormTitle="基本資料"
                          FormSubtitle="採購訂單的基本資訊"
                          RequiredPermission="@(Id.HasValue ? "Purchase.Update" : "Purchase.Create")"

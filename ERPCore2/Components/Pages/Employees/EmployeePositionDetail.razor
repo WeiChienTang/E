@@ -4,25 +4,25 @@
 @rendermode InteractiveServer
 
 
-    <GenericDetailPageComponent TEntity="EmployeePosition" 
-                            TService="IEmployeePositionService"
-                            EntityId="@PositionId"
-                            Entity="@position"
-                            Service="@EmployeePositionService"
-                            EntityName="職位設定"
-                            EntityNamePlural="職位設定"
-                            IndexRoute="/employee-positions"
-                            EditRoute="/employee-positions/edit"
-                            LoadingText="載入職位設定資料中..."
-                            BreadcrumbItems="@breadcrumbItems"
-                            DataLoader="@LoadPositionDataAsync"
-                            AdditionalDataLoader="@LoadAdditionalDataAsync"
-                            EntityTitleSelector="@(p => p.Name)"
-                            EntitySubtitleSelector="@(p => $"職位代碼：{p.Code ?? "未設定"} | 等級：{p.Level?.ToString() ?? "未設定"}")"
-                            EntityDisplayNameSelector="@(p => p.Name)"
-                            OnDataLoaded="@OnPositionDataLoaded"
-                            TabSections="@GetTabSections()" RequiredPermission="EmployeePosition.Read">
-    </GenericDetailPageComponent>
+<GenericDetailPageComponent TEntity="EmployeePosition" 
+                        TService="IEmployeePositionService"
+                        EntityId="@PositionId"
+                        Entity="@position"
+                        Service="@EmployeePositionService"
+                        EntityName="職位設定"
+                        EntityNamePlural="職位設定"
+                        IndexRoute="/employee-positions"
+                        EditRoute="/employee-positions/edit"
+                        LoadingText="載入職位設定資料中..."
+                        BreadcrumbItems="@breadcrumbItems"
+                        DataLoader="@LoadPositionDataAsync"
+                        AdditionalDataLoader="@LoadAdditionalDataAsync"
+                        EntityTitleSelector="@(p => p.Name)"
+                        EntitySubtitleSelector="@(p => $"職位代碼：{p.Code ?? "未設定"} | 等級：{p.Level?.ToString() ?? "未設定"}")"
+                        EntityDisplayNameSelector="@(p => p.Name)"
+                        OnDataLoaded="@OnPositionDataLoaded"
+                        TabSections="@GetTabSections()" RequiredPermission="EmployeePosition.Read">
+</GenericDetailPageComponent>
 
 @code {
     [Parameter] public int PositionId { get; set; }

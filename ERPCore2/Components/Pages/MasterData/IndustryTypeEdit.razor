@@ -5,15 +5,14 @@
 @inject INotificationService NotificationService
 @rendermode InteractiveServer
 
-<PageTitle>@(Id.HasValue ? "編輯行業類型" : "新增行業類型")</PageTitle>
-
 <GenericEditPageComponent TEntity="IndustryType" 
                          TService="IIndustryTypeService"
                          Id="@Id"
                          Entity="@industryType"
                          Service="@IndustryTypeService"
                          EntityName="行業類型"
-                         EntityNamePlural="行業類型"                         
+                         EntityNamePlural="行業類型"
+                         PageTitle="@(Id.HasValue ? "編輯行業類型" : "新增行業類型")"
                          FormTitle="基本資料"
                          FormSubtitle="行業類型的基本分類資訊"
                          IndexRoute="/industrytypes"

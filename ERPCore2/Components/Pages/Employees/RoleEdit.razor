@@ -5,9 +5,6 @@
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
-<PageTitle>@(Id.HasValue ? "編輯角色" : "新增角色")</PageTitle>
-
-
 <GenericEditPageComponent TEntity="Role" 
                          TService="IRoleService"
                          Id="@Id"
@@ -15,6 +12,7 @@
                          Service="@RoleService"
                          EntityName="角色"
                          EntityNamePlural="角色"
+                         PageTitle="@(Id.HasValue ? "編輯角色" : "新增角色")"
                          FormTitle="基本資料"
                          FormSubtitle="角色的基本資訊與描述"
                          IndexRoute="/roles"

@@ -5,8 +5,6 @@
 @inject INotificationService NotificationService 
 @rendermode InteractiveServer
 
-<PageTitle>@(Id.HasValue ? "編輯職位設定" : "新增職位設定")</PageTitle>
-
     <GenericEditPageComponent TEntity="EmployeePosition" 
                             TService="IEmployeePositionService"
                             @ref="editComponent"
@@ -14,6 +12,7 @@
                             Service="@EmployeePositionService"
                             EntityName="職位設定"
                             EntityNamePlural="職位設定"
+                            PageTitle="@(Id.HasValue ? "編輯職位設定" : "新增職位設定")"
                             IndexRoute="/employee-positions"
                             FormTitle="基本資料"
                             FormSubtitle="職位設定的基本資訊"

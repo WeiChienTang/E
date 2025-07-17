@@ -4,26 +4,25 @@
 
 @rendermode InteractiveServer
 
-    
-    <GenericDetailPageComponent TEntity="Color" 
-                            TService="IColorService"
-                            EntityId="@ColorId"
-                            Entity="@color"
-                            Service="@ColorService"
-                            EntityName="顏色"
-                            EntityNamePlural="顏色"
-                            IndexRoute="/colors"
-                            EditRoute="/colors/edit"
-                            LoadingText="載入顏色資料中..."
-                            BreadcrumbItems="@breadcrumbItems"
-                            DataLoader="@LoadColorDataAsync"
-                            AdditionalDataLoader="@LoadAdditionalDataAsync"
-                            EntityTitleSelector="@(c => c.Name)"
-                            EntitySubtitleSelector="@(c => $"顏色代碼：{c.Code ?? "未設定"}")"
-                            EntityDisplayNameSelector="@(c => c.Name)"
-                            OnDataLoaded="@OnColorDataLoaded"
-                            TabSections="@GetTabSections()" RequiredPermission="Color.Read">
-    </GenericDetailPageComponent>
+<GenericDetailPageComponent TEntity="Color" 
+                        TService="IColorService"
+                        EntityId="@ColorId"
+                        Entity="@color"
+                        Service="@ColorService"
+                        EntityName="顏色"
+                        EntityNamePlural="顏色"
+                        IndexRoute="/colors"
+                        EditRoute="/colors/edit"
+                        LoadingText="載入顏色資料中..."
+                        BreadcrumbItems="@breadcrumbItems"
+                        DataLoader="@LoadColorDataAsync"
+                        AdditionalDataLoader="@LoadAdditionalDataAsync"
+                        EntityTitleSelector="@(c => c.Name)"
+                        EntitySubtitleSelector="@(c => $"顏色代碼：{c.Code ?? "未設定"}")"
+                        EntityDisplayNameSelector="@(c => c.Name)"
+                        OnDataLoaded="@OnColorDataLoaded"
+                        TabSections="@GetTabSections()" RequiredPermission="Color.Read">
+</GenericDetailPageComponent>
 
 @code {
     [Parameter] public int ColorId { get; set; }

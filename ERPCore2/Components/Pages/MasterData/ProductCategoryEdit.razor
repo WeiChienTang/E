@@ -6,8 +6,6 @@
 @inject INotificationService NotificationService 
 @rendermode InteractiveServer
 
-<PageTitle>@(Id.HasValue ? "編輯商品分類" : "新增商品分類")</PageTitle>
-
     <GenericEditPageComponent TEntity="ProductCategory" 
                             TService="IProductCategoryService"
                             @ref="editComponent"
@@ -15,6 +13,7 @@
                             Service="@ProductCategoryService"
                             EntityName="商品分類"
                             EntityNamePlural="商品分類"
+                            PageTitle="@(Id.HasValue ? "編輯商品分類" : "新增商品分類")"
                             IndexRoute="/product-categories"
                             FormTitle="基本資料"
                             FormSubtitle="商品分類的基本資訊與階層設定"

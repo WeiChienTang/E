@@ -9,15 +9,14 @@
 
 @rendermode InteractiveServer
 
-<PageTitle>@GetPageTitle()</PageTitle>
-
 <GenericEditPageComponent TEntity="Product" 
                          TService="IProductService"
                          Id="@Id"
                          Entity="@product"
                          Service="@ProductService"
                          EntityName="產品"
-                         EntityNamePlural="產品"                         
+                         EntityNamePlural="產品"
+                         PageTitle="@GetPageTitle()"
                          FormTitle="基本資料"
                          FormSubtitle="產品的基本資訊"
                          IndexRoute="/products"

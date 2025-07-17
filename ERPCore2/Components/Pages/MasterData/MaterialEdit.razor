@@ -8,8 +8,6 @@
 
 @rendermode InteractiveServer
 
-<PageTitle>@(Id.HasValue ? "編輯材質" : "新增材質")</PageTitle>
-
 <GenericEditPageComponent TEntity="Material" 
                          TService="IMaterialService"
                          @ref="editComponent"
@@ -17,6 +15,7 @@
                          Service="@MaterialService"
                          EntityName="材質"
                          EntityNamePlural="材質"
+                         PageTitle="@(Id.HasValue ? "編輯材質" : "新增材質")"
                          IndexRoute="/materials"
                          FormTitle="基本資料"
                          FormSubtitle="材質的基本資訊"

@@ -7,9 +7,6 @@
 
 @rendermode InteractiveServer
 
-<PageTitle>@(Id.HasValue ? "編輯天氣" : "新增天氣")</PageTitle>
-
-
 <GenericEditPageComponent TEntity="Weather" 
                          TService="IWeatherService"
                          @ref="editComponent"
@@ -17,7 +14,8 @@
                          Service="@WeatherService"
                          EntityName="天氣"
                          EntityNamePlural="天氣"
-                         IndexRoute="/weather"                         
+                         PageTitle="@(Id.HasValue ? "編輯天氣" : "新增天氣")"
+                         IndexRoute="/weather"
                          FormTitle="基本資料"
                          FormSubtitle="天氣的基本資訊"
                          UseGenericForm="true"

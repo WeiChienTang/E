@@ -4,29 +4,27 @@
 @inject INotificationService NotificationService 
 @rendermode InteractiveServer
 
-<PageTitle>@(Id.HasValue ? "編輯部門" : "新增部門")</PageTitle>
-
-
-    <GenericEditPageComponent TEntity="Department" 
-                            TService="IDepartmentService"
-                            @ref="editComponent"
-                            Id="@Id"
-                            Service="@DepartmentService"
-                            EntityName="部門"
-                            EntityNamePlural="部門"
-                            IndexRoute="/departments"
-                            FormTitle="基本資料"
-                            FormSubtitle="部門的基本資訊與組織架構"
-                            UseGenericForm="true"
-                            FormFields="@GetFormFields()"
-                            FormSections="@formSections"
-                            BreadcrumbItems="@breadcrumbItems"
-                            DataLoader="@LoadDepartmentData"
-                            AdditionalDataLoader="@LoadOptionsData"
-                            UseGenericSave="true"
-                            SaveSuccessMessage="@(Id.HasValue ? "部門更新成功" : "部門新增成功")"
-                            SaveFailureMessage="部門儲存失敗"
-                            RequiredPermission="@(Id.HasValue ? "Department.Update" : "Department.Create")" />
+<GenericEditPageComponent TEntity="Department" 
+                        TService="IDepartmentService"
+                        @ref="editComponent"
+                        Id="@Id"
+                        Service="@DepartmentService"
+                        EntityName="部門"
+                        EntityNamePlural="部門"
+                        PageTitle="@(Id.HasValue ? "編輯部門" : "新增部門")"
+                        IndexRoute="/departments"
+                        FormTitle="基本資料"
+                        FormSubtitle="部門的基本資訊與組織架構"
+                        UseGenericForm="true"
+                        FormFields="@GetFormFields()"
+                        FormSections="@formSections"
+                        BreadcrumbItems="@breadcrumbItems"
+                        DataLoader="@LoadDepartmentData"
+                        AdditionalDataLoader="@LoadOptionsData"
+                        UseGenericSave="true"
+                        SaveSuccessMessage="@(Id.HasValue ? "部門更新成功" : "部門新增成功")"
+                        SaveFailureMessage="部門儲存失敗"
+                        RequiredPermission="@(Id.HasValue ? "Department.Update" : "Department.Create")" />
 
 
 @code {

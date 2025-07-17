@@ -15,8 +15,6 @@
 @rendermode InteractiveServer
 @implements IDisposable
 
-<PageTitle>@GetPageTitle()</PageTitle>
-
 <GenericEditPageComponent TEntity="Supplier" 
                          TService="ISupplierService"
                          Id="@Id"
@@ -24,7 +22,8 @@
                          Service="@SupplierService"
                          RequiredPermission="@(Id.HasValue ? "Supplier.Update" : "Supplier.Create")"
                              EntityName="廠商"
-                             EntityNamePlural="廠商"                         
+                             EntityNamePlural="廠商"
+                             PageTitle="@GetPageTitle()"
                              FormTitle="基本資料"
                              FormSubtitle="廠商的基本公司資訊"
                              IndexRoute="/suppliers"

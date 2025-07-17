@@ -8,15 +8,14 @@
 @rendermode InteractiveServer
 @implements IDisposable
 
-<PageTitle>@GetPageTitle()</PageTitle>
-
 <GenericEditPageComponent TEntity="SupplierType" 
                          TService="ISupplierTypeService"
                          Id="@Id"
                          Entity="@supplierType"
                          Service="@SupplierTypeService"
                          EntityName="廠商類型"
-                         EntityNamePlural="廠商類型"                         
+                         EntityNamePlural="廠商類型"
+                         PageTitle="@GetPageTitle()"
                          FormTitle="基本資料"
                          FormSubtitle="廠商類型的基本設定資訊"
                          IndexRoute="/supplier-types"
