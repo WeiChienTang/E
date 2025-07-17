@@ -1,11 +1,10 @@
 @page "/supplier-types/detail/{supplierTypeId:int}"
 
 @inject ISupplierTypeService SupplierTypeService
-@inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="SupplierType.Read">
+
     <GenericDetailPageComponent TEntity="SupplierType" 
                             TService="ISupplierTypeService"
                             EntityId="@SupplierTypeId"
@@ -23,9 +22,9 @@
                             EntityDisplayNameSelector="@(st => st.TypeName)"
                             OnDataLoaded="@OnSupplierTypeDataLoaded"                           
                             UseTabLayout="true"
-                            TabSections="@GetTabSections()">
+                            TabSections="@GetTabSections()" RequiredPermission="SupplierType.Read">
     </GenericDetailPageComponent>
-</PagePermissionCheck>
+
 @code {
     [Parameter] public int SupplierTypeId { get; set; }
 
@@ -91,11 +90,13 @@
     }
 
     // 設定標籤頁結構
-    private List<GenericDetailPageComponent<SupplierType, ISupplierTypeService>.TabSection> GetTabSections()
+    private List<GenericDetailPageComponent<SupplierType, ISupplierTypeService
+                        >.TabSection> GetTabSections()
     {
         try
         {
-            return new List<GenericDetailPageComponent<SupplierType, ISupplierTypeService>.TabSection>
+            return new List<GenericDetailPageComponent<SupplierType, ISupplierTypeService
+                        >.TabSection>
             {            new GenericDetailPageComponent<SupplierType, ISupplierTypeService>.TabSection
             {
                 Id = "basic",
@@ -167,7 +168,8 @@
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetTabSections), GetType(),
                 additionalData: new { SupplierTypeId = SupplierTypeId }
             );
-            return new List<GenericDetailPageComponent<SupplierType, ISupplierTypeService>.TabSection>();
+            return new List<GenericDetailPageComponent<SupplierType, ISupplierTypeService
+                        >.TabSection>();
         }
     }
 
@@ -229,3 +231,7 @@
         }
     }
 }
+
+
+
+

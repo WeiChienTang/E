@@ -2,12 +2,11 @@
 @page "/employee-positions/edit/{id:int?}"
 
 @inject IEmployeePositionService EmployeePositionService
-@inject NavigationManager Navigation
 @inject INotificationService NotificationService 
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯職位設定" : "新增職位設定")</PageTitle>
-<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "EmployeePosition.Update" : "EmployeePosition.Create")">
+
     <GenericEditPageComponent TEntity="EmployeePosition" 
                             TService="IEmployeePositionService"
                             @ref="editComponent"
@@ -25,8 +24,8 @@
                             UseGenericSave="true"
                             SaveSuccessMessage="@(Id.HasValue ? "職位設定更新成功" : "職位設定新增成功")"
                             SaveFailureMessage="職位設定儲存失敗"
-    />
-</PagePermissionCheck>
+                            RequiredPermission="@(Id.HasValue ? "EmployeePosition.Update" : "EmployeePosition.Create")" />
+
 @code {
     [Parameter] public int? Id { get; set; }
     
@@ -191,17 +190,28 @@
             
             if (position == null)
             {
-                await NotificationService.ShowErrorAsync("找不到指定的職位設定資料");
-                Navigation.NavigateTo("/employee-positions");
-                return null;
+                // 如果找不到職位，建立新的預設職位
+                return new EmployeePosition
+                {
+                    Status = EntityStatus.Active,
+                    SortOrder = 0
+                };
             }
             return position;
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadEmployeePositionData), GetType());
-            Navigation.NavigateTo("/employee-positions");
-            return null;
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadEmployeePositionData), GetType(), NotificationService);
+            
+            // 設定安全的預設值，確保程式不會崩潰
+            return new EmployeePosition
+            {
+                Code = "ERROR",
+                Name = "ERROR",
+                Status = EntityStatus.Active,
+                SortOrder = 0
+            };
         }
     }
 }
+

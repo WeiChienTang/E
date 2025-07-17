@@ -3,12 +3,11 @@
 @inject IUnitService UnitService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯單位" : "新增單位")</PageTitle>
 
-<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Unit.Update" : "Unit.Create")">
+
 <GenericEditPageComponent TEntity="Unit" 
                          TService="IUnitService"
                          Id="@Id"
@@ -25,8 +24,9 @@
                          BreadcrumbItems="@breadcrumbItems"
                          DataLoader="@LoadUnitData"
                          SaveHandler="@SaveUnit"
+                         RequiredPermission="@(Id.HasValue ? "Unit.Update" : "Unit.Create")"
                          @ref="editComponent" />
-</PagePermissionCheck>
+
 
 @code {
     [Parameter] public int? Id { get; set; }
@@ -257,3 +257,4 @@
         }
     }
 }
+

@@ -1,11 +1,10 @@
 @page "/units/detail/{unitId:int}"
 
 @inject IUnitService UnitService
-@inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Unit.Read">
+
 <GenericDetailPageComponent TEntity="Unit" 
                            TService="IUnitService"
                            EntityId="@UnitId"
@@ -24,9 +23,10 @@
                            EntityDisplayNameSelector="@(u => u.UnitName)"
                            OnDataLoaded="@OnUnitDataLoaded"
                            UseTabLayout="true"
-                           TabSections="@GetTabSections()">
+                           TabSections="@GetTabSections()"
+                           RequiredPermission="Unit.Read">
 </GenericDetailPageComponent>
-</PagePermissionCheck>
+
 @code {
     [Parameter] public int UnitId { get; set; }
 
@@ -287,3 +287,5 @@
         }
     }
 }
+
+

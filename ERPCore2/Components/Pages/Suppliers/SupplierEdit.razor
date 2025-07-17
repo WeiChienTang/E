@@ -15,14 +15,14 @@
 @rendermode InteractiveServer
 @implements IDisposable
 
-<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Supplier.Update" : "Supplier.Create")">
-    <PageTitle>@GetPageTitle()</PageTitle>
+<PageTitle>@GetPageTitle()</PageTitle>
 
-    <GenericEditPageComponent TEntity="Supplier" 
-                             TService="ISupplierService"
-                             Id="@Id"
-                             Entity="@supplier"
-                             Service="@SupplierService"
+<GenericEditPageComponent TEntity="Supplier" 
+                         TService="ISupplierService"
+                         Id="@Id"
+                         Entity="@supplier"
+                         Service="@SupplierService"
+                         RequiredPermission="@(Id.HasValue ? "Supplier.Update" : "Supplier.Create")"
                              EntityName="廠商"
                              EntityNamePlural="廠商"                         
                              FormTitle="基本資料"
@@ -74,7 +74,6 @@
                                ItemsChanged="@OnSupplierAddressesChanged" />
     </AdditionalSections>
 </GenericEditPageComponent>
-</PagePermissionCheck>
 
 @code {
     [Parameter] public int? Id { get; set; }

@@ -7,12 +7,13 @@
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯權限" : "新增權限")</PageTitle>
-<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Permission.Update" : "Permission.Create")">
-    <GenericEditPageComponent TEntity="Permission" 
-                            TService="IPermissionManagementService"
-                            Id="@Id"
-                            Entity="@permission"
-                            Service="@PermissionService"
+
+<GenericEditPageComponent TEntity="Permission" 
+                        TService="IPermissionManagementService"
+                        Id="@Id"
+                        Entity="@permission"
+                        Service="@PermissionService"
+                        RequiredPermission="@(Id.HasValue ? "Permission.Update" : "Permission.Create")"
                             EntityName="權限"
                             EntityNamePlural="權限"
                             FormTitle="基本資料"
@@ -26,7 +27,7 @@
                             AdditionalDataLoader="@LoadAdditionalData"
                             @ref="editComponent">
     </GenericEditPageComponent>
-</PagePermissionCheck>
+
 @code {
     [Parameter] public int? Id { get; set; }
     

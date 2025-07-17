@@ -2,13 +2,12 @@
 @page "/colors/edit/{id:int?}"
 
 @inject IColorService ColorService
-@inject NavigationManager Navigation
 @inject INotificationService NotificationService 
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯顏色" : "新增顏色")</PageTitle>
 
-<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Color.Update" : "Color.Create")">
+
     <GenericEditPageComponent TEntity="Color" 
                             TService="IColorService"
                             @ref="editComponent"
@@ -26,8 +25,8 @@
                             UseGenericSave="true"
                             SaveSuccessMessage="@(Id.HasValue ? "顏色更新成功" : "顏色新增成功")"
                             SaveFailureMessage="顏色儲存失敗"
-    />
-</PagePermissionCheck>
+                            RequiredPermission="@(Id.HasValue ? "Color.Update" : "Color.Create")" />
+
 @code {
     [Parameter] public int? Id { get; set; }
     
@@ -170,17 +169,26 @@
             
             if (color == null)
             {
-                await NotificationService.ShowErrorAsync("找不到指定的顏色資料");
-                Navigation.NavigateTo("/colors");
-                return null;
+                // 如果找不到顏色，建立新的預設顏色
+                return new Color
+                {
+                    Status = EntityStatus.Active
+                };
             }
             return color;
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadColorData), GetType());
-            Navigation.NavigateTo("/colors");
-            return null;
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadColorData), GetType(), NotificationService);
+            
+            // 設定安全的預設值，確保程式不會崩潰
+            return new Color
+            {
+                Name = "ERROR",
+                Code = "",
+                Status = EntityStatus.Active
+            };
         }
     }
 }
+

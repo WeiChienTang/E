@@ -3,11 +3,9 @@
 @inject IIndustryTypeService IndustryTypeService
 @inject ICustomerService CustomerService
 @inject ISupplierService SupplierService
-@inject IJSRuntime JSRuntime
-@inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="IndustryType.Read">
+
     <GenericDetailPageComponent TEntity="IndustryType" 
                             TService="IIndustryTypeService"
                             EntityId="@IndustryTypeId"
@@ -26,9 +24,9 @@
                             EntityDisplayNameSelector="@(it => it.IndustryTypeName)"
                             OnDataLoaded="@OnIndustryTypeDataLoaded"
                             UseTabLayout="true"
-                            TabSections="@GetTabSections()">
+                            TabSections="@GetTabSections()" RequiredPermission="IndustryType.Read">
     </GenericDetailPageComponent>
-</PagePermissionCheck>
+
 @code {
     [Parameter] public int IndustryTypeId { get; set; }
 
@@ -122,11 +120,13 @@
     }
 
     // 設定標籤頁結構
-    private List<GenericDetailPageComponent<IndustryType, IIndustryTypeService>.TabSection> GetTabSections()
+    private List<GenericDetailPageComponent<IndustryType, IIndustryTypeService
+                        >.TabSection> GetTabSections()
     {
         try
         {
-            return new List<GenericDetailPageComponent<IndustryType, IIndustryTypeService>.TabSection>
+            return new List<GenericDetailPageComponent<IndustryType, IIndustryTypeService
+                        >.TabSection>
         {            new GenericDetailPageComponent<IndustryType, IIndustryTypeService>.TabSection
             {
                 Id = "basic",
@@ -287,7 +287,8 @@
             );
             
             // 返回空的標籤頁列表避免頁面崩潰
-            return new List<GenericDetailPageComponent<IndustryType, IIndustryTypeService>.TabSection>();
+            return new List<GenericDetailPageComponent<IndustryType, IIndustryTypeService
+                        >.TabSection>();
         }
     }
 
@@ -379,3 +380,7 @@
         }
     }
 }
+
+
+
+

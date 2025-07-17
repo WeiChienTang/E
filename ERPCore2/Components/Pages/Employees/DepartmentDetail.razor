@@ -2,7 +2,7 @@
 @inject IDepartmentService DepartmentService
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Department.Read">
+
     <GenericDetailPageComponent TEntity="Department" 
                             TService="IDepartmentService"
                             EntityId="@DepartmentId"
@@ -21,9 +21,10 @@
                             EntityDisplayNameSelector="@(d => d.Name)"
                             OnDataLoaded="@OnDepartmentDataLoaded"
                             UseTabLayout="true"
-                            TabSections="@GetTabSections()">
+                            TabSections="@GetTabSections()"
+                            RequiredPermission="Department.Read">
     </GenericDetailPageComponent>
-</PagePermissionCheck>
+
 
 @code {
     [Parameter] public int DepartmentId { get; set; }
@@ -111,11 +112,13 @@
     }
 
     // 設定標籤頁結構
-    private List<GenericDetailPageComponent<Department, IDepartmentService>.TabSection> GetTabSections()
+    private List<GenericDetailPageComponent<Department, IDepartmentService
+                        >.TabSection> GetTabSections()
     {
         try
         {
-            return new List<GenericDetailPageComponent<Department, IDepartmentService>.TabSection>
+            return new List<GenericDetailPageComponent<Department, IDepartmentService
+                        >.TabSection>
             {
                 new GenericDetailPageComponent<Department, IDepartmentService>.TabSection
                 {
@@ -278,3 +281,5 @@
         }
     }
 }
+
+

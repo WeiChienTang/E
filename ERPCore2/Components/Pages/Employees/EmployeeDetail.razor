@@ -4,7 +4,7 @@
 @inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Employee.Read">
+
     <GenericDetailPageComponent TEntity="Employee" 
                             TService="IEmployeeService"
                             EntityId="@EmployeeId"
@@ -23,9 +23,9 @@
                             EntityDisplayNameSelector="@(e => GetFullName())"
                             OnDataLoaded="@OnEmployeeDataLoaded"
                             UseTabLayout="true"
-                            TabSections="@GetTabSections()">
+                            TabSections="@GetTabSections()" RequiredPermission="Employee.Read">
     </GenericDetailPageComponent>
-</PagePermissionCheck>
+
 @code {
     [Parameter] public int EmployeeId { get; set; }
 
@@ -180,11 +180,13 @@
     }
 
     // 設定標籤頁結構
-    private List<GenericDetailPageComponent<Employee, IEmployeeService>.TabSection> GetTabSections()
+    private List<GenericDetailPageComponent<Employee, IEmployeeService
+                        >.TabSection> GetTabSections()
     {
         try
         {
-            return new List<GenericDetailPageComponent<Employee, IEmployeeService>.TabSection>
+            return new List<GenericDetailPageComponent<Employee, IEmployeeService
+                        >.TabSection>
             {
                 new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
                 {
@@ -330,7 +332,8 @@
             );
             
             // 返回基本標籤頁結構
-            return new List<GenericDetailPageComponent<Employee, IEmployeeService>.TabSection>
+            return new List<GenericDetailPageComponent<Employee, IEmployeeService
+                        >.TabSection>
             {
                 new GenericDetailPageComponent<Employee, IEmployeeService>.TabSection
                 {
@@ -484,3 +487,7 @@
         }
     }
 }
+
+
+
+

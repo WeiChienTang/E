@@ -1,4 +1,5 @@
 @* 泛型Edit頁面組件 - 重新設計 *@
+@attribute [Authorize]
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @typeparam TEntity where TEntity : BaseEntity, new()
@@ -6,6 +7,18 @@
 
 @* 設置瀏覽器標題 *@
 <PageTitle>@GetPageTitle()</PageTitle>
+
+@{
+    // 權限檢查 - 如果沒有設定權限，預設拒絕存取
+    string requiredPermission = RequiredPermission;
+    if (string.IsNullOrWhiteSpace(requiredPermission))
+    {
+        // 安全起見，如果沒有設定權限，設定為一個不存在的權限以確保拒絕存取
+        requiredPermission = "System.RequiredPermissionNotSet";
+    }
+}
+
+<PagePermissionCheck RequiredPermission="@requiredPermission">
 
 @* 頁面標題 *@
 <GenericHeaderComponent Title="@GetPageTitle()"
@@ -80,8 +93,13 @@
     </div>
 </div>
 
+</PagePermissionCheck>
+
 @code {
     // ===== 參數 =====
+    
+    // 權限檢查參數
+    [Parameter] public string RequiredPermission { get; set; } = "";
     
     // 核心參數
     [Parameter] public int? Id { get; set; }
@@ -345,8 +363,9 @@
     
     private async Task LogError(string method, Exception ex)
     {
-        await JSRuntime.InvokeVoidAsync("console.error", $"[{method}] 錯誤：", ex.Message);    }
-      // ===== 通用Save方法 =====
+        await JSRuntime.InvokeVoidAsync("console.error", $"[{method}] 錯誤：", ex.Message);    
+    }
+    // ===== 通用Save方法 =====
     
     /// <summary>
     /// 通用的保存方法，適用於大部分簡單實體

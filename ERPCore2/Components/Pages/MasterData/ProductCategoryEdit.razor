@@ -3,12 +3,11 @@
 
 @inject IProductCategoryService ProductCategoryService
 @inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService 
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯商品分類" : "新增商品分類")</PageTitle>
-<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "ProductCategory.Update" : "ProductCategory.Create")">
+
     <GenericEditPageComponent TEntity="ProductCategory" 
                             TService="IProductCategoryService"
                             @ref="editComponent"
@@ -27,8 +26,8 @@
                             UseGenericSave="true"
                             SaveSuccessMessage="@(Id.HasValue ? "商品分類更新成功" : "商品分類新增成功")"
                             SaveFailureMessage="商品分類儲存失敗"
-    />
-</PagePermissionCheck>
+                            RequiredPermission="@(Id.HasValue ? "ProductCategory.Update" : "ProductCategory.Create")" />
+
 @code {
     [Parameter] public int? Id { get; set; }
     
@@ -245,3 +244,4 @@
         }
     }
 }
+

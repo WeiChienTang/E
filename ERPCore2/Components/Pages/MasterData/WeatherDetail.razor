@@ -1,11 +1,10 @@
 @page "/weather/detail/{weatherId:int}"
 
 @inject IWeatherService WeatherService
-@inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Weather.Read">
+
 <GenericDetailPageComponent TEntity="Weather" 
                            TService="IWeatherService"
                            EntityId="@WeatherId"
@@ -24,9 +23,9 @@
                            EntityDisplayNameSelector="@(w => w.Name)"
                            OnDataLoaded="@OnWeatherDataLoaded"
                            UseTabLayout="true"
-                           TabSections="@GetTabSections()">
+                           TabSections="@GetTabSections()" RequiredPermission="Weather.Read">
 </GenericDetailPageComponent>
-</PagePermissionCheck>
+
 
 @code {
     [Parameter] public int WeatherId { get; set; }
@@ -102,11 +101,13 @@
     }
 
     // 設定標籤頁結構
-    private List<GenericDetailPageComponent<Weather, IWeatherService>.TabSection> GetTabSections()
+    private List<GenericDetailPageComponent<Weather, IWeatherService
+                        >.TabSection> GetTabSections()
     {
         try
         {
-            return new List<GenericDetailPageComponent<Weather, IWeatherService>.TabSection>
+            return new List<GenericDetailPageComponent<Weather, IWeatherService
+                        >.TabSection>
             {            new GenericDetailPageComponent<Weather, IWeatherService>.TabSection
                 {
                     Id = "basic",
@@ -229,3 +230,6 @@
         }
     }
 }
+
+
+

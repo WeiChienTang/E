@@ -9,21 +9,20 @@
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯採購訂單" : "新增採購訂單")</PageTitle>
 
-<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Purchase.Update" : "Purchase.Create")">
-    <GenericEditPageComponent TEntity="PurchaseOrder" 
-                             TService="IPurchaseOrderService"
-                             Id="@Id"
-                             Entity="@purchaseOrder"
-                             Service="@PurchaseOrderService"
-                             EntityName="採購訂單"
-                             EntityNamePlural="採購訂單"
-                             FormTitle="基本資料"
-                             FormSubtitle="採購訂單的基本資訊"
+<GenericEditPageComponent TEntity="PurchaseOrder" 
+                         TService="IPurchaseOrderService"
+                         Id="@Id"
+                         Entity="@purchaseOrder"
+                         Service="@PurchaseOrderService"
+                         EntityName="採購訂單"
+                         EntityNamePlural="採購訂單"
+                         FormTitle="基本資料"
+                         FormSubtitle="採購訂單的基本資訊"
+                         RequiredPermission="@(Id.HasValue ? "Purchase.Update" : "Purchase.Create")"
                              IndexRoute="/purchase/orders"
                              UseGenericForm="true"
                              FormFields="@formFields"
@@ -60,7 +59,6 @@
                 CreateDetailFromProduct="@CreateDetailFromProduct" />
         </AdditionalSections>
     </GenericEditPageComponent>
-</PagePermissionCheck>
 
 @code {
     [Parameter] public int? Id { get; set; }

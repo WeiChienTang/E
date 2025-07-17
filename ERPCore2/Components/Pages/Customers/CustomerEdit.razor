@@ -7,25 +7,25 @@
 
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Customer.Update" : "Customer.Create")">
-    <GenericEditPageComponent TEntity="Customer" 
-                         TService="ICustomerService"
-                         Id="@Id"
-                         Entity="@customer"
-                         Service="@CustomerService"
-                         EntityName="客戶"
-                         EntityNamePlural="客戶"                         
-                         FormTitle="基本資料"
-                         FormSubtitle="客戶的基本公司資訊"
-                         IndexRoute="/customers"
-                         UseGenericForm="true"
-                         FormFields="@basicFormFields"
-                         FormSections="@basicFormSections"
-                         BreadcrumbItems="@breadcrumbItems"                         
-                         DataLoader="@LoadCustomerData"
-                         SaveHandler="@SaveCustomer"                         
-                         AdditionalDataLoader="@LoadAdditionalData"
-                         @ref="editComponent"><AdditionalSections>
+<GenericEditPageComponent TEntity="Customer" 
+                     TService="ICustomerService"
+                     Id="@Id"
+                     Entity="@customer"
+                     Service="@CustomerService"
+                     EntityName="客戶"
+                     EntityNamePlural="客戶"                         
+                     FormTitle="基本資料"
+                     FormSubtitle="客戶的基本公司資訊"
+                     IndexRoute="/customers"
+                     RequiredPermission="@(Id.HasValue ? "Customer.Update" : "Customer.Create")"
+                     UseGenericForm="true"
+                     FormFields="@basicFormFields"
+                     FormSections="@basicFormSections"
+                     BreadcrumbItems="@breadcrumbItems"                         
+                     DataLoader="@LoadCustomerData"
+                     SaveHandler="@SaveCustomer"                         
+                     AdditionalDataLoader="@LoadAdditionalData"
+                     @ref="editComponent"><AdditionalSections>
                             
         @* 聯絡方式管理 - 使用新的子集合組件 *@
         <ContactManagerComponent TContactEntity="CustomerContact" 
@@ -76,7 +76,6 @@
                                 ItemsChanged="@OnAddressesChanged" />
     </AdditionalSections>
 </GenericEditPageComponent>
-</PagePermissionCheck>
 
 @code {
     [Parameter] public int? Id { get; set; }

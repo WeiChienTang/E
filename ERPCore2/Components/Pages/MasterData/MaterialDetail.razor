@@ -2,12 +2,9 @@
 
 @inject IMaterialService MaterialService
 @inject IJSRuntime JSRuntime
-@inject NavigationManager Navigation
-@inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Material.Read">
+
 <GenericDetailPageComponent TEntity="Material" 
                            TService="IMaterialService"
                            EntityId="@MaterialId"
@@ -26,9 +23,9 @@
                            EntityDisplayNameSelector="@(m => m.Name)"
                            OnDataLoaded="@OnMaterialDataLoaded"
                            UseTabLayout="true"
-                           TabSections="@GetTabSections()">
+                           TabSections="@GetTabSections()" RequiredPermission="Material.Read">
 </GenericDetailPageComponent>
-</PagePermissionCheck>
+
 @code {
     [Parameter] public int MaterialId { get; set; }
 
@@ -101,11 +98,13 @@
     }
 
     // 設定標籤頁結構
-    private List<GenericDetailPageComponent<Material, IMaterialService>.TabSection> GetTabSections()
+    private List<GenericDetailPageComponent<Material, IMaterialService
+                        >.TabSection> GetTabSections()
     {
         try
         {
-            return new List<GenericDetailPageComponent<Material, IMaterialService>.TabSection>
+            return new List<GenericDetailPageComponent<Material, IMaterialService
+                        >.TabSection>
             {            new GenericDetailPageComponent<Material, IMaterialService>.TabSection
                 {
                     Id = "basic",
@@ -261,3 +260,7 @@
         }
     }
 }
+
+
+
+

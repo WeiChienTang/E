@@ -9,20 +9,20 @@
 
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Product.Update" : "Product.Create")">
-    <PageTitle>@GetPageTitle()</PageTitle>
+<PageTitle>@GetPageTitle()</PageTitle>
 
-    <GenericEditPageComponent TEntity="Product" 
-                             TService="IProductService"
-                             Id="@Id"
-                             Entity="@product"
-                             Service="@ProductService"
-                             EntityName="產品"
-                             EntityNamePlural="產品"                         
-                             FormTitle="基本資料"
-                             FormSubtitle="產品的基本資訊"
-                             IndexRoute="/products"
-                             BreadcrumbItems="@breadcrumbItems"
+<GenericEditPageComponent TEntity="Product" 
+                         TService="IProductService"
+                         Id="@Id"
+                         Entity="@product"
+                         Service="@ProductService"
+                         EntityName="產品"
+                         EntityNamePlural="產品"                         
+                         FormTitle="基本資料"
+                         FormSubtitle="產品的基本資訊"
+                         IndexRoute="/products"
+                         RequiredPermission="@(Id.HasValue ? "Product.Update" : "Product.Create")"
+                         BreadcrumbItems="@breadcrumbItems"
                              FormFields="@GetFormFields()"                         
                              FormSections="@GetFormSections()"
                              DataLoader="LoadProductData"
@@ -57,7 +57,6 @@
         }
     </AdditionalSections>
 </GenericEditPageComponent>
-</PagePermissionCheck>
 
 @* 移除舊的 Modal 代碼 *@
 

@@ -5,12 +5,11 @@
 @inject ISupplierService SupplierService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
 
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯材質" : "新增材質")</PageTitle>
-<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Material.Update" : "Material.Create")">
+
 <GenericEditPageComponent TEntity="Material" 
                          TService="IMaterialService"
                          @ref="editComponent"
@@ -21,6 +20,7 @@
                          IndexRoute="/materials"
                          FormTitle="基本資料"
                          FormSubtitle="材質的基本資訊"
+                         RequiredPermission="@(Id.HasValue ? "Material.Update" : "Material.Create")"
                          UseGenericForm="true"
                          FormFields="@GetFormFields()"
                          FormSections="@formSections"
@@ -30,7 +30,7 @@
                          SaveSuccessMessage="@(Id.HasValue ? "材質更新成功" : "材質新增成功")"
                          SaveFailureMessage="材質儲存失敗"
  />
-</PagePermissionCheck>
+
 @code {
     [Parameter] public int? Id { get; set; }
     

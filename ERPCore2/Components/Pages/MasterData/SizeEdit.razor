@@ -4,12 +4,12 @@
 @inject ISizeService SizeService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
+
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯尺寸" : "新增尺寸")</PageTitle>
 
-<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Size.Update" : "Size.Create")">
+
 <GenericEditPageComponent TEntity="Size" 
                          TService="ISizeService"
                          Id="@Id"
@@ -27,9 +27,10 @@
                          DataLoader="@LoadSizeData"
                          SaveHandler="@SaveSize"
                          AdditionalDataLoader="@LoadAdditionalData"
-                         @ref="editComponent">
+                         @ref="editComponent"
+                        RequiredPermission="@(Id.HasValue ? "Size.Update" : "Size.Create")">
 </GenericEditPageComponent>
-</PagePermissionCheck>
+
 
 @code {
     [Parameter] public int? Id { get; set; }
@@ -268,3 +269,4 @@
         }
     }
 }
+

@@ -1,13 +1,12 @@
 @page "/products/detail/{productId:int}"
 
 @inject IProductService ProductService
-@inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 @inject INotificationService NotificationService
 @inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Product.Read">
+
     <GenericDetailPageComponent TEntity="Product" 
                                TService="IProductService"
                                EntityId="@ProductId"
@@ -26,9 +25,9 @@
                            EntityDisplayNameSelector="@(p => p.ProductName)"
                            OnDataLoaded="@OnProductDataLoaded"
                            UseTabLayout="true"
-                           TabSections="@GetTabSections()">
+                           TabSections="@GetTabSections()" RequiredPermission="Product.Read">
     </GenericDetailPageComponent>
-</PagePermissionCheck>
+
 
 @code {
     [Parameter] public int ProductId { get; set; }
@@ -234,11 +233,13 @@
     }
 
     // 設定標籤頁結構
-    private List<GenericDetailPageComponent<Product, IProductService>.TabSection> GetTabSections()
+    private List<GenericDetailPageComponent<Product, IProductService
+                        >.TabSection> GetTabSections()
     {
         try
         {
-            return new List<GenericDetailPageComponent<Product, IProductService>.TabSection>
+            return new List<GenericDetailPageComponent<Product, IProductService
+                        >.TabSection>
             {
                 new GenericDetailPageComponent<Product, IProductService>.TabSection
                 {
@@ -379,7 +380,8 @@
                 additionalData: new { ProductId = product?.Id, PageName = "ProductDetail" });
             
             // 返回最基本的標籤頁結構
-            return new List<GenericDetailPageComponent<Product, IProductService>.TabSection>
+            return new List<GenericDetailPageComponent<Product, IProductService
+                        >.TabSection>
             {
                 new GenericDetailPageComponent<Product, IProductService>.TabSection
                 {
@@ -526,3 +528,7 @@
         }
     }
 }
+
+
+
+

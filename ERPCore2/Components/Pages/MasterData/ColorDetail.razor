@@ -4,7 +4,7 @@
 
 @rendermode InteractiveServer
 
-    <PagePermissionCheck RequiredPermission="Color.Read">
+    
     <GenericDetailPageComponent TEntity="Color" 
                             TService="IColorService"
                             EntityId="@ColorId"
@@ -22,9 +22,9 @@
                             EntitySubtitleSelector="@(c => $"顏色代碼：{c.Code ?? "未設定"}")"
                             EntityDisplayNameSelector="@(c => c.Name)"
                             OnDataLoaded="@OnColorDataLoaded"
-                            TabSections="@GetTabSections()">
+                            TabSections="@GetTabSections()" RequiredPermission="Color.Read">
     </GenericDetailPageComponent>
-</PagePermissionCheck>
+
 @code {
     [Parameter] public int ColorId { get; set; }
 
@@ -109,11 +109,13 @@
             throw;
         }
     }    // 設定標籤頁結構
-    private List<GenericDetailPageComponent<Color, IColorService>.TabSection> GetTabSections()
+    private List<GenericDetailPageComponent<Color, IColorService
+                        >.TabSection> GetTabSections()
     {
         try
         {
-            return new List<GenericDetailPageComponent<Color, IColorService>.TabSection>
+            return new List<GenericDetailPageComponent<Color, IColorService
+                        >.TabSection>
             {            new GenericDetailPageComponent<Color, IColorService>.TabSection
                 {
                     Id = "basic",
@@ -225,3 +227,7 @@
         }
     }
 }
+
+
+
+

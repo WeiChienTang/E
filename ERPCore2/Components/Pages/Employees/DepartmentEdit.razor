@@ -1,13 +1,12 @@
 @page "/departments/edit"
 @page "/departments/edit/{id:int?}"
 @inject IDepartmentService DepartmentService
-@inject NavigationManager Navigation
 @inject INotificationService NotificationService 
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯部門" : "新增部門")</PageTitle>
 
-<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Department.Update" : "Department.Create")">
+
     <GenericEditPageComponent TEntity="Department" 
                             TService="IDepartmentService"
                             @ref="editComponent"
@@ -27,8 +26,8 @@
                             UseGenericSave="true"
                             SaveSuccessMessage="@(Id.HasValue ? "部門更新成功" : "部門新增成功")"
                             SaveFailureMessage="部門儲存失敗"
-    />
-</PagePermissionCheck>
+                            RequiredPermission="@(Id.HasValue ? "Department.Update" : "Department.Create")" />
+
 
 @code {
     [Parameter] public int? Id { get; set; }
@@ -200,17 +199,27 @@
             
             if (department == null)
             {
-                await NotificationService.ShowErrorAsync("找不到指定的部門資料");
-                Navigation.NavigateTo("/departments");
-                return null;
+                // 如果找不到部門，建立新的預設部門
+                return new Department
+                {
+                    Status = EntityStatus.Active,
+                    SortOrder = 0
+                };
             }
             return department;
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDepartmentData), GetType());
-            Navigation.NavigateTo("/departments");
-            return null;
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDepartmentData), GetType(), NotificationService);
+            
+            // 設定安全的預設值，確保程式不會崩潰
+            return new Department
+            {
+                DepartmentCode = "ERROR",
+                Name = "ERROR",
+                Status = EntityStatus.Active,
+                SortOrder = 0
+            };
         }
     }
 
@@ -228,3 +237,4 @@
         }
     }
 }
+

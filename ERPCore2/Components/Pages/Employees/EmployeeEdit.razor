@@ -16,7 +16,7 @@
 @implements IDisposable
 
 <PageTitle>@GetPageTitle()</PageTitle>
-<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Employee.Update" : "Employee.Create")">
+
     <GenericEditPageComponent TEntity="Employee" 
                             TService="IEmployeeService"
                             Id="@Id"
@@ -37,7 +37,8 @@
                             AfterSave="@AfterSaveEmployee"
                             SaveSuccessMessage="@(Id.HasValue ? "員工更新成功" : "員工新增成功")"
                             SaveFailureMessage="員工儲存失敗"
-                            AdditionalDataLoader="@LoadAdditionalData">
+                            AdditionalDataLoader="@LoadAdditionalData"
+                        RequiredPermission="@(Id.HasValue ? "Employee.Update" : "Employee.Create")">
 
         <AdditionalSections>
             @* 密碼設定區塊（僅新增模式） *@
@@ -290,7 +291,7 @@
                                 ItemsChanged="@OnEmployeeAddressesChanged" />
         </AdditionalSections>
     </GenericEditPageComponent>
-</PagePermissionCheck>
+
 @code {
     [Parameter] public int? Id { get; set; }
     
@@ -1121,3 +1122,4 @@
         _loadingSemaphore?.Dispose();
     }
 }
+

@@ -4,13 +4,12 @@
 @inject ISupplierTypeService SupplierTypeService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
 
 @rendermode InteractiveServer
 @implements IDisposable
 
 <PageTitle>@GetPageTitle()</PageTitle>
-<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "SupplierType.Update" : "SupplierType.Create")">
+
 <GenericEditPageComponent TEntity="SupplierType" 
                          TService="ISupplierTypeService"
                          Id="@Id"
@@ -29,9 +28,10 @@
                          UseGenericSave="true"
                          CustomValidator="@ValidateSupplierType"
                          SaveSuccessMessage="@(Id.HasValue ? "廠商類型更新成功" : "廠商類型新增成功")"
-                         SaveFailureMessage="廠商類型儲存失敗">
+                         SaveFailureMessage="廠商類型儲存失敗"
+                        RequiredPermission="@(Id.HasValue ? "SupplierType.Update" : "SupplierType.Create")">
 </GenericEditPageComponent>
-</PagePermissionCheck>
+
 @code {
     [Parameter] public int? Id { get; set; }
     
@@ -267,3 +267,4 @@
         }
     }
 }
+

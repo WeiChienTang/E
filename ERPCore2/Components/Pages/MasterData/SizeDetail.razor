@@ -1,11 +1,9 @@
 @page "/sizes/detail/{sizeId:int}"
 
 @inject ISizeService SizeService
-@inject IJSRuntime JSRuntime
-@inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Size.Read">
+
 <GenericDetailPageComponent TEntity="Size" 
                            TService="ISizeService"
                            EntityId="@SizeId"
@@ -24,9 +22,9 @@
                            EntityDisplayNameSelector="@(s => s.SizeName)"
                            OnDataLoaded="@OnSizeDataLoaded"
                            UseTabLayout="true"
-                           TabSections="@GetTabSections()">
+                           TabSections="@GetTabSections()" RequiredPermission="Size.Read">
 </GenericDetailPageComponent>
-</PagePermissionCheck>
+
 
 @code {
     [Parameter] public int SizeId { get; set; }
@@ -106,11 +104,13 @@
     }
 
     // 設定標籤頁結構
-    private List<GenericDetailPageComponent<Size, ISizeService>.TabSection> GetTabSections()
+    private List<GenericDetailPageComponent<Size, ISizeService
+                        >.TabSection> GetTabSections()
     {
         try
         {
-            return new List<GenericDetailPageComponent<Size, ISizeService>.TabSection>
+            return new List<GenericDetailPageComponent<Size, ISizeService
+                        >.TabSection>
             {           
                  new GenericDetailPageComponent<Size, ISizeService>.TabSection
                 {
@@ -267,3 +267,7 @@
         }
     }
 }
+
+
+
+

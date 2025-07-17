@@ -3,7 +3,7 @@
 @inject IPermissionManagementService PermissionService
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Permission.Read">
+
     <GenericDetailPageComponent TEntity="Permission" 
                             TService="IPermissionManagementService"
                             EntityId="@PermissionId"
@@ -22,9 +22,9 @@
                             EntityDisplayNameSelector="@(p => p.PermissionName)"
                             OnDataLoaded="@OnPermissionDataLoaded"
                             UseTabLayout="true"
-                            TabSections="@GetTabSections()">
+                            TabSections="@GetTabSections()" RequiredPermission="Permission.Read">
     </GenericDetailPageComponent>
-</PagePermissionCheck>
+
 
 @code {
     [Parameter] public int PermissionId { get; set; }
@@ -103,11 +103,13 @@
     }
 
     // 設定標籤頁結構
-    private List<GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection> GetTabSections()
+    private List<GenericDetailPageComponent<Permission, IPermissionManagementService
+                        >.TabSection> GetTabSections()
     {
         try
         {
-            return new List<GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection>
+            return new List<GenericDetailPageComponent<Permission, IPermissionManagementService
+                        >.TabSection>
             {
                 new GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection
                 {
@@ -195,7 +197,8 @@
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetTabSections), GetType(),
                 additionalData: new { PermissionId = PermissionId });
-            return new List<GenericDetailPageComponent<Permission, IPermissionManagementService>.TabSection>();
+            return new List<GenericDetailPageComponent<Permission, IPermissionManagementService
+                        >.TabSection>();
         }
     }
 
@@ -261,3 +264,7 @@
         }
     }
 }
+
+
+
+

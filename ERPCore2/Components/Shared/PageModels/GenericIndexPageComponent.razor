@@ -9,7 +9,17 @@
 @* 設置瀏覽器標題 *@
 <PageTitle>@PageTitle</PageTitle>
 
-<PagePermissionCheck RequiredPermission="@RequiredPermission">
+@{
+    // 權限檢查 - 如果沒有設定權限，預設拒絕存取
+    string requiredPermission = RequiredPermission;
+    if (string.IsNullOrWhiteSpace(requiredPermission))
+    {
+        // 安全起見，如果沒有設定權限，設定為一個不存在的權限以確保拒絕存取
+        requiredPermission = "System.RequiredPermissionNotSet";
+    }
+}
+
+<PagePermissionCheck RequiredPermission="@requiredPermission">
 
 @* 頁面標題 *@
 <GenericHeaderComponent Title="@PageTitle"

@@ -3,7 +3,7 @@
 @inject IEmployeePositionService EmployeePositionService
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="EmployeePosition.Read">
+
     <GenericDetailPageComponent TEntity="EmployeePosition" 
                             TService="IEmployeePositionService"
                             EntityId="@PositionId"
@@ -21,9 +21,9 @@
                             EntitySubtitleSelector="@(p => $"職位代碼：{p.Code ?? "未設定"} | 等級：{p.Level?.ToString() ?? "未設定"}")"
                             EntityDisplayNameSelector="@(p => p.Name)"
                             OnDataLoaded="@OnPositionDataLoaded"
-                            TabSections="@GetTabSections()">
+                            TabSections="@GetTabSections()" RequiredPermission="EmployeePosition.Read">
     </GenericDetailPageComponent>
-</PagePermissionCheck>
+
 @code {
     [Parameter] public int PositionId { get; set; }
 
@@ -116,11 +116,13 @@
     }
 
     // 設定標籤頁結構
-    private List<GenericDetailPageComponent<EmployeePosition, IEmployeePositionService>.TabSection> GetTabSections()
+    private List<GenericDetailPageComponent<EmployeePosition, IEmployeePositionService
+                        >.TabSection> GetTabSections()
     {
         try
         {
-            return new List<GenericDetailPageComponent<EmployeePosition, IEmployeePositionService>.TabSection>
+            return new List<GenericDetailPageComponent<EmployeePosition, IEmployeePositionService
+                        >.TabSection>
             {
                 new GenericDetailPageComponent<EmployeePosition, IEmployeePositionService>.TabSection
                 {
@@ -306,3 +308,7 @@
         }
     }
 }
+
+
+
+

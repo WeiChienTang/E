@@ -4,13 +4,12 @@
 @inject IWeatherService WeatherService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
 
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯天氣" : "新增天氣")</PageTitle>
 
-<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Weather.Update" : "Weather.Create")">
+
 <GenericEditPageComponent TEntity="Weather" 
                          TService="IWeatherService"
                          @ref="editComponent"
@@ -23,12 +22,14 @@
                          FormSubtitle="天氣的基本資訊"
                          UseGenericForm="true"
                          FormFields="@GetFormFields()"
-                         FormSections="@formSections"                         BreadcrumbItems="@breadcrumbItems"
+                         FormSections="@formSections"                         
+                         BreadcrumbItems="@breadcrumbItems"
                          DataLoader="@LoadWeatherData"
                          UseGenericSave="true"
                          SaveSuccessMessage="@(Id.HasValue ? "天氣更新成功" : "天氣新增成功")"
-                         SaveFailureMessage="天氣儲存失敗"/>
-</PagePermissionCheck>
+                         SaveFailureMessage="天氣儲存失敗"
+                         RequiredPermission="@(Id.HasValue ? "Weather.Update" : "Weather.Create")" />
+
 
 @code {
     [Parameter] public int? Id { get; set; }
@@ -172,3 +173,4 @@
         }
     }
 }
+

@@ -6,7 +6,7 @@
 
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Customer.Read">
+
     <GenericDetailPageComponent TEntity="Customer" 
                            TService="ICustomerService"
                            EntityId="@CustomerId"
@@ -25,9 +25,9 @@
                            EntityDisplayNameSelector="@(c => c.CompanyName)"
                            OnDataLoaded="@OnCustomerDataLoaded"
                            UseTabLayout="true"
-                           TabSections="@GetTabSections()">
+                           TabSections="@GetTabSections()" RequiredPermission="Customer.Read">
 </GenericDetailPageComponent>
-</PagePermissionCheck>
+
 
 @code {
     [Parameter] public int CustomerId { get; set; }
@@ -172,11 +172,13 @@
     }
 
     // 設定標籤頁結構
-    private List<GenericDetailPageComponent<Customer, ICustomerService>.TabSection> GetTabSections()
+    private List<GenericDetailPageComponent<Customer, ICustomerService
+                        >.TabSection> GetTabSections()
     {
         try
         {
-            return new List<GenericDetailPageComponent<Customer, ICustomerService>.TabSection>
+            return new List<GenericDetailPageComponent<Customer, ICustomerService
+                        >.TabSection>
             {           
                  new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
                 {
@@ -252,7 +254,8 @@
             );
             
             // 返回基本標籤頁結構
-            return new List<GenericDetailPageComponent<Customer, ICustomerService>.TabSection>
+            return new List<GenericDetailPageComponent<Customer, ICustomerService
+                        >.TabSection>
             {
                 new GenericDetailPageComponent<Customer, ICustomerService>.TabSection
                 {
@@ -397,3 +400,7 @@
         }
     }
 }
+
+
+
+

@@ -3,7 +3,7 @@
 @inject IRoleService RoleService
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Role.Read">
+
     <GenericDetailPageComponent TEntity="Role" 
                             TService="IRoleService"
                             EntityId="@RoleId"
@@ -21,9 +21,9 @@
                             EntitySubtitleSelector="@(r => $"權限數量：{r.RolePermissions?.Count ?? 0} 個")"
                             EntityDisplayNameSelector="@(r => r.RoleName)"
                             OnDataLoaded="@OnRoleDataLoaded"
-                            TabSections="@GetTabSections()">
+                            TabSections="@GetTabSections()" RequiredPermission="Role.Read">
     </GenericDetailPageComponent>
-</PagePermissionCheck>
+
 @code {
     [Parameter] public int RoleId { get; set; }
 
@@ -128,11 +128,13 @@
     }
 
     // 設定標籤頁結構
-    private List<GenericDetailPageComponent<Role, IRoleService>.TabSection> GetTabSections()
+    private List<GenericDetailPageComponent<Role, IRoleService
+                        >.TabSection> GetTabSections()
     {
         try
         {
-            return new List<GenericDetailPageComponent<Role, IRoleService>.TabSection>
+            return new List<GenericDetailPageComponent<Role, IRoleService
+                        >.TabSection>
             {            new GenericDetailPageComponent<Role, IRoleService>.TabSection
             {
                 Id = "basic",
@@ -280,3 +282,7 @@
         }
     }
 }
+
+
+
+

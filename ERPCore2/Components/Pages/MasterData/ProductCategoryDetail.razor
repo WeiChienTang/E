@@ -1,11 +1,9 @@
 @page "/product-categories/detail/{productCategoryId:int}"
 
 @inject IProductCategoryService ProductCategoryService
-@inject IJSRuntime JSRuntime
-@inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="ProductCategory.Read">
+
     <GenericDetailPageComponent TEntity="ProductCategory" 
                             TService="IProductCategoryService"
                             EntityId="@ProductCategoryId"
@@ -24,9 +22,9 @@
                             EntityDisplayNameSelector="@(c => c.CategoryName)"
                             OnDataLoaded="@OnProductCategoryDataLoaded"
                             UseTabLayout="true"
-                            TabSections="@GetTabSections()">
+                            TabSections="@GetTabSections()" RequiredPermission="ProductCategory.Read">
     </GenericDetailPageComponent>
-</PagePermissionCheck>
+
 @code {
     [Parameter] public int ProductCategoryId { get; set; }
 
@@ -113,11 +111,13 @@
     }
 
     // 設定標籤頁結構
-    private List<GenericDetailPageComponent<ProductCategory, IProductCategoryService>.TabSection> GetTabSections()
+    private List<GenericDetailPageComponent<ProductCategory, IProductCategoryService
+                        >.TabSection> GetTabSections()
     {
         try
         {
-            return new List<GenericDetailPageComponent<ProductCategory, IProductCategoryService>.TabSection>
+            return new List<GenericDetailPageComponent<ProductCategory, IProductCategoryService
+                        >.TabSection>
             {
                 new GenericDetailPageComponent<ProductCategory, IProductCategoryService>.TabSection
                 {
@@ -334,3 +334,7 @@
         }
     }
 }
+
+
+
+

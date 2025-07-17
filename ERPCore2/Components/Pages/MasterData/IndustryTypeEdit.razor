@@ -3,11 +3,10 @@
 
 @inject IIndustryTypeService IndustryTypeService
 @inject INotificationService NotificationService
-@inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯行業類型" : "新增行業類型")</PageTitle>
-<PagePermissionCheck RequiredPermission="@(Id.HasValue ? "IndustryType.Update" : "IndustryType.Create")">
+
 <GenericEditPageComponent TEntity="IndustryType" 
                          TService="IIndustryTypeService"
                          Id="@Id"
@@ -18,6 +17,7 @@
                          FormTitle="基本資料"
                          FormSubtitle="行業類型的基本分類資訊"
                          IndexRoute="/industrytypes"
+                         RequiredPermission="@(Id.HasValue ? "IndustryType.Update" : "IndustryType.Create")"
                          UseGenericForm="true"
                          FormFields="@formFields"
                          FormSections="@formSections"
@@ -25,7 +25,7 @@
                          DataLoader="@LoadIndustryTypeData"
                          SaveHandler="@SaveIndustryType"
                          @ref="editComponent" />
-</PagePermissionCheck>
+
 @code {
     [Parameter] public int? Id { get; set; }
     
@@ -161,9 +161,11 @@
                 return industryType;
             }            else
             {
-                await NotificationService.ShowErrorAsync("找不到指定的行業類型");
-                Navigation.NavigateTo("/industrytypes");
-                return null;
+                // 如果找不到行業類型，建立新的預設行業類型
+                return new IndustryType
+                {
+                    Status = EntityStatus.Active
+                };
             }
         }
         catch (Exception ex)
@@ -171,9 +173,16 @@
             _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(LoadIndustryTypeData),
-                GetType()
+                GetType(),
+                NotificationService
             );
-            throw;
+            
+            // 設定安全的預設值，確保程式不會崩潰
+            return new IndustryType
+            {
+                IndustryTypeName = "ERROR",
+                Status = EntityStatus.Active
+            };
         }
     }
     
@@ -201,7 +210,7 @@
             }            if (result.IsSuccess)
             {
                 await NotificationService.ShowSuccessAsync(Id.HasValue ? "行業類型更新成功" : "行業類型新增成功");
-                Navigation.NavigateTo("/industrytypes");
+                // 不再自動跳轉，讓使用者決定是否繼續編輯
                 return true;
             }
             else

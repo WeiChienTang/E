@@ -9,7 +9,7 @@
 @inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 
-<PagePermissionCheck RequiredPermission="Supplier.Read">
+
     <GenericDetailPageComponent TEntity="Supplier" 
                                TService="ISupplierService"
                                EntityId="@SupplierId"
@@ -26,9 +26,9 @@
                            EntityTitleSelector="@(s => s.CompanyName)"
                            EntitySubtitleSelector="@(s => $"廠商編號：{s.SupplierCode}")"                           EntityDisplayNameSelector="@(s => s.CompanyName)"                           OnDataLoaded="@OnSupplierDataLoaded"
                            UseTabLayout="true"
-                           TabSections="@GetTabSections()">
+                           TabSections="@GetTabSections()" RequiredPermission="Supplier.Read">
     </GenericDetailPageComponent>
-</PagePermissionCheck>
+
 
 @code {
     [Parameter] public int SupplierId { get; set; }
@@ -150,11 +150,13 @@
     }
 
     // 設定標籤頁結構
-    private List<GenericDetailPageComponent<Supplier, ISupplierService>.TabSection> GetTabSections()
+    private List<GenericDetailPageComponent<Supplier, ISupplierService
+                        >.TabSection> GetTabSections()
     {
         try
         {
-            return new List<GenericDetailPageComponent<Supplier, ISupplierService>.TabSection>
+            return new List<GenericDetailPageComponent<Supplier, ISupplierService
+                        >.TabSection>
             {            new GenericDetailPageComponent<Supplier, ISupplierService>.TabSection
                 {
                     Id = "basic",
@@ -223,7 +225,8 @@
                 nameof(GetTabSections),
                 GetType(),
                 additionalData: new { SupplierId = SupplierId });
-            return new List<GenericDetailPageComponent<Supplier, ISupplierService>.TabSection>();
+            return new List<GenericDetailPageComponent<Supplier, ISupplierService
+                        >.TabSection>();
         }
     }
 
@@ -380,3 +383,7 @@
         }
     }
 }
+
+
+
+
