@@ -1,12 +1,11 @@
 @page "/weather/edit"
 @page "/weather/edit/{id:int?}"
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
+
 @inject IWeatherService WeatherService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@using ERPCore2.Helpers
+
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯天氣" : "新增天氣")</PageTitle>

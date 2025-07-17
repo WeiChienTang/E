@@ -1,7 +1,6 @@
 @page "/colors/edit"
 @page "/colors/edit/{id:int?}"
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
+
 @inject IColorService ColorService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime

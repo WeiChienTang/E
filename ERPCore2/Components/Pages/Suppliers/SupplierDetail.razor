@@ -1,12 +1,5 @@
 @page "/suppliers/detail/{supplierId:int}"
-@using Microsoft.AspNetCore.Authorization
-@using ERPCore2.Components.Shared
-@using ERPCore2.Components.Shared.Details
-@using ERPCore2.Components.Shared.Badges
-@using ERPCore2.Components.Shared.Buttons
-@using ERPCore2.Extensions
-@using ERPCore2.Helpers
-@attribute [Authorize]
+
 @inject ISupplierService SupplierService
 @inject ISupplierContactService SupplierContactService
 @inject ISupplierAddressService SupplierAddressService

@@ -1,13 +1,5 @@
 @page "/weather/detail/{weatherId:int}"
-@using Microsoft.AspNetCore.Authorization
-@using ERPCore2.Components.Shared
-@using ERPCore2.Components.Shared.Details
-@using ERPCore2.Components.Shared.Badges
-@using ERPCore2.Components.Shared.Headers
-@using ERPCore2.Data.Entities
-@using ERPCore2.Data.Enums
-@using ERPCore2.Helpers
-@attribute [Authorize]
+
 @inject IWeatherService WeatherService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation

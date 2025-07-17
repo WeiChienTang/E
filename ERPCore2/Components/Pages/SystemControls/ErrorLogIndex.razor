@@ -1,16 +1,6 @@
 @page "/error-logs"
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
-@using ERPCore2.Data.Entities
-@using ERPCore2.Data.Enums
-@using ERPCore2.Services
-@using ERPCore2.Components.Shared.Headers
-@using ERPCore2.Components.Shared.Alerts
-@using ERPCore2.Components.Shared.Loading
-@using ERPCore2.Components.Shared.Buttons
-@using ERPCore2.Components.Shared.Forms
-@using ERPCore2.Components.Shared.Tables
-@using Microsoft.AspNetCore.Components.Web
 @inject IErrorLogService ErrorLogService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime

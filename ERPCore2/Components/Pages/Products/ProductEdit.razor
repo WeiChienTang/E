@@ -1,11 +1,6 @@
 @page "/products/edit"
 @page "/products/edit/{id:int?}"
-@using Microsoft.AspNetCore.Authorization
-@using ERPCore2.Data.Entities
-@using ERPCore2.Services
-@using ERPCore2.Data.Enums
-@using ERPCore2.Components.Shared.SubCollections
-@attribute [Authorize]
+
 @inject IProductService ProductService
 @inject IProductCategoryService ProductCategoryService
 @inject ISupplierService SupplierService

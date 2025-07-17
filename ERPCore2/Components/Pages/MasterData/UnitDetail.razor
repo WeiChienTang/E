@@ -1,7 +1,5 @@
 @page "/units/detail/{unitId:int}"
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
-@using ERPCore2.Helpers
+
 @inject IUnitService UnitService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation

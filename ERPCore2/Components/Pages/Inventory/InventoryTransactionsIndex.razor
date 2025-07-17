@@ -1,15 +1,5 @@
 @page "/inventory/transactions"
-@using Microsoft.AspNetCore.Authorization
-@using ERPCore2.Data.Entities
-@using ERPCore2.Data.Enums
-@using ERPCore2.Services
-@using ERPCore2.Helpers
-@using ERPCore2.Components.Shared.Forms
-@using ERPCore2.Components.Shared.Tables
-@using ERPCore2.Components.Shared.Auth
-@using ERPCore2.Components.Shared.Headers
-@using Microsoft.AspNetCore.Components.Web
-@attribute [Authorize]
+
 @inject IInventoryTransactionService InventoryTransactionService
 @inject IProductService ProductService
 @inject IWarehouseService WarehouseService

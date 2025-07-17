@@ -1,10 +1,5 @@
 @page "/updates"
-@using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
-@using ERPCore2.Models
-@using ERPCore2.Services
-@using ERPCore2.Components.Shared.Tables
-@using ERPCore2.Components.Shared.Headers
 @inject IUpdateService UpdateService
 @inject IJSRuntime JSRuntime
 <PagePermissionCheck RequiredPermission="SystemControl.ViewUpdates">

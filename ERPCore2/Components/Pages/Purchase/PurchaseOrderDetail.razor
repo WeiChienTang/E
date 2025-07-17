@@ -1,16 +1,5 @@
 @page "/purchase/orders/{id:int}"
-@using Microsoft.AspNetCore.Authorization
-@using ERPCore2.Components.Shared.Auth
-@using ERPCore2.Components.Shared.Headers
-@using ERPCore2.Components.Shared.Cards
-@using ERPCore2.Components.Shared.Tables
-@using ERPCore2.Components.Shared.Buttons
-@using ERPCore2.Data.Entities
-@using ERPCore2.Data.Enums
-@using ERPCore2.Services
-@using ERPCore2.Helpers
-@using ERPCore2.Models
-@attribute [Authorize]
+
 @inject IPurchaseOrderService PurchaseOrderService
 @inject IPurchaseReceiptService PurchaseReceiptService
 @inject INotificationService NotificationService

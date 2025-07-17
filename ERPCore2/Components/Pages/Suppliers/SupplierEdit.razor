@@ -1,7 +1,6 @@
 @page "/suppliers/edit"
 @page "/suppliers/edit/{id:int?}"
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
+
 @inject ISupplierService SupplierService
 @inject ISupplierAddressService SupplierAddressService
 @inject ISupplierContactService SupplierContactService
@@ -11,8 +10,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject IErrorLogService ErrorLogService
-@using ERPCore2.Components.Shared.SubCollections
-@using ERPCore2.Helpers
+
 @inject INotificationService NotificationService
 @rendermode InteractiveServer
 @implements IDisposable

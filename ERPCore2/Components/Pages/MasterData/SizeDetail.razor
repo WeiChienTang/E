@@ -1,7 +1,5 @@
 @page "/sizes/detail/{sizeId:int}"
-@using Microsoft.AspNetCore.Authorization
-@using ERPCore2.Helpers
-@attribute [Authorize]
+
 @inject ISizeService SizeService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation

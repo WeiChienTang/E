@@ -1,17 +1,5 @@
 @page "/purchase/receipts"
-@using Microsoft.AspNetCore.Authorization
-@using ERPCore2.Components.Shared.Forms
-@using ERPCore2.Components.Shared.Tables
-@using ERPCore2.Components.Shared.Headers
-@using ERPCore2.Components.Shared.Auth
-@using ERPCore2.Services
-@using ERPCore2.Data.Entities
-@using ERPCore2.Data.Enums
-@using ERPCore2.Helpers
-@using ERPCore2.Models
-@using System.ComponentModel.DataAnnotations
-@using System.Reflection
-@attribute [Authorize]
+
 @inject IPurchaseReceiptService PurchaseReceiptService
 @inject IPurchaseOrderService PurchaseOrderService
 @inject IWarehouseService WarehouseService

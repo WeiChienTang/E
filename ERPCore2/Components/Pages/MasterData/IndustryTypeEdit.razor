@@ -1,15 +1,6 @@
 @page "/industrytypes/edit"
 @page "/industrytypes/edit/{id:int?}"
-@attribute [Authorize]
-@using Microsoft.AspNetCore.Authorization
-@using ERPCore2.Data.Entities
-@using ERPCore2.Services
-@using ERPCore2.Data.Enums
-@using ERPCore2.Components.Shared.Forms
-@using ERPCore2.Components.Shared.Headers
-@using ERPCore2.Components.Shared.PageModels
-@using ERPCore2.Helpers
-@using Microsoft.AspNetCore.Components.Forms
+
 @inject IIndustryTypeService IndustryTypeService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation

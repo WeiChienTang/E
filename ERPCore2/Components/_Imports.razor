@@ -1,5 +1,7 @@
 @using System.Net.Http
 @using System.Net.Http.Json
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Routing
 @using Microsoft.AspNetCore.Components.Web
@@ -20,6 +22,9 @@
 
 @* Services資料夾*@
 @using ERPCore2.Services
+
+@* Helpers資料夾 *@
+@using ERPCore2.Helpers
 
 @* 共享組件 *@
 @using ERPCore2.Components.Shared
@@ -48,4 +53,3 @@
 @* 錯誤記錄相關 *@
 @using ERPCore2.Components.Pages.SystemControls
 @using ERPCore2.Components.Pages.ErrorHandling
-@using ERPCore2.Helpers

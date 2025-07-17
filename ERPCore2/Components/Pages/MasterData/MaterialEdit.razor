@@ -1,13 +1,12 @@
 @page "/materials/edit"
 @page "/materials/edit/{id:int?}"
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
+
 @inject IMaterialService MaterialService
 @inject ISupplierService SupplierService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@using ERPCore2.Helpers
+
 @rendermode InteractiveServer
 
 <PageTitle>@(Id.HasValue ? "編輯材質" : "新增材質")</PageTitle>

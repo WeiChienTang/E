@@ -1,7 +1,5 @@
 @page "/warehouses/detail/{warehouseId:int}"
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
-@using ERPCore2.Helpers
+
 @inject IWarehouseService WarehouseService
 @inject IErrorLogService ErrorLogService
 @inject INotificationService NotificationService

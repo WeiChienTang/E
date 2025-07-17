@@ -1,13 +1,5 @@
 @page "/materials/detail/{materialId:int}"
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
-@using ERPCore2.Components.Shared
-@using ERPCore2.Components.Shared.Details
-@using ERPCore2.Components.Shared.Badges
-@using ERPCore2.Components.Shared.Headers
-@using ERPCore2.Data.Entities
-@using ERPCore2.Data.Enums
-@using ERPCore2.Helpers
+
 @inject IMaterialService MaterialService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation

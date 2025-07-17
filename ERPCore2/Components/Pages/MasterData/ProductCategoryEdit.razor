@@ -1,7 +1,6 @@
 @page "/product-categories/edit"
 @page "/product-categories/edit/{id:int?}"
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
+
 @inject IProductCategoryService ProductCategoryService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
