@@ -7,38 +7,6 @@
 /* Bootstrap 覆寫 - 全域必要的基礎樣式 */
 /* ========================================= */
 
-/* 表格基礎樣式覆寫 */
-.table {
-  --bs-table-bg: var(--bg-primary);
-  --bs-table-border-color: var(--border-color);
-}
-
-.table-striped > tbody > tr:nth-of-type(odd) > td {
-  background-color: var(--bg-secondary);
-}
-
-/* 表格 hover 效果 - 全域統一 */
-.table-hover > tbody > tr:hover > td,
-.table-hover > tbody > tr:hover > th {
-  background-color: var(--table-hover-bg);
-  color: var(--table-hover-text);
-  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
-}
-
-.table-striped.table-hover > tbody > tr:hover > td,
-.table-striped.table-hover > tbody > tr:hover > th {
-  background-color: var(--table-hover-bg-striped);
-  color: var(--table-hover-text);
-}
-
-/* 表格標題樣式 - 跨組件使用 */
-.table-header-primary th {
-  background-color: var(--primary-blue-alt);
-  color: var(--primary-white);
-  border-color: var(--primary-blue);
-  font-weight: 600;
-}
-
 /* 卡片基礎樣式覆寫 */
 .card {
   background-color: var(--bg-primary);
@@ -228,6 +196,37 @@
     width: 1rem !important;
     height: 1rem !important;
     line-height: 1 !important;
+}
+
+/* ========================================= */
+/* 表格操作按鈕樣式 */
+/* ========================================= */
+
+/* 表格操作欄位寬度控制 */
+.table-actions-column {
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+}
+
+/* 表格操作按鈕組樣式 */
+.table-actions-group {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.table-actions-group .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.2;
+    border-radius: 0.25rem;
+}
+
+.table-actions-group .btn i {
+    font-size: 0.875rem;
 }
 
 /* ========================================= */

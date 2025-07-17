@@ -27,7 +27,7 @@
                     }
                     @if (ShowActions)
                     {
-                        <th scope="col" class="text-center">@ActionsHeader</th>
+                        <th scope="col" class="text-center table-actions-column">@ActionsHeader</th>
                     }
                 </tr>
             </thead>
@@ -56,7 +56,7 @@
                         
                         @if (ShowActions && ActionsTemplate != null)
                         {
-                            <td class="text-center">
+                            <td class="text-center table-actions-column">
                                 @ActionsTemplate(item)
                             </td>
                         }
@@ -179,7 +179,8 @@
     [Parameter] public bool ShowActions { get; set; } = false;
     [Parameter] public bool IsStriped { get; set; } = true;
     [Parameter] public bool IsHoverable { get; set; } = true;
-    [Parameter] public bool IsBordered { get; set; } = false;
+    [Parameter] public bool IsBordered { get; set; } = true;
+    [Parameter] public bool ShowColumnBorders { get; set; } = true;
     [Parameter] public TableSize Size { get; set; } = TableSize.Normal;
     [Parameter] public string CssClass { get; set; } = string.Empty;
     [Parameter] public string EmptyMessage { get; set; } = "沒有找到資料";
@@ -215,6 +216,9 @@
         if (IsStriped) classes.Add("table-striped");
         if (IsHoverable) classes.Add("table-hover");
         if (IsBordered) classes.Add("table-bordered");
+        
+        // 添加列邊框樣式
+        if (ShowColumnBorders) classes.Add("table-with-column-borders");
         
         classes.Add(Size switch
         {

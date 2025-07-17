@@ -1,5 +1,54 @@
 /* GenericTableComponent.razor.css - 表格組件專用樣式 */
 
+/* 表格基礎樣式覆寫 - 僅適用於此組件 */
+.table {
+  --bs-table-bg: var(--bg-primary);
+  --bs-table-border-color: var(--border-color);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > td {
+  background-color: var(--bg-secondary);
+}
+
+/* 表格 hover 效果 - 組件專用 */
+.table-hover > tbody > tr:hover > td,
+.table-hover > tbody > tr:hover > th {
+  background-color: var(--table-hover-bg);
+  color: var(--table-hover-text);
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+.table-striped.table-hover > tbody > tr:hover > td,
+.table-striped.table-hover > tbody > tr:hover > th {
+  background-color: var(--table-hover-bg-striped);
+  color: var(--table-hover-text);
+}
+
+/* 表格標題樣式 - 組件專用 */
+.table-header-primary th {
+  background-color: var(--primary-blue-alt);
+  color: var(--primary-white);
+  border-color: var(--primary-blue);
+  font-weight: 600;
+}
+
+/* 表格列邊框樣式 - 組件專用 */
+.table-with-column-borders th,
+.table-with-column-borders td {
+    border-left: 1px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
+}
+
+.table-with-column-borders th:first-child,
+.table-with-column-borders td:first-child {
+    border-left: none;
+}
+
+.table-with-column-borders th:last-child,
+.table-with-column-borders td:last-child {
+    border-right: none;
+}
+
 /* 表格容器 hover 效果 - 參考 NavigationCard 和 GenericSearchFilterComponent 的漂浮效果 */
 .table-container-hover {
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
