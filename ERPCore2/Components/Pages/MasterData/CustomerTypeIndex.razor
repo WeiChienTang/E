@@ -18,7 +18,8 @@
     <GenericIndexPageComponent TEntity="CustomerType" 
                             TService="ICustomerTypeService"
                             Service="@CustomerTypeService"
-                            EntityBasePath="/customer-types"                          PageTitle="客戶類型"
+                            EntityBasePath="/customer-types"                          
+                            PageTitle="客戶類型"
                             PageSubtitle="管理客戶分類類型設定"
                             AddButtonText="新增客戶類型"
                             AddButtonTitle="新增客戶類型"
@@ -36,10 +37,6 @@
                             GetEntityDisplayName="@(customerType => customerType.TypeName)"
                             DeleteSuccessMessage="客戶類型刪除成功"
                             DeleteConfirmMessage="確定要刪除客戶類型「{0}」嗎？"
-                            EnableStandardActions="true"
-                            ShowViewButton="true"
-                            ShowEditButton="true"
-                            ShowDeleteButton="true"
                             @ref="indexComponent" />
 </PagePermissionCheck>
 

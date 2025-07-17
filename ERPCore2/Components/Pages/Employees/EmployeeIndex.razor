@@ -34,10 +34,6 @@
                             GetEntityDisplayName="@(employee => $"{employee.FirstName} {employee.LastName}".Trim())"
                             DeleteSuccessMessage="員工刪除成功"
                             DeleteConfirmMessage="確定要刪除員工「{0}」嗎？"
-                            EnableStandardActions="true"
-                            ShowViewButton="true"
-                            ShowEditButton="true"
-                            ShowDeleteButton="true"
                             CustomActionsTemplate="@EmployeeCustomActions"
                             @ref="indexComponent" />
 </PagePermissionCheck>
