@@ -20,10 +20,6 @@
                             EntityBasePath="/product-categories"                          
                             PageTitle="商品類型"
                             PageSubtitle="管理所有商品類型資料與階層結構"
-                            AddButtonText="新增商品類型"
-                            AddButtonTitle="新增商品類型資料"
-                            SearchSectionTitle="商品類型搜尋與管理"
-                            EmptyMessage="沒有找到符合條件的商品類型資料"                          
                             DataLoader="@LoadDataAsync"
                             FilterApplier="@ApplyProductCategoryFilters"
                             BreadcrumbItems="@breadcrumbItems"
@@ -31,8 +27,6 @@
                             ColumnDefinitions="@columnDefinitions"
                             EntityName="商品類型"
                             GetEntityDisplayName="@(category => category.CategoryName)"
-                            DeleteSuccessMessage="商品類型刪除成功"
-                            DeleteConfirmMessage="確定要刪除商品類型「{0}」嗎？"
                             @ref="indexComponent">
     </GenericIndexPageComponent>
 </PagePermissionCheck>

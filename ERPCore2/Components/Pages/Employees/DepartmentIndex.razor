@@ -26,10 +26,6 @@
                             EntityBasePath="/departments"                          
                             PageTitle="部門設定"
                             PageSubtitle="設定公司組織架構與部門資訊"
-                            AddButtonText="新增部門"
-                            AddButtonTitle="新增部門資料"
-                            SearchSectionTitle="部門搜尋與管理"
-                            EmptyMessage="沒有找到符合條件的部門資料"                          
                             DataLoader="@LoadDataAsync"
                             FilterApplier="@ApplyDepartmentFilters"
                             BreadcrumbItems="@breadcrumbItems"
@@ -37,8 +33,6 @@
                             ColumnDefinitions="@columnDefinitions"
                             EntityName="部門"
                             GetEntityDisplayName="@(dept => dept.Name)"
-                            DeleteSuccessMessage="部門刪除成功"
-                            DeleteConfirmMessage="確定要刪除部門「{0}」嗎？"
                             @ref="indexComponent">
     </GenericIndexPageComponent>
 </PagePermissionCheck>

@@ -21,10 +21,6 @@
                             EntityBasePath="/customer-types"                          
                             PageTitle="客戶類型"
                             PageSubtitle="管理客戶分類類型設定"
-                            AddButtonText="新增客戶類型"
-                            AddButtonTitle="新增客戶類型"
-                            SearchSectionTitle="客戶類型搜尋與管理"
-                            EmptyMessage="沒有找到符合條件的客戶類型資料"
                             BreadcrumbItems="@breadcrumbItems"
                             FilterDefinitions="@filterDefinitions"
                             ColumnDefinitions="@columnDefinitions"
@@ -35,8 +31,6 @@
                             SearchDelayMs="500"
                             EntityName="客戶類型"
                             GetEntityDisplayName="@(customerType => customerType.TypeName)"
-                            DeleteSuccessMessage="客戶類型刪除成功"
-                            DeleteConfirmMessage="確定要刪除客戶類型「{0}」嗎？"
                             @ref="indexComponent" />
 </PagePermissionCheck>
 

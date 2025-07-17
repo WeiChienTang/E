@@ -1,6 +1,6 @@
 @page "/employees"
-@attribute [Authorize]
 @using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @inject IEmployeeService EmployeeService
 @inject IRoleService RoleService
 @inject NavigationManager Navigation
@@ -16,11 +16,7 @@
                             Service="@EmployeeService"
                             EntityBasePath="/employees"                          
                             PageTitle="員工維護"
-                            PageSubtitle="管理所有員工資料與權限設定"
-                            AddButtonText="新增員工"
-                            AddButtonTitle="新增員工資料"
-                            SearchSectionTitle="員工搜尋與管理"
-                            EmptyMessage="沒有找到符合條件的員工資料"
+                            PageSubtitle="管理員工資料與權限設定"
                             BreadcrumbItems="@breadcrumbItems"
                             FilterDefinitions="@filterDefinitions"
                             ColumnDefinitions="@columnDefinitions"
@@ -32,8 +28,6 @@
                             SearchDelayMs="500"
                             EntityName="員工"
                             GetEntityDisplayName="@(employee => $"{employee.FirstName} {employee.LastName}".Trim())"
-                            DeleteSuccessMessage="員工刪除成功"
-                            DeleteConfirmMessage="確定要刪除員工「{0}」嗎？"
                             CustomActionsTemplate="@EmployeeCustomActions"
                             @ref="indexComponent" />
 </PagePermissionCheck>

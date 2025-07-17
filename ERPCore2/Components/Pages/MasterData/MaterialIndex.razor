@@ -18,10 +18,6 @@
                           EntityBasePath="/materials"
                           PageTitle="材質"
                           PageSubtitle="管理所有材質資料與屬性設定"
-                          AddButtonText="新增材質"
-                          AddButtonTitle="新增材質資料"
-                          SearchSectionTitle="材質搜尋與管理"
-                          EmptyMessage="沒有找到符合條件的材質資料"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
@@ -32,8 +28,6 @@
                           SearchDelayMs="500"
                           EntityName="材質"
                           GetEntityDisplayName="@(material => material.Name)"
-                          DeleteSuccessMessage="材質刪除成功"
-                          DeleteConfirmMessage="確定要刪除材質「{0}」嗎？"
                           @ref="indexComponent" />
 </PagePermissionCheck>
 

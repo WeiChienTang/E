@@ -1,15 +1,10 @@
 @page "/colors"
 @using Microsoft.AspNetCore.Authorization
-@using ERPCore2.Data.Entities
-@using ERPCore2.Services
-@using ERPCore2.Components.Shared
-@using ERPCore2.Helpers
 @attribute [Authorize]
 @inject IColorService ColorService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
-
 @rendermode InteractiveServer
 
 <PageTitle>顏色</PageTitle>
@@ -32,8 +27,6 @@
                             ColumnDefinitions="@columnDefinitions"
                             EntityName="顏色"
                             GetEntityDisplayName="@(color => color.Name)"
-                            DeleteSuccessMessage="顏色刪除成功"
-                            DeleteConfirmMessage="確定要刪除顏色「{0}」嗎？"
                             @ref="indexComponent">
     </GenericIndexPageComponent>
 </PagePermissionCheck>

@@ -23,10 +23,6 @@
                             EntityBasePath="/industrytypes"                          
                             PageTitle="行業類型維護"
                             PageSubtitle="管理所有行業類型分類與相關設定"
-                            AddButtonText="新增行業類型"
-                            AddButtonTitle="新增行業類型資料"
-                            SearchSectionTitle="行業類型搜尋與管理"
-                            EmptyMessage="沒有找到符合條件的行業類型資料"
                             BreadcrumbItems="@breadcrumbItems"
                             FilterDefinitions="@filterDefinitions"
                             ColumnDefinitions="@columnDefinitions"
@@ -37,8 +33,6 @@
                             SearchDelayMs="500"
                             EntityName="行業類型"
                             GetEntityDisplayName="@(industryType => industryType.IndustryTypeName)"
-                            DeleteSuccessMessage="行業類型刪除成功"
-                            DeleteConfirmMessage="確定要刪除行業類型「{0}」嗎？"
                             @ref="indexComponent" />
 </PagePermissionCheck>
 @code {

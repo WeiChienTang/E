@@ -21,10 +21,6 @@
                           EntityBasePath="/supplier-types"                          
                           PageTitle="廠商類型"
                           PageSubtitle="管理廠商分類類型設定"
-                          AddButtonText="新增廠商類型"
-                          AddButtonTitle="新增廠商類型"
-                          SearchSectionTitle="廠商類型搜尋與管理"
-                          EmptyMessage="沒有找到符合條件的廠商類型資料"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
@@ -35,8 +31,6 @@
                           SearchDelayMs="500"
                           EntityName="廠商類型"
                           GetEntityDisplayName="@(supplierType => supplierType.TypeName)"
-                          DeleteSuccessMessage="廠商類型刪除成功"
-                          DeleteConfirmMessage="確定要刪除廠商類型「{0}」嗎？"
                           @ref="indexComponent" />
 </PagePermissionCheck>
 

@@ -21,10 +21,6 @@
                             EntityBasePath="/employee-positions"                          
                             PageTitle="職位設定"
                             PageSubtitle="管理所有職位設定資料與職位層級"
-                            AddButtonText="新增職位"
-                            AddButtonTitle="新增職位設定資料"
-                            SearchSectionTitle="職位搜尋與管理"
-                            EmptyMessage="沒有找到符合條件的職位資料"                          
                             DataLoader="@LoadDataAsync"
                             FilterApplier="@ApplyEmployeePositionFilters"
                             BreadcrumbItems="@breadcrumbItems"
@@ -32,8 +28,6 @@
                             ColumnDefinitions="@columnDefinitions"
                             EntityName="職位設定"
                             GetEntityDisplayName="@(position => position.Name)"
-                            DeleteSuccessMessage="職位刪除成功"
-                            DeleteConfirmMessage="確定要刪除職位「{0}」嗎？"
                             @ref="indexComponent">
     </GenericIndexPageComponent>
 </PagePermissionCheck>
