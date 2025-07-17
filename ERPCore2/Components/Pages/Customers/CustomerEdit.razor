@@ -7,7 +7,7 @@
 @inject IErrorLogService ErrorLogService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@using ERPCore2.Components.Shared.SubCollections
+
 @rendermode InteractiveServer
 
 <PagePermissionCheck RequiredPermission="@(Id.HasValue ? "Customer.Update" : "Customer.Create")">

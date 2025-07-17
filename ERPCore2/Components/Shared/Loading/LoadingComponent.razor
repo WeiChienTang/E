@@ -1,4 +1,3 @@
-@using static ERPCore2.Components.Shared.Loading.LoadingComponent
 @* 載入指示器組件 *@
 @if (IsLoading)
 {
@@ -50,12 +49,5 @@
         }
         
         return string.Join(" ", classes);
-    }
-
-    public enum LoadingSize
-    {
-        Small,
-        Normal,
-        Large
     }
 }
