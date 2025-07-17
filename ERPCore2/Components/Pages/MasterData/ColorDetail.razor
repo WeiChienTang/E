@@ -1,8 +1,7 @@
 @page "/colors/detail/{colorId:int}"
 
 @inject IColorService ColorService
-@inject IJSRuntime JSRuntime
-@inject NavigationManager Navigation
+
 @rendermode InteractiveServer
 
     <PagePermissionCheck RequiredPermission="Color.Read">
@@ -23,7 +22,6 @@
                             EntitySubtitleSelector="@(c => $"顏色代碼：{c.Code ?? "未設定"}")"
                             EntityDisplayNameSelector="@(c => c.Name)"
                             OnDataLoaded="@OnColorDataLoaded"
-                            UseTabLayout="true"
                             TabSections="@GetTabSections()">
     </GenericDetailPageComponent>
 </PagePermissionCheck>

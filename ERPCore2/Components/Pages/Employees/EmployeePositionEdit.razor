@@ -3,7 +3,6 @@
 
 @inject IEmployeePositionService EmployeePositionService
 @inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService 
 @rendermode InteractiveServer
 
@@ -19,7 +18,6 @@
                             IndexRoute="/employee-positions"
                             FormTitle="基本資料"
                             FormSubtitle="職位設定的基本資訊"
-                            UseGenericForm="true"
                             FormFields="@GetFormFields()"
                             FormSections="@formSections"
                             BreadcrumbItems="@breadcrumbItems"

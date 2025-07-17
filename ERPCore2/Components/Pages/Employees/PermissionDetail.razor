@@ -1,8 +1,6 @@
 @page "/permissions/detail/{permissionId:int}"
 
 @inject IPermissionManagementService PermissionService
-@inject IJSRuntime JSRuntime
-@inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 <PagePermissionCheck RequiredPermission="Permission.Read">

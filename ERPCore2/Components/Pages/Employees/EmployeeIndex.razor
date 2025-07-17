@@ -1,7 +1,8 @@
 @page "/employees"
 @inject IEmployeeService EmployeeService
 @inject IRoleService RoleService
-@inject INotificationService NotificationService
+@inject IDepartmentService DepartmentService
+@inject IEmployeePositionService EmployeePositionService
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="Employee" 
@@ -16,12 +17,8 @@
                         DataLoader="@LoadEmployeesAsync"
                         InitializeBasicData="@LoadBasicDataAsync"
                         FilterApplier="@ApplyEmployeeFilters"
-                        AutoSearch="true"
-                        ShowSearchButton="true"
-                        SearchDelayMs="500"
                         EntityName="員工"
                         GetEntityDisplayName="@(employee => $"{employee.FirstName} {employee.LastName}".Trim())"
-                        CustomActionsTemplate="@EmployeeCustomActions"
                         RequiredPermission="Employee.Read"
                         @ref="indexComponent" />
 @code {
@@ -30,6 +27,8 @@
     
     // 選項清單
     private List<Role> roles = new();
+    private List<Department> departments = new();
+    private List<EmployeePosition> employeePositions = new();
     
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
@@ -115,6 +114,8 @@
         try
         {
             roles = await RoleService.GetAllAsync();
+            departments = await DepartmentService.GetAllAsync();
+            employeePositions = await EmployeePositionService.GetAllAsync();
             
             // 重新初始化篩選器（因為需要選項資料）
             InitializeFilters();
@@ -132,11 +133,13 @@
                 additionalData: new { 
                     PageName = "EmployeeIndex",
                     Action = "LoadBasicData",
-                    ExpectedData = "Roles"
+                    ExpectedData = "Roles, Departments, EmployeePositions"
                 });
             
             // 設定安全的預設值，確保程式不會崩潰
             roles = new List<Role>();
+            departments = new List<Department>();
+            employeePositions = new List<EmployeePosition>();
             
             // 即使失敗也要重新初始化篩選器
             InitializeFilters();
@@ -181,6 +184,20 @@
                 Value = r.Id.ToString()
             }).ToList();
 
+            // 準備部門選項
+            var departmentOptions = departments.Select(d => new SelectOption
+            {
+                Text = d.Name,
+                Value = d.Id.ToString()
+            }).ToList();
+
+            // 準備職位選項
+            var positionOptions = employeePositions.Select(p => new SelectOption
+            {
+                Text = p.Name,
+                Value = p.Id.ToString()
+            }).ToList();
+
             // 準備狀態選項
             var statusOptions = new List<SelectOption>
             {
@@ -202,8 +219,8 @@
                 .AddText("FirstName", "名字", "輸入名字搜尋")
                 .AddText("LastName", "姓氏", "輸入姓氏搜尋")
                 .AddText("Email", "電子郵件", "輸入電子郵件搜尋")
-                .AddText("Department", "部門", "輸入部門搜尋")
-                .AddText("Position", "職位", "輸入職位搜尋")
+                .AddSelect("DepartmentId", "部門", departmentOptions)
+                .AddSelect("EmployeePositionId", "職位", positionOptions)
                 .AddSelect("RoleId", "角色", roleOptions)
                 .AddSelect("Status", "狀態", statusOptions)
                 .AddSelect("IsLocked", "帳號狀態", lockOptions)
@@ -341,21 +358,17 @@
             }
 
             // 部門篩選
-            var departmentFilter = searchModel.GetFilterValue("Department")?.ToString();
-            if (!string.IsNullOrWhiteSpace(departmentFilter))
+            var departmentIdFilter = searchModel.GetFilterValue("DepartmentId")?.ToString();
+            if (!string.IsNullOrWhiteSpace(departmentIdFilter) && int.TryParse(departmentIdFilter, out var departmentId))
             {
-                query = query.Where(e => 
-                    e.Department != null && !string.IsNullOrEmpty(e.Department.Name) && 
-                    e.Department.Name.Contains(departmentFilter, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(e => e.DepartmentId == departmentId);
             }
 
             // 職位篩選
-            var positionFilter = searchModel.GetFilterValue("Position")?.ToString();
-            if (!string.IsNullOrWhiteSpace(positionFilter))
+            var positionIdFilter = searchModel.GetFilterValue("EmployeePositionId")?.ToString();
+            if (!string.IsNullOrWhiteSpace(positionIdFilter) && int.TryParse(positionIdFilter, out var positionId))
             {
-                query = query.Where(e => 
-                    e.EmployeePosition != null && !string.IsNullOrEmpty(e.EmployeePosition.Name) && 
-                    e.EmployeePosition.Name.Contains(positionFilter, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(e => e.EmployeePositionId == positionId);
             }
 
             // 角色篩選
@@ -401,85 +414,4 @@
             return query.OrderBy(e => e.EmployeeCode);
         }
     }
-
-    private async Task LockEmployee(Employee employee)
-    {
-        try
-        {
-            var result = await EmployeeService.SetEmployeeActiveStatusAsync(employee.Id, false);
-            
-            if (result.IsSuccess)
-            {
-                await NotificationService.ShowSuccessAsync("員工帳號已鎖定");
-                // 觸發基底組件重新載入
-                await indexComponent.Refresh();
-            }
-            else
-            {
-                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "鎖定失敗");
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex, 
-                nameof(LockEmployee), 
-                GetType(),
-                additionalData: new { 
-                    PageName = "EmployeeIndex",
-                    Action = "LockEmployee",
-                    EmployeeId = employee.Id,
-                    EmployeeName = $"{employee.FirstName} {employee.LastName}".Trim()
-                });
-        }
-    }
-
-    private async Task UnlockEmployee(Employee employee)
-    {
-        try
-        {
-            var result = await EmployeeService.SetEmployeeActiveStatusAsync(employee.Id, true);
-            
-            if (result.IsSuccess)
-            {
-                await NotificationService.ShowSuccessAsync("員工帳號已解鎖");
-                // 觸發基底組件重新載入
-                await indexComponent.Refresh();
-            }
-            else
-            {
-                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "解鎖失敗");
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex, 
-                nameof(UnlockEmployee), 
-                GetType(),
-                additionalData: new { 
-                    PageName = "EmployeeIndex",
-                    Action = "UnlockEmployee",
-                    EmployeeId = employee.Id,
-                    EmployeeName = $"{employee.FirstName} {employee.LastName}".Trim()
-                });
-        }
-    }
-
-    // 員工專用的自定義操作按鈕
-    private RenderFragment<Employee> EmployeeCustomActions => employee =>
-        @<fragment>
-            @if (employee.IsLocked)
-            {
-                <button class="btn btn-outline-success" @onclick="() => UnlockEmployee(employee)" @onclick:stopPropagation="true" title="解鎖帳號">
-                    <i class="bi bi-unlock"></i>
-                </button>
-            }
-            else
-            {
-                <button class="btn btn-outline-warning" @onclick="() => LockEmployee(employee)" @onclick:stopPropagation="true" title="鎖定帳號">
-                    <i class="bi bi-lock"></i>
-                </button>
-            }
-        </fragment>;
 }

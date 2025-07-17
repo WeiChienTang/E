@@ -4,9 +4,6 @@
 @inject ICustomerAddressService CustomerAddressService
 @inject ICustomerContactService CustomerContactService
 @inject INotificationService NotificationService
-@inject IErrorLogService ErrorLogService
-@inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
 
 @rendermode InteractiveServer
 
@@ -29,6 +26,7 @@
                          SaveHandler="@SaveCustomer"                         
                          AdditionalDataLoader="@LoadAdditionalData"
                          @ref="editComponent"><AdditionalSections>
+                            
         @* 聯絡方式管理 - 使用新的子集合組件 *@
         <ContactManagerComponent TContactEntity="CustomerContact" 
                                 TParentEntity="Customer"
@@ -496,7 +494,8 @@
         {
             return "C0001"; // 如果出錯，回傳預設值
         }    
-    }    private async Task<bool> SaveCustomer(Customer entity)
+    }    
+    private async Task<bool> SaveCustomer(Customer entity)
     {
         try
         {
@@ -571,5 +570,4 @@
         StateHasChanged();
         return Task.CompletedTask;
     }
-
 }

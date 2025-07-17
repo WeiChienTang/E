@@ -1,8 +1,6 @@
 @page "/employee-positions/detail/{positionId:int}"
 
 @inject IEmployeePositionService EmployeePositionService
-@inject IJSRuntime JSRuntime
-@inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 <PagePermissionCheck RequiredPermission="EmployeePosition.Read">
@@ -23,7 +21,6 @@
                             EntitySubtitleSelector="@(p => $"職位代碼：{p.Code ?? "未設定"} | 等級：{p.Level?.ToString() ?? "未設定"}")"
                             EntityDisplayNameSelector="@(p => p.Name)"
                             OnDataLoaded="@OnPositionDataLoaded"
-                            UseTabLayout="true"
                             TabSections="@GetTabSections()">
     </GenericDetailPageComponent>
 </PagePermissionCheck>

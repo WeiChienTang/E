@@ -3,7 +3,6 @@
 
 @inject IColorService ColorService
 @inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService 
 @rendermode InteractiveServer
 
@@ -20,7 +19,6 @@
                             IndexRoute="/colors"
                             FormTitle="基本資料"
                             FormSubtitle="顏色的基本資訊"
-                            UseGenericForm="true"
                             FormFields="@GetFormFields()"
                             FormSections="@formSections"
                             BreadcrumbItems="@breadcrumbItems"

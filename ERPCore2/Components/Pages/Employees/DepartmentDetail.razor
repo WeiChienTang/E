@@ -1,7 +1,5 @@
 @page "/departments/detail/{departmentId:int}"
 @inject IDepartmentService DepartmentService
-@inject IJSRuntime JSRuntime
-@inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 <PagePermissionCheck RequiredPermission="Department.Read">

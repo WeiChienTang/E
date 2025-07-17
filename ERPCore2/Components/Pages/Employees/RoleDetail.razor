@@ -1,8 +1,6 @@
 @page "/roles/detail/{roleId:int}"
 
 @inject IRoleService RoleService
-@inject IJSRuntime JSRuntime
-@inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 <PagePermissionCheck RequiredPermission="Role.Read">
@@ -23,7 +21,6 @@
                             EntitySubtitleSelector="@(r => $"權限數量：{r.RolePermissions?.Count ?? 0} 個")"
                             EntityDisplayNameSelector="@(r => r.RoleName)"
                             OnDataLoaded="@OnRoleDataLoaded"
-                            UseTabLayout="true"
                             TabSections="@GetTabSections()">
     </GenericDetailPageComponent>
 </PagePermissionCheck>
