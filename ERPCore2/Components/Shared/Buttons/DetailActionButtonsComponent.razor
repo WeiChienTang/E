@@ -9,8 +9,10 @@
     {
         <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@EditButtonText" 
                                OnClick="HandleEditClick" IsDisabled="@IsLoading" />
-    }@if (ShowToggleStatusButton && EntityStatus != null)
-    {        @if (EntityStatus.ToString() == "Active")
+    }
+    @if (ShowToggleStatusButton && EntityStatus != null)
+    {        
+        @if (EntityStatus.ToString() == "Active")
         {
             <GenericButtonComponent Variant="ButtonVariant.Warning" Text="@DeactivateButtonText" 
                                    OnClick="HandleToggleStatusClick" IsDisabled="@IsLoading" />
@@ -20,15 +22,18 @@
             <GenericButtonComponent Variant="ButtonVariant.Success" Text="@ActivateButtonText" 
                                    OnClick="HandleToggleStatusClick" IsDisabled="@IsLoading" />
         }
-    }    @if (ShowDeleteButton)
+    }    
+    @if (ShowDeleteButton)
     {
         <GenericButtonComponent Variant="ButtonVariant.Danger" Text="@DeleteButtonText" 
                                OnClick="HandleDeleteClick" IsDisabled="@IsLoading" />
-    }    @if (ShowPrintButton)
+    }    
+    @if (ShowPrintButton)
     {
         <GenericButtonComponent Variant="ButtonVariant.Info" Text="@PrintButtonText" 
                                OnClick="HandlePrintClick" IsDisabled="@IsLoading" />
-    }    @if (ShowBackButton)
+    }    
+    @if (ShowBackButton)
     {
         <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" Text="@BackButtonText" 
                                OnClick="HandleBackClick" IsDisabled="@IsLoading" />

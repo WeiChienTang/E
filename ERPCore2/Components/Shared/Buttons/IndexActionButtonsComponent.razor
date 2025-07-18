@@ -7,7 +7,7 @@
         <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@AddButtonText" 
                                OnClick="HandleAddClick" IsDisabled="@(IsLoading || IsAddDisabled)" 
                                IsLoading="@(IsLoading && LoadingOnAdd)" Title="@AddButtonTitle"
-                               CssClass="index-action-btn index-add-btn" />
+                               CssClass="index-action-btn index-add-btn" IconClass="@AddButtonIconClass" />
     }
 
     @if (ShowRefreshButton)
@@ -15,7 +15,23 @@
         <GenericButtonComponent Variant="ButtonVariant.Success" Text="@RefreshButtonText" 
                                OnClick="HandleRefreshClick" IsDisabled="@(IsLoading || IsRefreshDisabled)" 
                                IsLoading="@(IsLoading && LoadingOnRefresh)" Title="@RefreshButtonTitle"
-                               CssClass="index-action-btn index-refresh-btn" />
+                               CssClass="index-action-btn index-refresh-btn" IconClass="@RefreshButtonIconClass" />
+    }
+
+    @if (ShowExportExcelButton)
+    {
+        <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="@ExportExcelButtonText" 
+                               OnClick="HandleExportExcelClick" IsDisabled="@(IsLoading || IsExportExcelDisabled)" 
+                               IsLoading="@(IsLoading && LoadingOnExportExcel)" Title="@ExportExcelButtonTitle"
+                               CssClass="index-action-btn index-export-excel-btn" IconClass="@ExportExcelButtonIconClass" />
+    }
+
+    @if (ShowExportPdfButton)
+    {
+        <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="@ExportPdfButtonText" 
+                               OnClick="HandleExportPdfClick" IsDisabled="@(IsLoading || IsExportPdfDisabled)" 
+                               IsLoading="@(IsLoading && LoadingOnExportPdf)" Title="@ExportPdfButtonTitle"
+                               CssClass="index-action-btn index-export-pdf-btn" IconClass="@ExportPdfButtonIconClass" />
     }
 
     @* 允許添加自訂按鈕 *@
@@ -27,6 +43,7 @@
     [Parameter] public bool ShowAddButton { get; set; } = true;
     [Parameter] public string AddButtonText { get; set; } = "新增";
     [Parameter] public string AddButtonTitle { get; set; } = "";
+    [Parameter] public string AddButtonIconClass { get; set; } = "fas fa-plus";
     [Parameter] public bool IsAddDisabled { get; set; } = false;
     [Parameter] public bool LoadingOnAdd { get; set; } = false;
     [Parameter] public EventCallback OnAddClick { get; set; }    
@@ -35,9 +52,28 @@
     [Parameter] public bool ShowRefreshButton { get; set; } = true;
     [Parameter] public string RefreshButtonText { get; set; } = "重新整理";
     [Parameter] public string RefreshButtonTitle { get; set; } = "";
+    [Parameter] public string RefreshButtonIconClass { get; set; } = "fas fa-sync";
     [Parameter] public bool IsRefreshDisabled { get; set; } = false;
     [Parameter] public bool LoadingOnRefresh { get; set; } = false;
     [Parameter] public EventCallback OnRefreshClick { get; set; }
+
+    // 匯出Excel按鈕相關參數
+    [Parameter] public bool ShowExportExcelButton { get; set; } = false;
+    [Parameter] public string ExportExcelButtonText { get; set; } = "匯出Excel";
+    [Parameter] public string ExportExcelButtonTitle { get; set; } = "";
+    [Parameter] public string ExportExcelButtonIconClass { get; set; } = "fas fa-file-excel";
+    [Parameter] public bool IsExportExcelDisabled { get; set; } = false;
+    [Parameter] public bool LoadingOnExportExcel { get; set; } = false;
+    [Parameter] public EventCallback OnExportExcelClick { get; set; }
+
+    // 匯出PDF按鈕相關參數
+    [Parameter] public bool ShowExportPdfButton { get; set; } = false;
+    [Parameter] public string ExportPdfButtonText { get; set; } = "匯出PDF";
+    [Parameter] public string ExportPdfButtonTitle { get; set; } = "";
+    [Parameter] public string ExportPdfButtonIconClass { get; set; } = "fas fa-file-pdf";
+    [Parameter] public bool IsExportPdfDisabled { get; set; } = false;
+    [Parameter] public bool LoadingOnExportPdf { get; set; } = false;
+    [Parameter] public EventCallback OnExportPdfClick { get; set; }
 
     // 通用狀態參數
     [Parameter] public bool IsLoading { get; set; } = false;
@@ -58,6 +94,16 @@
             RefreshButtonTitle = RefreshButtonText;
         }
         
+        if (string.IsNullOrEmpty(ExportExcelButtonTitle))
+        {
+            ExportExcelButtonTitle = ExportExcelButtonText;
+        }
+        
+        if (string.IsNullOrEmpty(ExportPdfButtonTitle))
+        {
+            ExportPdfButtonTitle = ExportPdfButtonText;
+        }
+        
         base.OnParametersSet();
     }
 
@@ -74,6 +120,22 @@
         if (OnRefreshClick.HasDelegate && !IsLoading && !IsRefreshDisabled)
         {
             await OnRefreshClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandleExportExcelClick()
+    {
+        if (OnExportExcelClick.HasDelegate && !IsLoading && !IsExportExcelDisabled)
+        {
+            await OnExportExcelClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandleExportPdfClick()
+    {
+        if (OnExportPdfClick.HasDelegate && !IsLoading && !IsExportPdfDisabled)
+        {
+            await OnExportPdfClick.InvokeAsync();
         }
     }
 }

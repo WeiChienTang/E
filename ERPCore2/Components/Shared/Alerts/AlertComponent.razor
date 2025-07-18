@@ -62,7 +62,7 @@
 
     private string GetNotificationStyle()
     {
-        return $"position: fixed; top: {TopOffset}px; right: 20px; z-index: {ZIndex}; min-width: 300px; max-width: 400px;";
+        return $"position: fixed; top: {TopOffset}px; left: 50%; transform: translateX(-50%); z-index: {ZIndex}; min-width: 300px; max-width: 400px;";
     }
     
     private async Task HandleDismiss()

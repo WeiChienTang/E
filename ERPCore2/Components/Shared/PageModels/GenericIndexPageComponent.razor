@@ -37,6 +37,10 @@
                 AddButtonTitle="@GetAddButtonTitle()"
                 OnAddClick="@HandleAddClick"
                 OnRefreshClick="@RefreshData"
+                ShowExportExcelButton="@ShowExportExcelButton"
+                OnExportExcelClick="@HandleExportExcelClick"
+                ShowExportPdfButton="@ShowExportPdfButton"
+                OnExportPdfClick="@HandleExportPdfClick"
                 IsLoading="@IsLoading"
                 LoadingOnRefresh="true" />
         }
@@ -129,6 +133,12 @@
     [Parameter] public bool ShowDefaultActions { get; set; } = true;
     [Parameter] public RenderFragment? CustomActionButtons { get; set; }
     
+    // 匯出功能控制
+    [Parameter] public bool ShowExportExcelButton { get; set; } = false;
+    [Parameter] public bool ShowExportPdfButton { get; set; } = false;
+    [Parameter] public EventCallback OnExportExcelClick { get; set; }
+    [Parameter] public EventCallback OnExportPdfClick { get; set; }
+    
     // 麵包屑導航
     [Parameter] public List<GenericHeaderComponent.BreadcrumbItem> BreadcrumbItems { get; set; } = new();
     
@@ -215,6 +225,22 @@
             // 使用內建導航邏輯
             var url = !string.IsNullOrEmpty(DetailUrl) ? DetailUrl.Replace("{id}", entity.Id.ToString()) : $"{EntityBasePath}/detail/{entity.Id}";
             Navigation.NavigateTo(url);
+        }
+    }
+
+    private async Task HandleExportExcelClick()
+    {
+        if (OnExportExcelClick.HasDelegate)
+        {
+            await OnExportExcelClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandleExportPdfClick()
+    {
+        if (OnExportPdfClick.HasDelegate)
+        {
+            await OnExportPdfClick.InvokeAsync();
         }
     }
       // 公開方法供外部調用

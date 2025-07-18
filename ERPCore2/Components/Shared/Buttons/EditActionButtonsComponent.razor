@@ -2,15 +2,18 @@
 @using ERPCore2.Components.Shared.Buttons
 
 <div class="edit-action-buttons-container">
+
     <GenericButtonComponent Variant="ButtonVariant.Success" Text="@SaveButtonText" 
                            OnClick="HandleSaveClick" IsDisabled="@(IsSubmitting || IsLoading || !IsFormValid)" 
-                           IsLoading="@IsSubmitting" CssClass="edit-action-btn edit-save-btn" />
+                           IsLoading="@IsSubmitting" CssClass="edit-action-btn edit-save-btn" 
+                           IconClass="@SaveButtonIcon" />
 
     @if (ShowCancelButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.OutlineDanger" Text="@CancelButtonText" 
+        <GenericButtonComponent Variant="ButtonVariant.Danger" Text="@CancelButtonText" 
                                OnClick="HandleCancelClick" IsDisabled="@IsSubmitting" 
-                               CssClass="edit-action-btn edit-cancel-btn" />
+                               CssClass="edit-action-btn edit-cancel-btn" 
+                               IconClass="@CancelButtonIcon" />
     }
 
     @if (CustomButtons != null)

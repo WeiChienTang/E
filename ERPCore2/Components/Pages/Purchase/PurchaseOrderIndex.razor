@@ -29,24 +29,8 @@
                           ShowStatisticsCards="true"
                           StatisticsCardConfigs="@statisticsCardConfigs"
                           StatisticsDataLoader="@LoadStatisticsDataAsync"
-                          RequiredPermission="Purchase.Read">
+                          RequiredPermission="Purchase.Read"/>
     
-    <CustomActionButtons>
-        <div class="btn-group" role="group">
-            <button type="button" class="btn btn-primary" @onclick="() => indexPageRef.NavigateToCreate()">
-                <i class="fas fa-plus me-2"></i>新增採購訂單
-            </button>
-            <button type="button" class="btn btn-outline-info" @onclick="() => indexPageRef.Refresh()">
-                <i class="fas fa-sync me-2"></i>重新整理
-            </button>
-            <button type="button" class="btn btn-outline-success" @onclick="ExportData">
-                <i class="fas fa-file-excel me-2"></i>匯出資料
-            </button>
-        </div>
-    </CustomActionButtons>
-    
-</GenericIndexPageComponent>
-
 @code {
     // 組件引用
     private GenericIndexPageComponent<PurchaseOrder, IPurchaseOrderService> indexPageRef = default!;
@@ -553,24 +537,6 @@
                 nameof(InitializeStatisticsCards),
                 GetType(),
                 additionalData: "初始化統計卡片失敗"
-            );
-        }
-    }
-
-    // 自訂事件處理
-    private async Task ExportData()
-    {
-        try
-        {
-            // TODO: 實作匯出功能
-            await JSRuntime.InvokeVoidAsync("alert", "匯出功能開發中...");
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(ExportData),
-                GetType()
             );
         }
     }
