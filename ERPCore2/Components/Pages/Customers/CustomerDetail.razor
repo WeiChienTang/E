@@ -6,28 +6,25 @@
 
 @rendermode InteractiveServer
 
-
-    <GenericDetailPageComponent TEntity="Customer" 
-                           TService="ICustomerService"
-                           EntityId="@CustomerId"
-                           Entity="@customer"
-                           Service="@CustomerService"
-                           EntityName="客戶"
-                           EntityNamePlural="客戶"
-                           IndexRoute="/customers"
-                           EditRoute="/customers/edit"
-                           LoadingText="載入客戶資料中..."
-                           BreadcrumbItems="@breadcrumbItems"
-                           DataLoader="@LoadCustomerDataAsync"
-                           AdditionalDataLoader="@LoadAdditionalDataAsync"
-                           EntityTitleSelector="@(c => c.CompanyName)"
-                           EntitySubtitleSelector="@(c => $"統一編號：{c.TaxNumber ?? "未設定"}")"
-                           EntityDisplayNameSelector="@(c => c.CompanyName)"
-                           OnDataLoaded="@OnCustomerDataLoaded"
-                           UseTabLayout="true"
-                           TabSections="@GetTabSections()" RequiredPermission="Customer.Read">
-</GenericDetailPageComponent>
-
+<GenericDetailPageComponent TEntity="Customer" 
+                        TService="ICustomerService"
+                        EntityId="@CustomerId"
+                        Entity="@customer"
+                        Service="@CustomerService"
+                        EntityName="客戶"
+                        EntityNamePlural="客戶"
+                        IndexRoute="/customers"
+                        EditRoute="/customers/edit"
+                        LoadingText="載入客戶資料中..."
+                        BreadcrumbItems="@breadcrumbItems"
+                        DataLoader="@LoadCustomerDataAsync"
+                        AdditionalDataLoader="@LoadAdditionalDataAsync"
+                        EntityTitleSelector="@(c => c.CompanyName)"
+                        EntitySubtitleSelector="@(c => $"統一編號：{c.TaxNumber ?? "未設定"}")"
+                        EntityDisplayNameSelector="@(c => c.CompanyName)"
+                        OnDataLoaded="@OnCustomerDataLoaded"
+                        UseTabLayout="true"
+                        TabSections="@GetTabSections()" RequiredPermission="Customer.Read"/>
 
 @code {
     [Parameter] public int CustomerId { get; set; }

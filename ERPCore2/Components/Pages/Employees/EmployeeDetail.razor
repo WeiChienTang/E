@@ -22,8 +22,7 @@
                         EntityDisplayNameSelector="@(e => GetFullName())"
                         OnDataLoaded="@OnEmployeeDataLoaded"
                         UseTabLayout="true"
-                        TabSections="@GetTabSections()" RequiredPermission="Employee.Read">
-</GenericDetailPageComponent>
+                        TabSections="@GetTabSections()" RequiredPermission="Employee.Read"/>
 
 @code {
     [Parameter] public int EmployeeId { get; set; }

@@ -26,7 +26,6 @@
                         SaveFailureMessage="部門儲存失敗"
                         RequiredPermission="@(Id.HasValue ? "Department.Update" : "Department.Create")" />
 
-
 @code {
     [Parameter] public int? Id { get; set; }
     

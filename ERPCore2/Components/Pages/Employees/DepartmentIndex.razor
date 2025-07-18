@@ -17,9 +17,7 @@
                         EntityName="部門"
                         GetEntityDisplayName="@(dept => dept.Name)"
                         RequiredPermission="Department.Read"
-                        @ref="indexComponent">
-</GenericIndexPageComponent>
-
+                        @ref="indexComponent"/>
 @code {
     private GenericIndexPageComponent<Department, IDepartmentService> indexComponent = default!;
     

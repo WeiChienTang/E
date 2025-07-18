@@ -2,29 +2,26 @@
 @inject IDepartmentService DepartmentService
 @rendermode InteractiveServer
 
-
-    <GenericDetailPageComponent TEntity="Department" 
-                            TService="IDepartmentService"
-                            EntityId="@DepartmentId"
-                            Entity="@department"
-                            Service="@DepartmentService"
-                            EntityName="部門"
-                            EntityNamePlural="部門"
-                            IndexRoute="/departments"
-                            EditRoute="/departments/edit"
-                            LoadingText="載入部門資料中..."
-                            BreadcrumbItems="@breadcrumbItems"
-                            DataLoader="@LoadDepartmentDataAsync"
-                            AdditionalDataLoader="@LoadAdditionalDataAsync"
-                            EntityTitleSelector="@(d => d.Name)"
-                            EntitySubtitleSelector="@(d => $"部門代碼：{d.DepartmentCode ?? "未設定"}")"
-                            EntityDisplayNameSelector="@(d => d.Name)"
-                            OnDataLoaded="@OnDepartmentDataLoaded"
-                            UseTabLayout="true"
-                            TabSections="@GetTabSections()"
-                            RequiredPermission="Department.Read">
-    </GenericDetailPageComponent>
-
+<GenericDetailPageComponent TEntity="Department" 
+                        TService="IDepartmentService"
+                        EntityId="@DepartmentId"
+                        Entity="@department"
+                        Service="@DepartmentService"
+                        EntityName="部門"
+                        EntityNamePlural="部門"
+                        IndexRoute="/departments"
+                        EditRoute="/departments/edit"
+                        LoadingText="載入部門資料中..."
+                        BreadcrumbItems="@breadcrumbItems"
+                        DataLoader="@LoadDepartmentDataAsync"
+                        AdditionalDataLoader="@LoadAdditionalDataAsync"
+                        EntityTitleSelector="@(d => d.Name)"
+                        EntitySubtitleSelector="@(d => $"部門代碼：{d.DepartmentCode ?? "未設定"}")"
+                        EntityDisplayNameSelector="@(d => d.Name)"
+                        OnDataLoaded="@OnDepartmentDataLoaded"
+                        UseTabLayout="true"
+                        TabSections="@GetTabSections()"
+                        RequiredPermission="Department.Read"/>
 
 @code {
     [Parameter] public int DepartmentId { get; set; }
