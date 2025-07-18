@@ -235,15 +235,6 @@
                     FieldType = FormFieldType.Text,
                     IsReadOnly = true,
                     ContainerCssClass = "col-md-6"
-                },
-                new()
-                {
-                    PropertyName = nameof(PurchaseOrder.OrderRemarks),
-                    Label = "訂單備註",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入訂單相關備註",
-                    Rows = 3,
-                    ContainerCssClass = "col-12"
                 }
             };
 
@@ -252,8 +243,7 @@
                 { nameof(PurchaseOrder.PurchaseOrderNumber), "基本資訊" },
                 { nameof(PurchaseOrder.OrderDate), "基本資訊" },
                 { nameof(PurchaseOrder.ExpectedDeliveryDate), "採購設定" },
-                { nameof(PurchaseOrder.PurchasePersonnel), "採購設定" },
-                { nameof(PurchaseOrder.OrderRemarks), "備註資訊" }
+                { nameof(PurchaseOrder.PurchasePersonnel), "採購設定" }
             };
         }
         catch (Exception ex)
@@ -374,6 +364,15 @@
                     IsRequired = true,
                     Options = purchaseTypeOptions,
                     ContainerCssClass = "col-md-6"
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseOrder.OrderRemarks),
+                    Label = "訂單備註",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入訂單相關備註",
+                    Rows = 3,
+                    ContainerCssClass = "col-12"
                 }
             });
             
@@ -381,6 +380,7 @@
             formSections[nameof(PurchaseOrder.SupplierId)] = "基本資訊";
             formSections[nameof(PurchaseOrder.WarehouseId)] = "基本資訊";
             formSections[nameof(PurchaseOrder.PurchaseType)] = "採購設定";
+            formSections[nameof(PurchaseOrder.OrderRemarks)] = "備註資訊";
         }
         catch (Exception ex)
         {

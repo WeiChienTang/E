@@ -32,9 +32,10 @@
                 <ValidationSummary class="alert alert-danger" />
             }
             
-            @if (FieldSections != null && FieldSections.Any())
+            @if (FieldSections != null && FieldSections.Any() && FieldDefinitions != null)
             {
-                @foreach (var section in FieldSections.GroupBy(kvp => kvp.Value).OrderBy(g => g.Key))
+                @* 按照 FieldDefinitions 中的欄位順序來排列區段 *@
+                @foreach (var section in GetOrderedSections())
                 {
                     <div class="mb-4">
                         <h6 class="text-primary border-bottom pb-2 mb-3">@(section.Key)</h6>
@@ -177,6 +178,33 @@
         }
         
         base.OnParametersSet();
+    }
+
+    // 按照 FieldDefinitions 中的欄位順序來排列區段
+    private IEnumerable<IGrouping<string, KeyValuePair<string, string>>> GetOrderedSections()
+    {
+        if (FieldDefinitions == null || FieldSections == null)
+            return Enumerable.Empty<IGrouping<string, KeyValuePair<string, string>>>();
+
+        // 建立區段出現順序的對應表
+        var sectionOrderMap = new Dictionary<string, int>();
+        var sectionOrder = 0;
+        
+        foreach (var field in FieldDefinitions)
+        {
+            if (FieldSections.TryGetValue(field.PropertyName, out var sectionName))
+            {
+                if (!sectionOrderMap.ContainsKey(sectionName))
+                {
+                    sectionOrderMap[sectionName] = sectionOrder++;
+                }
+            }
+        }
+
+        // 按照區段在 FieldDefinitions 中的出現順序排列
+        return FieldSections
+            .GroupBy(kvp => kvp.Value)
+            .OrderBy(g => sectionOrderMap.GetValueOrDefault(g.Key, int.MaxValue));
     }
 
     private string GetFormCssClass()
