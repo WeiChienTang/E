@@ -143,21 +143,23 @@
                 // 基本資訊區段
                 new()
                 {
+                    PropertyName = nameof(ProductCategory.CategoryCode),
+                    Label = "分類代碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入分類代碼",
+                    IsRequired = true,
+                    MaxLength = 20,
+                    HelpText = "唯一識別此分類的代碼，最多20個字元"
+                },
+                new()
+                {
                     PropertyName = nameof(ProductCategory.CategoryName),
                     Label = "分類名稱",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入分類名稱",
                     IsRequired = true,
-                    
-                },
-                new()
-                {
-                    PropertyName = nameof(ProductCategory.CategoryCode),
-                    Label = "分類代碼",
-                    FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入分類代碼",
-                    IsRequired = false,
-                    
+                    MaxLength = 100,
+                    HelpText = "顯示用的分類名稱，最多100個字元"
                 },
                 
                 // 階層設定區段
@@ -178,13 +180,15 @@
                     FieldType = FormFieldType.TextArea,
                     Placeholder = "請輸入分類描述",
                     Rows = 3,
+                    MaxLength = 200,
+                    HelpText = "額外的分類說明，最多200個字元"
                 }
             };
 
             formSections = new Dictionary<string, string>
             {
-                { nameof(ProductCategory.CategoryName), "基本資訊" },
                 { nameof(ProductCategory.CategoryCode), "基本資訊" },
+                { nameof(ProductCategory.CategoryName), "基本資訊" },
                 { nameof(ProductCategory.ParentCategoryId), "階層設定" },
                 { nameof(ProductCategory.Description), "詳細資訊" }
             };
@@ -214,10 +218,11 @@
         {
             if (!Id.HasValue) 
             {
+                // 新增模式：建立新的商品分類實體並生成代碼
                 return new ProductCategory
                 {
                     CategoryName = string.Empty,
-                    CategoryCode = null,
+                    CategoryCode = await GenerateCategoryCodeAsync(),
                     Description = null,
                     ParentCategoryId = null
                 };
@@ -238,6 +243,34 @@
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadProductCategoryData), GetType());
             Navigation.NavigateTo("/product-categories");
             return null;
+        }
+    }
+
+    private async Task<string> GenerateCategoryCodeAsync()
+    {
+        try
+        {
+            // 簡單的分類代碼生成邏輯：CAT + 時間戳
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var baseCode = $"CAT{timestamp}";
+            
+            // 檢查是否重複，如果重複則加上隨機數
+            var isExists = await ProductCategoryService.IsCategoryCodeExistsAsync(baseCode);
+            if (isExists)
+            {
+                var random = new Random().Next(100, 999);
+                baseCode = $"CAT{timestamp}{random}";
+            }
+            
+            return baseCode;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GenerateCategoryCodeAsync), GetType(),
+                additionalData: "生成分類代碼時發生錯誤"
+            );
+            // 如果生成失敗，返回預設格式
+            return $"CAT{DateTime.Now:yyyyMMddHHmmss}";
         }
     }
 }

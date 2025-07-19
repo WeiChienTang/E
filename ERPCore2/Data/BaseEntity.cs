@@ -13,7 +13,9 @@ namespace ERPCore2.Data
         /// </summary>
         [Display(Name = "ID")]
         [Required(ErrorMessage = "請設定 ID")]
-        public int Id { get; set; }        /// <summary>
+        public int Id { get; set; }
+        
+        /// <summary>
         /// 實體狀態
         /// </summary>
         [Display(Name = "實體狀態")]

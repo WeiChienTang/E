@@ -107,8 +107,8 @@
         {
             columnDefinitions = new List<TableColumnDefinition>
             {
-                TableColumnDefinition.Text("分類名稱", nameof(ProductCategory.CategoryName)),
                 TableColumnDefinition.Text("分類代碼", nameof(ProductCategory.CategoryCode)),
+                TableColumnDefinition.Text("分類名稱", nameof(ProductCategory.CategoryName)),                
                 TableColumnDefinition.Template("父分類", item => {
                     var category = (ProductCategory)item;
                     return @<span>@(category.ParentCategory?.CategoryName ?? "-")</span>;
