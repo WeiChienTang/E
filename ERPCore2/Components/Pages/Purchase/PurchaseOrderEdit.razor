@@ -57,7 +57,7 @@
                 SetProduct="@((ERPCore2.Data.Entities.PurchaseOrderDetail d, ERPCore2.Data.Entities.Product p) => { d.ProductId = p.Id; d.Product = p; d.UnitPrice = p.UnitPrice ?? 0; })"
                 
                 OnDetailRemoved="@((ERPCore2.Data.Entities.PurchaseOrderDetail detail) => { purchaseOrderDetails.Remove(detail); StateHasChanged(); })"
-                OnDetailAdded="@((ERPCore2.Data.Entities.PurchaseOrderDetail detail) => { purchaseOrderDetails.Add(detail); StateHasChanged(); })"
+                OnDetailAdded="@((ERPCore2.Data.Entities.PurchaseOrderDetail detail) => StateHasChanged())"
                 OnDetailUpdated="@((ERPCore2.Data.Entities.PurchaseOrderDetail detail) => StateHasChanged())"
                 CreateNewDetail="@CreateNewDetail" />
         </AdditionalSections>

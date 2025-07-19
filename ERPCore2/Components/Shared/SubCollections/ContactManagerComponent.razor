@@ -8,10 +8,12 @@
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
 
-<div class="card mb-4">    <GenericHeaderComponent Title="@Title"
+<div class="card mb-4">    
+    <GenericHeaderComponent Title="@Title"
                            Subtitle="@GetSubtitle()"
                            IsCardHeader="true">
-    </GenericHeaderComponent>    <div class="card-body">
+    </GenericHeaderComponent>    
+    <div class="card-body">
         <div class="row g-3">
             @for (int i = 0; i < Items.Count; i++)
             {

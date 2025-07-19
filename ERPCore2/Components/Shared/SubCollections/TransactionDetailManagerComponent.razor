@@ -1,26 +1,11 @@
 @using Microsoft.JSInterop
+@using Microsoft.AspNetCore.Components.Web
 @inject IJSRuntime JS
 @typeparam TDetailEntity where TDetailEntity : class, new()
 @typeparam TParentEntity where TParentEntity : class
 @typeparam TProductEntity where TProductEntity : class
 
-<style>
-    .cursor-pointer {
-        cursor: pointer;
-    }
-    
-    .hover-bg-light:hover {
-        background-color: #f8f9fa;
-    }
-    
-    .product-suggestion-item {
-        transition: background-color 0.15s ease-in-out;
-    }
-    
-    .product-suggestion-item:hover {
-        background-color: #e9ecef;
-    }
-</style>
+
 
 <div class="card">
     <div class="card-header">
@@ -50,10 +35,11 @@
                                 <td>
                                     <div class="position-relative">
                                         <input type="text" 
-                                               class="form-control form-control-sm" 
+                                               class="form-control form-control-sm @(productErrors.ContainsKey(index) && productErrors[index] ? "input-error" : "")" 
                                                placeholder="輸入產品代碼或名稱..."
                                                value="@GetProductSearchText(detail)"
                                                @oninput="@(async (ChangeEventArgs e) => await HandleProductSearch(detail, e.Value?.ToString() ?? "", index))"
+                                               @onkeydown="@(async (KeyboardEventArgs e) => await HandleKeyDown(detail, e, index))"
                                                @onfocus="@(() => ShowProductSuggestions(index))"
                                                @onblur:preventDefault="false"
                                                @onblur="@(async () => await HideProductSuggestionsAsync(index))" />
@@ -71,6 +57,13 @@
                                                         <small class="text-muted">@GetProductNameFromProduct(suggestion) - NT$ @GetProductPrice(suggestion).ToString("N2")</small>
                                                     </div>
                                                 }
+                                            </div>
+                                        }
+                                        
+                                        @if (productErrors.ContainsKey(index) && productErrors[index])
+                                        {
+                                            <div class="product-error">
+                                                沒有此商品編號
                                             </div>
                                         }
                                     </div>
@@ -159,6 +152,8 @@
     private Dictionary<int, List<TProductEntity>> productSuggestions = new();
     private Dictionary<int, string> currentSearchTexts = new();
     private Dictionary<int, bool> showSuggestions = new();
+    private Dictionary<int, bool> productErrors = new();
+    private bool isAddingNewRow = false; // 防止重複新增列
     
     protected override void OnInitialized()
     {
@@ -175,6 +170,7 @@
         {
             var newDetail = CreateNewDetail();
             Details.Add(newDetail);
+            // 注意：初始化時不呼叫 OnDetailAdded，避免觸發額外邏輯
         }
     }
     
@@ -197,6 +193,9 @@
     {
         currentSearchTexts[rowIndex] = searchText;
         
+        // 清除錯誤狀態
+        productErrors[rowIndex] = false;
+        
         if (string.IsNullOrWhiteSpace(searchText) || Products == null)
         {
             productSuggestions[rowIndex] = new List<TProductEntity>();
@@ -213,25 +212,117 @@
         
         productSuggestions[rowIndex] = suggestions;
         showSuggestions[rowIndex] = true;
-        
-        // 檢查是否需要新增更多列
-        CheckAndAddNewRowIfNeeded(rowIndex);
-        
         StateHasChanged();
+        
+        // 不在搜尋時自動新增列，只在實際選擇產品時才新增
         return Task.CompletedTask;
+    }
+    
+    // 處理鍵盤事件
+    private async Task HandleKeyDown(TDetailEntity detail, KeyboardEventArgs e, int rowIndex)
+    {
+        if (e.Key == "Tab")
+        {
+            await HandleTabKeyPress(detail, rowIndex);
+        }
+    }
+    
+    // 處理 Tab 鍵按下
+    private async Task HandleTabKeyPress(TDetailEntity detail, int rowIndex)
+    {
+        var searchText = currentSearchTexts.ContainsKey(rowIndex) ? currentSearchTexts[rowIndex] : "";
+        
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            return;
+        }
+        
+        if (Products == null)
+        {
+            productErrors[rowIndex] = true;
+            StateHasChanged();
+            return;
+        }
+        
+        // 尋找完全匹配的產品
+        var exactMatches = Products.Where(p => 
+            GetProductCodeFromProduct(p).Equals(searchText, StringComparison.OrdinalIgnoreCase) ||
+            GetProductNameFromProduct(p).Equals(searchText, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        
+        // 如果有完全匹配且只有一個，直接選擇
+        if (exactMatches.Count == 1)
+        {
+            await SelectProductSuggestion(detail, exactMatches.First(), rowIndex);
+            return;
+        }
+        
+        // 如果沒有完全匹配，尋找部分匹配
+        if (exactMatches.Count == 0)
+        {
+            var partialMatches = Products.Where(p => 
+                GetProductCodeFromProduct(p).Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                GetProductNameFromProduct(p).Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            
+            // 如果部分匹配只有一個，直接選擇
+            if (partialMatches.Count == 1)
+            {
+                await SelectProductSuggestion(detail, partialMatches.First(), rowIndex);
+                return;
+            }
+            
+            // 如果沒有任何匹配
+            if (partialMatches.Count == 0)
+            {
+                productErrors[rowIndex] = true;
+                StateHasChanged();
+                return;
+            }
+        }
+        
+        // 如果有多個匹配，不自動選擇，讓使用者手動從下拉選單選擇
+        // 這裡可以顯示搜尋建議但不自動選擇
+        productErrors[rowIndex] = false;
+        StateHasChanged();
     }
     
     // 檢查並在需要時新增新列
     private void CheckAndAddNewRowIfNeeded(int currentRowIndex)
     {
-        if (Details == null) return;
+        if (Details == null || isAddingNewRow) return;
         
-        // 如果是最後一列且有輸入內容，自動新增新列
-        if (currentRowIndex >= Details.Count - 1)
+        // 只有在最後一列且有實際輸入內容時才新增新列
+        if (currentRowIndex == Details.Count - 1)
         {
-            var newDetail = CreateNewDetail();
-            Details.Add(newDetail);
-            OnDetailAdded(newDetail);
+            var currentDetail = Details[currentRowIndex];
+            
+            // 檢查當前列是否有產品選擇
+            var hasProduct = !string.IsNullOrEmpty(GetProductCode(currentDetail)) &&
+                           !string.IsNullOrEmpty(GetProductName(currentDetail));
+            
+            // 只有當選擇了產品時才新增新列
+            if (hasProduct)
+            {
+                isAddingNewRow = true;
+                try
+                {
+                    var newDetail = CreateNewDetail();
+                    Details.Add(newDetail);
+                    OnDetailAdded(newDetail);
+                    
+                    // 使用 InvokeAsync 確保 UI 更新
+                    InvokeAsync(StateHasChanged);
+                }
+                finally
+                {
+                    // 延遲重置標誌，防止競爭條件
+                    Task.Delay(100).ContinueWith(_ => 
+                    {
+                        isAddingNewRow = false;
+                    });
+                }
+            }
         }
     }
     
@@ -281,8 +372,9 @@
                 SetQuantity(detail, 1);
             }
             
-            // 立即隱藏建議清單
+            // 立即隱藏建議清單和清除錯誤狀態
             showSuggestions[rowIndex] = false;
+            productErrors[rowIndex] = false;
             if (productSuggestions.ContainsKey(rowIndex))
             {
                 productSuggestions[rowIndex] = new List<TProductEntity>();
@@ -291,6 +383,10 @@
             OnDetailUpdated(detail);
             StateHasChanged();
         });
+        
+        // 延遲檢查新增列，避免與選擇產品邏輯衝突
+        await Task.Delay(50);
+        await InvokeAsync(() => CheckAndAddNewRowIfNeeded(rowIndex));
     }
     
     // 更新數量
