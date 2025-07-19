@@ -41,8 +41,8 @@
                 Products="allProducts"
                 Config="ERPCore2.Models.TransactionDetailConfig.GetDefaultConfig(ERPCore2.Data.Enums.TransactionDetailType.Purchase)"
                 
-                GetProductCode="@((ERPCore2.Data.Entities.PurchaseOrderDetail d) => d.Product?.ProductCode ?? "")"
-                GetProductName="@((ERPCore2.Data.Entities.PurchaseOrderDetail d) => d.Product?.ProductName ?? "")"
+                GetProductCode="@((ERPCore2.Data.Entities.PurchaseOrderDetail d) => GetProductCodeById(d.ProductId))"
+                GetProductName="@((ERPCore2.Data.Entities.PurchaseOrderDetail d) => GetProductNameById(d.ProductId))"
                 GetQuantity="@((ERPCore2.Data.Entities.PurchaseOrderDetail d) => (decimal)d.OrderQuantity)"
                 GetUnitPrice="@((ERPCore2.Data.Entities.PurchaseOrderDetail d) => d.UnitPrice)"
                 GetSubtotal="@((ERPCore2.Data.Entities.PurchaseOrderDetail d) => d.UnitPrice * (decimal)d.OrderQuantity)"
@@ -53,12 +53,13 @@
                 GetProductPrice="@((ERPCore2.Data.Entities.Product p) => p.UnitPrice ?? 0)"
                 
                 SetQuantity="@((ERPCore2.Data.Entities.PurchaseOrderDetail d, decimal q) => d.OrderQuantity = (int)q)"
+                SetUnitPrice="@((ERPCore2.Data.Entities.PurchaseOrderDetail d, decimal p) => d.UnitPrice = p)"
                 SetRemarks="@((ERPCore2.Data.Entities.PurchaseOrderDetail d, string r) => d.DetailRemarks = r)"
-                SetProduct="@((ERPCore2.Data.Entities.PurchaseOrderDetail d, ERPCore2.Data.Entities.Product p) => { d.ProductId = p.Id; d.Product = p; d.UnitPrice = p.UnitPrice ?? 0; })"
+                SetProduct="@((ERPCore2.Data.Entities.PurchaseOrderDetail d, ERPCore2.Data.Entities.Product p) => { d.ProductId = p.Id; d.Product = null; d.UnitPrice = p.UnitPrice ?? 0; })"
                 
-                OnDetailRemoved="@((ERPCore2.Data.Entities.PurchaseOrderDetail detail) => { purchaseOrderDetails.Remove(detail); StateHasChanged(); })"
-                OnDetailAdded="@((ERPCore2.Data.Entities.PurchaseOrderDetail detail) => StateHasChanged())"
-                OnDetailUpdated="@((ERPCore2.Data.Entities.PurchaseOrderDetail detail) => StateHasChanged())"
+                OnDetailRemoved="@((ERPCore2.Data.Entities.PurchaseOrderDetail detail) => { Console.WriteLine($"移除明細 - 產品ID: {detail.ProductId}"); purchaseOrderDetails.Remove(detail); StateHasChanged(); })"
+                OnDetailAdded="@((ERPCore2.Data.Entities.PurchaseOrderDetail detail) => { Console.WriteLine($"新增明細 - 產品ID: {detail.ProductId}"); StateHasChanged(); })"
+                OnDetailUpdated="@((ERPCore2.Data.Entities.PurchaseOrderDetail detail) => { Console.WriteLine($"更新明細 - 產品ID: {detail.ProductId}, 數量: {detail.OrderQuantity}, 單價: {detail.UnitPrice}, 小計: {detail.SubtotalAmount}"); StateHasChanged(); })"
                 CreateNewDetail="@CreateNewDetail" />
         </AdditionalSections>
     </GenericEditPageComponent>
@@ -85,19 +86,25 @@
     // 麵包屑導航
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
     
-    // 計算屬性
-    private decimal totalAmount => purchaseOrderDetails.Where(d => d.Status == EntityStatus.Active).Sum(d => d.SubtotalAmount);
+    // 計算屬性 - 只計算有效明細的金額
+    private decimal totalAmount => purchaseOrderDetails
+        .Where(d => d.Status == EntityStatus.Active && d.ProductId > 0 && d.OrderQuantity > 0)
+        .Sum(d => d.SubtotalAmount);
     
     protected override async Task OnInitializedAsync()
     {
+        Console.WriteLine("=== PurchaseOrderEdit 初始化開始 ===");
+        Console.WriteLine($"是否為編輯模式: {Id.HasValue}");
         try
         {
             InitializeBreadcrumbs();
             await InitializeDefaultValues();
             InitializeBasicFormFields(); // 先初始化基本表單欄位
+            Console.WriteLine("=== PurchaseOrderEdit 初始化完成 ===");
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"初始化發生例外: {ex.Message}");
             _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(OnInitializedAsync), 
@@ -407,20 +414,29 @@
     
     private async Task<PurchaseOrder?> LoadPurchaseOrderData()
     {
+        Console.WriteLine("=== LoadPurchaseOrderData 開始 ===");
         try
         {
             if (Id.HasValue)
             {
+                Console.WriteLine($"載入編輯模式資料 - ID: {Id.Value}");
                 var order = await PurchaseOrderService.GetByIdAsync(Id.Value);
                 if (order != null)
                 {
+                    Console.WriteLine($"成功載入訂單 - 單號: {order.PurchaseOrderNumber}, 供應商ID: {order.SupplierId}");
                     purchaseOrder = order;
                     purchaseOrderDetails = order.PurchaseOrderDetails?.Where(d => d.Status == EntityStatus.Active).ToList() ?? new List<Data.Entities.PurchaseOrderDetail>();
+                    Console.WriteLine($"載入明細數量: {purchaseOrderDetails.Count}");
                     return order;
+                }
+                else
+                {
+                    Console.WriteLine($"找不到 ID 為 {Id.Value} 的訂單");
                 }
             }
             else
             {
+                Console.WriteLine("新增模式 - 建立新訂單");
                 // 新增模式 - 產生採購單號
                 var newOrder = new PurchaseOrder
                 {
@@ -431,18 +447,24 @@
                     Status = EntityStatus.Active
                 };
                 
+                Console.WriteLine($"新訂單建立 - 單號: {newOrder.PurchaseOrderNumber}");
+                
                 // 設定採購人員為當前登入使用者
                 await SetCurrentUserAsPurchasePersonnel(newOrder);
                 
                 purchaseOrder = newOrder;
                 purchaseOrderDetails = new List<Data.Entities.PurchaseOrderDetail>();
+                Console.WriteLine($"初始化明細清單 - 數量: {purchaseOrderDetails.Count}");
                 return newOrder;
             }
             
+            Console.WriteLine($"回傳現有 purchaseOrder - 單號: {purchaseOrder.PurchaseOrderNumber}");
             return purchaseOrder;
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"LoadPurchaseOrderData 發生例外: {ex.Message}");
+            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
             await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(LoadPurchaseOrderData),
@@ -464,8 +486,13 @@
                 Status = EntityStatus.Active
             };
             purchaseOrderDetails = new List<Data.Entities.PurchaseOrderDetail>();
+            Console.WriteLine("回傳錯誤處理後的預設訂單");
             
             return purchaseOrder;
+        }
+        finally
+        {
+            Console.WriteLine("=== LoadPurchaseOrderData 結束 ===");
         }
     }
     
@@ -473,23 +500,47 @@
     {
         try
         {
+            Console.WriteLine("=== 開始儲存採購訂單 ===");
+            Console.WriteLine($"是否為編輯模式: {Id.HasValue}");
+            Console.WriteLine($"採購單號: {entity.PurchaseOrderNumber}");
+            Console.WriteLine($"訂單日期: {entity.OrderDate}");
+            Console.WriteLine($"供應商ID: {entity.SupplierId}");
+            Console.WriteLine($"倉庫ID: {entity.WarehouseId}");
+            Console.WriteLine($"明細數量: {purchaseOrderDetails.Count}");
+            
+            // 計算有效明細數量
+            var validDetailsCount = purchaseOrderDetails.Where(d => 
+                d.Status == EntityStatus.Active && 
+                d.ProductId > 0 && 
+                d.OrderQuantity > 0).Count();
+            Console.WriteLine($"有效明細數量: {validDetailsCount}");
+            
             // 更新訂單總金額
             entity.TotalAmount = totalAmount;
+            Console.WriteLine($"計算總金額: {entity.TotalAmount}");
             
-            // 設定明細的採購訂單ID
-            foreach (var detail in purchaseOrderDetails.Where(d => d.Status == EntityStatus.Active))
+            // 設定明細的採購訂單ID (只處理有效明細)
+            var activeDetails = purchaseOrderDetails.Where(d => 
+                d.Status == EntityStatus.Active && 
+                d.ProductId > 0 && 
+                d.OrderQuantity > 0).ToList();
+                
+            foreach (var detail in activeDetails)
             {
                 detail.PurchaseOrderId = entity.Id;
+                Console.WriteLine($"有效明細 - 產品ID: {detail.ProductId}, 數量: {detail.OrderQuantity}, 單價: {detail.UnitPrice}, 小計: {detail.SubtotalAmount}");
             }
             
             // 先儲存主檔
             ServiceResult result;
             if (Id.HasValue)
             {
+                Console.WriteLine($"執行更新操作 - ID: {Id.Value}");
                 result = await PurchaseOrderService.UpdateAsync(entity);
             }
             else
             {
+                Console.WriteLine("執行新增操作");
                 var createResult = await PurchaseOrderService.CreateAsync(entity);
                 result = new ServiceResult 
                 { 
@@ -501,20 +552,39 @@
                 {
                     purchaseOrder = createResult.Data;
                     Id = purchaseOrder.Id;
+                    Console.WriteLine($"主檔創建成功 - 新 ID: {purchaseOrder.Id}");
                 }
+                else
+                {
+                    Console.WriteLine($"主檔創建失敗 - 錯誤: {result.ErrorMessage}");
+                }
+            }
+            
+            Console.WriteLine($"主檔儲存結果: {result.IsSuccess}");
+            if (!string.IsNullOrEmpty(result.ErrorMessage))
+            {
+                Console.WriteLine($"錯誤訊息: {result.ErrorMessage}");
             }
             
             if (result.IsSuccess && purchaseOrder.Id > 0)
             {
+                Console.WriteLine($"開始儲存明細 - 主檔 ID: {purchaseOrder.Id}");
                 // 儲存明細
                 await SaveOrderDetails();
+                Console.WriteLine("=== 採購訂單儲存完成 ===");
                 return true;
+            }
+            else
+            {
+                Console.WriteLine($"主檔儲存失敗或 ID 無效 - ID: {purchaseOrder.Id}");
             }
             
             return false;
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"SavePurchaseOrder 發生例外: {ex.Message}");
+            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
             await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(SavePurchaseOrder),
@@ -528,29 +598,70 @@
     {
         try
         {
-            foreach (var detail in purchaseOrderDetails)
+            Console.WriteLine("=== 開始儲存明細資料 ===");
+            Console.WriteLine($"明細總數: {purchaseOrderDetails.Count}");
+            
+            // 過濾出有效的明細 - 必須有產品ID且數量大於0
+            var validDetails = purchaseOrderDetails.Where(detail => 
+                detail.Status == EntityStatus.Active && 
+                detail.ProductId > 0 && 
+                detail.OrderQuantity > 0).ToList();
+                
+            Console.WriteLine($"有效明細數量: {validDetails.Count}");
+            
+            foreach (var detail in validDetails)
             {
                 detail.PurchaseOrderId = purchaseOrder.Id;
+                Console.WriteLine($"處理有效明細 - ID: {detail.Id}, 產品ID: {detail.ProductId}, 數量: {detail.OrderQuantity}, 單價: {detail.UnitPrice}");
                 
-                if (detail.Id == 0 && detail.Status == EntityStatus.Active)
+                if (detail.Id == 0)
                 {
+                    Console.WriteLine($"新增明細 - 產品ID: {detail.ProductId}, 數量: {detail.OrderQuantity}, 單價: {detail.UnitPrice}");
                     // 新增明細
-                    await PurchaseOrderService.AddOrderDetailAsync(detail);
+                    var addResult = await PurchaseOrderService.AddOrderDetailAsync(detail);
+                    Console.WriteLine($"新增結果: {addResult?.IsSuccess ?? false}");
+                    if (addResult != null && !addResult.IsSuccess)
+                    {
+                        Console.WriteLine($"新增明細失敗: {addResult.ErrorMessage}");
+                    }
                 }
-                else if (detail.Id > 0 && detail.Status == EntityStatus.Deleted)
+                else if (detail.Id > 0)
                 {
-                    // 刪除明細
-                    await PurchaseOrderService.DeleteOrderDetailAsync(detail.Id);
-                }
-                else if (detail.Id > 0 && detail.Status == EntityStatus.Active)
-                {
+                    Console.WriteLine($"更新明細 - ID: {detail.Id}, 產品ID: {detail.ProductId}, 數量: {detail.OrderQuantity}, 單價: {detail.UnitPrice}");
                     // 更新明細
-                    await PurchaseOrderService.UpdateOrderDetailAsync(detail);
+                    var updateResult = await PurchaseOrderService.UpdateOrderDetailAsync(detail);
+                    Console.WriteLine($"更新結果: {updateResult?.IsSuccess ?? false}");
+                    if (updateResult != null && !updateResult.IsSuccess)
+                    {
+                        Console.WriteLine($"更新明細失敗: {updateResult.ErrorMessage}");
+                    }
                 }
             }
+            
+            // 處理需要刪除的明細 (原本存在但現在被標記為刪除或無效)
+            var deletedDetails = purchaseOrderDetails.Where(detail => 
+                detail.Id > 0 && 
+                (detail.Status == EntityStatus.Deleted || detail.ProductId <= 0 || detail.OrderQuantity <= 0)).ToList();
+                
+            Console.WriteLine($"需要刪除的明細數量: {deletedDetails.Count}");
+            
+            foreach (var detail in deletedDetails)
+            {
+                Console.WriteLine($"刪除明細 - ID: {detail.Id}");
+                var deleteResult = await PurchaseOrderService.DeleteOrderDetailAsync(detail.Id);
+                Console.WriteLine($"刪除結果: {deleteResult?.IsSuccess ?? false}");
+                if (deleteResult != null && !deleteResult.IsSuccess)
+                {
+                    Console.WriteLine($"刪除明細失敗: {deleteResult.ErrorMessage}");
+                }
+            }
+            
+            Console.WriteLine("=== 明細資料儲存完成 ===");
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"SaveOrderDetails 發生例外: {ex.Message}");
+            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
             await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(SaveOrderDetails),
@@ -574,7 +685,8 @@
     // 創建明細實體的方法
     private ERPCore2.Data.Entities.PurchaseOrderDetail CreateNewDetail()
     {
-        return new ERPCore2.Data.Entities.PurchaseOrderDetail
+        Console.WriteLine("創建新明細實體");
+        var newDetail = new ERPCore2.Data.Entities.PurchaseOrderDetail
         {
             OrderQuantity = 1,
             UnitPrice = 0,
@@ -584,6 +696,24 @@
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now
         };
+        Console.WriteLine($"新明細實體已創建 - 數量: {newDetail.OrderQuantity}, 單價: {newDetail.UnitPrice}");
+        return newDetail;
+    }
+    
+    // 根據ProductId取得產品代碼
+    private string GetProductCodeById(int productId)
+    {
+        if (productId <= 0 || allProducts == null) return "";
+        var product = allProducts.FirstOrDefault(p => p.Id == productId);
+        return product?.ProductCode ?? "";
+    }
+    
+    // 根據ProductId取得產品名稱
+    private string GetProductNameById(int productId)
+    {
+        if (productId <= 0 || allProducts == null) return "";
+        var product = allProducts.FirstOrDefault(p => p.Id == productId);
+        return product?.ProductName ?? "";
     }
     
     // 更新明細小計（因為SubtotalAmount是計算屬性，實際上不需要設定）

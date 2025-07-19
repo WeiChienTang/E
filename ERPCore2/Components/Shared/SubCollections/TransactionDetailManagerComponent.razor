@@ -46,15 +46,21 @@
                                         
                                         @if (productSuggestions.ContainsKey(index) && productSuggestions[index].Any())
                                         {
-                                            <div class="position-absolute bg-white border rounded shadow-sm w-100" style="top: 100%; z-index: 1050; max-height: 200px; overflow-y: auto;">
-                                                @foreach (var suggestion in productSuggestions[index])
+                                            <div id="suggestions-@index" class="position-absolute bg-white border rounded shadow-sm w-100" style="top: 100%; z-index: 1050; max-height: 200px; overflow-y: auto;">
+                                                @for (int suggestionIndex = 0; suggestionIndex < productSuggestions[index].Count; suggestionIndex++)
                                                 {
-                                                    <div class="dropdown-item-text px-3 py-2 border-bottom cursor-pointer hover-bg-light"
+                                                    var suggestion = productSuggestions[index][suggestionIndex];
+                                                    var currentSuggestionIndex = suggestionIndex;
+                                                    var isSelected = selectedSuggestionIndex.ContainsKey(index) && selectedSuggestionIndex[index] == currentSuggestionIndex;
+                                                    
+                                                    <div id="suggestion-@index-@currentSuggestionIndex" 
+                                                         class="dropdown-item-text px-3 py-2 border-bottom cursor-pointer @(isSelected ? "bg-primary text-white" : "hover-bg-light")"
                                                          @onclick="@(async () => await SelectProductSuggestion(detail, suggestion, index))"
-                                                         @onmousedown:preventDefault="true">
+                                                         @onmousedown:preventDefault="true"
+                                                         @onmouseover="@(() => selectedSuggestionIndex[index] = currentSuggestionIndex)">
                                                         <strong>@GetProductCodeFromProduct(suggestion)</strong>
                                                         <br />
-                                                        <small class="text-muted">@GetProductNameFromProduct(suggestion) - NT$ @GetProductPrice(suggestion).ToString("N2")</small>
+                                                        <small class="@(isSelected ? "text-white-50" : "text-muted")">@GetProductNameFromProduct(suggestion) - NT$ @GetProductPrice(suggestion).ToString("N2")</small>
                                                     </div>
                                                 }
                                             </div>
@@ -69,7 +75,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="text-muted">@GetProductName(detail)</span>
+                                    <span class="text-muted">@GetDisplayProductName(detail, index)</span>
                                 </td>
                                 <td>
                                     <input type="number" 
@@ -153,6 +159,7 @@
     private Dictionary<int, string> currentSearchTexts = new();
     private Dictionary<int, bool> showSuggestions = new();
     private Dictionary<int, bool> productErrors = new();
+    private Dictionary<int, int> selectedSuggestionIndex = new(); // 當前選中的建議索引
     private bool isAddingNewRow = false; // 防止重複新增列
     
     protected override void OnInitialized()
@@ -172,6 +179,29 @@
             Details.Add(newDetail);
             // 注意：初始化時不呼叫 OnDetailAdded，避免觸發額外邏輯
         }
+    }
+    
+    // 取得顯示用的產品名稱 - 從產品清單中根據ProductId查找
+    private string GetDisplayProductName(TDetailEntity detail, int rowIndex)
+    {
+        // 優先從detail直接取得（如果有設定的話）
+        var directName = GetProductName(detail);
+        if (!string.IsNullOrEmpty(directName))
+            return directName;
+        
+        // 如果沒有直接設定的名稱，則根據ProductCode從產品清單查找
+        var code = GetProductCode(detail);
+        if (!string.IsNullOrEmpty(code) && Products != null)
+        {
+            var product = Products.FirstOrDefault(p => 
+                GetProductCodeFromProduct(p).Equals(code, StringComparison.OrdinalIgnoreCase));
+            if (product != null)
+            {
+                return GetProductNameFromProduct(product);
+            }
+        }
+        
+        return "";
     }
     
     // 取得產品搜尋顯示文字
@@ -212,6 +242,7 @@
         
         productSuggestions[rowIndex] = suggestions;
         showSuggestions[rowIndex] = true;
+        selectedSuggestionIndex[rowIndex] = -1; // 重置選中索引
         StateHasChanged();
         
         // 不在搜尋時自動新增列，只在實際選擇產品時才新增
@@ -224,6 +255,22 @@
         if (e.Key == "Tab")
         {
             await HandleTabKeyPress(detail, rowIndex);
+        }
+        else if (e.Key == "ArrowDown")
+        {
+            HandleArrowDownKey(rowIndex);
+        }
+        else if (e.Key == "ArrowUp")
+        {
+            HandleArrowUpKey(rowIndex);
+        }
+        else if (e.Key == "Enter")
+        {
+            await HandleEnterKey(detail, rowIndex);
+        }
+        else if (e.Key == "Escape")
+        {
+            HandleEscapeKey(rowIndex);
         }
     }
     
@@ -287,6 +334,82 @@
         StateHasChanged();
     }
     
+    // 處理向下箭頭鍵
+    private void HandleArrowDownKey(int rowIndex)
+    {
+        if (!productSuggestions.ContainsKey(rowIndex) || !productSuggestions[rowIndex].Any()) return;
+        
+        var currentIndex = selectedSuggestionIndex.ContainsKey(rowIndex) ? selectedSuggestionIndex[rowIndex] : -1;
+        var maxIndex = productSuggestions[rowIndex].Count - 1;
+        
+        currentIndex = currentIndex >= maxIndex ? 0 : currentIndex + 1;
+        selectedSuggestionIndex[rowIndex] = currentIndex;
+        
+        StateHasChanged();
+        
+        // 滾動到選中的項目
+        _ = ScrollToSelectedSuggestion(rowIndex, currentIndex);
+    }
+    
+    // 處理向上箭頭鍵
+    private void HandleArrowUpKey(int rowIndex)
+    {
+        if (!productSuggestions.ContainsKey(rowIndex) || !productSuggestions[rowIndex].Any()) return;
+        
+        var currentIndex = selectedSuggestionIndex.ContainsKey(rowIndex) ? selectedSuggestionIndex[rowIndex] : 0;
+        var maxIndex = productSuggestions[rowIndex].Count - 1;
+        
+        currentIndex = currentIndex <= 0 ? maxIndex : currentIndex - 1;
+        selectedSuggestionIndex[rowIndex] = currentIndex;
+        
+        StateHasChanged();
+        
+        // 滾動到選中的項目
+        _ = ScrollToSelectedSuggestion(rowIndex, currentIndex);
+    }
+    
+    // 處理 Enter 鍵
+    private async Task HandleEnterKey(TDetailEntity detail, int rowIndex)
+    {
+        if (!productSuggestions.ContainsKey(rowIndex) || !productSuggestions[rowIndex].Any()) return;
+        if (!selectedSuggestionIndex.ContainsKey(rowIndex)) return;
+        
+        var selectedIndex = selectedSuggestionIndex[rowIndex];
+        if (selectedIndex >= 0 && selectedIndex < productSuggestions[rowIndex].Count)
+        {
+            var selectedProduct = productSuggestions[rowIndex][selectedIndex];
+            await SelectProductSuggestion(detail, selectedProduct, rowIndex);
+        }
+    }
+    
+    // 處理 Escape 鍵
+    private void HandleEscapeKey(int rowIndex)
+    {
+        showSuggestions[rowIndex] = false;
+        productSuggestions[rowIndex] = new List<TProductEntity>();
+        selectedSuggestionIndex[rowIndex] = -1;
+        StateHasChanged();
+    }
+    
+    // 滾動到選中的建議項目
+    private async Task ScrollToSelectedSuggestion(int rowIndex, int selectedIndex)
+    {
+        try
+        {
+            await InvokeAsync(async () =>
+            {
+                var suggestionElementId = $"suggestion-{rowIndex}-{selectedIndex}";
+                var containerElementId = $"suggestions-{rowIndex}";
+                
+                await JS.InvokeVoidAsync("scrollToElement", containerElementId, suggestionElementId);
+            });
+        }
+        catch (Exception)
+        {
+            // 忽略 JavaScript 相關錯誤，避免影響使用者體驗
+        }
+    }
+    
     // 檢查並在需要時新增新列
     private void CheckAndAddNewRowIfNeeded(int currentRowIndex)
     {
@@ -341,6 +464,7 @@
         {
             productSuggestions[rowIndex] = new List<TProductEntity>();
         }
+        selectedSuggestionIndex[rowIndex] = -1;
         StateHasChanged();
     }
     
@@ -355,6 +479,7 @@
             {
                 productSuggestions[rowIndex] = new List<TProductEntity>();
             }
+            selectedSuggestionIndex[rowIndex] = -1;
             StateHasChanged();
         });
     }
@@ -379,6 +504,7 @@
             {
                 productSuggestions[rowIndex] = new List<TProductEntity>();
             }
+            selectedSuggestionIndex[rowIndex] = -1;
             
             OnDetailUpdated(detail);
             StateHasChanged();
@@ -437,3 +563,31 @@
         return Details.Sum(d => GetSubtotal(d));
     }
 }
+
+<script>
+    window.scrollToElement = function (containerId, elementId) {
+        const container = document.getElementById(containerId);
+        const element = document.getElementById(elementId);
+        
+        if (container && element) {
+            // 計算元素相對於容器的位置
+            const containerRect = container.getBoundingClientRect();
+            const elementRect = element.getBoundingClientRect();
+            
+            // 元素在容器中的相對位置
+            const elementTop = element.offsetTop;
+            const elementHeight = element.offsetHeight;
+            const containerScrollTop = container.scrollTop;
+            const containerHeight = container.clientHeight;
+            
+            // 檢查是否需要滾動
+            if (elementTop < containerScrollTop) {
+                // 元素在視窗上方，向上滾動
+                container.scrollTop = elementTop;
+            } else if (elementTop + elementHeight > containerScrollTop + containerHeight) {
+                // 元素在視窗下方，向下滾動
+                container.scrollTop = elementTop + elementHeight - containerHeight;
+            }
+        }
+    };
+</script>
