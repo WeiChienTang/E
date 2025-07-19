@@ -55,7 +55,7 @@
                 SetQuantity="@((ERPCore2.Data.Entities.PurchaseOrderDetail d, decimal q) => d.OrderQuantity = (int)q)"
                 SetUnitPrice="@((ERPCore2.Data.Entities.PurchaseOrderDetail d, decimal p) => d.UnitPrice = p)"
                 SetRemarks="@((ERPCore2.Data.Entities.PurchaseOrderDetail d, string r) => d.DetailRemarks = r)"
-                SetProduct="@((ERPCore2.Data.Entities.PurchaseOrderDetail d, ERPCore2.Data.Entities.Product p) => { d.ProductId = p.Id; d.Product = null; d.UnitPrice = p.UnitPrice ?? 0; })"
+                SetProduct="@((ERPCore2.Data.Entities.PurchaseOrderDetail d, ERPCore2.Data.Entities.Product p) => { d.ProductId = p.Id; d.Product = p; d.UnitPrice = p.UnitPrice ?? 0; })"
                 
                 OnDetailRemoved="@((ERPCore2.Data.Entities.PurchaseOrderDetail detail) => { Console.WriteLine($"移除明細 - 產品ID: {detail.ProductId}"); purchaseOrderDetails.Remove(detail); StateHasChanged(); })"
                 OnDetailAdded="@((ERPCore2.Data.Entities.PurchaseOrderDetail detail) => { Console.WriteLine($"新增明細 - 產品ID: {detail.ProductId}"); StateHasChanged(); })"
@@ -383,7 +383,6 @@
                     FieldType = FormFieldType.TextArea,
                     Placeholder = "請輸入訂單相關備註",
                     Rows = 3,
-                    ContainerCssClass = "col-12"
                 }
             });
             

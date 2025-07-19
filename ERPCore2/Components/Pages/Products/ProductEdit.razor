@@ -22,9 +22,10 @@
                          IndexRoute="/products"
                          RequiredPermission="@(Id.HasValue ? "Product.Update" : "Product.Create")"
                          BreadcrumbItems="@breadcrumbItems"
-                             FormFields="@GetFormFields()"                         
-                             FormSections="@GetFormSections()"
-                             DataLoader="LoadProductData"
+                         FormFields="@formFields"                         
+                         FormSections="@formSections"
+                         DataLoader="LoadProductData"
+                         AdditionalDataLoader="@LoadAdditionalData"
                          SaveHandler="SaveProduct"
                          UseGenericForm="true">
       <AdditionalSections>
@@ -61,12 +62,17 @@
 
 @code {
     [Parameter] public int? Id { get; set; }
-      private Product product = new();
+    
+    private Product product = new();
     private List<ProductCategory> productCategories = new();
     private List<ProductSupplier> productSuppliers = new();
     private List<Supplier> suppliers = new();
     private List<Supplier> availableSuppliers = new();
     private List<Unit> units = new();
+    
+    // 表單欄位定義
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
     
     // UI 狀態
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
@@ -76,11 +82,33 @@
         try
         {
             InitializeBreadcrumb();
+            InitializeBasicFormFields(); // 先初始化基本表單欄位
+            // AdditionalDataLoader 會由 GenericEditPageComponent 自動調用
         }
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitialized), GetType(),
                 additionalData: new { ProductId = Id });
+                
+            // 確保基本初始化完成，避免程式崩潰
+            try
+            {
+                breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+                {
+                    new() { Text = "首頁", Href = "/" },
+                    new() { Text = "產品管理", Href = "/products" },
+                    new() { Text = Id.HasValue ? "編輯產品" : "新增產品" }
+                };
+                formFields = new List<FormFieldDefinition>();
+                formSections = new Dictionary<string, string>();
+            }
+            catch
+            {
+                // 如果連預設值都設定失敗，至少確保不是 null
+                breadcrumbItems ??= new List<GenericHeaderComponent.BreadcrumbItem>();
+                formFields ??= new List<FormFieldDefinition>();
+                formSections ??= new Dictionary<string, string>();
+            }
         }
     }
     
@@ -105,6 +133,219 @@
         }
     }
 
+    private void InitializeBasicFormFields()
+    {
+        try
+        {
+            // 先初始化不需要選項的基本欄位
+            formFields = new List<FormFieldDefinition>
+            {
+                new() {
+                    PropertyName = nameof(Product.ProductCode),
+                    Label = "產品代碼",
+                    FieldType = FormFieldType.Text,
+                    IsRequired = true,
+                    Placeholder = "輸入產品代碼",
+                },
+                new() {
+                    PropertyName = nameof(Product.ProductName),
+                    Label = "產品名稱",
+                    FieldType = FormFieldType.Text,
+                    IsRequired = true,
+                    Placeholder = "輸入產品名稱",
+                },
+                new() {
+                    PropertyName = nameof(Product.IsActive),
+                    Label = "狀態",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = new List<SelectOption>
+                    {
+                        new() { Value = "true", Text = "啟用" },
+                        new() { Value = "false", Text = "停用" }
+                    },
+                },
+                new() {
+                    PropertyName = nameof(Product.Description),
+                    Label = "產品描述",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "輸入產品描述",
+                },
+                new() {
+                    PropertyName = nameof(Product.Specification),
+                    Label = "規格說明",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "輸入規格說明",
+                },
+                new() {
+                    PropertyName = nameof(Product.UnitPrice),
+                    Label = "售價",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "0",
+                },
+                new() {
+                    PropertyName = nameof(Product.CostPrice),
+                    Label = "成本價",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "0",
+                },
+                new() {
+                    PropertyName = nameof(Product.CurrentStock),
+                    Label = "目前庫存",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "0",
+                },
+                new() {
+                    PropertyName = nameof(Product.MinStockLevel),
+                    Label = "最低庫存",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "0",
+                },
+                new() {
+                    PropertyName = nameof(Product.MaxStockLevel),
+                    Label = "最高庫存",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "0",
+                },
+                new() {
+                    PropertyName = nameof(Product.Remarks),
+                    Label = "備註",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "輸入備註",
+                }
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                // 基本資訊區塊
+                { nameof(Product.ProductCode), "基本資訊" },
+                { nameof(Product.ProductName), "基本資訊" },
+                { nameof(Product.IsActive), "基本資訊" },
+                
+                // 價格與庫存區塊
+                { nameof(Product.UnitPrice), "價格與庫存" },
+                { nameof(Product.CostPrice), "價格與庫存" },
+                { nameof(Product.CurrentStock), "價格與庫存" },
+                { nameof(Product.MinStockLevel), "價格與庫存" },
+                { nameof(Product.MaxStockLevel), "價格與庫存" },
+                
+                // 詳細說明與其他資訊區塊（放在最下方）
+                { nameof(Product.Description), "詳細說明與其他資訊" },
+                { nameof(Product.Specification), "詳細說明與其他資訊" },
+                { nameof(Product.Remarks), "詳細說明與其他資訊" }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBasicFormFields), GetType(),
+                additionalData: new { ProductId = Id });
+            
+            // 設定安全的預設值
+            formFields = new List<FormFieldDefinition>();
+            formSections = new Dictionary<string, string>();
+        }
+    }
+
+    private async Task LoadAdditionalData()
+    {
+        try
+        {
+            // 載入基礎選項資料
+            await LoadReferenceData();
+            
+            // 初始化需要選項的表單欄位
+            InitializeFormFieldsWithOptions();
+            
+            // 不需要手動調用 StateHasChanged()，GenericEditPageComponent 會處理
+        }        
+        catch (Exception ex)
+        {
+            // 記錄錯誤到資料庫並通知使用者
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalData), GetType(),
+                additionalData: new { 
+                    ProductId = Id,
+                    ExpectedData = "ProductCategories, Suppliers, Units"
+                });
+            
+            // 設定安全的預設值，確保程式不會崩潰
+            productCategories = new List<ProductCategory>();
+            suppliers = new List<Supplier>();
+            units = new List<Unit>();
+            
+            // 即使失敗也要初始化表單欄位
+            try
+            {
+                InitializeFormFieldsWithOptions();
+            }
+            catch
+            {
+                // 如果初始化表單欄位也失敗，至少確保基本結構存在
+                formFields ??= new List<FormFieldDefinition>();
+                formSections ??= new Dictionary<string, string>();
+            }
+        }
+    }
+
+    private void InitializeFormFieldsWithOptions()
+    {
+        try
+        {
+            // 找到需要添加選項的欄位並添加到現有的formFields
+            var productCategoryField = new FormFieldDefinition
+            {
+                PropertyName = nameof(Product.ProductCategoryId),
+                Label = "產品分類",
+                FieldType = FormFieldType.Select,
+                IsRequired = productCategories.Any(), // 只有當有分類資料時才設為必填
+                Options = productCategories.Select(pc => new SelectOption 
+                { 
+                    Value = pc.Id.ToString(), 
+                    Text = pc.CategoryName 
+                }).ToList(),
+            };
+
+            var unitField = new FormFieldDefinition
+            {
+                PropertyName = nameof(Product.UnitId),
+                Label = "單位",
+                FieldType = FormFieldType.Select,
+                IsRequired = units.Any(), // 只有當有單位資料時才設為必填
+                Options = units.Select(u => new SelectOption 
+                { 
+                    Value = u.Id.ToString(), 
+                    Text = u.UnitName 
+                }).ToList(),
+            };
+
+            // 插入到適當位置（ProductName之後）
+            var insertIndex = formFields.FindIndex(f => f.PropertyName == nameof(Product.ProductName)) + 1;
+            if (insertIndex > 0)
+            {
+                formFields.Insert(insertIndex, productCategoryField);
+                formFields.Insert(insertIndex + 1, unitField);
+            }
+            else
+            {
+                // 如果找不到ProductName欄位，就添加到開頭
+                formFields.Insert(0, productCategoryField);
+                formFields.Insert(1, unitField);
+            }
+
+            // 更新表單區段
+            formSections[nameof(Product.ProductCategoryId)] = "基本資訊";
+            formSections[nameof(Product.UnitId)] = "基本資訊";
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFormFieldsWithOptions), GetType(),
+                additionalData: new { ProductId = Id });
+            
+            // 如果失敗，至少確保基本結構存在
+            formFields ??= new List<FormFieldDefinition>();
+            formSections ??= new Dictionary<string, string>();
+        }
+    }
+
     private string GetPageTitle()
     {
         try
@@ -117,165 +358,6 @@
                 additionalData: new { ProductId = Id });
             
             return "產品管理";
-        }
-    }
-
-    // 主表單欄位定義
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        try
-        {
-            return new List<FormFieldDefinition>
-            {
-                new() {
-                    PropertyName = nameof(Product.ProductCode),
-                    Label = "產品代碼",
-                    FieldType = FormFieldType.Text,
-                    IsRequired = true,
-                    Placeholder = "輸入產品代碼",
-                    
-                },
-                new() {
-                    PropertyName = nameof(Product.ProductName),
-                    Label = "產品名稱",
-                    FieldType = FormFieldType.Text,
-                    IsRequired = true,
-                    Placeholder = "輸入產品名稱",
-                    
-                },
-                new() {
-                    PropertyName = nameof(Product.ProductCategoryId),
-                    Label = "產品分類",
-                    FieldType = FormFieldType.Select,
-                    Options = productCategories.Select(pc => new SelectOption 
-                    { 
-                        Value = pc.Id.ToString(), 
-                        Text = pc.CategoryName 
-                    }).Prepend(new SelectOption { Value = "", Text = "請選擇分類" }).ToList(),
-                    
-                },
-                new() {
-                    PropertyName = nameof(Product.UnitId),
-                    Label = "單位",
-                    FieldType = FormFieldType.Select,
-                    Options = units.Select(u => new SelectOption 
-                    { 
-                        Value = u.Id.ToString(), 
-                        Text = u.UnitName 
-                    }).Prepend(new SelectOption { Value = "", Text = "請選擇單位" }).ToList(),
-                    
-                },
-                new() {
-                    PropertyName = nameof(Product.IsActive),
-                    Label = "狀態",
-                    FieldType = FormFieldType.Select,
-                    Options = new List<SelectOption>
-                    {
-                        new() { Value = "true", Text = "啟用" },
-                        new() { Value = "false", Text = "停用" }
-                    },
-                    
-                },
-                new() {
-                    PropertyName = nameof(Product.Description),
-                    Label = "產品描述",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "輸入產品描述",
-                    ContainerCssClass = "col-md-12"
-                },
-                new() {
-                    PropertyName = nameof(Product.Specification),
-                    Label = "規格說明",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "輸入規格說明",
-                    ContainerCssClass = "col-md-12"
-                },
-                new() {
-                    PropertyName = nameof(Product.UnitPrice),
-                    Label = "售價",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "0",
-                    
-                },
-                new() {
-                    PropertyName = nameof(Product.CostPrice),
-                    Label = "成本價",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "0",
-                    
-                },
-                new() {
-                    PropertyName = nameof(Product.CurrentStock),
-                    Label = "目前庫存",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "0",
-                    ContainerCssClass = "col-md-4"
-                },
-                new() {
-                    PropertyName = nameof(Product.MinStockLevel),
-                    Label = "最低庫存",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "0",
-                    ContainerCssClass = "col-md-4"
-                },
-                new() {
-                    PropertyName = nameof(Product.MaxStockLevel),
-                    Label = "最高庫存",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "0",
-                    ContainerCssClass = "col-md-4"
-                },
-                new() {
-                    PropertyName = nameof(Product.Remarks),
-                    Label = "備註",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "輸入備註",
-                    ContainerCssClass = "col-md-12"
-                }
-            };
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFormFields), GetType(),
-                additionalData: new { ProductId = Id });
-            
-            return new List<FormFieldDefinition>();
-        }
-    }    // 表單區塊定義
-    private Dictionary<string, string> GetFormSections()
-    {
-        try
-        {
-            return new Dictionary<string, string>
-            {
-                // 基本資訊區塊
-                { nameof(Product.ProductCode), "基本資訊" },
-                { nameof(Product.ProductName), "基本資訊" },
-                { nameof(Product.ProductCategoryId), "基本資訊" },
-                { nameof(Product.UnitId), "基本資訊" },
-                { nameof(Product.IsActive), "基本資訊" },
-                
-                // 詳細說明區塊
-                { nameof(Product.Description), "詳細說明" },
-                { nameof(Product.Specification), "詳細說明" },
-                
-                // 價格與庫存區塊
-                { nameof(Product.UnitPrice), "價格與庫存" },
-                { nameof(Product.CostPrice), "價格與庫存" },
-                { nameof(Product.CurrentStock), "價格與庫存" },
-                { nameof(Product.MinStockLevel), "價格與庫存" },
-                { nameof(Product.MaxStockLevel), "價格與庫存" },
-                
-                // 其他資訊區塊
-                { nameof(Product.Remarks), "其他資訊" }
-            };
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFormSections), GetType(),
-                additionalData: new { ProductId = Id });
-            
-            return new Dictionary<string, string>();
         }
     }
 
@@ -304,6 +386,18 @@
             else
             {
                 product = new Product();
+                
+                // 設定新產品的預設值
+                product.IsActive = true; // 預設為啟用
+                
+                // 設定預設單位為"個"，如果找不到則使用第一個可用的單位
+                var defaultUnit = units.FirstOrDefault(u => u.UnitName == "個") 
+                                 ?? units.FirstOrDefault();
+                if (defaultUnit != null)
+                {
+                    product.UnitId = defaultUnit.Id;
+                }
+                
                 productSuppliers.Clear();
                 return product;
             }
@@ -324,19 +418,24 @@
         {
             // 依序載入資料以避免 DbContext 併發問題
             var categoryResult = await ProductCategoryService.GetAllAsync();
-            productCategories = categoryResult.Where(c => c.Status == EntityStatus.Active).ToList();
+            productCategories = categoryResult?.Where(c => c.Status == EntityStatus.Active).ToList() ?? new List<ProductCategory>();
             
             var supplierResult = await SupplierService.GetAllAsync();
-            suppliers = supplierResult.Where(s => s.Status == EntityStatus.Active).ToList();
+            suppliers = supplierResult?.Where(s => s.Status == EntityStatus.Active).ToList() ?? new List<Supplier>();
             
-            units = await ProductService.GetUnitsAsync();
+            units = await ProductService.GetUnitsAsync() ?? new List<Unit>();
+            
+            // 確保至少有基本的資料結構
+            productCategories ??= new List<ProductCategory>();
+            suppliers ??= new List<Supplier>();
+            units ??= new List<Unit>();
         }
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadReferenceData), GetType(),
                 additionalData: new { PageName = "ProductEdit" });
             
-            // 設定預設值
+            // 設定安全的預設值
             productCategories = new List<ProductCategory>();
             suppliers = new List<Supplier>();
             units = new List<Unit>();
