@@ -1,97 +1,126 @@
-@using ERPCore2.Data.Entities
-@using ERPCore2.Models
+@using Microsoft.JSInterop
 @inject IJSRuntime JS
 @typeparam TDetailEntity where TDetailEntity : class, new()
 @typeparam TParentEntity where TParentEntity : class
 @typeparam TProductEntity where TProductEntity : class
 
-<h4>@Config.Title</h4>
+<style>
+    .cursor-pointer {
+        cursor: pointer;
+    }
+    
+    .hover-bg-light:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .product-suggestion-item {
+        transition: background-color 0.15s ease-in-out;
+    }
+    
+    .product-suggestion-item:hover {
+        background-color: #e9ecef;
+    }
+</style>
 
-<div class="row mb-3">
-    <div class="col-12">
-        <button type="button" class="btn btn-primary" @onclick="ShowProductSelectionModal">
-            @Config.AddButtonText
-        </button>
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">@Config.Title</h5>
     </div>
-</div>
-
-<div class="table-responsive">
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>產品代碼</th>
-                <th>產品名稱</th>
-                <th>數量</th>
-                <th>單價</th>
-                <th>小計</th>
-                <th>備註</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (Details != null)
-            {
-                @foreach (var detail in Details)
-                {
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-header-primary">
                     <tr>
-                        <td>@GetProductCode(detail)</td>
-                        <td>@GetProductName(detail)</td>
-                        <td>@GetQuantity(detail)</td>
-                        <td>@GetUnitPrice(detail).ToString("F2")</td>
-                        <td>@GetSubtotal(detail).ToString("F2")</td>
-                        <td>@GetRemarks(detail)</td>
-                        <td>
-                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveDetail(detail)">
-                                移除
-                            </button>
-                        </td>
+                        <th style="width: 250px;">產品代碼/名稱</th>
+                        <th style="width: 250px;">產品名稱</th>
+                        <th style="width: 100px;">數量</th>
+                        <th style="width: 150px;">單價</th>
+                        <th style="width: 150px;">小計</th>
+                        <th>備註</th>
                     </tr>
-                }
-            }
-        </tbody>
-    </table>
-</div>
-
-<!-- 產品選擇 Modal -->
-<div class="modal fade" id="productSelectionModal" tabindex="-1" aria-labelledby="productSelectionModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="productSelectionModalLabel">選擇產品</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
+                </thead>
+                <tbody>
+                    @if (Details != null && Details.Any())
+                    {
+                        @for (int i = 0; i < Details.Count; i++)
+                        {
+                            var detail = Details[i];
+                            var index = i;
                             <tr>
-                                <th>代碼</th>
-                                <th>名稱</th>
-                                <th>單價</th>
-                                <th>操作</th>
+                                <td>
+                                    <div class="position-relative">
+                                        <input type="text" 
+                                               class="form-control form-control-sm" 
+                                               placeholder="輸入產品代碼或名稱..."
+                                               value="@GetProductSearchText(detail)"
+                                               @oninput="@(async (ChangeEventArgs e) => await HandleProductSearch(detail, e.Value?.ToString() ?? "", index))"
+                                               @onfocus="@(() => ShowProductSuggestions(index))"
+                                               @onblur:preventDefault="false"
+                                               @onblur="@(async () => await HideProductSuggestionsAsync(index))" />
+                                        
+                                        @if (productSuggestions.ContainsKey(index) && productSuggestions[index].Any())
+                                        {
+                                            <div class="position-absolute bg-white border rounded shadow-sm w-100" style="top: 100%; z-index: 1050; max-height: 200px; overflow-y: auto;">
+                                                @foreach (var suggestion in productSuggestions[index])
+                                                {
+                                                    <div class="dropdown-item-text px-3 py-2 border-bottom cursor-pointer hover-bg-light"
+                                                         @onclick="@(async () => await SelectProductSuggestion(detail, suggestion, index))"
+                                                         @onmousedown:preventDefault="true">
+                                                        <strong>@GetProductCodeFromProduct(suggestion)</strong>
+                                                        <br />
+                                                        <small class="text-muted">@GetProductNameFromProduct(suggestion) - NT$ @GetProductPrice(suggestion).ToString("N2")</small>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="text-muted">@GetProductName(detail)</span>
+                                </td>
+                                <td>
+                                    <input type="number" 
+                                           class="form-control form-control-sm text-center" 
+                                           placeholder="數量"
+                                           value="@(GetQuantity(detail) == 0 ? "" : GetQuantity(detail).ToString())"
+                                           @onchange="@((ChangeEventArgs e) => UpdateQuantity(detail, e))"
+                                           min="1" 
+                                           step="1" />
+                                </td>
+                                <td>
+                                    <input type="number" 
+                                           class="form-control form-control-sm text-end" 
+                                           placeholder="單價"
+                                           value="@(GetUnitPrice(detail) == 0 ? "" : GetUnitPrice(detail).ToString())"
+                                           @onchange="@((ChangeEventArgs e) => UpdateUnitPrice(detail, e))"
+                                           min="0" 
+                                           step="0.01" />
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-success">@(GetSubtotal(detail) == 0 ? "" : "NT$ " + GetSubtotal(detail).ToString("N2"))</span>
+                                </td>
+                                <td>
+                                    <input type="text" 
+                                           class="form-control form-control-sm" 
+                                           placeholder="備註..."
+                                           value="@GetRemarks(detail)"
+                                           @onchange="@((ChangeEventArgs e) => UpdateRemarks(detail, e.Value?.ToString() ?? ""))" />
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @if (Products != null)
-                            {
-                                @foreach (var product in Products)
-                                {
-                                    <tr>
-                                        <td>@GetProductCodeFromProduct(product)</td>
-                                        <td>@GetProductNameFromProduct(product)</td>
-                                        <td>@GetProductPrice(product).ToString("F2")</td>
-                                        <td>
-                                            <button type="button" class="btn btn-sm btn-primary" @onclick="() => SelectProduct(product)">
-                                                選擇
-                                            </button>
-                                        </td>
-                                    </tr>
-                                }
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                        }
+                    }
+                </tbody>
+                @if (Details != null && Details.Any() && HasAnyData())
+                {
+                    <tfoot class="table-light">
+                        <tr>
+                            <td colspan="4" class="text-end fw-bold">總計:</td>
+                            <td class="fw-bold text-success fs-5">NT$ @CalculateTotal().ToString("N2")</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                }
+            </table>
         </div>
     </div>
 </div>
@@ -114,25 +143,201 @@
     [Parameter] public Func<TProductEntity, string> GetProductNameFromProduct { get; set; } = _ => "";
     [Parameter] public Func<TProductEntity, decimal> GetProductPrice { get; set; } = _ => 0;
     
+    // Setter functions - 設定 detail entity 的值
+    [Parameter] public Action<TDetailEntity, decimal> SetQuantity { get; set; } = (_, _) => { };
+    [Parameter] public Action<TDetailEntity, decimal> SetUnitPrice { get; set; } = (_, _) => { };
+    [Parameter] public Action<TDetailEntity, string> SetRemarks { get; set; } = (_, _) => { };
+    [Parameter] public Action<TDetailEntity, TProductEntity> SetProduct { get; set; } = (_, _) => { };
+    
     // Actions
     [Parameter] public Action<TDetailEntity> OnDetailRemoved { get; set; } = _ => { };
-    [Parameter] public Func<TProductEntity, decimal, TDetailEntity> CreateDetailFromProduct { get; set; } = (_, _) => new TDetailEntity();
+    [Parameter] public Func<TDetailEntity> CreateNewDetail { get; set; } = () => new TDetailEntity();
     [Parameter] public Action<TDetailEntity> OnDetailAdded { get; set; } = _ => { };
+    [Parameter] public Action<TDetailEntity> OnDetailUpdated { get; set; } = _ => { };
     
-    private async Task ShowProductSelectionModal()
+    // 產品建議和搜尋狀態管理
+    private Dictionary<int, List<TProductEntity>> productSuggestions = new();
+    private Dictionary<int, string> currentSearchTexts = new();
+    private Dictionary<int, bool> showSuggestions = new();
+    
+    protected override void OnInitialized()
     {
-        await JS.InvokeVoidAsync("showModal", "productSelectionModal");
+        // 初始化時確保至少有一個空白列
+        EnsureMinimumRows();
     }
-
-    private async Task SelectProduct(TProductEntity product)
+    
+    // 確保最少有幾個空白列
+    private void EnsureMinimumRows(int minRows = 3)
     {
-        var detail = CreateDetailFromProduct(product, 1);
-        OnDetailAdded(detail);
-        await JS.InvokeVoidAsync("hideModal", "productSelectionModal");
+        if (Details == null) return;
+        
+        while (Details.Count < minRows)
+        {
+            var newDetail = CreateNewDetail();
+            Details.Add(newDetail);
+        }
     }
-
-    private void RemoveDetail(TDetailEntity detail)
+    
+    // 取得產品搜尋顯示文字
+    private string GetProductSearchText(TDetailEntity detail)
     {
-        OnDetailRemoved(detail);
+        var code = GetProductCode(detail);
+        if (!string.IsNullOrEmpty(code))
+            return code;
+        
+        var name = GetProductName(detail);
+        if (!string.IsNullOrEmpty(name))
+            return name;
+            
+        return "";
+    }
+    
+    // 處理產品搜尋
+    private Task HandleProductSearch(TDetailEntity detail, string searchText, int rowIndex)
+    {
+        currentSearchTexts[rowIndex] = searchText;
+        
+        if (string.IsNullOrWhiteSpace(searchText) || Products == null)
+        {
+            productSuggestions[rowIndex] = new List<TProductEntity>();
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        
+        // 執行搜尋
+        var suggestions = Products.Where(p => 
+            GetProductCodeFromProduct(p).Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+            GetProductNameFromProduct(p).Contains(searchText, StringComparison.OrdinalIgnoreCase))
+            .Take(10)
+            .ToList();
+        
+        productSuggestions[rowIndex] = suggestions;
+        showSuggestions[rowIndex] = true;
+        
+        // 檢查是否需要新增更多列
+        CheckAndAddNewRowIfNeeded(rowIndex);
+        
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+    
+    // 檢查並在需要時新增新列
+    private void CheckAndAddNewRowIfNeeded(int currentRowIndex)
+    {
+        if (Details == null) return;
+        
+        // 如果是最後一列且有輸入內容，自動新增新列
+        if (currentRowIndex >= Details.Count - 1)
+        {
+            var newDetail = CreateNewDetail();
+            Details.Add(newDetail);
+            OnDetailAdded(newDetail);
+        }
+    }
+    
+    // 顯示產品建議
+    private void ShowProductSuggestions(int rowIndex)
+    {
+        showSuggestions[rowIndex] = true;
+        StateHasChanged();
+    }
+    
+    // 隱藏產品建議
+    private void HideProductSuggestions(int rowIndex)
+    {
+        showSuggestions[rowIndex] = false;
+        if (productSuggestions.ContainsKey(rowIndex))
+        {
+            productSuggestions[rowIndex] = new List<TProductEntity>();
+        }
+        StateHasChanged();
+    }
+    
+    // 非同步隱藏產品建議
+    private async Task HideProductSuggestionsAsync(int rowIndex)
+    {
+        await Task.Delay(200);
+        await InvokeAsync(() =>
+        {
+            showSuggestions[rowIndex] = false;
+            if (productSuggestions.ContainsKey(rowIndex))
+            {
+                productSuggestions[rowIndex] = new List<TProductEntity>();
+            }
+            StateHasChanged();
+        });
+    }
+    
+    // 選擇產品建議
+    private async Task SelectProductSuggestion(TDetailEntity detail, TProductEntity product, int rowIndex)
+    {
+        await InvokeAsync(() =>
+        {
+            SetProduct(detail, product);
+            
+            // 預設數量為1（如果當前為0）
+            if (GetQuantity(detail) == 0)
+            {
+                SetQuantity(detail, 1);
+            }
+            
+            // 立即隱藏建議清單
+            showSuggestions[rowIndex] = false;
+            if (productSuggestions.ContainsKey(rowIndex))
+            {
+                productSuggestions[rowIndex] = new List<TProductEntity>();
+            }
+            
+            OnDetailUpdated(detail);
+            StateHasChanged();
+        });
+    }
+    
+    // 更新數量
+    private void UpdateQuantity(TDetailEntity detail, ChangeEventArgs e)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), out var quantity) && quantity >= 0)
+        {
+            SetQuantity(detail, quantity);
+            OnDetailUpdated(detail);
+            StateHasChanged();
+        }
+    }
+    
+    // 更新單價
+    private void UpdateUnitPrice(TDetailEntity detail, ChangeEventArgs e)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), out var unitPrice) && unitPrice >= 0)
+        {
+            SetUnitPrice(detail, unitPrice);
+            OnDetailUpdated(detail);
+            StateHasChanged();
+        }
+    }
+    
+    // 更新備註
+    private void UpdateRemarks(TDetailEntity detail, string remarks)
+    {
+        SetRemarks(detail, remarks);
+        OnDetailUpdated(detail);
+    }
+    
+    // 檢查是否有任何資料
+    private bool HasAnyData()
+    {
+        if (Details == null) return false;
+        return Details.Any(d => 
+            !string.IsNullOrEmpty(GetProductCode(d)) || 
+            !string.IsNullOrEmpty(GetProductName(d)) ||
+            GetQuantity(d) > 0 ||
+            GetUnitPrice(d) > 0 ||
+            !string.IsNullOrEmpty(GetRemarks(d)));
+    }
+    
+    // 計算總計
+    private decimal CalculateTotal()
+    {
+        if (Details == null) return 0;
+        return Details.Sum(d => GetSubtotal(d));
     }
 }

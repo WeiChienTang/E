@@ -80,7 +80,6 @@
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入部門代碼",
                     IsRequired = true,
-                    ContainerCssClass = "col-md-6"
                 },
                 new()
                 {
@@ -89,7 +88,7 @@
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入部門名稱",
                     IsRequired = true,
-                    ContainerCssClass = "col-md-6"
+                    
                 },
                 new()
                 {
@@ -97,7 +96,7 @@
                     Label = "上級部門",
                     FieldType = FormFieldType.Select,
                     Options = new List<SelectOption>(), // 將在 LoadOptionsData 中填充
-                    ContainerCssClass = "col-md-6"
+                    
                 },
                 new()
                 {
@@ -105,7 +104,7 @@
                     Label = "排序順序",
                     FieldType = FormFieldType.Number,
                     Placeholder = "請輸入排序順序",
-                    ContainerCssClass = "col-md-6"
+                    
                 },
                 new()
                 {
@@ -117,7 +116,7 @@
                         new() { Text = "啟用", Value = "Active" },
                         new() { Text = "停用", Value = "Inactive" }
                     },
-                    ContainerCssClass = "col-md-6"
+                    
                 },
                 // 描述區段
                 new()

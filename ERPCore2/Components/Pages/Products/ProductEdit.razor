@@ -133,7 +133,7 @@
                     FieldType = FormFieldType.Text,
                     IsRequired = true,
                     Placeholder = "輸入產品代碼",
-                    ContainerCssClass = "col-md-6"
+                    
                 },
                 new() {
                     PropertyName = nameof(Product.ProductName),
@@ -141,7 +141,7 @@
                     FieldType = FormFieldType.Text,
                     IsRequired = true,
                     Placeholder = "輸入產品名稱",
-                    ContainerCssClass = "col-md-6"
+                    
                 },
                 new() {
                     PropertyName = nameof(Product.ProductCategoryId),
@@ -152,7 +152,7 @@
                         Value = pc.Id.ToString(), 
                         Text = pc.CategoryName 
                     }).Prepend(new SelectOption { Value = "", Text = "請選擇分類" }).ToList(),
-                    ContainerCssClass = "col-md-6"
+                    
                 },
                 new() {
                     PropertyName = nameof(Product.UnitId),
@@ -163,7 +163,7 @@
                         Value = u.Id.ToString(), 
                         Text = u.UnitName 
                     }).Prepend(new SelectOption { Value = "", Text = "請選擇單位" }).ToList(),
-                    ContainerCssClass = "col-md-6"
+                    
                 },
                 new() {
                     PropertyName = nameof(Product.IsActive),
@@ -174,7 +174,7 @@
                         new() { Value = "true", Text = "啟用" },
                         new() { Value = "false", Text = "停用" }
                     },
-                    ContainerCssClass = "col-md-6"
+                    
                 },
                 new() {
                     PropertyName = nameof(Product.Description),
@@ -195,14 +195,14 @@
                     Label = "售價",
                     FieldType = FormFieldType.Number,
                     Placeholder = "0",
-                    ContainerCssClass = "col-md-6"
+                    
                 },
                 new() {
                     PropertyName = nameof(Product.CostPrice),
                     Label = "成本價",
                     FieldType = FormFieldType.Number,
                     Placeholder = "0",
-                    ContainerCssClass = "col-md-6"
+                    
                 },
                 new() {
                     PropertyName = nameof(Product.CurrentStock),
