@@ -40,158 +40,11 @@
                         RequiredPermission="@(Id.HasValue ? "Employee.Update" : "Employee.Create")">
 
         <AdditionalSections>
-            @* 密碼設定區塊（僅新增模式） *@
-            @if (!Id.HasValue)
-            {
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-key me-2"></i>
-                            密碼設定
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-2">
-                                <div class="mb-3">
-                                    <label for="password" class="form-label">密碼 <span class="text-danger">*</span></label>
-                                    <input type="password" @bind="password" class="form-control" id="password" />
-                                    <div class="form-text">密碼長度至少 4 個字元，可包含數字、文字或符號</div>
-                                    @if (!string.IsNullOrEmpty(passwordValidationMessage))
-                                    {
-                                        <div class="text-danger small">@passwordValidationMessage</div>
-                                    }
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="mb-3">
-                                    <label for="confirmPassword" class="form-label">確認密碼 <span class="text-danger">*</span></label>
-                                    <input type="password" @bind="confirmPassword" class="form-control" id="confirmPassword" />
-                                    @if (!string.IsNullOrEmpty(confirmPasswordValidationMessage))
-                                    {
-                                        <div class="text-danger small">@confirmPasswordValidationMessage</div>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-
-            @* 帳號設定區塊（僅編輯模式） *@
-            @if (Id.HasValue && employee != null)
-            {
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-gear me-2"></i>
-                            帳號設定
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">帳號狀態</label>
-                                    <div>
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" id="statusActive" name="employeeStatus"
-                                                   checked="@(employee.Status == EntityStatus.Active)" 
-                                                   @onchange="@(() => OnStatusChange(EntityStatus.Active))" />
-                                            <label class="form-check-label" for="statusActive">啟用</label>
-                                        </div>
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" id="statusInactive" name="employeeStatus"
-                                                   checked="@(employee.Status == EntityStatus.Inactive)" 
-                                                   @onchange="@(() => OnStatusChange(EntityStatus.Inactive))" />
-                                            <label class="form-check-label" for="statusInactive">停用</label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="isLocked" 
-                                               checked="@employee.IsLocked" 
-                                               @onchange="@OnIsLockedChange" />
-                                        <label class="form-check-label" for="isLocked">鎖定帳號</label>
-                                        <div class="form-text">勾選此項將阻止使用者登入</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        @if (employee.FailedLoginAttempts > 0)
-                        {
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">失敗登入次數</label>
-                                        <div class="fw-bold @(employee.FailedLoginAttempts >= 3 ? "text-danger" : "text-warning")">
-                                            @employee.FailedLoginAttempts
-                                        </div>
-                                        <GenericButtonComponent Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small"
-                                                            Text="重設登入失敗次數" OnClick="ResetFailedAttempts" 
-                                                            CssClass="mt-1" />
-                                    </div>
-                                </div>
-                            </div>
-                        }
-
-                        <div class="row">
-                            <div class="col-12">
-                                <GenericButtonComponent Variant="ButtonVariant.Warning" Text="重設密碼" 
-                                                    IconClass="bi-key me-1" OnClick="ShowPasswordResetDialog" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-
-            @* 密碼重設模態對話框 *@
-            @if (showPasswordResetModal)
-            {
-                <div class="modal fade show" style="display: block; background: rgba(0,0,0,0.5);">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">
-                                    <i class="bi-key me-2"></i>
-                                    重設密碼 - @employee?.Account
-                                </h5>
-                                <GenericButtonComponent Variant="ButtonVariant.Secondary" CssClass="btn-close" OnClick="ClosePasswordResetDialog" 
-                                                    Title="關閉" />
-                            </div>
-                            <div class="modal-body">
-                                <div class="mb-3">
-                                    <label for="newPassword" class="form-label">新密碼 <span class="text-danger">*</span></label>
-                                    <input type="password" @bind="newPassword" class="form-control" id="newPassword" 
-                                        placeholder="請輸入新密碼" />
-                                    <div class="form-text">密碼長度至少 4 個字元，可包含數字、文字或符號</div>
-                                    @if (!string.IsNullOrEmpty(newPasswordValidationMessage))
-                                    {
-                                        <div class="text-danger small mt-1">@newPasswordValidationMessage</div>
-                                    }
-                                </div>
-                                <div class="mb-3">
-                                    <label for="confirmNewPassword" class="form-label">確認新密碼 <span class="text-danger">*</span></label>
-                                    <input type="password" @bind="confirmNewPassword" class="form-control" id="confirmNewPassword" 
-                                        placeholder="請再次輸入新密碼" />
-                                    @if (!string.IsNullOrEmpty(confirmNewPasswordValidationMessage))
-                                    {
-                                        <div class="text-danger small mt-1">@confirmNewPasswordValidationMessage</div>
-                                    }
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="取消" OnClick="ClosePasswordResetDialog" />
-                                <GenericButtonComponent Variant="ButtonVariant.Warning" Text="確定重設" OnClick="ConfirmPasswordReset" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
+            @* 員工帳號管理元件 *@
+            <EmployeeAccountManagerComponent Employee="@employee" 
+                                           IsCreateMode="@(!Id.HasValue)"
+                                           OnEmployeeChanged="@OnEmployeeAccountChanged"
+                                           @ref="employeeAccountManager" />
 
             @* 軟刪除衝突處理對話框 *@
             @if (showSoftDeletedConflictModal && softDeletedEmployee != null)
@@ -310,18 +163,8 @@
     private List<FormFieldDefinition> basicFormFields = new();
     private Dictionary<string, string> basicFormSections = new();
     
-    // 密碼欄位
-    private string password = string.Empty;
-    private string confirmPassword = string.Empty;
-    private string passwordValidationMessage = string.Empty;
-    private string confirmPasswordValidationMessage = string.Empty;
-    
-    // 密碼重設模態對話框
-    private bool showPasswordResetModal = false;
-    private string newPassword = string.Empty;
-    private string confirmNewPassword = string.Empty;
-    private string newPasswordValidationMessage = string.Empty;
-    private string confirmNewPasswordValidationMessage = string.Empty;
+    // 元件引用
+    private EmployeeAccountManagerComponent? employeeAccountManager;
     
     // 軟刪除衝突處理對話框
     private bool showSoftDeletedConflictModal = false;
@@ -694,7 +537,7 @@
                 }
                 
                 // 驗證密碼（新增模式）
-                if (!ValidatePassword())
+                if (employeeAccountManager != null && !employeeAccountManager.ValidatePassword())
                 {
                     return false;
                 }
@@ -723,9 +566,9 @@
             }
 
             // 新增模式時設定初始密碼
-            if (!Id.HasValue && !string.IsNullOrWhiteSpace(password))
+            if (!Id.HasValue && employeeAccountManager != null && !string.IsNullOrWhiteSpace(employeeAccountManager.Password))
             {
-                var passwordResult = await AuthenticationService.ResetPasswordAsync(entity.Id, password);
+                var passwordResult = await AuthenticationService.ResetPasswordAsync(entity.Id, employeeAccountManager.Password);
                 if (!passwordResult.IsSuccess)
                 {
                     await NotificationService.ShowErrorAsync($"員工建立成功，但密碼設定失敗：{passwordResult.ErrorMessage}");
@@ -739,216 +582,14 @@
         }
     }
 
-    private bool ValidatePassword()
-    {
-        passwordValidationMessage = string.Empty;
-        confirmPasswordValidationMessage = string.Empty;
-
-        if (string.IsNullOrWhiteSpace(password))
-        {
-            passwordValidationMessage = "請輸入密碼";
-            return false;
-        }
-
-        if (password.Length < 4)
-        {
-            passwordValidationMessage = "密碼長度至少需要 4 個字元";
-            return false;
-        }
-
-        if (string.IsNullOrWhiteSpace(confirmPassword))
-        {
-            confirmPasswordValidationMessage = "請確認密碼";
-            return false;
-        }
-
-        if (password != confirmPassword)
-        {
-            confirmPasswordValidationMessage = "密碼確認不一致";
-            return false;
-        }
-        
-        return true;
-    }
-
-    #region 帳號管理
-
-    private async Task ResetFailedAttempts()
-    {
-        try
-        {
-            if (employee != null)
-            {
-                employee.FailedLoginAttempts = 0;
-                employee.IsLocked = false;
-                
-                // 儲存變更到資料庫
-                await EmployeeService.UpdateAsync(employee);
-                
-                await NotificationService.ShowSuccessAsync("登入失敗次數已重設");
-                StateHasChanged();
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex, 
-                nameof(ResetFailedAttempts), 
-                GetType(),
-                additionalData: new { 
-                    PageName = "EmployeeEdit",
-                    Action = "ResetFailedAttempts",
-                    EmployeeId = employee?.Id
-                });
-        }
-    }
-
-    private async Task ShowPasswordResetDialog()
-    {
-        try
-        {
-            if (employee == null) return;
-
-            // 重置表單狀態
-            newPassword = string.Empty;
-            confirmNewPassword = string.Empty;
-            newPasswordValidationMessage = string.Empty;
-            confirmNewPasswordValidationMessage = string.Empty;
-            
-            // 顯示模態對話框
-            showPasswordResetModal = true;
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex, 
-                nameof(ShowPasswordResetDialog), 
-                GetType(),
-                additionalData: new { 
-                    PageName = "EmployeeEdit",
-                    Action = "ShowPasswordResetDialog",
-                    EmployeeId = employee?.Id,
-                    Account = employee?.Account
-                });
-        }
-    }
-
-    private void ClosePasswordResetDialog()
-    {
-        showPasswordResetModal = false;
-        newPassword = string.Empty;
-        confirmNewPassword = string.Empty;
-        newPasswordValidationMessage = string.Empty;
-        confirmNewPasswordValidationMessage = string.Empty;
-        StateHasChanged();
-    }
-
-    private async Task ConfirmPasswordReset()
-    {
-        try
-        {
-            if (employee == null) return;
-
-            // 驗證新密碼
-            if (!ValidateNewPassword())
-            {
-                StateHasChanged();
-                return;
-            }
-
-            // 執行密碼重設
-            var resetResult = await AuthenticationService.ResetPasswordAsync(employee.Id, newPassword);
-            
-            if (resetResult.IsSuccess)
-            {
-                // 重設登入失敗次數和帳號鎖定狀態（但不更新到資料庫，避免覆蓋密碼）
-                employee.FailedLoginAttempts = 0;
-                employee.IsLocked = false;
-                
-                // 重新載入員工資料以確保密碼已更新，並保持狀態重設
-                var updatedEmployee = await EmployeeService.GetByIdAsync(employee.Id);
-                if (updatedEmployee != null)
-                {
-                    // 保持 UI 中的狀態重設，但使用資料庫中的最新資料（包含新密碼）
-                    updatedEmployee.FailedLoginAttempts = 0;
-                    updatedEmployee.IsLocked = false;
-                    
-                    // 更新員工資料以儲存狀態變更（此時員工對象已包含正確的密碼雜湊）
-                    var statusUpdateResult = await EmployeeService.UpdateAsync(updatedEmployee);
-                    if (statusUpdateResult.IsSuccess)
-                    {
-                        employee = updatedEmployee;
-                    }
-                    else
-                    {
-                        // 即使狀態更新失敗，密碼已經重設成功，所以仍使用更新後的員工資料
-                        employee = updatedEmployee;
-                    }
-                }
-                
-                // 關閉對話框
-                ClosePasswordResetDialog();
-                
-                await NotificationService.ShowSuccessAsync("密碼重設成功！請使用新密碼登入。");
-                StateHasChanged();
-            }
-            else
-            {
-                await NotificationService.ShowErrorAsync($"重設密碼失敗：{resetResult.ErrorMessage}");
-            }
-        }
-        catch (Exception ex)
-        {
-            
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex, 
-                nameof(ConfirmPasswordReset), 
-                GetType(),
-                additionalData: new { 
-                    PageName = "EmployeeEdit",
-                    Action = "ConfirmPasswordReset",
-                    EmployeeId = employee?.Id,
-                    Account = employee?.Account
-                });
-        }
-    }
-
-    private bool ValidateNewPassword()
-    {
-        newPasswordValidationMessage = string.Empty;
-        confirmNewPasswordValidationMessage = string.Empty;
-
-        if (string.IsNullOrWhiteSpace(newPassword))
-        {
-            newPasswordValidationMessage = "請輸入新密碼";
-            return false;
-        }
-
-        if (newPassword.Length < 4)
-        {
-            newPasswordValidationMessage = "密碼長度至少需要 4 個字元";
-            return false;
-        }
-
-        if (string.IsNullOrWhiteSpace(confirmNewPassword))
-        {
-            confirmNewPasswordValidationMessage = "請確認新密碼";
-            return false;
-        }
-
-        if (newPassword != confirmNewPassword)
-        {
-            confirmNewPasswordValidationMessage = "密碼確認不一致";
-            return false;
-        }
-        
-        return true;
-    }
-
-    #endregion
-
     #region 事件處理方法
+
+    private Task OnEmployeeAccountChanged(Employee updatedEmployee)
+    {
+        employee = updatedEmployee;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
 
     private Task OnEmployeeContactsChanged(List<EmployeeContact> updatedContacts)
     {
@@ -1055,9 +696,9 @@
             employeeAddresses = loadedEmployee.EmployeeAddresses?.ToList() ?? new List<EmployeeAddress>();
 
             // 設定密碼（如果有輸入）
-            if (!string.IsNullOrWhiteSpace(password))
+            if (employeeAccountManager != null && !string.IsNullOrWhiteSpace(employeeAccountManager.Password))
             {
-                var passwordResult = await AuthenticationService.ResetPasswordAsync(loadedEmployee.Id, password);
+                var passwordResult = await AuthenticationService.ResetPasswordAsync(loadedEmployee.Id, employeeAccountManager.Password);
                 if (!passwordResult.IsSuccess)
                 {
                     await NotificationService.ShowWarningAsync($"員工復原成功，但密碼設定失敗：{passwordResult.ErrorMessage}");
@@ -1092,26 +733,9 @@
 
     #endregion
 
-    #region UI 事件處理方法
-    
-    private void OnStatusChange(EntityStatus newStatus)
-    {
-        employee.Status = newStatus;
-        StateHasChanged();
-    }
-    
-    private void OnIsLockedChange(ChangeEventArgs e)
-    {
-        var newValue = (bool)e.Value!;
-        employee.IsLocked = newValue;
-        StateHasChanged();
-    }
-    
-    #endregion
     
     public void Dispose()
     {
         _loadingSemaphore?.Dispose();
     }
 }
-

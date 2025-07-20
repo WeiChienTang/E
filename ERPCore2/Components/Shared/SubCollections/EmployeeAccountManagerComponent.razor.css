@@ -1,0 +1,155 @@
+/* EmployeeAccountManagerComponent 專用樣式 */
+.employee-account-manager {
+    position: relative;
+}
+
+.employee-account-manager .card {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+}
+
+.employee-account-manager .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.employee-account-manager .card-title {
+    color: #495057;
+    font-weight: 600;
+}
+
+/* 密碼設定區塊樣式 */
+.employee-account-manager .password-section {
+    margin-bottom: 1rem;
+}
+
+.employee-account-manager .password-section .form-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.employee-account-manager .password-section .text-danger {
+    font-size: 0.875rem;
+}
+
+/* 帳號設定區塊樣式 */
+.employee-account-manager .account-section {
+    margin-top: 1rem;
+}
+
+.employee-account-manager .account-section .form-check-input {
+    margin-top: 0.125rem;
+}
+
+.employee-account-manager .account-section .form-check-label {
+    font-weight: 500;
+}
+
+/* 失敗登入次數顯示 */
+.employee-account-manager .failed-attempts {
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+}
+
+.employee-account-manager .failed-attempts.high-risk {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+}
+
+/* 密碼重設模態對話框樣式 */
+.employee-account-manager .password-reset-modal {
+    z-index: 1055;
+}
+
+.employee-account-manager .password-reset-modal .modal-content {
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.employee-account-manager .password-reset-modal .modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+}
+
+.employee-account-manager .password-reset-modal .modal-title {
+    color: #495057;
+    font-weight: 600;
+}
+
+.employee-account-manager .password-reset-modal .modal-footer {
+    border-top: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+    border-bottom-left-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+}
+
+/* 按鈕樣式增強 */
+.employee-account-manager .btn {
+    font-weight: 500;
+    border-radius: 0.375rem;
+}
+
+.employee-account-manager .btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+}
+
+.employee-account-manager .btn-warning:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+}
+
+.employee-account-manager .btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+}
+
+.employee-account-manager .btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: #fff;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .employee-account-manager .col-md-6 {
+        margin-bottom: 1rem;
+    }
+    
+    .employee-account-manager .modal-dialog {
+        margin: 1rem 0.5rem;
+    }
+}
+
+/* 表單驗證錯誤樣式 */
+.employee-account-manager .is-invalid {
+    border-color: #dc3545;
+}
+
+.employee-account-manager .invalid-feedback {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #dc3545;
+}
+
+/* 成功狀態樣式 */
+.employee-account-manager .is-valid {
+    border-color: #28a745;
+}
+
+/* 載入狀態樣式 */
+.employee-account-manager .loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* 圖示樣式 */
+.employee-account-manager .bi {
+    vertical-align: -0.125em;
+}
