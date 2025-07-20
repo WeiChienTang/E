@@ -215,7 +215,7 @@
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("EmployeeCode", "員工代碼", "輸入員工代碼搜尋")
-                .AddText("Username", "帳號", "輸入帳號搜尋")
+                .AddText("Account", "帳號", "輸入帳號搜尋")
                 .AddText("FirstName", "名字", "輸入名字搜尋")
                 .AddText("LastName", "姓氏", "輸入姓氏搜尋")
                 .AddText("Email", "電子郵件", "輸入電子郵件搜尋")
@@ -253,7 +253,7 @@
             columnDefinitions = new List<TableColumnDefinition>
             {
                 TableColumnDefinition.Text("員工代碼", nameof(Employee.EmployeeCode)),
-                TableColumnDefinition.Text("帳號", nameof(Employee.Username)),
+                TableColumnDefinition.Text("帳號", nameof(Employee.Account)),
                 TableColumnDefinition.Template("姓名", item => 
                 {
                     var employee = (Employee)item;
@@ -317,11 +317,11 @@
             }
 
             // 帳號篩選
-            var usernameFilter = searchModel.GetFilterValue("Username")?.ToString();
-            if (!string.IsNullOrWhiteSpace(usernameFilter))
+            var accountFilter = searchModel.GetFilterValue("Account")?.ToString();
+            if (!string.IsNullOrWhiteSpace(accountFilter))
             {
                 query = query.Where(e => 
-                    e.Username.Contains(usernameFilter, StringComparison.OrdinalIgnoreCase));
+                    e.Account != null && e.Account.Contains(accountFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 名字篩選

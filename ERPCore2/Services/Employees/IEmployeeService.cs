@@ -9,11 +9,11 @@ namespace ERPCore2.Services
     public interface IEmployeeService : IGenericManagementService<Employee>
     {
         /// <summary>
-        /// 根據使用者名稱取得員工
+        /// 根據帳號取得員工
         /// </summary>
-        /// <param name="username">使用者名稱</param>
+        /// <param name="account">帳號</param>
         /// <returns>員工資料</returns>
-        Task<ServiceResult<Employee>> GetByUsernameAsync(string username);
+        Task<ServiceResult<Employee>> GetByAccountAsync(string account);
 
         /// <summary>
         /// 根據員工編號取得員工
@@ -23,12 +23,12 @@ namespace ERPCore2.Services
         Task<ServiceResult<Employee>> GetByEmployeeCodeAsync(string employeeCode);
 
         /// <summary>
-        /// 檢查使用者名稱是否已存在
+        /// 檢查帳號是否已存在
         /// </summary>
-        /// <param name="username">使用者名稱</param>
+        /// <param name="account">帳號</param>
         /// <param name="excludeEmployeeId">排除的員工ID（用於更新時檢查）</param>
         /// <returns>檢查結果</returns>
-        Task<ServiceResult<bool>> IsUsernameExistsAsync(string username, int? excludeEmployeeId = null);
+        Task<ServiceResult<bool>> IsAccountExistsAsync(string account, int? excludeEmployeeId = null);
 
         /// <summary>
         /// 檢查員工編號是否已存在
@@ -39,7 +39,7 @@ namespace ERPCore2.Services
         Task<ServiceResult<bool>> IsEmployeeCodeExistsAsync(string employeeCode, int? excludeEmployeeId = null);
 
         /// <summary>
-        /// 搜尋員工（根據姓名、員工編號或使用者名稱）
+        /// 搜尋員工（根據姓名、員工編號或帳號）
         /// </summary>
         /// <param name="searchTerm">搜尋關鍵字</param>
         /// <returns>員工清單</returns>
@@ -112,12 +112,12 @@ namespace ERPCore2.Services
         Task<ServiceResult> UpdateEmployeeAddressesAsync(int employeeId, List<EmployeeAddress> addresses);
 
         /// <summary>
-        /// 檢查軟刪除的員工資料（包含用戶名稱和員工編號）
+        /// 檢查軟刪除的員工資料（包含帳號和員工編號）
         /// </summary>
-        /// <param name="username">使用者名稱</param>
+        /// <param name="account">帳號</param>
         /// <param name="employeeCode">員工編號</param>
         /// <returns>軟刪除的員工資料，如果不存在則回傳 null</returns>
-        Task<ServiceResult<Employee?>> GetSoftDeletedEmployeeAsync(string username, string employeeCode);
+        Task<ServiceResult<Employee?>> GetSoftDeletedEmployeeAsync(string account, string employeeCode);
 
         /// <summary>
         /// 復原軟刪除的員工
@@ -141,16 +141,15 @@ namespace ERPCore2.Services
         {
             public bool HasSoftDeletedEmployee { get; set; }
             public Employee? SoftDeletedEmployee { get; set; }
-            public string ConflictType { get; set; } = string.Empty; // "Username", "EmployeeCode", "Both"
+            public string ConflictType { get; set; } = string.Empty; // "Account", "EmployeeCode", "Both"
         }
 
         /// <summary>
         /// 檢查新增員工時是否與軟刪除員工衝突
         /// </summary>
-        /// <param name="username">使用者名稱</param>
+        /// <param name="account">帳號</param>
         /// <param name="employeeCode">員工編號</param>
         /// <returns>衝突檢查結果</returns>
-        Task<ServiceResult<SoftDeletedEmployeeCheckResult>> CheckSoftDeletedConflictAsync(string username, string employeeCode);
+        Task<ServiceResult<SoftDeletedEmployeeCheckResult>> CheckSoftDeletedConflictAsync(string account, string employeeCode);
     }
 }
-

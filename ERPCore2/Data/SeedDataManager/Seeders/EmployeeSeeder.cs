@@ -38,8 +38,9 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 EmployeeCode = "ADMIN001",
                 FirstName = "系統",
                 LastName = "管理員",
-                Username = "admin",
+                Account = "admin",
                 PasswordHash = SeedDataHelper.HashPassword("admin123"),
+                IsSystemUser = true, // 設置為系統使用者
                 DepartmentId = null, // 先設為 null，部門建立後再更新
                 RoleId = adminRole?.Id ?? 1,
                 Status = EntityStatus.Active,
@@ -68,7 +69,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     EmployeeId = employee.Id,
                     ContactTypeId = emailContactType.Id,
-                    ContactValue = $"{employee.Username}@erpcore2.com",
+                    ContactValue = $"{employee.Account}@erpcore2.com",
                     IsPrimary = true,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,

@@ -11,10 +11,10 @@ namespace ERPCore2.Services
         /// <summary>
         /// 登入驗證
         /// </summary>
-        /// <param name="username">使用者名稱</param>
+        /// <param name="account">帳號</param>
         /// <param name="password">密碼</param>
         /// <returns>驗證結果</returns>
-        Task<ServiceResult<Employee>> LoginAsync(string username, string password);
+        Task<ServiceResult<Employee>> LoginAsync(string account, string password);
 
         /// <summary>
         /// 登出
@@ -27,7 +27,7 @@ namespace ERPCore2.Services
         /// 變更密碼
         /// </summary>
         /// <param name="employeeId">員工ID</param>
-        /// <param name="currentPassword">當前密碼</param>
+        /// <param name="currentPassword">目前密碼</param>
         /// <param name="newPassword">新密碼</param>
         /// <returns>操作結果</returns>
         Task<ServiceResult> ChangePasswordAsync(int employeeId, string currentPassword, string newPassword);
@@ -48,11 +48,11 @@ namespace ERPCore2.Services
         ServiceResult<bool> ValidatePasswordStrength(string password);
 
         /// <summary>
-        /// 驗證使用者名稱格式
+        /// 驗證帳號格式
         /// </summary>
-        /// <param name="username">使用者名稱</param>
+        /// <param name="account">帳號</param>
         /// <returns>驗證結果</returns>
-        ServiceResult<bool> ValidateUsername(string username);
+        ServiceResult<bool> ValidateAccount(string account);
 
         /// <summary>
         /// 更新最後登入時間

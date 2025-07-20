@@ -8,7 +8,7 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 員工實體 - 系統用戶和權限管理
     /// </summary>
-    [Index(nameof(Username), IsUnique = true)]
+    [Index(nameof(Account), IsUnique = true)]
     [Index(nameof(EmployeeCode), IsUnique = true)]
     public class Employee : BaseEntity
     {
@@ -35,19 +35,24 @@ namespace ERPCore2.Data.Entities
         public string? LastName { get; set; }
 
         /// <summary>
+        /// 是否為系統使用者
+        /// </summary>
+        [Display(Name = "系統使用者")]
+        public bool IsSystemUser { get; set; } = false;
+
+        /// <summary>
         /// 帳號
         /// </summary>
         [Display(Name = "帳號")]
-        [Required(ErrorMessage = "請輸入帳號")]
         [MaxLength(50, ErrorMessage = "帳號不可超過50個字元")]
-        public string Username { get; set; } = string.Empty;
+        public string? Account { get; set; }
+        
         /// <summary>
         /// 密碼雜湊
         /// </summary>
         [Display(Name = "密碼雜湊")]
-        [Required(ErrorMessage = "請設定密碼")]
         [MaxLength(255, ErrorMessage = "密碼雜湊不可超過255個字元")]
-        public string PasswordHash { get; set; } = string.Empty;
+        public string? PasswordHash { get; set; }
 
         /// <summary>
         /// 部門ID
@@ -67,9 +72,8 @@ namespace ERPCore2.Data.Entities
         /// 角色ID
         /// </summary>
         [Display(Name = "角色")]
-        [Required(ErrorMessage = "請選擇角色")]
         [ForeignKey(nameof(Role))]
-        public int RoleId { get; set; }        /// <summary>
+        public int? RoleId { get; set; }        /// <summary>
         /// 最後登入時間
         /// </summary>
         [Display(Name = "最後登入時間")]
@@ -92,7 +96,7 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         [Display(Name = "鎖定時間")]
         public DateTime? LockedAt { get; set; }        // 導航屬性
-        public Role Role { get; set; } = null!;
+        public Role? Role { get; set; }
         public Department? Department { get; set; }
         public EmployeePosition? EmployeePosition { get; set; }
         public ICollection<EmployeeContact> EmployeeContacts { get; set; } = new List<EmployeeContact>();

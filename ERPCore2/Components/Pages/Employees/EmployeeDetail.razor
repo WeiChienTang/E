@@ -136,7 +136,7 @@
         {
             if (employee == null) return "";
             var fullName = $"{employee.LastName}{employee.FirstName}".Trim();
-            return string.IsNullOrEmpty(fullName) ? employee.Username : fullName;
+            return string.IsNullOrEmpty(fullName) ? (employee.Account ?? "") : fullName;
         }
         catch (Exception ex)
         {
@@ -363,7 +363,7 @@
                 new()
                 {
                     Label = "帳號",
-                    Value = employee?.Username,
+                    Value = employee?.Account,
                     ValueBold = true,
                     IconClass = "fas fa-user-circle",
                     IconBgClass = "bg-info bg-opacity-10",

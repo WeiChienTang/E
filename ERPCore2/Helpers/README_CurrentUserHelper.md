@@ -35,7 +35,7 @@ ERPCore2/
 var claims = new List<Claim>
 {
     new Claim(ClaimTypes.NameIdentifier, employee.Id.ToString()),
-    new Claim(ClaimTypes.Name, employee.Username),           // Username
+    new Claim(ClaimTypes.Name, employee.Account),           // Account
     new Claim(ClaimTypes.GivenName, employee.FirstName ?? ""), // FirstName
     new Claim(ClaimTypes.Surname, employee.LastName ?? ""),    // LastName
     new Claim(ClaimTypes.Role, employee.Role?.RoleName ?? "User"),

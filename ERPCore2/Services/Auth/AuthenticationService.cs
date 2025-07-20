@@ -33,40 +33,47 @@ namespace ERPCore2.Services
         /// <summary>
         /// 登入驗證
         /// </summary>
-        public async Task<ServiceResult<Employee>> LoginAsync(string username, string password)
+        public async Task<ServiceResult<Employee>> LoginAsync(string account, string password)
         {
             try
             {
                 using var context = _contextFactory.CreateDbContext();
                 
                 var employee = await context.Employees
-                    .FirstOrDefaultAsync(e => e.Username == username && e.Status == EntityStatus.Active);
+                    .FirstOrDefaultAsync(e => e.Account == account && e.Status == EntityStatus.Active);
 
                 if (employee == null)
                 {
-                    _logger?.LogWarning("Login attempt with invalid username: {Username}", username);
-                    return ServiceResult<Employee>.Failure("使用者名稱或密碼錯誤");
+                    _logger?.LogWarning("Login attempt with invalid account: {Account}", account);
+                    return ServiceResult<Employee>.Failure("帳號或密碼錯誤");
+                }
+
+                // 檢查帳號是否為系統使用者
+                if (!employee.IsSystemUser)
+                {
+                    _logger?.LogWarning("Login attempt for non-system user: {Account}", account);
+                    return ServiceResult<Employee>.Failure("該帳號無法登入系統");
                 }
 
                 // 檢查帳號是否被鎖定
                 var lockResult = await IsUserLockedAsync(employee.Id);
                 if (lockResult.IsSuccess && lockResult.Data)
                 {
-                    _logger?.LogWarning("Login attempt for locked user: {Username}", username);
+                    _logger?.LogWarning("Login attempt for locked user: {Account}", account);
                     return ServiceResult<Employee>.Failure("帳號已被鎖定，請聯絡管理員");
                 }
 
                 // 驗證密碼
                 if (!VerifyPassword(password, employee.PasswordHash))
                 {
-                    _logger?.LogWarning("Login attempt with invalid password for user: {Username}", username);
-                    return ServiceResult<Employee>.Failure("使用者名稱或密碼錯誤");
+                    _logger?.LogWarning("Login attempt with invalid password for user: {Account}", account);
+                    return ServiceResult<Employee>.Failure("帳號或密碼錯誤");
                 }
 
                 // 更新最後登入時間
                 await UpdateLastLoginAsync(employee.Id);
 
-                _logger?.LogInformation("User {Username} logged in successfully", username);
+                _logger?.LogInformation("User {Account} logged in successfully", account);
                 return ServiceResult<Employee>.Success(employee);
             }
             catch (Exception ex)
@@ -215,39 +222,39 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 驗證使用者名稱格式
+        /// 驗證帳號格式
         /// </summary>
-        public ServiceResult<bool> ValidateUsername(string username)
+        public ServiceResult<bool> ValidateAccount(string account)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(username))
+                if (string.IsNullOrWhiteSpace(account))
                 {
-                    return ServiceResult<bool>.Failure("使用者名稱不能為空");
+                    return ServiceResult<bool>.Failure("帳號不能為空");
                 }
 
-                if (username.Length < 3)
+                if (account.Length < 3)
                 {
-                    return ServiceResult<bool>.Failure("使用者名稱長度至少需要3個字元");
+                    return ServiceResult<bool>.Failure("帳號長度至少需要3個字元");
                 }
 
-                if (username.Length > 50)
+                if (account.Length > 50)
                 {
-                    return ServiceResult<bool>.Failure("使用者名稱長度不能超過50個字元");
+                    return ServiceResult<bool>.Failure("帳號長度不能超過50個字元");
                 }
 
                 // 檢查是否只包含字母、數字和底線
-                if (!Regex.IsMatch(username, @"^[a-zA-Z0-9_]+$"))
+                if (!Regex.IsMatch(account, @"^[a-zA-Z0-9_]+$"))
                 {
-                    return ServiceResult<bool>.Failure("使用者名稱只能包含字母、數字和底線");
+                    return ServiceResult<bool>.Failure("帳號只能包含字母、數字和底線");
                 }
 
                 return ServiceResult<bool>.Success(true);
             }
             catch (Exception ex)
             {
-                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(ValidateUsername), GetType(), _logger);
-                return ServiceResult<bool>.Failure("使用者名稱格式驗證發生錯誤");
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(ValidateAccount), GetType(), _logger);
+                return ServiceResult<bool>.Failure("帳號格式驗證發生錯誤");
             }
         }
 

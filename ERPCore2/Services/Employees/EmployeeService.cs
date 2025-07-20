@@ -86,21 +86,21 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 根據使用者名稱取得員工
+        /// 根據帳號取得員工
         /// </summary>
-        public async Task<ServiceResult<Employee>> GetByUsernameAsync(string username)
+        public async Task<ServiceResult<Employee>> GetByAccountAsync(string account)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(username))
-                    return ServiceResult<Employee>.Failure("使用者名稱不能為空");
+                if (string.IsNullOrWhiteSpace(account))
+                    return ServiceResult<Employee>.Failure("帳號不能為空");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var employee = await context.Employees
                     .Include(e => e.Role)
                     .Include(e => e.Department)
                     .Include(e => e.EmployeePosition)
-                    .FirstOrDefaultAsync(e => e.Username == username && !e.IsDeleted);
+                    .FirstOrDefaultAsync(e => e.Account == account && !e.IsDeleted);
 
                 if (employee == null)
                     return ServiceResult<Employee>.Failure("找不到指定的員工");
@@ -109,10 +109,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByUsernameAsync), GetType(), _logger, new { 
-                    Method = nameof(GetByUsernameAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByAccountAsync), GetType(), _logger, new { 
+                    Method = nameof(GetByAccountAsync),
                     ServiceType = GetType().Name,
-                    Username = username
+                    Account = account
                 });
                 return ServiceResult<Employee>.Failure($"取得員工資料時發生錯誤：{ex.Message}");
             }
@@ -152,17 +152,17 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 檢查使用者名稱是否已存在
+        /// 檢查帳號是否已存在
         /// </summary>
-        public async Task<ServiceResult<bool>> IsUsernameExistsAsync(string username, int? excludeEmployeeId = null)
+        public async Task<ServiceResult<bool>> IsAccountExistsAsync(string account, int? excludeEmployeeId = null)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(username))
-                    return ServiceResult<bool>.Failure("使用者名稱不能為空");
+                if (string.IsNullOrWhiteSpace(account))
+                    return ServiceResult<bool>.Failure("帳號不能為空");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Employees.Where(e => e.Username == username && !e.IsDeleted);
+                var query = context.Employees.Where(e => e.Account == account && !e.IsDeleted && e.IsSystemUser);
 
                 if (excludeEmployeeId.HasValue)
                     query = query.Where(e => e.Id != excludeEmployeeId.Value);
@@ -172,13 +172,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsUsernameExistsAsync), GetType(), _logger, new { 
-                    Method = nameof(IsUsernameExistsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsAccountExistsAsync), GetType(), _logger, new { 
+                    Method = nameof(IsAccountExistsAsync),
                     ServiceType = GetType().Name,
-                    Username = username,
+                    Account = account,
                     ExcludeEmployeeId = excludeEmployeeId
                 });
-                return ServiceResult<bool>.Failure($"檢查使用者名稱時發生錯誤：{ex.Message}");
+                return ServiceResult<bool>.Failure($"檢查帳號時發生錯誤：{ex.Message}");
             }
         }
 
@@ -232,7 +232,7 @@ namespace ERPCore2.Services
                                ((e.FirstName != null && e.FirstName.Contains(searchTerm)) ||
                                 (e.LastName != null && e.LastName.Contains(searchTerm)) ||
                                 e.EmployeeCode.Contains(searchTerm) ||
-                                e.Username.Contains(searchTerm) ||
+                                (e.Account != null && e.Account.Contains(searchTerm)) ||
                                 (e.Department != null && e.Department.Name.Contains(searchTerm))))
                     .OrderBy(e => e.EmployeeCode)
                     .ToListAsync();
@@ -417,7 +417,7 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(employee.EmployeeCode))
                     return ServiceResult<bool>.Failure("員工編號不能為空");
 
-                if (string.IsNullOrWhiteSpace(employee.Username))
+                if (string.IsNullOrWhiteSpace(employee.Account))
                     return ServiceResult<bool>.Failure("使用者名稱不能為空");
 
                 // 驗證員工編號格式
@@ -425,7 +425,7 @@ namespace ERPCore2.Services
                     return ServiceResult<bool>.Failure("員工編號只能包含大寫字母和數字");
 
                 // 驗證使用者名稱格式
-                if (!Regex.IsMatch(employee.Username, @"^[a-zA-Z0-9_]+$"))
+                if (!Regex.IsMatch(employee.Account, @"^[a-zA-Z0-9_]+$"))
                     return ServiceResult<bool>.Failure("使用者名稱只能包含英文字母、數字和底線");
 
                 // 驗證角色ID
@@ -491,7 +491,7 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
 
                 // 檢查必要欄位
-                if (string.IsNullOrWhiteSpace(entity.Username))
+                if (string.IsNullOrWhiteSpace(entity.Account))
                     errors.Add("使用者名稱為必填");
 
                 if (string.IsNullOrWhiteSpace(entity.FirstName))
@@ -501,7 +501,7 @@ namespace ERPCore2.Services
                     errors.Add("姓氏為必填");
 
                 // 檢查長度限制
-                if (entity.Username?.Length > 50)
+                if (entity.Account?.Length > 50)
                     errors.Add("使用者名稱不可超過50個字元");
 
                 if (entity.FirstName?.Length > 50)
@@ -514,10 +514,10 @@ namespace ERPCore2.Services
                     errors.Add("員工代碼不可超過20個字元");
 
                 // 檢查使用者名稱是否重複
-                if (!string.IsNullOrWhiteSpace(entity.Username))
+                if (!string.IsNullOrWhiteSpace(entity.Account))
                 {
                     var isDuplicate = await context.Employees
-                        .Where(e => e.Username == entity.Username && !e.IsDeleted)
+                        .Where(e => e.Account == entity.Account && !e.IsDeleted)
                         .Where(e => e.Id != entity.Id) // 排除自己
                         .AnyAsync();
 
@@ -711,11 +711,11 @@ namespace ERPCore2.Services
 
                 if (!string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(employeeCode))
                 {
-                    query = query.Where(e => e.Username == username || e.EmployeeCode == employeeCode);
+                    query = query.Where(e => e.Account == username || e.EmployeeCode == employeeCode);
                 }
                 else if (!string.IsNullOrWhiteSpace(username))
                 {
-                    query = query.Where(e => e.Username == username);
+                    query = query.Where(e => e.Account == username);
                 }
                 else
                 {
@@ -730,7 +730,7 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetSoftDeletedEmployeeAsync), GetType(), _logger, new { 
                     Method = nameof(GetSoftDeletedEmployeeAsync),
                     ServiceType = GetType().Name,
-                    Username = username,
+                    Account = username,
                     EmployeeCode = employeeCode
                 });
                 return ServiceResult<Employee?>.Failure($"檢查軟刪除員工時發生錯誤：{ex.Message}");
@@ -761,12 +761,12 @@ namespace ERPCore2.Services
                         .Include(e => e.Role)
                         .Include(e => e.Department)
                         .Include(e => e.EmployeePosition)
-                        .FirstOrDefaultAsync(e => e.Username == username && e.IsDeleted);
+                        .FirstOrDefaultAsync(e => e.Account == username && e.IsDeleted);
                     
                     if (usernameConflict != null)
                     {
                         softDeletedEmployee = usernameConflict;
-                        conflictTypes.Add("Username");
+                        conflictTypes.Add("Account");
                     }
                 }
 
@@ -785,7 +785,7 @@ namespace ERPCore2.Services
                         if (softDeletedEmployee == null || softDeletedEmployee.Id == codeConflict.Id)
                         {
                             softDeletedEmployee = codeConflict;
-                            if (!conflictTypes.Contains("Username"))
+                            if (!conflictTypes.Contains("Account"))
                                 conflictTypes.Add("EmployeeCode");
                         }
                         else
@@ -810,7 +810,7 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CheckSoftDeletedConflictAsync), GetType(), _logger, new { 
                     Method = nameof(CheckSoftDeletedConflictAsync),
                     ServiceType = GetType().Name,
-                    Username = username,
+                    Account = username,
                     EmployeeCode = employeeCode
                 });
                 return ServiceResult<IEmployeeService.SoftDeletedEmployeeCheckResult>.Failure($"檢查軟刪除衝突時發生錯誤：{ex.Message}");
@@ -913,7 +913,7 @@ namespace ERPCore2.Services
                 
                 // 更新業務資料
                 employee.EmployeeCode = updateData.EmployeeCode;
-                employee.Username = updateData.Username;
+                employee.Account = updateData.Account;
                 employee.FirstName = updateData.FirstName;
                 employee.LastName = updateData.LastName;
                 employee.RoleId = updateData.RoleId;
@@ -938,7 +938,7 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     EmployeeId = employeeId,
                     UpdateData = new { 
-                        updateData.Username, 
+                        updateData.Account, 
                         updateData.EmployeeCode, 
                         updateData.RoleId, 
                         updateData.DepartmentId, 

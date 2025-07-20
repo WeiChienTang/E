@@ -17,7 +17,7 @@ namespace ERPCore2.Controllers
         }
 
         [HttpPost("/auth/signin")]
-        public async Task<IActionResult> SignIn(string username, string password, bool rememberMe = false, string? returnUrl = null)
+        public async Task<IActionResult> SignIn(string account, string password, bool rememberMe = false, string? returnUrl = null)
         {
             // 檢查 Request.Form 中的值來確認表單資料
             if (Request.Form.ContainsKey("rememberMe"))
@@ -34,7 +34,7 @@ namespace ERPCore2.Controllers
             try
             {
                 // 驗證用戶
-                var result = await _authService.LoginAsync(username, password);
+                var result = await _authService.LoginAsync(account, password);
                 
                 if (!result.IsSuccess)
                 {
@@ -54,7 +54,7 @@ namespace ERPCore2.Controllers
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, employee.Id.ToString()),
-                    new Claim(ClaimTypes.Name, employee.Username),
+                    new Claim(ClaimTypes.Name, employee.Account ?? ""),
                     new Claim(ClaimTypes.GivenName, employee.FirstName ?? ""),
                     new Claim(ClaimTypes.Surname, employee.LastName ?? ""),
                     new Claim(ClaimTypes.Role, employee.Role?.RoleName ?? "User"),

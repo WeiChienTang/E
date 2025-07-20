@@ -142,7 +142,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var employee = await context.Employees
                     .Include(e => e.Role)
-                    .ThenInclude(r => r.RolePermissions)
+                    .ThenInclude(r => r != null ? r.RolePermissions : null!)
                     .ThenInclude(rp => rp.Permission)
                     .FirstOrDefaultAsync(e => e.Id == employeeId && !e.IsDeleted);
 
@@ -157,7 +157,7 @@ namespace ERPCore2.Services
 
                 var permissions = employee.Role.RolePermissions
                     .Where(rp => !rp.IsDeleted && rp.Status == EntityStatus.Active && rp.Permission != null && !rp.Permission.IsDeleted)
-                    .Select(rp => rp.Permission)
+                    .Select(rp => rp.Permission!)
                     .ToList();
 
                 // 快取權限資料
