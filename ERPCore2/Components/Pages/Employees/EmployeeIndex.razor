@@ -375,7 +375,7 @@
             var roleIdFilter = searchModel.GetFilterValue("RoleId")?.ToString();
             if (!string.IsNullOrWhiteSpace(roleIdFilter) && int.TryParse(roleIdFilter, out var roleId))
             {
-                query = query.Where(e => e.RoleId == roleId);
+                query = query.Where(e => e.RoleId.HasValue && e.RoleId.Value == roleId);
             }
 
             // 狀態篩選

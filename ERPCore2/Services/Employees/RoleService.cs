@@ -364,7 +364,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var count = await context.Employees
-                    .Where(e => e.RoleId == roleId && !e.IsDeleted)
+                    .Where(e => e.RoleId.HasValue && e.RoleId.Value == roleId && !e.IsDeleted)
                     .CountAsync();
 
                 return ServiceResult<int>.Success(count);
@@ -557,7 +557,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var employeeIds = await context.Employees
-                    .Where(e => e.RoleId == roleId && !e.IsDeleted)
+                    .Where(e => e.RoleId.HasValue && e.RoleId.Value == roleId && !e.IsDeleted)
                     .Select(e => e.Id)
                     .ToListAsync();
 

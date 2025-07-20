@@ -63,7 +63,6 @@
                                 GetTypeId="@(address => address.AddressTypeId)"
                                 GetPostalCode="@(address => address.PostalCode)"
                                 GetCity="@(address => address.City)"
-                                GetDistrict="@(address => address.District)"
                                 GetAddress="@(address => address.Address)"
                                 GetOptionId="@(option => option.Id)"
                                 GetOptionDisplayText="@(option => ((AddressType)option).TypeName)"
@@ -71,7 +70,6 @@
                                 SetTypeId="@((address, typeId) => address.AddressTypeId = typeId)"
                                 SetPostalCode="@((address, value) => address.PostalCode = value)"
                                 SetCity="@((address, value) => address.City = value)"
-                                SetDistrict="@((address, value) => address.District = value)"
                                 SetAddress="@((address, value) => address.Address = value)"
                                 SetParentId="@((address, parentId) => address.CustomerId = parentId)"
                                 ItemsChanged="@OnAddressesChanged" />

@@ -27,9 +27,11 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "城市")]
         public string? City { get; set; }
         
+        // 已停用 - 不再使用行政區欄位，保留以維持資料庫結構相容性
+        // 預設為空值，避免影響現有資料和業務邏輯
         [MaxLength(50, ErrorMessage = "行政區不可超過50個字元")]
         [Display(Name = "行政區")]
-        public string? District { get; set; }
+        public string? District { get; set; } = string.Empty;
         
         [MaxLength(200, ErrorMessage = "地址不可超過200個字元")]
         [Display(Name = "地址")]

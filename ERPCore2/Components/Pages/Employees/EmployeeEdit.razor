@@ -37,7 +37,7 @@
                             SaveSuccessMessage="@(Id.HasValue ? "員工更新成功" : "員工新增成功")"
                             SaveFailureMessage="員工儲存失敗"
                             AdditionalDataLoader="@LoadAdditionalData"
-                        RequiredPermission="@(Id.HasValue ? "Employee.Update" : "Employee.Create")">
+                            RequiredPermission="@(Id.HasValue ? "Employee.Update" : "Employee.Create")">
 
         <AdditionalSections>
             @* 員工帳號管理元件 *@
@@ -106,41 +106,50 @@
                 </div>
             }
 
-            @* 聯絡方式管理 *@
-            <ContactManagerComponent TContactEntity="EmployeeContact"
-                                TParentEntity="Employee"
-                                Items="@employeeContacts"
-                                Options="@(contactTypes.Cast<ERPCore2.Data.BaseEntity>().ToList())"
-                                ParentEntityId="@(employee?.Id ?? 0)"
-                                GetIsPrimary="@(c => c.IsPrimary)"
-                                GetTypeId="@(c => c.ContactTypeId)"
-                                GetContactValue="@(c => c.ContactValue)"
-                                SetIsPrimary="@((c, isPrimary) => c.IsPrimary = isPrimary)"
-                                SetTypeId="@((c, typeId) => c.ContactTypeId = typeId)"
-                                SetContactValue="@((c, value) => c.ContactValue = value)"
-                                SetParentId="@((c, parentId) => c.EmployeeId = parentId)"
-                                ItemsChanged="@OnEmployeeContactsChanged" />
+            @* 聯絡方式和地址管理 - 左右並排 *@
+            <div class="row g-4">
+                @* 聯絡方式管理 *@
+                <div class="col-lg-6">
+                    <ContactManagerComponent TContactEntity="EmployeeContact"
+                                        TParentEntity="Employee"
+                                        Items="@employeeContacts"
+                                        Options="@(contactTypes.Cast<ERPCore2.Data.BaseEntity>().ToList())"
+                                        ParentEntityId="@(employee?.Id ?? 0)"
+                                        GetIsPrimary="@(c => c.IsPrimary)"
+                                        GetTypeId="@(c => c.ContactTypeId)"
+                                        GetContactValue="@(c => c.ContactValue)"
+                                        GetOptionId="@(option => option.Id)"
+                                        GetOptionDisplayText="@(option => ((ContactType)option).TypeName)"
+                                        SetIsPrimary="@((c, isPrimary) => c.IsPrimary = isPrimary)"
+                                        SetTypeId="@((c, typeId) => c.ContactTypeId = typeId)"
+                                        SetContactValue="@((c, value) => c.ContactValue = value)"
+                                        SetParentId="@((c, parentId) => c.EmployeeId = parentId)"
+                                        ItemsChanged="@OnEmployeeContactsChanged" />
+                </div>
 
-            @* 地址管理 *@
-            <AddressManagerComponent TAddressEntity="EmployeeAddress"
-                                TParentEntity="Employee"
-                                Items="@employeeAddresses"
-                                Options="@(addressTypes.Cast<ERPCore2.Data.BaseEntity>().ToList())"
-                                ParentEntityId="@(employee?.Id ?? 0)"
-                                GetIsPrimary="@(a => a.IsPrimary)"
-                                GetTypeId="@(a => a.AddressTypeId)"
-                                GetPostalCode="@(a => a.PostalCode)"
-                                GetCity="@(a => a.City)"
-                                GetDistrict="@(a => a.District)"
-                                GetAddress="@(a => a.Address)"
-                                SetIsPrimary="@((a, isPrimary) => a.IsPrimary = isPrimary)"
-                                SetTypeId="@((a, typeId) => a.AddressTypeId = typeId)"
-                                SetPostalCode="@((a, postalCode) => a.PostalCode = postalCode)"
-                                SetCity="@((a, city) => a.City = city)"
-                                SetDistrict="@((a, district) => a.District = district)"
-                                SetAddress="@((a, address) => a.Address = address)"
-                                SetParentId="@((a, parentId) => a.EmployeeId = parentId)"
-                                ItemsChanged="@OnEmployeeAddressesChanged" />
+                @* 地址管理 *@
+                <div class="col-lg-6">
+                    <AddressManagerComponent TAddressEntity="EmployeeAddress"
+                                        TParentEntity="Employee"
+                                        Items="@employeeAddresses"
+                                        Options="@(addressTypes.Cast<ERPCore2.Data.BaseEntity>().ToList())"
+                                        ParentEntityId="@(employee?.Id ?? 0)"
+                                        GetIsPrimary="@(a => a.IsPrimary)"
+                                        GetTypeId="@(a => a.AddressTypeId)"
+                                        GetPostalCode="@(a => a.PostalCode)"
+                                        GetCity="@(a => a.City)"
+                                        GetAddress="@(a => a.Address)"
+                                        GetOptionId="@(option => option.Id)"
+                                        GetOptionDisplayText="@(option => ((AddressType)option).TypeName)"
+                                        SetIsPrimary="@((a, isPrimary) => a.IsPrimary = isPrimary)"
+                                        SetTypeId="@((a, typeId) => a.AddressTypeId = typeId)"
+                                        SetPostalCode="@((a, postalCode) => a.PostalCode = postalCode)"
+                                        SetCity="@((a, city) => a.City = city)"
+                                        SetAddress="@((a, address) => a.Address = address)"
+                                        SetParentId="@((a, parentId) => a.EmployeeId = parentId)"
+                                        ItemsChanged="@OnEmployeeAddressesChanged" />
+                </div>
+            </div>
         </AdditionalSections>
     </GenericEditPageComponent>
 
@@ -431,12 +440,17 @@
         {
             if (!Id.HasValue) 
             {
+                // 取得第一個可用的角色作為預設值
+                var defaultRole = roles.FirstOrDefault();
+                var defaultRoleId = defaultRole?.Id;
+                
                 var newEmployee = new Employee
                 {
                     EmployeeCode = GenerateEmployeeCode(),
                     Account = "",
                     LastName = "",
                     FirstName = "",
+                    RoleId = defaultRoleId, // 設置預設角色
                     DepartmentId = null,
                     EmployeePositionId = null,
                     Status = EntityStatus.Active,

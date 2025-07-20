@@ -61,13 +61,11 @@
                                GetTypeId="@(a => a.AddressTypeId)"
                                GetPostalCode="@(a => a.PostalCode)"
                                GetCity="@(a => a.City)"
-                               GetDistrict="@(a => a.District)"
                                GetAddress="@(a => a.Address)"
                                SetIsPrimary="@((a, isPrimary) => a.IsPrimary = isPrimary)"
                                SetTypeId="@((a, typeId) => a.AddressTypeId = typeId)"
                                SetPostalCode="@((a, postalCode) => a.PostalCode = postalCode)"
                                SetCity="@((a, city) => a.City = city)"
-                               SetDistrict="@((a, district) => a.District = district)"
                                SetAddress="@((a, address) => a.Address = address)"
                                SetParentId="@((a, parentId) => a.SupplierId = parentId)"
                                ItemsChanged="@OnSupplierAddressesChanged" />

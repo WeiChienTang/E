@@ -262,7 +262,7 @@ namespace ERPCore2.Services
                     .Include(e => e.Role)
                     .Include(e => e.Department)
                     .Include(e => e.EmployeePosition)
-                    .Where(e => e.RoleId == roleId && !e.IsDeleted)
+                    .Where(e => e.RoleId.HasValue && e.RoleId.Value == roleId && !e.IsDeleted)
                     .OrderBy(e => e.EmployeeCode)
                     .ToListAsync();
 
@@ -429,7 +429,7 @@ namespace ERPCore2.Services
                     return ServiceResult<bool>.Failure("使用者名稱只能包含英文字母、數字和底線");
 
                 // 驗證角色ID
-                if (employee.RoleId <= 0)
+                if (!employee.RoleId.HasValue || employee.RoleId.Value <= 0)
                     return ServiceResult<bool>.Failure("必須指定有效的角色");
 
                 return ServiceResult<bool>.Success(true);
@@ -538,10 +538,10 @@ namespace ERPCore2.Services
                 }
 
                 // 檢查角色是否存在
-                if (entity.RoleId > 0)
+                if (entity.RoleId.HasValue && entity.RoleId.Value > 0)
                 {
                     var roleExists = await context.Roles
-                        .AnyAsync(r => r.Id == entity.RoleId && !r.IsDeleted && r.Status == EntityStatus.Active);
+                        .AnyAsync(r => r.Id == entity.RoleId.Value && !r.IsDeleted && r.Status == EntityStatus.Active);
 
                     if (!roleExists)
                         errors.Add("指定的角色不存在或已停用");
@@ -869,10 +869,10 @@ namespace ERPCore2.Services
                 }
 
                 // 驗證角色是否存在且有效
-                if (updateData.RoleId > 0)
+                if (updateData.RoleId.HasValue && updateData.RoleId.Value > 0)
                 {
                     var roleExists = await context.Roles
-                        .AnyAsync(r => r.Id == updateData.RoleId && !r.IsDeleted && r.Status == EntityStatus.Active);
+                        .AnyAsync(r => r.Id == updateData.RoleId.Value && !r.IsDeleted && r.Status == EntityStatus.Active);
                     
                     if (!roleExists)
                     {
