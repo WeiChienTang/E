@@ -52,7 +52,7 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-2">
                                 <div class="mb-3">
                                     <label for="password" class="form-label">密碼 <span class="text-danger">*</span></label>
                                     <input type="password" @bind="password" class="form-control" id="password" />
@@ -63,7 +63,7 @@
                                     }
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-2">
                                 <div class="mb-3">
                                     <label for="confirmPassword" class="form-label">確認密碼 <span class="text-danger">*</span></label>
                                     <input type="password" @bind="confirmPassword" class="form-control" id="confirmPassword" />
@@ -521,14 +521,6 @@
             },
             new()
             {
-                PropertyName = nameof(Employee.Username),
-                Label = "帳號",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入帳號（用於登入系統）",
-                IsRequired = true
-            },
-            new()
-            {
                 PropertyName = nameof(Employee.LastName),
                 Label = "姓氏",
                 FieldType = FormFieldType.Text,
@@ -541,6 +533,14 @@
                 Label = "名字",
                 FieldType = FormFieldType.Text,
                 Placeholder = "請輸入名字",
+                IsRequired = true
+            },
+            new()
+            {
+                PropertyName = nameof(Employee.Username),
+                Label = "帳號",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入帳號（用於登入系統）",
                 IsRequired = true
             },
             new()
