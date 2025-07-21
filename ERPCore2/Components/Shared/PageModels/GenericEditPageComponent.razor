@@ -63,9 +63,10 @@
             @if (UseGenericForm && FormFields.Any())
             {
                 <div class="card mb-4">
-                    <GenericHeaderComponent Title="@FormTitle"
+                    
+                    @* <GenericHeaderComponent Title="@FormTitle"
                                            Subtitle="@FormSubtitle"
-                                           IsCardHeader="true" />
+                                           IsCardHeader="true" /> *@
                     <div class="card-body">                        
                         <GenericFormComponent TModel="TEntity"
                                             Model="@Entity"
@@ -73,22 +74,22 @@
                                             FieldSections="@FormSections"
                                             ShowFormHeader="false"
                                             ShowFormButtons="false" />
+                        @* 自訂表單內容 *@
+                         @if (CustomFormContent != null)
+                        {
+                            <CascadingValue Value="@editContext">
+                                @CustomFormContent
+                            </CascadingValue>
+                        }
+            
+                        @* 額外區段 *@
+                        @if (AdditionalSections != null)
+                        {
+                            @AdditionalSections
+                        }
                     </div>
                 </div>
-            }            
-            @* 自訂表單內容 *@
-            @if (CustomFormContent != null)
-            {
-                <CascadingValue Value="@editContext">
-                    @CustomFormContent
-                </CascadingValue>
-            }
-            
-            @* 額外區段 *@
-            @if (AdditionalSections != null)
-            {
-                @AdditionalSections
-            }
+            }           
         }
     </div>
 </div>

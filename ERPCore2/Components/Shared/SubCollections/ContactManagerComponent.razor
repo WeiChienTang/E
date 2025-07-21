@@ -9,13 +9,13 @@
 @inject INotificationService NotificationService
 
 <div class="card mb-4">    
-    <div class="card-header">
+    @* <div class="card-header">
         <h5 class="card-title mb-0">
             <i class="bi bi-@Icon me-2"></i>
             @Title
         </h5>
         <small class="text-muted">@GetSubtitle()</small>
-    </div>    
+    </div>     *@
     <div class="card-body">
         @if (Items.Any())
         {
@@ -96,7 +96,7 @@
                                 <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" 
                                                       Size="ButtonSize.Large"
                                                       IconClass="bi bi-plus-lg"
-                                                      Text="新增@ItemDisplayName"
+                                                      Text="新增"
                                                       OnClick="AddItemAsync" />
                             </div>
                         </div>
@@ -111,12 +111,12 @@
                 <div class="mb-3">
                     <i class="@EmptyIcon text-muted" style="font-size: 3rem;"></i>
                 </div>
-                <h6 class="text-muted mb-3">尚無@ItemDisplayName資料</h6>
+                <h6 class="text-muted mb-3">尚無資料</h6>
                 @if (!IsReadOnly)
                 {
                     <GenericButtonComponent Variant="ButtonVariant.Primary" 
                                           IconClass="bi bi-plus-lg"
-                                          Text="新增第一個@ItemDisplayName"
+                                          Text="新增第一個"
                                           OnClick="AddItemAsync" />
                 }
             </div>

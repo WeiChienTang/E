@@ -340,7 +340,9 @@
         {
             Text = r.RoleName,
             Value = r.Id.ToString()
-        }).ToList();        // 職位選項
+        }).ToList();        
+
+        // 職位選項
         var positionOptions = employeePositions.Select(ep => new SelectOption
         {
             Text = ep.Name,
@@ -389,22 +391,6 @@
             },
             new()
             {
-                PropertyName = nameof(Employee.Account),
-                Label = "帳號",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入帳號（用於登入系統）",
-                IsRequired = true
-            },
-            new()
-            {
-                PropertyName = nameof(Employee.RoleId),
-                Label = "角色",
-                FieldType = FormFieldType.Select,
-                Options = roleOptions,
-                IsRequired = true
-            },
-            new()
-            {
                 PropertyName = nameof(Employee.DepartmentId),
                 Label = "部門",
                 FieldType = FormFieldType.Select,
@@ -418,18 +404,45 @@
                 FieldType = FormFieldType.Select,
                 Placeholder = "請選擇職位",
                 Options = positionOptions
+            },
+            new()
+            {
+                PropertyName = nameof(Employee.IsSystemUser),
+                Label = "系統使用者",
+                FieldType = FormFieldType.Checkbox,
+                HelpText = "勾選此項目表示該員工可以登入系統"
+            },
+            new()
+            {
+                PropertyName = nameof(Employee.Account),
+                Label = "帳號",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入帳號（用於登入系統）",
+                IsRequired = true,  
+                HelpText = "系統使用者必須設定帳號"
+            },
+            new()
+            {
+                PropertyName = nameof(Employee.RoleId),
+                Label = "角色",
+                FieldType = FormFieldType.Select,
+                Options = roleOptions,
+                IsRequired = true
             }
         };
 
         basicFormSections = new Dictionary<string, string>
         {
-            { nameof(Employee.EmployeeCode), "基本資訊" },
-            { nameof(Employee.Account), "基本資訊" },
+            { nameof(Employee.EmployeeCode), "基本資訊" },            
             { nameof(Employee.LastName), "基本資訊" },
             { nameof(Employee.FirstName), "基本資訊" },
-            { nameof(Employee.RoleId), "角色權限" },
+            
             { nameof(Employee.DepartmentId), "工作資訊" },
-            { nameof(Employee.EmployeePositionId), "工作資訊" }
+            { nameof(Employee.EmployeePositionId), "工作資訊" },
+
+            { nameof(Employee.IsSystemUser), "帳號設定" },
+            { nameof(Employee.Account), "帳號設定" },
+            { nameof(Employee.RoleId), "帳號設定" },
         };
     }
 
@@ -477,6 +490,9 @@
                 
                 // 載入地址資料
                 employeeAddresses = await EmployeeAddressService.GetByEmployeeIdAsync(Id.Value);
+                
+                // 重新初始化表單欄位以反映 IsSystemUser 的狀態
+                InitializeFormFields();
                 
                 // 觸發 UI 更新
                 StateHasChanged();
@@ -537,8 +553,9 @@
             // 只在新增模式進行軟刪除衝突檢查
             if (!Id.HasValue)
             {
-                // 檢查軟刪除衝突
-                var checkResult = await EmployeeService.CheckSoftDeletedConflictAsync(entity.Account ?? "", entity.EmployeeCode);
+                // 檢查軟刪除衝突（只有系統使用者才需要檢查帳號衝突）
+                var accountToCheck = entity.IsSystemUser ? (entity.Account ?? "") : "";
+                var checkResult = await EmployeeService.CheckSoftDeletedConflictAsync(accountToCheck, entity.EmployeeCode);
                 if (checkResult.IsSuccess && checkResult.Data != null && checkResult.Data.HasSoftDeletedEmployee)
                 {
                     softDeletedEmployee = checkResult.Data.SoftDeletedEmployee;
@@ -550,10 +567,25 @@
                     return false;
                 }
                 
-                // 驗證密碼（新增模式）
-                if (employeeAccountManager != null && !employeeAccountManager.ValidatePassword())
+                // 驗證密碼（新增模式，只有系統使用者需要密碼）
+                if (entity.IsSystemUser)
                 {
-                    return false;
+                    // 使用 EmployeeAccountManagerComponent 的驗證
+                    if (employeeAccountManager != null && !employeeAccountManager.ValidatePassword())
+                    {
+                        return false;
+                    }
+                    
+                    // 設置密碼到 entity
+                    if (employeeAccountManager != null && !string.IsNullOrWhiteSpace(employeeAccountManager.Password))
+                    {
+                        entity.PasswordHash = employeeAccountManager.Password;
+                    }
+                    else
+                    {
+                        await NotificationService.ShowErrorAsync("系統使用者必須設定密碼");
+                        return false;
+                    }
                 }
             }
             
@@ -572,6 +604,13 @@
     {
         try
         {
+            // 如果不是系統使用者，清空帳號欄位
+            if (!entity.IsSystemUser)
+            {
+                entity.Account = null;
+                await EmployeeService.UpdateAsync(entity);
+            }
+
             // 更新聯絡方式和地址資料
             if (employeeContacts.Any() || employeeAddresses.Any())
             {
@@ -579,13 +618,18 @@
                 await EmployeeService.UpdateEmployeeAddressesAsync(entity.Id, employeeAddresses);
             }
 
-            // 新增模式時設定初始密碼
-            if (!Id.HasValue && employeeAccountManager != null && !string.IsNullOrWhiteSpace(employeeAccountManager.Password))
+            // 新增模式時設定初始密碼（只有系統使用者且有輸入密碼時）
+            if (!Id.HasValue && entity.IsSystemUser && employeeAccountManager != null && !string.IsNullOrWhiteSpace(employeeAccountManager.Password))
             {
                 var passwordResult = await AuthenticationService.ResetPasswordAsync(entity.Id, employeeAccountManager.Password);
                 if (!passwordResult.IsSuccess)
                 {
                     await NotificationService.ShowErrorAsync($"員工建立成功，但密碼設定失敗：{passwordResult.ErrorMessage}");
+                }
+                else
+                {
+                    // 清空密碼欄位（安全性考量）
+                    employeeAccountManager.ClearPassword();
                 }
             }
         }
@@ -617,6 +661,18 @@
         employeeAddresses = updatedAddresses;
         StateHasChanged();
         return Task.CompletedTask;
+    }
+
+    // 處理系統使用者狀態變更
+    private void OnIsSystemUserChanged(bool isSystemUser)
+    {
+        if (employee != null)
+        {
+            employee.IsSystemUser = isSystemUser;
+            // 重新初始化表單欄位以更新密碼欄位的必填狀態
+            InitializeFormFields();
+            StateHasChanged();
+        }
     }
 
     #endregion
@@ -709,13 +765,20 @@
             employeeContacts = loadedEmployee.EmployeeContacts?.ToList() ?? new List<EmployeeContact>();
             employeeAddresses = loadedEmployee.EmployeeAddresses?.ToList() ?? new List<EmployeeAddress>();
 
-            // 設定密碼（如果有輸入）
-            if (employeeAccountManager != null && !string.IsNullOrWhiteSpace(employeeAccountManager.Password))
+            // 設定密碼（如果有輸入且員工為系統使用者）
+            if (loadedEmployee.IsSystemUser && !string.IsNullOrWhiteSpace(loadedEmployee.PasswordHash))
             {
-                var passwordResult = await AuthenticationService.ResetPasswordAsync(loadedEmployee.Id, employeeAccountManager.Password);
+                var passwordResult = await AuthenticationService.ResetPasswordAsync(loadedEmployee.Id, loadedEmployee.PasswordHash);
                 if (!passwordResult.IsSuccess)
                 {
                     await NotificationService.ShowWarningAsync($"員工復原成功，但密碼設定失敗：{passwordResult.ErrorMessage}");
+                }
+                else
+                {
+                    // 清空密碼欄位
+                    loadedEmployee.PasswordHash = string.Empty;
+                    // 清空 EmployeeAccountManagerComponent 的密碼
+                    employeeAccountManager?.ClearPassword();
                 }
             }
 
@@ -745,9 +808,8 @@
         }
     }
 
-    #endregion
+    #endregion    
 
-    
     public void Dispose()
     {
         _loadingSemaphore?.Dispose();

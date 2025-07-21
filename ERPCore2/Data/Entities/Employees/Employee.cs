@@ -73,7 +73,8 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         [Display(Name = "角色")]
         [ForeignKey(nameof(Role))]
-        public int? RoleId { get; set; }        /// <summary>
+        public int? RoleId { get; set; }
+        /// <summary>
         /// 最後登入時間
         /// </summary>
         [Display(Name = "最後登入時間")]

@@ -7,9 +7,11 @@
 @using ERPCore2.Components.Shared.Buttons
 @using Microsoft.JSInterop
 
-<div class="card mb-4">    <GenericHeaderComponent Title="@Title"
+<div class="card mb-4">    
+    <GenericHeaderComponent Title="@Title"
                            Subtitle="@GetSubtitle()"
-                           IsCardHeader="true">        <ActionButtons>
+                           IsCardHeader="true">        
+        <ActionButtons>
             @if (!IsReadOnly)
             {
                 <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@($"新增{ItemDisplayName}")" 

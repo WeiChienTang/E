@@ -491,14 +491,18 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
 
                 // 檢查必要欄位
-                if (string.IsNullOrWhiteSpace(entity.Account))
-                    errors.Add("使用者名稱為必填");
+                // 帳號只有在系統使用者時才為必填
+                if (entity.IsSystemUser && string.IsNullOrWhiteSpace(entity.Account))
+                    errors.Add("系統使用者必須設定帳號");
 
                 if (string.IsNullOrWhiteSpace(entity.FirstName))
                     errors.Add("名字為必填");
 
                 if (string.IsNullOrWhiteSpace(entity.LastName))
                     errors.Add("姓氏為必填");
+
+                if (string.IsNullOrWhiteSpace(entity.EmployeeCode))
+                    errors.Add("員工代碼為必填");
 
                 // 檢查長度限制
                 if (entity.Account?.Length > 50)
@@ -513,16 +517,16 @@ namespace ERPCore2.Services
                 if (!string.IsNullOrEmpty(entity.EmployeeCode) && entity.EmployeeCode.Length > 20)
                     errors.Add("員工代碼不可超過20個字元");
 
-                // 檢查使用者名稱是否重複
-                if (!string.IsNullOrWhiteSpace(entity.Account))
+                // 檢查使用者名稱是否重複（只有系統使用者才需要檢查）
+                if (entity.IsSystemUser && !string.IsNullOrWhiteSpace(entity.Account))
                 {
                     var isDuplicate = await context.Employees
-                        .Where(e => e.Account == entity.Account && !e.IsDeleted)
+                        .Where(e => e.Account == entity.Account && !e.IsDeleted && e.IsSystemUser)
                         .Where(e => e.Id != entity.Id) // 排除自己
                         .AnyAsync();
 
                     if (isDuplicate)
-                        errors.Add("使用者名稱已存在");
+                        errors.Add("此帳號已被其他系統使用者使用");
                 }
 
                 // 檢查員工代碼是否重複
@@ -754,14 +758,14 @@ namespace ERPCore2.Services
                 Employee? softDeletedEmployee = null;
                 var conflictTypes = new List<string>();
 
-                // 檢查使用者名稱衝突
+                // 檢查使用者名稱衝突（只有系統使用者的帳號才需要檢查）
                 if (!string.IsNullOrWhiteSpace(username))
                 {
                     var usernameConflict = await context.Employees
                         .Include(e => e.Role)
                         .Include(e => e.Department)
                         .Include(e => e.EmployeePosition)
-                        .FirstOrDefaultAsync(e => e.Account == username && e.IsDeleted);
+                        .FirstOrDefaultAsync(e => e.Account == username && e.IsDeleted && e.IsSystemUser);
                     
                     if (usernameConflict != null)
                     {

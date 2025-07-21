@@ -10,7 +10,7 @@
 @implements IDisposable
 
 <div class="@GetFormCssClass()">
-    @if (ShowFormHeader && !string.IsNullOrEmpty(FormTitle))
+    @* @if (ShowFormHeader && !string.IsNullOrEmpty(FormTitle))
     {
         <div class="card-header">
             <h5 class="card-title mb-0">
@@ -21,7 +21,7 @@
                 @FormTitle
             </h5>
         </div>
-    }
+    } *@
     
     <div class="@GetFormBodyCssClass()">
         <EditForm Model="Model" OnValidSubmit="HandleValidSubmit" @ref="editForm">
@@ -63,7 +63,8 @@
                         }
                     }
                 </div>
-            }              @if (ShowFormButtons)
+            }              
+            @if (ShowFormButtons)
             {
                 <div class="mt-4 d-flex gap-2">
                     <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@SubmitButtonText" 
