@@ -14,7 +14,7 @@
             </div> *@
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-2">
                         <div class="mb-3">
                             <label for="password" class="form-label">密碼 <span class="text-danger">*</span></label>
                             <input type="password" @bind="password" class="form-control" id="password" />
@@ -25,7 +25,7 @@
                             }
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-2">
                         <div class="mb-3">
                             <label for="confirmPassword" class="form-label">確認密碼 <span class="text-danger">*</span></label>
                             <input type="password" @bind="confirmPassword" class="form-control" id="confirmPassword" />
@@ -43,16 +43,9 @@
     @* 帳號設定區塊（僅編輯模式） *@
     @if (!IsCreateMode && Employee != null)
     {
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-gear me-2"></i>
-                    帳號設定
-                </h5>
-            </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-2">
                         <div class="mb-3">
                             <label class="form-label">帳號狀態</label>
                             <div>
@@ -71,7 +64,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-2">
                         <div class="mb-3">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="isLocked" 
@@ -87,7 +80,7 @@
                 @if (Employee.FailedLoginAttempts > 0)
                 {
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-2">
                             <div class="mb-3">
                                 <label class="form-label">失敗登入次數</label>
                                 <div class="fw-bold @(Employee.FailedLoginAttempts >= 3 ? "text-danger" : "text-warning")">
@@ -109,7 +102,6 @@
                     </div>
                 </div>
             </div>
-        </div>
     }
 
     @* 密碼重設模態對話框 *@

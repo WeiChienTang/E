@@ -77,8 +77,7 @@
                                                placeholder="@ValuePlaceholder"
                                                value="@GetContactValue(item)"
                                                @onchange="@(e => UpdateContactValue(index, e.Value?.ToString()))"
-                                               readonly="@IsReadOnly" />
-                                        <div class="form-text">請輸入正確的@ValueDisplayName格式</div>
+                                               readonly="@IsReadOnly" />                                        
                                     </div>
                                 </div>
                             </div>
@@ -96,7 +95,7 @@
                                 <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" 
                                                       Size="ButtonSize.Large"
                                                       IconClass="bi bi-plus-lg"
-                                                      Text="新增"
+                                                      Text="新增聯繫"
                                                       OnClick="AddItemAsync" />
                             </div>
                         </div>
@@ -116,7 +115,7 @@
                 {
                     <GenericButtonComponent Variant="ButtonVariant.Primary" 
                                           IconClass="bi bi-plus-lg"
-                                          Text="新增第一個"
+                                          Text="新增聯繫"
                                           OnClick="AddItemAsync" />
                 }
             </div>

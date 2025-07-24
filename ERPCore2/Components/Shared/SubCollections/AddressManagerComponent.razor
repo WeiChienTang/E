@@ -113,7 +113,7 @@
                                 <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" 
                                                       Size="ButtonSize.Large"
                                                       IconClass="bi bi-plus-lg"
-                                                      Text="新增"
+                                                      Text="新增地址"
                                                       OnClick="AddItemAsync" />
                             </div>
                         </div>
@@ -133,7 +133,7 @@
                 {
                     <GenericButtonComponent Variant="ButtonVariant.Primary" 
                                           IconClass="bi bi-plus-lg"
-                                          Text="新增第一個"
+                                          Text="新增地址"
                                           OnClick="AddItemAsync" />
                 }
             </div>
@@ -155,7 +155,7 @@
     [Parameter] public string Icon { get; set; } = "geo-alt";
     [Parameter] public string ItemDisplayName { get; set; } = "地址";
     [Parameter] public string TypeDisplayName { get; set; } = "地址類型";
-    [Parameter] public string EmptyIcon { get; set; } = "bi-geo-alt-slash";
+    [Parameter] public string EmptyIcon { get; set; } = "bi-geo-alt";
     
     // ===== 委派參數 - Getter =====
     [Parameter] public Func<TAddressEntity, bool> GetIsPrimary { get; set; } = item => false;

@@ -7,21 +7,16 @@
 
 
 
-<div class="card">
-    <div class="card-header">
-        <h5 class="card-title mb-0">@Config.Title</h5>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead class="table-header-primary">
+<div class="table-responsive">
+    <table class="table table-striped table-hover table-bordered">
+        <thead class="table-header-primary">
                     <tr>
                         <th style="width: 250px;">產品代碼/名稱</th>
                         <th style="width: 250px;">產品名稱</th>
                         <th style="width: 100px;">數量</th>
                         <th style="width: 150px;">單價</th>
-                        <th style="width: 150px;">小計</th>
-                        <th>備註</th>
+                        <th style="width: 180px;">小計</th>
+                        <th style="width: 200px;">備註</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -121,8 +116,6 @@
                 }
             </table>
         </div>
-    </div>
-</div>
 
 @code {
     [Parameter] public IList<TDetailEntity>? Details { get; set; }

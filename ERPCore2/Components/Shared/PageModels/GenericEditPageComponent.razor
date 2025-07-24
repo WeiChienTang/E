@@ -75,14 +75,34 @@
                                             ShowFormHeader="false"
                                             ShowFormButtons="false" />
                         @* 自訂表單內容 *@
-                         @if (CustomFormContent != null)
+                        @if (CustomFormContent != null)
                         {
                             <CascadingValue Value="@editContext">
                                 @CustomFormContent
                             </CascadingValue>
                         }
             
-                        @* 額外區段 *@
+                        @* 自訂模組系統 *@
+                        @if (CustomModules != null && CustomModules.Any())
+                        {
+                            @foreach (var module in CustomModules.Where(m => m.IsVisible).OrderBy(m => m.Order))
+                            {
+                                @if (module.Content != null)
+                                {
+                                    <div class="@GetModuleCssClass(module)">
+                                        @if (!string.IsNullOrWhiteSpace(module.Title))
+                                        {
+                                            <h5 class="mb-3">@module.Title</h5>
+                                        }
+                                        <CascadingValue Value="@editContext">
+                                            @module.Content
+                                        </CascadingValue>
+                                    </div>
+                                }
+                            }
+                        }
+                        
+                        @* 額外區段 (保持向後相容) *@
                         @if (AdditionalSections != null)
                         {
                             @AdditionalSections
@@ -97,6 +117,44 @@
 </PagePermissionCheck>
 
 @code {
+    // ===== 自訂模組類別 =====
+    
+    /// <summary>
+    /// 自訂模組類別，用於定義可重複使用的頁面模組
+    /// </summary>
+    public class CustomModule
+    {
+        /// <summary>
+        /// 模組標題（可選）
+        /// </summary>
+        public string? Title { get; set; }
+        
+        /// <summary>
+        /// 模組內容
+        /// </summary>
+        public RenderFragment? Content { get; set; }
+        
+        /// <summary>
+        /// 排序順序，數字越小越靠前
+        /// </summary>
+        public int Order { get; set; } = 0;
+        
+        /// <summary>
+        /// 自訂 CSS 類別
+        /// </summary>
+        public string? CssClass { get; set; }
+        
+        /// <summary>
+        /// 模組唯一識別符（可選，用於除錯或特殊處理）
+        /// </summary>
+        public string? Id { get; set; }
+        
+        /// <summary>
+        /// 是否顯示此模組
+        /// </summary>
+        public bool IsVisible { get; set; } = true;
+    }
+    
     // ===== 參數 =====
     
     // 權限檢查參數
@@ -133,6 +191,9 @@
     // 自訂內容
     [Parameter] public RenderFragment? CustomFormContent { get; set; }
     [Parameter] public RenderFragment? AdditionalSections { get; set; }
+    
+    // 新增：自訂模組系統
+    [Parameter] public List<CustomModule> CustomModules { get; set; } = new();
     
     // 委派參數 - 資料操作
     [Parameter] public Func<Task<TEntity?>>? DataLoader { get; set; }
@@ -349,6 +410,32 @@
             return PageSubtitle;
             
         return Id.HasValue ? $"修改{EntityName}資料" : $"建立新的{EntityName}資料";
+    }
+    
+    /// <summary>
+    /// 取得自訂模組的 CSS 類別
+    /// </summary>
+    private string GetModuleCssClass(CustomModule module)
+    {
+        var cssClasses = new List<string>();
+        
+        // 基本間距類別
+        if (!string.IsNullOrWhiteSpace(module.Title))
+        {
+            cssClasses.Add("mb-4");
+        }
+        else
+        {
+            cssClasses.Add("mb-3");
+        }
+        
+        // 自訂 CSS 類別
+        if (!string.IsNullOrWhiteSpace(module.CssClass))
+        {
+            cssClasses.Add(module.CssClass);
+        }
+        
+        return string.Join(" ", cssClasses);
     }
       // ===== 通知方法 =====
     
