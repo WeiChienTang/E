@@ -9,20 +9,6 @@
 @typeparam TModel
 @implements IDisposable
 
-<div class="@GetFormCssClass()">
-    @* @if (ShowFormHeader && !string.IsNullOrEmpty(FormTitle))
-    {
-        <div class="card-header">
-            <h5 class="card-title mb-0">
-                @if (!string.IsNullOrEmpty(FormIconClass))
-                {
-                    <i class="@FormIconClass me-2"></i>
-                }
-                @FormTitle
-            </h5>
-        </div>
-    } *@
-    
     <div class="@GetFormBodyCssClass()">
         <EditForm Model="Model" OnValidSubmit="HandleValidSubmit" @ref="editForm">
             <DataAnnotationsValidator />
@@ -86,7 +72,6 @@
             }
         </EditForm>
     </div>
-</div>
 
 @code {
     [Parameter] public TModel Model { get; set; } = default!;
