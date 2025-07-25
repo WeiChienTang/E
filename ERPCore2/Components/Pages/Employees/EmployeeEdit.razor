@@ -731,6 +731,15 @@
                     // 驗證密碼
                     if (!ValidatePassword())
                     {
+                        // 顯示密碼驗證錯誤訊息
+                        if (!string.IsNullOrEmpty(passwordValidationMessage))
+                        {
+                            await NotificationService.ShowErrorAsync(passwordValidationMessage);
+                        }
+                        if (!string.IsNullOrEmpty(confirmPasswordValidationMessage))
+                        {
+                            await NotificationService.ShowErrorAsync(confirmPasswordValidationMessage);
+                        }
                         return false;
                     }
                     
@@ -838,6 +847,16 @@
             // 重新初始化表單欄位以顯示/隐藏帳號相關欄位
             InitializeFormFields();
             StateHasChanged();
+        }
+        
+        // 處理密碼欄位的變更
+        if (fieldChange.PropertyName == "Password")
+        {
+            password = fieldChange.Value?.ToString() ?? string.Empty;
+        }
+        else if (fieldChange.PropertyName == "ConfirmPassword")
+        {
+            confirmPassword = fieldChange.Value?.ToString() ?? string.Empty;
         }
         
         return Task.CompletedTask;

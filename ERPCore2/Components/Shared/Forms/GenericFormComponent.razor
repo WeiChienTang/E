@@ -859,6 +859,14 @@
                     await OnFieldChanged.InvokeAsync((propertyName, convertedValue));
                 }
             }
+            else
+            {
+                // 即使屬性不存在，也觸發欄位變更事件（用於虛擬欄位如 Password、ConfirmPassword）
+                if (OnFieldChanged.HasDelegate)
+                {
+                    await OnFieldChanged.InvokeAsync((propertyName, value));
+                }
+            }
         }
     }
 
