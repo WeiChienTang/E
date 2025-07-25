@@ -64,7 +64,7 @@ namespace ERPCore2.Services
                 }
 
                 // 驗證密碼
-                if (!VerifyPassword(password, employee.PasswordHash))
+                if (!VerifyPassword(password, employee.Password))
                 {
                     _logger?.LogWarning("Login attempt with invalid password for user: {Account}", account);
                     return ServiceResult<Employee>.Failure("帳號或密碼錯誤");
@@ -116,7 +116,7 @@ namespace ERPCore2.Services
                 }
 
                 // 驗證當前密碼
-                if (!VerifyPassword(currentPassword, employee.PasswordHash))
+                if (!VerifyPassword(currentPassword, employee.Password))
                 {
                     return ServiceResult.Failure("當前密碼錯誤");
                 }
@@ -129,7 +129,7 @@ namespace ERPCore2.Services
                 }
 
                 // 更新密碼
-                employee.PasswordHash = HashPassword(newPassword);
+                employee.Password = HashPassword(newPassword);
                 employee.UpdatedAt = DateTime.UtcNow;
                 employee.UpdatedBy = $"Employee_{employeeId}";
 
@@ -168,7 +168,7 @@ namespace ERPCore2.Services
                 }
 
                 // 更新密碼
-                employee.PasswordHash = HashPassword(newPassword);
+                employee.Password = HashPassword(newPassword);
                 employee.UpdatedAt = DateTime.UtcNow;
                 employee.UpdatedBy = "System";
 

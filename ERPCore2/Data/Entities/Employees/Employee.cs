@@ -48,11 +48,11 @@ namespace ERPCore2.Data.Entities
         public string? Account { get; set; }
         
         /// <summary>
-        /// 密碼雜湊
+        /// 密碼
         /// </summary>
-        [Display(Name = "密碼雜湊")]
-        [MaxLength(255, ErrorMessage = "密碼雜湊不可超過255個字元")]
-        public string? PasswordHash { get; set; }
+        [Display(Name = "密碼")]
+        [MaxLength(255, ErrorMessage = "密碼不可超過255個字元")]
+        public string? Password { get; set; }
 
         /// <summary>
         /// 部門ID

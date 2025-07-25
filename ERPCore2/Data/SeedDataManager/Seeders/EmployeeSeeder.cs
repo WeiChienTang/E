@@ -39,7 +39,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 FirstName = "系統",
                 LastName = "管理員",
                 Account = "admin",
-                PasswordHash = SeedDataHelper.HashPassword("admin123"),
+                Password = SeedDataHelper.HashPassword("admin123"),
                 IsSystemUser = true, // 設置為系統使用者
                 DepartmentId = null, // 先設為 null，部門建立後再更新
                 RoleId = adminRole?.Id ?? 1,

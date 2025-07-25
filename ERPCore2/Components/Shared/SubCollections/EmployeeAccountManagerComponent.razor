@@ -5,35 +5,27 @@
     @* 密碼設定區塊（僅新增模式） *@
     @if (IsCreateMode)
     {
-        <div class="card mb-4">
-            @* <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-key me-2"></i>
-                    密碼設定
-                </h5>
-            </div> *@
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-2">
-                        <div class="mb-3">
-                            <label for="password" class="form-label">密碼 <span class="text-danger">*</span></label>
-                            <input type="password" @bind="password" class="form-control" id="password" />
-                            <div class="form-text">密碼長度至少 4 個字元，可包含數字、文字或符號</div>
-                            @if (!string.IsNullOrEmpty(passwordValidationMessage))
-                            {
-                                <div class="text-danger small">@passwordValidationMessage</div>
-                            }
-                        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-2">
+                    <div class="mb-3">
+                        <label for="password" class="form-label">密碼 <span class="text-danger">*</span></label>
+                        <input type="password" @bind="password" class="form-control" id="password" />
+                        <div class="form-text">密碼長度至少 4 個字元，可包含數字、文字或符號</div>
+                        @if (!string.IsNullOrEmpty(passwordValidationMessage))
+                        {
+                            <div class="text-danger small">@passwordValidationMessage</div>
+                        }
                     </div>
-                    <div class="col-md-2">
-                        <div class="mb-3">
-                            <label for="confirmPassword" class="form-label">確認密碼 <span class="text-danger">*</span></label>
-                            <input type="password" @bind="confirmPassword" class="form-control" id="confirmPassword" />
-                            @if (!string.IsNullOrEmpty(confirmPasswordValidationMessage))
-                            {
-                                <div class="text-danger small">@confirmPasswordValidationMessage</div>
-                            }
-                        </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">確認密碼 <span class="text-danger">*</span></label>
+                        <input type="password" @bind="confirmPassword" class="form-control" id="confirmPassword" />
+                        @if (!string.IsNullOrEmpty(confirmPasswordValidationMessage))
+                        {
+                            <div class="text-danger small">@confirmPasswordValidationMessage</div>
+                        }
                     </div>
                 </div>
             </div>
@@ -117,7 +109,6 @@
                         </h5>
                         <button type="button" class="btn-close" @onclick="ClosePasswordResetDialog" aria-label="關閉"></button>
                     </div>
-                    <div class="modal-body">
                         <div class="mb-3">
                             <label for="newPassword" class="form-label">新密碼 <span class="text-danger">*</span></label>
                             <input type="password" @bind="newPassword" class="form-control" id="newPassword" 
@@ -137,7 +128,6 @@
                                 <div class="text-danger small mt-1">@confirmNewPasswordValidationMessage</div>
                             }
                         </div>
-                    </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" @onclick="ClosePasswordResetDialog">取消</button>
                         <button type="button" class="btn btn-warning" @onclick="ConfirmPasswordReset">確定重設</button>
