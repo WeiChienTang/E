@@ -39,7 +39,8 @@
                             SaveSuccessMessage="@(Id.HasValue ? "員工更新成功" : "員工新增成功")"
                             SaveFailureMessage="員工儲存失敗"
                             AdditionalDataLoader="@LoadAdditionalData"
-                            RequiredPermission="@(Id.HasValue ? "Employee.Update" : "Employee.Create")">
+                            RequiredPermission="@(Id.HasValue ? "Employee.Update" : "Employee.Create")"
+                            OnFieldChanged="@HandleFieldChanged">
 
         <AdditionalSections>
             @* 編輯模式的帳號管理功能 *@
@@ -479,6 +480,7 @@
             new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
         };
 
+        // 基本欄位（始終顯示）
         basicFormFields = new List<FormFieldDefinition>
         {
             new()
@@ -527,43 +529,52 @@
                 Label = "系統使用者",
                 FieldType = FormFieldType.Checkbox,
                 HelpText = "勾選此項目表示該員工可以登入系統"
-            },
-            new()
-            {
-                PropertyName = nameof(Employee.Account),
-                Label = "帳號",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入帳號（用於登入系統）",
-                IsRequired = true,  
-                HelpText = "系統使用者必須設定帳號"
-            },
-            new()
-            {
-                PropertyName = nameof(Employee.RoleId),
-                Label = "角色",
-                FieldType = FormFieldType.Select,
-                Options = roleOptions,
-                IsRequired = true
-            },
-            new()
-            {
-                PropertyName = "Password",
-                Label = "密碼",
-                FieldType = FormFieldType.Password,
-                Placeholder = "請輸入密碼",
-                IsRequired = !Id.HasValue, // 新增模式必填
-                HelpText = "密碼長度至少 4 個字元"
-            },
-            new()
-            {
-                PropertyName = "ConfirmPassword",
-                Label = "確認密碼",
-                FieldType = FormFieldType.Password,
-                Placeholder = "請再次輸入密碼",
-                IsRequired = !Id.HasValue // 新增模式必填
             }
         };
 
+        // 只有當 IsSystemUser 為 true 時才添加帳號相關欄位
+        if (employee?.IsSystemUser == true)
+        {
+            basicFormFields.AddRange(new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(Employee.Account),
+                    Label = "帳號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入帳號（用於登入系統）",
+                    IsRequired = true,
+                    HelpText = "系統使用者必須設定帳號"
+                },
+                new()
+                {
+                    PropertyName = nameof(Employee.RoleId),
+                    Label = "角色",
+                    FieldType = FormFieldType.Select,
+                    Options = roleOptions,
+                    IsRequired = true
+                },
+                new()
+                {
+                    PropertyName = "Password",
+                    Label = "密碼",
+                    FieldType = FormFieldType.Password,
+                    Placeholder = "請輸入密碼",
+                    IsRequired = !Id.HasValue, // 新增模式必填
+                    HelpText = "密碼長度至少 4 個字元"
+                },
+                new()
+                {
+                    PropertyName = "ConfirmPassword",
+                    Label = "確認密碼",
+                    FieldType = FormFieldType.Password,
+                    Placeholder = "請再次輸入密碼",
+                    IsRequired = !Id.HasValue // 新增模式必填
+                }
+            });
+        }
+
+        // 基本區段設定
         basicFormSections = new Dictionary<string, string>
         {
             { nameof(Employee.EmployeeCode), "基本資訊" },            
@@ -573,12 +584,17 @@
             { nameof(Employee.DepartmentId), "工作資訊" },
             { nameof(Employee.EmployeePositionId), "工作資訊" },
 
-            { nameof(Employee.IsSystemUser), "帳號設定" },
-            { nameof(Employee.Account), "帳號設定" },
-            { nameof(Employee.RoleId), "帳號設定" },
-            { "Password", "帳號設定" },
-            { "ConfirmPassword", "帳號設定" }
+            { nameof(Employee.IsSystemUser), "帳號設定" }
         };
+
+        // 只有當 IsSystemUser 為 true 時才添加帳號相關區段
+        if (employee?.IsSystemUser == true)
+        {
+            basicFormSections.Add(nameof(Employee.Account), "帳號設定");
+            basicFormSections.Add(nameof(Employee.RoleId), "帳號設定");
+            basicFormSections.Add("Password", "帳號設定");
+            basicFormSections.Add("ConfirmPassword", "帳號設定");
+        }
     }
 
     private async Task<Employee?> LoadEmployeeData()
@@ -705,6 +721,13 @@
                 // 驗證密碼（新增模式，只有系統使用者需要密碼）
                 if (entity.IsSystemUser)
                 {
+                    // 驗證帳號
+                    if (string.IsNullOrWhiteSpace(entity.Account))
+                    {
+                        await NotificationService.ShowErrorAsync("系統使用者必須設定帳號");
+                        return false;
+                    }
+                    
                     // 驗證密碼
                     if (!ValidatePassword())
                     {
@@ -801,6 +824,23 @@
             InitializeFormFields();
             StateHasChanged();
         }
+    }
+
+    #endregion
+
+    #region 欄位變更處理
+
+    private Task HandleFieldChanged((string PropertyName, object? Value) fieldChange)
+    {
+        // 當 IsSystemUser 欄位變更時，重新初始化表單欄位
+        if (fieldChange.PropertyName == nameof(Employee.IsSystemUser))
+        {
+            // 重新初始化表單欄位以顯示/隐藏帳號相關欄位
+            InitializeFormFields();
+            StateHasChanged();
+        }
+        
+        return Task.CompletedTask;
     }
 
     #endregion

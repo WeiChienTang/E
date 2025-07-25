@@ -73,7 +73,8 @@
                                             FieldDefinitions="@FormFields"
                                             FieldSections="@FormSections"
                                             ShowFormHeader="false"
-                                            ShowFormButtons="false" />
+                                            ShowFormButtons="false"
+                                            OnFieldChanged="@HandleFieldChanged" />
                         @* 自訂表單內容 *@
                         @if (CustomFormContent != null)
                         {
@@ -210,6 +211,7 @@
     [Parameter] public Func<Task>? OnSaveSuccess { get; set; }
     [Parameter] public Func<Task>? OnSaveFailure { get; set; }
     [Parameter] public Func<Task>? OnCancel { get; set; }
+    [Parameter] public Func<(string PropertyName, object? Value), Task>? OnFieldChanged { get; set; }
     
     // 訊息設定
     [Parameter] public string LoadingMessage { get; set; } = "載入資料中...";
@@ -521,6 +523,16 @@
             await ShowErrorMessage($"{SaveFailureMessage}：{ex.Message}");
             await LogError("GenericSave", ex);
             return false;
+        }
+    }
+
+    // ===== 欄位變更處理 =====
+    
+    private async Task HandleFieldChanged((string PropertyName, object? Value) fieldChange)
+    {
+        if (OnFieldChanged != null)
+        {
+            await OnFieldChanged(fieldChange);
         }
     }
       // ===== 清理資源 =====
