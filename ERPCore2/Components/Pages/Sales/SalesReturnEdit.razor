@@ -1,0 +1,512 @@
+@page "/sales-returns/edit"
+@page "/sales-returns/edit/{id:int?}"
+@inject ISalesReturnService SalesReturnService
+@inject ISalesOrderService SalesOrderService
+@inject ISalesDeliveryService SalesDeliveryService
+@inject ICustomerService CustomerService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<GenericEditPageComponent TEntity="SalesReturn" 
+                        TService="ISalesReturnService"
+                        Id="@Id"
+                        Entity="@salesReturn"
+                        Service="@SalesReturnService"
+                        EntityName="銷貨退回"
+                        EntityNamePlural="銷貨退回"
+                        PageTitle="@(Id.HasValue ? "編輯銷貨退回" : "新增銷貨退回")"
+                        FormTitle="基本資料"
+                        FormSubtitle="銷貨退回的基本資訊"
+                        RequiredPermission="@(Id.HasValue ? "SalesReturn.Update" : "SalesReturn.Create")"
+                        IndexRoute="/sales-returns"
+                        UseGenericForm="true"
+                        FormFields="@formFields"
+                        FormSections="@formSections"
+                        BreadcrumbItems="@breadcrumbItems"
+                        DataLoader="@LoadSalesReturnData"
+                        AdditionalDataLoader="@LoadAdditionalData"
+                        @ref="editComponent">
+</GenericEditPageComponent>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    
+    // 組件參考
+    private GenericEditPageComponent<SalesReturn, ISalesReturnService> editComponent = default!;
+    
+    // 資料模型
+    private SalesReturn salesReturn = new();
+    
+    // 選項清單
+    private List<Customer> customers = new();
+    private List<SalesOrder> salesOrders = new();
+    private List<SalesDelivery> salesDeliveries = new();
+    private List<Employee> employees = new();
+    
+    // 表單欄位定義
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            InitializeBreadcrumbs();
+            await InitializeDefaultValues();
+            InitializeBasicFormFields();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(OnInitializedAsync), 
+                GetType()
+            );
+            
+            // 確保基本初始化完成，避免程式崩潰
+            breadcrumbItems ??= new List<GenericHeaderComponent.BreadcrumbItem>();
+            formFields ??= new List<FormFieldDefinition>();
+            formSections ??= new Dictionary<string, string>();
+        }
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new() { Text = "首頁", Href = "/" },
+                new() { Text = "銷貨管理", Href = "/sales" },
+                new() { Text = "銷貨退回", Href = "/sales-returns" },
+                new() { Text = Id.HasValue ? "編輯銷貨退回" : "新增銷貨退回" }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeBreadcrumbs),
+                GetType()
+            );
+        }
+    }
+
+    private async Task InitializeDefaultValues()
+    {
+        try
+        {
+            if (!Id.HasValue)
+            {
+                salesReturn = new SalesReturn
+                {
+                    SalesReturnNumber = await GenerateReturnNumberAsync(),
+                    ReturnDate = DateTime.Today,
+                    ReturnStatus = SalesReturnStatus.Draft,
+                    ReturnReason = SalesReturnReason.CustomerRequest,
+                    TotalReturnAmount = 0,
+                    ReturnTaxAmount = 0,
+                    TotalReturnAmountWithTax = 0,
+                    IsRefunded = false,
+                    RefundAmount = 0
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeDefaultValues),
+                GetType()
+            );
+        }
+    }
+
+    private void InitializeBasicFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.SalesReturnNumber),
+                    Label = "退回單號",
+                    FieldType = FormFieldType.Text,
+                    IsRequired = true,
+                    IsReadOnly = true,
+                    Placeholder = "系統自動產生",
+                    GroupName = "basic"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.ReturnDate),
+                    Label = "退回日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    GroupName = "basic"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.CustomerId),
+                    Label = "客戶",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = new List<SelectOption>(),
+                    GroupName = "basic"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.SalesOrderId),
+                    Label = "原始銷貨訂單",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    Options = new List<SelectOption>(),
+                    GroupName = "basic"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.SalesDeliveryId),
+                    Label = "原始銷貨出貨單",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    Options = new List<SelectOption>(),
+                    GroupName = "basic"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.ReturnStatus),
+                    Label = "退回狀態",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = Enum.GetValues<SalesReturnStatus>()
+                        .Select(status => new SelectOption
+                        {
+                            Value = ((int)status).ToString(),
+                            Text = GetReturnStatusLabel(status)
+                        }).ToList(),
+                    GroupName = "basic"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.ReturnReason),
+                    Label = "退回原因",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = Enum.GetValues<SalesReturnReason>()
+                        .Select(reason => new SelectOption
+                        {
+                            Value = ((int)reason).ToString(),
+                            Text = GetReturnReasonLabel(reason)
+                        }).ToList(),
+                    GroupName = "basic"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.ReturnDescription),
+                    Label = "退回說明",
+                    FieldType = FormFieldType.TextArea,
+                    IsRequired = false,
+                    Placeholder = "請輸入退回說明",
+                    GroupName = "details"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.ExpectedProcessDate),
+                    Label = "預計處理日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    GroupName = "processing"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.ActualProcessDate),
+                    Label = "實際處理日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    GroupName = "processing"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.EmployeeId),
+                    Label = "處理員工",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    Options = new List<SelectOption>(),
+                    GroupName = "processing"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.ProcessPersonnel),
+                    Label = "處理人員",
+                    FieldType = FormFieldType.Text,
+                    IsRequired = false,
+                    Placeholder = "請輸入處理人員名稱",
+                    GroupName = "processing"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.ProcessRemarks),
+                    Label = "處理備註",
+                    FieldType = FormFieldType.TextArea,
+                    IsRequired = false,
+                    Placeholder = "請輸入處理備註",
+                    GroupName = "processing"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.TotalReturnAmount),
+                    Label = "退回總金額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    Placeholder = "0.00",
+                    GroupName = "financial"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.ReturnTaxAmount),
+                    Label = "退回稅額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    Placeholder = "0.00",
+                    GroupName = "financial"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.TotalReturnAmountWithTax),
+                    Label = "退回含稅總金額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    Placeholder = "0.00",
+                    GroupName = "financial"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.IsRefunded),
+                    Label = "是否已退款",
+                    FieldType = FormFieldType.Checkbox,
+                    IsRequired = false,
+                    GroupName = "refund"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.RefundDate),
+                    Label = "退款日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    GroupName = "refund"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.RefundAmount),
+                    Label = "退款金額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    Placeholder = "0.00",
+                    GroupName = "refund"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.RefundRemarks),
+                    Label = "退款備註",
+                    FieldType = FormFieldType.TextArea,
+                    IsRequired = false,
+                    Placeholder = "請輸入退款備註",
+                    GroupName = "refund"
+                }
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                { "basic", "基本資料" },
+                { "details", "退回詳情" },
+                { "processing", "處理資訊" },
+                { "financial", "金額資訊" },
+                { "refund", "退款資訊" }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeBasicFormFields),
+                GetType()
+            );
+        }
+    }
+
+    private async Task<string> GenerateReturnNumberAsync()
+    {
+        try
+        {
+            return await SalesReturnService.GenerateSalesReturnNumberAsync(DateTime.Today);
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(GenerateReturnNumberAsync),
+                GetType()
+            );
+            return $"SR{DateTime.Today:yyyyMMdd}001";
+        }
+    }
+
+    private async Task<SalesReturn?> LoadSalesReturnData()
+    {
+        if (!Id.HasValue) return null;
+        
+        try
+        {
+            var salesReturnData = await SalesReturnService.GetByIdAsync(Id.Value);
+            if (salesReturnData != null)
+            {
+                salesReturn = salesReturnData;
+            }
+            return salesReturnData;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadSalesReturnData),
+                GetType(),
+                additionalData: new { Id = Id }
+            );
+            return null;
+        }
+    }
+
+    private async Task LoadAdditionalData()
+    {
+        try
+        {
+            // 載入客戶清單
+            customers = await CustomerService.GetAllAsync();
+            
+            // 載入銷貨訂單清單
+            salesOrders = await SalesOrderService.GetAllAsync();
+            
+            // 載入銷貨出貨清單
+            salesDeliveries = await SalesDeliveryService.GetAllAsync();
+            
+            // 載入員工清單
+            employees = await EmployeeService.GetAllAsync();
+
+            // 更新表單欄位的選項
+            UpdateFormFieldOptions();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadAdditionalData),
+                GetType()
+            );
+        }
+    }
+
+    private void UpdateFormFieldOptions()
+    {
+        try
+        {
+            // 更新客戶選項
+            var customerField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesReturn.CustomerId));
+            if (customerField != null)
+            {
+                customerField.Options = customers
+                    .Where(c => !c.IsDeleted)
+                    .OrderBy(c => c.CompanyName)
+                    .Select(c => new SelectOption
+                    {
+                        Value = c.Id.ToString(),
+                        Text = $"{c.CompanyName} ({c.CustomerCode})"
+                    }).ToList();
+            }
+
+            // 更新銷貨訂單選項
+            var salesOrderField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesReturn.SalesOrderId));
+            if (salesOrderField != null)
+            {
+                salesOrderField.Options = salesOrders
+                    .Where(so => !so.IsDeleted)
+                    .OrderBy(so => so.SalesOrderNumber)
+                    .Select(so => new SelectOption
+                    {
+                        Value = so.Id.ToString(),
+                        Text = $"{so.SalesOrderNumber} - {so.Customer?.CompanyName ?? "未知客戶"}"
+                    }).ToList();
+            }
+
+            // 更新銷貨出貨選項
+            var salesDeliveryField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesReturn.SalesDeliveryId));
+            if (salesDeliveryField != null)
+            {
+                salesDeliveryField.Options = salesDeliveries
+                    .Where(sd => !sd.IsDeleted)
+                    .OrderBy(sd => sd.DeliveryNumber)
+                    .Select(sd => new SelectOption
+                    {
+                        Value = sd.Id.ToString(),
+                        Text = $"{sd.DeliveryNumber} - {sd.SalesOrder?.Customer?.CompanyName ?? "未知客戶"}"
+                    }).ToList();
+            }
+
+            // 更新員工選項
+            var employeeField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesReturn.EmployeeId));
+            if (employeeField != null)
+            {
+                employeeField.Options = employees
+                    .Where(e => !e.IsDeleted && e.Status == EntityStatus.Active)
+                    .OrderBy(e => e.FirstName)
+                    .ThenBy(e => e.LastName)
+                    .Select(e => new SelectOption
+                    {
+                        Value = e.Id.ToString(),
+                        Text = $"{e.FirstName} {e.LastName}"
+                    }).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(UpdateFormFieldOptions),
+                GetType()
+            );
+        }
+    }
+
+    private static string GetReturnStatusLabel(SalesReturnStatus status)
+    {
+        return status switch
+        {
+            SalesReturnStatus.Draft => "草稿",
+            SalesReturnStatus.Submitted => "已提交",
+            SalesReturnStatus.Processing => "處理中",
+            SalesReturnStatus.Completed => "已完成",
+            SalesReturnStatus.Cancelled => "已取消",
+            _ => status.ToString()
+        };
+    }
+
+    private static string GetReturnReasonLabel(SalesReturnReason reason)
+    {
+        return reason switch
+        {
+            SalesReturnReason.CustomerRequest => "客戶要求",
+            SalesReturnReason.QualityIssue => "品質不良",
+            SalesReturnReason.ShippingDamage => "運送損壞",
+            SalesReturnReason.SpecificationMismatch => "規格不符",
+            SalesReturnReason.QuantityError => "數量錯誤",
+            SalesReturnReason.ExpiredProduct => "過期商品",
+            SalesReturnReason.Other => "其他",
+            _ => reason.ToString()
+        };
+    }
+}

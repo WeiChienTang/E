@@ -147,6 +147,22 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { PermissionCode = "StockTaking.Approve", PermissionName = "審核盤點", Module = "StockTaking", Action = "Approve", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "StockTaking.Report", PermissionName = "盤點報告", Module = "StockTaking", Action = "Report", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 
+                // 銷貨管理權限
+                new Permission { PermissionCode = "SalesOrder.Create", PermissionName = "建立銷貨訂單", Module = "SalesOrder", Action = "Create", PermissionGroup = "銷貨管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "SalesOrder.Read", PermissionName = "檢視銷貨訂單", Module = "SalesOrder", Action = "Read", PermissionGroup = "銷貨管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "SalesOrder.Update", PermissionName = "修改銷貨訂單", Module = "SalesOrder", Action = "Update", PermissionGroup = "銷貨管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "SalesOrder.Delete", PermissionName = "刪除銷貨訂單", Module = "SalesOrder", Action = "Delete", PermissionGroup = "銷貨管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                
+                new Permission { PermissionCode = "SalesDelivery.Create", PermissionName = "建立銷貨出貨", Module = "SalesDelivery", Action = "Create", PermissionGroup = "銷貨管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "SalesDelivery.Read", PermissionName = "檢視銷貨出貨", Module = "SalesDelivery", Action = "Read", PermissionGroup = "銷貨管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "SalesDelivery.Update", PermissionName = "修改銷貨出貨", Module = "SalesDelivery", Action = "Update", PermissionGroup = "銷貨管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "SalesDelivery.Delete", PermissionName = "刪除銷貨出貨", Module = "SalesDelivery", Action = "Delete", PermissionGroup = "銷貨管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                
+                new Permission { PermissionCode = "SalesReturn.Create", PermissionName = "建立銷貨退回", Module = "SalesReturn", Action = "Create", PermissionGroup = "銷貨管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "SalesReturn.Read", PermissionName = "檢視銷貨退回", Module = "SalesReturn", Action = "Read", PermissionGroup = "銷貨管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "SalesReturn.Update", PermissionName = "修改銷貨退回", Module = "SalesReturn", Action = "Update", PermissionGroup = "銷貨管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "SalesReturn.Delete", PermissionName = "刪除銷貨退回", Module = "SalesReturn", Action = "Delete", PermissionGroup = "銷貨管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                
                 // 採購管理權限
                 new Permission { PermissionCode = "Purchase.Read", PermissionName = "檢視採購訂單", Module = "Purchase", Action = "Read", PermissionGroup = "採購管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 

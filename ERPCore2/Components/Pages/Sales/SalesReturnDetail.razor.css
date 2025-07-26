@@ -1,0 +1,89 @@
+/* 時間軸樣式 */
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.5rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--bs-border-color);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -2rem;
+    top: 0.25rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px var(--bs-border-color);
+}
+
+.timeline-content {
+    background: var(--bs-light);
+    padding: 1rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--bs-border-color);
+}
+
+.timeline-title {
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--bs-dark);
+}
+
+.timeline-description {
+    margin-bottom: 0.25rem;
+    color: var(--bs-body-color);
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+    .timeline {
+        padding-left: 1.5rem;
+    }
+    
+    .timeline-marker {
+        left: -1.5rem;
+        width: 0.75rem;
+        height: 0.75rem;
+    }
+    
+    .timeline-content {
+        padding: 0.75rem;
+    }
+}
+
+/* 表格改進 */
+.table-responsive {
+    border-radius: 0.375rem;
+    border: 1px solid var(--bs-border-color);
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    background-color: var(--bs-light);
+}
+
+/* 卡片改進 */
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid var(--bs-border-color);
+}
+
+.card-header {
+    background-color: var(--bs-light);
+    border-bottom: 1px solid var(--bs-border-color);
+}
