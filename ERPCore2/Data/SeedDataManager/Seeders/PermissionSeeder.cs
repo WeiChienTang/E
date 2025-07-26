@@ -149,7 +149,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 
                 // 採購管理權限
                 new Permission { PermissionCode = "Purchase.Read", PermissionName = "檢視採購訂單", Module = "Purchase", Action = "Read", PermissionGroup = "採購管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
-                new Permission { PermissionCode = "Purchase.Receipt", PermissionName = "進貨收料", Module = "Purchase", Action = "Receipt", PermissionGroup = "採購管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 
                 // 系統控制權限
                 new Permission { PermissionCode = "SystemControl.ViewErrorLog", PermissionName = "檢視錯誤記錄", Module = "SystemControl", Action = "ViewErrorLog", PermissionGroup = "系統管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
