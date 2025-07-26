@@ -47,8 +47,8 @@ namespace ERPCore2.Data.Context
       // Purchase Management
       public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
       public DbSet<PurchaseOrderDetail> PurchaseOrderDetails { get; set; }
-      public DbSet<PurchaseReceipt> PurchaseReceipts { get; set; }
-      public DbSet<PurchaseReceiptDetail> PurchaseReceiptDetails { get; set; }
+      public DbSet<PurchaseReceiving> PurchaseReceivings { get; set; }
+      public DbSet<PurchaseReceivingDetail> PurchaseReceivingDetails { get; set; }
       
       // BOM Foundations
       public DbSet<Material> Materials { get; set; }
@@ -401,13 +401,13 @@ namespace ERPCore2.Data.Context
                         .OnDelete(DeleteBehavior.Restrict);
                   });
 
-                  modelBuilder.Entity<PurchaseReceipt>(entity =>
+                  modelBuilder.Entity<PurchaseReceiving>(entity =>
                   {
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                         
                         // 關聯設定
                         entity.HasOne(pr => pr.PurchaseOrder)
-                        .WithMany(po => po.PurchaseReceipts)
+                        .WithMany(po => po.PurchaseReceivings)
                         .HasForeignKey(pr => pr.PurchaseOrderId)
                         .OnDelete(DeleteBehavior.Restrict);
 
@@ -422,18 +422,18 @@ namespace ERPCore2.Data.Context
                         .OnDelete(DeleteBehavior.SetNull);
                   });
 
-                  modelBuilder.Entity<PurchaseReceiptDetail>(entity =>
+                  modelBuilder.Entity<PurchaseReceivingDetail>(entity =>
                   {
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                         
                         // 關聯設定
-                        entity.HasOne(prd => prd.PurchaseReceipt)
-                        .WithMany(pr => pr.PurchaseReceiptDetails)
-                        .HasForeignKey(prd => prd.PurchaseReceiptId)
+                        entity.HasOne(prd => prd.PurchaseReceiving)
+                        .WithMany(pr => pr.PurchaseReceivingDetails)
+                        .HasForeignKey(prd => prd.PurchaseReceivingId)
                         .OnDelete(DeleteBehavior.Cascade);
 
                         entity.HasOne(prd => prd.PurchaseOrderDetail)
-                        .WithMany(pod => pod.PurchaseReceiptDetails)
+                        .WithMany(pod => pod.PurchaseReceivingDetails)
                         .HasForeignKey(prd => prd.PurchaseOrderDetailId)
                         .OnDelete(DeleteBehavior.Restrict);
 

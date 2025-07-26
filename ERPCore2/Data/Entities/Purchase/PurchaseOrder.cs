@@ -75,6 +75,6 @@ namespace ERPCore2.Data.Entities
         public Warehouse? Warehouse { get; set; }
         public Employee? ApprovedByUser { get; set; }
         public ICollection<PurchaseOrderDetail> PurchaseOrderDetails { get; set; } = new List<PurchaseOrderDetail>();
-        public ICollection<PurchaseReceipt> PurchaseReceipts { get; set; } = new List<PurchaseReceipt>();
+        public ICollection<PurchaseReceiving> PurchaseReceivings { get; set; } = new List<PurchaseReceiving>();
     }
 }

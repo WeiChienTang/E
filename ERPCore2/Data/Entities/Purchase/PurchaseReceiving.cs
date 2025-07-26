@@ -11,7 +11,7 @@ namespace ERPCore2.Data.Entities
     [Index(nameof(ReceiptNumber), IsUnique = true)]
     [Index(nameof(PurchaseOrderId), nameof(ReceiptDate))]
     [Index(nameof(ReceiptStatus), nameof(ReceiptDate))]
-    public class PurchaseReceipt : BaseEntity
+    public class PurchaseReceiving : BaseEntity
     {
         [Required(ErrorMessage = "進貨單號為必填")]
         [MaxLength(30, ErrorMessage = "進貨單號不可超過30個字元")]
@@ -24,7 +24,7 @@ namespace ERPCore2.Data.Entities
 
         [Required(ErrorMessage = "進貨狀態為必填")]
         [Display(Name = "進貨狀態")]
-        public PurchaseReceiptStatus ReceiptStatus { get; set; } = PurchaseReceiptStatus.Draft;
+        public PurchaseReceivingStatus ReceiptStatus { get; set; } = PurchaseReceivingStatus.Draft;
 
         [MaxLength(100, ErrorMessage = "驗收人員不可超過100個字元")]
         [Display(Name = "驗收人員")]
@@ -64,6 +64,6 @@ namespace ERPCore2.Data.Entities
         public PurchaseOrder PurchaseOrder { get; set; } = null!;
         public Warehouse Warehouse { get; set; } = null!;
         public Employee? ConfirmedByUser { get; set; }
-        public ICollection<PurchaseReceiptDetail> PurchaseReceiptDetails { get; set; } = new List<PurchaseReceiptDetail>();
+        public ICollection<PurchaseReceivingDetail> PurchaseReceivingDetails { get; set; } = new List<PurchaseReceivingDetail>();
     }
 }

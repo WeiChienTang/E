@@ -1734,7 +1734,7 @@ namespace ERPCore2.Migrations
                     b.ToTable("PurchaseOrderDetails");
                 });
 
-            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceipt", b =>
+            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceiving", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1816,10 +1816,10 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("ReceiptStatus", "ReceiptDate");
 
-                    b.ToTable("PurchaseReceipts");
+                    b.ToTable("PurchaseReceivings");
                 });
 
-            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceiptDetail", b =>
+            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceivingDetail", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1854,7 +1854,7 @@ namespace ERPCore2.Migrations
                     b.Property<int>("PurchaseOrderDetailId")
                         .HasColumnType("int");
 
-                    b.Property<int>("PurchaseReceiptId")
+                    b.Property<int>("PurchaseReceivingId")
                         .HasColumnType("int");
 
                     b.Property<bool?>("QualityInspectionPassed")
@@ -1895,9 +1895,9 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("WarehouseLocationId");
 
-                    b.HasIndex("PurchaseReceiptId", "ProductId");
+                    b.HasIndex("PurchaseReceivingId", "ProductId");
 
-                    b.ToTable("PurchaseReceiptDetails");
+                    b.ToTable("PurchaseReceivingDetails");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Role", b =>
@@ -3122,7 +3122,7 @@ namespace ERPCore2.Migrations
                     b.Navigation("PurchaseOrder");
                 });
 
-            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceipt", b =>
+            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceiving", b =>
                 {
                     b.HasOne("ERPCore2.Data.Entities.Employee", "ConfirmedByUser")
                         .WithMany()
@@ -3130,7 +3130,7 @@ namespace ERPCore2.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("ERPCore2.Data.Entities.PurchaseOrder", "PurchaseOrder")
-                        .WithMany("PurchaseReceipts")
+                        .WithMany("PurchaseReceivings")
                         .HasForeignKey("PurchaseOrderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -3148,7 +3148,7 @@ namespace ERPCore2.Migrations
                     b.Navigation("Warehouse");
                 });
 
-            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceiptDetail", b =>
+            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceivingDetail", b =>
                 {
                     b.HasOne("ERPCore2.Data.Entities.Product", "Product")
                         .WithMany()
@@ -3157,14 +3157,14 @@ namespace ERPCore2.Migrations
                         .IsRequired();
 
                     b.HasOne("ERPCore2.Data.Entities.PurchaseOrderDetail", "PurchaseOrderDetail")
-                        .WithMany("PurchaseReceiptDetails")
+                        .WithMany("PurchaseReceivingDetails")
                         .HasForeignKey("PurchaseOrderDetailId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("ERPCore2.Data.Entities.PurchaseReceipt", "PurchaseReceipt")
-                        .WithMany("PurchaseReceiptDetails")
-                        .HasForeignKey("PurchaseReceiptId")
+                    b.HasOne("ERPCore2.Data.Entities.PurchaseReceiving", "PurchaseReceiving")
+                        .WithMany("PurchaseReceivingDetails")
+                        .HasForeignKey("PurchaseReceivingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -3177,7 +3177,7 @@ namespace ERPCore2.Migrations
 
                     b.Navigation("PurchaseOrderDetail");
 
-                    b.Navigation("PurchaseReceipt");
+                    b.Navigation("PurchaseReceiving");
 
                     b.Navigation("WarehouseLocation");
                 });
@@ -3417,17 +3417,17 @@ namespace ERPCore2.Migrations
                 {
                     b.Navigation("PurchaseOrderDetails");
 
-                    b.Navigation("PurchaseReceipts");
+                    b.Navigation("PurchaseReceivings");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseOrderDetail", b =>
                 {
-                    b.Navigation("PurchaseReceiptDetails");
+                    b.Navigation("PurchaseReceivingDetails");
                 });
 
-            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceipt", b =>
+            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceiving", b =>
                 {
-                    b.Navigation("PurchaseReceiptDetails");
+                    b.Navigation("PurchaseReceivingDetails");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Role", b =>

@@ -62,8 +62,8 @@ namespace ERPCore2.Services
                     .Include(po => po.PurchaseOrderDetails)
                         .ThenInclude(pod => pod.Product)
                             .ThenInclude(p => p.Unit)
-                    .Include(po => po.PurchaseReceipts)
-                        .ThenInclude(pr => pr.PurchaseReceiptDetails)
+                    .Include(po => po.PurchaseReceivings)
+                        .ThenInclude(pr => pr.PurchaseReceivingDetails)
                     .FirstOrDefaultAsync(po => po.Id == id && !po.IsDeleted);
             }
             catch (Exception ex)
@@ -465,13 +465,13 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var order = await context.PurchaseOrders
-                    .Include(po => po.PurchaseReceipts)
+                    .Include(po => po.PurchaseReceivings)
                     .FirstOrDefaultAsync(po => po.Id == orderId && !po.IsDeleted);
                 
                 if (order == null) return false;
                 
                 // 已有進貨記錄的訂單不能刪除
-                if (order.PurchaseReceipts.Any(pr => !pr.IsDeleted))
+                if (order.PurchaseReceivings.Any(pr => !pr.IsDeleted))
                     return false;
                 
                 // 已核准或更後續狀態的訂單不能刪除
@@ -734,7 +734,7 @@ namespace ERPCore2.Services
                         return ServiceResult.Failure("找不到訂單明細");
                     
                     // 檢查是否已有進貨記錄
-                    var hasReceipts = await context.PurchaseReceiptDetails
+                    var hasReceipts = await context.PurchaseReceivingDetails
                         .AnyAsync(prd => prd.PurchaseOrderDetailId == detailId && !prd.IsDeleted);
                     
                     if (hasReceipts)

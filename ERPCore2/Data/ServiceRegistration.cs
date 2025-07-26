@@ -71,7 +71,7 @@ namespace ERPCore2.Data
 
             // 採購相關服務
             services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
-            services.AddScoped<IPurchaseReceiptService, PurchaseReceiptService>();
+            services.AddScoped<IPurchaseReceivingService, PurchaseReceivingService>();
 
             // BOM基礎資料表服務
             services.AddScoped<IWeatherService, WeatherService>();

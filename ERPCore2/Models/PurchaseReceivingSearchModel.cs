@@ -5,7 +5,7 @@ namespace ERPCore2.Models;
 /// <summary>
 /// 進貨單搜尋模型
 /// </summary>
-public class PurchaseReceiptSearchModel
+public class PurchaseReceivingSearchModel
 {
     /// <summary>
     /// 搜尋關鍵字
@@ -25,15 +25,20 @@ public class PurchaseReceiptSearchModel
     /// <summary>
     /// 進貨狀態
     /// </summary>
-    public PurchaseReceiptStatus? ReceiptStatus { get; set; }
+    public PurchaseReceivingStatus? ReceiptStatus { get; set; }
 
     /// <summary>
-    /// 進貨日期起始
+    /// 開始日期
     /// </summary>
-    public DateTime? ReceiptDateFrom { get; set; }
+    public DateTime? StartDate { get; set; }
 
     /// <summary>
-    /// 進貨日期結束
+    /// 結束日期
     /// </summary>
-    public DateTime? ReceiptDateTo { get; set; }
+    public DateTime? EndDate { get; set; }
+
+    /// <summary>
+    /// 供應商ID
+    /// </summary>
+    public int? SupplierId { get; set; }
 }

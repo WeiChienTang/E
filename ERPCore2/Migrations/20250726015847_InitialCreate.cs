@@ -101,6 +101,98 @@ namespace ERPCore2.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Departments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    DepartmentCode = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    ParentDepartmentId = table.Column<int>(type: "int", nullable: true),
+                    ManagerId = table.Column<int>(type: "int", nullable: true),
+                    SortOrder = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Departments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Departments_Departments_ParentDepartmentId",
+                        column: x => x.ParentDepartmentId,
+                        principalTable: "Departments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "EmployeePositions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    Code = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    Level = table.Column<int>(type: "int", nullable: true),
+                    SortOrder = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EmployeePositions", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ErrorLogs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ErrorId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Message = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    StackTrace = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Source = table.Column<int>(type: "int", nullable: false),
+                    Level = table.Column<int>(type: "int", nullable: false),
+                    OccurredAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ExceptionType = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    InnerException = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AdditionalData = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Category = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Module = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    UserId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    UserAgent = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    RequestPath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    IsResolved = table.Column<bool>(type: "bit", nullable: false),
+                    ResolvedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ResolvedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Resolution = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ErrorLogs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "IndustryTypes",
                 columns: table => new
                 {
@@ -220,6 +312,29 @@ namespace ERPCore2.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Roles", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Sizes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SizeCode = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    SizeName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Sizes", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -364,11 +479,12 @@ namespace ERPCore2.Migrations
                     EmployeeCode = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     FirstName = table.Column<string>(type: "nvarchar(25)", maxLength: 25, nullable: true),
                     LastName = table.Column<string>(type: "nvarchar(25)", maxLength: 25, nullable: true),
-                    Username = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    PasswordHash = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    Department = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Position = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    RoleId = table.Column<int>(type: "int", nullable: false),
+                    IsSystemUser = table.Column<bool>(type: "bit", nullable: false),
+                    Account = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Password = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    DepartmentId = table.Column<int>(type: "int", nullable: true),
+                    EmployeePositionId = table.Column<int>(type: "int", nullable: true),
+                    RoleId = table.Column<int>(type: "int", nullable: true),
                     LastLoginAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsLocked = table.Column<bool>(type: "bit", nullable: false),
                     FailedLoginAttempts = table.Column<int>(type: "int", nullable: false),
@@ -384,6 +500,18 @@ namespace ERPCore2.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Employees", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Employees_Departments_DepartmentId",
+                        column: x => x.DepartmentId,
+                        principalTable: "Departments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_Employees_EmployeePositions_EmployeePositionId",
+                        column: x => x.EmployeePositionId,
+                        principalTable: "EmployeePositions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_Employees_Roles_RoleId",
                         column: x => x.RoleId,
@@ -722,6 +850,7 @@ namespace ERPCore2.Migrations
                     Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     Specification = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     UnitId = table.Column<int>(type: "int", nullable: true),
+                    SizeId = table.Column<int>(type: "int", nullable: true),
                     UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     CostPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     MinStockLevel = table.Column<int>(type: "int", nullable: true),
@@ -748,6 +877,11 @@ namespace ERPCore2.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
+                        name: "FK_Products_Sizes_SizeId",
+                        column: x => x.SizeId,
+                        principalTable: "Sizes",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_Products_Suppliers_PrimarySupplierId",
                         column: x => x.PrimarySupplierId,
                         principalTable: "Suppliers",
@@ -757,6 +891,57 @@ namespace ERPCore2.Migrations
                         name: "FK_Products_Units_UnitId",
                         column: x => x.UnitId,
                         principalTable: "Units",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PurchaseOrders",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PurchaseOrderNumber = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ExpectedDeliveryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    OrderStatus = table.Column<int>(type: "int", nullable: false),
+                    PurchaseType = table.Column<int>(type: "int", nullable: false),
+                    PurchasePersonnel = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    OrderRemarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TaxAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ReceivedAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ApprovedBy = table.Column<int>(type: "int", nullable: true),
+                    ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    SupplierId = table.Column<int>(type: "int", nullable: false),
+                    WarehouseId = table.Column<int>(type: "int", nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PurchaseOrders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrders_Employees_ApprovedBy",
+                        column: x => x.ApprovedBy,
+                        principalTable: "Employees",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrders_Suppliers_SupplierId",
+                        column: x => x.SupplierId,
+                        principalTable: "Suppliers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrders_Warehouses_WarehouseId",
+                        column: x => x.WarehouseId,
+                        principalTable: "Warehouses",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
                 });
@@ -835,6 +1020,106 @@ namespace ERPCore2.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "StockTakings",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TakingNumber = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    TakingDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    WarehouseId = table.Column<int>(type: "int", nullable: false),
+                    WarehouseLocationId = table.Column<int>(type: "int", nullable: true),
+                    TakingType = table.Column<int>(type: "int", nullable: false),
+                    TakingStatus = table.Column<int>(type: "int", nullable: false),
+                    StartTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    EndTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    TakingPersonnel = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SupervisingPersonnel = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ApprovedBy = table.Column<int>(type: "int", nullable: true),
+                    ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    TakingRemarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    IsAdjustmentGenerated = table.Column<bool>(type: "bit", nullable: false),
+                    TotalItems = table.Column<int>(type: "int", nullable: false),
+                    CompletedItems = table.Column<int>(type: "int", nullable: false),
+                    DifferenceItems = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_StockTakings", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_StockTakings_Employees_ApprovedBy",
+                        column: x => x.ApprovedBy,
+                        principalTable: "Employees",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_StockTakings_WarehouseLocations_WarehouseLocationId",
+                        column: x => x.WarehouseLocationId,
+                        principalTable: "WarehouseLocations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_StockTakings_Warehouses_WarehouseId",
+                        column: x => x.WarehouseId,
+                        principalTable: "Warehouses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "InventoryStocks",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CurrentStock = table.Column<int>(type: "int", nullable: false),
+                    ReservedStock = table.Column<int>(type: "int", nullable: false),
+                    InTransitStock = table.Column<int>(type: "int", nullable: false),
+                    MinStockLevel = table.Column<int>(type: "int", nullable: true),
+                    MaxStockLevel = table.Column<int>(type: "int", nullable: true),
+                    AverageCost = table.Column<decimal>(type: "decimal(18,4)", nullable: true),
+                    LastTransactionDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    WarehouseId = table.Column<int>(type: "int", nullable: false),
+                    WarehouseLocationId = table.Column<int>(type: "int", nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InventoryStocks", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_InventoryStocks_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_InventoryStocks_WarehouseLocations_WarehouseLocationId",
+                        column: x => x.WarehouseLocationId,
+                        principalTable: "WarehouseLocations",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_InventoryStocks_Warehouses_WarehouseId",
+                        column: x => x.WarehouseId,
+                        principalTable: "Warehouses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ProductSuppliers",
                 columns: table => new
                 {
@@ -870,6 +1155,304 @@ namespace ERPCore2.Migrations
                         principalTable: "Suppliers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PurchaseOrderDetails",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PurchaseOrderId = table.Column<int>(type: "int", nullable: false),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    OrderQuantity = table.Column<int>(type: "int", nullable: false),
+                    ReceivedQuantity = table.Column<int>(type: "int", nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
+                    ReceivedAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    DetailRemarks = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    ExpectedDeliveryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PurchaseOrderDetails", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrderDetails_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrderDetails_PurchaseOrders_PurchaseOrderId",
+                        column: x => x.PurchaseOrderId,
+                        principalTable: "PurchaseOrders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PurchaseReceivings",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ReceiptNumber = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    ReceiptDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReceiptStatus = table.Column<int>(type: "int", nullable: false),
+                    InspectionPersonnel = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ReceiptRemarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TaxAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ConfirmedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ConfirmedBy = table.Column<int>(type: "int", nullable: true),
+                    PurchaseOrderId = table.Column<int>(type: "int", nullable: false),
+                    WarehouseId = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PurchaseReceivings", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PurchaseReceivings_Employees_ConfirmedBy",
+                        column: x => x.ConfirmedBy,
+                        principalTable: "Employees",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_PurchaseReceivings_PurchaseOrders_PurchaseOrderId",
+                        column: x => x.PurchaseOrderId,
+                        principalTable: "PurchaseOrders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PurchaseReceivings_Warehouses_WarehouseId",
+                        column: x => x.WarehouseId,
+                        principalTable: "Warehouses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "StockTakingDetails",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    StockTakingId = table.Column<int>(type: "int", nullable: false),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    WarehouseLocationId = table.Column<int>(type: "int", nullable: true),
+                    SystemStock = table.Column<int>(type: "int", nullable: false),
+                    ActualStock = table.Column<int>(type: "int", nullable: true),
+                    UnitCost = table.Column<decimal>(type: "decimal(18,4)", nullable: true),
+                    DetailStatus = table.Column<int>(type: "int", nullable: false),
+                    TakingTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    TakingPersonnel = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    DetailRemarks = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    IsAdjusted = table.Column<bool>(type: "bit", nullable: false),
+                    AdjustmentNumber = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_StockTakingDetails", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_StockTakingDetails_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_StockTakingDetails_StockTakings_StockTakingId",
+                        column: x => x.StockTakingId,
+                        principalTable: "StockTakings",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_StockTakingDetails_WarehouseLocations_WarehouseLocationId",
+                        column: x => x.WarehouseLocationId,
+                        principalTable: "WarehouseLocations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "InventoryReservations",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ReservationNumber = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    ReservationType = table.Column<int>(type: "int", nullable: false),
+                    ReservationStatus = table.Column<int>(type: "int", nullable: false),
+                    ReservationDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ExpiryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReservedQuantity = table.Column<int>(type: "int", nullable: false),
+                    ReleasedQuantity = table.Column<int>(type: "int", nullable: false),
+                    ReferenceNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    ReservationRemarks = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    WarehouseId = table.Column<int>(type: "int", nullable: false),
+                    WarehouseLocationId = table.Column<int>(type: "int", nullable: true),
+                    InventoryStockId = table.Column<int>(type: "int", nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InventoryReservations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_InventoryReservations_InventoryStocks_InventoryStockId",
+                        column: x => x.InventoryStockId,
+                        principalTable: "InventoryStocks",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_InventoryReservations_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_InventoryReservations_WarehouseLocations_WarehouseLocationId",
+                        column: x => x.WarehouseLocationId,
+                        principalTable: "WarehouseLocations",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_InventoryReservations_Warehouses_WarehouseId",
+                        column: x => x.WarehouseId,
+                        principalTable: "Warehouses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "InventoryTransactions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TransactionNumber = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    TransactionType = table.Column<int>(type: "int", nullable: false),
+                    TransactionDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    UnitCost = table.Column<decimal>(type: "decimal(18,4)", nullable: true),
+                    StockBefore = table.Column<int>(type: "int", nullable: false),
+                    StockAfter = table.Column<int>(type: "int", nullable: false),
+                    TransactionRemarks = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    ReferenceNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    WarehouseId = table.Column<int>(type: "int", nullable: false),
+                    WarehouseLocationId = table.Column<int>(type: "int", nullable: true),
+                    InventoryStockId = table.Column<int>(type: "int", nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InventoryTransactions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_InventoryTransactions_InventoryStocks_InventoryStockId",
+                        column: x => x.InventoryStockId,
+                        principalTable: "InventoryStocks",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_InventoryTransactions_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_InventoryTransactions_WarehouseLocations_WarehouseLocationId",
+                        column: x => x.WarehouseLocationId,
+                        principalTable: "WarehouseLocations",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_InventoryTransactions_Warehouses_WarehouseId",
+                        column: x => x.WarehouseId,
+                        principalTable: "Warehouses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PurchaseReceivingDetails",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PurchaseReceivingId = table.Column<int>(type: "int", nullable: false),
+                    PurchaseOrderDetailId = table.Column<int>(type: "int", nullable: false),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    ReceivedQuantity = table.Column<int>(type: "int", nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
+                    WarehouseLocationId = table.Column<int>(type: "int", nullable: true),
+                    InspectionRemarks = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    QualityInspectionPassed = table.Column<bool>(type: "bit", nullable: true),
+                    QualityRemarks = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    BatchNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    ExpiryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PurchaseReceivingDetails", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PurchaseReceivingDetails_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PurchaseReceivingDetails_PurchaseOrderDetails_PurchaseOrderDetailId",
+                        column: x => x.PurchaseOrderDetailId,
+                        principalTable: "PurchaseOrderDetails",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PurchaseReceivingDetails_PurchaseReceivings_PurchaseReceivingId",
+                        column: x => x.PurchaseReceivingId,
+                        principalTable: "PurchaseReceivings",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_PurchaseReceivingDetails_WarehouseLocations_WarehouseLocationId",
+                        column: x => x.WarehouseLocationId,
+                        principalTable: "WarehouseLocations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateIndex(
@@ -909,6 +1492,11 @@ namespace ERPCore2.Migrations
                 column: "IndustryTypeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Departments_ParentDepartmentId",
+                table: "Departments",
+                column: "ParentDepartmentId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_EmployeeAddresses_AddressTypeId",
                 table: "EmployeeAddresses",
                 column: "AddressTypeId");
@@ -929,10 +1517,27 @@ namespace ERPCore2.Migrations
                 column: "EmployeeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Employees_Account",
+                table: "Employees",
+                column: "Account",
+                unique: true,
+                filter: "[Account] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Employees_DepartmentId",
+                table: "Employees",
+                column: "DepartmentId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Employees_EmployeeCode",
                 table: "Employees",
                 column: "EmployeeCode",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Employees_EmployeePositionId",
+                table: "Employees",
+                column: "EmployeePositionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Employees_RoleId",
@@ -940,10 +1545,76 @@ namespace ERPCore2.Migrations
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Employees_Username",
-                table: "Employees",
-                column: "Username",
-                unique: true);
+                name: "IX_InventoryReservations_InventoryStockId",
+                table: "InventoryReservations",
+                column: "InventoryStockId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InventoryReservations_ProductId_ReservationDate",
+                table: "InventoryReservations",
+                columns: new[] { "ProductId", "ReservationDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InventoryReservations_ReferenceNumber",
+                table: "InventoryReservations",
+                column: "ReferenceNumber");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InventoryReservations_ReservationType_ReservationStatus",
+                table: "InventoryReservations",
+                columns: new[] { "ReservationType", "ReservationStatus" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InventoryReservations_WarehouseId",
+                table: "InventoryReservations",
+                column: "WarehouseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InventoryReservations_WarehouseLocationId",
+                table: "InventoryReservations",
+                column: "WarehouseLocationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InventoryStocks_ProductId_WarehouseId_WarehouseLocationId",
+                table: "InventoryStocks",
+                columns: new[] { "ProductId", "WarehouseId", "WarehouseLocationId" },
+                unique: true,
+                filter: "[WarehouseLocationId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InventoryStocks_WarehouseId",
+                table: "InventoryStocks",
+                column: "WarehouseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InventoryStocks_WarehouseLocationId",
+                table: "InventoryStocks",
+                column: "WarehouseLocationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InventoryTransactions_InventoryStockId",
+                table: "InventoryTransactions",
+                column: "InventoryStockId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InventoryTransactions_ProductId_TransactionDate",
+                table: "InventoryTransactions",
+                columns: new[] { "ProductId", "TransactionDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InventoryTransactions_TransactionType_TransactionDate",
+                table: "InventoryTransactions",
+                columns: new[] { "TransactionType", "TransactionDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InventoryTransactions_WarehouseId_TransactionDate",
+                table: "InventoryTransactions",
+                columns: new[] { "WarehouseId", "TransactionDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InventoryTransactions_WarehouseLocationId",
+                table: "InventoryTransactions",
+                column: "WarehouseLocationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_InventoryTransactionTypes_TypeCode",
@@ -991,6 +1662,11 @@ namespace ERPCore2.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Products_SizeId",
+                table: "Products",
+                column: "SizeId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Products_UnitId",
                 table: "Products",
                 column: "UnitId");
@@ -1006,6 +1682,88 @@ namespace ERPCore2.Migrations
                 column: "SupplierId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrderDetails_ProductId",
+                table: "PurchaseOrderDetails",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrderDetails_PurchaseOrderId_ProductId",
+                table: "PurchaseOrderDetails",
+                columns: new[] { "PurchaseOrderId", "ProductId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrders_ApprovedBy",
+                table: "PurchaseOrders",
+                column: "ApprovedBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrders_OrderStatus_OrderDate",
+                table: "PurchaseOrders",
+                columns: new[] { "OrderStatus", "OrderDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrders_PurchaseOrderNumber",
+                table: "PurchaseOrders",
+                column: "PurchaseOrderNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrders_SupplierId_OrderDate",
+                table: "PurchaseOrders",
+                columns: new[] { "SupplierId", "OrderDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrders_WarehouseId",
+                table: "PurchaseOrders",
+                column: "WarehouseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseReceivingDetails_ProductId",
+                table: "PurchaseReceivingDetails",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseReceivingDetails_PurchaseOrderDetailId",
+                table: "PurchaseReceivingDetails",
+                column: "PurchaseOrderDetailId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseReceivingDetails_PurchaseReceivingId_ProductId",
+                table: "PurchaseReceivingDetails",
+                columns: new[] { "PurchaseReceivingId", "ProductId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseReceivingDetails_WarehouseLocationId",
+                table: "PurchaseReceivingDetails",
+                column: "WarehouseLocationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseReceivings_ConfirmedBy",
+                table: "PurchaseReceivings",
+                column: "ConfirmedBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseReceivings_PurchaseOrderId_ReceiptDate",
+                table: "PurchaseReceivings",
+                columns: new[] { "PurchaseOrderId", "ReceiptDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseReceivings_ReceiptNumber",
+                table: "PurchaseReceivings",
+                column: "ReceiptNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseReceivings_ReceiptStatus_ReceiptDate",
+                table: "PurchaseReceivings",
+                columns: new[] { "ReceiptStatus", "ReceiptDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseReceivings_WarehouseId",
+                table: "PurchaseReceivings",
+                column: "WarehouseId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RolePermissions_PermissionId",
                 table: "RolePermissions",
                 column: "PermissionId");
@@ -1014,6 +1772,55 @@ namespace ERPCore2.Migrations
                 name: "IX_RolePermissions_RoleId",
                 table: "RolePermissions",
                 column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Sizes_SizeCode",
+                table: "Sizes",
+                column: "SizeCode",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StockTakingDetails_ProductId",
+                table: "StockTakingDetails",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StockTakingDetails_StockTakingId_ProductId_WarehouseLocationId",
+                table: "StockTakingDetails",
+                columns: new[] { "StockTakingId", "ProductId", "WarehouseLocationId" },
+                unique: true,
+                filter: "[WarehouseLocationId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StockTakingDetails_WarehouseLocationId",
+                table: "StockTakingDetails",
+                column: "WarehouseLocationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StockTakings_ApprovedBy",
+                table: "StockTakings",
+                column: "ApprovedBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StockTakings_TakingNumber",
+                table: "StockTakings",
+                column: "TakingNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StockTakings_TakingStatus_TakingDate",
+                table: "StockTakings",
+                columns: new[] { "TakingStatus", "TakingDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StockTakings_WarehouseId_TakingDate",
+                table: "StockTakings",
+                columns: new[] { "WarehouseId", "TakingDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StockTakings_WarehouseLocationId",
+                table: "StockTakings",
+                column: "WarehouseLocationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SupplierAddresses_AddressTypeId",
@@ -1100,6 +1907,15 @@ namespace ERPCore2.Migrations
                 name: "EmployeeContacts");
 
             migrationBuilder.DropTable(
+                name: "ErrorLogs");
+
+            migrationBuilder.DropTable(
+                name: "InventoryReservations");
+
+            migrationBuilder.DropTable(
+                name: "InventoryTransactions");
+
+            migrationBuilder.DropTable(
                 name: "InventoryTransactionTypes");
 
             migrationBuilder.DropTable(
@@ -1109,7 +1925,13 @@ namespace ERPCore2.Migrations
                 name: "ProductSuppliers");
 
             migrationBuilder.DropTable(
+                name: "PurchaseReceivingDetails");
+
+            migrationBuilder.DropTable(
                 name: "RolePermissions");
+
+            migrationBuilder.DropTable(
+                name: "StockTakingDetails");
 
             migrationBuilder.DropTable(
                 name: "SupplierAddresses");
@@ -1121,22 +1943,25 @@ namespace ERPCore2.Migrations
                 name: "UnitConversions");
 
             migrationBuilder.DropTable(
-                name: "WarehouseLocations");
-
-            migrationBuilder.DropTable(
                 name: "Weathers");
 
             migrationBuilder.DropTable(
                 name: "Customers");
 
             migrationBuilder.DropTable(
-                name: "Employees");
+                name: "InventoryStocks");
 
             migrationBuilder.DropTable(
-                name: "Products");
+                name: "PurchaseOrderDetails");
+
+            migrationBuilder.DropTable(
+                name: "PurchaseReceivings");
 
             migrationBuilder.DropTable(
                 name: "Permissions");
+
+            migrationBuilder.DropTable(
+                name: "StockTakings");
 
             migrationBuilder.DropTable(
                 name: "AddressTypes");
@@ -1145,22 +1970,43 @@ namespace ERPCore2.Migrations
                 name: "ContactTypes");
 
             migrationBuilder.DropTable(
-                name: "Warehouses");
-
-            migrationBuilder.DropTable(
                 name: "CustomerTypes");
 
             migrationBuilder.DropTable(
-                name: "Roles");
+                name: "Products");
+
+            migrationBuilder.DropTable(
+                name: "PurchaseOrders");
+
+            migrationBuilder.DropTable(
+                name: "WarehouseLocations");
 
             migrationBuilder.DropTable(
                 name: "ProductCategories");
 
             migrationBuilder.DropTable(
-                name: "Suppliers");
+                name: "Sizes");
 
             migrationBuilder.DropTable(
                 name: "Units");
+
+            migrationBuilder.DropTable(
+                name: "Employees");
+
+            migrationBuilder.DropTable(
+                name: "Suppliers");
+
+            migrationBuilder.DropTable(
+                name: "Warehouses");
+
+            migrationBuilder.DropTable(
+                name: "Departments");
+
+            migrationBuilder.DropTable(
+                name: "EmployeePositions");
+
+            migrationBuilder.DropTable(
+                name: "Roles");
 
             migrationBuilder.DropTable(
                 name: "IndustryTypes");

@@ -5,7 +5,7 @@ namespace ERPCore2.Data.Enums
     /// <summary>
     /// 採購進貨狀態枚舉
     /// </summary>
-    public enum PurchaseReceiptStatus
+    public enum PurchaseReceivingStatus
     {
         [Description("草稿")]
         Draft = 1,

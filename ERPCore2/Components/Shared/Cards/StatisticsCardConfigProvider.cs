@@ -108,7 +108,7 @@ namespace ERPCore2.Components.Shared.Cards
         /// <summary>
         /// 進貨單統計卡片配置
         /// </summary>
-        public static List<StatisticsCardConfig> PurchaseReceiptConfigs(
+        public static List<StatisticsCardConfig> PurchaseReceivingConfigs(
             EventCallback? onTotalReceiptsClick = null,
             EventCallback? onPendingReceiptsClick = null,
             EventCallback? onCompletedReceiptsClick = null,

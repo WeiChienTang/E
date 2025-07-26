@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250720072508_AddIsSystemUserToEmployee")]
-    partial class AddIsSystemUserToEmployee
+    [Migration("20250726015847_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -486,6 +486,10 @@ namespace ERPCore2.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Account")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -530,7 +534,7 @@ namespace ERPCore2.Migrations
                     b.Property<DateTime?>("LockedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("PasswordHash")
+                    b.Property<string>("Password")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
@@ -551,11 +555,11 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("Username")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("Account")
+                        .IsUnique()
+                        .HasFilter("[Account] IS NOT NULL");
 
                     b.HasIndex("DepartmentId");
 
@@ -565,10 +569,6 @@ namespace ERPCore2.Migrations
                     b.HasIndex("EmployeePositionId");
 
                     b.HasIndex("RoleId");
-
-                    b.HasIndex("Username")
-                        .IsUnique()
-                        .HasFilter("[Username] IS NOT NULL");
 
                     b.ToTable("Employees");
                 });
@@ -1737,7 +1737,7 @@ namespace ERPCore2.Migrations
                     b.ToTable("PurchaseOrderDetails");
                 });
 
-            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceipt", b =>
+            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceiving", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1819,10 +1819,10 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("ReceiptStatus", "ReceiptDate");
 
-                    b.ToTable("PurchaseReceipts");
+                    b.ToTable("PurchaseReceivings");
                 });
 
-            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceiptDetail", b =>
+            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceivingDetail", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1857,7 +1857,7 @@ namespace ERPCore2.Migrations
                     b.Property<int>("PurchaseOrderDetailId")
                         .HasColumnType("int");
 
-                    b.Property<int>("PurchaseReceiptId")
+                    b.Property<int>("PurchaseReceivingId")
                         .HasColumnType("int");
 
                     b.Property<bool?>("QualityInspectionPassed")
@@ -1898,9 +1898,9 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("WarehouseLocationId");
 
-                    b.HasIndex("PurchaseReceiptId", "ProductId");
+                    b.HasIndex("PurchaseReceivingId", "ProductId");
 
-                    b.ToTable("PurchaseReceiptDetails");
+                    b.ToTable("PurchaseReceivingDetails");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Role", b =>
@@ -3125,7 +3125,7 @@ namespace ERPCore2.Migrations
                     b.Navigation("PurchaseOrder");
                 });
 
-            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceipt", b =>
+            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceiving", b =>
                 {
                     b.HasOne("ERPCore2.Data.Entities.Employee", "ConfirmedByUser")
                         .WithMany()
@@ -3133,7 +3133,7 @@ namespace ERPCore2.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("ERPCore2.Data.Entities.PurchaseOrder", "PurchaseOrder")
-                        .WithMany("PurchaseReceipts")
+                        .WithMany("PurchaseReceivings")
                         .HasForeignKey("PurchaseOrderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -3151,7 +3151,7 @@ namespace ERPCore2.Migrations
                     b.Navigation("Warehouse");
                 });
 
-            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceiptDetail", b =>
+            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceivingDetail", b =>
                 {
                     b.HasOne("ERPCore2.Data.Entities.Product", "Product")
                         .WithMany()
@@ -3160,14 +3160,14 @@ namespace ERPCore2.Migrations
                         .IsRequired();
 
                     b.HasOne("ERPCore2.Data.Entities.PurchaseOrderDetail", "PurchaseOrderDetail")
-                        .WithMany("PurchaseReceiptDetails")
+                        .WithMany("PurchaseReceivingDetails")
                         .HasForeignKey("PurchaseOrderDetailId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("ERPCore2.Data.Entities.PurchaseReceipt", "PurchaseReceipt")
-                        .WithMany("PurchaseReceiptDetails")
-                        .HasForeignKey("PurchaseReceiptId")
+                    b.HasOne("ERPCore2.Data.Entities.PurchaseReceiving", "PurchaseReceiving")
+                        .WithMany("PurchaseReceivingDetails")
+                        .HasForeignKey("PurchaseReceivingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -3180,7 +3180,7 @@ namespace ERPCore2.Migrations
 
                     b.Navigation("PurchaseOrderDetail");
 
-                    b.Navigation("PurchaseReceipt");
+                    b.Navigation("PurchaseReceiving");
 
                     b.Navigation("WarehouseLocation");
                 });
@@ -3420,17 +3420,17 @@ namespace ERPCore2.Migrations
                 {
                     b.Navigation("PurchaseOrderDetails");
 
-                    b.Navigation("PurchaseReceipts");
+                    b.Navigation("PurchaseReceivings");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseOrderDetail", b =>
                 {
-                    b.Navigation("PurchaseReceiptDetails");
+                    b.Navigation("PurchaseReceivingDetails");
                 });
 
-            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceipt", b =>
+            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceiving", b =>
                 {
-                    b.Navigation("PurchaseReceiptDetails");
+                    b.Navigation("PurchaseReceivingDetails");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Role", b =>

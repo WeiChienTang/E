@@ -55,6 +55,6 @@ namespace ERPCore2.Data.Entities
         // Navigation Properties
         public PurchaseOrder PurchaseOrder { get; set; } = null!;
         public Product Product { get; set; } = null!;
-        public ICollection<PurchaseReceiptDetail> PurchaseReceiptDetails { get; set; } = new List<PurchaseReceiptDetail>();
+        public ICollection<PurchaseReceivingDetail> PurchaseReceivingDetails { get; set; } = new List<PurchaseReceivingDetail>();
     }
 }

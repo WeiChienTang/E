@@ -119,8 +119,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             await context.SaveChangesAsync();
 
             // 為已進貨的訂單建立進貨單
-            var receipts = new List<PurchaseReceipt>();
-            var receiptDetails = new List<PurchaseReceiptDetail>();
+            var receipts = new List<PurchaseReceiving>();
+            var receiptDetails = new List<PurchaseReceivingDetail>();
 
             var completedOrders = orders.Where(o => o.OrderStatus == PurchaseOrderStatus.Completed ||
                                                    o.OrderStatus == PurchaseOrderStatus.PartialReceived).ToList();
@@ -128,11 +128,11 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             foreach (var order in completedOrders)
             {
                 var receiptDate = order.OrderDate.AddDays(random.Next(3, 10));
-                var receipt = new PurchaseReceipt
+                var receipt = new PurchaseReceiving
                 {
                     ReceiptNumber = $"PR{receiptDate:yyyyMMdd}{order.Id:D3}",
                     ReceiptDate = receiptDate,
-                    ReceiptStatus = PurchaseReceiptStatus.Received,
+                    ReceiptStatus = PurchaseReceivingStatus.Received,
                     InspectionPersonnel = "驗收人員" + order.Id,
                     ReceiptRemarks = $"採購訂單 {order.PurchaseOrderNumber} 進貨",
                     PurchaseOrderId = order.Id,
@@ -147,7 +147,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 receipts.Add(receipt);
             }
 
-            await context.PurchaseReceipts.AddRangeAsync(receipts);
+            await context.PurchaseReceivings.AddRangeAsync(receipts);
             await context.SaveChangesAsync();
 
             // 建立進貨明細
@@ -160,9 +160,9 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     if (orderDetail.ReceivedQuantity > 0)
                     {
-                        var receiptDetail = new PurchaseReceiptDetail
+                        var receiptDetail = new PurchaseReceivingDetail
                         {
-                            PurchaseReceiptId = receipt.Id,
+                            PurchaseReceivingId = receipt.Id,
                             PurchaseOrderDetailId = orderDetail.Id,
                             ProductId = orderDetail.ProductId,
                             ReceivedQuantity = orderDetail.ReceivedQuantity,
@@ -181,13 +181,13 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 }
             }
 
-            await context.PurchaseReceiptDetails.AddRangeAsync(receiptDetails);
+            await context.PurchaseReceivingDetails.AddRangeAsync(receiptDetails);
             await context.SaveChangesAsync();
 
             // 更新進貨單總金額
             foreach (var receipt in receipts)
             {
-                var details = receiptDetails.Where(rd => rd.PurchaseReceiptId == receipt.Id).ToList();
+                var details = receiptDetails.Where(rd => rd.PurchaseReceivingId == receipt.Id).ToList();
                 receipt.TotalAmount = details.Sum(d => d.SubtotalAmount);
             }
 

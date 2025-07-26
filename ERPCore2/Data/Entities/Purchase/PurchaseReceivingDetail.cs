@@ -8,15 +8,15 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 採購進貨明細實體 - 記錄採購進貨商品明細
     /// </summary>
-    [Index(nameof(PurchaseReceiptId), nameof(ProductId))]
+    [Index(nameof(PurchaseReceivingId), nameof(ProductId))]
     [Index(nameof(PurchaseOrderDetailId))]
     [Index(nameof(ProductId))]
-    public class PurchaseReceiptDetail : BaseEntity
+    public class PurchaseReceivingDetail : BaseEntity
     {
         [Required(ErrorMessage = "採購進貨單為必填")]
         [Display(Name = "採購進貨單")]
-        [ForeignKey(nameof(PurchaseReceipt))]
-        public int PurchaseReceiptId { get; set; }
+        [ForeignKey(nameof(PurchaseReceiving))]
+        public int PurchaseReceivingId { get; set; }
 
         [Required(ErrorMessage = "採購訂單明細為必填")]
         [Display(Name = "採購訂單明細")]
@@ -64,7 +64,7 @@ namespace ERPCore2.Data.Entities
         public DateTime? ExpiryDate { get; set; }
 
         // Navigation Properties
-        public PurchaseReceipt PurchaseReceipt { get; set; } = null!;
+        public PurchaseReceiving PurchaseReceiving { get; set; } = null!;
         public PurchaseOrderDetail PurchaseOrderDetail { get; set; } = null!;
         public Product Product { get; set; } = null!;
         public WarehouseLocation? WarehouseLocation { get; set; }
