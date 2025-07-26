@@ -1,0 +1,538 @@
+@page "/sales-deliveries/detail/{salesDeliveryId:int}"
+
+@inject ISalesDeliveryService SalesDeliveryService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<GenericDetailPageComponent TEntity="SalesDelivery" 
+                           TService="ISalesDeliveryService"
+                           EntityId="@SalesDeliveryId"
+                           Entity="@salesDelivery"
+                           Service="@SalesDeliveryService"
+                           EntityName="銷貨出貨"
+                           EntityNamePlural="銷貨出貨"
+                           IndexRoute="/sales-deliveries"
+                           EditRoute="/sales-deliveries/edit"
+                           LoadingText="載入銷貨出貨資料中..."
+                           BreadcrumbItems="@breadcrumbItems"
+                           DataLoader="@LoadSalesDeliveryDataAsync"
+                           AdditionalDataLoader="@LoadAdditionalDataAsync"
+                           EntityTitleSelector="@(sd => sd.DeliveryNumber)"
+                           EntitySubtitleSelector="@(sd => $"出貨日期：{sd.DeliveryDate:yyyy/MM/dd}")"
+                           EntityDisplayNameSelector="@(sd => sd.DeliveryNumber)"
+                           OnDataLoaded="@OnSalesDeliveryDataLoaded"
+                           UseTabLayout="true"
+                           TabSections="@GetTabSections()"
+                           RequiredPermission="SalesDelivery.Read"
+                           @ref="detailComponent">
+</GenericDetailPageComponent>
+
+@code {
+    [Parameter] public int SalesDeliveryId { get; set; }
+    
+    // 組件參考
+    private GenericDetailPageComponent<SalesDelivery, ISalesDeliveryService> detailComponent = default!;
+    
+    // 資料模型
+    private SalesDelivery? salesDelivery;
+    private List<ERPCore2.Data.Entities.SalesDeliveryDetail> salesDeliveryDetails = new();
+    
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            InitializeBreadcrumbItems();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(OnInitialized),
+                typeof(SalesDeliveryDetail),
+                additionalData: new { SalesDeliveryId }
+            );
+            throw;
+        }
+    }
+
+    private void InitializeBreadcrumbItems()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new() { Text = "首頁", Href = "/" },
+            new() { Text = "銷貨管理", Href = "/sales" },
+            new() { Text = "銷貨出貨", Href = "/sales-deliveries" },
+            new() { Text = "出貨詳情" }  // 沒有 Href 會自動設為 IsActive = true
+        };
+    }
+
+    private async Task<SalesDelivery?> LoadSalesDeliveryDataAsync()
+    {
+        try
+        {
+            salesDelivery = await SalesDeliveryService.GetByIdAsync(SalesDeliveryId);
+            return salesDelivery;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(LoadSalesDeliveryDataAsync),
+                typeof(SalesDeliveryDetail),
+                additionalData: new { SalesDeliveryId }
+            );
+            throw;
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            if (salesDelivery?.Id != null)
+            {
+                var salesDeliveryWithDetails = await SalesDeliveryService.GetWithDetailsAsync(salesDelivery.Id);
+                if (salesDeliveryWithDetails != null)
+                {
+                    if (salesDeliveryWithDetails.SalesDeliveryDetails != null)
+                    {
+                        salesDeliveryDetails = salesDeliveryWithDetails.SalesDeliveryDetails.ToList();
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(LoadAdditionalDataAsync),
+                typeof(SalesDeliveryDetail),
+                additionalData: new { SalesDeliveryId, salesDelivery?.Id }
+            );
+        }
+    }
+
+    private void OnSalesDeliveryDataLoaded()
+    {
+        StateHasChanged();
+    }
+
+    private List<GenericDetailPageComponent<SalesDelivery, ISalesDeliveryService>.TabSection> GetTabSections()
+    {
+        try
+        {
+            return new List<GenericDetailPageComponent<SalesDelivery, ISalesDeliveryService>.TabSection>
+            {
+                new()
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div>
+                        <BasicInfoDisplayComponent 
+                            Title="銷貨出貨基本資訊"
+                            IconClass="fas fa-truck"
+                            IconColor="text-primary"
+                            Fields="@GetSalesDeliveryBasicFields()" />
+                    </div>
+                },
+                
+                new()
+                {
+                    Id = "delivery",
+                    Title = "配送資訊",
+                    Content = @<div>
+                        <BasicInfoDisplayComponent 
+                            Title="配送相關資訊"
+                            IconClass="fas fa-shipping-fast"
+                            IconColor="text-success"
+                            Fields="@GetDeliveryInfoFields()" />
+                    </div>
+                },
+
+                new()
+                {
+                    Id = "details",
+                    Title = "出貨明細",
+                    Content = @<div>
+                        @if (salesDeliveryDetails.Any())
+                        {
+                            <GenericTableComponent TItem="ERPCore2.Data.Entities.SalesDeliveryDetail"
+                                                 Items="@salesDeliveryDetails"
+                                                 ColumnDefinitions="@GetDeliveryDetailColumnDefinitions()"
+                                                 ShowActions="false"
+                                                 IsStriped="true"
+                                                 IsHoverable="true"
+                                                 Size="TableSize.Small" />
+                        }
+                        else
+                        {
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                此出貨單尚未新增任何明細項目。
+                            </div>
+                        }
+                    </div>
+                },
+
+                new()
+                {
+                    Id = "order",
+                    Title = "相關訂單",
+                    Content = @<div>
+                        @if (salesDelivery?.SalesOrder != null)
+                        {
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">
+                                        <i class="fas fa-receipt me-2"></i>
+                                        關聯銷貨訂單
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <BasicInfoDisplayComponent Fields="@GetRelatedOrderFields()" />
+                                    <div class="mt-3">
+                                        <a href="/sales-orders/detail/@salesDelivery.SalesOrder.Id" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye me-1"></i>
+                                            查看銷貨訂單詳情
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                此出貨單沒有關聯的銷貨訂單資料。
+                            </div>
+                        }
+                    </div>
+                },
+
+                new()
+                {
+                    Id = "system",
+                    Title = "系統資訊",
+                    Content = @<div>
+                        <SystemInfoDisplayComponent 
+                            CreatedAt="@(salesDelivery?.CreatedAt ?? DateTime.MinValue)"
+                            UpdatedAt="@salesDelivery?.UpdatedAt"
+                            CreatedBy="@salesDelivery?.CreatedBy"
+                            UpdatedBy="@salesDelivery?.UpdatedBy"
+                            Remarks="@salesDelivery?.DeliveryRemarks"
+                            ShowTimeline="true"
+                            ShowRemarks="true" />
+                    </div>
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(GetTabSections),
+                typeof(SalesDeliveryDetail),
+                additionalData: new { SalesDeliveryId }
+            );
+            throw;
+        }
+    }
+
+    private List<BasicInfoDisplayComponent.BasicInfoField> GetSalesDeliveryBasicFields()
+    {
+        try
+        {
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
+            {
+                new()
+                {
+                    Label = "出貨單號",
+                    Value = salesDelivery?.DeliveryNumber,
+                    IconClass = "fas fa-barcode",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary",
+                    IsPrimary = true
+                },
+                new()
+                {
+                    Label = "出貨日期",
+                    Value = salesDelivery?.DeliveryDate.ToString("yyyy/MM/dd"),
+                    Format = BasicInfoDisplayComponent.FieldFormat.Date,
+                    IconClass = "fas fa-calendar",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info"
+                },
+                new()
+                {
+                    Label = "出貨狀態",
+                    CustomContent = @<div>
+                        @if (salesDelivery?.DeliveryStatus != null)
+                        {
+                            <span class="badge @GetDeliveryStatusBadgeClass(salesDelivery.DeliveryStatus)">
+                                @GetDeliveryStatusDisplayName(salesDelivery.DeliveryStatus)
+                            </span>
+                        }
+                    </div>,
+                    IconClass = "fas fa-info-circle",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success"
+                },
+                new()
+                {
+                    Label = "預計送達日期",
+                    Value = salesDelivery?.ExpectedArrivalDate?.ToString("yyyy/MM/dd"),
+                    Format = BasicInfoDisplayComponent.FieldFormat.Date,
+                    IconClass = "fas fa-clock",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    VisibilityCondition = () => salesDelivery?.ExpectedArrivalDate != null
+                },
+                new()
+                {
+                    Label = "實際送達日期",
+                    Value = salesDelivery?.ActualArrivalDate?.ToString("yyyy/MM/dd"),
+                    Format = BasicInfoDisplayComponent.FieldFormat.Date,
+                    IconClass = "fas fa-check-circle",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    VisibilityCondition = () => salesDelivery?.ActualArrivalDate != null
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(GetSalesDeliveryBasicFields),
+                typeof(SalesDeliveryDetail),
+                additionalData: new { SalesDeliveryId }
+            );
+            throw;
+        }
+    }
+
+    private List<BasicInfoDisplayComponent.BasicInfoField> GetDeliveryInfoFields()
+    {
+        try
+        {
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
+            {
+                new()
+                {
+                    Label = "收貨地址",
+                    Value = salesDelivery?.DeliveryAddress,
+                    IconClass = "fas fa-map-marker-alt",
+                    IconBgClass = "bg-danger bg-opacity-10",
+                    IconTextClass = "text-danger",
+                    ColSize = 12
+                },
+                new()
+                {
+                    Label = "收貨聯絡人",
+                    Value = salesDelivery?.DeliveryContact,
+                    IconClass = "fas fa-user",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info"
+                },
+                new()
+                {
+                    Label = "收貨聯絡電話",
+                    Value = salesDelivery?.DeliveryPhone,
+                    IconClass = "fas fa-phone",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info"
+                },
+                new()
+                {
+                    Label = "運送方式",
+                    Value = salesDelivery?.ShippingMethod,
+                    IconClass = "fas fa-truck",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary"
+                },
+                new()
+                {
+                    Label = "追蹤號碼",
+                    Value = salesDelivery?.TrackingNumber,
+                    IconClass = "fas fa-search",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    IconTextClass = "text-secondary"
+                },
+                new()
+                {
+                    Label = "出貨人員",
+                    Value = salesDelivery?.DeliveryPersonnel,
+                    IconClass = "fas fa-user-tie",
+                    IconBgClass = "bg-dark bg-opacity-10",
+                    IconTextClass = "text-dark"
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(GetDeliveryInfoFields),
+                typeof(SalesDeliveryDetail),
+                additionalData: new { SalesDeliveryId }
+            );
+            throw;
+        }
+    }
+
+    private List<BasicInfoDisplayComponent.BasicInfoField> GetRelatedOrderFields()
+    {
+        try
+        {
+            var order = salesDelivery?.SalesOrder;
+            if (order == null) return new List<BasicInfoDisplayComponent.BasicInfoField>();
+
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
+            {
+                new()
+                {
+                    Label = "訂單編號",
+                    Value = order.SalesOrderNumber,
+                    IsPrimary = true,
+                    IconClass = "fas fa-receipt",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary"
+                },
+                new()
+                {
+                    Label = "客戶名稱",
+                    Value = order.Customer?.CompanyName,
+                    IconClass = "fas fa-building",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info"
+                },
+                new()
+                {
+                    Label = "訂單日期",
+                    Value = order.OrderDate.ToString("yyyy/MM/dd"),
+                    Format = BasicInfoDisplayComponent.FieldFormat.Date,
+                    IconClass = "fas fa-calendar",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success"
+                },
+                new()
+                {
+                    Label = "訂單狀態",
+                    CustomContent = @<div>
+                        <span class="badge @GetOrderStatusBadgeClass(order.OrderStatus)">
+                            @GetOrderStatusDisplayName(order.OrderStatus)
+                        </span>
+                    </div>,
+                    IconClass = "fas fa-info-circle",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning"
+                },
+                new()
+                {
+                    Label = "訂單金額",
+                    Value = $"NT$ {order.TotalAmount:N2}",
+                    Format = BasicInfoDisplayComponent.FieldFormat.Currency,
+                    IconClass = "fas fa-dollar-sign",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success"
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(GetRelatedOrderFields),
+                typeof(SalesDeliveryDetail),
+                additionalData: new { SalesDeliveryId }
+            );
+            throw;
+        }
+    }
+
+    private List<TableColumnDefinition> GetDeliveryDetailColumnDefinitions()
+    {
+        try
+        {
+            return new List<TableColumnDefinition>
+            {
+                TableColumnDefinition.Text("商品代碼", "Product.ProductCode"),
+                TableColumnDefinition.Text("商品名稱", "Product.ProductName"),
+                TableColumnDefinition.Number("出貨數量", "DeliveredQuantity", "N0", "text-end"),
+                TableColumnDefinition.Text("單位", "Unit.UnitName"),
+                TableColumnDefinition.Currency("單價", "UnitPrice", "NT$", "N2", "text-end"),
+                TableColumnDefinition.Currency("小計", "Subtotal", "NT$", "N2", "text-end"),
+                TableColumnDefinition.Text("備註", "DetailRemarks")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(GetDeliveryDetailColumnDefinitions),
+                typeof(SalesDeliveryDetail),
+                additionalData: new { SalesDeliveryId }
+            );
+            throw;
+        }
+    }
+
+    private static string GetDeliveryStatusDisplayName(SalesDeliveryStatus status)
+    {
+        return status switch
+        {
+            SalesDeliveryStatus.Pending => "待出貨",
+            SalesDeliveryStatus.Preparing => "備貨中",
+            SalesDeliveryStatus.Delivered => "已出貨",
+            SalesDeliveryStatus.Received => "已送達",
+            SalesDeliveryStatus.Cancelled => "已取消",
+            _ => "未知"
+        };
+    }
+
+    private static string GetDeliveryStatusBadgeClass(SalesDeliveryStatus status)
+    {
+        return status switch
+        {
+            SalesDeliveryStatus.Pending => "bg-warning text-dark",
+            SalesDeliveryStatus.Preparing => "bg-info",
+            SalesDeliveryStatus.Delivered => "bg-primary",
+            SalesDeliveryStatus.Received => "bg-success",
+            SalesDeliveryStatus.Cancelled => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private static string GetOrderStatusDisplayName(SalesOrderStatus status)
+    {
+        return status switch
+        {
+            SalesOrderStatus.Draft => "草稿",
+            SalesOrderStatus.Submitted => "已送出",
+            SalesOrderStatus.Confirmed => "已確認",
+            SalesOrderStatus.PartialDelivered => "部分出貨",
+            SalesOrderStatus.Completed => "已完成",
+            SalesOrderStatus.Cancelled => "已取消",
+            SalesOrderStatus.Closed => "已關閉",
+            _ => "未知"
+        };
+    }
+
+    private static string GetOrderStatusBadgeClass(SalesOrderStatus status)
+    {
+        return status switch
+        {
+            SalesOrderStatus.Draft => "bg-secondary",
+            SalesOrderStatus.Submitted => "bg-info",
+            SalesOrderStatus.Confirmed => "bg-warning text-dark",
+            SalesOrderStatus.PartialDelivered => "bg-primary",
+            SalesOrderStatus.Completed => "bg-success",
+            SalesOrderStatus.Cancelled => "bg-danger",
+            SalesOrderStatus.Closed => "bg-dark",
+            _ => "bg-secondary"
+        };
+    }
+}
