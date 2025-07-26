@@ -140,16 +140,14 @@
                     FieldType = FormFieldType.Text,
                     IsRequired = true,
                     IsReadOnly = true,
-                    Placeholder = "系統自動產生",
-                    GroupName = "basic"
+                    Placeholder = "系統自動產生"
                 },
                 new()
                 {
                     PropertyName = nameof(SalesReturn.ReturnDate),
                     Label = "退回日期",
                     FieldType = FormFieldType.Date,
-                    IsRequired = true,
-                    GroupName = "basic"
+                    IsRequired = true
                 },
                 new()
                 {
@@ -157,8 +155,7 @@
                     Label = "客戶",
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
-                    Options = new List<SelectOption>(),
-                    GroupName = "basic"
+                    Options = new List<SelectOption>()
                 },
                 new()
                 {
@@ -166,8 +163,7 @@
                     Label = "原始銷貨訂單",
                     FieldType = FormFieldType.Select,
                     IsRequired = false,
-                    Options = new List<SelectOption>(),
-                    GroupName = "basic"
+                    Options = new List<SelectOption>()
                 },
                 new()
                 {
@@ -175,8 +171,7 @@
                     Label = "原始銷貨出貨單",
                     FieldType = FormFieldType.Select,
                     IsRequired = false,
-                    Options = new List<SelectOption>(),
-                    GroupName = "basic"
+                    Options = new List<SelectOption>()
                 },
                 new()
                 {
@@ -189,8 +184,7 @@
                         {
                             Value = ((int)status).ToString(),
                             Text = GetReturnStatusLabel(status)
-                        }).ToList(),
-                    GroupName = "basic"
+                        }).ToList()
                 },
                 new()
                 {
@@ -203,8 +197,7 @@
                         {
                             Value = ((int)reason).ToString(),
                             Text = GetReturnReasonLabel(reason)
-                        }).ToList(),
-                    GroupName = "basic"
+                        }).ToList()
                 },
                 new()
                 {
@@ -212,24 +205,21 @@
                     Label = "退回說明",
                     FieldType = FormFieldType.TextArea,
                     IsRequired = false,
-                    Placeholder = "請輸入退回說明",
-                    GroupName = "details"
+                    Placeholder = "請輸入退回說明"
                 },
                 new()
                 {
                     PropertyName = nameof(SalesReturn.ExpectedProcessDate),
                     Label = "預計處理日期",
                     FieldType = FormFieldType.Date,
-                    IsRequired = false,
-                    GroupName = "processing"
+                    IsRequired = false
                 },
                 new()
                 {
                     PropertyName = nameof(SalesReturn.ActualProcessDate),
                     Label = "實際處理日期",
                     FieldType = FormFieldType.Date,
-                    IsRequired = false,
-                    GroupName = "processing"
+                    IsRequired = false
                 },
                 new()
                 {
@@ -237,8 +227,7 @@
                     Label = "處理員工",
                     FieldType = FormFieldType.Select,
                     IsRequired = false,
-                    Options = new List<SelectOption>(),
-                    GroupName = "processing"
+                    Options = new List<SelectOption>()
                 },
                 new()
                 {
@@ -246,8 +235,7 @@
                     Label = "處理人員",
                     FieldType = FormFieldType.Text,
                     IsRequired = false,
-                    Placeholder = "請輸入處理人員名稱",
-                    GroupName = "processing"
+                    Placeholder = "請輸入處理人員名稱"
                 },
                 new()
                 {
@@ -255,8 +243,7 @@
                     Label = "處理備註",
                     FieldType = FormFieldType.TextArea,
                     IsRequired = false,
-                    Placeholder = "請輸入處理備註",
-                    GroupName = "processing"
+                    Placeholder = "請輸入處理備註"
                 },
                 new()
                 {
@@ -264,8 +251,7 @@
                     Label = "退回總金額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    Placeholder = "0.00",
-                    GroupName = "financial"
+                    Placeholder = "0.00"
                 },
                 new()
                 {
@@ -273,8 +259,7 @@
                     Label = "退回稅額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    Placeholder = "0.00",
-                    GroupName = "financial"
+                    Placeholder = "0.00"
                 },
                 new()
                 {
@@ -282,24 +267,21 @@
                     Label = "退回含稅總金額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    Placeholder = "0.00",
-                    GroupName = "financial"
+                    Placeholder = "0.00"
                 },
                 new()
                 {
                     PropertyName = nameof(SalesReturn.IsRefunded),
                     Label = "是否已退款",
                     FieldType = FormFieldType.Checkbox,
-                    IsRequired = false,
-                    GroupName = "refund"
+                    IsRequired = false
                 },
                 new()
                 {
                     PropertyName = nameof(SalesReturn.RefundDate),
                     Label = "退款日期",
                     FieldType = FormFieldType.Date,
-                    IsRequired = false,
-                    GroupName = "refund"
+                    IsRequired = false
                 },
                 new()
                 {
@@ -307,8 +289,7 @@
                     Label = "退款金額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    Placeholder = "0.00",
-                    GroupName = "refund"
+                    Placeholder = "0.00"
                 },
                 new()
                 {
@@ -316,18 +297,32 @@
                     Label = "退款備註",
                     FieldType = FormFieldType.TextArea,
                     IsRequired = false,
-                    Placeholder = "請輸入退款備註",
-                    GroupName = "refund"
+                    Placeholder = "請輸入退款備註"
                 }
             };
 
             formSections = new Dictionary<string, string>
             {
-                { "basic", "基本資料" },
-                { "details", "退回詳情" },
-                { "processing", "處理資訊" },
-                { "financial", "金額資訊" },
-                { "refund", "退款資訊" }
+                { nameof(SalesReturn.SalesReturnNumber), "基本資料" },
+                { nameof(SalesReturn.ReturnDate), "基本資料" },
+                { nameof(SalesReturn.CustomerId), "基本資料" },
+                { nameof(SalesReturn.SalesOrderId), "基本資料" },
+                { nameof(SalesReturn.SalesDeliveryId), "基本資料" },
+                { nameof(SalesReturn.ReturnStatus), "基本資料" },
+                { nameof(SalesReturn.ReturnReason), "基本資料" },
+                { nameof(SalesReturn.ReturnDescription), "退回詳情" },
+                { nameof(SalesReturn.ExpectedProcessDate), "處理資訊" },
+                { nameof(SalesReturn.ActualProcessDate), "處理資訊" },
+                { nameof(SalesReturn.EmployeeId), "處理資訊" },
+                { nameof(SalesReturn.ProcessPersonnel), "處理資訊" },
+                { nameof(SalesReturn.ProcessRemarks), "處理資訊" },
+                { nameof(SalesReturn.TotalReturnAmount), "金額資訊" },
+                { nameof(SalesReturn.ReturnTaxAmount), "金額資訊" },
+                { nameof(SalesReturn.TotalReturnAmountWithTax), "金額資訊" },
+                { nameof(SalesReturn.IsRefunded), "退款資訊" },
+                { nameof(SalesReturn.RefundDate), "退款資訊" },
+                { nameof(SalesReturn.RefundAmount), "退款資訊" },
+                { nameof(SalesReturn.RefundRemarks), "退款資訊" }
             };
         }
         catch (Exception ex)
