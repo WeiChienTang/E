@@ -1,0 +1,519 @@
+@page "/sales-orders/detail/{salesOrderId:int}"
+@using SalesOrderDetailEntity = ERPCore2.Data.Entities.SalesOrderDetail
+
+@inject ISalesOrderService SalesOrderService
+@inject INotificationService NotificationService
+@inject NavigationManager Navigation
+
+@rendermode InteractiveServer
+
+<GenericDetailPageComponent TEntity="SalesOrder" 
+                           TService="ISalesOrderService"
+                           EntityId="@SalesOrderId"
+                           Entity="@salesOrder"
+                           Service="@SalesOrderService"
+                           EntityName="銷貨訂單"
+                           EntityNamePlural="銷貨訂單"
+                           PageTitle="銷貨訂單詳細資料"
+                           IndexRoute="/sales-orders"
+                           EditRoute="@($"/sales-orders/edit/{SalesOrderId}")"
+                           RequiredPermission="Sales.View"
+                           BreadcrumbItems="@breadcrumbItems"
+                           DataLoader="@LoadSalesOrderData"
+                           AdditionalDataLoader="@LoadAdditionalData"
+                           EntityTitleSelector="@(so => $"銷貨單號：{so.SalesOrderNumber}")"
+                           EntitySubtitleSelector="@(so => $"客戶：{so.Customer?.CompanyName} | 訂單日期：{so.OrderDate:yyyy/MM/dd}")"
+                           EntityDisplayNameSelector="@(so => so.SalesOrderNumber)"
+                           TabSections="@tabSections"
+                           UseTabLayout="true"
+                           OnDataLoaded="@OnSalesOrderDataLoaded"
+                           @ref="detailComponent">
+</GenericDetailPageComponent>
+
+@code {
+    [Parameter] public int SalesOrderId { get; set; }
+    
+    // 組件參考
+    private GenericDetailPageComponent<SalesOrder, ISalesOrderService> detailComponent = default!;
+    
+    // 資料模型
+    private SalesOrder? salesOrder;
+    private List<SalesOrderDetailEntity> salesOrderDetails = new();
+    private bool _isLoading = false; // 防止重複載入
+    
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    
+    // 標籤頁配置
+    private List<GenericDetailPageComponent<SalesOrder, ISalesOrderService>.TabSection> tabSections = new();
+    
+    protected override void OnInitialized()
+    {
+        InitializeBreadcrumbs();
+        InitializeTabSections();
+    }
+    
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("銷售管理", "/sales"),
+            new("銷貨訂單", "/sales-orders"),
+            new("銷貨訂單詳細")
+        };
+    }
+    
+    private void InitializeTabSections()
+    {
+        try
+        {
+            tabSections = new List<GenericDetailPageComponent<SalesOrder, ISalesOrderService>.TabSection>
+            {
+                new()
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = BuildBasicInfoContent()
+                },
+                new()
+                {
+                    Id = "details",
+                    Title = "銷貨明細",
+                    Content = BuildDetailsContent()
+                },
+                new()
+                {
+                    Id = "summary",
+                    Title = "金額摘要",
+                    Content = BuildSummaryContent()
+                },
+                new()
+                {
+                    Id = "system",
+                    Title = "系統資訊",
+                    Content = BuildSystemInfoContent()
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeTabSections),
+                GetType()
+            );
+            
+            // 提供基本標籤頁結構
+            tabSections = new List<GenericDetailPageComponent<SalesOrder, ISalesOrderService>.TabSection>
+            {
+                new()
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div class="alert alert-warning">載入基本資料時發生錯誤</div>
+                }
+            };
+        }
+    }
+    
+    private async Task<SalesOrder?> LoadSalesOrderData()
+    {
+        if (_isLoading) return salesOrder;
+        _isLoading = true;
+        
+        try
+        {
+            var order = await SalesOrderService.GetWithDetailsAsync(SalesOrderId);
+            if (order != null)
+            {
+                salesOrder = order;
+                if (order.SalesOrderDetails != null)
+                {
+                    salesOrderDetails = order.SalesOrderDetails.ToList();
+                }
+                else
+                {
+                    salesOrderDetails = new List<SalesOrderDetailEntity>();
+                }
+            }
+            
+            return order;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadSalesOrderData),
+                GetType(),
+                additionalData: new { SalesOrderId }
+            );
+            return null;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+    
+    private async Task LoadAdditionalData()
+    {
+        try
+        {
+            // 目前不需要載入額外資料
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadAdditionalData),
+                GetType()
+            );
+        }
+    }
+    
+    private void OnSalesOrderDataLoaded()
+    {
+        try
+        {
+            // 資料載入完成後重新初始化標籤頁
+            InitializeTabSections();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(OnSalesOrderDataLoaded),
+                GetType()
+            );
+        }
+    }
+    
+    private RenderFragment BuildBasicInfoContent()
+    {
+        return __builder =>
+        {
+            <BasicInfoDisplayComponent Fields="@GetSalesOrderBasicFields()" />
+        };
+    }
+    
+    private RenderFragment BuildDetailsContent()
+    {
+        return __builder =>
+        {
+            if (salesOrderDetails.Any())
+            {
+                <GenericTableComponent TItem="SalesOrderDetailEntity"
+                                     Items="@salesOrderDetails"
+                                     ColumnDefinitions="@GetDetailColumnDefinitions()"
+                                     ShowActions="false"
+                                     IsStriped="true"
+                                     IsHoverable="true"
+                                     Size="TableSize.Small" />
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    此銷貨訂單尚未新增任何明細項目。
+                </div>
+            }
+        };
+    }
+    
+    private RenderFragment BuildSummaryContent()
+    {
+        return __builder =>
+        {
+            <BasicInfoDisplayComponent Fields="@GetSalesOrderSummaryFields()" />
+        };
+    }
+    
+    private RenderFragment BuildSystemInfoContent()
+    {
+        return __builder =>
+        {
+            <BasicInfoDisplayComponent Fields="@GetSalesOrderSystemFields()" />
+        };
+    }
+    
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetSalesOrderBasicFields()
+    {
+        try
+        {
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
+            {
+                new()
+                {
+                    Label = "銷貨單號",
+                    Value = salesOrder?.SalesOrderNumber,
+                    IsPrimary = true,
+                    ValueBold = true,
+                    EmptyText = "未設定",
+                    IconClass = "fas fa-file-invoice",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary"
+                },
+                new()
+                {
+                    Label = "客戶名稱",
+                    Value = salesOrder?.Customer?.CompanyName,
+                    ValueBold = true,
+                    IconClass = "fas fa-building",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success"
+                },
+                new()
+                {
+                    Label = "客戶代碼",
+                    Value = salesOrder?.Customer?.CustomerCode,
+                    IconClass = "fas fa-barcode",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success"
+                },
+                new()
+                {
+                    Label = "訂單日期",
+                    Value = salesOrder?.OrderDate.ToString("yyyy年MM月dd日"),
+                    IconClass = "fas fa-calendar",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info"
+                },
+                new()
+                {
+                    Label = "預計交貨日期",
+                    Value = salesOrder?.ExpectedDeliveryDate?.ToString("yyyy年MM月dd日"),
+                    EmptyText = "未設定",
+                    IconClass = "fas fa-calendar-check",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning"
+                },
+                new()
+                {
+                    Label = "訂單狀態",
+                    Type = BasicInfoDisplayComponent.FieldType.Status,
+                    Value = salesOrder?.OrderStatus,
+                    IconClass = "fas fa-flag",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary"
+                },
+                new()
+                {
+                    Label = "銷貨類型",
+                    Value = salesOrder?.SalesType switch
+                    {
+                        SalesType.Normal => "一般銷貨",
+                        SalesType.Urgent => "緊急銷貨",
+                        SalesType.PreSale => "預售",
+                        SalesType.Project => "專案銷貨",
+                        SalesType.Trial => "試用銷貨",
+                        _ => salesOrder?.SalesType.ToString()
+                    },
+                    IconClass = "fas fa-tag",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    IconTextClass = "text-secondary"
+                },
+                new()
+                {
+                    Label = "銷售人員",
+                    Value = !string.IsNullOrEmpty(salesOrder?.SalesPersonnel) 
+                        ? salesOrder.SalesPersonnel 
+                        : salesOrder?.Employee != null 
+                            ? $"{salesOrder.Employee.FirstName} {salesOrder.Employee.LastName}"
+                            : null,
+                    EmptyText = "未指定",
+                    IconClass = "fas fa-user-tie",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info"
+                },
+                new()
+                {
+                    Label = "付款條件",
+                    Value = salesOrder?.PaymentTerms,
+                    EmptyText = "未設定",
+                    IconClass = "fas fa-credit-card",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "交貨條件",
+                    Value = salesOrder?.DeliveryTerms,
+                    EmptyText = "未設定",
+                    IconClass = "fas fa-truck",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "訂單備註",
+                    Value = salesOrder?.OrderRemarks,
+                    EmptyText = "無",
+                    IconClass = "fas fa-comment",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    ColSize = 12
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetSalesOrderBasicFields), GetType());
+            return new List<BasicInfoDisplayComponent.BasicInfoField>();
+        }
+    }
+    
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetSalesOrderSummaryFields()
+    {
+        try
+        {
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
+            {
+                new()
+                {
+                    Label = "訂單總金額",
+                    Value = salesOrder?.TotalAmount.ToString("C"),
+                    ValueBold = true,
+                    IconClass = "fas fa-dollar-sign",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success"
+                },
+                new()
+                {
+                    Label = "稅額",
+                    Value = salesOrder?.TaxAmount.ToString("C"),
+                    IconClass = "fas fa-percentage",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info"
+                },
+                new()
+                {
+                    Label = "含稅總金額",
+                    Value = salesOrder?.TotalAmountWithTax.ToString("C"),
+                    ValueBold = true,
+                    IconClass = "fas fa-calculator",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary"
+                },
+                new()
+                {
+                    Label = "折扣金額",
+                    Value = salesOrder?.DiscountAmount.ToString("C"),
+                    EmptyText = "無折扣",
+                    IconClass = "fas fa-tag",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning"
+                },
+                new()
+                {
+                    Label = "明細筆數",
+                    Value = salesOrderDetails.Count.ToString(),
+                    IconClass = "fas fa-list-ol",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    IconTextClass = "text-secondary"
+                },
+                new()
+                {
+                    Label = "總數量",
+                    Value = salesOrderDetails.Sum(d => d.OrderQuantity).ToString("N0"),
+                    IconClass = "fas fa-cubes",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info"
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetSalesOrderSummaryFields), GetType());
+            return new List<BasicInfoDisplayComponent.BasicInfoField>();
+        }
+    }
+    
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetSalesOrderSystemFields()
+    {
+        try
+        {
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
+            {
+                new()
+                {
+                    Label = "建立時間",
+                    Value = salesOrder?.CreatedAt.ToString("yyyy年MM月dd日 HH:mm:ss"),
+                    IconClass = "fas fa-clock",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info"
+                },
+                new()
+                {
+                    Label = "建立者",
+                    Value = salesOrder?.CreatedBy,
+                    IconClass = "fas fa-user",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info"
+                },
+                new()
+                {
+                    Label = "最後更新時間",
+                    Value = salesOrder?.UpdatedAt?.ToString("yyyy年MM月dd日 HH:mm:ss"),
+                    EmptyText = "未更新",
+                    IconClass = "fas fa-edit",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning"
+                },
+                new()
+                {
+                    Label = "最後更新者",
+                    Value = salesOrder?.UpdatedBy,
+                    EmptyText = "無",
+                    IconClass = "fas fa-user-edit",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning"
+                },
+                new()
+                {
+                    Label = "狀態",
+                    Type = BasicInfoDisplayComponent.FieldType.Status,
+                    Value = salesOrder?.Status,
+                    IconClass = "fas fa-toggle-on",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success"
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetSalesOrderSystemFields), GetType());
+            return new List<BasicInfoDisplayComponent.BasicInfoField>();
+        }
+    }
+    
+    private List<TableColumnDefinition> GetDetailColumnDefinitions()
+    {
+        try
+        {
+            return new List<TableColumnDefinition>
+            {
+                TableColumnDefinition.Text("產品代碼", "Product.ProductCode"),
+                TableColumnDefinition.Text("產品名稱", "Product.ProductName"),
+                TableColumnDefinition.Text("單位", "Unit.UnitName"),
+                TableColumnDefinition.Number("訂購數量", "OrderQuantity", "N0"),
+                TableColumnDefinition.Number("單價", "UnitPrice", "C"),
+                TableColumnDefinition.Number("折扣%", "DiscountPercentage", "N2"),
+                TableColumnDefinition.Number("折扣金額", "DiscountAmount", "C"),
+                TableColumnDefinition.Number("小計", "Subtotal", "C"),
+                TableColumnDefinition.Number("已出貨數量", "DeliveredQuantity", "N0"),
+                TableColumnDefinition.Number("待出貨數量", "PendingQuantity", "N0"),
+                TableColumnDefinition.Text("備註", "DetailRemarks")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetDetailColumnDefinitions), GetType());
+            return new List<TableColumnDefinition>();
+        }
+    }
+}

@@ -97,8 +97,10 @@
         </NavMenuItem>           
         
         <!-- 銷貨管理下拉選單 -->
-        <NavMenuItem Text="銷貨管理 (開發中)" IconClass="bi bi-cart-fill">
-
+        <NavMenuItem Text="銷貨管理" IconClass="bi bi-cart-fill" MenuKey="sales_management">
+            <DropdownItems>
+                <NavDropdownItem Text="銷貨訂單" Url="/sales-orders" RequiredPermission="SalesOrder.Read" ParentMenuKey="sales_management" />
+            </DropdownItems>
         </NavMenuItem>
 
         <!-- 採購管理下拉選單 -->
