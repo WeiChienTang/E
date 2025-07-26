@@ -5,7 +5,7 @@ using ERPCore2.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace ERPCore2.Services.Sales
+namespace ERPCore2.Services
 {
     /// <summary>
     /// 銷貨退回明細服務實作
