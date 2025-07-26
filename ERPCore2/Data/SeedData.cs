@@ -79,6 +79,7 @@ namespace ERPCore2.Data
                 new InventorySeeder(),
                 new InventoryStockSeeder(), 
                 new SalesSeeder(),              // 依賴 Customer, Employee, Product (必須在這些之後)
+                new PurchaseReturnSeeder(),     // 依賴 Supplier, Product, Warehouse (必須在這些之後)
                 // PurchaseSeeder 已移除 - 改為手動新增測試資料
                 new WeatherSeeder(),
                 new ErrorLogSeeder()
