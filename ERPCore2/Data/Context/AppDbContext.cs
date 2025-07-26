@@ -50,6 +50,12 @@ namespace ERPCore2.Data.Context
       public DbSet<PurchaseReceiving> PurchaseReceivings { get; set; }
       public DbSet<PurchaseReceivingDetail> PurchaseReceivingDetails { get; set; }
       
+      // Sales Management
+      public DbSet<SalesOrder> SalesOrders { get; set; }
+      public DbSet<SalesOrderDetail> SalesOrderDetails { get; set; }
+      public DbSet<SalesDelivery> SalesDeliveries { get; set; }
+      public DbSet<SalesDeliveryDetail> SalesDeliveryDetails { get; set; }
+      
       // BOM Foundations
       public DbSet<Material> Materials { get; set; }
       public DbSet<Weather> Weathers { get; set; }
@@ -445,6 +451,82 @@ namespace ERPCore2.Data.Context
                         entity.HasOne(prd => prd.WarehouseLocation)
                         .WithMany()
                         .HasForeignKey(prd => prd.WarehouseLocationId)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  // Sales Management Relationships
+                  modelBuilder.Entity<SalesOrder>(entity =>
+                  {
+                        entity.HasKey(so => so.Id);
+
+                        entity.HasOne(so => so.Customer)
+                        .WithMany()
+                        .HasForeignKey(so => so.CustomerId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(so => so.Employee)
+                        .WithMany()
+                        .HasForeignKey(so => so.EmployeeId)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  modelBuilder.Entity<SalesOrderDetail>(entity =>
+                  {
+                        entity.HasKey(sod => sod.Id);
+
+                        entity.HasOne(sod => sod.SalesOrder)
+                        .WithMany(so => so.SalesOrderDetails)
+                        .HasForeignKey(sod => sod.SalesOrderId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                        entity.HasOne(sod => sod.Product)
+                        .WithMany()
+                        .HasForeignKey(sod => sod.ProductId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(sod => sod.Unit)
+                        .WithMany()
+                        .HasForeignKey(sod => sod.UnitId)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  modelBuilder.Entity<SalesDelivery>(entity =>
+                  {
+                        entity.HasKey(sd => sd.Id);
+
+                        entity.HasOne(sd => sd.SalesOrder)
+                        .WithMany(so => so.SalesDeliveries)
+                        .HasForeignKey(sd => sd.SalesOrderId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(sd => sd.Employee)
+                        .WithMany()
+                        .HasForeignKey(sd => sd.EmployeeId)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  modelBuilder.Entity<SalesDeliveryDetail>(entity =>
+                  {
+                        entity.HasKey(sdd => sdd.Id);
+
+                        entity.HasOne(sdd => sdd.SalesDelivery)
+                        .WithMany(sd => sd.SalesDeliveryDetails)
+                        .HasForeignKey(sdd => sdd.SalesDeliveryId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                        entity.HasOne(sdd => sdd.Product)
+                        .WithMany()
+                        .HasForeignKey(sdd => sdd.ProductId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(sdd => sdd.SalesOrderDetail)
+                        .WithMany(sod => sod.SalesDeliveryDetails)
+                        .HasForeignKey(sdd => sdd.SalesOrderDetailId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(sdd => sdd.Unit)
+                        .WithMany()
+                        .HasForeignKey(sdd => sdd.UnitId)
                         .OnDelete(DeleteBehavior.SetNull);
                   });
             }
