@@ -15,6 +15,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
         public async Task SeedAsync(AppDbContext context)
         {
             await SeedSalesOrdersAsync(context);
+            await SeedSalesReturnsAsync(context);
         }
 
         private static async Task SeedSalesOrdersAsync(AppDbContext context)
@@ -227,6 +228,153 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             };
 
             await context.SalesDeliveries.AddRangeAsync(salesDeliveries);
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task SeedSalesReturnsAsync(AppDbContext context)
+        {
+            if (await context.SalesReturns.AnyAsync()) return;
+
+            var (createdAt1, createdBy) = SeedDataHelper.GetSystemCreateInfo(15);
+            var (createdAt2, _) = SeedDataHelper.GetSystemCreateInfo(10);
+
+            // 取得相關資料用於關聯
+            var customers = await context.Customers.Take(2).ToListAsync();
+            var employees = await context.Employees.Take(2).ToListAsync();
+            var salesOrders = await context.SalesOrders.Take(2).ToListAsync();
+            var salesDeliveries = await context.SalesDeliveries.Take(2).ToListAsync();
+
+            if (!customers.Any() || !salesOrders.Any())
+                return; // 沒有必要的關聯資料時跳過
+
+            var salesReturns = new[]
+            {
+                new SalesReturn
+                {
+                    SalesReturnNumber = "SR202501001",
+                    ReturnDate = DateTime.Today.AddDays(-7),
+                    ExpectedProcessDate = DateTime.Today.AddDays(-5),
+                    ActualProcessDate = DateTime.Today.AddDays(-3),
+                    ReturnStatus = SalesReturnStatus.Completed,
+                    ReturnReason = SalesReturnReason.QualityIssue,
+                    ProcessPersonnel = "王處理",
+                    ReturnDescription = "商品品質不良，客戶要求退回",
+                    ProcessRemarks = "已完成退款處理",
+                    TotalReturnAmount = 12500,
+                    ReturnTaxAmount = 625,
+                    TotalReturnAmountWithTax = 13125,
+                    IsRefunded = true,
+                    RefundDate = DateTime.Today.AddDays(-3),
+                    RefundAmount = 13125,
+                    RefundRemarks = "已退回原付款帳戶",
+                    CustomerId = customers[0].Id,
+                    SalesOrderId = salesOrders[0].Id,
+                    SalesDeliveryId = salesDeliveries.FirstOrDefault()?.Id,
+                    EmployeeId = employees[0].Id,
+                    Status = EntityStatus.Active,
+                    CreatedAt = createdAt1,
+                    CreatedBy = createdBy
+                },
+                new SalesReturn
+                {
+                    SalesReturnNumber = "SR202501002",
+                    ReturnDate = DateTime.Today.AddDays(-3),
+                    ExpectedProcessDate = DateTime.Today.AddDays(2),
+                    ReturnStatus = SalesReturnStatus.Submitted,
+                    ReturnReason = SalesReturnReason.SpecificationMismatch,
+                    ProcessPersonnel = "李處理",
+                    ReturnDescription = "規格不符合要求，需要更換",
+                    TotalReturnAmount = 15000,
+                    ReturnTaxAmount = 750,
+                    TotalReturnAmountWithTax = 15750,
+                    IsRefunded = false,
+                    CustomerId = customers.Count > 1 ? customers[1].Id : customers[0].Id,
+                    SalesOrderId = salesOrders.Count > 1 ? salesOrders[1].Id : salesOrders[0].Id,
+                    SalesDeliveryId = salesDeliveries.Count > 1 ? salesDeliveries[1].Id : salesDeliveries.FirstOrDefault()?.Id,
+                    EmployeeId = employees.Count > 1 ? employees[1].Id : employees[0].Id,
+                    Status = EntityStatus.Active,
+                    CreatedAt = createdAt2,
+                    CreatedBy = createdBy
+                }
+            };
+
+            await context.SalesReturns.AddRangeAsync(salesReturns);
+            await context.SaveChangesAsync();
+
+            // 建立銷貨退回明細
+            await SeedSalesReturnDetailsAsync(context, salesReturns);
+        }
+
+        private static async Task SeedSalesReturnDetailsAsync(AppDbContext context, SalesReturn[] salesReturns)
+        {
+            if (await context.SalesReturnDetails.AnyAsync()) return;
+
+            var products = await context.Products.Take(3).ToListAsync();
+            var salesOrderDetails = await context.SalesOrderDetails.Take(3).ToListAsync();
+            var salesDeliveryDetails = await context.SalesDeliveryDetails.Take(3).ToListAsync();
+
+            if (!products.Any())
+                return;
+
+            var salesReturnDetails = new List<SalesReturnDetail>();
+
+            // 第一筆退回的明細
+            salesReturnDetails.AddRange(new[]
+            {
+                new SalesReturnDetail
+                {
+                    SalesReturnId = salesReturns[0].Id,
+                    ProductId = products[0].Id,
+                    ReturnQuantity = 50,
+                    OriginalUnitPrice = 250,
+                    ReturnUnitPrice = 250,
+                    DiscountPercentage = 0,
+                    DiscountAmount = 0,
+                    ReturnSubtotal = 12500,
+                    ProcessedQuantity = 50,
+                    PendingQuantity = 0,
+                    IsRestocked = true,
+                    RestockedQuantity = 45,
+                    ScrapQuantity = 5,
+                    DetailRemarks = "部分商品報廢，其餘入庫",
+                    QualityCondition = "輕微瑕疵",
+                    SalesOrderDetailId = salesOrderDetails.FirstOrDefault()?.Id,
+                    SalesDeliveryDetailId = salesDeliveryDetails.FirstOrDefault()?.Id,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-7),
+                    CreatedBy = "System"
+                }
+            });
+
+            // 第二筆退回的明細
+            salesReturnDetails.AddRange(new[]
+            {
+                new SalesReturnDetail
+                {
+                    SalesReturnId = salesReturns[1].Id,
+                    ProductId = products.Count > 1 ? products[1].Id : products[0].Id,
+                    ReturnQuantity = 30,
+                    OriginalUnitPrice = 500,
+                    ReturnUnitPrice = 500,
+                    DiscountPercentage = 0,
+                    DiscountAmount = 0,
+                    ReturnSubtotal = 15000,
+                    ProcessedQuantity = 0,
+                    PendingQuantity = 30,
+                    IsRestocked = false,
+                    RestockedQuantity = 0,
+                    ScrapQuantity = 0,
+                    DetailRemarks = "等待處理",
+                    QualityCondition = "待檢查",
+                    SalesOrderDetailId = salesOrderDetails.Count > 1 ? salesOrderDetails[1].Id : salesOrderDetails.FirstOrDefault()?.Id,
+                    SalesDeliveryDetailId = salesDeliveryDetails.Count > 1 ? salesDeliveryDetails[1].Id : salesDeliveryDetails.FirstOrDefault()?.Id,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-3),
+                    CreatedBy = "System"
+                }
+            });
+
+            await context.SalesReturnDetails.AddRangeAsync(salesReturnDetails);
             await context.SaveChangesAsync();
         }
     }

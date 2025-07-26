@@ -55,6 +55,8 @@ namespace ERPCore2.Data.Context
       public DbSet<SalesOrderDetail> SalesOrderDetails { get; set; }
       public DbSet<SalesDelivery> SalesDeliveries { get; set; }
       public DbSet<SalesDeliveryDetail> SalesDeliveryDetails { get; set; }
+      public DbSet<SalesReturn> SalesReturns { get; set; }
+      public DbSet<SalesReturnDetail> SalesReturnDetails { get; set; }
       
       // BOM Foundations
       public DbSet<Material> Materials { get; set; }
@@ -527,6 +529,57 @@ namespace ERPCore2.Data.Context
                         entity.HasOne(sdd => sdd.Unit)
                         .WithMany()
                         .HasForeignKey(sdd => sdd.UnitId)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  // Sales Return Relationships
+                  modelBuilder.Entity<SalesReturn>(entity =>
+                  {
+                        entity.HasKey(sr => sr.Id);
+
+                        entity.HasOne(sr => sr.Customer)
+                        .WithMany()
+                        .HasForeignKey(sr => sr.CustomerId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(sr => sr.SalesOrder)
+                        .WithMany()
+                        .HasForeignKey(sr => sr.SalesOrderId)
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasOne(sr => sr.SalesDelivery)
+                        .WithMany()
+                        .HasForeignKey(sr => sr.SalesDeliveryId)
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasOne(sr => sr.Employee)
+                        .WithMany()
+                        .HasForeignKey(sr => sr.EmployeeId)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  modelBuilder.Entity<SalesReturnDetail>(entity =>
+                  {
+                        entity.HasKey(srd => srd.Id);
+
+                        entity.HasOne(srd => srd.SalesReturn)
+                        .WithMany(sr => sr.SalesReturnDetails)
+                        .HasForeignKey(srd => srd.SalesReturnId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                        entity.HasOne(srd => srd.Product)
+                        .WithMany()
+                        .HasForeignKey(srd => srd.ProductId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(srd => srd.SalesOrderDetail)
+                        .WithMany()
+                        .HasForeignKey(srd => srd.SalesOrderDetailId)
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasOne(srd => srd.SalesDeliveryDetail)
+                        .WithMany()
+                        .HasForeignKey(srd => srd.SalesDeliveryDetailId)
                         .OnDelete(DeleteBehavior.SetNull);
                   });
             }
