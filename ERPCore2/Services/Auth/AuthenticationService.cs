@@ -40,7 +40,7 @@ namespace ERPCore2.Services
                 using var context = _contextFactory.CreateDbContext();
                 
                 var employee = await context.Employees
-                    .FirstOrDefaultAsync(e => e.Account == account && e.Status == EntityStatus.Active);
+                    .FirstOrDefaultAsync(e => e.Account == account && !e.IsDeleted);
 
                 if (employee == null)
                 {
@@ -56,8 +56,7 @@ namespace ERPCore2.Services
                 }
 
                 // 檢查帳號是否被鎖定
-                var lockResult = await IsUserLockedAsync(employee.Id);
-                if (lockResult.IsSuccess && lockResult.Data)
+                if (employee.IsLocked)
                 {
                     _logger?.LogWarning("Login attempt for locked user: {Account}", account);
                     return ServiceResult<Employee>.Failure("帳號已被鎖定，請聯絡管理員");
@@ -303,8 +302,8 @@ namespace ERPCore2.Services
                     return ServiceResult<bool>.Failure("找不到指定的員工");
                 }
 
-                // 假設有 IsLocked 屬性或者根據狀態判斷
-                bool isLocked = employee.Status == EntityStatus.Inactive;
+                // 檢查帳號是否被鎖定
+                bool isLocked = employee.IsLocked;
                 
                 return ServiceResult<bool>.Success(isLocked);
             }
@@ -330,7 +329,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("找不到指定的員工");
                 }
 
-                employee.Status = EntityStatus.Inactive;
+                employee.IsLocked = true;
                 employee.UpdatedAt = DateTime.UtcNow;
                 employee.UpdatedBy = "System";
 
@@ -361,7 +360,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("找不到指定的員工");
                 }
 
-                employee.Status = EntityStatus.Active;
+                employee.IsLocked = false;
                 employee.UpdatedAt = DateTime.UtcNow;
                 employee.UpdatedBy = "System";
 

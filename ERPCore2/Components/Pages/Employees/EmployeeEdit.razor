@@ -1,8 +1,6 @@
 @page "/employees/edit"
 @page "/employees/edit/{id:int?}"
 
-@using ERPCore2.Data.Enums
-
 @inject IEmployeeService EmployeeService
 @inject IEmployeeContactService EmployeeContactService
 @inject IEmployeeAddressService EmployeeAddressService
@@ -54,26 +52,7 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label class="form-label">帳號狀態</label>
-                                    <div>
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" id="statusActive" name="employeeStatus"
-                                                   checked="@(employee.Status == EntityStatus.Active)" 
-                                                   @onchange="@(() => OnStatusChange(EntityStatus.Active))" />
-                                            <label class="form-check-label" for="statusActive">啟用</label>
-                                        </div>
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" id="statusInactive" name="employeeStatus"
-                                                   checked="@(employee.Status == EntityStatus.Inactive)" 
-                                                   @onchange="@(() => OnStatusChange(EntityStatus.Inactive))" />
-                                            <label class="form-check-label" for="statusInactive">停用</label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <div class="mb-3">
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" id="isLocked" 
@@ -101,8 +80,14 @@
                             <div class="col-md-3">
                                 <div class="mb-3">
                                     <button type="button" class="btn btn-warning" @onclick="ShowPasswordResetDialog">
-                                        <i class="bi-key me-1"></i>重設密碼
+                                        <i class="bi-key me-1"></i>@GetPasswordButtonText()
                                     </button>
+                                    @if (string.IsNullOrEmpty(employee.Password))
+                                    {
+                                        <div class="form-text text-warning mt-1">
+                                            <i class="bi-exclamation-triangle me-1"></i>此帳號尚未設定密碼
+                                        </div>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -119,7 +104,7 @@
                             <div class="modal-header">
                                 <h5 class="modal-title">
                                     <i class="bi-key me-2"></i>
-                                    重設密碼 - @employee?.Account
+                                    @GetPasswordButtonText() - @employee?.Account
                                 </h5>
                                 <button type="button" class="btn-close" @onclick="ClosePasswordResetDialog" aria-label="關閉"></button>
                             </div>
@@ -146,7 +131,7 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" @onclick="ClosePasswordResetDialog">取消</button>
-                                <button type="button" class="btn btn-warning" @onclick="ConfirmPasswordReset">確定重設</button>
+                                <button type="button" class="btn btn-warning" @onclick="ConfirmPasswordReset">確定@(string.IsNullOrEmpty(employee?.Password) ? "設定" : "重設")</button>
                             </div>
                         </div>
                     </div>
@@ -473,13 +458,6 @@
             Value = d.Id.ToString()
         }).ToList();
 
-        // 帳號狀態選項
-        var statusOptions = new List<SelectOption>
-        {
-            new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-            new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-        };
-
         // 基本欄位（始終顯示）
         basicFormFields = new List<FormFieldDefinition>
         {
@@ -535,7 +513,7 @@
         // 只有當 IsSystemUser 為 true 時才添加帳號相關欄位
         if (employee?.IsSystemUser == true)
         {
-            basicFormFields.AddRange(new List<FormFieldDefinition>
+            var accountFields = new List<FormFieldDefinition>
             {
                 new()
                 {
@@ -553,25 +531,35 @@
                     FieldType = FormFieldType.Select,
                     Options = roleOptions,
                     IsRequired = true
-                },
-                new()
-                {
-                    PropertyName = "Password",
-                    Label = "密碼",
-                    FieldType = FormFieldType.Password,
-                    Placeholder = "請輸入密碼",
-                    IsRequired = !Id.HasValue, // 新增模式必填
-                    HelpText = "密碼長度至少 4 個字元"
-                },
-                new()
-                {
-                    PropertyName = "ConfirmPassword",
-                    Label = "確認密碼",
-                    FieldType = FormFieldType.Password,
-                    Placeholder = "請再次輸入密碼",
-                    IsRequired = !Id.HasValue // 新增模式必填
                 }
-            });
+            };
+
+            // 只有在新增模式才顯示密碼欄位
+            if (!Id.HasValue)
+            {
+                accountFields.AddRange(new List<FormFieldDefinition>
+                {
+                    new()
+                    {
+                        PropertyName = "Password",
+                        Label = "密碼",
+                        FieldType = FormFieldType.Password,
+                        Placeholder = "請輸入密碼",
+                        IsRequired = true,
+                        HelpText = "密碼長度至少 4 個字元"
+                    },
+                    new()
+                    {
+                        PropertyName = "ConfirmPassword",
+                        Label = "確認密碼",
+                        FieldType = FormFieldType.Password,
+                        Placeholder = "請再次輸入密碼",
+                        IsRequired = true
+                    }
+                });
+            }
+
+            basicFormFields.AddRange(accountFields);
         }
 
         // 基本區段設定
@@ -592,8 +580,13 @@
         {
             basicFormSections.Add(nameof(Employee.Account), "帳號設定");
             basicFormSections.Add(nameof(Employee.RoleId), "帳號設定");
-            basicFormSections.Add("Password", "帳號設定");
-            basicFormSections.Add("ConfirmPassword", "帳號設定");
+            
+            // 只有在新增模式才添加密碼欄位區段
+            if (!Id.HasValue)
+            {
+                basicFormSections.Add("Password", "帳號設定");
+                basicFormSections.Add("ConfirmPassword", "帳號設定");
+            }
         }
     }
 
@@ -694,6 +687,15 @@
     private string GetPageTitle()
     {
         return Id.HasValue ? "編輯員工" : "新增員工";
+    }
+
+    private string GetPasswordButtonText()
+    {
+        if (employee?.IsSystemUser == true)
+        {
+            return string.IsNullOrEmpty(employee.Password) ? "設定密碼" : "重設密碼";
+        }
+        return "重設密碼";
     }
 
     // 員工資料驗證（包含軟刪除衝突檢查和密碼驗證）
@@ -839,11 +841,19 @@
 
     #region 欄位變更處理
 
-    private Task HandleFieldChanged((string PropertyName, object? Value) fieldChange)
+    private async Task HandleFieldChanged((string PropertyName, object? Value) fieldChange)
     {
         // 當 IsSystemUser 欄位變更時，重新初始化表單欄位
         if (fieldChange.PropertyName == nameof(Employee.IsSystemUser))
         {
+            var newIsSystemUser = (bool)(fieldChange.Value ?? false);
+            
+            // 如果在編輯模式下從非系統使用者改為系統使用者，且沒有密碼，提醒使用者設定密碼
+            if (Id.HasValue && newIsSystemUser && string.IsNullOrEmpty(employee.Password))
+            {
+                await NotificationService.ShowInfoAsync("已設定為系統使用者，請記得為此帳號設定密碼。");
+            }
+            
             // 重新初始化表單欄位以顯示/隐藏帳號相關欄位
             InitializeFormFields();
             StateHasChanged();
@@ -858,8 +868,6 @@
         {
             confirmPassword = fieldChange.Value?.ToString() ?? string.Empty;
         }
-        
-        return Task.CompletedTask;
     }
 
     #endregion
@@ -910,23 +918,39 @@
     #endregion
     
     #region 帳號管理方法
-    
-    private void OnStatusChange(EntityStatus newStatus)
-    {
-        if (employee != null)
-        {
-            employee.Status = newStatus;
-            StateHasChanged();
-        }
-    }
 
-    private void OnIsLockedChange(ChangeEventArgs e)
+    private async void OnIsLockedChange(ChangeEventArgs e)
     {
         if (employee != null)
         {
-            var newValue = (bool)e.Value!;
-            employee.IsLocked = newValue;
-            StateHasChanged();
+            try
+            {
+                var newValue = (bool)e.Value!;
+                employee.IsLocked = newValue;
+                
+                // 儲存到資料庫
+                var updateResult = await EmployeeService.UpdateAsync(employee);
+                if (updateResult.IsSuccess)
+                {
+                    var statusMessage = newValue ? "帳號已鎖定" : "帳號已解鎖";
+                    await NotificationService.ShowSuccessAsync(statusMessage);
+                }
+                else
+                {
+                    // 如果儲存失敗，還原狀態
+                    employee.IsLocked = !newValue;
+                    await NotificationService.ShowErrorAsync($"更新帳號鎖定狀態失敗：{updateResult.ErrorMessage}");
+                }
+                
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                // 如果發生錯誤，還原狀態
+                employee.IsLocked = !(bool)e.Value!;
+                await NotificationService.ShowErrorAsync($"更新帳號鎖定狀態時發生錯誤：{ex.Message}");
+                StateHasChanged();
+            }
         }
     }
 
@@ -936,10 +960,22 @@
         {
             if (employee != null)
             {
+                // 更新資料庫中的失敗登入次數
                 employee.FailedLoginAttempts = 0;
                 employee.IsLocked = false;
                 
-                await NotificationService.ShowSuccessAsync("登入失敗次數已重設");
+                // 儲存到資料庫
+                var updateResult = await EmployeeService.UpdateAsync(employee);
+                if (updateResult.IsSuccess)
+                {
+                    await NotificationService.ShowSuccessAsync("登入失敗次數已重設");
+                }
+                else
+                {
+                    await NotificationService.ShowErrorAsync($"重設登入失敗次數失敗：{updateResult.ErrorMessage}");
+                    return;
+                }
+                
                 StateHasChanged();
             }
         }
@@ -994,11 +1030,22 @@
                 return;
             }
 
+            // 記錄設定前的密碼狀態（用於顯示成功訊息）
+            var hadPasswordBefore = !string.IsNullOrEmpty(employee.Password);
+
             // 執行密碼重設
             var resetResult = await AuthenticationService.ResetPasswordAsync(employee.Id, newPassword);
             
             if (resetResult.IsSuccess)
             {
+                // 重新載入員工資料以獲取更新後的密碼哈希
+                var updatedEmployee = await EmployeeService.GetByIdAsync(employee.Id);
+                if (updatedEmployee != null)
+                {
+                    // 更新當前員工物件的密碼欄位為新的哈希值
+                    employee.Password = updatedEmployee.Password;
+                }
+                
                 // 重設登入失敗次數和帳號鎖定狀態
                 employee.FailedLoginAttempts = 0;
                 employee.IsLocked = false;
@@ -1006,7 +1053,8 @@
                 // 關閉對話框
                 ClosePasswordResetDialog();
                 
-                await NotificationService.ShowSuccessAsync("密碼重設成功！請使用新密碼登入。");
+                var successMessage = hadPasswordBefore ? "密碼重設成功！" : "密碼設定成功！";
+                await NotificationService.ShowSuccessAsync(successMessage);
                 StateHasChanged();
             }
             else

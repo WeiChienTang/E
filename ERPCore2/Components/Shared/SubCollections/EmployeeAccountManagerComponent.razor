@@ -37,26 +37,7 @@
     {
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-2">
-                        <div class="mb-3">
-                            <label class="form-label">帳號狀態</label>
-                            <div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" id="statusActive" name="employeeStatus"
-                                           checked="@(Employee.Status == ERPCore2.Data.Enums.EntityStatus.Active)" 
-                                           @onchange="@(() => OnStatusChange(ERPCore2.Data.Enums.EntityStatus.Active))" />
-                                    <label class="form-check-label" for="statusActive">啟用</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" id="statusInactive" name="employeeStatus"
-                                           checked="@(Employee.Status == ERPCore2.Data.Enums.EntityStatus.Inactive)" 
-                                           @onchange="@(() => OnStatusChange(ERPCore2.Data.Enums.EntityStatus.Inactive))" />
-                                    <label class="form-check-label" for="statusInactive">停用</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
+                    <div class="col-md-4">
                         <div class="mb-3">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="isLocked" 
