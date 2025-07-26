@@ -105,10 +105,6 @@
         <NavMenuItem Text="採購管理" IconClass="bi bi-truck" MenuKey="purchase_management">
             <DropdownItems>
                 <NavDropdownItem Text="採購訂單" Url="/purchase/orders" RequiredPermission="Purchase.Read" ParentMenuKey="purchase_management" />
-
-                <NavDropdownItem Text="進貨管理" Url="/purchase/receipts" RequiredPermission="Purchase.Receipt" ParentMenuKey="purchase_management" />
-
-                <NavDropdownItem Text="採購報表" Url="/purchase/reports" RequiredPermission="Purchase.Report" ParentMenuKey="purchase_management" />
             </DropdownItems>
         </NavMenuItem>
 
@@ -116,13 +112,7 @@
         <NavMenuItem Text="庫存管理" IconClass="bi-boxes nav-menu-bi" MenuKey="inventory_management">
             <DropdownItems>
 
-                <NavDropdownItem Text="庫存概覽" Url="/inventoryoverview" RequiredPermission="Inventory.Read" ParentMenuKey="inventory_management" />
-
-                <NavDropdownItem Text="倉庫維護" Url="/warehouses" RequiredPermission="Warehouse.Read" ParentMenuKey="inventory_management" />
-
-                <NavDropdownItem Text="庫存異動歷史" Url="/inventory/transactions" RequiredPermission="Inventory.TransactionHistory" ParentMenuKey="inventory_management" />
-
-                <NavDropdownItem Text="庫存盤點管理" Url="/stock-taking" RequiredPermission="StockTaking.Read" ParentMenuKey="inventory_management" />
+                <NavDropdownItem Text="庫存管理" Url="/inventory/stock" RequiredPermission="InventoryStock.Read" ParentMenuKey="inventory_management" />
 
             </DropdownItems>
         </NavMenuItem>    

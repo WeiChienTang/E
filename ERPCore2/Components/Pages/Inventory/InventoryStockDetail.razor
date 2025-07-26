@@ -1,0 +1,313 @@
+@page "/inventory/stock/detail/{inventoryStockId:int}"
+@inject IInventoryStockService InventoryStockService
+
+@rendermode InteractiveServer
+
+<GenericDetailPageComponent TEntity="InventoryStock" 
+                        TService="IInventoryStockService"
+                        EntityId="@InventoryStockId"
+                        Service="@InventoryStockService"
+                        EntityName="庫存"
+                        EntityNamePlural="庫存"
+                        IndexRoute="/inventory/stock"
+                        EditRoute="/inventory/stock/edit"
+                        LoadingText="載入庫存資料中..."
+                        BreadcrumbItems="@breadcrumbItems"
+                        DataLoader="@LoadInventoryStockDataAsync"
+                        EntityTitleSelector="@(s => $"{s.Product?.ProductName} - {s.Warehouse?.WarehouseName}")"
+                        EntitySubtitleSelector="@(s => $"目前庫存：{s.CurrentStock} | 可用庫存：{s.AvailableStock}")"
+                        EntityDisplayNameSelector="@(s => $"{s.Product?.ProductName} ({s.Warehouse?.WarehouseName})")"
+                        OnDataLoaded="@OnInventoryStockDataLoaded"
+                        UseTabLayout="true"
+                        TabSections="@GetTabSections()" 
+                        RequiredPermission="InventoryStock.Read"/>
+
+@code {
+    [Parameter] public int InventoryStockId { get; set; }
+
+    private InventoryStock? inventoryStock;
+    private bool _isLoading = false; // 防止重複載入
+
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
+    {
+        new("首頁", "/"),
+        new("庫存管理", "/inventory"),
+        new("庫存查詢", "/inventory/stock"),
+        new("庫存詳細資料")
+    };
+
+    // GenericDetailPageComponent 需要的方法
+    private async Task<InventoryStock?> LoadInventoryStockDataAsync()
+    {
+        // 防止重複載入
+        if (_isLoading)
+        {
+            return inventoryStock;
+        }
+        
+        try
+        {
+            _isLoading = true;
+            
+            if (InventoryStockId <= 0) return null;
+            var result = await InventoryStockService.GetByIdAsync(InventoryStockId);
+            inventoryStock = result; // 保持本地變數同步
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            // 統一錯誤處理
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(LoadInventoryStockDataAsync),
+                GetType(),          
+                additionalData: new { InventoryStockId = InventoryStockId }
+            );
+            
+            // 設置預設值避免頁面崩潰
+            inventoryStock = null;
+            
+            // 重新拋出異常讓 GenericDetailPageComponent 處理
+            throw;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+    
+    private async Task OnInventoryStockDataLoaded()
+    {
+        try
+        {
+            // 資料載入完成後的處理
+            await Task.Run(() => StateHasChanged());
+        }
+        catch (Exception ex)
+        {
+            // 資料載入後處理失敗不應該影響主要功能
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(OnInventoryStockDataLoaded),
+                GetType(),
+                new { InventoryStockId = InventoryStockId }
+            );
+        }
+    }
+
+    // 設定標籤頁結構
+    private List<GenericDetailPageComponent<InventoryStock, IInventoryStockService>.TabSection> GetTabSections()
+    {
+        try
+        {
+            return new List<GenericDetailPageComponent<InventoryStock, IInventoryStockService>.TabSection>
+            {           
+                 new GenericDetailPageComponent<InventoryStock, IInventoryStockService>.TabSection
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div>
+                        <BasicInfoDisplayComponent 
+                            Title="庫存基本資訊"
+                            IconClass="fas fa-boxes"
+                            IconColor="text-primary"
+                            Fields="@GetInventoryStockBasicFields()" />
+                    </div>
+                },
+                
+                new GenericDetailPageComponent<InventoryStock, IInventoryStockService>.TabSection
+                {
+                    Id = "system",
+                    Title = "系統資訊",
+                    Content = @<div>
+                        <SystemInfoDisplayComponent 
+                            CreatedAt="@(inventoryStock?.CreatedAt ?? DateTime.MinValue)"
+                            UpdatedAt="@inventoryStock?.UpdatedAt"
+                            CreatedBy="@inventoryStock?.CreatedBy"
+                            UpdatedBy="@inventoryStock?.UpdatedBy"
+                            Remarks="@inventoryStock?.Remarks"
+                            ShowTimeline="true"
+                            ShowRemarks="false" />
+                    </div>
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            // 標籤頁設定失敗，記錄錯誤但返回基本結構
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(GetTabSections),
+                GetType(),
+                additionalData: new { InventoryStockId = InventoryStockId }
+            );
+            
+            // 返回基本標籤頁結構
+            return new List<GenericDetailPageComponent<InventoryStock, IInventoryStockService>.TabSection>
+            {
+                new GenericDetailPageComponent<InventoryStock, IInventoryStockService>.TabSection
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div><p>載入錯誤，請重新整理頁面</p></div>
+                }
+            };
+        }
+    }
+
+    // 取得庫存基本資料欄位
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetInventoryStockBasicFields()
+    {
+        try
+        {
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
+            {
+                new()
+                {
+                    Label = "產品名稱",
+                    Value = inventoryStock?.Product?.ProductName,
+                    IsPrimary = true,
+                    ValueBold = true,
+                    IconClass = "fas fa-box",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary"
+                },
+                new()
+                {
+                    Label = "產品編號",
+                    Value = inventoryStock?.Product?.ProductCode,
+                    ValueBold = true,
+                    IconClass = "fas fa-barcode",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info"
+                },
+                new()
+                {
+                    Label = "倉庫名稱",
+                    Value = inventoryStock?.Warehouse?.WarehouseName,
+                    IconClass = "fas fa-warehouse",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success"
+                },
+                new()
+                {
+                    Label = "倉庫位置",
+                    Value = inventoryStock?.WarehouseLocation?.LocationName,
+                    IconClass = "fas fa-map-marker-alt",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    EmptyText = "未指定位置"
+                },
+                new()
+                {
+                    Label = "現有庫存",
+                    Value = inventoryStock?.CurrentStock.ToString("N0"),
+                    ValueBold = true,
+                    IconClass = "fas fa-cubes",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "可用庫存",
+                    Value = inventoryStock?.AvailableStock.ToString("N0"),
+                    ValueBold = true,
+                    IconClass = "fas fa-check-circle",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "預留庫存",
+                    Value = inventoryStock?.ReservedStock.ToString("N0"),
+                    IconClass = "fas fa-lock",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "在途庫存",
+                    Value = inventoryStock?.InTransitStock.ToString("N0"),
+                    IconClass = "fas fa-truck",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "最低庫存",
+                    Value = inventoryStock?.MinStockLevel?.ToString("N0"),
+                    IconClass = "fas fa-exclamation-triangle",
+                    IconBgClass = "bg-danger bg-opacity-10",
+                    IconTextClass = "text-danger",
+                    EmptyText = "未設定",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "最高庫存",
+                    Value = inventoryStock?.MaxStockLevel?.ToString("N0"),
+                    IconClass = "fas fa-chart-line",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    IconTextClass = "text-secondary",
+                    EmptyText = "未設定",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "平均成本",
+                    Value = inventoryStock?.AverageCost?.ToString("C2"),
+                    IconClass = "fas fa-dollar-sign",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    EmptyText = "未設定",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "最後交易日期",
+                    Value = inventoryStock?.LastTransactionDate?.ToString("yyyy/MM/dd HH:mm"),
+                    IconClass = "fas fa-clock",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    EmptyText = "無交易記錄",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "狀態",
+                    CustomContent = @<div>
+                        @if (inventoryStock?.Status != null)
+                        {
+                            <span class="badge @(inventoryStock.Status == EntityStatus.Active ? "bg-success" : "bg-secondary")">
+                                @(inventoryStock.Status == EntityStatus.Active ? "有效" : "無效")
+                            </span>
+                        }
+                    </div>,
+                    IconClass = "fas fa-toggle-on",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    ColSize = 12
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            // 基本資料欄位設定失敗，記錄錯誤但返回空列表
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(GetInventoryStockBasicFields),
+                GetType(),
+                additionalData: new { InventoryStockId = InventoryStockId }
+            );
+            
+            // 返回空列表以避免頁面崩潰
+            return new List<BasicInfoDisplayComponent.BasicInfoField>();
+        }
+    }
+}
