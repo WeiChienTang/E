@@ -220,7 +220,8 @@
             }).ToList();
 
             // 載入狀態選項
-            statusOptions = Enum.GetValues<PurchaseOrderStatus>()
+            statusOptions = Enum.GetValues(typeof(PurchaseOrderStatus))
+                .Cast<PurchaseOrderStatus>()
                 .Select(s => new SelectOption
                 {
                     Text = GetStatusDisplayName(s),
@@ -228,7 +229,8 @@
                 }).ToList();
 
             // 載入類型選項
-            typeOptions = Enum.GetValues<PurchaseType>()
+            typeOptions = Enum.GetValues(typeof(PurchaseType))
+                .Cast<PurchaseType>()
                 .Select(t => new SelectOption
                 {
                     Text = GetTypeDisplayName(t),
