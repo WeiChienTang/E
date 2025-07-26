@@ -1,6 +1,161 @@
 [
   {
     "version": "1",
+    "releaseDate": "2025-07-26",
+    "title": "更新日誌",
+    "type": "patch",
+    "items": [
+      {
+        "category": "新增",
+        "description": "新增銷貨退回管理功能，包含資料表、服務介面和完整的業務流程管理",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修改",
+        "description": "更新銷貨退回詳細頁面及編輯頁面，改善欄位結構與樣式",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "移除銷售相關命名空間，統一為ERPCore2.Services，改善程式碼結構",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "新增",
+        "description": "新增銷貨出貨管理功能，強化銷售流程管理",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "新增銷貨訂單管理頁面及編輯頁面，並更新導航菜單",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "新增採購訂單搜尋模型以支持更靈活的搜尋功能",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "新增銷售管理資料表和服務，支援銷貨訂單和出貨管理",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "新增庫存管理頁面，強化庫存監控功能",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修改",
+        "description": "在角色種子器中新增IsSystemRole屬性以標識系統角色",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "重新命名PurchaseReceipt為PurchaseReceiving，更新相關外鍵約束及索引",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "新增",
+        "description": "新增進貨收料功能，包含搜尋模型和服務實作",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "刪除",
+        "description": "移除進貨報表頁面並更新權限種子器，簡化功能結構",
+        "icon": "fas fa-trash"
+      },
+      {
+        "category": "修改",
+        "description": "移除帳號狀態選項，調整員工編輯頁面結構，改善使用者介面",
+        "icon": "fas fa-edit"
+      }
+    ]
+  },
+  {
+    "version": "1",
+    "releaseDate": "2025-07-25",
+    "title": "更新日誌",
+    "type": "patch",
+    "items": [
+      {
+        "category": "修改",
+        "description": "增加密碼驗證錯誤訊息顯示及欄位變更事件處理，改善表單使用者體驗",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "新增",
+        "description": "新增欄位變更事件處理，改善表單動態更新功能",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修改",
+        "description": "重新命名員工資料表中PasswordHash欄位為Password，簡化欄位命名",
+        "icon": "fas fa-edit"
+      }
+    ]
+  },
+  {
+    "version": "1",
+    "releaseDate": "2025-07-24",
+    "title": "更新日誌",
+    "type": "patch",
+    "items": [
+      {
+        "category": "修改",
+        "description": "移除通用表單組件中的多餘標題區域，簡化結構以提升可讀性",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "新增",
+        "description": "新增自訂模組系統，改善編輯頁面功能並優化元件結構",
+        "icon": "fas fa-plus-circle"
+      }
+    ]
+  },
+  {
+    "version": "1",
+    "releaseDate": "2025-07-21",
+    "title": "更新日誌",
+    "type": "patch",
+    "items": [
+      {
+        "category": "新增",
+        "description": "新增系統使用者相關欄位及驗證邏輯，調整帳號必填條件以改善員工管理功能",
+        "icon": "fas fa-plus-circle"
+      }
+    ]
+  },
+  {
+    "version": "1",
+    "releaseDate": "2025-07-20",
+    "title": "更新日誌",
+    "type": "patch",
+    "items": [
+      {
+        "category": "修改",
+        "description": "移除不再使用的行政區欄位，調整相關元件以改善地址管理功能",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "新增",
+        "description": "新增員工帳號管理元件，整合密碼設定與帳號狀態管理功能",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修改",
+        "description": "更新管理員使用者系統標記並重新命名使用者名稱為帳戶",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "調整密碼欄位佈局，簡化欄位定義順序以改善表單可讀性",
+        "icon": "fas fa-edit"
+      }
+    ]
+  },
+  {
+    "version": "1",
     "releaseDate": "2025-07-19",
     "title": "更新日誌",
     "type": "patch",
