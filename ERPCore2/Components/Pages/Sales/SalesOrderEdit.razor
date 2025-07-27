@@ -20,7 +20,6 @@
                         FormSubtitle="銷貨訂單的基本資訊"
                         RequiredPermission="@(Id.HasValue ? "Sales.Update" : "Sales.Create")"
                         IndexRoute="/sales-orders"
-                        UseGenericForm="true"
                         FormFields="@formFields"
                         FormSections="@formSections"
                         BreadcrumbItems="@breadcrumbItems"

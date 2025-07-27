@@ -43,7 +43,6 @@
         <NavMenuItem Text="客戶管理" IconClass="bi bi-people-fill" MenuKey="customer_management">
             <DropdownItems>
                 <NavDropdownItem Text="客戶維護" Url="/customers" RequiredPermission="Customer.Read" ParentMenuKey="customer_management"/>
-
                 <NavDropdownItem Text="客戶類型" Url="/customer-types" RequiredPermission="CustomerType.Read" ParentMenuKey="customer_management"/>               
             </DropdownItems>
         </NavMenuItem>
@@ -52,7 +51,6 @@
         <NavMenuItem Text="廠商管理" IconClass="bi bi-building-gear" MenuKey="supplier_management">
             <DropdownItems>
                 <NavDropdownItem Text="廠商維護" Url="/suppliers" RequiredPermission="Supplier.Read" ParentMenuKey="supplier_management" />
-
                 <NavDropdownItem Text="廠商類型" Url="/supplier-types" RequiredPermission="SupplierType.Read" ParentMenuKey="supplier_management"/>
             </DropdownItems>
         </NavMenuItem>
@@ -62,12 +60,9 @@
             <DropdownItems>
                 <NavDropdownItem Text="員工維護" Url="/employees" RequiredPermission="Employee.Read" ParentMenuKey="employee_management" />
                 <NavDropdownItem Text="部門設定" Url="/departments" RequiredPermission="Department.Read" ParentMenuKey="employee_management"/>
-                <NavDropdownItem Text="職位設定" Url="/employee-positions" RequiredPermission="EmployeePosition.Read" ParentMenuKey="employee_management"/>         
-
-                <NavDropdownItem Text="角色設定" Url="/roles" RequiredPermission="Role.Read" ParentMenuKey="employee_management"/>        
-
+                <NavDropdownItem Text="職位設定" Url="/employee-positions" RequiredPermission="EmployeePosition.Read" ParentMenuKey="employee_management"/>        
+                <NavDropdownItem Text="角色設定" Url="/roles" RequiredPermission="Role.Read" ParentMenuKey="employee_management"/>       
                 <NavDropdownItem Text="權限設定" Url="/permissions" RequiredPermission="Permission.Read" ParentMenuKey="employee_management"/>
-
                 <NavDropdownItem Text="角色權限設定" Url="/employees/role-permission-management" RequiredPermission="Role.Read" ParentMenuKey="employee_management"/>
 
             </DropdownItems>
@@ -109,16 +104,15 @@
         <!-- 庫存管理下拉選單 -->
         <NavMenuItem Text="庫存管理" IconClass="bi-boxes nav-menu-bi" MenuKey="inventory_management">
             <DropdownItems>
-
                 <NavDropdownItem Text="庫存查詢" Url="/inventory/stock" RequiredPermission="InventoryStock.Read" ParentMenuKey="inventory_management" />
+                <NavDropdownItem Text="庫存預留" Url="/inventory/reservations" RequiredPermission="InventoryReservation.Read" ParentMenuKey="inventory_management" />                
                 <NavDropdownItem Text="庫存盤點" Url="/inventory/stock-taking" RequiredPermission="StockTaking.Read" ParentMenuKey="inventory_management" />
-
             </DropdownItems>
         </NavMenuItem>    
 
         <!-- BOM 管理下拉選單 -->
         @* 暫時移除權限檢查，因為尚未定義相關權限 *@
-        <NavMenuItem Text="BOM 管理 (待開發)" IconClass="bi bi-list-nested">
+        <NavMenuItem Text="生產管理 (待開發)" IconClass="bi bi-list-nested">
 
         </NavMenuItem>
         <!-- 系統管理下拉選單 -->
@@ -126,7 +120,6 @@
             <DropdownItems>
 
                 <NavDropdownItem Text="更新紀錄" Url="/updates" RequiredPermission="SystemControl.ViewUpdates" ParentMenuKey="system_management" />
-
                 <NavDropdownItem Text="錯誤記錄" Url="/error-logs" RequiredPermission="SystemControl.ViewErrorLog" ParentMenuKey="system_management" />
 
             </DropdownItems>

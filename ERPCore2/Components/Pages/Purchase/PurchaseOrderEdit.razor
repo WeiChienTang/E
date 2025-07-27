@@ -22,7 +22,6 @@
                         FormSubtitle="採購訂單的基本資訊"
                         RequiredPermission="@(Id.HasValue ? "Purchase.Update" : "Purchase.Create")"
                         IndexRoute="/purchase/orders"
-                        UseGenericForm="true"
                         FormFields="@formFields"
                         FormSections="@formSections"
                         BreadcrumbItems="@breadcrumbItems"

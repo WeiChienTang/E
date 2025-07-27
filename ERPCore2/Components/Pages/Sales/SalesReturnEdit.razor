@@ -21,7 +21,6 @@
                         FormSubtitle="銷貨退回的基本資訊"
                         RequiredPermission="@(Id.HasValue ? "SalesReturn.Update" : "SalesReturn.Create")"
                         IndexRoute="/sales-returns"
-                        UseGenericForm="true"
                         FormFields="@formFields"
                         FormSections="@formSections"
                         BreadcrumbItems="@breadcrumbItems"

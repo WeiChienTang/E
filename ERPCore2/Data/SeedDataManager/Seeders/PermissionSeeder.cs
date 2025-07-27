@@ -140,6 +140,14 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { PermissionCode = "Inventory.Overview", PermissionName = "庫存總覽", Module = "Inventory", Action = "Overview", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Inventory.TransactionHistory", PermissionName = "庫存異動歷史", Module = "Inventory", Action = "TransactionHistory", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 
+                // 庫存預留權限
+                new Permission { PermissionCode = "InventoryReservation.Create", PermissionName = "建立庫存預留", Module = "InventoryReservation", Action = "Create", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "InventoryReservation.Read", PermissionName = "檢視庫存預留", Module = "InventoryReservation", Action = "Read", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "InventoryReservation.Update", PermissionName = "修改庫存預留", Module = "InventoryReservation", Action = "Update", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "InventoryReservation.Delete", PermissionName = "刪除庫存預留", Module = "InventoryReservation", Action = "Delete", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "InventoryReservation.Release", PermissionName = "釋放庫存預留", Module = "InventoryReservation", Action = "Release", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "InventoryReservation.Cancel", PermissionName = "取消庫存預留", Module = "InventoryReservation", Action = "Cancel", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                
                 // 庫存盤點權限
                 new Permission { PermissionCode = "StockTaking.Create", PermissionName = "建立盤點", Module = "StockTaking", Action = "Create", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "StockTaking.Read", PermissionName = "檢視盤點", Module = "StockTaking", Action = "Read", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },

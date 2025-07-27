@@ -19,7 +19,6 @@
                         FormSubtitle="庫存盤點基本資訊"
                         IndexRoute="/inventory/stock-taking"
                         RequiredPermission="@(Id.HasValue ? "StockTaking.Update" : "StockTaking.Create")"
-                        UseGenericForm="true"
                         FormFields="@formFields"
                         FormSections="@formSections"
                         BreadcrumbItems="@breadcrumbItems"                         
