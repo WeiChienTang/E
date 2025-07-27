@@ -109,6 +109,7 @@
         <NavMenuItem Text="採購管理" IconClass="bi bi-truck" MenuKey="purchase_management">
             <DropdownItems>
                 <NavDropdownItem Text="採購訂單" Url="/purchase/orders" RequiredPermission="Purchase.Read" ParentMenuKey="purchase_management" />
+                <NavDropdownItem Text="採購退貨" Url="/purchase-returns" RequiredPermission="PurchaseReturn.Read" ParentMenuKey="purchase_management" />
             </DropdownItems>
         </NavMenuItem>
 
@@ -123,7 +124,7 @@
 
         <!-- BOM 管理下拉選單 -->
         @* 暫時移除權限檢查，因為尚未定義相關權限 *@
-        <NavMenuItem Text="BOM 管理 (開發中)" IconClass="bi bi-list-nested">
+        <NavMenuItem Text="BOM 管理 (待開發)" IconClass="bi bi-list-nested">
 
         </NavMenuItem>
         <!-- 系統管理下拉選單 -->

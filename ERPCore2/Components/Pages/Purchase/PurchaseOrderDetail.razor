@@ -16,7 +16,7 @@
                            PageTitle="採購訂單詳細資料"
                            IndexRoute="/purchase/orders"
                            EditRoute="@($"/purchase/orders/edit/{PurchaseOrderId}")"
-                           RequiredPermission="Purchase.View"
+                           RequiredPermission="Purchase.Read"
                            BreadcrumbItems="@breadcrumbItems"
                            DataLoader="@LoadPurchaseOrderData"
                            AdditionalDataLoader="@LoadAdditionalData"
