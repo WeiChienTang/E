@@ -61,12 +61,10 @@
         <NavMenuItem Text="員工管理" IconClass="bi bi-person-badge-fill" MenuKey="employee_management">
             <DropdownItems>
                 <NavDropdownItem Text="員工維護" Url="/employees" RequiredPermission="Employee.Read" ParentMenuKey="employee_management" />
-
                 <NavDropdownItem Text="部門設定" Url="/departments" RequiredPermission="Department.Read" ParentMenuKey="employee_management"/>
+                <NavDropdownItem Text="職位設定" Url="/employee-positions" RequiredPermission="EmployeePosition.Read" ParentMenuKey="employee_management"/>         
 
-                <NavDropdownItem Text="職位設定" Url="/employee-positions" RequiredPermission="EmployeePosition.Read" ParentMenuKey="employee_management"/>          
-
-                <NavDropdownItem Text="角色設定" Url="/roles" RequiredPermission="Role.Read" ParentMenuKey="employee_management"/>         
+                <NavDropdownItem Text="角色設定" Url="/roles" RequiredPermission="Role.Read" ParentMenuKey="employee_management"/>        
 
                 <NavDropdownItem Text="權限設定" Url="/permissions" RequiredPermission="Permission.Read" ParentMenuKey="employee_management"/>
 
@@ -80,17 +78,11 @@
             <DropdownItems>
 
                 <NavDropdownItem Text="產品維護" Url="/products" RequiredPermission="Product.Read" ParentMenuKey="product_management" />
-
-                <NavDropdownItem Text="產品類型" Url="/product-categories" RequiredPermission="ProductCategory.Read" ParentMenuKey="product_management"/>
-                        
-                <NavDropdownItem Text="產品尺寸" Url="/sizes" RequiredPermission="Size.Read" ParentMenuKey="product_management" />
-                        
-                <NavDropdownItem Text="產品顏色" Url="/colors" RequiredPermission="Color.Read" ParentMenuKey="product_management" />
-                        
-                <NavDropdownItem Text="天氣" Url="/weather" RequiredPermission="Weather.Read" ParentMenuKey="product_management" />
-                        
-                <NavDropdownItem Text="產品材質" Url="/materials" RequiredPermission="Material.Read" ParentMenuKey="product_management" />
-                        
+                <NavDropdownItem Text="產品類型" Url="/product-categories" RequiredPermission="ProductCategory.Read" ParentMenuKey="product_management"/>                        
+                <NavDropdownItem Text="產品尺寸" Url="/sizes" RequiredPermission="Size.Read" ParentMenuKey="product_management" />                        
+                <NavDropdownItem Text="產品顏色" Url="/colors" RequiredPermission="Color.Read" ParentMenuKey="product_management" />                        
+                <NavDropdownItem Text="天氣" Url="/weather" RequiredPermission="Weather.Read" ParentMenuKey="product_management" />                        
+                <NavDropdownItem Text="產品材質" Url="/materials" RequiredPermission="Material.Read" ParentMenuKey="product_management" />                        
                 <NavDropdownItem Text="產品單位" Url="/units" RequiredPermission="Unit.Read" ParentMenuKey="product_management"/>
                         
             </DropdownItems>
@@ -109,6 +101,7 @@
         <NavMenuItem Text="採購管理" IconClass="bi bi-truck" MenuKey="purchase_management">
             <DropdownItems>
                 <NavDropdownItem Text="採購訂單" Url="/purchase/orders" RequiredPermission="Purchase.Read" ParentMenuKey="purchase_management" />
+                <NavDropdownItem Text="採購進貨" Url="/purchase-receivings" RequiredPermission="PurchaseReceiving.Read" ParentMenuKey="purchase_management" />
                 <NavDropdownItem Text="採購退貨" Url="/purchase-returns" RequiredPermission="PurchaseReturn.Read" ParentMenuKey="purchase_management" />
             </DropdownItems>
         </NavMenuItem>
