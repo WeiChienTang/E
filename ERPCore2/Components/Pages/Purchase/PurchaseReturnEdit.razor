@@ -14,11 +14,11 @@
                         Id="@Id"
                         Entity="@purchaseReturn"
                         Service="@PurchaseReturnService"
-                        EntityName="採購退貨"
-                        EntityNamePlural="採購退貨"
-                        PageTitle="@(Id.HasValue ? "編輯採購退貨" : "新增採購退貨")"
+                        EntityName="採購退回"
+                        EntityNamePlural="採購退回"
+                        PageTitle="@(Id.HasValue ? "編輯採購退回" : "新增採購退回")"
                         FormTitle="基本資料"
-                        FormSubtitle="採購退貨的基本資訊"
+                        FormSubtitle="採購退回的基本資訊"
                         RequiredPermission="@(Id.HasValue ? "PurchaseReturn.Update" : "PurchaseReturn.Create")"
                         IndexRoute="/purchase-returns"
                         UseGenericForm="true"
@@ -84,8 +84,8 @@
             {
                 new() { Text = "首頁", Href = "/" },
                 new() { Text = "採購管理", Href = "/purchase" },
-                new() { Text = "採購退貨", Href = "/purchase-returns" },
-                new() { Text = Id.HasValue ? "編輯採購退貨" : "新增採購退貨" }
+                new() { Text = "採購退回", Href = "/purchase-returns" },
+                new() { Text = Id.HasValue ? "編輯採購退回" : "新增採購退回" }
             };
         }
         catch (Exception ex)
@@ -585,7 +585,7 @@
         try
         {
             // 調試訊息：開始儲存
-            await NotificationService.ShowInfoAsync($"開始儲存採購退貨，ID: {Id?.ToString() ?? "新增"}");
+            await NotificationService.ShowInfoAsync($"開始儲存採購退回，ID: {Id?.ToString() ?? "新增"}");
             
             // 首先執行必填欄位的客戶端驗證
             var isRequiredFieldsValid = await NotificationService.ValidateRequiredFieldsAsync();
@@ -624,13 +624,13 @@
             
             if (Id.HasValue)
             {
-                // 更新現有採購退貨
+                // 更新現有採購退回
                 await NotificationService.ShowInfoAsync($"呼叫更新服務，ID: {Id.Value}");
                 result = await PurchaseReturnService.UpdateAsync(entity);
             }
             else
             {
-                // 新增採購退貨
+                // 新增採購退回
                 await NotificationService.ShowInfoAsync("呼叫新增服務");
                 result = await PurchaseReturnService.CreateAsync(entity);
             }

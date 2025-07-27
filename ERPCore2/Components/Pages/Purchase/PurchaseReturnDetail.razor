@@ -9,11 +9,11 @@
                             EntityId="@PurchaseReturnId"
                             Entity="@purchaseReturn"
                             Service="@PurchaseReturnService"
-                            EntityName="採購退貨"
-                            EntityNamePlural="採購退貨"
+                            EntityName="採購退回"
+                            EntityNamePlural="採購退回"
                             IndexRoute="/purchase-returns"
                             EditRoute="/purchase-returns/edit"
-                            LoadingText="載入採購退貨資料中..."
+                            LoadingText="載入採購退回資料中..."
                             BreadcrumbItems="@breadcrumbItems"
                             DataLoader="@LoadPurchaseReturnDataAsync"
                             AdditionalDataLoader="@LoadAdditionalDataAsync"
@@ -64,7 +64,7 @@
         {
             new() { Text = "首頁", Href = "/" },
             new() { Text = "採購管理", Href = "/purchase" },
-            new() { Text = "採購退貨", Href = "/purchase-returns" },
+            new() { Text = "採購退回", Href = "/purchase-returns" },
             new() { Text = "退貨詳情" }  // 沒有 Href 會自動設為 IsActive = true
         };
     }
@@ -171,7 +171,7 @@
                     Title = "基本資料",
                     Content = @<div>
                         <BasicInfoDisplayComponent 
-                            Title="採購退貨基本資訊"
+                            Title="採購退回基本資訊"
                             IconClass="fas fa-undo"
                             IconColor="text-primary"
                             Fields="@GetPurchaseReturnBasicFields()" />
@@ -371,7 +371,7 @@
         }
     }
 
-    // 取得採購退貨基本資料欄位
+    // 取得採購退回基本資料欄位
     private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetPurchaseReturnBasicFields()
     {
         try

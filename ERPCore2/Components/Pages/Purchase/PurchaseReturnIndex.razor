@@ -8,9 +8,9 @@
                           TService="IPurchaseReturnService"
                           Service="@PurchaseReturnService"
                           EntityBasePath="/purchase-returns"
-                          PageTitle="採購退貨管理"
-                          PageSubtitle="管理所有採購退貨與退款資料"
-                          EntityName="採購退貨"
+                          PageTitle="採購退回管理"
+                          PageSubtitle="管理所有採購退回與退款資料"
+                          EntityName="採購退回"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
@@ -50,7 +50,7 @@
                 ex,
                 nameof(OnInitialized),
                 GetType(),
-                additionalData: "初始化採購退貨頁面失敗"
+                additionalData: "初始化採購退回頁面失敗"
             );
         }
     }
@@ -63,7 +63,7 @@
             {
                 new("首頁", "/"),
                 new("採購管理", "/"),
-                new("採購退貨", "/purchase-returns")
+                new("採購退回", "/purchase-returns")
             };
         }
         catch (Exception ex)
