@@ -1,0 +1,358 @@
+@page "/inventory/stock-taking/detail/{stockTakingId:int}"
+
+@inject IStockTakingService StockTakingService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<GenericDetailPageComponent TEntity="StockTaking" 
+                        TService="IStockTakingService"
+                        EntityId="@StockTakingId"
+                        Service="@StockTakingService"
+                        EntityName="庫存盤點"
+                        EntityNamePlural="庫存盤點"
+                        IndexRoute="/inventory/stock-taking"
+                        EditRoute="/inventory/stock-taking/edit"
+                        LoadingText="載入盤點資料中..."
+                        BreadcrumbItems="@breadcrumbItems"
+                        DataLoader="@LoadStockTakingDataAsync"
+                        EntityTitleSelector="@(st => $"{st.TakingNumber} - {st.Warehouse?.WarehouseName}")"
+                        EntitySubtitleSelector="@(st => $"盤點狀態：{st.TakingStatus.ToString()} | 完成率：{st.CompletionRate:F1}%")"
+                        EntityDisplayNameSelector="@(st => $"{st.TakingNumber} ({st.Warehouse?.WarehouseName})")"
+                        OnDataLoaded="@OnStockTakingDataLoaded"
+                        UseTabLayout="true"
+                        TabSections="@GetTabSections()" 
+                        RequiredPermission="StockTaking.Read"
+                        @ref="detailComponent"/>
+
+@code {
+    [Parameter] public int StockTakingId { get; set; }
+
+    private StockTaking? stockTaking;
+    private List<ERPCore2.Data.Entities.StockTakingDetail> stockTakingDetails = new();
+    private bool _isLoading = false; // 防止重複載入
+    
+    // 組件參考
+    private GenericDetailPageComponent<StockTaking, IStockTakingService> detailComponent = default!;
+
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
+    {
+        new("首頁", "/"),
+        new("庫存管理", "/inventory"),
+        new("庫存盤點", "/inventory/stock-taking"),
+        new("盤點詳細資料")
+    };
+
+    // GenericDetailPageComponent 需要的方法
+    private async Task<StockTaking?> LoadStockTakingDataAsync()
+    {
+        // 防止重複載入
+        if (_isLoading)
+        {
+            return stockTaking;
+        }
+        
+        try
+        {
+            _isLoading = true;
+            
+            if (StockTakingId <= 0) return null;
+            
+            var result = await StockTakingService.GetWithDetailsAsync(StockTakingId);
+            stockTaking = result; // 保持本地變數同步
+            
+            if (stockTaking != null)
+            {
+                // 載入盤點明細
+                stockTakingDetails = await StockTakingService.GetStockTakingDetailsAsync(StockTakingId);
+            }
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            // 統一錯誤處理
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(LoadStockTakingDataAsync),
+                GetType(),          
+                additionalData: new { StockTakingId = StockTakingId }
+            );
+            
+            // 設置預設值避免頁面崩潰
+            stockTaking = null;
+            stockTakingDetails = new List<ERPCore2.Data.Entities.StockTakingDetail>();
+            
+            // 重新拋出異常讓 GenericDetailPageComponent 處理
+            throw;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+    
+    private async Task OnStockTakingDataLoaded()
+    {
+        try
+        {
+            // 資料載入完成後的處理
+            await Task.Run(() => StateHasChanged());
+        }
+        catch (Exception ex)
+        {
+            // 資料載入後處理失敗不應該影響主要功能
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(OnStockTakingDataLoaded),
+                GetType(),
+                new { StockTakingId = StockTakingId }
+            );
+        }
+    }
+
+    // 設定標籤頁結構
+    private List<GenericDetailPageComponent<StockTaking, IStockTakingService>.TabSection> GetTabSections()
+    {
+        try
+        {
+            return new List<GenericDetailPageComponent<StockTaking, IStockTakingService>.TabSection>
+            {           
+                 new GenericDetailPageComponent<StockTaking, IStockTakingService>.TabSection
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div>
+                        <BasicInfoDisplayComponent 
+                            Title="盤點基本資訊"
+                            IconClass="fas fa-clipboard-list"
+                            IconColor="text-primary"
+                            Fields="@GetStockTakingBasicFields()" />
+                    </div>
+                },
+                
+                new GenericDetailPageComponent<StockTaking, IStockTakingService>.TabSection
+                {
+                    Id = "system",
+                    Title = "系統資訊",
+                    Content = @<div>
+                        <SystemInfoDisplayComponent 
+                            CreatedAt="@(stockTaking?.CreatedAt ?? DateTime.MinValue)"
+                            UpdatedAt="@stockTaking?.UpdatedAt"
+                            CreatedBy="@stockTaking?.CreatedBy"
+                            UpdatedBy="@stockTaking?.UpdatedBy"
+                            Remarks="@stockTaking?.Remarks"
+                            ShowTimeline="true"
+                            ShowRemarks="false" />
+                    </div>
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            // 標籤頁設定失敗，記錄錯誤但返回基本結構
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(GetTabSections),
+                GetType(),
+                additionalData: new { StockTakingId = StockTakingId }
+            );
+            
+            // 返回基本標籤頁結構
+            return new List<GenericDetailPageComponent<StockTaking, IStockTakingService>.TabSection>
+            {
+                new GenericDetailPageComponent<StockTaking, IStockTakingService>.TabSection
+                {
+                    Id = "basic",
+                    Title = "基本資料",
+                    Content = @<div><p>載入錯誤，請重新整理頁面</p></div>
+                }
+            };
+        }
+    }
+
+    // 取得庫存盤點基本資料欄位
+    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetStockTakingBasicFields()
+    {
+        try
+        {
+            return new List<BasicInfoDisplayComponent.BasicInfoField>
+            {
+                new()
+                {
+                    Label = "盤點單號",
+                    Value = stockTaking?.TakingNumber,
+                    IsPrimary = true,
+                    ValueBold = true,
+                    IconClass = "fas fa-file-alt",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary"
+                },
+                new()
+                {
+                    Label = "倉庫名稱",
+                    Value = stockTaking?.Warehouse?.WarehouseName,
+                    IconClass = "fas fa-warehouse",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success"
+                },
+                new()
+                {
+                    Label = "盤點日期",
+                    Value = stockTaking?.TakingDate.ToString("yyyy/MM/dd"),
+                    IconClass = "fas fa-calendar",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info"
+                },
+                new()
+                {
+                    Label = "倉庫位置",
+                    Value = stockTaking?.WarehouseLocation?.LocationName,
+                    EmptyText = "全部位置",
+                    IconClass = "fas fa-map-marker-alt",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning"
+                },
+                new()
+                {
+                    Label = "盤點類型",
+                    Value = stockTaking?.TakingType.ToString(),
+                    IconClass = "fas fa-tags",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    IconTextClass = "text-secondary",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "盤點狀態",
+                    Value = stockTaking?.TakingStatus.ToString(),
+                    IconClass = "fas fa-flag",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "開始時間",
+                    Value = stockTaking?.StartTime?.ToString("yyyy/MM/dd HH:mm"),
+                    EmptyText = "尚未開始",
+                    IconClass = "fas fa-play",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "結束時間",
+                    Value = stockTaking?.EndTime?.ToString("yyyy/MM/dd HH:mm"),
+                    EmptyText = "尚未結束",
+                    IconClass = "fas fa-stop",
+                    IconBgClass = "bg-danger bg-opacity-10",
+                    IconTextClass = "text-danger",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "盤點人員",
+                    Value = stockTaking?.TakingPersonnel,
+                    EmptyText = "未指定",
+                    IconClass = "fas fa-user",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "監盤人員",
+                    Value = stockTaking?.SupervisingPersonnel,
+                    EmptyText = "未指定",
+                    IconClass = "fas fa-user-tie",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "審核人員",
+                    Value = stockTaking?.ApprovedByUser != null ? 
+                        $"{stockTaking.ApprovedByUser.LastName}{stockTaking.ApprovedByUser.FirstName}".Trim() : null,
+                    EmptyText = "尚未審核",
+                    IconClass = "fas fa-user-check",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "審核時間",
+                    Value = stockTaking?.ApprovedAt?.ToString("yyyy/MM/dd HH:mm"),
+                    EmptyText = "尚未審核",
+                    IconClass = "fas fa-clock",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    IconTextClass = "text-secondary",
+                    ColSize = 6
+                },
+                new()
+                {
+                    Label = "總項目數",
+                    Value = stockTaking != null ? stockTaking.TotalItems.ToString("N0") : "0",
+                    IconClass = "fas fa-list",
+                    IconBgClass = "bg-primary bg-opacity-10",
+                    IconTextClass = "text-primary",
+                    ColSize = 4
+                },
+                new()
+                {
+                    Label = "已盤點項目數",
+                    Value = stockTaking != null ? stockTaking.CompletedItems.ToString("N0") : "0",
+                    IconClass = "fas fa-check",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success",
+                    ColSize = 4
+                },
+                new()
+                {
+                    Label = "差異項目數",
+                    Value = stockTaking != null ? stockTaking.DifferenceItems.ToString("N0") : "0",
+                    IconClass = "fas fa-exclamation-triangle",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
+                    ColSize = 4
+                },
+                new()
+                {
+                    Label = "完成率",
+                    Value = stockTaking != null ? stockTaking.CompletionRate.ToString("F1") + "%" : "0%",
+                    ValueBold = true,
+                    IconClass = "fas fa-chart-line",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 12
+                },
+                new()
+                {
+                    Label = "備註",
+                    Value = stockTaking?.TakingRemarks,
+                    EmptyText = "無備註",
+                    IconClass = "fas fa-sticky-note",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    IconTextClass = "text-secondary",
+                    ColSize = 12
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            // 基本資料欄位設定失敗，記錄錯誤但返回空列表
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(GetStockTakingBasicFields),
+                GetType(),
+                additionalData: new { StockTakingId = StockTakingId }
+            );
+            
+            // 返回空列表以避免頁面崩潰
+            return new List<BasicInfoDisplayComponent.BasicInfoField>();
+        }
+    }
+}

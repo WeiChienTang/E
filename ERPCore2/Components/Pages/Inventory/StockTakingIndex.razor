@@ -1,0 +1,334 @@
+@page "/inventory/stock-taking"
+@inject IStockTakingService StockTakingService
+@inject IWarehouseService WarehouseService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="StockTaking" 
+                        TService="IStockTakingService"
+                        Service="@StockTakingService"
+                        EntityBasePath="/inventory/stock-taking"
+                        PageTitle="庫存盤點管理"
+                        PageSubtitle="管理庫存盤點作業與盤點紀錄"
+                        EntityName="盤點"
+                        BreadcrumbItems="@breadcrumbItems"
+                        FilterDefinitions="@filterDefinitions"
+                        ColumnDefinitions="@columnDefinitions"
+                        DataLoader="@LoadStockTakingsAsync"
+                        InitializeBasicData="@LoadBasicDataAsync"
+                        FilterApplier="@ApplyStockTakingFilters"
+                        GetEntityDisplayName="@(st => $"{st.TakingNumber} - {st.Warehouse?.WarehouseName}")"
+                        RequiredPermission="StockTaking.Read"
+                        @ref="indexComponent" />
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<StockTaking, IStockTakingService> indexComponent = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    // 選項資料
+    private List<SelectOption> warehouseOptions = new();
+    private List<SelectOption> takingTypeOptions = new();
+    private List<SelectOption> takingStatusOptions = new();
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeFilters();
+            InitializeTableColumns();
+        }
+        catch (Exception ex)
+        {
+            // 記錄初始化錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(OnInitialized),
+                    GetType(),
+                    additionalData: "初始化庫存盤點頁面失敗"
+                );
+            });
+            
+            // 確保基本初始化完成，避免程式崩潰
+            try
+            {
+                InitializeBreadcrumbs();
+                InitializeFilters();
+                InitializeTableColumns();
+            }
+            catch
+            {
+                // 設定最基本的預設值
+                breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+                filterDefinitions = new List<SearchFilterDefinition>();
+                columnDefinitions = new List<TableColumnDefinition>();
+            }
+        }
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("庫存管理", "/inventory"),
+                new("庫存盤點", "/inventory/stock-taking")
+            };
+        }
+        catch (Exception ex)
+        {
+            // 記錄麵包屑初始化錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(InitializeBreadcrumbs),
+                    GetType(),
+                    additionalData: "初始化麵包屑失敗"
+                );
+            });
+            
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    // 載入基礎資料（選項清單等）
+    private async Task LoadBasicDataAsync()
+    {
+        try
+        {
+            // 重新初始化篩選器以載入下拉選單選項
+            await InitializeFiltersAsync();
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(LoadBasicDataAsync),
+                GetType(),
+                additionalData: "載入基礎資料失敗"
+            );
+        }
+    }
+
+    // 載入庫存盤點資料
+    private async Task<List<StockTaking>> LoadStockTakingsAsync()
+    {
+        try
+        {
+            return await StockTakingService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(LoadStockTakingsAsync),
+                GetType(),
+                additionalData: "載入庫存盤點資料失敗"
+            );
+            
+            // 確保 UI 狀態更新，並回傳安全的預設值
+            StateHasChanged();
+            return new List<StockTaking>();
+        }
+    }
+
+    private void InitializeFilters()
+    {
+        try
+        {
+            // 準備盤點類型選項
+            takingTypeOptions = Enum.GetValues<StockTakingTypeEnum>()
+                .Select(e => new SelectOption
+                {
+                    Value = ((int)e).ToString(),
+                    Text = e.ToString()
+                }).ToList();
+
+            // 準備盤點狀態選項
+            takingStatusOptions = Enum.GetValues<StockTakingStatusEnum>()
+                .Select(e => new SelectOption
+                {
+                    Value = ((int)e).ToString(),
+                    Text = e.ToString()
+                }).ToList();
+
+            // 建立基本篩選定義（不包含下拉選單選項，這些將在 InitializeFiltersAsync 中載入）
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("TakingNumber", "盤點單號", "請輸入盤點單號")
+                .AddSelect("WarehouseId", "倉庫", warehouseOptions)
+                .AddSelect("TakingType", "盤點類型", takingTypeOptions)
+                .AddSelect("TakingStatus", "盤點狀態", takingStatusOptions)
+                .AddDateRange("TakingDate", "盤點日期")
+                .AddText("TakingPersonnel", "盤點人員", "請輸入盤點人員")
+                .Build();
+        }
+        catch (Exception ex)
+        {
+            // 記錄篩選器初始化錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(InitializeFilters),
+                    GetType(),
+                    additionalData: "初始化篩選器失敗"
+                );
+            });
+            
+            // 設定安全的預設值
+            filterDefinitions = new List<SearchFilterDefinition>();
+        }
+    }
+
+    private void InitializeTableColumns()
+    {
+        try
+        {
+            columnDefinitions = new List<TableColumnDefinition>
+            {
+                TableColumnDefinition.Text("盤點單號", nameof(StockTaking.TakingNumber)),
+                TableColumnDefinition.Text("倉庫", "Warehouse.WarehouseName"),
+                TableColumnDefinition.Date("盤點日期", nameof(StockTaking.TakingDate), "yyyy-MM-dd"),
+                TableColumnDefinition.Text("盤點類型", nameof(StockTaking.TakingType)),
+                TableColumnDefinition.Text("盤點狀態", nameof(StockTaking.TakingStatus)),
+                TableColumnDefinition.Number("總項目數", nameof(StockTaking.TotalItems)),
+                TableColumnDefinition.Number("已盤點", nameof(StockTaking.CompletedItems)),
+                TableColumnDefinition.Number("完成率", nameof(StockTaking.CompletionRate)),
+                TableColumnDefinition.Number("差異項目", nameof(StockTaking.DifferenceItems)),
+                TableColumnDefinition.Text("盤點人員", nameof(StockTaking.TakingPersonnel)),
+                TableColumnDefinition.DateTime("建立時間", nameof(StockTaking.CreatedAt), "yyyy-MM-dd HH:mm")
+            };
+        }
+        catch (Exception ex)
+        {
+            // 記錄表格欄位初始化錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(InitializeTableColumns),
+                    GetType(),
+                    additionalData: "初始化表格欄位失敗"
+                );
+            });
+            
+            // 設定安全的預設值
+            columnDefinitions = new List<TableColumnDefinition>();
+        }
+    }
+
+    // 自定義篩選邏輯
+    private IQueryable<StockTaking> ApplyStockTakingFilters(SearchFilterModel searchModel, IQueryable<StockTaking> query)
+    {
+        try
+        {
+            // 盤點單號篩選
+            var takingNumberFilter = searchModel.GetFilterValue("TakingNumber")?.ToString();
+            if (!string.IsNullOrWhiteSpace(takingNumberFilter))
+            {
+                query = query.Where(st => st.TakingNumber.Contains(takingNumberFilter));
+            }
+
+            // 倉庫篩選
+            var warehouseIdFilter = searchModel.GetFilterValue("WarehouseId")?.ToString();
+            if (!string.IsNullOrWhiteSpace(warehouseIdFilter) && int.TryParse(warehouseIdFilter, out var warehouseId))
+            {
+                query = query.Where(st => st.WarehouseId == warehouseId);
+            }
+
+            // 盤點類型篩選
+            var takingTypeFilter = searchModel.GetFilterValue("TakingType")?.ToString();
+            if (!string.IsNullOrWhiteSpace(takingTypeFilter) && Enum.TryParse<StockTakingTypeEnum>(takingTypeFilter, out var takingType))
+            {
+                query = query.Where(st => st.TakingType == takingType);
+            }
+
+            // 盤點狀態篩選
+            var takingStatusFilter = searchModel.GetFilterValue("TakingStatus")?.ToString();
+            if (!string.IsNullOrWhiteSpace(takingStatusFilter) && Enum.TryParse<StockTakingStatusEnum>(takingStatusFilter, out var takingStatus))
+            {
+                query = query.Where(st => st.TakingStatus == takingStatus);
+            }
+
+            // 盤點日期篩選
+            var dateFromFilter = searchModel.GetFilterValue("TakingDate_From")?.ToString();
+            if (!string.IsNullOrWhiteSpace(dateFromFilter) && DateTime.TryParse(dateFromFilter, out var dateFrom))
+            {
+                query = query.Where(st => st.TakingDate >= dateFrom.Date);
+            }
+
+            var dateToFilter = searchModel.GetFilterValue("TakingDate_To")?.ToString();
+            if (!string.IsNullOrWhiteSpace(dateToFilter) && DateTime.TryParse(dateToFilter, out var dateTo))
+            {
+                query = query.Where(st => st.TakingDate <= dateTo.Date.AddDays(1).AddTicks(-1));
+            }
+
+            // 盤點人員篩選
+            var personnelFilter = searchModel.GetFilterValue("TakingPersonnel")?.ToString();
+            if (!string.IsNullOrWhiteSpace(personnelFilter))
+            {
+                query = query.Where(st => st.TakingPersonnel != null && st.TakingPersonnel.Contains(personnelFilter));
+            }
+
+            return query.OrderByDescending(st => st.TakingDate);
+        }
+        catch (Exception ex)
+        {
+            // 記錄篩選錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(ApplyStockTakingFilters),
+                    GetType(),
+                    additionalData: "篩選庫存盤點資料失敗"
+                );
+            });
+            
+            // 回傳原始查詢，確保程式不會崩潰
+            return query.OrderByDescending(st => st.TakingDate);
+        }
+    }
+
+    private async Task InitializeFiltersAsync()
+    {
+        try
+        {
+            // 載入倉庫選項
+            var warehouses = await WarehouseService.GetAllAsync();
+            warehouseOptions = warehouses.Select(w => new SelectOption
+            {
+                Value = w.Id.ToString(),
+                Text = w.WarehouseName
+            }).ToList();
+
+            // 更新篩選器中的倉庫選項
+            var warehouseFilter = filterDefinitions.FirstOrDefault(f => f.PropertyName == "WarehouseId");
+            if (warehouseFilter != null)
+            {
+                warehouseFilter.Options = warehouseOptions;
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(InitializeFiltersAsync),
+                GetType(),
+                additionalData: "載入篩選器選項失敗"
+            );
+        }
+    }
+}
