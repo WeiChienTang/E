@@ -1,0 +1,353 @@
+@page "/inventory-transaction-types"
+@inject IInventoryTransactionTypeService InventoryTransactionTypeService
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="InventoryTransactionType" 
+                      TService="IInventoryTransactionTypeService"
+                      Service="@InventoryTransactionTypeService"
+                      EntityBasePath="/inventory-transaction-types"
+                      PageTitle="庫存異動類型維護"
+                      PageSubtitle="管理所有庫存異動類型設定"
+                      EntityName="庫存異動類型"
+                      BreadcrumbItems="@breadcrumbItems"
+                      FilterDefinitions="@filterDefinitions"
+                      ColumnDefinitions="@columnDefinitions"
+                      DataLoader="@LoadInventoryTransactionTypesAsync"
+                      InitializeBasicData="@LoadBasicDataAsync"
+                      FilterApplier="@ApplyInventoryTransactionTypeFilters"
+                      GetEntityDisplayName="@(type => type.TypeName)"
+                      RequiredPermission="InventoryTransactionType.Read"
+                      @ref="indexComponent" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<InventoryTransactionType, IInventoryTransactionTypeService> indexComponent = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeFilters();
+            InitializeTableColumns();
+        }
+        catch (Exception ex)
+        {
+            // 記錄初始化錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(OnInitialized), 
+                    GetType(),
+                    additionalData: new { 
+                        PageName = "InventoryTransactionTypeIndex",
+                        Action = "Initialize",
+                        Phase = "ComponentInitialization"
+                    });
+            });
+            
+            // 確保基本初始化完成，避免程式崩潰
+            try
+            {
+                breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+                {
+                    new("首頁", "/"),
+                    new("庫存管理", "/inventory"),
+                    new("庫存異動類型維護")
+                };
+                filterDefinitions = new List<SearchFilterDefinition>();
+                columnDefinitions = new List<TableColumnDefinition>();
+            }
+            catch
+            {
+                breadcrumbItems ??= new List<GenericHeaderComponent.BreadcrumbItem>();
+                filterDefinitions ??= new List<SearchFilterDefinition>();
+                columnDefinitions ??= new List<TableColumnDefinition>();
+            }
+        }
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("庫存管理", "/inventory"),
+                new("庫存異動類型維護")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(InitializeBreadcrumbs), 
+                    GetType(),
+                    additionalData: new { 
+                        PageName = "InventoryTransactionTypeIndex",
+                        Action = "InitializeBreadcrumbs"
+                    });
+            });
+            
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    // 載入基礎資料
+    private async Task LoadBasicDataAsync()
+    {
+        try
+        {
+            // 重新初始化篩選器以載入下拉選單選項
+            await InitializeFiltersAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(LoadBasicDataAsync), 
+                GetType(),
+                additionalData: new { 
+                    PageName = "InventoryTransactionTypeIndex",
+                    Action = "LoadBasicData"
+                });
+        }
+    }
+
+    // 載入庫存異動類型資料
+    private async Task<List<InventoryTransactionType>> LoadInventoryTransactionTypesAsync()
+    {
+        try
+        {
+            return await InventoryTransactionTypeService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(LoadInventoryTransactionTypesAsync), 
+                GetType(),
+                additionalData: new { 
+                    PageName = "InventoryTransactionTypeIndex",
+                    Action = "LoadInventoryTransactionTypes",
+                    ExpectedDataType = "List<InventoryTransactionType>"
+                });
+            
+            StateHasChanged();
+            return new List<InventoryTransactionType>();
+        }
+    }
+
+    private void InitializeFilters()
+    {
+        try
+        {
+            // 準備狀態選項
+            var statusOptions = new List<SelectOption>
+            {
+                new() { Text = "啟用", Value = "true" },
+                new() { Text = "停用", Value = "false" }
+            };
+
+            var boolOptions = new List<SelectOption>
+            {
+                new() { Text = "是", Value = "true" },
+                new() { Text = "否", Value = "false" }
+            };
+
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("TypeCode", "類型代碼", "輸入類型代碼搜尋")
+                .AddText("TypeName", "類型名稱", "輸入類型名稱搜尋")
+                .AddSelect("TransactionType", "異動類型", new List<SelectOption>()) // 稍後載入
+                .AddSelect("AffectsCost", "影響成本", boolOptions)
+                .AddSelect("RequiresApproval", "需要審核", boolOptions)
+                .AddSelect("IsActive", "狀態", statusOptions)
+                .Build();
+        }
+        catch (Exception ex)
+        {
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(InitializeFilters), 
+                    GetType(),
+                    additionalData: new { 
+                        PageName = "InventoryTransactionTypeIndex",
+                        Action = "InitializeFilters"
+                    });
+            });
+            
+            filterDefinitions = new List<SearchFilterDefinition>();
+        }
+    }
+
+    private void InitializeTableColumns()
+    {
+        try
+        {
+            columnDefinitions = new List<TableColumnDefinition>
+            {
+                TableColumnDefinition.Text("類型代碼", nameof(InventoryTransactionType.TypeCode)),
+                TableColumnDefinition.Text("類型名稱", nameof(InventoryTransactionType.TypeName)),
+                TableColumnDefinition.Text("異動類型", nameof(InventoryTransactionType.TransactionType)),
+                TableColumnDefinition.Boolean("影響成本", nameof(InventoryTransactionType.AffectsCost)),
+                TableColumnDefinition.Boolean("需要審核", nameof(InventoryTransactionType.RequiresApproval)),
+                TableColumnDefinition.Boolean("自動產生單號", nameof(InventoryTransactionType.AutoGenerateNumber)),
+                TableColumnDefinition.Text("單號前綴", nameof(InventoryTransactionType.NumberPrefix)),
+                TableColumnDefinition.Boolean("狀態", nameof(InventoryTransactionType.IsActive)),
+                TableColumnDefinition.Date("建立時間", nameof(InventoryTransactionType.CreatedAt), "yyyy/MM/dd HH:mm")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(InitializeTableColumns), 
+                    GetType(),
+                    additionalData: new { 
+                        PageName = "InventoryTransactionTypeIndex",
+                        Action = "InitializeTableColumns"
+                    });
+            });
+            
+            columnDefinitions = new List<TableColumnDefinition>();
+        }
+    }
+
+    // 異步初始化篩選器（載入下拉選單選項）
+    private async Task InitializeFiltersAsync()
+    {
+        try
+        {
+            // 載入異動類型選項
+            var transactionTypeOptions = new List<SelectOption>();
+            foreach (InventoryTransactionTypeEnum type in Enum.GetValues<InventoryTransactionTypeEnum>())
+            {
+                transactionTypeOptions.Add(new SelectOption 
+                { 
+                    Value = ((int)type).ToString(), 
+                    Text = GetTransactionTypeDisplayName(type) 
+                });
+            }
+
+            // 更新 TransactionType 篩選器的選項
+            var transactionTypeFilter = filterDefinitions.FirstOrDefault(f => f.PropertyName == "TransactionType");
+            if (transactionTypeFilter != null)
+            {
+                transactionTypeFilter.Options = transactionTypeOptions;
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(InitializeFiltersAsync), 
+                GetType(),
+                additionalData: new { 
+                    PageName = "InventoryTransactionTypeIndex",
+                    Action = "InitializeFiltersAsync"
+                });
+        }
+    }
+
+    // 應用篩選條件
+    private IQueryable<InventoryTransactionType> ApplyInventoryTransactionTypeFilters(SearchFilterModel searchModel, IQueryable<InventoryTransactionType> query)
+    {
+        try
+        {
+            // 類型代碼篩選
+            var typeCodeFilter = searchModel.GetFilterValue("TypeCode")?.ToString();
+            if (!string.IsNullOrWhiteSpace(typeCodeFilter))
+            {
+                query = query.Where(x => x.TypeCode != null && x.TypeCode.Contains(typeCodeFilter));
+            }
+
+            // 類型名稱篩選
+            var typeNameFilter = searchModel.GetFilterValue("TypeName")?.ToString();
+            if (!string.IsNullOrWhiteSpace(typeNameFilter))
+            {
+                query = query.Where(x => x.TypeName != null && x.TypeName.Contains(typeNameFilter));
+            }
+
+            // 異動類型篩選
+            var transactionTypeFilter = searchModel.GetFilterValue("TransactionType")?.ToString();
+            if (!string.IsNullOrWhiteSpace(transactionTypeFilter) && 
+                Enum.TryParse<InventoryTransactionTypeEnum>(transactionTypeFilter, out var transactionType))
+            {
+                query = query.Where(x => x.TransactionType == transactionType);
+            }
+
+            // 影響成本篩選
+            var affectsCostFilter = searchModel.GetFilterValue("AffectsCost")?.ToString();
+            if (!string.IsNullOrWhiteSpace(affectsCostFilter) && 
+                bool.TryParse(affectsCostFilter, out var affectsCost))
+            {
+                query = query.Where(x => x.AffectsCost == affectsCost);
+            }
+
+            // 需要審核篩選
+            var requiresApprovalFilter = searchModel.GetFilterValue("RequiresApproval")?.ToString();
+            if (!string.IsNullOrWhiteSpace(requiresApprovalFilter) && 
+                bool.TryParse(requiresApprovalFilter, out var requiresApproval))
+            {
+                query = query.Where(x => x.RequiresApproval == requiresApproval);
+            }
+
+            // 狀態篩選
+            var isActiveFilter = searchModel.GetFilterValue("IsActive")?.ToString();
+            if (!string.IsNullOrWhiteSpace(isActiveFilter) && 
+                bool.TryParse(isActiveFilter, out var isActive))
+            {
+                query = query.Where(x => x.IsActive == isActive);
+            }
+
+            return query;
+        }
+        catch (Exception ex)
+        {
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(ApplyInventoryTransactionTypeFilters), 
+                    GetType(),
+                    additionalData: new { 
+                        PageName = "InventoryTransactionTypeIndex",
+                        Action = "ApplyFilters"
+                    });
+            });
+            
+            return query;
+        }
+    }
+
+    private string GetTransactionTypeDisplayName(InventoryTransactionTypeEnum transactionType)
+    {
+        return transactionType switch
+        {
+            InventoryTransactionTypeEnum.OpeningBalance => "期初庫存",
+            InventoryTransactionTypeEnum.Purchase => "進貨",
+            InventoryTransactionTypeEnum.Sale => "銷貨",
+            InventoryTransactionTypeEnum.Return => "退貨",
+            InventoryTransactionTypeEnum.Adjustment => "調整",
+            InventoryTransactionTypeEnum.Transfer => "轉倉",
+            InventoryTransactionTypeEnum.StockTaking => "盤點",
+            InventoryTransactionTypeEnum.ProductionConsumption => "生產投料",
+            InventoryTransactionTypeEnum.ProductionCompletion => "生產完工",
+            InventoryTransactionTypeEnum.Scrap => "報廢",
+            _ => transactionType.ToString()
+        };
+    }
+}

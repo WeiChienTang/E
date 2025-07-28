@@ -1,0 +1,316 @@
+@page "/inventory-transaction-types/detail/{id:int}"
+@inject IInventoryTransactionTypeService InventoryTransactionTypeService
+@rendermode InteractiveServer
+
+<GenericDetailPageComponent TEntity="InventoryTransactionType" 
+                        TService="IInventoryTransactionTypeService"
+                        EntityId="@Id"
+                        Entity="@inventoryTransactionType"
+                        Service="@InventoryTransactionTypeService"
+                        EntityName="庫存異動類型"
+                        EntityNamePlural="庫存異動類型"
+                        IndexRoute="/inventory-transaction-types"
+                        EditRoute="/inventory-transaction-types/edit"
+                        LoadingText="載入庫存異動類型中..."
+                        BreadcrumbItems="@breadcrumbItems"
+                        DataLoader="@LoadInventoryTransactionTypeDataAsync"
+                        AdditionalDataLoader="@LoadAdditionalDataAsync"
+                        EntityTitleSelector="@(t => t.TypeName)"
+                        EntitySubtitleSelector="@(t => $"類型代碼：{t.TypeCode}")"
+                        EntityDisplayNameSelector="@(t => t.TypeName)"
+                        OnDataLoaded="@OnInventoryTransactionTypeDataLoaded"
+                        TabSections="@GetTabSections()" 
+                        RequiredPermission="InventoryTransactionType.Read"/>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    // 主要實體
+    private InventoryTransactionType? inventoryTransactionType;
+
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
+    {
+        new("首頁", "/"),
+        new("庫存管理", "/inventory"),
+        new("庫存異動類型", "/inventory-transaction-types"),
+        new("類型詳情")
+    };
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            // 初始化麵包屑
+        }
+        catch (Exception ex)
+        {
+            // 記錄初始化錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(OnInitialized), 
+                    GetType(),
+                    additionalData: new { 
+                        PageName = "InventoryTransactionTypeDetail",
+                        Action = "Initialize",
+                        Id = Id
+                    }
+                );
+            });
+        }
+    }
+
+
+
+    private async Task<InventoryTransactionType?> LoadInventoryTransactionTypeDataAsync()
+    {
+        try
+        {
+            var result = await InventoryTransactionTypeService.GetByIdAsync(Id);
+            if (result != null)
+            {
+                inventoryTransactionType = result;
+                return inventoryTransactionType;
+            }
+            
+            // 如果找不到記錄，返回預設值
+            inventoryTransactionType = new InventoryTransactionType();
+            return inventoryTransactionType;
+        }
+        catch (Exception ex)
+        {
+            // 記錄資料載入錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(LoadInventoryTransactionTypeDataAsync), 
+                    GetType(),
+                    additionalData: new { 
+                        PageName = "InventoryTransactionTypeDetail",
+                        Action = "LoadInventoryTransactionTypeDataAsync",
+                        Id = Id
+                    }
+                );
+            });
+
+            // 回傳安全的預設值
+            return new InventoryTransactionType();
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            // 載入相關的額外資料
+            // 目前沒有需要載入的額外資料
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            // 記錄額外資料載入錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(LoadAdditionalDataAsync), 
+                    GetType(),
+                    additionalData: new { 
+                        PageName = "InventoryTransactionTypeDetail",
+                        Action = "LoadAdditionalDataAsync",
+                        Id = Id
+                    }
+                );
+            });
+        }
+    }
+
+    private void OnInventoryTransactionTypeDataLoaded()
+    {
+        // 資料載入完成後的處理
+        StateHasChanged();
+    }
+
+    private string GetTransactionTypeDisplayName(InventoryTransactionTypeEnum transactionType)
+    {
+        return transactionType switch
+        {
+            InventoryTransactionTypeEnum.OpeningBalance => "期初庫存",
+            InventoryTransactionTypeEnum.Purchase => "進貨",
+            InventoryTransactionTypeEnum.Sale => "銷貨",
+            InventoryTransactionTypeEnum.Return => "退貨",
+            InventoryTransactionTypeEnum.Adjustment => "調整",
+            InventoryTransactionTypeEnum.Transfer => "轉倉",
+            InventoryTransactionTypeEnum.StockTaking => "盤點",
+            InventoryTransactionTypeEnum.ProductionConsumption => "生產投料",
+            InventoryTransactionTypeEnum.ProductionCompletion => "生產完工",
+            InventoryTransactionTypeEnum.Scrap => "報廢",
+            _ => transactionType.ToString()
+        };
+    }
+
+    private List<GenericDetailPageComponent<InventoryTransactionType, IInventoryTransactionTypeService>.TabSection> GetTabSections()
+    {
+        var sections = new List<GenericDetailPageComponent<InventoryTransactionType, IInventoryTransactionTypeService>.TabSection>();
+
+        // 基本資訊分頁
+        sections.Add(new GenericDetailPageComponent<InventoryTransactionType, IInventoryTransactionTypeService>.TabSection
+        {
+            Id = "basic",
+            Title = "基本資訊",
+            Content = GetBasicInfoContent()
+        });
+
+        // 進階設定分頁
+        sections.Add(new GenericDetailPageComponent<InventoryTransactionType, IInventoryTransactionTypeService>.TabSection
+        {
+            Id = "advanced",
+            Title = "進階設定",
+            Content = GetAdvancedSettingsContent()
+        });
+
+        // 系統資訊分頁
+        sections.Add(new GenericDetailPageComponent<InventoryTransactionType, IInventoryTransactionTypeService>.TabSection
+        {
+            Id = "system",
+            Title = "系統資訊",
+            Content = GetSystemInfoContent()
+        });
+
+        return sections;
+    }
+
+    private RenderFragment GetBasicInfoContent() => @<div>
+        <BasicInfoDisplayComponent 
+            Title="庫存異動類型基本資訊"
+            IconClass="fas fa-tags"
+            IconColor="text-primary"
+            Fields="@GetBasicInfoFields()" />
+    </div>;
+
+    private RenderFragment GetAdvancedSettingsContent() => @<div>
+        <BasicInfoDisplayComponent 
+            Title="進階設定"
+            IconClass="fas fa-cog"
+            IconColor="text-info"
+            Fields="@GetAdvancedSettingsFields()" />
+    </div>;
+
+    private RenderFragment GetSystemInfoContent() => @<div>
+        <BasicInfoDisplayComponent 
+            Title="系統資訊"
+            IconClass="fas fa-info-circle"
+            IconColor="text-secondary"
+            Fields="@GetSystemInfoFields()" />
+    </div>;
+
+    private List<BasicInfoDisplayComponent.BasicInfoField> GetBasicInfoFields()
+    {
+        if (inventoryTransactionType == null) return new List<BasicInfoDisplayComponent.BasicInfoField>();
+
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "類型代碼",
+                Value = inventoryTransactionType.TypeCode,
+                IconClass = "fas fa-barcode",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary"
+            },
+            new()
+            {
+                Label = "類型名稱",
+                Value = inventoryTransactionType.TypeName,
+                IconClass = "fas fa-tag",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info"
+            },
+            new()
+            {
+                Label = "異動類型",
+                Value = GetTransactionTypeDisplayName(inventoryTransactionType.TransactionType),
+                IconClass = "fas fa-exchange-alt",
+                IconBgClass = "bg-success bg-opacity-10",
+                IconTextClass = "text-success"
+            }
+        };
+    }
+
+    private List<BasicInfoDisplayComponent.BasicInfoField> GetAdvancedSettingsFields()
+    {
+        if (inventoryTransactionType == null) return new List<BasicInfoDisplayComponent.BasicInfoField>();
+
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "影響成本",
+                Value = inventoryTransactionType.AffectsCost ? "是" : "否",
+                IconClass = "fas fa-dollar-sign",
+                IconBgClass = inventoryTransactionType.AffectsCost ? "bg-warning bg-opacity-10" : "bg-secondary bg-opacity-10",
+                IconTextClass = inventoryTransactionType.AffectsCost ? "text-warning" : "text-secondary"
+            },
+            new()
+            {
+                Label = "需要審核",
+                Value = inventoryTransactionType.RequiresApproval ? "是" : "否",
+                IconClass = "fas fa-check-circle",
+                IconBgClass = inventoryTransactionType.RequiresApproval ? "bg-info bg-opacity-10" : "bg-secondary bg-opacity-10",
+                IconTextClass = inventoryTransactionType.RequiresApproval ? "text-info" : "text-secondary"
+            },
+            new()
+            {
+                Label = "自動產生單號",
+                Value = inventoryTransactionType.AutoGenerateNumber ? "是" : "否",
+                IconClass = "fas fa-automation",
+                IconBgClass = inventoryTransactionType.AutoGenerateNumber ? "bg-success bg-opacity-10" : "bg-secondary bg-opacity-10",
+                IconTextClass = inventoryTransactionType.AutoGenerateNumber ? "text-success" : "text-secondary"
+            },
+            new()
+            {
+                Label = "單號前綴",
+                Value = inventoryTransactionType.NumberPrefix ?? "無",
+                IconClass = "fas fa-hashtag",
+                IconBgClass = "bg-primary bg-opacity-10",
+                IconTextClass = "text-primary"
+            },
+            new()
+            {
+                Label = "啟用狀態",
+                Value = inventoryTransactionType.IsActive ? "啟用" : "停用",
+                IconClass = inventoryTransactionType.IsActive ? "fas fa-toggle-on" : "fas fa-toggle-off",
+                IconBgClass = inventoryTransactionType.IsActive ? "bg-success bg-opacity-10" : "bg-danger bg-opacity-10",
+                IconTextClass = inventoryTransactionType.IsActive ? "text-success" : "text-danger"
+            }
+        };
+    }
+
+    private List<BasicInfoDisplayComponent.BasicInfoField> GetSystemInfoFields()
+    {
+        if (inventoryTransactionType == null) return new List<BasicInfoDisplayComponent.BasicInfoField>();
+
+        return new List<BasicInfoDisplayComponent.BasicInfoField>
+        {
+            new()
+            {
+                Label = "建立時間",
+                Value = inventoryTransactionType.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss"),
+                IconClass = "fas fa-calendar-plus",
+                IconBgClass = "bg-info bg-opacity-10",
+                IconTextClass = "text-info"
+            },
+            new()
+            {
+                Label = "更新時間",
+                Value = inventoryTransactionType.UpdatedAt?.ToString("yyyy/MM/dd HH:mm:ss") ?? "無",
+                IconClass = "fas fa-calendar-edit",
+                IconBgClass = "bg-warning bg-opacity-10",
+                IconTextClass = "text-warning"
+            }
+        };
+    }
+}
