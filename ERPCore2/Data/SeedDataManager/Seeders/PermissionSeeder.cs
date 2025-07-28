@@ -155,6 +155,12 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { PermissionCode = "StockTaking.Approve", PermissionName = "審核盤點", Module = "StockTaking", Action = "Approve", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "StockTaking.Report", PermissionName = "盤點報告", Module = "StockTaking", Action = "Report", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 
+                // 庫存異動權限
+                new Permission { PermissionCode = "InventoryTransaction.Create", PermissionName = "建立庫存異動", Module = "InventoryTransaction", Action = "Create", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "InventoryTransaction.Read", PermissionName = "檢視庫存異動", Module = "InventoryTransaction", Action = "Read", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "InventoryTransaction.Update", PermissionName = "修改庫存異動", Module = "InventoryTransaction", Action = "Update", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "InventoryTransaction.Delete", PermissionName = "刪除庫存異動", Module = "InventoryTransaction", Action = "Delete", PermissionGroup = "庫存管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                
                 // 銷貨管理權限
                 new Permission { PermissionCode = "SalesOrder.Create", PermissionName = "建立銷貨訂單", Module = "SalesOrder", Action = "Create", PermissionGroup = "銷貨管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "SalesOrder.Read", PermissionName = "檢視銷貨訂單", Module = "SalesOrder", Action = "Read", PermissionGroup = "銷貨管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },

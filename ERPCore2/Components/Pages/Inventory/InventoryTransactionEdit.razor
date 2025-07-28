@@ -1,0 +1,506 @@
+@page "/inventory/transactions/edit"
+@page "/inventory/transactions/edit/{id:int?}"
+@inject IInventoryTransactionService InventoryTransactionService
+@inject IInventoryTransactionTypeService InventoryTransactionTypeService
+@inject IProductService ProductService
+@inject IWarehouseService WarehouseService
+@inject INotificationService NotificationService
+@rendermode InteractiveServer
+
+<GenericEditPageComponent TEntity="InventoryTransaction" 
+                     TService="IInventoryTransactionService"
+                     Id="@Id"
+                     Entity="@inventoryTransaction"
+                     Service="@InventoryTransactionService"
+                     EntityName="庫存異動記錄"
+                     EntityNamePlural="庫存異動記錄"
+                     PageTitle="@(Id.HasValue ? "編輯庫存異動記錄" : "新增庫存異動記錄")"
+                     FormTitle="異動資訊"
+                     FormSubtitle="庫存異動的詳細資訊"
+                     IndexRoute="/inventory/transactions"
+                     RequiredPermission="@(Id.HasValue ? "InventoryTransaction.Update" : "InventoryTransaction.Create")"
+                     UseGenericForm="true"
+                     FormFields="@formFields"
+                     FormSections="@formSections"
+                     BreadcrumbItems="@breadcrumbItems"                         
+                     DataLoader="@LoadInventoryTransactionData"
+                     SaveHandler="@SaveInventoryTransaction"                         
+                     AdditionalDataLoader="@LoadAdditionalData"
+                     @ref="editComponent" />
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    // 組件參考
+    private GenericEditPageComponent<InventoryTransaction, IInventoryTransactionService> editComponent = default!;
+
+    // 主要實體
+    private InventoryTransaction inventoryTransaction = new();
+
+    // 基礎資料
+    private List<Product> products = new();
+    private List<Warehouse> warehouses = new();
+    private List<InventoryTransactionType> inventoryTransactionTypes = new();
+
+    // 表單配置
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeFormFields();
+            InitializeFormSections();
+        }
+        catch (Exception ex)
+        {
+            // 記錄初始化錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(OnInitialized), 
+                    GetType(),
+                    additionalData: new { 
+                        PageName = "InventoryTransactionEdit",
+                        Action = "Initialize",
+                        Id = Id
+                    }
+                );
+            });
+            
+            // 確保基本初始化完成，避免程式崩潰
+            try
+            {
+                breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+                formFields = new List<FormFieldDefinition>();
+                formSections = new Dictionary<string, string>();
+            }
+            catch
+            {
+                // 最後的防護，確保不會因為初始化失敗而崩潰
+            }
+        }
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("庫存管理", "/inventory"),
+                new("庫存異動記錄", "/inventory/transactions"),
+                new(Id.HasValue ? "編輯異動記錄" : "新增異動記錄")
+            };
+        }
+        catch (Exception ex)
+        {
+            // 記錄麵包屑初始化錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(InitializeBreadcrumbs), 
+                    GetType(),
+                    additionalData: new { 
+                        PageName = "InventoryTransactionEdit",
+                        Action = "InitializeBreadcrumbs",
+                        Id = Id
+                    }
+                );
+            });
+            
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    private void InitializeFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.TransactionNumber),
+                    Label = "異動單號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入異動單號",
+                    IsRequired = true,
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.TransactionType),
+                    Label = "異動類型",
+                    FieldType = FormFieldType.Select,
+                    Options = new List<SelectOption>(),
+                    IsRequired = true,
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.TransactionDate),
+                    Label = "異動日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.ProductId),
+                    Label = "產品",
+                    FieldType = FormFieldType.Select,
+                    Options = new List<SelectOption>(),
+                    IsRequired = true,
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.WarehouseId),
+                    Label = "倉庫",
+                    FieldType = FormFieldType.Select,
+                    Options = new List<SelectOption>(),
+                    IsRequired = true,
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.Quantity),
+                    Label = "異動數量",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = true,
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.StockBefore),
+                    Label = "異動前庫存",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    IsReadOnly = true,
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.StockAfter),
+                    Label = "異動後庫存",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    IsReadOnly = true,
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.UnitCost),
+                    Label = "單位成本",
+                    FieldType = FormFieldType.Number,
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.ReferenceNumber),
+                    Label = "參考單號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入參考單號",
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            // 記錄表單欄位初始化錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(InitializeFormFields), 
+                    GetType(),
+                    additionalData: new { 
+                        PageName = "InventoryTransactionEdit",
+                        Action = "InitializeFormFields",
+                        Id = Id
+                    }
+                );
+            });
+            
+            // 設定安全的預設值
+            formFields = new List<FormFieldDefinition>();
+        }
+    }
+
+    private void InitializeFormSections()
+    {
+        try
+        {
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(InventoryTransaction.TransactionNumber), "基本資訊" },
+                { nameof(InventoryTransaction.TransactionType), "基本資訊" },
+                { nameof(InventoryTransaction.TransactionDate), "基本資訊" },
+                { nameof(InventoryTransaction.ProductId), "產品與倉庫" },
+                { nameof(InventoryTransaction.WarehouseId), "產品與倉庫" },
+                { nameof(InventoryTransaction.Quantity), "庫存資訊" },
+                { nameof(InventoryTransaction.StockBefore), "庫存資訊" },
+                { nameof(InventoryTransaction.StockAfter), "庫存資訊" },
+                { nameof(InventoryTransaction.UnitCost), "庫存資訊" },
+                { nameof(InventoryTransaction.ReferenceNumber), "其他資訊" }
+            };
+        }
+        catch (Exception ex)
+        {
+            // 記錄表單區段初始化錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(InitializeFormSections), 
+                    GetType(),
+                    additionalData: new { 
+                        PageName = "InventoryTransactionEdit",
+                        Action = "InitializeFormSections",
+                        Id = Id
+                    }
+                );
+            });
+            
+            // 設定安全的預設值
+            formSections = new Dictionary<string, string>();
+        }
+    }
+
+    private async Task<InventoryTransaction> LoadInventoryTransactionData()
+    {
+        try
+        {
+            if (Id.HasValue)
+            {
+                var result = await InventoryTransactionService.GetByIdAsync(Id.Value);
+                if (result != null)
+                {
+                    inventoryTransaction = result;
+                }
+                else
+                {
+                    // 如果找不到記錄，創建新的實體
+                    inventoryTransaction = new InventoryTransaction
+                    {
+                        TransactionDate = DateTime.Now,
+                        TransactionNumber = await GenerateTransactionNumber()
+                    };
+                }
+            }
+            else
+            {
+                inventoryTransaction = new InventoryTransaction
+                {
+                    TransactionDate = DateTime.Now,
+                    TransactionNumber = await GenerateTransactionNumber()
+                };
+            }
+
+            return inventoryTransaction;
+        }
+        catch (Exception ex)
+        {
+            // 記錄資料載入錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(LoadInventoryTransactionData), 
+                    GetType(),
+                    additionalData: new { 
+                        PageName = "InventoryTransactionEdit",
+                        Action = "LoadInventoryTransactionData",
+                        Id = Id
+                    }
+                );
+            });
+
+            // 回傳安全的預設值
+            return new InventoryTransaction
+            {
+                TransactionDate = DateTime.Now,
+                TransactionNumber = "TXN" + DateTime.Now.ToString("yyyyMMddHHmmss")
+            };
+        }
+    }
+
+    private async Task LoadAdditionalData()
+    {
+        try
+        {
+            // 載入產品清單
+            products = await ProductService.GetAllAsync();
+            
+            // 載入倉庫清單  
+            warehouses = await WarehouseService.GetAllAsync();
+            
+            // 載入庫存異動類型清單
+            inventoryTransactionTypes = await InventoryTransactionTypeService.GetAllAsync();
+            
+            // 更新表單欄位選項
+            await UpdateFormFieldOptions();
+        }
+        catch (Exception ex)
+        {
+            // 記錄額外資料載入錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(LoadAdditionalData), 
+                    GetType(),
+                    additionalData: new { 
+                        PageName = "InventoryTransactionEdit",
+                        Action = "LoadAdditionalData",
+                        Id = Id
+                    }
+                );
+            });
+        }
+    }
+
+    private Task UpdateFormFieldOptions()
+    {
+        try
+        {
+            // 更新異動類型選項
+            var transactionTypeOptions = inventoryTransactionTypes.Select(tt => new SelectOption 
+            { 
+                Value = ((int)tt.TransactionType).ToString(), 
+                Text = tt.TypeName 
+            }).ToList();
+
+            // 更新產品選項
+            var productOptions = products.Select(p => new SelectOption 
+            { 
+                Value = p.Id.ToString(), 
+                Text = p.ProductName 
+            }).ToList();
+
+            // 更新倉庫選項
+            var warehouseOptions = warehouses.Select(w => new SelectOption 
+            { 
+                Value = w.Id.ToString(), 
+                Text = w.WarehouseName 
+            }).ToList();
+
+            // 尋找並更新對應的表單欄位
+            var transactionTypeField = formFields.FirstOrDefault(f => f.PropertyName == nameof(InventoryTransaction.TransactionType));
+            if (transactionTypeField != null)
+            {
+                transactionTypeField.Options = transactionTypeOptions;
+            }
+
+            var productField = formFields.FirstOrDefault(f => f.PropertyName == nameof(InventoryTransaction.ProductId));
+            if (productField != null)
+            {
+                productField.Options = productOptions;
+            }
+
+            var warehouseField = formFields.FirstOrDefault(f => f.PropertyName == nameof(InventoryTransaction.WarehouseId));
+            if (warehouseField != null)
+            {
+                warehouseField.Options = warehouseOptions;
+            }
+
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            // 記錄表單選項更新錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(UpdateFormFieldOptions), 
+                    GetType(),
+                    additionalData: new { 
+                        PageName = "InventoryTransactionEdit",
+                        Action = "UpdateFormFieldOptions",
+                        Id = Id
+                    }
+                );
+            });
+
+            return Task.CompletedTask;
+        }
+    }
+
+    private async Task<bool> SaveInventoryTransaction(InventoryTransaction entity)
+    {
+        try
+        {
+            ServiceResult result;
+            
+            if (Id.HasValue)
+            {
+                result = await InventoryTransactionService.UpdateAsync(entity);
+            }
+            else
+            {
+                result = await InventoryTransactionService.CreateAsync(entity);
+            }
+
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync(
+                    Id.HasValue ? "庫存異動記錄更新成功！" : "庫存異動記錄新增成功！"
+                );
+            }
+
+            return result.IsSuccess;
+        }
+        catch (Exception ex)
+        {
+            // 記錄儲存錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(SaveInventoryTransaction), 
+                    GetType(),
+                    additionalData: new { 
+                        PageName = "InventoryTransactionEdit",
+                        Action = "SaveInventoryTransaction",
+                        Id = Id,
+                        EntityId = entity.Id
+                    }
+                );
+            });
+
+            await NotificationService.ShowErrorAsync(
+                Id.HasValue ? "庫存異動記錄更新失敗，請重試！" : "庫存異動記錄新增失敗，請重試！"
+            );
+
+            return false;
+        }
+    }
+
+    private Task<string> GenerateTransactionNumber()
+    {
+        try
+        {
+            // 這裡可以實作更複雜的單號生成邏輯
+            // 例如根據年月日 + 流水號
+            return Task.FromResult("TXN" + DateTime.Now.ToString("yyyyMMddHHmmss"));
+        }
+        catch (Exception ex)
+        {
+            // 記錄單號產生錯誤
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(
+                    ex, 
+                    nameof(GenerateTransactionNumber), 
+                    GetType(),
+                    additionalData: new { 
+                        PageName = "InventoryTransactionEdit",
+                        Action = "GenerateTransactionNumber"
+                    }
+                );
+            });
+
+            // 回傳基本的預設值
+            return Task.FromResult("TXN" + DateTime.Now.ToString("yyyyMMddHHmmss"));
+        }
+    }
+}
