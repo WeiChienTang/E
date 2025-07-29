@@ -1,6 +1,5 @@
 .supplier-card {
     transition: all 0.2s ease;
-    border: 1px solid #e0e0e0;
     position: relative;
     cursor: default;
 }
@@ -21,6 +20,15 @@
     font-size: 0.95rem;
     font-weight: 600;
     color: #2c3e50;
+}
+
+.supplier-card:hover .card-title {
+    color: #0d6efd !important;
+    font-weight: bold !important;
+}
+
+.supplier-card:hover .card-title i {
+    color: #0d6efd !important;
 }
 
 .supplier-card .badge {

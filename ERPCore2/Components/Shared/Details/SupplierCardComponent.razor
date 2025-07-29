@@ -8,10 +8,10 @@
          data-supplier-id="@ProductSupplier.SupplierId" 
          data-supplier-name="@ProductSupplier.Supplier?.CompanyName">
         <div class="card-body p-3">
-            <div class="d-flex justify-content-between align-items-start mb-2">
+            <div class="d-flex justify-content-between align-items-start">
                 <div class="flex-grow-1">
                     <h6 class="card-title mb-1 text-truncate" title="@ProductSupplier.Supplier?.CompanyName">
-                        @ProductSupplier.Supplier?.CompanyName
+                        <i class="fas fa-eye me-1"></i>@ProductSupplier.Supplier?.CompanyName
                     </h6>
                     @if (ProductSupplier.IsPrimarySupplier || ProductSupplier.SupplierId == PrimarySupplierId)
                     {
@@ -51,12 +51,6 @@
                         <small>@ProductSupplier.MinOrderQuantity</small>
                     </div>
                 }
-            </div>
-            
-            <div class="text-end mt-2">
-                <small class="text-muted">
-                    <i class="fas fa-eye me-1"></i>點擊查看詳情
-                </small>
             </div>
         </div>
     </div>
