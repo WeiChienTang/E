@@ -177,6 +177,41 @@
         }
     }
 
+    // 導航到供應商詳細頁面
+    private void NavigateToSupplierDetail(int supplierId)
+    {
+        try
+        {
+            Navigation.NavigateTo($"/suppliers/detail/{supplierId}");
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(NavigateToSupplierDetail),
+                GetType(),
+                additionalData: new { SupplierId = supplierId, PageName = "ProductDetail" });
+        }
+    }
+
+    // 處理供應商卡片點擊事件
+    private async Task OnSupplierCardClick(int supplierId)
+    {
+        try
+        {
+            NavigateToSupplierDetail(supplierId);
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(OnSupplierCardClick),
+                GetType(),
+                additionalData: new { SupplierId = supplierId, PageName = "ProductDetail" });
+        }
+    }
+
     // 設定標籤頁結構
     private List<GenericDetailPageComponent<Product, IProductService>.TabSection> GetTabSections()
     {
@@ -215,63 +250,10 @@
                     Id = "suppliers",
                     Title = "供應商資訊",
                     Content = @<div>
-                        @if (productSuppliers.Any())
-                        {
-                            <div class="mt-2">
-                                @foreach (var productSupplier in productSuppliers.OrderByDescending(ps => ps.IsPrimarySupplier))
-                                {
-                                    <div class="card mb-2">
-                                        <div class="card-body p-3">
-                                            <div class="d-flex justify-content-between align-items-start">
-                                                <div>
-                                                    <h6 class="card-title mb-1">
-                                                        @productSupplier.Supplier?.CompanyName
-                                                        @if (productSupplier.IsPrimarySupplier || productSupplier.SupplierId == product?.PrimarySupplierId)
-                                                        {
-                                                            <span class="badge bg-primary ms-1">主要</span>
-                                                        }
-                                                    </h6>
-                                                    @if (!string.IsNullOrEmpty(productSupplier.SupplierProductCode))
-                                                    {
-                                                        <small class="text-muted">供應商代碼：@productSupplier.SupplierProductCode</small>
-                                                    }
-                                                </div>
-                                            </div>
-                                            <div class="row mt-2">
-                                                @if (productSupplier.SupplierPrice.HasValue)
-                                                {
-                                                    <div class="col-6 col-md-3">
-                                                        <small class="text-muted">報價</small><br>
-                                                        <strong>NT$ @productSupplier.SupplierPrice.Value.ToString("N2")</strong>
-                                                    </div>
-                                                }
-                                                @if (productSupplier.LeadTime.HasValue)
-                                                {
-                                                    <div class="col-6 col-md-3">
-                                                        <small class="text-muted">交期</small><br>
-                                                        <span>@productSupplier.LeadTime 天</span>
-                                                    </div>
-                                                }
-                                                @if (productSupplier.MinOrderQuantity.HasValue)
-                                                {
-                                                    <div class="col-6 col-md-3">
-                                                        <small class="text-muted">最小訂購量</small><br>
-                                                        <span>@productSupplier.MinOrderQuantity</span>
-                                                    </div>
-                                                }
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="text-muted p-3 text-center">
-                                <i class="fas fa-truck fa-2x mb-2 d-block"></i>
-                                尚未設定供應商
-                            </div>
-                        }
+                        <SupplierListComponent 
+                            ProductSuppliers="@productSuppliers"
+                            PrimarySupplierId="@product?.PrimarySupplierId"
+                            OnSupplierClick="@OnSupplierCardClick" />
                     </div>
                 },
                 

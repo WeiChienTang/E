@@ -1,0 +1,89 @@
+.supplier-card {
+    transition: all 0.2s ease;
+    border: 1px solid #e0e0e0;
+    position: relative;
+    cursor: default;
+}
+
+.supplier-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    border-color: #007bff;
+    cursor: pointer;
+}
+
+.supplier-card .card-body {
+    position: relative;
+    overflow: hidden;
+}
+
+.supplier-card .card-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.supplier-card .badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.supplier-card .text-success {
+    color: #28a745 !important;
+    font-weight: 600;
+}
+
+.supplier-card .text-muted {
+    color: #6c757d !important;
+    font-size: 0.75rem;
+}
+
+.supplier-card .fw-medium {
+    font-weight: 500 !important;
+    color: #495057;
+}
+
+.supplier-card small {
+    font-size: 0.8rem;
+}
+
+.supplier-card .row .col-6 {
+    padding: 0 0.25rem;
+}
+
+.supplier-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.5s;
+}
+
+.supplier-card:hover::before {
+    left: 100%;
+}
+
+.supplier-card .fas.fa-eye {
+    opacity: 0.7;
+}
+
+.supplier-card:hover .fas.fa-eye {
+    opacity: 1;
+}
+
+@media (max-width: 576px) {
+    .supplier-card .card-body {
+        padding: 0.75rem;
+    }
+    
+    .supplier-card .card-title {
+        font-size: 0.9rem;
+    }
+    
+    .supplier-card small {
+        font-size: 0.75rem;
+    }
+}
