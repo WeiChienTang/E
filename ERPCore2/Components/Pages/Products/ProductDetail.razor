@@ -250,10 +250,16 @@
                     Id = "suppliers",
                     Title = "供應商資訊",
                     Content = @<div>
-                        <SupplierListComponent 
-                            ProductSuppliers="@productSuppliers"
-                            PrimarySupplierId="@product?.PrimarySupplierId"
-                            OnSupplierClick="@OnSupplierCardClick" />
+                        <RelationListComponent TRelationEntity="ProductSupplier" 
+                                             TTargetEntity="Supplier"
+                                             RelationItems="@productSuppliers"
+                                             PrimaryTargetId="@product?.PrimarySupplierId"
+                                             OnItemClick="@OnSupplierCardClick"
+                                             GetTargetId="@(ps => ps.SupplierId)"
+                                             GetIsPrimary="@(ps => ps.IsPrimarySupplier)"
+                                             GetDisplayName="@(ps => ps.Supplier?.CompanyName ?? "未知供應商")"
+                                             EmptyMessage="尚未設定供應商"
+                                             EmptyIcon="fas fa-truck"/>
                     </div>
                 },
                 
