@@ -163,7 +163,6 @@
                 TableColumnDefinition.Text("產品分類", "ProductCategory.CategoryName"),
                 TableColumnDefinition.Text("單位", "Unit.UnitName"),
                 TableColumnDefinition.Number("單價", nameof(Product.UnitPrice), "N2"),
-                TableColumnDefinition.Number("庫存", nameof(Product.CurrentStock), "N0"),
                 TableColumnDefinition.Status("啟用", nameof(Product.IsActive), new Dictionary<object, string>
                 {
                     { true, "bg-success" },

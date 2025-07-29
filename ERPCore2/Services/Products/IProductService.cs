@@ -34,15 +34,6 @@ namespace ERPCore2.Services
         /// </summary>
         Task<List<Product>> GetActiveProductsAsync();
         
-        /// <summary>
-        /// 取得庫存不足的商品列表
-        /// </summary>
-        Task<List<Product>> GetLowStockProductsAsync();
-          /// <summary>
-        /// 取得庫存超量的商品列表
-        /// </summary>
-        Task<List<Product>> GetOverStockProductsAsync();
-        
         #endregion
 
         #region 輔助資料查詢
@@ -80,25 +71,6 @@ namespace ERPCore2.Services
         /// 設定主要供應商
         /// </summary>
         Task<ServiceResult> SetPrimarySupplierAsync(int productId, int supplierId);
-        
-        #endregion
-
-        #region 庫存管理
-        
-        /// <summary>
-        /// 更新商品庫存
-        /// </summary>
-        Task<ServiceResult> UpdateStockAsync(int productId, int newStock);
-        
-        /// <summary>
-        /// 調整商品庫存
-        /// </summary>
-        Task<ServiceResult> AdjustStockAsync(int productId, int adjustment, string reason);
-        
-        /// <summary>
-        /// 設定庫存警戒值
-        /// </summary>
-        Task<ServiceResult> SetStockLevelsAsync(int productId, int? minLevel, int? maxLevel);
         
         #endregion
 
@@ -146,16 +118,6 @@ namespace ERPCore2.Services
         /// 取得基本完成欄位數量
         /// </summary>
         int GetBasicCompletedFieldsCount(Product product);
-        
-        /// <summary>
-        /// 檢查庫存是否充足
-        /// </summary>
-        bool IsStockSufficient(Product product, int requiredQuantity);
-        
-        /// <summary>
-        /// 計算庫存狀態
-        /// </summary>
-        string GetStockStatus(Product product);
         
         #endregion
     }

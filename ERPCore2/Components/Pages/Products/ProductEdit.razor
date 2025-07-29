@@ -4,6 +4,7 @@
 @inject IProductService ProductService
 @inject IProductCategoryService ProductCategoryService
 @inject ISupplierService SupplierService
+@inject ISizeService SizeService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
 
@@ -69,6 +70,7 @@
     private List<Supplier> suppliers = new();
     private List<Supplier> availableSuppliers = new();
     private List<Unit> units = new();
+    private List<Size> sizes = new();
     
     // 表單欄位定義
     private List<FormFieldDefinition> formFields = new();
@@ -190,24 +192,6 @@
                     Placeholder = "0",
                 },
                 new() {
-                    PropertyName = nameof(Product.CurrentStock),
-                    Label = "目前庫存",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "0",
-                },
-                new() {
-                    PropertyName = nameof(Product.MinStockLevel),
-                    Label = "最低庫存",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "0",
-                },
-                new() {
-                    PropertyName = nameof(Product.MaxStockLevel),
-                    Label = "最高庫存",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "0",
-                },
-                new() {
                     PropertyName = nameof(Product.Remarks),
                     Label = "備註",
                     FieldType = FormFieldType.TextArea,
@@ -222,12 +206,9 @@
                 { nameof(Product.ProductName), "基本資訊" },
                 { nameof(Product.IsActive), "基本資訊" },
                 
-                // 價格與庫存區塊
-                { nameof(Product.UnitPrice), "價格與庫存" },
-                { nameof(Product.CostPrice), "價格與庫存" },
-                { nameof(Product.CurrentStock), "價格與庫存" },
-                { nameof(Product.MinStockLevel), "價格與庫存" },
-                { nameof(Product.MaxStockLevel), "價格與庫存" },
+                // 價格與其他資訊區塊
+                { nameof(Product.UnitPrice), "價格與其他資訊" },
+                { nameof(Product.CostPrice), "價格與其他資訊" },
                 
                 // 詳細說明與其他資訊區塊（放在最下方）
                 { nameof(Product.Description), "詳細說明與其他資訊" },
@@ -264,13 +245,14 @@
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalData), GetType(),
                 additionalData: new { 
                     ProductId = Id,
-                    ExpectedData = "ProductCategories, Suppliers, Units"
+                    ExpectedData = "ProductCategories, Suppliers, Units, Sizes"
                 });
             
             // 設定安全的預設值，確保程式不會崩潰
             productCategories = new List<ProductCategory>();
             suppliers = new List<Supplier>();
             units = new List<Unit>();
+            sizes = new List<Size>();
             
             // 即使失敗也要初始化表單欄位
             try
@@ -317,23 +299,39 @@
                 }).ToList(),
             };
 
+            var sizeField = new FormFieldDefinition
+            {
+                PropertyName = nameof(Product.SizeId),
+                Label = "尺寸",
+                FieldType = FormFieldType.Select,
+                IsRequired = false, // 尺寸通常不是必填
+                Options = sizes.Select(s => new SelectOption 
+                { 
+                    Value = s.Id.ToString(), 
+                    Text = s.SizeName 
+                }).ToList(),
+            };
+
             // 插入到適當位置（ProductName之後）
             var insertIndex = formFields.FindIndex(f => f.PropertyName == nameof(Product.ProductName)) + 1;
             if (insertIndex > 0)
             {
                 formFields.Insert(insertIndex, productCategoryField);
                 formFields.Insert(insertIndex + 1, unitField);
+                formFields.Insert(insertIndex + 2, sizeField);
             }
             else
             {
                 // 如果找不到ProductName欄位，就添加到開頭
                 formFields.Insert(0, productCategoryField);
                 formFields.Insert(1, unitField);
+                formFields.Insert(2, sizeField);
             }
 
             // 更新表單區段
             formSections[nameof(Product.ProductCategoryId)] = "基本資訊";
             formSections[nameof(Product.UnitId)] = "基本資訊";
+            formSections[nameof(Product.SizeId)] = "基本資訊";
         }
         catch (Exception ex)
         {
@@ -387,8 +385,8 @@
             {
                 product = new Product();
                 
-                // 設定新產品的預設值
-                product.IsActive = true; // 預設為啟用
+                // 使用服務的初始化方法設定預設值
+                ProductService.InitializeNewProduct(product);
                 
                 // 設定預設單位為"個"，如果找不到則使用第一個可用的單位
                 var defaultUnit = units.FirstOrDefault(u => u.UnitName == "個") 
@@ -397,6 +395,13 @@
                 {
                     product.UnitId = defaultUnit.Id;
                 }
+                
+                // 設定預設尺寸（可選，如果需要預設值的話）
+                // var defaultSize = sizes.FirstOrDefault();
+                // if (defaultSize != null)
+                // {
+                //     product.SizeId = defaultSize.Id;
+                // }
                 
                 productSuppliers.Clear();
                 return product;
@@ -408,7 +413,9 @@
                 additionalData: new { ProductId = Id });
             
             StateHasChanged();
-            return new Product();
+            var errorProduct = new Product();
+            ProductService.InitializeNewProduct(errorProduct);
+            return errorProduct;
         }
     }
 
@@ -425,10 +432,13 @@
             
             units = await ProductService.GetUnitsAsync() ?? new List<Unit>();
             
+            sizes = await SizeService.GetActiveSizesAsync() ?? new List<Size>();
+            
             // 確保至少有基本的資料結構
             productCategories ??= new List<ProductCategory>();
             suppliers ??= new List<Supplier>();
             units ??= new List<Unit>();
+            sizes ??= new List<Size>();
         }
         catch (Exception ex)
         {
@@ -439,6 +449,7 @@
             productCategories = new List<ProductCategory>();
             suppliers = new List<Supplier>();
             units = new List<Unit>();
+            sizes = new List<Size>();
             StateHasChanged();
         }
     }

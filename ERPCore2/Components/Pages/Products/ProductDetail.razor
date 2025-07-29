@@ -24,7 +24,6 @@
                             EntitySubtitleSelector="@(p => $"商品代碼：{p.ProductCode}")"
                             EntityDisplayNameSelector="@(p => p.ProductName)"
                             OnDataLoaded="@OnProductDataLoaded"
-                            UseTabLayout="true"
                             TabSections="@GetTabSections()" RequiredPermission="Product.Read">
 </GenericDetailPageComponent>
 
@@ -178,60 +177,6 @@
         }
     }
 
-    private string GetStockStatus()
-    {
-        try
-        {
-            if (product == null) return "未知";
-
-            if (product.MinStockLevel.HasValue && product.CurrentStock <= product.MinStockLevel.Value)
-            {
-                return "庫存不足";
-            }
-
-            if (product.MaxStockLevel.HasValue && product.CurrentStock >= product.MaxStockLevel.Value)
-            {
-                return "庫存過量";
-            }
-
-            return "正常";
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(GetStockStatus),
-                GetType(),
-                additionalData: new { ProductId = product?.Id, PageName = "ProductDetail" });
-            
-            return "未知";
-        }
-    }
-
-    private string GetStockStatusBadgeClass(string status)
-    {
-        try
-        {
-            return status switch
-            {
-                "庫存不足" => "bg-danger",
-                "庫存過量" => "bg-warning",
-                "正常" => "bg-success",
-                _ => "bg-secondary"
-            };
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(GetStockStatusBadgeClass),
-                GetType(),
-                additionalData: new { Status = status, PageName = "ProductDetail" });
-            
-            return "bg-secondary";
-        }
-    }
-
     // 設定標籤頁結構
     private List<GenericDetailPageComponent<Product, IProductService>.TabSection> GetTabSections()
     {
@@ -264,26 +209,6 @@
                             <DetailFieldComponent Label="毛利" Value="@FormatPrice(product.UnitPrice!.Value - product.CostPrice!.Value)" />
                             <DetailFieldComponent Label="毛利率" Value="@FormatPercentage(CalculateMarginRate(product.UnitPrice!.Value, product.CostPrice!.Value))" />
                         }
-                    </div>
-                },
-                
-                new GenericDetailPageComponent<Product, IProductService>.TabSection
-                {
-                    Id = "inventory",
-                    Title = "庫存資訊",
-                    Content = @<div class="row">
-                        <DetailFieldComponent Label="現有庫存" Value="@product?.CurrentStock.ToString()" IsBold="true" />
-                        <DetailFieldComponent Label="庫存狀態">
-                            @if (product != null)
-                            {
-                                var stockStatus = GetStockStatus();
-                                <span class="badge @GetStockStatusBadgeClass(stockStatus)">
-                                    @stockStatus
-                                </span>
-                            }
-                        </DetailFieldComponent>
-                        <DetailFieldComponent Label="最低庫存量" Value="@(product?.MinStockLevel?.ToString() ?? "未設定")" />
-                        <DetailFieldComponent Label="最高庫存量" Value="@(product?.MaxStockLevel?.ToString() ?? "未設定")" />
                     </div>
                 },
                 
@@ -405,8 +330,7 @@
                     ValueBold = true,
                     IconClass = "fas fa-barcode",
                     IconBgClass = "bg-primary bg-opacity-10",
-                    IconTextClass = "text-primary",
-                    ColSize = 6
+                    IconTextClass = "text-primary"
                 },
                 new()
                 {
@@ -415,8 +339,7 @@
                     ValueBold = true,
                     IconClass = "fas fa-box",
                     IconBgClass = "bg-info bg-opacity-10",
-                    IconTextClass = "text-info",
-                    ColSize = 6
+                    IconTextClass = "text-info"
                 },
                 new()
                 {
@@ -424,8 +347,15 @@
                     Value = product?.ProductCategory?.CategoryName,
                     IconClass = "fas fa-tags",
                     IconBgClass = "bg-warning bg-opacity-10",
-                    IconTextClass = "text-warning",
-                    ColSize = 6
+                    IconTextClass = "text-warning"
+                },
+                new()
+                {
+                    Label = "尺寸",
+                    Value = product?.Size?.SizeName,
+                    IconClass = "fas fa-ruler",
+                    IconBgClass = "bg-purple bg-opacity-10",
+                    IconTextClass = "text-purple"
                 },
                 new()
                 {
@@ -433,8 +363,7 @@
                     Value = product?.Unit?.UnitName,
                     IconClass = "fas fa-weight",
                     IconBgClass = "bg-secondary bg-opacity-10",
-                    IconTextClass = "text-secondary",
-                    ColSize = 6
+                    IconTextClass = "text-secondary"
                 },
                 new()
                 {
@@ -447,8 +376,7 @@
                     </div>,
                     IconClass = "fas fa-toggle-on",
                     IconBgClass = "bg-success bg-opacity-10",
-                    IconTextClass = "text-success",
-                    ColSize = 6
+                    IconTextClass = "text-success"
                 },
                 new()
                 {
@@ -463,8 +391,7 @@
                     </div>,
                     IconClass = "fas fa-power-off",
                     IconBgClass = "bg-info bg-opacity-10",
-                    IconTextClass = "text-info",
-                    ColSize = 6
+                    IconTextClass = "text-info"
                 },
                 new()
                 {
@@ -525,7 +452,3 @@
         }
     }
 }
-
-
-
-

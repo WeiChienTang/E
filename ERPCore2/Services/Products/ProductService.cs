@@ -40,6 +40,7 @@ namespace ERPCore2.Services
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
+                    .Include(p => p.Size)
                     .Where(p => !p.IsDeleted)
                     .OrderBy(p => p.ProductName)
                     .ToListAsync();
@@ -61,6 +62,7 @@ namespace ERPCore2.Services
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
+                    .Include(p => p.Size)
                     .Include(p => p.ProductSuppliers)
                         .ThenInclude(ps => ps.Supplier)
                     .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
@@ -85,6 +87,7 @@ namespace ERPCore2.Services
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
+                    .Include(p => p.Size)
                     .Where(p => !p.IsDeleted &&
                                (p.ProductName.Contains(searchTerm) ||
                                 p.ProductCode.Contains(searchTerm) ||
@@ -137,30 +140,6 @@ namespace ERPCore2.Services
                     errors.Add("成本價不能為負數");
                 }
 
-                // 驗證庫存警戒值
-                if (entity.MinStockLevel.HasValue && entity.MaxStockLevel.HasValue)
-                {
-                    if (entity.MinStockLevel.Value > entity.MaxStockLevel.Value)
-                    {
-                        errors.Add("最低庫存量不能大於最高庫存量");
-                    }
-                }
-
-                if (entity.MinStockLevel.HasValue && entity.MinStockLevel.Value < 0)
-                {
-                    errors.Add("最低庫存量不能為負數");
-                }
-
-                if (entity.MaxStockLevel.HasValue && entity.MaxStockLevel.Value < 0)
-                {
-                    errors.Add("最高庫存量不能為負數");
-                }
-
-                if (entity.CurrentStock < 0)
-                {
-                    errors.Add("現有庫存不能為負數");
-                }
-
                 return errors.Any() 
                     ? ServiceResult.Failure(string.Join("; ", errors))
                     : ServiceResult.Success();
@@ -186,6 +165,7 @@ namespace ERPCore2.Services
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
+                    .Include(p => p.Size)
                     .FirstOrDefaultAsync(p => p.ProductCode == productCode && !p.IsDeleted);
             }
             catch (Exception ex)
@@ -225,6 +205,7 @@ namespace ERPCore2.Services
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
+                    .Include(p => p.Size)
                     .Where(p => p.ProductCategoryId == productCategoryId && !p.IsDeleted)
                     .OrderBy(p => p.ProductName)
                     .ToListAsync();
@@ -246,6 +227,7 @@ namespace ERPCore2.Services
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
+                    .Include(p => p.Size)
                     .Where(p => p.PrimarySupplierId == supplierId && !p.IsDeleted)
                     .OrderBy(p => p.ProductName)
                     .ToListAsync();
@@ -267,6 +249,7 @@ namespace ERPCore2.Services
                     .Include(p => p.ProductCategory)
                     .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
+                    .Include(p => p.Size)
                     .Where(p => p.IsActive && !p.IsDeleted)
                     .OrderBy(p => p.ProductName)
                     .ToListAsync();
@@ -274,52 +257,6 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetActiveProductsAsync), GetType(), _logger);
-                throw;
-            }
-        }
-
-        public async Task<List<Product>> GetLowStockProductsAsync()
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
-
-            try
-            {
-                return await context.Products
-                    .Include(p => p.ProductCategory)
-                    .Include(p => p.PrimarySupplier)
-                    .Include(p => p.Unit)
-                    .Where(p => !p.IsDeleted && 
-                               p.MinStockLevel.HasValue && 
-                               p.CurrentStock <= p.MinStockLevel.Value)
-                    .OrderBy(p => p.CurrentStock)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetLowStockProductsAsync), GetType(), _logger);
-                throw;
-            }
-        }
-
-        public async Task<List<Product>> GetOverStockProductsAsync()
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
-
-            try
-            {
-                return await context.Products
-                    .Include(p => p.ProductCategory)
-                    .Include(p => p.PrimarySupplier)
-                    .Include(p => p.Unit)
-                    .Where(p => !p.IsDeleted && 
-                               p.MaxStockLevel.HasValue && 
-                               p.CurrentStock >= p.MaxStockLevel.Value)
-                    .OrderByDescending(p => p.CurrentStock)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetOverStockProductsAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -502,113 +439,6 @@ namespace ERPCore2.Services
 
         #endregion
 
-        #region 庫存管理
-
-        public async Task<ServiceResult> UpdateStockAsync(int productId, int newStock)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var product = await GetByIdAsync(productId);
-                if (product == null)
-                {
-                    return ServiceResult.Failure("找不到指定的商品");
-                }
-
-                if (newStock < 0)
-                {
-                    return ServiceResult.Failure("庫存數量不能為負數");
-                }
-
-                product.CurrentStock = newStock;
-                product.UpdatedAt = DateTime.UtcNow;
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateStockAsync), GetType(), _logger, new { ProductId = productId, NewStock = newStock });
-                return ServiceResult.Failure($"更新庫存時發生錯誤: {ex.Message}");
-            }
-        }
-
-        public async Task<ServiceResult> AdjustStockAsync(int productId, int adjustment, string reason)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var product = await GetByIdAsync(productId);
-                if (product == null)
-                {
-                    return ServiceResult.Failure("找不到指定的商品");
-                }
-
-                var newStock = product.CurrentStock + adjustment;
-                if (newStock < 0)
-                {
-                    return ServiceResult.Failure("調整後的庫存數量不能為負數");
-                }
-
-                product.CurrentStock = newStock;
-                product.UpdatedAt = DateTime.UtcNow;
-
-                await context.SaveChangesAsync();
-                
-                _logger?.LogInformation("Stock adjusted for product {ProductId}: {Adjustment} (Reason: {Reason})", 
-                    productId, adjustment, reason);
-                    
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(AdjustStockAsync), GetType(), _logger, new { ProductId = productId, Adjustment = adjustment, Reason = reason });
-                return ServiceResult.Failure($"調整庫存時發生錯誤: {ex.Message}");
-            }
-        }
-
-        public async Task<ServiceResult> SetStockLevelsAsync(int productId, int? minLevel, int? maxLevel)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var product = await GetByIdAsync(productId);
-                if (product == null)
-                {
-                    return ServiceResult.Failure("找不到指定的商品");
-                }
-
-                if (minLevel.HasValue && minLevel.Value < 0)
-                {
-                    return ServiceResult.Failure("最低庫存量不能為負數");
-                }
-
-                if (maxLevel.HasValue && maxLevel.Value < 0)
-                {
-                    return ServiceResult.Failure("最高庫存量不能為負數");
-                }
-
-                if (minLevel.HasValue && maxLevel.HasValue && minLevel.Value > maxLevel.Value)
-                {
-                    return ServiceResult.Failure("最低庫存量不能大於最高庫存量");
-                }
-
-                product.MinStockLevel = minLevel;
-                product.MaxStockLevel = maxLevel;
-                product.UpdatedAt = DateTime.UtcNow;
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetStockLevelsAsync), GetType(), _logger, new { ProductId = productId, MinLevel = minLevel, MaxLevel = maxLevel });
-                return ServiceResult.Failure($"設定庫存警戒值時發生錯誤: {ex.Message}");
-            }
-        }
-
-        #endregion
-
         #region 價格管理
 
         public async Task<ServiceResult> UpdatePricesAsync(int productId, decimal? unitPrice, decimal? costPrice)
@@ -770,11 +600,9 @@ namespace ERPCore2.Services
                 product.Description = string.Empty;
                 product.Specification = string.Empty;
                 product.UnitId = null;
+                product.SizeId = null;
                 product.UnitPrice = null;
                 product.CostPrice = null;
-                product.MinStockLevel = null;
-                product.MaxStockLevel = null;
-                product.CurrentStock = 0;
                 product.IsActive = true;
                 product.ProductCategoryId = null;
                 product.PrimarySupplierId = null;
@@ -817,42 +645,6 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetBasicCompletedFieldsCount), GetType(), _logger, new { ProductId = product?.Id });
-                throw;
-            }
-        }
-
-        public bool IsStockSufficient(Product product, int requiredQuantity)
-        {
-            try
-            {
-                return product.CurrentStock >= requiredQuantity;
-            }
-            catch (Exception ex)
-            {
-                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(IsStockSufficient), GetType(), _logger, new { ProductId = product?.Id, RequiredQuantity = requiredQuantity });
-                throw;
-            }
-        }
-
-        public string GetStockStatus(Product product)
-        {
-            try
-            {
-                if (product.MinStockLevel.HasValue && product.CurrentStock <= product.MinStockLevel.Value)
-                {
-                    return "庫存不足";
-                }
-
-                if (product.MaxStockLevel.HasValue && product.CurrentStock >= product.MaxStockLevel.Value)
-                {
-                    return "庫存過量";
-                }
-
-                return "正常";
-            }
-            catch (Exception ex)
-            {
-                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetStockStatus), GetType(), _logger, new { ProductId = product?.Id });
                 throw;
             }
         }

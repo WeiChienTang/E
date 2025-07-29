@@ -48,15 +48,6 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal? CostPrice { get; set; }
         
-        [Display(Name = "最低庫存量")]
-        public int? MinStockLevel { get; set; }
-        
-        [Display(Name = "最高庫存量")]
-        public int? MaxStockLevel { get; set; }
-        
-        [Display(Name = "現有庫存")]
-        public int CurrentStock { get; set; } = 0;
-        
         [Display(Name = "是否啟用")]
         public bool IsActive { get; set; } = true;
         
