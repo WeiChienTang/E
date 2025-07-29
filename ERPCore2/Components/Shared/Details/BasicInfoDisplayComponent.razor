@@ -3,101 +3,84 @@
 
 @if (Fields?.Any() == true)
 {
-    <div class="card border-0 shadow-sm">
-        @if (!string.IsNullOrEmpty(Title))
-        {
-            <div class="card-header bg-gradient bg-light border-0">
-                <h6 class="mb-0 d-flex align-items-center">
-                    @if (!string.IsNullOrEmpty(IconClass))
-                    {
-                        <i class="@IconClass @IconColor me-2"></i>
-                    }
-                    @Title
-                    @if (ShowFieldCount)
-                    {
-                        <span class="badge bg-secondary ms-auto">@Fields.Count() 個欄位</span>
-                    }
-                </h6>
-            </div>
-        }
-        <div class="card-body p-4">            
-            <div class="row g-4">
-                @foreach (var field in Fields.Where(f => ShouldShowField(f)))
-                {
-                    <div class="col-md-@(field.ColSize ?? DefaultColSize)">
-                        <div class="d-flex align-items-start">
-                            @if (!string.IsNullOrEmpty(field.IconClass))
-                            {
-                                <div class="flex-shrink-0">
-                                    <div class="icon-box @(field.IconBgClass ?? "bg-primary bg-opacity-10") @(field.IconTextClass ?? "text-primary") rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                        <i class="@field.IconClass"></i>
-                                    </div>
+    <div class="card-body p-4">            
+        <div class="row g-4">
+            @foreach (var field in Fields.Where(f => ShouldShowField(f)))
+            {
+                <div class="col-md-@(field.ColSize ?? DefaultColSize)">
+                    <div class="d-flex align-items-start border rounded p-3 h-100">
+                        @if (!string.IsNullOrEmpty(field.IconClass))
+                        {
+                            <div class="flex-shrink-0">
+                                <div class="icon-box @(field.IconBgClass ?? "bg-primary bg-opacity-10") @(field.IconTextClass ?? "text-primary") rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <i class="@field.IconClass"></i>
                                 </div>
-                            }
-                            <div class="@(string.IsNullOrEmpty(field.IconClass) ? "" : "flex-grow-1 ms-3")">
-                                <h6 class="@(field.IsPrimary ? "text-primary" : (field.IsSecondary ? "text-secondary" : "text-dark")) mb-1 @(field.LabelBold ? "fw-bold" : "")">
-                                    @field.Label
-                                    @if (field.IsRequired)
-                                    {
-                                        <span class="text-danger">*</span>
-                                    }
-                                </h6>                                <div class="@GetFieldValueClass(field)">
-                                    @if (field.CustomContent != null)
-                                    {
-                                        @field.CustomContent
-                                    }
-                                    else
-                                    {
-                                        @RenderFieldValue(field)
-                                    }
-                                </div>
-                                @if (!string.IsNullOrEmpty(field.Description))
+                            </div>
+                        }
+                        <div class="@(string.IsNullOrEmpty(field.IconClass) ? "" : "flex-grow-1 ms-3")">
+                            <h6 class="text-primary fw-bold mb-1">
+                                @field.Label
+                                @if (field.IsRequired)
                                 {
-                                    <div class="text-muted small mt-1">
-                                        <i class="fas fa-info-circle me-1"></i>
-                                        @field.Description
-                                    </div>
+                                    <span class="text-danger">*</span>
+                                }
+                            </h6>
+                            <div class="text-dark">
+                                @if (field.CustomContent != null)
+                                {
+                                    @field.CustomContent
+                                }
+                                else
+                                {
+                                    @RenderFieldValue(field)
                                 }
                             </div>
-                        </div>
-                    </div>
-                }
-            </div>
-
-            @* 額外內容區域 *@
-            @if (AdditionalContent != null)
-            {
-                <hr class="my-4">
-                <div class="row">
-                    <div class="col-12">
-                        @AdditionalContent
-                    </div>
-                </div>
-            }
-
-            @* 統計信息 *@
-            @if (ShowStatistics)
-            {
-                <hr class="my-4">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-chart-bar text-info me-2"></i>
-                                <span class="text-muted">統計信息</span>
-                            </div>
-                            <div class="text-end">
-                                <small class="text-muted">
-                                    總欄位數：@Fields.Count() |
-                                    已填入：@Fields.Count(f => !IsFieldEmpty(f)) |
-                                    空值：@Fields.Count(f => IsFieldEmpty(f))
-                                </small>
-                            </div>
+                            @if (!string.IsNullOrEmpty(field.Description))
+                            {
+                                <div class="text-muted small mt-1">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    @field.Description
+                                </div>
+                            }
                         </div>
                     </div>
                 </div>
             }
         </div>
+
+        @* 額外內容區域 *@
+        @if (AdditionalContent != null)
+        {
+            <hr class="my-4">
+            <div class="row">
+                <div class="col-12">
+                    @AdditionalContent
+                </div>
+            </div>
+        }
+
+        @* 統計信息 *@
+        @if (ShowStatistics)
+        {
+            <hr class="my-4">
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-chart-bar text-info me-2"></i>
+                            <span class="text-muted">統計信息</span>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted">
+                                總欄位數：@Fields.Count() |
+                                已填入：@Fields.Count(f => !IsFieldEmpty(f)) |
+                                空值：@Fields.Count(f => IsFieldEmpty(f))
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 }
 else
@@ -120,7 +103,7 @@ else
     // 顯示選項
     [Parameter] public bool ShowFieldCount { get; set; } = false;
     [Parameter] public bool ShowStatistics { get; set; } = false;
-    [Parameter] public int DefaultColSize { get; set; } = 3;
+    [Parameter] public int DefaultColSize { get; set; } = 2;
     [Parameter] public string? EmptyMessage { get; set; }
 
     // 樣式選項
@@ -613,7 +596,8 @@ else
         public string? Unit { get; set; }
         public string? Prefix { get; set; }
         public string? Suffix { get; set; }
-    }    public enum FieldFormat
+    }    
+    public enum FieldFormat
     {
         Text,           // 一般文字
         Currency,       // 貨幣格式 (NT$ 1,234.56)
