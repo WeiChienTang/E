@@ -2,6 +2,7 @@
 @using System.Reflection
 @using System.Web
 @using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Data.Enums
 @typeparam TItem
 
 <div class="table-responsive table-container-hover">
@@ -387,8 +388,27 @@
     {
         if (badgeMap != null && badgeMap.ContainsKey(value))
         {
-            return $"<span class=\"badge {badgeMap[value]}\">{HttpUtility.HtmlEncode(value.ToString() ?? "")}</span>";
-        }          return $"<span class=\"badge bg-secondary\">{HttpUtility.HtmlEncode(value.ToString() ?? "")}</span>";
+            // 使用映射中的值作為顯示文字，而不是原始枚舉值
+            var displayText = badgeMap[value];
+            var cssClass = GetStatusBadgeClass(value);
+            return $"<span class=\"badge {cssClass}\">{HttpUtility.HtmlEncode(displayText)}</span>";
+        }
+        return $"<span class=\"badge bg-secondary\">{HttpUtility.HtmlEncode(value.ToString() ?? "")}</span>";
+    }
+    
+    private string GetStatusBadgeClass(object value)
+    {
+        if (value is EntityStatus status)
+        {
+            return status switch
+            {
+                EntityStatus.Active => "bg-success",
+                EntityStatus.Inactive => "bg-danger",
+                EntityStatus.Deleted => "bg-danger",
+                _ => "bg-secondary"
+            };
+        }
+        return "bg-secondary";
     }
 
     // 分頁相關方法

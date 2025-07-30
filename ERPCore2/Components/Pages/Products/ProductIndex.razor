@@ -166,11 +166,7 @@
                 TableColumnDefinition.Text("產品分類", "ProductCategory.CategoryName"),
                 TableColumnDefinition.Text("單位", "Unit.UnitName"),
                 TableColumnDefinition.Number("單價", nameof(Product.UnitPrice), "N2"),
-                TableColumnDefinition.Status("狀態", nameof(Product.Status), new Dictionary<object, string>
-                {
-                    { EntityStatus.Active, "bg-success" },
-                    { EntityStatus.Inactive, "bg-secondary" }
-                }),
+                GenericIndexPageComponent<Product, IProductService>.GetDefaultStatusColumn("狀態", nameof(Product.Status)),
                 TableColumnDefinition.Date("建立日期", nameof(Product.CreatedAt), "yyyy/MM/dd")
             };
         }

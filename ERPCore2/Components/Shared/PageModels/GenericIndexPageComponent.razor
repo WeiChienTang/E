@@ -6,6 +6,9 @@
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
 
+@using ERPCore2.Data.Enums
+@using ERPCore2.Components.Shared.Forms
+
 @* 設置瀏覽器標題 *@
 <PageTitle>@PageTitle</PageTitle>
 
@@ -189,6 +192,7 @@
     [Parameter] public bool EnableStandardActions { get; set; } = true;
     [Parameter] public bool ShowEditButton { get; set; } = true;
     [Parameter] public bool ShowDeleteButton { get; set; } = true;
+    [Parameter] public bool ShowToggleStatusButton { get; set; } = true;
     [Parameter] public RenderFragment<TEntity>? CustomActionsTemplate { get; set; }
     
     // 事件處理 - 修改為內建導航
@@ -294,7 +298,8 @@
                         
                         if (isSuccessProperty != null)
                         {
-                            var isSuccess = (bool)isSuccessProperty.GetValue(result)!;                            if (isSuccess)
+                            var isSuccess = (bool)isSuccessProperty.GetValue(result)!;                            
+                            if (isSuccess)
                             {
                                 var successMessage = GetDeleteSuccessMessage();
                                 await NotificationService.ShowSuccessAsync(successMessage);
@@ -306,14 +311,72 @@
                                 await NotificationService.ShowErrorAsync($"刪除失敗：{errorMessage}");
                             }
                         }
-                    }                }                else
+                    }                
+                }               
+                else
                 {
                     await NotificationService.ShowErrorAsync("找不到刪除方法");
                 }
-            }            catch (Exception ex)
+            }            
+            catch (Exception ex)
             {
                 await NotificationService.ShowErrorAsync($"刪除時發生錯誤：{ex.Message}");
             }
+        }
+    }
+    
+    /// <summary>
+    /// 通用啟用/停用狀態切換方法
+    /// </summary>
+    public async Task ToggleEntityStatusAsync(TEntity entity)
+    {
+        var displayName = GetEntityDisplayName(entity);
+        var currentStatus = entity.Status;
+        var newStatus = currentStatus == EntityStatus.Active ? EntityStatus.Inactive : EntityStatus.Active;
+        var actionText = newStatus == EntityStatus.Active ? "啟用" : "停用";
+        
+        try
+        {
+            // 使用反射調用服務的 SetStatusAsync 方法
+            var setStatusMethod = Service?.GetType().GetMethod("SetStatusAsync", new[] { typeof(int), typeof(EntityStatus) });
+            if (setStatusMethod != null)
+            {
+                var task = (Task)setStatusMethod.Invoke(Service, new object[] { entity.Id, newStatus })!;
+                await task;
+                
+                // 獲取結果
+                var resultProperty = task.GetType().GetProperty("Result");
+                if (resultProperty != null)
+                {
+                    var result = resultProperty.GetValue(task);
+                    var isSuccessProperty = result?.GetType().GetProperty("IsSuccess");
+                    var errorMessageProperty = result?.GetType().GetProperty("ErrorMessage");
+                    
+                    if (isSuccessProperty != null)
+                    {
+                        var isSuccess = (bool)isSuccessProperty.GetValue(result)!;
+                        if (isSuccess)
+                        {
+                            var successMessage = $"{EntityName}「{displayName}」{actionText}成功";
+                            await NotificationService.ShowSuccessAsync(successMessage);
+                            await Refresh();
+                        }
+                        else
+                        {
+                            var errorMessage = errorMessageProperty?.GetValue(result)?.ToString() ?? $"{actionText}失敗";
+                            await NotificationService.ShowErrorAsync($"{actionText}失敗：{errorMessage}");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync("找不到狀態更新方法");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"{actionText}時發生錯誤：{ex.Message}");
         }
     }
     
@@ -333,6 +396,21 @@
                     <button class="btn btn-outline-warning" @onclick="() => NavigateToEdit(entity)" @onclick:stopPropagation="true" title="編輯">
                         <i class="bi bi-pencil"></i>
                     </button>
+                }
+                @if (ShowToggleStatusButton)
+                {
+                    @if (entity.Status == EntityStatus.Active)
+                    {
+                        <button class="btn btn-outline-secondary" @onclick="@(async () => await ToggleEntityStatusAsync(entity))" @onclick:stopPropagation="true" title="停用">
+                            <i class="bi bi-pause-circle"></i>
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-outline-success" @onclick="@(async () => await ToggleEntityStatusAsync(entity))" @onclick:stopPropagation="true" title="啟用">
+                            <i class="bi bi-play-circle"></i>
+                        </button>
+                    }
                 }
                 @if (ShowDeleteButton)
                 {
@@ -414,6 +492,33 @@
             return string.Format(DeleteConfirmMessage, displayName);
         }
         return $"確定要刪除{EntityName}「{displayName}」嗎？";
+    }
+
+    /// <summary>
+    /// 取得狀態的中文顯示文字
+    /// </summary>
+    public static string GetStatusDisplayText(EntityStatus status)
+    {
+        return status switch
+        {
+            EntityStatus.Active => "啟用",
+            EntityStatus.Inactive => "停用",
+            EntityStatus.Deleted => "已刪除",
+            _ => "未知"
+        };
+    }
+
+    /// <summary>
+    /// 取得預設的狀態列定義（含中文顯示文字）
+    /// </summary>
+    public static TableColumnDefinition GetDefaultStatusColumn(string title = "狀態", string propertyName = "Status")
+    {
+        return TableColumnDefinition.Status(title, propertyName, new Dictionary<object, string>
+        {
+            { EntityStatus.Active, "啟用" },
+            { EntityStatus.Inactive, "停用" },
+            { EntityStatus.Deleted, "已刪除" }
+        });
     }
 
     // ...existing code...
