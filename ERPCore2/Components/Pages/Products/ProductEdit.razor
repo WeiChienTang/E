@@ -284,6 +284,9 @@
                     Value = pc.Id.ToString(), 
                     Text = pc.CategoryName 
                 }).ToList(),
+                // 設定預設值為"半成品"分類，如果找不到則使用第一個可用的分類
+                DefaultValue = productCategories.FirstOrDefault(pc => pc.CategoryName == "半成品")?.Id.ToString() 
+                              ?? productCategories.FirstOrDefault()?.Id.ToString()
             };
 
             var unitField = new FormFieldDefinition
@@ -297,6 +300,9 @@
                     Value = u.Id.ToString(), 
                     Text = u.UnitName 
                 }).ToList(),
+                // 設定預設值為"個"單位，如果找不到則使用第一個可用的單位
+                DefaultValue = units.FirstOrDefault(u => u.UnitName == "個")?.Id.ToString() 
+                              ?? units.FirstOrDefault()?.Id.ToString()
             };
 
             var sizeField = new FormFieldDefinition
@@ -388,20 +394,7 @@
                 // 使用服務的初始化方法設定預設值
                 ProductService.InitializeNewProduct(product);
                 
-                // 設定預設單位為"個"，如果找不到則使用第一個可用的單位
-                var defaultUnit = units.FirstOrDefault(u => u.UnitName == "個") 
-                                 ?? units.FirstOrDefault();
-                if (defaultUnit != null)
-                {
-                    product.UnitId = defaultUnit.Id;
-                }
-                
-                // 設定預設尺寸（可選，如果需要預設值的話）
-                // var defaultSize = sizes.FirstOrDefault();
-                // if (defaultSize != null)
-                // {
-                //     product.SizeId = defaultSize.Id;
-                // }
+                // 注意：產品分類和單位的預設值現在由 GenericFormComponent 通過 DefaultValue 自動處理
                 
                 productSuppliers.Clear();
                 return product;

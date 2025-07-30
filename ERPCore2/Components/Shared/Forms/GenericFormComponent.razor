@@ -162,9 +162,43 @@
                     });
                 }
             }
+            
+            // 處理欄位的預設值
+            foreach (var field in FieldDefinitions)
+            {
+                if (field.DefaultValue != null)
+                {
+                    var currentValue = GetPropertyValue(Model, field.PropertyName);
+                    
+                    // 只有當屬性值為 null 或是預設值時才設定預設值
+                    if (ShouldApplyDefaultValue(currentValue, field))
+                    {
+                        SetPropertyValue(Model, field.PropertyName, field.DefaultValue);
+                    }
+                }
+            }
         }
         
         base.OnParametersSet();
+    }
+
+    /// <summary>
+    /// 判斷是否應該應用預設值
+    /// </summary>
+    private bool ShouldApplyDefaultValue(object? currentValue, FormFieldDefinition field)
+    {
+        // 如果當前值是 null，則應用預設值
+        if (currentValue == null)
+            return true;
+            
+        // 對於字串類型，如果是空字串也應用預設值
+        if (currentValue is string str && string.IsNullOrEmpty(str))
+            return true;
+            
+        // 對於數值類型，如果是預設值（如 0）也可以應用預設值（這部分可以根據需求調整）
+        // 這裡我們保守一點，只有當值確實是 null 或空字串時才應用預設值
+        
+        return false;
     }
 
     // 按照 FieldDefinitions 中的欄位順序來排列區段
