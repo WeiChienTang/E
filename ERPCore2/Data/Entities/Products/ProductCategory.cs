@@ -26,14 +26,7 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "描述")]
         public string? Description { get; set; }
         
-        // Foreign Keys (Self-referencing for hierarchy)
-        [Display(Name = "父分類")]
-        [ForeignKey(nameof(ParentCategory))]
-        public int? ParentCategoryId { get; set; }
-        
         // Navigation Properties
-        public ProductCategory? ParentCategory { get; set; }
-        public ICollection<ProductCategory> ChildCategories { get; set; } = new List<ProductCategory>();
         public ICollection<Product> Products { get; set; } = new List<Product>();
     }
 }

@@ -133,19 +133,6 @@
                 },
                 new GenericDetailPageComponent<ProductCategory, IProductCategoryService>.TabSection
                 {
-                    Id = "hierarchy",
-                    Title = "階層關係",
-                    Content = @<div>
-                        <BasicInfoDisplayComponent 
-                            Title="分類階層關係"
-                            IconClass="fas fa-share-alt"
-                            IconColor="text-info"
-                            Fields="@GetProductCategoryHierarchyFields()"
-                            ShowFieldCount="false" />
-                    </div>
-                },
-                new GenericDetailPageComponent<ProductCategory, IProductCategoryService>.TabSection
-                {
                     Id = "products",
                     Title = $"關聯商品 ({productCategory?.Products?.Count ?? 0})",
                     Content = @<div>
@@ -264,68 +251,6 @@
             _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
                 nameof(GetProductCategoryBasicFields),
-                typeof(ProductCategoryDetail),
-                additionalData: new { ProductCategoryId }
-            );
-            throw;
-        }
-    }
-
-    // 取得商品分類階層關係欄位
-    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetProductCategoryHierarchyFields()
-    {
-        try
-        {
-            return new List<BasicInfoDisplayComponent.BasicInfoField>
-            {
-                new()
-                {
-                    Label = "父分類",
-                    Value = productCategory?.ParentCategory?.CategoryName,
-                    EmptyText = "無（頂層分類）",
-                    IconClass = "fas fa-level-up-alt",
-                    IconBgClass = "bg-warning bg-opacity-10",
-                    IconTextClass = "text-warning",
-                    ColSize = 6
-                },
-                new()
-                {
-                    Label = "子分類數量",
-                    Value = (productCategory?.ChildCategories?.Count ?? 0).ToString(),
-                    IconClass = "fas fa-level-down-alt",
-                    IconBgClass = "bg-success bg-opacity-10",
-                    IconTextClass = "text-success",
-                    ColSize = 6
-                },
-                new()
-                {
-                    Label = "關聯商品數量",
-                    Value = (productCategory?.Products?.Count ?? 0).ToString(),
-                    IconClass = "fas fa-cube",
-                    IconBgClass = "bg-info bg-opacity-10",
-                    IconTextClass = "text-info",
-                    ColSize = 6
-                },
-                new()
-                {
-                    Label = "子分類清單",
-                    Value = productCategory?.ChildCategories?.Any() == true 
-                        ? string.Join("、", productCategory.ChildCategories.Select(c => c.CategoryName))
-                        : null,
-                    EmptyText = "無子分類",
-                    VisibilityCondition = () => productCategory?.ChildCategories?.Any() == true,
-                    IconClass = "fas fa-list",
-                    IconBgClass = "bg-secondary bg-opacity-10",
-                    IconTextClass = "text-secondary",
-                    ColSize = 12
-                }
-            };
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex, 
-                nameof(GetProductCategoryHierarchyFields),
                 typeof(ProductCategoryDetail),
                 additionalData: new { ProductCategoryId }
             );

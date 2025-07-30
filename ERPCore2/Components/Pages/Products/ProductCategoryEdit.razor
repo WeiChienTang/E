@@ -34,19 +34,19 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
-    private List<SelectOption> parentCategoryOptions = new();
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         try
         {
             InitializeBreadcrumbs();
-            await LoadParentCategoryOptions();
             InitializeFormFields();
+            return Task.CompletedTask;
         }
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), NotificationService);
+            return Task.CompletedTask;
         }
     }
 
@@ -66,72 +66,6 @@
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType(), NotificationService);
         }
-    }
-
-    private async Task LoadParentCategoryOptions()
-    {
-        try
-        {
-            var allCategories = await ProductCategoryService.GetAllAsync();
-            
-            // 如果是編輯模式，排除自己和自己的子分類（避免循環參考）
-            if (Id.HasValue)
-            {
-                var currentCategory = allCategories.FirstOrDefault(c => c.Id == Id.Value);
-                if (currentCategory != null)
-                {
-                    // 取得所有子分類ID（遞歸）
-                    var excludeIds = GetAllChildCategoryIds(allCategories, Id.Value);
-                    excludeIds.Add(Id.Value); // 排除自己
-                    
-                    allCategories = allCategories.Where(c => !excludeIds.Contains(c.Id)).ToList();
-                }
-            }
-            
-            parentCategoryOptions = allCategories
-                .Select(c => new SelectOption 
-                { 
-                    Text = GetCategoryDisplayName(c, allCategories), 
-                    Value = c.Id.ToString() 
-                })
-                .ToList();
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, "載入父分類選項時發生錯誤", GetType(), NotificationService);
-        }
-    }
-
-    // 遞歸取得所有子分類ID
-    private List<int> GetAllChildCategoryIds(List<ProductCategory> allCategories, int parentId)
-    {
-        var childIds = new List<int>();
-        var directChildren = allCategories.Where(c => c.ParentCategoryId == parentId).ToList();
-        
-        foreach (var child in directChildren)
-        {
-            childIds.Add(child.Id);
-            childIds.AddRange(GetAllChildCategoryIds(allCategories, child.Id));
-        }
-        
-        return childIds;
-    }
-
-    // 建立階層顯示名稱
-    private string GetCategoryDisplayName(ProductCategory category, List<ProductCategory> allCategories)
-    {
-        var path = new List<string>();
-        var current = category;
-        
-        while (current != null)
-        {
-            path.Insert(0, current.CategoryName);
-            current = current.ParentCategoryId.HasValue 
-                ? allCategories.FirstOrDefault(c => c.Id == current.ParentCategoryId.Value)
-                : null;
-        }
-        
-        return string.Join(" > ", path);
     }
 
     private void InitializeFormFields()
@@ -162,16 +96,6 @@
                     HelpText = "顯示用的分類名稱，最多100個字元"
                 },
                 
-                // 階層設定區段
-                new()
-                {
-                    PropertyName = nameof(ProductCategory.ParentCategoryId),
-                    Label = "父分類",
-                    FieldType = FormFieldType.Select,
-                    Options = parentCategoryOptions,
-                    Placeholder = "請選擇父分類（可選）",
-                },
-                
                 // 詳細資訊區段
                 new()
                 {
@@ -189,7 +113,6 @@
             {
                 { nameof(ProductCategory.CategoryCode), "基本資訊" },
                 { nameof(ProductCategory.CategoryName), "基本資訊" },
-                { nameof(ProductCategory.ParentCategoryId), "階層設定" },
                 { nameof(ProductCategory.Description), "詳細資訊" }
             };
         }
@@ -223,8 +146,7 @@
                 {
                     CategoryName = string.Empty,
                     CategoryCode = await GenerateCategoryCodeAsync(),
-                    Description = null,
-                    ParentCategoryId = null
+                    Description = null
                 };
             }
 

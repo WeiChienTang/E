@@ -30,29 +30,9 @@ namespace ERPCore2.Services
         Task<ProductCategory?> GetByCategoryCodeAsync(string categoryCode);
         
         /// <summary>
-        /// 取得頂層分類（無父分類）
-        /// </summary>
-        Task<List<ProductCategory>> GetTopLevelCategoriesAsync();
-        
-        /// <summary>
-        /// 取得指定分類的子分類
-        /// </summary>
-        Task<List<ProductCategory>> GetChildCategoriesAsync(int parentCategoryId);
-        
-        /// <summary>
-        /// 取得分類階層樹狀結構
-        /// </summary>
-        Task<List<ProductCategory>> GetCategoryTreeAsync();
-        
-        /// <summary>
-        /// 檢查是否可以刪除分類（檢查是否有商品或子分類使用此分類）
+        /// 檢查是否可以刪除分類（檢查是否有商品使用此分類）
         /// </summary>
         Task<bool> CanDeleteCategoryAsync(int categoryId);
-        
-        /// <summary>
-        /// 檢查是否可以設定為父分類（避免循環參考）
-        /// </summary>
-        Task<bool> CanSetAsParentAsync(int categoryId, int parentCategoryId);
         
         #endregion
     }

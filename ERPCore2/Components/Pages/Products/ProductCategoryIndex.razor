@@ -71,23 +71,11 @@
     {
         try
         {
-            // 載入所有分類來建立父分類選項
-            var allCategories = await ProductCategoryService.GetAllAsync();
-            var parentCategoryOptions = allCategories
-                .Where(c => c.ParentCategoryId == null) // 只顯示頂層分類作為父分類選項
-                .Select(c => new SelectOption 
-                { 
-                    Text = c.CategoryName, 
-                    Value = c.Id.ToString() 
-                })
-                .ToList();
-
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("CategoryName", "分類名稱", "輸入分類名稱搜尋")
                 .AddText("CategoryCode", "分類代碼", "輸入分類代碼搜尋")
                 .AddText("Description", "描述", "輸入描述搜尋")
-                .AddSelect("ParentCategoryId", "父分類", parentCategoryOptions)
                 .Build();
         }
         catch (Exception ex)
@@ -109,14 +97,6 @@
             {
                 TableColumnDefinition.Text("分類代碼", nameof(ProductCategory.CategoryCode)),
                 TableColumnDefinition.Text("分類名稱", nameof(ProductCategory.CategoryName)),                
-                TableColumnDefinition.Template("父分類", item => {
-                    var category = (ProductCategory)item;
-                    return @<span>@(category.ParentCategory?.CategoryName ?? "-")</span>;
-                }),
-                TableColumnDefinition.Template("子分類數量", item => {
-                    var category = (ProductCategory)item;
-                    return @<span class="badge bg-info">@(category.ChildCategories?.Count ?? 0)</span>;
-                }),
                 TableColumnDefinition.Template("商品數量", item => {
                     var category = (ProductCategory)item;
                     return @<span class="badge bg-primary">@(category.Products?.Count ?? 0)</span>;
@@ -183,13 +163,6 @@
                 query = query.Where(c => 
                     !string.IsNullOrEmpty(c.Description) && 
                     c.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 父分類篩選
-            var parentCategoryFilter = searchModel.GetFilterValue("ParentCategoryId")?.ToString();
-            if (!string.IsNullOrWhiteSpace(parentCategoryFilter) && int.TryParse(parentCategoryFilter, out var parentId))
-            {
-                query = query.Where(c => c.ParentCategoryId == parentId);
             }
 
             return query.OrderBy(c => c.CategoryName);

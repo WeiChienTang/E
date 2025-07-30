@@ -36,7 +36,6 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductCategories
-                    .Include(pc => pc.ParentCategory)
                     .Where(pc => !pc.IsDeleted)
                     .OrderBy(pc => pc.CategoryName)
                     .ToListAsync();
@@ -54,8 +53,6 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductCategories
-                    .Include(pc => pc.ParentCategory)
-                    .Include(pc => pc.ChildCategories.Where(cc => !cc.IsDeleted))
                     .Include(pc => pc.Products.Where(p => !p.IsDeleted))
                     .FirstOrDefaultAsync(pc => pc.Id == id && !pc.IsDeleted);
             }
@@ -75,7 +72,6 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductCategories
-                    .Include(pc => pc.ParentCategory)
                     .Where(pc => !pc.IsDeleted &&
                                (pc.CategoryName.Contains(searchTerm) ||
                                 (pc.CategoryCode != null && pc.CategoryCode.Contains(searchTerm)) ||
@@ -118,23 +114,6 @@ namespace ERPCore2.Services
                     if (isDuplicate)
                     {
                         errors.Add("分類代碼已存在");
-                    }
-                }
-
-                // 驗證父分類設定（避免循環參考）
-                if (entity.ParentCategoryId.HasValue)
-                {
-                    if (entity.ParentCategoryId.Value == entity.Id)
-                    {
-                        errors.Add("不能設定自己為父分類");
-                    }
-                    else if (entity.Id != 0) // 只有更新時才檢查
-                    {
-                        var canSetAsParent = await CanSetAsParentAsync(entity.Id, entity.ParentCategoryId.Value);
-                        if (!canSetAsParent)
-                        {
-                            errors.Add("不能設定此分類為父分類，會造成循環參考");
-                        }
                     }
                 }
 
@@ -240,7 +219,6 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductCategories
-                    .Include(pc => pc.ParentCategory)
                     .FirstOrDefaultAsync(pc => pc.CategoryName == categoryName && !pc.IsDeleted);
             }
             catch (Exception ex)
@@ -258,7 +236,6 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductCategories
-                    .Include(pc => pc.ParentCategory)
                     .FirstOrDefaultAsync(pc => pc.CategoryCode == categoryCode && !pc.IsDeleted);
             }
             catch (Exception ex)
@@ -267,61 +244,6 @@ namespace ERPCore2.Services
                     CategoryCode = categoryCode
                 });
                 return null;
-            }
-        }
-
-        public async Task<List<ProductCategory>> GetTopLevelCategoriesAsync()
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductCategories
-                    .Where(pc => pc.ParentCategoryId == null && !pc.IsDeleted)
-                    .OrderBy(pc => pc.CategoryName)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetTopLevelCategoriesAsync), GetType(), _logger);
-                return new List<ProductCategory>();
-            }
-        }
-
-        public async Task<List<ProductCategory>> GetChildCategoriesAsync(int parentCategoryId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductCategories
-                    .Where(pc => pc.ParentCategoryId == parentCategoryId && !pc.IsDeleted)
-                    .OrderBy(pc => pc.CategoryName)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetChildCategoriesAsync), GetType(), _logger, new { 
-                    ParentCategoryId = parentCategoryId
-                });
-                return new List<ProductCategory>();
-            }
-        }
-
-        public async Task<List<ProductCategory>> GetCategoryTreeAsync()
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductCategories
-                    .Include(pc => pc.ParentCategory)
-                    .Include(pc => pc.ChildCategories.Where(cc => !cc.IsDeleted))
-                    .Where(pc => !pc.IsDeleted)
-                    .OrderBy(pc => pc.CategoryName)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCategoryTreeAsync), GetType(), _logger);
-                return new List<ProductCategory>();
             }
         }
 
@@ -334,49 +256,12 @@ namespace ERPCore2.Services
                 var hasProducts = await context.Products
                     .AnyAsync(p => p.ProductCategoryId == categoryId && !p.IsDeleted);
 
-                if (hasProducts)
-                    return false;
-
-                // 檢查是否有子分類
-                var hasChildCategories = await context.ProductCategories
-                    .AnyAsync(pc => pc.ParentCategoryId == categoryId && !pc.IsDeleted);
-
-                return !hasChildCategories;
+                return !hasProducts;
             }
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteCategoryAsync), GetType(), _logger, new { 
                     CategoryId = categoryId
-                });
-                return false;
-            }
-        }
-
-        public async Task<bool> CanSetAsParentAsync(int categoryId, int parentCategoryId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                // 檢查是否會造成循環參考
-                var currentCategory = await context.ProductCategories.FindAsync(parentCategoryId);
-                
-                while (currentCategory?.ParentCategoryId != null)
-                {
-                    if (currentCategory.ParentCategoryId == categoryId)
-                    {
-                        return false; // 會造成循環參考
-                    }
-                    
-                    currentCategory = await context.ProductCategories.FindAsync(currentCategory.ParentCategoryId);
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanSetAsParentAsync), GetType(), _logger, new { 
-                    CategoryId = categoryId,
-                    ParentCategoryId = parentCategoryId
                 });
                 return false;
             }
