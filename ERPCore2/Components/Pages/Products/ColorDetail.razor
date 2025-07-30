@@ -186,9 +186,13 @@
                 new()
                 {
                     Label = "狀態",
-                    Type = BasicInfoDisplayComponent.FieldType.Status,
-                    Value = color?.Status,
-                    IconClass = "fas fa-flag",
+                    CustomContent = @<div>
+                        @if (color?.Status != null)
+                        {
+                            <StatusBadgeComponent Status="@color.Status" />
+                        }
+                    </div>,
+                    IconClass = "fas fa-toggle-on",
                     IconBgClass = "bg-success bg-opacity-10",
                     IconTextClass = "text-success"
                 },

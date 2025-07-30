@@ -366,21 +366,6 @@
                 },
                 new()
                 {
-                    Label = "啟用狀態",
-                    CustomContent = @<div>
-                        @if (product != null)
-                        {
-                            <span class="badge @(product.Status == EntityStatus.Active ? "bg-success" : "bg-secondary")">
-                                @(product.Status == EntityStatus.Active ? "啟用" : "停用")
-                            </span>
-                        }
-                    </div>,
-                    IconClass = "fas fa-power-off",
-                    IconBgClass = "bg-info bg-opacity-10",
-                    IconTextClass = "text-info"
-                },
-                new()
-                {
                     Label = "商品描述",
                     Value = product?.Description,
                     Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,

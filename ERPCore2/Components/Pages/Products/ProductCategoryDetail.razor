@@ -236,6 +236,19 @@
                 },
                 new()
                 {
+                    Label = "狀態",
+                    CustomContent = @<div>
+                        @if (productCategory?.Status != null)
+                        {
+                            <StatusBadgeComponent Status="@productCategory.Status" />
+                        }
+                    </div>,
+                    IconClass = "fas fa-toggle-on",
+                    IconBgClass = "bg-success bg-opacity-10",
+                    IconTextClass = "text-success"
+                },
+                new()
+                {
                     Label = "描述",
                     Value = productCategory?.Description,
                     VisibilityCondition = () => !string.IsNullOrEmpty(productCategory?.Description),

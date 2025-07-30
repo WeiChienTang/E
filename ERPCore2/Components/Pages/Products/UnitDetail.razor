@@ -273,11 +273,16 @@
                 new()
                 {
                     Label = "狀態",
-                    Value = unit?.IsActive == true ? "啟用" : "停用",
+                    CustomContent = @<div>
+                        @if (unit?.Status != null)
+                        {
+                            <StatusBadgeComponent Status="@unit.Status" />
+                        }
+                    </div>,
                     IconClass = "fas fa-toggle-on",
                     IconBgClass = "bg-success bg-opacity-10",
                     IconTextClass = "text-success"
-                }
+                },
             };
         }
         catch (Exception ex)

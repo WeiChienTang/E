@@ -209,17 +209,9 @@
                 {
                     Label = "狀態",
                     CustomContent = @<div>
-                        @if (size?.Status == EntityStatus.Active)
+                        @if (size?.Status != null)
                         {
-                            <span class="badge bg-success">
-                                <i class="fas fa-check me-1"></i>啟用
-                            </span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-secondary">
-                                <i class="fas fa-times me-1"></i>停用
-                            </span>
+                            <StatusBadgeComponent Status="@size.Status" />
                         }
                     </div>,
                     IconClass = "fas fa-toggle-on",
