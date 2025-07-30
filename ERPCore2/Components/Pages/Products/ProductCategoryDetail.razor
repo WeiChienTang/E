@@ -136,47 +136,40 @@
                     Id = "products",
                     Title = $"關聯商品 ({productCategory?.Products?.Count ?? 0})",
                     Content = @<div>
-                        @if (productCategory?.Products?.Any() == true)
-                        {
-                            <div class="table-responsive">
-                                <table class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>商品代碼</th>
-                                            <th>商品名稱</th>
-                                            <th>規格</th>
-                                            <th>狀態</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var product in productCategory.Products.Take(10))
-                                        {
-                                            <tr>
-                                                <td>@product.ProductCode</td>
-                                                <td>@product.ProductName</td>
-                                                <td>@(product.Specification ?? "-")</td>
-                                                <td>
-                                                    <span class="badge @(product.Status == EntityStatus.Active ? "bg-success" : "bg-secondary")">
-                                                        @(product.Status == EntityStatus.Active ? "啟用" : "停用")
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                                @if (productCategory.Products.Count > 10)
-                                {
-                                    <p class="text-muted">只顯示前 10 筆商品，共 @productCategory.Products.Count 筆</p>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle me-2"></i>
-                                此分類目前沒有關聯的商品
-                            </div>
-                        }
+                        <RelationListComponent TRelationEntity="Product" 
+                                             TTargetEntity="Product"
+                                             RelationItems="@productCategory?.Products"
+                                             OnItemClick="@OnProductCardClick"
+                                             GetTargetId="@(p => p.Id)"
+                                             GetDisplayName="@(p => p.ProductName)"
+                                             EmptyMessage="此分類目前沒有關聯的商品"
+                                             EmptyIcon="fas fa-box-open">
+                            <CardTemplate Context="product">
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <div class="card h-100 relation-card" style="cursor: pointer;">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="card-title mb-1 text-truncate" title="@product.ProductName">
+                                                        <i class="fas fa-box me-1"></i>@product.ProductName
+                                                    </h6>
+                                                    <small class="text-muted">@product.ProductCode</small>
+                                                </div>
+                                                <span class="badge @(product.Status == EntityStatus.Active ? "bg-success" : "bg-secondary")">
+                                                    @(product.Status == EntityStatus.Active ? "啟用" : "停用")
+                                                </span>
+                                            </div>
+                                            @if (!string.IsNullOrEmpty(product.Specification))
+                                            {
+                                                <p class="card-text text-muted small mb-0">
+                                                    <i class="fas fa-info-circle me-1"></i>@product.Specification
+                                                </p>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardTemplate>
+                        </RelationListComponent>
                     </div>
                 },
                 new GenericDetailPageComponent<ProductCategory, IProductCategoryService>.TabSection
@@ -205,6 +198,26 @@
                 additionalData: new { ProductCategoryId }
             );
             throw;
+        }
+    }
+
+    // 處理商品點選事件
+    private async Task OnProductCardClick(int productId)
+    {
+        try
+        {
+            // 可以導航到商品詳細頁面或執行其他操作
+            // NavigationManager.NavigateTo($"/products/detail/{productId}");
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(OnProductCardClick),
+                typeof(ProductCategoryDetail),
+                additionalData: new { ProductCategoryId, productId }
+            );
         }
     }
 
@@ -255,6 +268,16 @@
                     IconClass = "fas fa-align-left",
                     IconBgClass = "bg-info bg-opacity-10",
                     IconTextClass = "text-info",
+                    ColSize = 12
+                },
+                new()
+                {
+                    Label = "備註",
+                    Value = productCategory?.Remarks,
+                    VisibilityCondition = () => !string.IsNullOrEmpty(productCategory?.Remarks),
+                    IconClass = "fas fa-sticky-note",
+                    IconBgClass = "bg-warning bg-opacity-10",
+                    IconTextClass = "text-warning",
                     ColSize = 12
                 }
             };

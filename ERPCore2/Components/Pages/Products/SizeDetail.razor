@@ -228,7 +228,19 @@
                     IconTextClass = "text-warning",
                     ColSize = 12,
                     VisibilityCondition = () => !string.IsNullOrEmpty(size?.Description)
-                }        
+                },        
+                new()
+                {
+                    Label = "備註",
+                    Value = size?.Remarks,
+                    IsPrimary = false,
+                    EmptyText = "無備註",
+                    IconClass = "fas fa-info-circle",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    ColSize = 12,
+                    IconTextClass = "text-secondary",
+                    VisibilityCondition = () => !string.IsNullOrEmpty(size?.Remarks)
+                }
             };
         }
         catch (Exception ex)

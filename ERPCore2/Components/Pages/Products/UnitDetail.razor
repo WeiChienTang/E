@@ -266,6 +266,18 @@
                     IconBgClass = "bg-success bg-opacity-10",
                     IconTextClass = "text-success"
                 },
+                new()
+                {
+                    Label = "備註",
+                    Value = unit?.Remarks,
+                    IsPrimary = false,
+                    EmptyText = "無備註",
+                    IconClass = "fas fa-info-circle",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    ColSize = 12,
+                    IconTextClass = "text-secondary",
+                    VisibilityCondition = () => !string.IsNullOrEmpty(unit?.Remarks)
+                }
             };
         }
         catch (Exception ex)

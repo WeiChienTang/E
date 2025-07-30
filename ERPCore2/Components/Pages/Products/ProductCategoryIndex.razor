@@ -101,8 +101,8 @@
                     var category = (ProductCategory)item;
                     return @<span class="badge bg-primary">@(category.Products?.Count ?? 0)</span>;
                 }),
-                TableColumnDefinition.Text("描述", nameof(ProductCategory.Description))
-                // 狀態和建立日期欄位會由 GenericIndexPageComponent 自動添加
+                TableColumnDefinition.Text("描述", nameof(ProductCategory.Description)),
+                TableColumnDefinition.Text("備註", nameof(ProductCategory.Remarks))
             };
         }
         catch (Exception ex)

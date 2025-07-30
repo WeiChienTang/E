@@ -151,8 +151,8 @@
                 TableColumnDefinition.Text("尺寸", "Size.SizeName"),
                 TableColumnDefinition.Text("產品分類", "ProductCategory.CategoryName"),
                 TableColumnDefinition.Text("單位", "Unit.UnitName"),
-                TableColumnDefinition.Number("單價", nameof(Product.UnitPrice), "N2")
-                // 狀態和建立日期欄位會由 GenericIndexPageComponent 自動添加
+                TableColumnDefinition.Number("單價", nameof(Product.UnitPrice), "N2"),
+                TableColumnDefinition.Text("備註", nameof(Product.Remarks))
             };
         }
         catch (Exception ex)
