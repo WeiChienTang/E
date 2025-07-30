@@ -28,7 +28,6 @@
                          SaveFailureMessage="天氣儲存失敗"
                          RequiredPermission="@(Id.HasValue ? "Weather.Update" : "Weather.Create")" />
 
-
 @code {
     [Parameter] public int? Id { get; set; }
     
@@ -74,6 +73,15 @@
             {
                 new()
                 {
+                    PropertyName = nameof(Weather.Code),
+                    Label = "天氣代碼",
+                    FieldType = FormFieldType.Text,
+                    IsRequired = true,
+                    Placeholder = "請輸入天氣代碼",
+                    MaxLength = 20,   
+                },
+                new()
+                {
                     PropertyName = nameof(Weather.Name),
                     Label = "名稱",
                     FieldType = FormFieldType.Text,
@@ -83,23 +91,11 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(Weather.Status),
-                    Label = "狀態",
-                    FieldType = FormFieldType.Select,
-                    Options = new List<SelectOption>
-                    {
-                        new() { Text = "啟用", Value = "Active" },
-                        new() { Text = "停用", Value = "Inactive" }
-                    },
-                    
-                },
-                new()
-                {
                     PropertyName = nameof(Weather.Description),
                     Label = "描述",
                     FieldType = FormFieldType.TextArea,
                     Placeholder = "請輸入天氣描述",
-                    Rows = 3,
+                    
                 },
                 new()
                 {
@@ -107,16 +103,16 @@
                     Label = "備註",
                     FieldType = FormFieldType.TextArea,
                     Placeholder = "請輸入備註",
-                    Rows = 2,
+                    
                 }
             };
 
             formSections = new Dictionary<string, string>
             {
+                { nameof(Weather.Code), "基本資訊" },
                 { nameof(Weather.Name), "基本資訊" },
-                { nameof(Weather.Status), "設定" },
-                { nameof(Weather.Description), "詳細資訊" },
-                { nameof(Weather.Remarks), "額外資訊" }
+                { nameof(Weather.Description), "詳細說明與其他資訊" },
+                { nameof(Weather.Remarks), "詳細說明與其他資訊" }
             };
         }
         catch (Exception ex)

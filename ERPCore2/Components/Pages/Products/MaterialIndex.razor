@@ -92,28 +92,11 @@
     {
         try
         {
-            // 準備狀態選項
-            var statusOptions = new List<SelectOption>
-            {
-                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-            };
-
-            // 準備環保選項
-            var ecoFriendlyOptions = new List<SelectOption>
-            {
-                new() { Text = "是", Value = "true" },
-                new() { Text = "否", Value = "false" }
-            };
-
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("Name", "材質名稱", "輸入材質名稱搜尋")
                 .AddText("Code", "材質代碼", "輸入材質代碼搜尋")
-                .AddText("Category", "材質類別", "輸入材質類別搜尋")
                 .AddText("Description", "描述", "輸入描述搜尋")
-                .AddSelect("Status", "狀態", statusOptions)
-                .AddSelect("IsEcoFriendly", "環保材質", ecoFriendlyOptions)
                 .Build();
         }
         catch (Exception ex)
@@ -134,24 +117,7 @@
             {
                 TableColumnDefinition.Text("材質代碼", nameof(Material.Code)),
                 TableColumnDefinition.Text("材質名稱", nameof(Material.Name)),
-                TableColumnDefinition.Text("類別", nameof(Material.Category)),
                 TableColumnDefinition.Text("描述", nameof(Material.Description)),
-                TableColumnDefinition.Template("密度", item => 
-                {
-                    var material = (Material)item;
-                    return @<span>@(material.Density?.ToString("0.00") + " g/cm³" ?? "-")</span>;
-                }),
-                TableColumnDefinition.Template("環保", item => 
-                {
-                    var material = (Material)item;
-                    return @<span>@(material.IsEcoFriendly ? "是" : "否")</span>;
-                }),
-                TableColumnDefinition.Status("狀態", nameof(Material.Status), new Dictionary<object, string>
-                {
-                    { EntityStatus.Active, "bg-success" },
-                    { EntityStatus.Inactive, "bg-secondary" }
-                }),
-                TableColumnDefinition.Date("建立日期", nameof(Material.CreatedAt), "yyyy/MM/dd")
             };
         }
         catch (Exception ex)
@@ -169,14 +135,6 @@
     {
         try
         {
-            // 材質名稱篩選
-            var nameFilter = searchModel.GetFilterValue("Name")?.ToString();
-            if (!string.IsNullOrWhiteSpace(nameFilter))
-            {
-                query = query.Where(m => 
-                    m.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
             // 材質代碼篩選
             var codeFilter = searchModel.GetFilterValue("Code")?.ToString();
             if (!string.IsNullOrWhiteSpace(codeFilter))
@@ -185,13 +143,12 @@
                     m.Code.Contains(codeFilter, StringComparison.OrdinalIgnoreCase));
             }
 
-            // 材質類別篩選
-            var categoryFilter = searchModel.GetFilterValue("Category")?.ToString();
-            if (!string.IsNullOrWhiteSpace(categoryFilter))
+            // 材質名稱篩選
+            var nameFilter = searchModel.GetFilterValue("Name")?.ToString();
+            if (!string.IsNullOrWhiteSpace(nameFilter))
             {
                 query = query.Where(m => 
-                    !string.IsNullOrEmpty(m.Category) && 
-                    m.Category.Contains(categoryFilter, StringComparison.OrdinalIgnoreCase));
+                    m.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 描述篩選
@@ -201,20 +158,6 @@
                 query = query.Where(m => 
                     !string.IsNullOrEmpty(m.Description) && 
                     m.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 狀態篩選
-            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
-            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
-            {
-                query = query.Where(m => m.Status == status);
-            }
-
-            // 環保材質篩選
-            var ecoFriendlyFilter = searchModel.GetFilterValue("IsEcoFriendly")?.ToString();
-            if (!string.IsNullOrWhiteSpace(ecoFriendlyFilter) && bool.TryParse(ecoFriendlyFilter, out var isEcoFriendly))
-            {
-                query = query.Where(m => m.IsEcoFriendly == isEcoFriendly);
             }
 
             return query.OrderBy(m => m.Code);

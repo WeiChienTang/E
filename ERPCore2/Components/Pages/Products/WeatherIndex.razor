@@ -82,6 +82,7 @@
         {
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("Code", "天氣代碼", "輸入天氣代碼搜尋")
                 .AddText("Name", "天氣名稱", "輸入天氣名稱搜尋")
                 .AddText("Description", "描述", "輸入描述搜尋")
                 .Build();
@@ -104,6 +105,7 @@
         {
             columnDefinitions = new List<TableColumnDefinition>
             {
+                TableColumnDefinition.Text("天氣代碼", nameof(Weather.Code)),
                 TableColumnDefinition.Text("天氣名稱", nameof(Weather.Name)),
                 TableColumnDefinition.Text("描述", nameof(Weather.Description)),
             };

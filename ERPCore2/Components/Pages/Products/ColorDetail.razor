@@ -166,15 +166,6 @@
             {
                 new()
                 {
-                    Label = "顏色名稱",
-                    Value = color?.Name,
-                    ValueBold = true,
-                    IconClass = "fas fa-palette",
-                    IconBgClass = "bg-info bg-opacity-10",
-                    IconTextClass = "text-info"
-                },
-                new()
-                {
                     Label = "顏色代碼",
                     Value = color?.Code,
                     IsPrimary = true,
@@ -182,6 +173,15 @@
                     IconClass = "fas fa-barcode",
                     IconBgClass = "bg-primary bg-opacity-10",
                     IconTextClass = "text-primary"
+                },
+                new()
+                {
+                    Label = "顏色名稱",
+                    Value = color?.Name,
+                    ValueBold = true,
+                    IconClass = "fas fa-palette",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info"
                 },
                 new()
                 {
