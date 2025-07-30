@@ -255,23 +255,6 @@
                 },
                 new()
                 {
-                    Label = "單位符號",
-                    Value = unit?.Symbol,
-                    IconClass = "fas fa-font",
-                    IconBgClass = "bg-warning bg-opacity-10",
-                    IconTextClass = "text-warning",
-                    EmptyText = "未設定"
-                },
-                new()
-                {
-                    Label = "基本單位",
-                    Value = unit?.IsBaseUnit == true ? "是" : "否",
-                    IconClass = "fas fa-star",
-                    IconBgClass = "bg-warning bg-opacity-10",
-                    IconTextClass = "text-warning"
-                },
-                new()
-                {
                     Label = "狀態",
                     CustomContent = @<div>
                         @if (unit?.Status != null)

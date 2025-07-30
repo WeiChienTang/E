@@ -102,10 +102,18 @@
                     PropertyName = nameof(ProductCategory.Description),
                     Label = "描述",
                     FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入分類描述",
-                    
+                    Placeholder = "請輸入分類描述",                    
                     MaxLength = 200,
                     HelpText = "額外的分類說明，最多200個字元"
+                },
+                new()
+                {
+                    PropertyName = nameof(ProductCategory.Remarks),
+                    Label = "備註",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入備註",
+                    MaxLength = 200,
+                    HelpText = "額外的備註說明，最多200個字元"
                 }
             };
 
@@ -113,7 +121,8 @@
             {
                 { nameof(ProductCategory.CategoryCode), "基本資訊" },
                 { nameof(ProductCategory.CategoryName), "基本資訊" },
-                { nameof(ProductCategory.Description), "額外資訊" }
+                { nameof(ProductCategory.Description), "額外資訊" },
+                { nameof(ProductCategory.Remarks), "額外資訊" }
             };
         }
         catch (Exception ex)

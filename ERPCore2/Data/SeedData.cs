@@ -72,6 +72,7 @@ namespace ERPCore2.Data
                 new MaterialSeeder(),
                 new ProductCategorySeeder(),    // 產品類別 - 必須在 ProductSeeder 之前
                 new UnitSeeder(),
+                new UnitConversionSeeder(),     // 單位轉換關係 - 必須在 UnitSeeder 之後
                 new SizeSeeder(),
                 new WarehouseSeeder(),
                 new CustomerSeeder(),           // 依賴 CustomerTypes (在 BasicDataSeeder 中)

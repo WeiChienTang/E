@@ -128,6 +128,19 @@
     {
         try
         {
+            // 如果是新增模式，返回新的 Unit 實體
+            if (!Id.HasValue)
+            {
+                var newUnit = new Unit
+                {
+                    UnitCode = await GenerateUnitCodeAsync(),
+                    UnitName = string.Empty
+                };
+                unit = newUnit;
+                return newUnit;
+            }
+
+            // 如果是編輯模式，載入現有資料
             var result = await UnitService.GetByIdAsync(Id.Value);
             if (result != null)
             {

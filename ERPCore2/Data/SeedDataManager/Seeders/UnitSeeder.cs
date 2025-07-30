@@ -24,25 +24,11 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             // 建立計量單位
             var units = new List<Unit>
             {
-                // 基本計量單位
+                // 基本計量單位  
                 new Unit
                 {
                     UnitCode = "PCS",
                     UnitName = "個",
-                    Symbol = "個",
-                    IsBaseUnit = true,
-                    
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                },
-                new Unit
-                {
-                    UnitCode = "BOX",
-                    UnitName = "箱",
-                    Symbol = "箱",
-                    IsBaseUnit = false,
-                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -51,20 +37,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     UnitCode = "KG",
                     UnitName = "公斤",
-                    Symbol = "kg",
-                    IsBaseUnit = true,
-                    
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                },
-                new Unit
-                {
-                    UnitCode = "G",
-                    UnitName = "公克",
-                    Symbol = "g",
-                    IsBaseUnit = false,
-                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -73,9 +45,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     UnitCode = "PACK",
                     UnitName = "包",
-                    Symbol = "包",
-                    IsBaseUnit = false,
-                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -84,9 +53,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     UnitCode = "M",
                     UnitName = "公尺",
-                    Symbol = "m",
-                    IsBaseUnit = true,
-                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -95,9 +61,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     UnitCode = "CM",
                     UnitName = "公分",
-                    Symbol = "cm",
-                    IsBaseUnit = false,
-                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -106,43 +69,16 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     UnitCode = "SQM",
                     UnitName = "平方公尺",
-                    Symbol = "m²",
-                    IsBaseUnit = true,
-                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
                 },
-                new Unit
-                {
-                    UnitCode = "L",
-                    UnitName = "公升",
-                    Symbol = "L",
-                    IsBaseUnit = true,
-                    
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                },
-                new Unit
-                {
-                    UnitCode = "ML",
-                    UnitName = "毫升",
-                    Symbol = "ml",
-                    IsBaseUnit = false,
-                    
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                },
+
                 // 產品相關的額外單位
                 new Unit
                 {
                     UnitCode = "PC",
                     UnitName = "台",
-                    Symbol = "台",
-                    IsBaseUnit = true,
-                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-31),
                     CreatedBy = "System"
@@ -151,42 +87,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     UnitCode = "PEN",
                     UnitName = "支",
-                    Symbol = "支",
-                    IsBaseUnit = true,
-                    
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-31),
-                    CreatedBy = "System"
-                },
-                new Unit
-                {
-                    UnitCode = "TOP",
-                    UnitName = "頂",
-                    Symbol = "頂",
-                    IsBaseUnit = true,
-                    
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-31),
-                    CreatedBy = "System"
-                },
-                new Unit
-                {
-                    UnitCode = "LIC",
-                    UnitName = "授權",
-                    Symbol = "授權",
-                    IsBaseUnit = true,
-                    
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-31),
-                    CreatedBy = "System"
-                },
-                new Unit
-                {
-                    UnitCode = "SHT",
-                    UnitName = "張",
-                    Symbol = "張",
-                    IsBaseUnit = true,
-                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-31),
                     CreatedBy = "System"
@@ -195,9 +95,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     UnitCode = "BAG",
                     UnitName = "袋",
-                    Symbol = "袋",
-                    IsBaseUnit = true,
-                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-31),
                     CreatedBy = "System"
@@ -206,9 +103,30 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     UnitCode = "ROL",
                     UnitName = "捲",
-                    Symbol = "捲",
-                    IsBaseUnit = true,
-                    
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-31),
+                    CreatedBy = "System"
+                },
+                new Unit
+                {
+                    UnitCode = "TOP",
+                    UnitName = "頂",
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-31),
+                    CreatedBy = "System"
+                },
+                new Unit
+                {
+                    UnitCode = "LIC",
+                    UnitName = "授權",
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-31),
+                    CreatedBy = "System"
+                },
+                new Unit
+                {
+                    UnitCode = "SHT",
+                    UnitName = "張",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-31),
                     CreatedBy = "System"
@@ -217,65 +135,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             await context.Units.AddRangeAsync(units);
             await context.SaveChangesAsync();
-
-            // 建立單位轉換關係
-            var unitConversions = new List<UnitConversion>
-            {
-                new UnitConversion
-                {
-                    FromUnitId = units.First(u => u.UnitCode == "BOX").Id,
-                    ToUnitId = units.First(u => u.UnitCode == "PCS").Id,
-                    ConversionRate = 12, // 1箱 = 12個
-                    
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                },
-                new UnitConversion
-                {
-                    FromUnitId = units.First(u => u.UnitCode == "KG").Id,
-                    ToUnitId = units.First(u => u.UnitCode == "G").Id,
-                    ConversionRate = 1000, // 1公斤 = 1000公克
-                    
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                },
-                new UnitConversion
-                {
-                    FromUnitId = units.First(u => u.UnitCode == "PACK").Id,
-                    ToUnitId = units.First(u => u.UnitCode == "PCS").Id,
-                    ConversionRate = 10, // 1包 = 10個
-                    
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                },
-                new UnitConversion
-                {
-                    FromUnitId = units.First(u => u.UnitCode == "M").Id,
-                    ToUnitId = units.First(u => u.UnitCode == "CM").Id,
-                    ConversionRate = 100, // 1公尺 = 100公分
-                    
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                },
-                new UnitConversion
-                {
-                    FromUnitId = units.First(u => u.UnitCode == "L").Id,
-                    ToUnitId = units.First(u => u.UnitCode == "ML").Id,
-                    ConversionRate = 1000, // 1公升 = 1000毫升
-                    
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                }
-            };
-
-            await context.UnitConversions.AddRangeAsync(unitConversions);
-            await context.SaveChangesAsync();
-
         }
     }
 }

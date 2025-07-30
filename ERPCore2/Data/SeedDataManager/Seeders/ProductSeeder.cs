@@ -70,40 +70,10 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CreatedAt = DateTime.Now.AddDays(-25),
                     CreatedBy = "System"
                 },
-                new Product
-                {
-                    ProductCode = "P002",
-                    ProductName = "無線滑鼠",
-                    Description = "人體工學設計無線滑鼠，2.4GHz無線連接",
-                    Specification = "1600 DPI，可調式設計",
-                    UnitId = unitPcs?.Id,
-                    UnitPrice = 850,
-                    CostPrice = 600,
-                    ProductCategoryId = electronicsCategory?.Id,
-                    PrimarySupplierId = supplier2?.Id,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-24),
-                    CreatedBy = "System"
-                },
-                new Product
-                {
-                    ProductCode = "P003",
-                    ProductName = "24吋顯示器",
-                    Description = "24吋Full HD LED背光液晶顯示器",
-                    Specification = "1920x1080解析度，IPS面板，HDMI/VGA介面",
-                    UnitId = unitPc?.Id,
-                    UnitPrice = 8500,
-                    CostPrice = 7200,
-                    ProductCategoryId = electronicsCategory?.Id,
-                    PrimarySupplierId = supplier1?.Id,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-23),
-                    CreatedBy = "System"
-                },
                 // 辦公用品
                 new Product
                 {
-                    ProductCode = "P004",
+                    ProductCode = "P002",
                     ProductName = "A4影印紙",
                     Description = "高品質A4白色影印紙，適用各種印表機",
                     Specification = "80gsm，500張包裝，FSC認證環保紙張",
@@ -113,43 +83,13 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ProductCategoryId = officeCategory?.Id,
                     PrimarySupplierId = supplier4?.Id,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-22),
-                    CreatedBy = "System"
-                },
-                new Product
-                {
-                    ProductCode = "P005",
-                    ProductName = "原子筆",
-                    Description = "藍色原子筆，書寫流暢不斷墨",
-                    Specification = "0.7mm筆芯，人體工學握桿設計",
-                    UnitId = unitPen?.Id,
-                    UnitPrice = 25,
-                    CostPrice = 15,
-                    ProductCategoryId = officeCategory?.Id,
-                    PrimarySupplierId = supplier4?.Id,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-21),
+                    CreatedAt = DateTime.Now.AddDays(-24),
                     CreatedBy = "System"
                 },
                 // 工業設備
                 new Product
                 {
-                    ProductCode = "P006",
-                    ProductName = "工業級電鑽",
-                    Description = "重型工業電鑽，適用各種材質鑽孔作業",
-                    Specification = "功率1200W，無級變速鑽夾頭",
-                    UnitId = unitPc?.Id,
-                    UnitPrice = 15000,
-                    CostPrice = 12000,
-                    ProductCategoryId = industrialCategory?.Id,
-                    PrimarySupplierId = supplier1?.Id,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-20),
-                    CreatedBy = "System"
-                },
-                new Product
-                {
-                    ProductCode = "P007",
+                    ProductCode = "P003",
                     ProductName = "安全帽",
                     Description = "工業用安全帽，符合CNS標準",
                     Specification = "ABS材質，可調整帽圍，重量350g",
@@ -159,13 +99,13 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ProductCategoryId = industrialCategory?.Id,
                     PrimarySupplierId = supplier4?.Id,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-19),
+                    CreatedAt = DateTime.Now.AddDays(-23),
                     CreatedBy = "System"
                 },
                 // 軟體授權
                 new Product
                 {
-                    ProductCode = "P008",
+                    ProductCode = "P004",
                     ProductName = "Microsoft Office 365授權",
                     Description = "Microsoft Office 365商業年度授權",
                     Specification = "包含Word、Excel、PowerPoint、Outlook等應用程式",
@@ -175,28 +115,13 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ProductCategoryId = softwareCategory?.Id,
                     PrimarySupplierId = supplier3?.Id,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-18),
-                    CreatedBy = "System"
-                },
-                new Product
-                {
-                    ProductCode = "P009",
-                    ProductName = "防毒軟體企業版",
-                    Description = "企業級防毒軟體年度授權",
-                    Specification = "支援Windows/Mac，即時防護及端點管理",
-                    UnitId = unitLic?.Id,
-                    UnitPrice = 1200,
-                    CostPrice = 950,
-                    ProductCategoryId = softwareCategory?.Id,
-                    PrimarySupplierId = supplier3?.Id,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-17),
+                    CreatedAt = DateTime.Now.AddDays(-22),
                     CreatedBy = "System"
                 },
                 // 原物料
                 new Product
                 {
-                    ProductCode = "P010",
+                    ProductCode = "P005",
                     ProductName = "不鏽鋼板材",
                     Description = "304不鏽鋼板材，適用工業用途",
                     Specification = "厚度2mm，尺寸1000x2000mm，表面2B處理",
@@ -206,37 +131,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ProductCategoryId = materialCategory?.Id,
                     PrimarySupplierId = supplier4?.Id,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-16),
-                    CreatedBy = "System"
-                },
-                new Product
-                {
-                    ProductCode = "P011",
-                    ProductName = "塑膠粒料",
-                    Description = "ABS塑膠粒料，射出成型用",
-                    Specification = "高光澤，優良耐衝擊性，25kg/袋",
-                    UnitId = unitBag?.Id,
-                    UnitPrice = 2200,
-                    CostPrice = 1800,
-                    ProductCategoryId = materialCategory?.Id,
-                    PrimarySupplierId = supplier4?.Id,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-15),
-                    CreatedBy = "System"
-                },
-                new Product
-                {
-                    ProductCode = "P012",
-                    ProductName = "工業膠帶",
-                    Description = "強力工業級膠帶，多用途黏著",
-                    Specification = "寬度50mm，長度25m，耐溫-40°C至80°C",
-                    UnitId = unitRol?.Id,
-                    UnitPrice = 180,
-                    CostPrice = 130,
-                    ProductCategoryId = materialCategory?.Id,
-                    PrimarySupplierId = supplier4?.Id,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-14),
+                    CreatedAt = DateTime.Now.AddDays(-21),
                     CreatedBy = "System"
                 }
             };

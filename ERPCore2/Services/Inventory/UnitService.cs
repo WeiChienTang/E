@@ -65,8 +65,7 @@ namespace ERPCore2.Services
                     .Include(u => u.ToUnitConversions)
                     .Where(u => !u.IsDeleted &&
                                (u.UnitName.Contains(searchTerm) ||
-                                u.UnitCode.Contains(searchTerm) ||
-                                (u.Symbol != null && u.Symbol.Contains(searchTerm))))
+                                u.UnitCode.Contains(searchTerm)))
                     .OrderBy(u => u.UnitCode)
                     .ToListAsync();
             }
@@ -110,7 +109,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Units
-                    .Where(u => !u.IsDeleted && u.IsBaseUnit)
+                    .Where(u => !u.IsDeleted)
                     .OrderBy(u => u.UnitCode)
                     .ToListAsync();
             }
