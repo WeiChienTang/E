@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 @typeparam TEntity where TEntity : BaseEntity, new()
 @typeparam TService
 
@@ -443,12 +444,12 @@
     
     private async Task ShowSuccessMessage(string message)
     {
-        await JSRuntime.InvokeVoidAsync("alert", message);
+        await NotificationService.ShowSuccessAsync(message);
     }
     
     private async Task ShowErrorMessage(string message)
     {
-        await JSRuntime.InvokeVoidAsync("alert", message);
+        await NotificationService.ShowErrorAsync(message);
     }
     
     private async Task LogError(string method, Exception ex)

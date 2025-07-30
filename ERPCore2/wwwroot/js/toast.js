@@ -13,7 +13,7 @@ class ToastManager {
             if (!this.container) {
                 this.container = document.createElement('div');
                 this.container.id = 'toast-container';
-                this.container.className = 'toast-container position-fixed top-0 end-0 p-3';
+                this.container.className = 'toast-container position-fixed top-0 start-50 translate-middle-x p-3';
                 this.container.style.zIndex = '9999';
                 document.body.appendChild(this.container);
                 console.log('Toast container created');
