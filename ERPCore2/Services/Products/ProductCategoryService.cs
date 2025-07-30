@@ -36,6 +36,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductCategories
+                    .Include(pc => pc.Products.Where(p => !p.IsDeleted))
                     .Where(pc => !pc.IsDeleted)
                     .OrderBy(pc => pc.CategoryName)
                     .ToListAsync();

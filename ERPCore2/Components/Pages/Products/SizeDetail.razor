@@ -1,6 +1,7 @@
 @page "/sizes/detail/{sizeId:int}"
 
 @inject ISizeService SizeService
+@inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 
@@ -109,6 +110,9 @@
     {
         try
         {
+            // 先定義點擊處理器
+            EventCallback<int> productClickHandler = EventCallback.Factory.Create<int>(this, OnProductCardClick);
+            
             return new List<GenericDetailPageComponent<Size, ISizeService
                         >.TabSection>
             {           
@@ -128,48 +132,24 @@
             new GenericDetailPageComponent<Size, ISizeService>.TabSection
             {
                 Id = "products",
-                Title = "關聯商品",
+                Title = $"關聯商品 ({size?.Products?.Count ?? 0})",
                 Content = @<div>
-                    @if (size?.Products?.Any() == true)
-                    {
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">
-                                    <i class="fas fa-box-open text-info me-2"></i>
-                                    使用此尺寸的商品 (@size.Products.Count)
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    @foreach (var product in size.Products)
-                                    {
-                                        <div class="col-md-6 col-lg-4 mb-3">
-                                            <div class="card border-0 shadow-sm">
-                                                <div class="card-body">
-                                                    <h6 class="card-title text-truncate">@product.ProductName</h6>
-                                                    <p class="card-text text-muted small mb-1">
-                                                        代碼：@product.ProductCode
-                                                    </p>
-                                                    @if (!string.IsNullOrEmpty(product.Description))
-                                                    {
-                                                        <p class="card-text small text-truncate">@product.Description</p>
-                                                    }
-                                                </div>
-                                            </div>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-5">
-                            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
-                            <h5 class="text-muted">尚無關聯商品</h5>
-                            <p class="text-muted">此尺寸目前沒有被任何商品使用</p>
-                        </div>
-                    }
+                    <RelationListComponent TRelationEntity="Product" 
+                                         TTargetEntity="Product"
+                                         RelationItems="@size?.Products"
+                                         OnItemClick="@productClickHandler"
+                                         GetTargetId="@(p => p.Id)"
+                                         GetDisplayName="@(p => p.ProductName ?? "未知商品")"
+                                         EmptyMessage="此尺寸目前沒有被任何商品使用"
+                                         EmptyIcon="fas fa-box-open">
+                        <ExtraContentTemplate Context="product">
+                            <small class="text-muted d-block mb-2">代碼：@product.ProductCode</small>
+                            @if (!string.IsNullOrEmpty(product.Description))
+                            {
+                                <p class="card-text small text-muted mb-2">@product.Description</p>
+                            }
+                        </ExtraContentTemplate>
+                    </RelationListComponent>
                 </div>
             },
             
@@ -264,6 +244,25 @@
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetSizeBasicFields), GetType(),
                 additionalData: new { SizeId });
             throw;
+        }
+    }
+
+    // 處理商品卡片點擊事件
+    private async Task OnProductCardClick(int productId)
+    {
+        try
+        {
+            Navigation.NavigateTo($"/products/detail/{productId}");
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(OnProductCardClick),
+                GetType(),
+                additionalData: new { ProductId = productId, SizeId }
+            );
         }
     }
 }
