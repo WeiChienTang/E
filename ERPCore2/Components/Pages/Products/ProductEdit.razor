@@ -4,6 +4,7 @@
 @inject IProductService ProductService
 @inject IProductCategoryService ProductCategoryService
 @inject ISupplierService SupplierService
+@inject IUnitService UnitService
 @inject ISizeService SizeService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
@@ -169,18 +170,6 @@
                     Placeholder = "輸入規格說明",
                 },
                 new() {
-                    PropertyName = nameof(Product.UnitPrice),
-                    Label = "售價",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "0",
-                },
-                new() {
-                    PropertyName = nameof(Product.CostPrice),
-                    Label = "成本價",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "0",
-                },
-                new() {
                     PropertyName = nameof(Product.Remarks),
                     Label = "備註",
                     FieldType = FormFieldType.TextArea,
@@ -193,10 +182,6 @@
                 // 基本資訊區塊
                 { nameof(Product.ProductCode), "基本資訊" },
                 { nameof(Product.ProductName), "基本資訊" },
-                
-                // 價格與其他資訊區塊
-                { nameof(Product.UnitPrice), "價格與其他資訊" },
-                { nameof(Product.CostPrice), "價格與其他資訊" },
                 
                 // 詳細說明與其他資訊區塊（放在最下方）
                 { nameof(Product.Description), "額外資訊" },

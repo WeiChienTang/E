@@ -74,20 +74,6 @@ namespace ERPCore2.Services
         
         #endregion
 
-        #region 價格管理
-        
-        /// <summary>
-        /// 更新商品價格
-        /// </summary>
-        Task<ServiceResult> UpdatePricesAsync(int productId, decimal? unitPrice, decimal? costPrice);
-        
-        /// <summary>
-        /// 批次更新價格
-        /// </summary>
-        Task<ServiceResult> BatchUpdatePricesAsync(List<int> productIds, decimal? priceAdjustment, bool isPercentage);
-        
-        #endregion
-
         #region 輔助方法
         
         /// <summary>

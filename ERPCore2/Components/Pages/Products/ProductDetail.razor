@@ -121,62 +121,6 @@
         }
     }
 
-    // 輔助方法
-    private string FormatPrice(decimal? price)
-    {
-        try
-        {
-            return price.HasValue ? $"NT$ {price.Value:N2}" : "未設定";
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(FormatPrice),
-                GetType(),
-                additionalData: new { Price = price, PageName = "ProductDetail" });
-            
-            return "格式錯誤";
-        }
-    }
-
-    private string FormatPercentage(decimal? percentage)
-    {
-        try
-        {
-            return percentage.HasValue ? $"{percentage.Value:P2}" : "無法計算";
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(FormatPercentage),
-                GetType(),
-                additionalData: new { Percentage = percentage, PageName = "ProductDetail" });
-            
-            return "格式錯誤";
-        }
-    }
-
-    private decimal? CalculateMarginRate(decimal unitPrice, decimal costPrice)
-    {
-        try
-        {
-            if (unitPrice <= 0) return null;
-            return (unitPrice - costPrice) / unitPrice;
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(CalculateMarginRate),
-                GetType(),
-                additionalData: new { UnitPrice = unitPrice, CostPrice = costPrice, PageName = "ProductDetail" });
-            
-            return null;
-        }
-    }
-
     // 導航到供應商詳細頁面
     private void NavigateToSupplierDetail(int supplierId)
     {
@@ -232,18 +176,6 @@
                     </div>
                 },
                 
-                new GenericDetailPageComponent<Product, IProductService>.TabSection
-                {
-                    Id = "pricing",
-                    Title = "價格資訊",
-                    Content = @<div>
-                        <BasicInfoDisplayComponent 
-                            Title="商品價格資訊"
-                            IconClass="fas fa-dollar-sign"
-                            IconColor="text-success"
-                            Fields="@GetProductPricingFields()" />
-                    </div>
-                },
                 
                 new GenericDetailPageComponent<Product, IProductService>.TabSection
                 {
@@ -414,83 +346,6 @@
                 {
                     Label = "載入錯誤",
                     Value = "無法載入商品基本資料",
-                    IconClass = "fas fa-exclamation-triangle",
-                    IconBgClass = "bg-danger bg-opacity-10",
-                    IconTextClass = "text-danger",
-                    ColSize = 12
-                }
-            };
-        }
-    }
-
-    // 取得商品價格資料欄位
-    private IEnumerable<BasicInfoDisplayComponent.BasicInfoField> GetProductPricingFields()
-    {
-        try
-        {
-            var fields = new List<BasicInfoDisplayComponent.BasicInfoField>();
-
-            // 單價
-            fields.Add(new()
-            {
-                Label = "單價",
-                Value = FormatPrice(product?.UnitPrice),
-                IconClass = "fas fa-tag",
-                IconBgClass = "bg-success bg-opacity-10",
-                IconTextClass = "text-success"
-            });
-
-            // 成本價
-            fields.Add(new()
-            {
-                Label = "成本價",
-                Value = FormatPrice(product?.CostPrice),
-                IconClass = "fas fa-calculator",
-                IconBgClass = "bg-warning bg-opacity-10",
-                IconTextClass = "text-warning"
-            });
-
-            // 如果單價和成本價都有值，則顯示毛利和毛利率
-            if (product?.UnitPrice.HasValue == true && product?.CostPrice.HasValue == true)
-            {
-                // 毛利
-                fields.Add(new()
-                {
-                    Label = "毛利",
-                    Value = FormatPrice(product.UnitPrice!.Value - product.CostPrice!.Value),
-                    IconClass = "fas fa-chart-line",
-                    IconBgClass = "bg-info bg-opacity-10",
-                    IconTextClass = "text-info"
-                });
-
-                // 毛利率
-                fields.Add(new()
-                {
-                    Label = "毛利率",
-                    Value = FormatPercentage(CalculateMarginRate(product.UnitPrice!.Value, product.CostPrice!.Value)),
-                    IconClass = "fas fa-percentage",
-                    IconBgClass = "bg-primary bg-opacity-10",
-                    IconTextClass = "text-primary"
-                });
-            }
-
-            return fields;
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(GetProductPricingFields),
-                GetType(),
-                additionalData: new { ProductId = product?.Id, PageName = "ProductDetail" });
-            
-            // 返回最基本的欄位結構
-            return new List<BasicInfoDisplayComponent.BasicInfoField>
-            {
-                new()
-                {
-                    Label = "載入錯誤",
-                    Value = "無法載入商品價格資料",
                     IconClass = "fas fa-exclamation-triangle",
                     IconBgClass = "bg-danger bg-opacity-10",
                     IconTextClass = "text-danger",

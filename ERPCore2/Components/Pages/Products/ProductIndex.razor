@@ -151,7 +151,6 @@
                 TableColumnDefinition.Text("尺寸", "Size.SizeName"),
                 TableColumnDefinition.Text("產品分類", "ProductCategory.CategoryName"),
                 TableColumnDefinition.Text("單位", "Unit.UnitName"),
-                TableColumnDefinition.Number("單價", nameof(Product.UnitPrice), "N2"),
                 TableColumnDefinition.Text("備註", nameof(Product.Remarks))
             };
         }
@@ -281,7 +280,6 @@
                 .AddSelect("ProductCategoryId", "產品分類", categoryOptions)
                 .AddSelect("PrimarySupplierId", "主要供應商", supplierOptions)
                 .AddSelect("UnitId", "單位", unitOptions)
-                // 狀態篩選器會由 GenericIndexPageComponent 自動添加
                 .Build();
 
             // 通知組件狀態已改變

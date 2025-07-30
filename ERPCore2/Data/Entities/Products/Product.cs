@@ -40,14 +40,6 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Size))]
         public int? SizeId { get; set; }
         
-        [Display(Name = "單價")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal? UnitPrice { get; set; }
-        
-        [Display(Name = "成本價")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal? CostPrice { get; set; }
-        
         // Foreign Keys
         [Display(Name = "商品分類")]
         [ForeignKey(nameof(ProductCategory))]

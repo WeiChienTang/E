@@ -129,17 +129,6 @@ namespace ERPCore2.Services
                     errors.Add("商品名稱為必填欄位");
                 }
 
-                // 驗證價格
-                if (entity.UnitPrice.HasValue && entity.UnitPrice.Value < 0)
-                {
-                    errors.Add("單價不能為負數");
-                }
-
-                if (entity.CostPrice.HasValue && entity.CostPrice.Value < 0)
-                {
-                    errors.Add("成本價不能為負數");
-                }
-
                 return errors.Any() 
                     ? ServiceResult.Failure(string.Join("; ", errors))
                     : ServiceResult.Success();
@@ -439,97 +428,6 @@ namespace ERPCore2.Services
 
         #endregion
 
-        #region 價格管理
-
-        public async Task<ServiceResult> UpdatePricesAsync(int productId, decimal? unitPrice, decimal? costPrice)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var product = await GetByIdAsync(productId);
-                if (product == null)
-                {
-                    return ServiceResult.Failure("找不到指定的商品");
-                }
-
-                if (unitPrice.HasValue && unitPrice.Value < 0)
-                {
-                    return ServiceResult.Failure("單價不能為負數");
-                }
-
-                if (costPrice.HasValue && costPrice.Value < 0)
-                {
-                    return ServiceResult.Failure("成本價不能為負數");
-                }
-
-                product.UnitPrice = unitPrice;
-                product.CostPrice = costPrice;
-                product.UpdatedAt = DateTime.UtcNow;
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdatePricesAsync), GetType(), _logger, new { ProductId = productId, UnitPrice = unitPrice, CostPrice = costPrice });
-                return ServiceResult.Failure($"更新價格時發生錯誤: {ex.Message}");
-            }
-        }
-
-        public async Task<ServiceResult> BatchUpdatePricesAsync(List<int> productIds, decimal? priceAdjustment, bool isPercentage)
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
-
-            try
-            {
-                var products = await context.Products
-                    .Where(p => productIds.Contains(p.Id) && !p.IsDeleted)
-                    .ToListAsync();
-
-                if (!products.Any())
-                {
-                    return ServiceResult.Failure("找不到要更新的商品");
-                }
-
-                if (!priceAdjustment.HasValue)
-                {
-                    return ServiceResult.Failure("價格調整值不能為空");
-                }
-
-                foreach (var product in products)
-                {
-                    if (product.UnitPrice.HasValue)
-                    {
-                        if (isPercentage)
-                        {
-                            product.UnitPrice = product.UnitPrice.Value * (1 + priceAdjustment.Value / 100);
-                        }
-                        else
-                        {
-                            product.UnitPrice = product.UnitPrice.Value + priceAdjustment.Value;
-                        }
-
-                        if (product.UnitPrice.Value < 0)
-                        {
-                            product.UnitPrice = 0;
-                        }
-                    }
-
-                    product.UpdatedAt = DateTime.UtcNow;
-                }
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(BatchUpdatePricesAsync), GetType(), _logger, new { ProductIds = productIds, PriceAdjustment = priceAdjustment, IsPercentage = isPercentage });
-                return ServiceResult.Failure($"批次更新價格時發生錯誤: {ex.Message}");
-            }
-        }
-
-        #endregion
-
         #region 輔助方法
 
         public void InitializeNewProduct(Product product)
@@ -542,8 +440,6 @@ namespace ERPCore2.Services
                 product.Specification = string.Empty;
                 product.UnitId = null;
                 product.SizeId = null;
-                product.UnitPrice = null;
-                product.CostPrice = null;
                 product.ProductCategoryId = null;
                 product.PrimarySupplierId = null;
                 product.Status = EntityStatus.Active;

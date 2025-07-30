@@ -652,12 +652,12 @@
                         
                         GetProductCodeFromProduct="@((ERPCore2.Data.Entities.Product p) => p.ProductCode)"
                         GetProductNameFromProduct="@((ERPCore2.Data.Entities.Product p) => p.ProductName)"
-                        GetProductPrice="@((ERPCore2.Data.Entities.Product p) => p.UnitPrice ?? 0)"
+                        GetProductPrice="@((ERPCore2.Data.Entities.Product p) => 0)"
                         
                         SetQuantity="@((ERPCore2.Data.Entities.PurchaseOrderDetail d, decimal q) => d.OrderQuantity = (int)q)"
                         SetUnitPrice="@((ERPCore2.Data.Entities.PurchaseOrderDetail d, decimal p) => d.UnitPrice = p)"
                         SetRemarks="@((ERPCore2.Data.Entities.PurchaseOrderDetail d, string r) => d.DetailRemarks = r)"
-                        SetProduct="@((ERPCore2.Data.Entities.PurchaseOrderDetail d, ERPCore2.Data.Entities.Product p) => { d.ProductId = p.Id; d.Product = p; d.UnitPrice = p.UnitPrice ?? 0; })"
+                        SetProduct="@((ERPCore2.Data.Entities.PurchaseOrderDetail d, ERPCore2.Data.Entities.Product p) => { d.ProductId = p.Id; d.Product = p; d.UnitPrice = 0; })"
                         
                         OnDetailRemoved="@((ERPCore2.Data.Entities.PurchaseOrderDetail detail) => { purchaseOrderDetails.Remove(detail); StateHasChanged(); })"
                         OnDetailAdded="@((ERPCore2.Data.Entities.PurchaseOrderDetail detail) => { StateHasChanged(); })"

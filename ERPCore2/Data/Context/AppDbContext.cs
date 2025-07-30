@@ -27,6 +27,12 @@ namespace ERPCore2.Data.Context
       public DbSet<Product> Products { get; set; }
       public DbSet<ProductCategory> ProductCategories { get; set; }
       public DbSet<ProductSupplier> ProductSuppliers { get; set; }
+      
+      // Product Pricing Management
+      public DbSet<ProductPricing> ProductPricings { get; set; }
+      public DbSet<SupplierPricing> SupplierPricings { get; set; }
+      public DbSet<PriceHistory> PriceHistories { get; set; }
+      
       public DbSet<Supplier> Suppliers { get; set; }
       public DbSet<SupplierType> SupplierTypes { get; set; }
       public DbSet<SupplierAddress> SupplierAddresses { get; set; }
