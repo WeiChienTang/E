@@ -1,5 +1,6 @@
 @page "/products"
 @inject IProductService ProductService
+@inject ISizeService SizeService
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="Product" 
@@ -27,6 +28,7 @@
     private List<ProductCategory> productCategories = new();
     private List<Supplier> suppliers = new();
     private List<Unit> units = new();
+    private List<Size> sizes = new();
     
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
@@ -132,6 +134,7 @@
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("ProductCode", "產品代碼", "輸入產品代碼搜尋")
                 .AddText("ProductName", "產品名稱", "輸入產品名稱搜尋")
+                .AddSelect("SizeId", "尺寸", new List<SelectOption>()) // 空的選項，稍後載入
                 .AddSelect("ProductCategoryId", "產品分類", new List<SelectOption>()) // 空的選項，稍後載入
                 .AddSelect("PrimarySupplierId", "主要供應商", new List<SelectOption>()) // 空的選項，稍後載入
                 .AddSelect("IsActive", "啟用狀態", activeStatusOptions)
@@ -160,6 +163,7 @@
             {
                 TableColumnDefinition.Text("產品代碼", nameof(Product.ProductCode)),
                 TableColumnDefinition.Text("產品名稱", nameof(Product.ProductName)),
+                TableColumnDefinition.Text("尺寸", "Size.SizeName"),
                 TableColumnDefinition.Text("產品分類", "ProductCategory.CategoryName"),
                 TableColumnDefinition.Text("單位", "Unit.UnitName"),
                 TableColumnDefinition.Number("單價", nameof(Product.UnitPrice), "N2"),
@@ -206,6 +210,13 @@
             {
                 query = query.Where(p => 
                     p.ProductName.Contains(productNameFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 尺寸篩選
+            var sizeIdFilter = searchModel.GetFilterValue("SizeId")?.ToString();
+            if (!string.IsNullOrWhiteSpace(sizeIdFilter) && int.TryParse(sizeIdFilter, out var sizeId))
+            {
+                query = query.Where(p => p.SizeId == sizeId);
             }
 
             // 產品分類篩選
@@ -285,6 +296,14 @@
                 Value = u.Id.ToString()
             }).ToList();
 
+            // 載入尺寸選項
+            sizes = await SizeService.GetActiveSizesAsync();
+            var sizeOptions = sizes.Select(s => new SelectOption
+            {
+                Text = s.SizeName,
+                Value = s.Id.ToString()
+            }).ToList();
+
             // 準備啟用狀態選項
             var activeStatusOptions = new List<SelectOption>
             {
@@ -303,6 +322,7 @@
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("ProductCode", "產品代碼", "輸入產品代碼搜尋")
                 .AddText("ProductName", "產品名稱", "輸入產品名稱搜尋")
+                .AddSelect("SizeId", "尺寸", sizeOptions)
                 .AddSelect("ProductCategoryId", "產品分類", categoryOptions)
                 .AddSelect("PrimarySupplierId", "主要供應商", supplierOptions)
                 .AddSelect("IsActive", "啟用狀態", activeStatusOptions)
