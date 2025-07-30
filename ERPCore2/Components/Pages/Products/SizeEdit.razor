@@ -126,13 +126,6 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(Size.IsActive),
-                    Label = "啟用狀態",
-                    FieldType = FormFieldType.Checkbox,
-                    HelpText = "設定此尺寸是否啟用"
-                },
-                new()
-                {
                     PropertyName = nameof(Size.Description),
                     Label = "尺寸描述",
                     FieldType = FormFieldType.TextArea,
@@ -146,7 +139,6 @@
             {
                 { nameof(Size.SizeCode), "基本資訊" },
                 { nameof(Size.SizeName), "基本資訊" },
-                { nameof(Size.IsActive), "顯示設定" },
                 { nameof(Size.Description), "額外資訊" }
             };
         }
@@ -168,7 +160,7 @@
                 size = new Size
                 {
                     SizeCode = await GenerateSizeCodeAsync(),
-                    IsActive = true
+                    Status = EntityStatus.Active
                 };
                 return size;
             }

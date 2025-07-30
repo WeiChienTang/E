@@ -30,20 +30,6 @@ namespace ERPCore2.Services
         Task<List<Size>> GetBySizeNameAsync(string sizeName);
         
         #endregion
-
-        #region 狀態管理
-        
-        /// <summary>
-        /// 更新尺寸的啟用狀態
-        /// </summary>
-        Task<ServiceResult> UpdateActiveStatusAsync(int sizeId, bool isActive);
-        
-        /// <summary>
-        /// 批次更新尺寸的啟用狀態
-        /// </summary>
-        Task<ServiceResult> BatchUpdateActiveStatusAsync(List<int> sizeIds, bool isActive);
-        
-        #endregion
     }
 }
 

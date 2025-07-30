@@ -26,9 +26,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "尺寸描述")]
         public string? Description { get; set; }
         
-        [Display(Name = "是否啟用")]
-        public bool IsActive { get; set; } = true;
-        
         // Navigation Properties
         public ICollection<Product> Products { get; set; } = new List<Product>();
     }

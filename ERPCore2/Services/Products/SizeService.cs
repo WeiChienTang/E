@@ -176,7 +176,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Sizes
-                    .Where(s => !s.IsDeleted && s.IsActive)
+                    .Where(s => !s.IsDeleted && s.Status == EntityStatus.Active)
                     .OrderBy(s => s.SizeName)
                     .ToListAsync();
             }
@@ -205,66 +205,6 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySizeNameAsync), GetType(), _logger, new { SizeName = sizeName });
                 throw;
-            }
-        }
-
-        #endregion
-
-        #region 狀態管理
-
-        public async Task<ServiceResult> UpdateActiveStatusAsync(int sizeId, bool isActive)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var size = await context.Sizes.FirstOrDefaultAsync(s => s.Id == sizeId && !s.IsDeleted);
-                if (size == null)
-                {
-                    return ServiceResult.Failure("找不到指定的尺寸");
-                }
-
-                size.IsActive = isActive;
-                size.UpdatedAt = DateTime.UtcNow;
-
-                await context.SaveChangesAsync();
-                
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateActiveStatusAsync), GetType(), _logger, new { SizeId = sizeId, IsActive = isActive });
-                return ServiceResult.Failure("更新啟用狀態時發生錯誤");
-            }
-        }
-
-        public async Task<ServiceResult> BatchUpdateActiveStatusAsync(List<int> sizeIds, bool isActive)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var sizes = await context.Sizes
-                    .Where(s => sizeIds.Contains(s.Id) && !s.IsDeleted)
-                    .ToListAsync();
-
-                if (!sizes.Any())
-                {
-                    return ServiceResult.Failure("找不到要更新的尺寸");
-                }
-
-                foreach (var size in sizes)
-                {
-                    size.IsActive = isActive;
-                    size.UpdatedAt = DateTime.UtcNow;
-                }
-
-                await context.SaveChangesAsync();
-                
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(BatchUpdateActiveStatusAsync), GetType(), _logger, new { SizeIds = sizeIds, IsActive = isActive });
-                return ServiceResult.Failure("批次更新啟用狀態時發生錯誤");
             }
         }
 

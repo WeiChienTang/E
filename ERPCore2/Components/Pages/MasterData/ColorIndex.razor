@@ -76,19 +76,11 @@
     {
         try
         {
-            // 準備狀態選項
-            var statusOptions = new List<SelectOption>
-            {
-                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-            };
-
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("Name", "顏色名稱", "輸入顏色名稱搜尋")
                 .AddText("HexCode", "色碼", "輸入HEX色碼搜尋")
-                .AddText("Description", "描述", "輸入描述搜尋")
-                .AddSelect("Status", "狀態", statusOptions)            
+                .AddText("Description", "描述", "輸入描述搜尋")        
                 .Build();
         }
         catch (Exception ex)
@@ -112,12 +104,6 @@
                 TableColumnDefinition.Text("顏色代碼", nameof(Color.Code)),
                 TableColumnDefinition.Text("HEX色碼", nameof(Color.HexCode)),
                 TableColumnDefinition.Text("描述", nameof(Color.Description)),
-                TableColumnDefinition.Status("狀態", nameof(Color.Status), new Dictionary<object, string>
-                {
-                    { EntityStatus.Active, "bg-success" },
-                    { EntityStatus.Inactive, "bg-secondary" }
-                }),
-                TableColumnDefinition.Date("建立日期", nameof(Color.CreatedAt), "yyyy/MM/dd")
             };
         }
         catch (Exception ex)
@@ -178,13 +164,6 @@
                 query = query.Where(c => 
                     !string.IsNullOrEmpty(c.Description) && 
                     c.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 狀態篩選
-            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
-            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
-            {
-                query = query.Where(c => c.Status == status);
             }
 
             return query.OrderBy(c => c.Name);

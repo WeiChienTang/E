@@ -112,19 +112,11 @@
     {
         try
         {
-            // 準備啟用狀態選項
-            var activeStatusOptions = new List<SelectOption>
-            {
-                new() { Text = "啟用", Value = "true" },
-                new() { Text = "停用", Value = "false" }
-            };
-
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("SizeCode", "尺寸代碼", "輸入尺寸代碼搜尋")
                 .AddText("SizeName", "尺寸名稱", "輸入尺寸名稱搜尋")
                 .AddText("Description", "尺寸描述", "輸入描述內容搜尋")
-                .AddSelect("IsActive", "啟用狀態", activeStatusOptions)
                 .Build();
         }
         catch (Exception ex)
@@ -146,12 +138,6 @@
                 TableColumnDefinition.Text("尺寸代碼", nameof(Size.SizeCode)),
                 TableColumnDefinition.Text("尺寸名稱", nameof(Size.SizeName)),
                 TableColumnDefinition.Text("描述", nameof(Size.Description)),
-                TableColumnDefinition.Status("啟用狀態", nameof(Size.IsActive), new Dictionary<object, string>
-                {
-                    { true, "bg-success" },
-                    { false, "bg-secondary" }
-                }),
-                TableColumnDefinition.Date("建立日期", nameof(Size.CreatedAt), "yyyy/MM/dd")
             };
         }
         catch (Exception ex)
@@ -192,13 +178,6 @@
                 query = query.Where(s => 
                     !string.IsNullOrEmpty(s.Description) && 
                     s.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 啟用狀態篩選
-            var isActiveFilter = searchModel.GetFilterValue("IsActive")?.ToString();
-            if (!string.IsNullOrWhiteSpace(isActiveFilter) && bool.TryParse(isActiveFilter, out var isActive))
-            {
-                query = query.Where(s => s.IsActive == isActive);
             }
 
             return query.OrderBy(s => s.SizeName);
