@@ -121,32 +121,7 @@
                             IconColor="text-primary"
                             Fields="@GetMaterialBasicFields()" />
                     </div>
-                },
-                
-                new GenericDetailPageComponent<Material, IMaterialService>.TabSection
-                {
-                    Id = "products",
-                    Title = $"關聯商品 (0)",
-                    Content = @<div>
-                        <RelationListComponent TRelationEntity="Product" 
-                                             TTargetEntity="Product"
-                                             RelationItems="@(new List<Product>())"
-                                             OnItemClick="@productClickHandler"
-                                             GetTargetId="@(p => p.Id)"
-                                             GetDisplayName="@(p => p.ProductName ?? "未知商品")"
-                                             EmptyMessage="此材質目前沒有被任何商品使用"
-                                             EmptyIcon="fas fa-box-open">
-                            <ExtraContentTemplate Context="product">
-                                <small class="text-muted d-block mb-2">代碼：@product.ProductCode</small>
-                                @if (!string.IsNullOrEmpty(product.Description))
-                                {
-                                    <p class="card-text small text-muted mb-2">@product.Description</p>
-                                }
-                            </ExtraContentTemplate>
-                        </RelationListComponent>
-                    </div>
-                },
-            
+                },            
                 new GenericDetailPageComponent<Material, IMaterialService>.TabSection
                 {
                     Id = "system",
