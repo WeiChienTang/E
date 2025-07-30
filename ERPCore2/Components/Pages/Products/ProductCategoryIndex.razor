@@ -71,7 +71,7 @@
     {
         try
         {
-            // 建立篩選定義
+            // 建立篩選定義（狀態篩選器會由 GenericIndexPageComponent 自動添加）
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("CategoryName", "分類名稱", "輸入分類名稱搜尋")
                 .AddText("CategoryCode", "分類代碼", "輸入分類代碼搜尋")
@@ -101,8 +101,8 @@
                     var category = (ProductCategory)item;
                     return @<span class="badge bg-primary">@(category.Products?.Count ?? 0)</span>;
                 }),
-                TableColumnDefinition.Text("描述", nameof(ProductCategory.Description)),
-                TableColumnDefinition.Date("建立日期", nameof(ProductCategory.CreatedAt), "yyyy/MM/dd")
+                TableColumnDefinition.Text("描述", nameof(ProductCategory.Description))
+                // 狀態和建立日期欄位會由 GenericIndexPageComponent 自動添加
             };
         }
         catch (Exception ex)
@@ -114,9 +114,7 @@
                 additionalData: "初始化表格欄位失敗"
             );
         }
-    }
-
-    // 資料載入委派
+    }    // 資料載入委派
     private async Task<List<ProductCategory>> LoadDataAsync()
     {
         try
@@ -163,6 +161,13 @@
                 query = query.Where(c => 
                     !string.IsNullOrEmpty(c.Description) && 
                     c.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 狀態篩選
+            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
+            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
+            {
+                query = query.Where(c => c.Status == status);
             }
 
             return query.OrderBy(c => c.CategoryName);

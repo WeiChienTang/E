@@ -78,7 +78,7 @@
             <div class="card-body">                
                 @* 搜尋篩選區域 *@
                 <GenericSearchFilterComponent TModel="SearchFilterModel"
-                                             FilterDefinitions="@FilterDefinitions"
+                                             FilterDefinitions="@GetFinalFilterDefinitions()"
                                              FilterModel="@SearchModel"
                                              OnSearch="@HandleSearch"
                                              OnFilterChanged="@HandleFilterChanged"
@@ -90,7 +90,7 @@
                 <div class="mt-4">                    
                     <GenericTableComponent TItem="TEntity"
                                           Items="@PagedItems"
-                                          ColumnDefinitions="@ColumnDefinitions"
+                                          ColumnDefinitions="@GetFinalColumnDefinitions()"
                                           ShowActions="@ShowActions"
                                           ActionsTemplate="@GetFinalActionsTemplate()"
                                           EnableRowClick="@EnableRowClick"
@@ -166,6 +166,14 @@
     [Parameter] public List<SearchFilterDefinition> FilterDefinitions { get; set; } = new();
     [Parameter] public List<TableColumnDefinition> ColumnDefinitions { get; set; } = new();
     [Parameter] public Func<SearchFilterModel, IQueryable<TEntity>, IQueryable<TEntity>> FilterApplier { get; set; } = default!;
+    
+    // 自動標準欄位設定
+    [Parameter] public bool AutoAddStatusColumn { get; set; } = true;
+    [Parameter] public bool AutoAddCreatedAtColumn { get; set; } = true;
+    [Parameter] public bool AutoAddStatusFilter { get; set; } = true;
+    [Parameter] public string StatusColumnTitle { get; set; } = "狀態";
+    [Parameter] public string CreatedAtColumnTitle { get; set; } = "建立日期";
+    [Parameter] public string StatusFilterTitle { get; set; } = "狀態";
     
     // 搜尋組件設定
     [Parameter] public bool AutoSearch { get; set; } = true;
@@ -513,12 +521,95 @@
     /// </summary>
     public static TableColumnDefinition GetDefaultStatusColumn(string title = "狀態", string propertyName = "Status")
     {
-        return TableColumnDefinition.Status(title, propertyName, new Dictionary<object, string>
+        var column = TableColumnDefinition.Status(title, propertyName, new Dictionary<object, string>
         {
             { EntityStatus.Active, "啟用" },
             { EntityStatus.Inactive, "停用" },
             { EntityStatus.Deleted, "已刪除" }
         });
+        
+        // 設定較小的欄位寬度，標題和內容都置中
+        column.HeaderStyle = "width: 80px; text-align: center;";
+        column.CellCssClass = "text-center";
+        
+        return column;
+    }
+
+    // ===== 標準欄位和篩選器處理方法 =====
+    
+    /// <summary>
+    /// 取得最終的欄位定義（自動添加標準欄位）
+    /// </summary>
+    private List<TableColumnDefinition> GetFinalColumnDefinitions()
+    {
+        var columns = new List<TableColumnDefinition>(ColumnDefinitions);
+        
+        // 自動添加狀態欄位
+        if (AutoAddStatusColumn)
+        {
+            // 檢查是否已經有狀態欄位，避免重複添加
+            if (!columns.Any(c => c.PropertyName == "Status"))
+            {
+                columns.Add(GetDefaultStatusColumn(StatusColumnTitle));
+            }
+        }
+        
+        // 自動添加建立日期欄位
+        if (AutoAddCreatedAtColumn)
+        {
+            // 檢查是否已經有建立日期欄位，避免重複添加
+            if (!columns.Any(c => c.PropertyName == "CreatedAt"))
+            {
+                var createdAtColumn = TableColumnDefinition.Date(CreatedAtColumnTitle, nameof(BaseEntity.CreatedAt), "yyyy/MM/dd");
+                // 設定較小的欄位寬度，標題和內容都置中
+                createdAtColumn.HeaderStyle = "width: 100px; text-align: center;";
+                createdAtColumn.CellCssClass = "text-center";
+                columns.Add(createdAtColumn);
+            }
+        }
+        
+        return columns;
+    }
+    
+    /// <summary>
+    /// 取得最終的篩選器定義（自動添加標準篩選器）
+    /// </summary>
+    private List<SearchFilterDefinition> GetFinalFilterDefinitions()
+    {
+        var filters = new List<SearchFilterDefinition>(FilterDefinitions);
+        
+        // 自動添加狀態篩選器
+        if (AutoAddStatusFilter)
+        {
+            // 檢查是否已經有狀態篩選器，避免重複添加
+            if (!filters.Any(f => f.PropertyName == "Status"))
+            {
+                try
+                {
+                    var statusOptions = new List<SelectOption>
+                    {
+                        new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
+                        new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
+                    };
+                    
+                    var statusFilter = new SearchFilterDefinition
+                    {
+                        Name = "Status",
+                        Label = StatusFilterTitle,
+                        Type = SearchFilterType.Select,
+                        Options = statusOptions
+                    };
+                    
+                    filters.Add(statusFilter);
+                }
+                catch
+                {
+                    // 如果有錯誤，跳過添加狀態篩選器
+                }
+            }
+        }
+        
+        return filters;
     }
 
     // ...existing code...
@@ -620,6 +711,11 @@
         {
             query = FilterApplier(searchModel, query);
         }
+        else
+        {
+            // 如果沒有提供自定義篩選邏輯，應用標準狀態篩選
+            query = ApplyStandardFilters(searchModel, query);
+        }
         
         filteredItems = query.ToList();
         totalItems = filteredItems.Count;
@@ -634,6 +730,24 @@
         }
         
         await Task.CompletedTask;
+    }
+    
+    /// <summary>
+    /// 應用標準篩選邏輯（當沒有提供自定義篩選器時使用）
+    /// </summary>
+    private IQueryable<TEntity> ApplyStandardFilters(SearchFilterModel searchModel, IQueryable<TEntity> query)
+    {
+        // 狀態篩選
+        if (AutoAddStatusFilter)
+        {
+            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
+            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
+            {
+                query = query.Where(entity => entity.Status == status);
+            }
+        }
+        
+        return query;
     }
     
     /// <summary>

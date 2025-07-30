@@ -89,18 +89,11 @@
     {
         try
         {
-            // 準備狀態選項
-            var statusOptions = new List<SelectOption>
-            {
-                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-            };
-
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("TypeName", "類型名稱", "輸入類型名稱搜尋")
                 .AddText("Description", "描述", "輸入描述搜尋")
-                .AddSelect("Status", "狀態", statusOptions)
+                .AddSelect("Status", "狀態", EntityStatusHelper.GetEntityStatusOptions())
                 .Build();
         }
         catch (Exception ex)

@@ -98,13 +98,6 @@
     {
         try
         {
-            // 準備狀態選項
-            var statusOptions = new List<SelectOption>
-            {
-                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-            };
-
             formFields = new List<FormFieldDefinition>
             {            
                 new()
@@ -122,7 +115,7 @@
                     Label = "狀態",
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
-                    Options = statusOptions,
+                    Options = EntityStatusHelper.GetEntityStatusOptions(),
                     
                 },
                 new()

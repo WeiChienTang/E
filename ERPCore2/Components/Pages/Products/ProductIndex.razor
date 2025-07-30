@@ -116,20 +116,6 @@
     {
         try
         {
-            // 準備啟用狀態選項
-            var activeStatusOptions = new List<SelectOption>
-            {
-                new() { Text = "啟用", Value = "true" },
-                new() { Text = "停用", Value = "false" }
-            };
-
-            // 準備實體狀態選項
-            var statusOptions = new List<SelectOption>
-            {
-                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-            };
-
             // 建立基本篩選定義（不包含下拉選單選項，這些將在 InitializeFiltersAsync 中載入）
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("ProductCode", "產品代碼", "輸入產品代碼搜尋")
@@ -137,8 +123,8 @@
                 .AddSelect("SizeId", "尺寸", new List<SelectOption>()) // 空的選項，稍後載入
                 .AddSelect("ProductCategoryId", "產品分類", new List<SelectOption>()) // 空的選項，稍後載入
                 .AddSelect("PrimarySupplierId", "主要供應商", new List<SelectOption>()) // 空的選項，稍後載入
-                .AddSelect("Status", "實體狀態", statusOptions)
                 .AddSelect("UnitId", "單位", new List<SelectOption>()) // 空的選項，稍後載入
+                // 狀態篩選器會由 GenericIndexPageComponent 自動添加
                 .Build();
         }
         catch (Exception ex)
@@ -165,9 +151,8 @@
                 TableColumnDefinition.Text("尺寸", "Size.SizeName"),
                 TableColumnDefinition.Text("產品分類", "ProductCategory.CategoryName"),
                 TableColumnDefinition.Text("單位", "Unit.UnitName"),
-                TableColumnDefinition.Number("單價", nameof(Product.UnitPrice), "N2"),
-                GenericIndexPageComponent<Product, IProductService>.GetDefaultStatusColumn("狀態", nameof(Product.Status)),
-                TableColumnDefinition.Date("建立日期", nameof(Product.CreatedAt), "yyyy/MM/dd")
+                TableColumnDefinition.Number("單價", nameof(Product.UnitPrice), "N2")
+                // 狀態和建立日期欄位會由 GenericIndexPageComponent 自動添加
             };
         }
         catch (Exception ex)
@@ -181,7 +166,8 @@
             // 設定預設值以防頁面無法正常運作
             columnDefinitions = new List<TableColumnDefinition>();
         }
-    }    // 自定義篩選邏輯
+    }    
+    // 自定義篩選邏輯
     private IQueryable<Product> ApplyProductFilters(SearchFilterModel searchModel, IQueryable<Product> query)
     {
         try
@@ -287,13 +273,6 @@
                 Value = s.Id.ToString()
             }).ToList();
 
-            // 準備實體狀態選項
-            var statusOptions = new List<SelectOption>
-            {
-                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-            };
-
             // 重新建立篩選定義，包含載入的選項
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("ProductCode", "產品代碼", "輸入產品代碼搜尋")
@@ -301,8 +280,8 @@
                 .AddSelect("SizeId", "尺寸", sizeOptions)
                 .AddSelect("ProductCategoryId", "產品分類", categoryOptions)
                 .AddSelect("PrimarySupplierId", "主要供應商", supplierOptions)
-                .AddSelect("Status", "實體狀態", statusOptions)
                 .AddSelect("UnitId", "單位", unitOptions)
+                // 狀態篩選器會由 GenericIndexPageComponent 自動添加
                 .Build();
 
             // 通知組件狀態已改變
