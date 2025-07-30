@@ -79,7 +79,6 @@
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("Name", "顏色名稱", "輸入顏色名稱搜尋")
-                .AddText("HexCode", "色碼", "輸入HEX色碼搜尋")
                 .AddText("Description", "描述", "輸入描述搜尋")        
                 .Build();
         }
@@ -100,9 +99,8 @@
         {
             columnDefinitions = new List<TableColumnDefinition>
             {
-                TableColumnDefinition.Text("顏色名稱", nameof(Color.Name)),
                 TableColumnDefinition.Text("顏色代碼", nameof(Color.Code)),
-                TableColumnDefinition.Text("HEX色碼", nameof(Color.HexCode)),
+                TableColumnDefinition.Text("顏色名稱", nameof(Color.Name)),
                 TableColumnDefinition.Text("描述", nameof(Color.Description)),
             };
         }
@@ -146,15 +144,6 @@
             if (!string.IsNullOrWhiteSpace(nameFilter))
             {
                 query = query.Where(c => c.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // HEX色碼篩選
-            var hexCodeFilter = searchModel.GetFilterValue("HexCode")?.ToString();
-            if (!string.IsNullOrWhiteSpace(hexCodeFilter))
-            {
-                query = query.Where(c => 
-                    !string.IsNullOrEmpty(c.HexCode) && 
-                    c.HexCode.Contains(hexCodeFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 描述篩選

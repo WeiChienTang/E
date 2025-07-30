@@ -73,21 +73,23 @@
                 // 基本資訊區段
                 new()
                 {
-                    PropertyName = nameof(Color.Name),
-                    Label = "名稱",
+                    PropertyName = nameof(Color.Code),
+                    Label = "顏色代碼",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入顏色名稱",
+                    Placeholder = "請輸入顏色代碼",
                     IsRequired = true,
-                    
+                    MaxLength = 20,
+                    HelpText = "唯一識別此顏色的代碼，最多20個字元"
                 },
                 new()
                 {
-                    PropertyName = nameof(Color.Code),
-                    Label = "編碼",
+                    PropertyName = nameof(Color.Name),
+                    Label = "顏色名稱",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入顏色編碼",
-                    IsRequired = false,
-                    
+                    Placeholder = "請輸入顏色名稱",
+                    IsRequired = true,
+                    MaxLength = 50,
+                    HelpText = "顯示用的顏色名稱，最多50個字元"
                 },
                 new()
                 {
@@ -99,7 +101,7 @@
                         new() { Text = "啟用", Value = "Active" },
                         new() { Text = "停用", Value = "Inactive" }
                     },
-                    
+                    HelpText = "設定此顏色的啟用狀態"
                 },
                 // 詳細資訊區段
                 new()
@@ -109,6 +111,8 @@
                     FieldType = FormFieldType.TextArea,
                     Placeholder = "請輸入顏色描述",
                     Rows = 3,
+                    MaxLength = 200,
+                    HelpText = "額外的顏色說明，最多200個字元"
                 },
                 // 其他資訊區段
                 new()
@@ -118,6 +122,7 @@
                     FieldType = FormFieldType.TextArea,
                     Placeholder = "請輸入備註",
                     Rows = 2,
+                    HelpText = "其他相關備註資訊"
                 }
             };
 
@@ -155,8 +160,11 @@
         {
             if (!Id.HasValue) 
             {
+                // 新增模式：建立新的顏色實體並生成代碼
                 return new Color
                 {
+                    Name = string.Empty,
+                    Code = await GenerateColorCodeAsync(),
                     Status = EntityStatus.Active
                 };
             }
@@ -165,25 +173,43 @@
             
             if (color == null)
             {
-                // 如果找不到顏色，建立新的預設顏色
-                return new Color
-                {
-                    Status = EntityStatus.Active
-                };
+                await NotificationService.ShowErrorAsync("找不到指定的顏色資料");
+                return null;
             }
             return color;
         }
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadColorData), GetType(), NotificationService);
+            return null;
+        }
+    }
+
+    private async Task<string> GenerateColorCodeAsync()
+    {
+        try
+        {
+            // 簡單的顏色代碼生成邏輯：COL + 時間戳
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var baseCode = $"COL{timestamp}";
             
-            // 設定安全的預設值，確保程式不會崩潰
-            return new Color
+            // 檢查是否重複，如果重複則加上隨機數
+            var isExists = await ColorService.IsCodeExistsAsync(baseCode);
+            if (isExists)
             {
-                Name = "ERROR",
-                Code = "",
-                Status = EntityStatus.Active
-            };
+                var random = new Random().Next(100, 999);
+                baseCode = $"COL{timestamp}{random}";
+            }
+            
+            return baseCode;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GenerateColorCodeAsync), GetType(),
+                additionalData: "生成顏色代碼時發生錯誤"
+            );
+            // 如果生成失敗，返回預設格式
+            return $"COL{DateTime.Now:yyyyMMddHHmmss}";
         }
     }
 }

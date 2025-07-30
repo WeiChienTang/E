@@ -18,7 +18,6 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
-                          EnableStandardActions="true"
                           EntityName="天氣"
                           GetEntityDisplayName="@(weather => weather.Name)"
                           DeleteSuccessMessage="天氣刪除成功"                          
@@ -81,18 +80,10 @@
     {
         try
         {
-            // 準備狀態選項
-            var statusOptions = new List<SelectOption>
-            {
-                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-            };
-
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("Name", "天氣名稱", "輸入天氣名稱搜尋")
                 .AddText("Description", "描述", "輸入描述搜尋")
-                .AddSelect("Status", "狀態", statusOptions)
                 .Build();
                 
             await Task.CompletedTask;
@@ -115,12 +106,6 @@
             {
                 TableColumnDefinition.Text("天氣名稱", nameof(Weather.Name)),
                 TableColumnDefinition.Text("描述", nameof(Weather.Description)),
-                TableColumnDefinition.Status("狀態", nameof(Weather.Status), new Dictionary<object, string>
-                {
-                    { EntityStatus.Active, "bg-success" },
-                    { EntityStatus.Inactive, "bg-secondary" }
-                }),
-                TableColumnDefinition.Date("建立日期", nameof(Weather.CreatedAt), "yyyy/MM/dd")
             };
             await Task.CompletedTask;
         }
@@ -169,13 +154,6 @@
                 query = query.Where(w => 
                     !string.IsNullOrEmpty(w.Description) && 
                     w.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 狀態篩選
-            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
-            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
-            {
-                query = query.Where(w => w.Status == status);
             }
             
             return query.OrderBy(w => w.Name);

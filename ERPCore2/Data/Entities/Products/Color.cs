@@ -7,14 +7,14 @@ namespace ERPCore2.Data.Entities
     /// </summary>
     public class Color : BaseEntity
     {
+        [MaxLength(20, ErrorMessage = "顏色代碼不可超過20個字元")]
+        [Display(Name = "顏色代碼")]
+        public string Code { get; set; } = string.Empty;
+
         [Required(ErrorMessage = "顏色名稱為必填")]
         [MaxLength(50, ErrorMessage = "顏色名稱不可超過50個字元")]
         [Display(Name = "顏色名稱")]
         public string Name { get; set; } = string.Empty;
-
-        [MaxLength(20, ErrorMessage = "顏色代碼不可超過20個字元")]
-        [Display(Name = "顏色代碼")]
-        public string Code { get; set; } = string.Empty;
 
         [MaxLength(200, ErrorMessage = "描述不可超過200個字元")]
         [Display(Name = "描述")]
