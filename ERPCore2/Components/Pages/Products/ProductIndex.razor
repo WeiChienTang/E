@@ -137,7 +137,6 @@
                 .AddSelect("SizeId", "尺寸", new List<SelectOption>()) // 空的選項，稍後載入
                 .AddSelect("ProductCategoryId", "產品分類", new List<SelectOption>()) // 空的選項，稍後載入
                 .AddSelect("PrimarySupplierId", "主要供應商", new List<SelectOption>()) // 空的選項，稍後載入
-                .AddSelect("IsActive", "啟用狀態", activeStatusOptions)
                 .AddSelect("Status", "實體狀態", statusOptions)
                 .AddSelect("UnitId", "單位", new List<SelectOption>()) // 空的選項，稍後載入
                 .Build();
@@ -167,11 +166,6 @@
                 TableColumnDefinition.Text("產品分類", "ProductCategory.CategoryName"),
                 TableColumnDefinition.Text("單位", "Unit.UnitName"),
                 TableColumnDefinition.Number("單價", nameof(Product.UnitPrice), "N2"),
-                TableColumnDefinition.Status("啟用", nameof(Product.IsActive), new Dictionary<object, string>
-                {
-                    { true, "bg-success" },
-                    { false, "bg-secondary" }
-                }),
                 TableColumnDefinition.Status("狀態", nameof(Product.Status), new Dictionary<object, string>
                 {
                     { EntityStatus.Active, "bg-success" },
@@ -231,13 +225,6 @@
             if (!string.IsNullOrWhiteSpace(supplierIdFilter) && int.TryParse(supplierIdFilter, out var supplierId))
             {
                 query = query.Where(p => p.PrimarySupplierId == supplierId);
-            }
-
-            // 啟用狀態篩選
-            var isActiveFilter = searchModel.GetFilterValue("IsActive")?.ToString();
-            if (!string.IsNullOrWhiteSpace(isActiveFilter) && bool.TryParse(isActiveFilter, out var isActive))
-            {
-                query = query.Where(p => p.IsActive == isActive);
             }
 
             // 實體狀態篩選
@@ -304,13 +291,6 @@
                 Value = s.Id.ToString()
             }).ToList();
 
-            // 準備啟用狀態選項
-            var activeStatusOptions = new List<SelectOption>
-            {
-                new() { Text = "啟用", Value = "true" },
-                new() { Text = "停用", Value = "false" }
-            };
-
             // 準備實體狀態選項
             var statusOptions = new List<SelectOption>
             {
@@ -325,7 +305,6 @@
                 .AddSelect("SizeId", "尺寸", sizeOptions)
                 .AddSelect("ProductCategoryId", "產品分類", categoryOptions)
                 .AddSelect("PrimarySupplierId", "主要供應商", supplierOptions)
-                .AddSelect("IsActive", "啟用狀態", activeStatusOptions)
                 .AddSelect("Status", "實體狀態", statusOptions)
                 .AddSelect("UnitId", "單位", unitOptions)
                 .Build();

@@ -370,8 +370,8 @@
                     CustomContent = @<div>
                         @if (product != null)
                         {
-                            <span class="badge @(product.IsActive ? "bg-success" : "bg-secondary")">
-                                @(product.IsActive ? "啟用" : "停用")
+                            <span class="badge @(product.Status == EntityStatus.Active ? "bg-success" : "bg-secondary")">
+                                @(product.Status == EntityStatus.Active ? "啟用" : "停用")
                             </span>
                         }
                     </div>,

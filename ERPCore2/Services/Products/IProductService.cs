@@ -88,20 +88,6 @@ namespace ERPCore2.Services
         
         #endregion
 
-        #region 狀態管理
-        
-        /// <summary>
-        /// 切換商品啟用狀態
-        /// </summary>
-        Task<ServiceResult> ToggleActiveStatusAsync(int productId);
-        
-        /// <summary>
-        /// 批次設定商品狀態
-        /// </summary>
-        Task<ServiceResult> BatchSetActiveStatusAsync(List<int> productIds, bool isActive);
-        
-        #endregion
-
         #region 輔助方法
         
         /// <summary>

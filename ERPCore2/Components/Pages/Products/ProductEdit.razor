@@ -156,17 +156,7 @@
                     IsRequired = true,
                     Placeholder = "輸入產品名稱",
                 },
-                new() {
-                    PropertyName = nameof(Product.IsActive),
-                    Label = "狀態",
-                    FieldType = FormFieldType.Select,
-                    IsRequired = true,
-                    Options = new List<SelectOption>
-                    {
-                        new() { Value = "true", Text = "啟用" },
-                        new() { Value = "false", Text = "停用" }
-                    },
-                },
+
                 new() {
                     PropertyName = nameof(Product.Description),
                     Label = "產品描述",
@@ -204,7 +194,6 @@
                 // 基本資訊區塊
                 { nameof(Product.ProductCode), "基本資訊" },
                 { nameof(Product.ProductName), "基本資訊" },
-                { nameof(Product.IsActive), "基本資訊" },
                 
                 // 價格與其他資訊區塊
                 { nameof(Product.UnitPrice), "價格與其他資訊" },

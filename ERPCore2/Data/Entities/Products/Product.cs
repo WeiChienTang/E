@@ -48,9 +48,6 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal? CostPrice { get; set; }
         
-        [Display(Name = "是否啟用")]
-        public bool IsActive { get; set; } = true;
-        
         // Foreign Keys
         [Display(Name = "商品分類")]
         [ForeignKey(nameof(ProductCategory))]

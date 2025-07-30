@@ -250,7 +250,7 @@ namespace ERPCore2.Services
                     .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
-                    .Where(p => p.IsActive && !p.IsDeleted)
+                    .Where(p => p.Status == EntityStatus.Active && !p.IsDeleted)
                     .OrderBy(p => p.ProductName)
                     .ToListAsync();
             }
@@ -530,65 +530,6 @@ namespace ERPCore2.Services
 
         #endregion
 
-        #region 狀態管理
-
-        public async Task<ServiceResult> ToggleActiveStatusAsync(int productId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var product = await GetByIdAsync(productId);
-                if (product == null)
-                {
-                    return ServiceResult.Failure("找不到指定的商品");
-                }
-
-                product.IsActive = !product.IsActive;
-                product.UpdatedAt = DateTime.UtcNow;
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ToggleActiveStatusAsync), GetType(), _logger, new { ProductId = productId });
-                return ServiceResult.Failure($"切換啟用狀態時發生錯誤: {ex.Message}");
-            }
-        }
-
-        public async Task<ServiceResult> BatchSetActiveStatusAsync(List<int> productIds, bool isActive)
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
-
-            try
-            {
-                var products = await context.Products
-                    .Where(p => productIds.Contains(p.Id) && !p.IsDeleted)
-                    .ToListAsync();
-
-                if (!products.Any())
-                {
-                    return ServiceResult.Failure("找不到要更新的商品");
-                }
-
-                foreach (var product in products)
-                {
-                    product.IsActive = isActive;
-                    product.UpdatedAt = DateTime.UtcNow;
-                }
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(BatchSetActiveStatusAsync), GetType(), _logger, new { ProductIds = productIds, IsActive = isActive });
-                return ServiceResult.Failure($"批次設定啟用狀態時發生錯誤: {ex.Message}");
-            }
-        }
-
-        #endregion
-
         #region 輔助方法
 
         public void InitializeNewProduct(Product product)
@@ -603,7 +544,6 @@ namespace ERPCore2.Services
                 product.SizeId = null;
                 product.UnitPrice = null;
                 product.CostPrice = null;
-                product.IsActive = true;
                 product.ProductCategoryId = null;
                 product.PrimarySupplierId = null;
                 product.Status = EntityStatus.Active;
