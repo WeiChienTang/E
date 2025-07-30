@@ -308,7 +308,7 @@ namespace ERPCore2.Services
             try
             {
                 return await context.Units
-                    .Where(u => u.IsActive && !u.IsDeleted)
+                    .Where(u => u.Status == EntityStatus.Active && !u.IsDeleted)
                     .OrderBy(u => u.UnitName)
                     .ToListAsync();
             }

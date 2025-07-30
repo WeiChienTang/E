@@ -26,10 +26,7 @@ namespace ERPCore2.Data.Entities
         public string? Symbol { get; set; }
         
         [Display(Name = "是否為基本單位")]
-        public bool IsBaseUnit { get; set; } = false;
-        
-        [Display(Name = "是否啟用")]
-        public bool IsActive { get; set; } = true;
+        public bool IsBaseUnit { get; set; } = true;
         
         // Navigation Properties
         public ICollection<Product> Products { get; set; } = new List<Product>();

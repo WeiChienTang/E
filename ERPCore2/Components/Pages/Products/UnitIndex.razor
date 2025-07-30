@@ -86,26 +86,10 @@
     {
         try
         {
-            // 準備狀態選項
-            var activeOptions = new List<SelectOption>
-            {
-                new() { Text = "啟用", Value = "true" },
-                new() { Text = "停用", Value = "false" }
-            };
-
-            var baseUnitOptions = new List<SelectOption>
-            {
-                new() { Text = "是", Value = "true" },
-                new() { Text = "否", Value = "false" }
-            };
-
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("UnitCode", "單位代碼", "輸入單位代碼搜尋")
                 .AddText("UnitName", "單位名稱", "輸入單位名稱搜尋")
-                .AddText("Symbol", "單位符號", "輸入單位符號搜尋")
-                .AddSelect("IsBaseUnit", "基本單位", baseUnitOptions)
-                .AddSelect("IsActive", "狀態", activeOptions)
                 .Build();
         }
         catch (Exception ex)
@@ -124,12 +108,6 @@
             {
                 TableColumnDefinition.Text("單位代碼", nameof(Unit.UnitCode)),
                 TableColumnDefinition.Text("單位名稱", nameof(Unit.UnitName)),
-                TableColumnDefinition.Text("符號", nameof(Unit.Symbol)),
-                TableColumnDefinition.Boolean("基本單位", nameof(Unit.IsBaseUnit), 
-                    trueText: "是", falseText: "否"),
-                TableColumnDefinition.Boolean("狀態", nameof(Unit.IsActive), 
-                    trueText: "啟用", falseText: "停用"),
-                TableColumnDefinition.Date("建立日期", nameof(Unit.CreatedAt), "yyyy/MM/dd")
             };
         }
         catch (Exception ex)
@@ -159,29 +137,6 @@
             {
                 query = query.Where(u => 
                     u.UnitName.Contains(unitNameFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 單位符號篩選
-            var symbolFilter = searchModel.GetFilterValue("Symbol")?.ToString();
-            if (!string.IsNullOrWhiteSpace(symbolFilter))
-            {
-                query = query.Where(u => 
-                    !string.IsNullOrEmpty(u.Symbol) && 
-                    u.Symbol.Contains(symbolFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 基本單位篩選
-            var isBaseUnitFilter = searchModel.GetFilterValue("IsBaseUnit")?.ToString();
-            if (!string.IsNullOrWhiteSpace(isBaseUnitFilter) && bool.TryParse(isBaseUnitFilter, out var isBaseUnit))
-            {
-                query = query.Where(u => u.IsBaseUnit == isBaseUnit);
-            }
-
-            // 狀態篩選
-            var isActiveFilter = searchModel.GetFilterValue("IsActive")?.ToString();
-            if (!string.IsNullOrWhiteSpace(isActiveFilter) && bool.TryParse(isActiveFilter, out var isActive))
-            {
-                query = query.Where(u => u.IsActive == isActive);
             }
 
             return query.OrderBy(u => u.UnitCode);

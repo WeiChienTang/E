@@ -31,7 +31,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitName = "個",
                     Symbol = "個",
                     IsBaseUnit = true,
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -42,7 +42,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitName = "箱",
                     Symbol = "箱",
                     IsBaseUnit = false,
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -53,7 +53,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitName = "公斤",
                     Symbol = "kg",
                     IsBaseUnit = true,
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -64,7 +64,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitName = "公克",
                     Symbol = "g",
                     IsBaseUnit = false,
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -75,7 +75,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitName = "包",
                     Symbol = "包",
                     IsBaseUnit = false,
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -86,7 +86,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitName = "公尺",
                     Symbol = "m",
                     IsBaseUnit = true,
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -97,7 +97,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitName = "公分",
                     Symbol = "cm",
                     IsBaseUnit = false,
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -108,7 +108,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitName = "平方公尺",
                     Symbol = "m²",
                     IsBaseUnit = true,
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -119,7 +119,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitName = "公升",
                     Symbol = "L",
                     IsBaseUnit = true,
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -130,7 +130,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitName = "毫升",
                     Symbol = "ml",
                     IsBaseUnit = false,
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -142,7 +142,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitName = "台",
                     Symbol = "台",
                     IsBaseUnit = true,
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-31),
                     CreatedBy = "System"
@@ -153,7 +153,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitName = "支",
                     Symbol = "支",
                     IsBaseUnit = true,
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-31),
                     CreatedBy = "System"
@@ -164,7 +164,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitName = "頂",
                     Symbol = "頂",
                     IsBaseUnit = true,
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-31),
                     CreatedBy = "System"
@@ -175,7 +175,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitName = "授權",
                     Symbol = "授權",
                     IsBaseUnit = true,
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-31),
                     CreatedBy = "System"
@@ -186,7 +186,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitName = "張",
                     Symbol = "張",
                     IsBaseUnit = true,
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-31),
                     CreatedBy = "System"
@@ -197,7 +197,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitName = "袋",
                     Symbol = "袋",
                     IsBaseUnit = true,
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-31),
                     CreatedBy = "System"
@@ -208,7 +208,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitName = "捲",
                     Symbol = "捲",
                     IsBaseUnit = true,
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-31),
                     CreatedBy = "System"
@@ -226,7 +226,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     FromUnitId = units.First(u => u.UnitCode == "BOX").Id,
                     ToUnitId = units.First(u => u.UnitCode == "PCS").Id,
                     ConversionRate = 12, // 1箱 = 12個
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -236,7 +236,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     FromUnitId = units.First(u => u.UnitCode == "KG").Id,
                     ToUnitId = units.First(u => u.UnitCode == "G").Id,
                     ConversionRate = 1000, // 1公斤 = 1000公克
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -246,7 +246,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     FromUnitId = units.First(u => u.UnitCode == "PACK").Id,
                     ToUnitId = units.First(u => u.UnitCode == "PCS").Id,
                     ConversionRate = 10, // 1包 = 10個
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -256,7 +256,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     FromUnitId = units.First(u => u.UnitCode == "M").Id,
                     ToUnitId = units.First(u => u.UnitCode == "CM").Id,
                     ConversionRate = 100, // 1公尺 = 100公分
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -266,7 +266,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     FromUnitId = units.First(u => u.UnitCode == "L").Id,
                     ToUnitId = units.First(u => u.UnitCode == "ML").Id,
                     ConversionRate = 1000, // 1公升 = 1000毫升
-                    IsActive = true,
+                    
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"

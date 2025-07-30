@@ -128,16 +128,6 @@
     {
         try
         {
-            if (!Id.HasValue)
-            {
-                unit = new Unit 
-                { 
-                    UnitCode = await GenerateUnitCodeAsync(),
-                    IsActive = true 
-                };
-                return unit;
-            }
-
             var result = await UnitService.GetByIdAsync(Id.Value);
             if (result != null)
             {
