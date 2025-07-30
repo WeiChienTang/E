@@ -12,190 +12,12 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
     /// </summary>
     public class ProductSeeder : IDataSeeder
     {
-        public int Order => 7;
+        public int Order => 8;
         public string Name => "產品資料";
 
         public async Task SeedAsync(AppDbContext context)
         {
-            await SeedProductCategoriesAsync(context);
-            await SeedUnitsAsync(context);
             await SeedProductsAsync(context);
-        }
-
-        /// <summary>
-        /// 種子商品類別資料
-        /// </summary>
-        private static async Task SeedProductCategoriesAsync(AppDbContext context)
-        {
-            if (await context.ProductCategories.AnyAsync())
-                return; // 資料已存在
-
-            var categories = new[]
-            {
-                new ProductCategory
-                {
-                    CategoryCode = "PC001",
-                    CategoryName = "電子產品",
-                    Description = "電腦週邊、電子設備",
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-30),
-                    CreatedBy = "System"
-                },
-                new ProductCategory
-                {
-                    CategoryCode = "PC002",
-                    CategoryName = "辦公用品",
-                    Description = "辦公室文具用品",
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-30),
-                    CreatedBy = "System"
-                },
-                new ProductCategory
-                {
-                    CategoryCode = "PC003",
-                    CategoryName = "工業設備",
-                    Description = "工業生產設備及工具",
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-30),
-                    CreatedBy = "System"
-                },
-                new ProductCategory
-                {
-                    CategoryCode = "PC004",
-                    CategoryName = "軟體授權",
-                    Description = "軟體授權及服務",
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-30),
-                    CreatedBy = "System"
-                },
-                new ProductCategory
-                {
-                    CategoryCode = "PC005",
-                    CategoryName = "原物料",
-                    Description = "生產原料材料",
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-30),
-                    CreatedBy = "System"
-                }
-            };
-
-            await context.ProductCategories.AddRangeAsync(categories);
-            await context.SaveChangesAsync();
-        }
-
-        /// <summary>
-        /// 種子單位資料
-        /// </summary>
-        private static async Task SeedUnitsAsync(AppDbContext context)
-        {
-            if (await context.Units.AnyAsync())
-                return; // 資料已存在
-
-            var units = new[]
-            {
-                new Unit
-                {
-                    UnitCode = "PC",
-                    UnitName = "台",
-                    Symbol = "台",
-                    IsBaseUnit = true,
-                    IsActive = true,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-31),
-                    CreatedBy = "System"
-                },
-                new Unit
-                {
-                    UnitCode = "PCS",
-                    UnitName = "個",
-                    Symbol = "個",
-                    IsBaseUnit = true,
-                    IsActive = true,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-31),
-                    CreatedBy = "System"
-                },
-                new Unit
-                {
-                    UnitCode = "PKG",
-                    UnitName = "包",
-                    Symbol = "包",
-                    IsBaseUnit = true,
-                    IsActive = true,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-31),
-                    CreatedBy = "System"
-                },
-                new Unit
-                {
-                    UnitCode = "PEN",
-                    UnitName = "支",
-                    Symbol = "支",
-                    IsBaseUnit = true,
-                    IsActive = true,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-31),
-                    CreatedBy = "System"
-                },
-                new Unit
-                {
-                    UnitCode = "TOP",
-                    UnitName = "頂",
-                    Symbol = "頂",
-                    IsBaseUnit = true,
-                    IsActive = true,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-31),
-                    CreatedBy = "System"
-                },
-                new Unit
-                {
-                    UnitCode = "LIC",
-                    UnitName = "授權",
-                    Symbol = "授權",
-                    IsBaseUnit = true,
-                    IsActive = true,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-31),
-                    CreatedBy = "System"
-                },
-                new Unit
-                {
-                    UnitCode = "SHT",
-                    UnitName = "張",
-                    Symbol = "張",
-                    IsBaseUnit = true,
-                    IsActive = true,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-31),
-                    CreatedBy = "System"
-                },
-                new Unit
-                {
-                    UnitCode = "BAG",
-                    UnitName = "袋",
-                    Symbol = "袋",
-                    IsBaseUnit = true,
-                    IsActive = true,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-31),
-                    CreatedBy = "System"
-                },
-                new Unit
-                {
-                    UnitCode = "ROL",
-                    UnitName = "捲",
-                    Symbol = "捲",
-                    IsBaseUnit = true,
-                    IsActive = true,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-31),
-                    CreatedBy = "System"
-                }
-            };
-
-            await context.Units.AddRangeAsync(units);
-            await context.SaveChangesAsync();
         }
 
         /// <summary>
@@ -222,7 +44,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             // 取得單位
             var unitPc = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "PC");     // 台
             var unitPcs = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "PCS");   // 個
-            var unitPkg = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "PKG");   // 包
+            var unitPack = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "PACK"); // 包
             var unitPen = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "PEN");   // 支
             var unitTop = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "TOP");   // 頂
             var unitLic = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "LIC");   // 授權
@@ -288,7 +110,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ProductName = "A4影印紙",
                     Description = "高品質A4白色影印紙，適用各種印表機",
                     Specification = "80gsm，500張包裝，FSC認證環保紙張",
-                    UnitId = unitPkg?.Id,
+                    UnitId = unitPack?.Id,
                     UnitPrice = 120,
                     CostPrice = 85,
                     IsActive = true,

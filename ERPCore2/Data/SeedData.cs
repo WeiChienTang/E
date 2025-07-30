@@ -70,12 +70,13 @@ namespace ERPCore2.Data
                 new DepartmentSeeder(),
                 new ColorSeeder(),
                 new MaterialSeeder(),
+                new ProductCategorySeeder(),    // 產品類別 - 必須在 ProductSeeder 之前
                 new UnitSeeder(),
                 new SizeSeeder(),
                 new WarehouseSeeder(),
                 new CustomerSeeder(),           // 依賴 CustomerTypes (在 BasicDataSeeder 中)
                 new SupplierSeeder(),           // 依賴 SupplierTypes (在 BasicDataSeeder 中)
-                new ProductSeeder(),
+                new ProductSeeder(),            // 依賴 ProductCategory, Unit, Supplier
                 new InventorySeeder(),
                 new InventoryStockSeeder(), 
                 new SalesSeeder(),              // 依賴 Customer, Employee, Product (必須在這些之後)

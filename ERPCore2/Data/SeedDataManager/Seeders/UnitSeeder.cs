@@ -24,6 +24,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             // 建立計量單位
             var units = new List<Unit>
             {
+                // 基本計量單位
                 new Unit
                 {
                     UnitCode = "PCS",
@@ -132,6 +133,84 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     IsActive = true,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
+                    CreatedBy = "System"
+                },
+                // 產品相關的額外單位
+                new Unit
+                {
+                    UnitCode = "PC",
+                    UnitName = "台",
+                    Symbol = "台",
+                    IsBaseUnit = true,
+                    IsActive = true,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-31),
+                    CreatedBy = "System"
+                },
+                new Unit
+                {
+                    UnitCode = "PEN",
+                    UnitName = "支",
+                    Symbol = "支",
+                    IsBaseUnit = true,
+                    IsActive = true,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-31),
+                    CreatedBy = "System"
+                },
+                new Unit
+                {
+                    UnitCode = "TOP",
+                    UnitName = "頂",
+                    Symbol = "頂",
+                    IsBaseUnit = true,
+                    IsActive = true,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-31),
+                    CreatedBy = "System"
+                },
+                new Unit
+                {
+                    UnitCode = "LIC",
+                    UnitName = "授權",
+                    Symbol = "授權",
+                    IsBaseUnit = true,
+                    IsActive = true,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-31),
+                    CreatedBy = "System"
+                },
+                new Unit
+                {
+                    UnitCode = "SHT",
+                    UnitName = "張",
+                    Symbol = "張",
+                    IsBaseUnit = true,
+                    IsActive = true,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-31),
+                    CreatedBy = "System"
+                },
+                new Unit
+                {
+                    UnitCode = "BAG",
+                    UnitName = "袋",
+                    Symbol = "袋",
+                    IsBaseUnit = true,
+                    IsActive = true,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-31),
+                    CreatedBy = "System"
+                },
+                new Unit
+                {
+                    UnitCode = "ROL",
+                    UnitName = "捲",
+                    Symbol = "捲",
+                    IsBaseUnit = true,
+                    IsActive = true,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-31),
                     CreatedBy = "System"
                 }
             };
