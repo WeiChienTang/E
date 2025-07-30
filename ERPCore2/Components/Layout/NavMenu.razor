@@ -58,12 +58,13 @@
         <!-- 員工管理下拉選單 -->
         <NavMenuItem Text="員工管理" IconClass="bi bi-person-badge-fill" MenuKey="employee_management">
             <DropdownItems>
-                <NavDropdownItem Text="員工維護" Url="/employees" RequiredPermission="Employee.Read" ParentMenuKey="employee_management" />
-                <NavDropdownItem Text="部門設定" Url="/departments" RequiredPermission="Department.Read" ParentMenuKey="employee_management"/>
-                <NavDropdownItem Text="職位設定" Url="/employee-positions" RequiredPermission="EmployeePosition.Read" ParentMenuKey="employee_management"/>        
-                <NavDropdownItem Text="角色設定" Url="/roles" RequiredPermission="Role.Read" ParentMenuKey="employee_management"/>       
-                <NavDropdownItem Text="權限設定" Url="/permissions" RequiredPermission="Permission.Read" ParentMenuKey="employee_management"/>
-                <NavDropdownItem Text="角色權限設定" Url="/employees/role-permission-management" RequiredPermission="Role.Read" ParentMenuKey="employee_management"/>
+                <NavDropdownItem Text="員工主檔" Url="/employees" RequiredPermission="Employee.Read" ParentMenuKey="employee_management" IconClass="bi bi-caret-right-fill"/>
+                <NavDropdownItem Text="角色權限主檔" Url="/employees/role-permission-management" RequiredPermission="Role.Read" ParentMenuKey="employee_management"IconClass="bi bi-caret-right-fill"/>
+                <NavDropdownItem Text="部門" Url="/departments" RequiredPermission="Department.Read" ParentMenuKey="employee_management"/>
+                <NavDropdownItem Text="職位" Url="/employee-positions" RequiredPermission="EmployeePosition.Read" ParentMenuKey="employee_management"/>        
+                <NavDropdownItem Text="角色" Url="/roles" RequiredPermission="Role.Read" ParentMenuKey="employee_management"/>       
+                <NavDropdownItem Text="權限" Url="/permissions" RequiredPermission="Permission.Read" ParentMenuKey="employee_management"/>
+
 
             </DropdownItems>
         </NavMenuItem>
