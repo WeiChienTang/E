@@ -1,0 +1,376 @@
+@page "/product-pricing"
+@inject IProductPricingService ProductPricingService
+@inject IProductService ProductService
+@inject ICustomerService CustomerService
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="ProductPricing" 
+                          TService="IProductPricingService"
+                          Service="@ProductPricingService"
+                          EntityBasePath="/product-pricing"
+                          PageTitle="產品定價管理"
+                          PageSubtitle="管理產品的銷售價格設定與客戶專屬定價"
+                          EntityName="產品定價"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadProductPricingAsync"
+                          InitializeBasicData="@LoadBasicDataAsync"
+                          FilterApplier="@ApplyProductPricingFilters"
+                          GetEntityDisplayName="@(pricing => $"{pricing.Product?.ProductName} - {GetPricingTypeDisplayName(pricing.PricingType)}")"
+                          RequiredPermission="ProductPricing.Read"
+                          @ref="indexComponent" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<ProductPricing, IProductPricingService> indexComponent = default!;
+    
+    // 選項清單
+    private List<Product> products = new();
+    private List<Customer> customers = new();
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            InitializeBreadcrumbs();
+            InitializeFilters();
+            InitializeTableColumns();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(OnInitialized),
+                GetType(),
+                additionalData: new { PageName = "ProductPricingIndex", Action = "OnInitialized" }
+            );
+        }
+    }
+
+    private void InitializeBreadcrumbs()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("產品管理", "/products"),
+                new("產品定價管理")
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeBreadcrumbs),
+                GetType(),
+                additionalData: new { PageName = "ProductPricingIndex", Action = "InitializeBreadcrumbs" }
+            );
+            
+            // 設定預設值以防頁面無法正常運作
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    // 載入基礎資料（選項清單等）
+    private async Task LoadBasicDataAsync()
+    {
+        try
+        {
+            // 重新初始化篩選器以載入下拉選單選項
+            await InitializeFiltersAsync();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadBasicDataAsync),
+                GetType(),
+                additionalData: new { PageName = "ProductPricingIndex", Action = "LoadBasicDataAsync" }
+            );
+        }
+    }
+
+    // 載入產品定價資料
+    private async Task<List<ProductPricing>> LoadProductPricingAsync()
+    {
+        try
+        {
+            return await ProductPricingService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadProductPricingAsync),
+                GetType(),
+                additionalData: new { PageName = "ProductPricingIndex", Action = "LoadProductPricingAsync" }
+            );
+            
+            StateHasChanged();
+            return new List<ProductPricing>();
+        }
+    }
+
+    private void InitializeFilters()
+    {
+        try
+        {
+            // 建立基本篩選定義（不包含下拉選單選項，這些將在 InitializeFiltersAsync 中載入）
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("ProductName", "產品名稱", "輸入產品名稱搜尋...")
+                .AddText("ProductCode", "產品代碼", "輸入產品代碼搜尋...")
+                .AddText("CustomerName", "客戶名稱", "輸入客戶名稱搜尋...")
+                .AddSelect("PricingType", "定價類型", GetPricingTypeOptions())
+                .AddText("Currency", "貨幣", "輸入貨幣代碼搜尋...")
+                .AddNumberRange("Price", "價格範圍")
+                .AddDateRange("EffectiveDate", "生效日期範圍")
+                .AddBoolean("HasCustomer", "有指定客戶")
+                .Build();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeFilters),
+                GetType(),
+                additionalData: new { PageName = "ProductPricingIndex", Action = "InitializeFilters" }
+            );
+            
+            // 設定預設值以防頁面無法正常運作
+            filterDefinitions = new List<SearchFilterDefinition>();
+        }
+    }
+
+    private void InitializeTableColumns()
+    {
+        try
+        {
+            columnDefinitions = new List<TableColumnDefinition>
+            {
+                TableColumnDefinition.Text("產品代碼", "Product.ProductCode"),
+                TableColumnDefinition.Text("產品名稱", "Product.ProductName"),
+                TableColumnDefinition.Text("定價類型", "PricingType"),
+                TableColumnDefinition.Currency("價格", "Price", "NT$", "N2"),
+                TableColumnDefinition.Text("貨幣", "Currency"),
+                TableColumnDefinition.Text("客戶", "Customer.CompanyName"),
+                TableColumnDefinition.Number("最小數量", "MinQuantity", "N0"),
+                TableColumnDefinition.Number("最大數量", "MaxQuantity", "N0"),
+                TableColumnDefinition.Date("生效日期", "EffectiveDate", "yyyy-MM-dd"),
+                TableColumnDefinition.Date("失效日期", "ExpiryDate", "yyyy-MM-dd"),
+                TableColumnDefinition.Number("優先順序", "Priority", "N0"),
+                TableColumnDefinition.Status("狀態", "Status", new Dictionary<object, string>
+                {
+                    { EntityStatus.Active, "bg-success" },
+                    { EntityStatus.Inactive, "bg-secondary" }
+                })
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeTableColumns),
+                GetType(),
+                additionalData: new { PageName = "ProductPricingIndex", Action = "InitializeTableColumns" }
+            );
+            
+            // 設定預設值以防頁面無法正常運作
+            columnDefinitions = new List<TableColumnDefinition>();
+        }
+    }
+
+    // 自定義篩選邏輯
+    private IQueryable<ProductPricing> ApplyProductPricingFilters(SearchFilterModel searchModel, IQueryable<ProductPricing> query)
+    {
+        try
+        {
+            // 產品名稱篩選
+            var productNameFilter = searchModel.GetFilterValue("ProductName")?.ToString();
+            if (!string.IsNullOrWhiteSpace(productNameFilter))
+            {
+                query = query.Where(pp => pp.Product.ProductName.Contains(productNameFilter));
+            }
+
+            // 產品代碼篩選
+            var productCodeFilter = searchModel.GetFilterValue("ProductCode")?.ToString();
+            if (!string.IsNullOrWhiteSpace(productCodeFilter))
+            {
+                query = query.Where(pp => pp.Product.ProductCode.Contains(productCodeFilter));
+            }
+
+            // 客戶名稱篩選
+            var customerNameFilter = searchModel.GetFilterValue("CustomerName")?.ToString();
+            if (!string.IsNullOrWhiteSpace(customerNameFilter))
+            {
+                query = query.Where(pp => pp.Customer != null && pp.Customer.CompanyName.Contains(customerNameFilter));
+            }
+
+            // 定價類型篩選
+            var pricingTypeFilter = searchModel.GetFilterValue("PricingType")?.ToString();
+            if (!string.IsNullOrWhiteSpace(pricingTypeFilter) && Enum.TryParse<PricingType>(pricingTypeFilter, out var pricingType))
+            {
+                query = query.Where(pp => pp.PricingType == pricingType);
+            }
+
+            // 貨幣篩選
+            var currencyFilter = searchModel.GetFilterValue("Currency")?.ToString();
+            if (!string.IsNullOrWhiteSpace(currencyFilter))
+            {
+                query = query.Where(pp => pp.Currency.Contains(currencyFilter));
+            }
+
+            // 價格範圍篩選
+            var priceRange = searchModel.GetFilterValue("Price") as NumberRange;
+            if (priceRange != null)
+            {
+                if (priceRange.Min.HasValue)
+                    query = query.Where(pp => pp.Price >= priceRange.Min.Value);
+                if (priceRange.Max.HasValue)
+                    query = query.Where(pp => pp.Price <= priceRange.Max.Value);
+            }
+
+            // 生效日期範圍篩選
+            var effectiveDateRange = searchModel.GetFilterValue("EffectiveDate") as DateRange;
+            if (effectiveDateRange != null)
+            {
+                if (effectiveDateRange.StartDate.HasValue)
+                    query = query.Where(pp => pp.EffectiveDate >= effectiveDateRange.StartDate.Value);
+                if (effectiveDateRange.EndDate.HasValue)
+                    query = query.Where(pp => pp.EffectiveDate <= effectiveDateRange.EndDate.Value);
+            }
+
+            // 有指定客戶篩選
+            var hasCustomerFilter = searchModel.GetFilterValue("HasCustomer") as bool?;
+            if (hasCustomerFilter.HasValue)
+            {
+                if (hasCustomerFilter.Value)
+                    query = query.Where(pp => pp.CustomerId.HasValue);
+                else
+                    query = query.Where(pp => !pp.CustomerId.HasValue);
+            }
+
+            // 實體狀態篩選
+            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
+            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
+            {
+                query = query.Where(pp => pp.Status == status);
+            }
+
+            return query.OrderByDescending(pp => pp.Priority)
+                       .ThenByDescending(pp => pp.EffectiveDate)
+                       .ThenBy(pp => pp.Product.ProductName);
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ApplyProductPricingFilters),
+                GetType(),
+                additionalData: new { PageName = "ProductPricingIndex", Action = "ApplyProductPricingFilters" }
+            );
+            
+            // 發生錯誤時回傳原始查詢
+            return query;
+        }
+    }
+
+    private async Task InitializeFiltersAsync()
+    {
+        try
+        {
+            // 載入產品選項
+            products = await ProductService.GetActiveProductsAsync();
+            var productOptions = products.Select(p => new SelectOption
+            {
+                Value = p.Id.ToString(),
+                Text = $"{p.ProductCode} - {p.ProductName}"
+            }).ToList();
+
+            // 載入客戶選項
+            customers = await CustomerService.GetAllAsync();
+            var customerOptions = customers.Where(c => c.Status == EntityStatus.Active)
+                                         .Select(c => new SelectOption
+            {
+                Value = c.Id.ToString(),
+                Text = $"{c.CustomerCode} - {c.CompanyName}"
+            }).ToList();
+
+            // 重新建立篩選定義，包含載入的選項
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("ProductName", "產品名稱", "輸入產品名稱搜尋...")
+                .AddText("ProductCode", "產品代碼", "輸入產品代碼搜尋...")
+                .AddText("CustomerName", "客戶名稱", "輸入客戶名稱搜尋...")
+                .AddSelect("PricingType", "定價類型", GetPricingTypeOptions())
+                .AddText("Currency", "貨幣", "輸入貨幣代碼搜尋...")
+                .AddNumberRange("Price", "價格範圍")
+                .AddDateRange("EffectiveDate", "生效日期範圍")
+                .AddBoolean("HasCustomer", "有指定客戶")
+                .Build();
+
+            // 通知組件狀態已改變
+            StateHasChanged();
+            
+            // 如果組件已經初始化，刷新組件以更新篩選器
+            if (indexComponent != null)
+            {
+                await indexComponent.Refresh();
+            }
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeFiltersAsync),
+                GetType(),
+                additionalData: new { PageName = "ProductPricingIndex", Action = "InitializeFiltersAsync" }
+            );
+        }
+    }
+
+    private List<SelectOption> GetPricingTypeOptions()
+    {
+        try
+        {
+            return Enum.GetValues<PricingType>()
+                      .Select(pt => new SelectOption
+                      {
+                          Value = pt.ToString(),
+                          Text = GetPricingTypeDisplayName(pt)
+                      }).ToList();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(GetPricingTypeOptions),
+                GetType(),
+                additionalData: new { PageName = "ProductPricingIndex", Action = "GetPricingTypeOptions" }
+            );
+            
+            return new List<SelectOption>();
+        }
+    }
+
+    private string GetPricingTypeDisplayName(PricingType pricingType)
+    {
+        return pricingType switch
+        {
+            PricingType.Standard => "標準價格",
+            PricingType.Promotional => "促銷價格",
+            PricingType.CustomerSpecific => "客戶專屬價",
+            PricingType.CustomerGroup => "客戶群組價",
+            PricingType.VolumeDiscount => "數量折扣價",
+            PricingType.VIP => "VIP價格",
+            PricingType.Clearance => "清倉價格",
+            PricingType.Trial => "試用價格",
+            _ => pricingType.ToString()
+        };
+    }
+}

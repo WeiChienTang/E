@@ -114,8 +114,7 @@
     {
         try
         {
-            return new List<GenericDetailPageComponent<Department, IDepartmentService
-                        >.TabSection>
+            return new List<GenericDetailPageComponent<Department, IDepartmentService>.TabSection>
             {
                 new GenericDetailPageComponent<Department, IDepartmentService>.TabSection
                 {
@@ -175,27 +174,14 @@
                 },
                 new()
                 {
-                    Label = "上級部門",
-                    Value = department?.ParentDepartment?.Name,
-                    EmptyText = "無上級部門",
-                    IconClass = "fas fa-sitemap",
-                    IconBgClass = "bg-success bg-opacity-10",
-                    IconTextClass = "text-success"
-                },
-                new()
-                {
-                    Label = "排序順序",
-                    Value = department?.SortOrder.ToString(),
-                    IconClass = "fas fa-sort-numeric-down",
-                    IconBgClass = "bg-warning bg-opacity-10",
-                    IconTextClass = "text-warning"
-                },
-                new()
-                {
                     Label = "狀態",
-                    Type = BasicInfoDisplayComponent.FieldType.Status,
-                    Value = department?.Status,
-                    IconClass = "fas fa-flag",
+                    CustomContent = @<div>
+                        @if (department?.Status != null)
+                        {
+                            <StatusBadgeComponent Status="@department.Status" />
+                        }
+                    </div>,
+                    IconClass = "fas fa-toggle-on",
                     IconBgClass = "bg-success bg-opacity-10",
                     IconTextClass = "text-success"
                 },
@@ -208,7 +194,18 @@
                     IconBgClass = "bg-info bg-opacity-10",
                     IconTextClass = "text-info",
                     ColSize = 12
+                },
+                new()
+                {
+                    Label = "備註",
+                    Value = department?.Remarks,
+                    VisibilityCondition = () => !string.IsNullOrEmpty(department?.Remarks),
+                    IconClass = "fas fa-sticky-note",
+                    IconBgClass = "bg-secondary bg-opacity-10",
+                    IconTextClass = "text-secondary",
+                    ColSize = 12
                 }
+                
             };
         }
         catch (Exception ex)

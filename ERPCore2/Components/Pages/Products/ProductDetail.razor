@@ -285,6 +285,17 @@
                 },
                 new()
                 {
+                    Label = "商品描述",
+                    Value = product?.Description,
+                    Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
+                    IconClass = "fas fa-align-left",
+                    IconBgClass = "bg-info bg-opacity-10",
+                    IconTextClass = "text-info",
+                    ColSize = 12,
+                    VisibilityCondition = () => !string.IsNullOrEmpty(product?.Description)
+                },
+                new()
+                {
                     Label = "狀態",
                     CustomContent = @<div>
                         @if (product?.Status != null)
@@ -298,17 +309,6 @@
                 },
                 new()
                 {
-                    Label = "商品描述",
-                    Value = product?.Description,
-                    Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
-                    IconClass = "fas fa-align-left",
-                    IconBgClass = "bg-info bg-opacity-10",
-                    IconTextClass = "text-info",
-                    ColSize = 12,
-                    VisibilityCondition = () => !string.IsNullOrEmpty(product?.Description)
-                },
-                new()
-                {
                     Label = "規格說明",
                     Value = product?.Specification,
                     Format = BasicInfoDisplayComponent.FieldFormat.MultiLine,
@@ -318,6 +318,7 @@
                     ColSize = 12,
                     VisibilityCondition = () => !string.IsNullOrEmpty(product?.Specification)
                 },
+                
                 new()
                 {
                     Label = "備註",

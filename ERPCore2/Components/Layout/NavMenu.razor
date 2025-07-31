@@ -73,10 +73,10 @@
         <NavMenuItem Text="產品管理" IconClass="bi bi-box-seam-fill" MenuKey="product_management">
             <DropdownItems>
                 <NavDropdownItem Text="產品主檔" Url="/products" RequiredPermission="Product.Read" ParentMenuKey="product_management" IconClass="bi bi-caret-right-fill"/>
+                <NavDropdownItem Text="產品定價" Url="/product-pricing" RequiredPermission="ProductPricing.Read" ParentMenuKey="product_management" IconClass="bi bi-caret-right-fill"/>
                 <NavDropdownItem Text="類型" Url="/product-categories" RequiredPermission="ProductCategory.Read" ParentMenuKey="product_management"/> 
                 <NavDropdownItem Text="單位" Url="/units" RequiredPermission="Unit.Read" ParentMenuKey="product_management"/>
-                <NavDropdownItem Text="尺寸" Url="/sizes" RequiredPermission="Size.Read" ParentMenuKey="product_management" />                                                                         
-                                      
+                <NavDropdownItem Text="尺寸" Url="/sizes" RequiredPermission="Size.Read" ParentMenuKey="product_management" />                                                                                        
             </DropdownItems>
         </NavMenuItem>           
         
