@@ -128,7 +128,7 @@
         {
             fieldConfigurations = new List<FormFieldDefinition>
             {
-                // 商品資訊區塊
+                // 基本資訊區塊
                 new()
                 {
                     PropertyName = nameof(ProductPricing.ProductId),
@@ -171,6 +171,7 @@
                     Placeholder = "貨幣代碼"
                 },
 
+                // 客戶設定區塊
                 new()
                 {
                     PropertyName = nameof(ProductPricing.CustomerId),
@@ -181,6 +182,7 @@
                     HelpText = "空白表示適用於所有客戶"
                 },
 
+                // 數量限制區塊
                 new()
                 {
                     PropertyName = nameof(ProductPricing.MinQuantity),
@@ -203,6 +205,7 @@
                     HelpText = "0或空白表示無最大數量限制"
                 },
 
+                // 有效期間區塊
                 new()
                 {
                     PropertyName = nameof(ProductPricing.EffectiveDate),
@@ -222,6 +225,7 @@
                     HelpText = "空白表示永久有效"
                 },
 
+                // 其他設定區塊
                 new()
                 {
                     PropertyName = nameof(ProductPricing.Priority),
@@ -233,6 +237,30 @@
                     Placeholder = "優先順序",
                     HelpText = "數字越大優先權越高，預設為0"
                 }
+            };
+
+            // 初始化表單區段分類
+            formSections = new Dictionary<string, string>
+            {
+                // 基本資訊區塊
+                { nameof(ProductPricing.ProductId), "基本資訊" },
+                { nameof(ProductPricing.PricingType), "基本資訊" },
+                { nameof(ProductPricing.Price), "基本資訊" },
+                { nameof(ProductPricing.Currency), "基本資訊" },
+                
+                // 客戶設定區塊
+                { nameof(ProductPricing.CustomerId), "客戶設定" },
+                
+                // 數量限制區塊
+                { nameof(ProductPricing.MinQuantity), "數量限制" },
+                { nameof(ProductPricing.MaxQuantity), "數量限制" },
+                
+                // 有效期間區塊
+                { nameof(ProductPricing.EffectiveDate), "有效期間" },
+                { nameof(ProductPricing.ExpiryDate), "有效期間" },
+                
+                // 其他設定區塊
+                { nameof(ProductPricing.Priority), "其他設定" }
             };
 
             // 通知組件狀態已改變
