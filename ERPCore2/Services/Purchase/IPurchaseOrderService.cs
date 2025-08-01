@@ -1,5 +1,4 @@
 using ERPCore2.Data.Entities;
-using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 
 namespace ERPCore2.Services
@@ -11,7 +10,6 @@ namespace ERPCore2.Services
     {
         // 基本查詢
         Task<List<PurchaseOrder>> GetBySupplierIdAsync(int supplierId);
-        Task<List<PurchaseOrder>> GetByStatusAsync(PurchaseOrderStatus status);
         Task<List<PurchaseOrder>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
         Task<PurchaseOrder?> GetByNumberAsync(string purchaseOrderNumber);
         

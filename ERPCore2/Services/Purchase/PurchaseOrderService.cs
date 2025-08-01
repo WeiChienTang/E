@@ -179,29 +179,6 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<PurchaseOrder>> GetByStatusAsync(PurchaseOrderStatus status)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.PurchaseOrders
-                    .Include(po => po.Supplier)
-                    .Include(po => po.Warehouse)
-                    .Where(po => po.OrderStatus == status && !po.IsDeleted)
-                    .OrderByDescending(po => po.OrderDate)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByStatusAsync), GetType(), _logger, new { 
-                    Method = nameof(GetByStatusAsync),
-                    ServiceType = GetType().Name,
-                    Status = status 
-                });
-                return new List<PurchaseOrder>();
-            }
-        }
-
         public async Task<List<PurchaseOrder>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
             try
@@ -266,13 +243,9 @@ namespace ERPCore2.Services
                 if (order == null)
                     return ServiceResult.Failure("找不到採購訂單");
                 
-                if (order.OrderStatus != PurchaseOrderStatus.Draft)
-                    return ServiceResult.Failure("只有草稿狀態的訂單可以送出");
-                
                 if (!order.PurchaseOrderDetails.Any())
                     return ServiceResult.Failure("訂單必須包含至少一項商品");
                 
-                order.OrderStatus = PurchaseOrderStatus.Submitted;
                 order.UpdatedAt = DateTime.Now;
                 
                 await context.SaveChangesAsync();
@@ -300,10 +273,6 @@ namespace ERPCore2.Services
                 if (order == null)
                     return ServiceResult.Failure("找不到採購訂單");
                 
-                if (order.OrderStatus != PurchaseOrderStatus.Submitted)
-                    return ServiceResult.Failure("只有已送出的訂單可以核准");
-                
-                order.OrderStatus = PurchaseOrderStatus.Approved;
                 order.ApprovedBy = approvedBy;
                 order.ApprovedAt = DateTime.Now;
                 order.UpdatedAt = DateTime.Now;
@@ -334,14 +303,9 @@ namespace ERPCore2.Services
                 if (order == null)
                     return ServiceResult.Failure("找不到採購訂單");
                 
-                if (order.OrderStatus == PurchaseOrderStatus.Completed || 
-                    order.OrderStatus == PurchaseOrderStatus.Cancelled)
-                    return ServiceResult.Failure("已完成或已取消的訂單無法取消");
-                
                 if (order.ReceivedAmount > 0)
                     return ServiceResult.Failure("已有進貨記錄的訂單無法取消");
                 
-                order.OrderStatus = PurchaseOrderStatus.Cancelled;
                 order.OrderRemarks = string.IsNullOrWhiteSpace(order.OrderRemarks) 
                     ? $"取消原因：{reason}" 
                     : $"{order.OrderRemarks}\n取消原因：{reason}";
@@ -373,11 +337,7 @@ namespace ERPCore2.Services
                 if (order == null)
                     return ServiceResult.Failure("找不到採購訂單");
                 
-                if (order.OrderStatus == PurchaseOrderStatus.Cancelled || 
-                    order.OrderStatus == PurchaseOrderStatus.Closed)
-                    return ServiceResult.Failure("已取消或已關閉的訂單無法關閉");
-                
-                order.OrderStatus = PurchaseOrderStatus.Closed;
+                // 移除狀態檢查，直接更新
                 order.UpdatedAt = DateTime.Now;
                 
                 await context.SaveChangesAsync();
@@ -418,24 +378,7 @@ namespace ERPCore2.Services
                     var receivedAmount = order.PurchaseOrderDetails.Sum(pod => pod.ReceivedAmount);
                     order.ReceivedAmount = receivedAmount;
                     
-                    // 更新訂單狀態
-                    if (receivedAmount == 0)
-                    {
-                        // 沒有進貨，保持原狀態（除非是已完成狀態則改為已核准）
-                        if (order.OrderStatus == PurchaseOrderStatus.Completed)
-                            order.OrderStatus = PurchaseOrderStatus.Approved;
-                    }
-                    else if (receivedAmount >= order.TotalAmount)
-                    {
-                        // 已全部進貨
-                        order.OrderStatus = PurchaseOrderStatus.Completed;
-                    }
-                    else
-                    {
-                        // 部分進貨
-                        order.OrderStatus = PurchaseOrderStatus.PartialReceived;
-                    }
-                    
+                    // 移除狀態更新邏輯，只更新金額
                     order.UpdatedAt = DateTime.Now;
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();
@@ -474,11 +417,7 @@ namespace ERPCore2.Services
                 if (order.PurchaseReceivings.Any(pr => !pr.IsDeleted))
                     return false;
                 
-                // 已核准或更後續狀態的訂單不能刪除
-                if (order.OrderStatus != PurchaseOrderStatus.Draft && 
-                    order.OrderStatus != PurchaseOrderStatus.Submitted)
-                    return false;
-                
+                // 移除狀態檢查，只要沒有進貨記錄就可以刪除
                 return true;
             }
             catch (Exception ex)
@@ -505,8 +444,7 @@ namespace ERPCore2.Services
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
                     .Where(po => !po.IsDeleted && 
-                               (po.OrderStatus == PurchaseOrderStatus.Approved || 
-                                po.OrderStatus == PurchaseOrderStatus.PartialReceived))
+                               po.ReceivedAmount < po.TotalAmount) // 改為用進貨金額判斷
                     .OrderBy(po => po.ExpectedDeliveryDate ?? po.OrderDate.AddDays(7))
                     .ToListAsync();
             }
@@ -530,8 +468,7 @@ namespace ERPCore2.Services
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
                     .Where(po => !po.IsDeleted && 
-                               (po.OrderStatus == PurchaseOrderStatus.Approved || 
-                                po.OrderStatus == PurchaseOrderStatus.PartialReceived) &&
+                               po.ReceivedAmount < po.TotalAmount && // 改為用進貨金額判斷
                                po.ExpectedDeliveryDate.HasValue && 
                                po.ExpectedDeliveryDate.Value < today)
                     .OrderBy(po => po.ExpectedDeliveryDate)

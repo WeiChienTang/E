@@ -46,10 +46,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     PurchaseOrderNumber = $"PO{orderDate:yyyyMMdd}{i:D3}",
                     OrderDate = orderDate,
                     ExpectedDeliveryDate = orderDate.AddDays(random.Next(7, 21)),
-                    OrderStatus = i <= 2 ? PurchaseOrderStatus.Approved : 
-                                 i == 3 ? PurchaseOrderStatus.PartialReceived :
-                                 i == 4 ? PurchaseOrderStatus.Completed : PurchaseOrderStatus.Draft,
-                    PurchaseType = (PurchaseType)random.Next(1, 5),
+                    // 移除 OrderStatus 和 PurchaseType 欄位
                     PurchasePersonnel = "採購人員" + i,
                     OrderRemarks = $"測試採購訂單 {i}",
                     SupplierId = supplier.Id,
@@ -59,9 +56,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CreatedBy = createdBy
                 };
 
-                if (order.OrderStatus == PurchaseOrderStatus.Approved || 
-                    order.OrderStatus == PurchaseOrderStatus.PartialReceived ||
-                    order.OrderStatus == PurchaseOrderStatus.Completed)
+                // 簡化邏輯，只設定前幾個訂單為已核准
+                if (i <= 4)
                 {
                     order.ApprovedBy = 24; // 使用實際存在的 admin 員工 ID
                     order.ApprovedAt = order.OrderDate.AddDays(1);
@@ -75,6 +71,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             // 為每個採購訂單建立明細
             var orderDetails = new List<PurchaseOrderDetail>();
+            var orderIndex = 1;
             foreach (var order in orders)
             {
                 var orderProductCount = random.Next(2, 5); // 每張訂單2-4個商品
@@ -90,8 +87,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                         PurchaseOrderId = order.Id,
                         ProductId = product.Id,
                         OrderQuantity = quantity,
-                        ReceivedQuantity = order.OrderStatus == PurchaseOrderStatus.Completed ? quantity :
-                                         order.OrderStatus == PurchaseOrderStatus.PartialReceived ? quantity / 2 : 0,
+                        ReceivedQuantity = orderIndex <= 2 ? quantity : orderIndex <= 4 ? quantity / 2 : 0, // 簡化邏輯
                         UnitPrice = unitPrice,
                         DetailRemarks = $"採購 {product.ProductName}",
                         ExpectedDeliveryDate = order.ExpectedDeliveryDate,
@@ -103,6 +99,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     detail.ReceivedAmount = detail.ReceivedQuantity * detail.UnitPrice;
                     orderDetails.Add(detail);
                 }
+                orderIndex++; // 增加訂單索引
             }
 
             await context.PurchaseOrderDetails.AddRangeAsync(orderDetails);
@@ -122,10 +119,9 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             var receipts = new List<PurchaseReceiving>();
             var receiptDetails = new List<PurchaseReceivingDetail>();
 
-            var completedOrders = orders.Where(o => o.OrderStatus == PurchaseOrderStatus.Completed ||
-                                                   o.OrderStatus == PurchaseOrderStatus.PartialReceived).ToList();
+            var ordersWithReceiving = orders.Where(o => o.ReceivedAmount > 0).ToList(); // 改為用已進貨金額判斷
 
-            foreach (var order in completedOrders)
+            foreach (var order in ordersWithReceiving)
             {
                 var receiptDate = order.OrderDate.AddDays(random.Next(3, 10));
                 var receipt = new PurchaseReceiving

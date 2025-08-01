@@ -51,7 +51,8 @@
                 GetType(),
                 additionalData: "ProductIndex頁面初始化");
         }
-    }    private void InitializeBreadcrumbs()
+    }    
+    private void InitializeBreadcrumbs()
     {
         try
         {
@@ -124,7 +125,7 @@
                 .AddSelect("ProductCategoryId", "產品分類", new List<SelectOption>()) // 空的選項，稍後載入
                 .AddSelect("PrimarySupplierId", "主要供應商", new List<SelectOption>()) // 空的選項，稍後載入
                 .AddSelect("UnitId", "單位", new List<SelectOption>()) // 空的選項，稍後載入
-                // 狀態篩選器會由 GenericIndexPageComponent 自動添加
+
                 .Build();
         }
         catch (Exception ex)

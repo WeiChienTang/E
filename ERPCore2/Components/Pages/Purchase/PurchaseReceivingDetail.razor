@@ -9,11 +9,11 @@
                             EntityId="@Id"
                             Entity="@purchaseReceiving"
                             Service="@PurchaseReceivingService"
-                            EntityName="採購進貨"
-                            EntityNamePlural="採購進貨"
+                            EntityName="採購入庫"
+                            EntityNamePlural="採購入庫"
                             IndexRoute="/purchase-receivings"
                             EditRoute="/purchase-receivings/edit"
-                            LoadingText="載入採購進貨資料中..."
+                            LoadingText="載入採購入庫資料中..."
                             BreadcrumbItems="@breadcrumbItems"
                             DataLoader="@LoadPurchaseReceivingDataAsync"
                             AdditionalDataLoader="@LoadAdditionalDataAsync"
@@ -42,8 +42,8 @@
             {
                 new("首頁", "/"),
                 new("採購管理", "/"),
-                new("採購進貨", "/purchase-receivings"),
-                new("採購進貨詳細", "")
+                new("採購入庫", "/purchase-receivings"),
+                new("採購入庫詳細", "")
             };
         }
         catch (Exception ex)

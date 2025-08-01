@@ -134,8 +134,6 @@
             if (!Id.HasValue)
             {
                 purchaseOrder.OrderDate = DateTime.Today;
-                purchaseOrder.OrderStatus = PurchaseOrderStatus.Draft;
-                purchaseOrder.PurchaseType = PurchaseType.Normal;
                 
                 // 設定採購人員為當前登入使用者
                 await SetCurrentUserAsPurchasePersonnel();
@@ -303,14 +301,6 @@
                 Value = w.Id.ToString()
             }).ToList();
             
-            // 採購類型選項
-            var purchaseTypeOptions = Enum.GetValues<PurchaseType>()
-                .Select(t => new SelectOption
-                {
-                    Text = GetPurchaseTypeDisplayName(t),
-                    Value = ((int)t).ToString()
-                }).ToList();
-            
             // 添加需要選項資料的欄位到現有的formFields
             formFields.AddRange(new List<FormFieldDefinition>
             {
@@ -334,15 +324,6 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(PurchaseOrder.PurchaseType),
-                    Label = "採購類型",
-                    FieldType = FormFieldType.Select,
-                    IsRequired = true,
-                    Options = purchaseTypeOptions,
-                    
-                },
-                new()
-                {
                     PropertyName = nameof(PurchaseOrder.OrderRemarks),
                     Label = "訂單備註",
                     FieldType = FormFieldType.TextArea,
@@ -354,7 +335,6 @@
             // 更新表單區段
             formSections[nameof(PurchaseOrder.SupplierId)] = "基本資訊";
             formSections[nameof(PurchaseOrder.WarehouseId)] = "基本資訊";
-            formSections[nameof(PurchaseOrder.PurchaseType)] = "採購設定";
             formSections[nameof(PurchaseOrder.OrderRemarks)] = "備註資訊";
         }
         catch (Exception ex)
@@ -397,8 +377,6 @@
                 {
                     PurchaseOrderNumber = await PurchaseOrderService.GenerateOrderNumberAsync(),
                     OrderDate = DateTime.Today,
-                    OrderStatus = PurchaseOrderStatus.Draft,
-                    PurchaseType = PurchaseType.Normal,
                     Status = EntityStatus.Active
                 };
                 
@@ -430,8 +408,6 @@
             {
                 PurchaseOrderNumber = "ERROR",
                 OrderDate = DateTime.Today,
-                OrderStatus = PurchaseOrderStatus.Draft,
-                PurchaseType = PurchaseType.Normal,
                 Status = EntityStatus.Active
             };
             purchaseOrderDetails = new List<Data.Entities.PurchaseOrderDetail>();
@@ -604,19 +580,6 @@
     {
         // SubtotalAmount 是計算屬性，會自動計算
         detail.UpdatedAt = DateTime.Now;
-    }
-    
-    // 輔助方法
-    private static string GetPurchaseTypeDisplayName(PurchaseType type)
-    {
-        return type switch
-        {
-            PurchaseType.Normal => "一般採購",
-            PurchaseType.Urgent => "緊急採購",
-            PurchaseType.Replenishment => "補貨採購",
-            PurchaseType.Project => "專案採購",
-            _ => type.ToString()
-        };
     }
     
     /// <summary>

@@ -1,311 +1,114 @@
 @page "/purchase/orders"
-
 @inject IPurchaseOrderService PurchaseOrderService
 @inject ISupplierService SupplierService
-@inject IWarehouseService WarehouseService
-@inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
-@inject INotificationService NotificationService
 @rendermode InteractiveServer
 
-<GenericIndexPageComponent @ref="indexPageRef"
-                          TEntity="PurchaseOrder"
+<GenericIndexPageComponent TEntity="PurchaseOrder" 
                           TService="IPurchaseOrderService"
                           Service="@PurchaseOrderService"
-                          PageTitle="採購訂單管理"
-                          PageSubtitle="管理採購訂單與供應商進貨作業"
-                          EntityName="採購訂單"
-                          EntityBasePath="/purchase/orders"
+                          EntityBasePath="/purchase-orders"
+                          PageTitle="採購單主檔"                          
+                          PageSubtitle="管理所有採購單資料"
+                          EntityName="採購單"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
-                          DataLoader="@LoadDataAsync"
-                          InitializeBasicData="@InitializeBasicDataAsync"
-                          FilterApplier="@ApplyFilters"
-                          GetEntityDisplayName="@GetEntityDisplayName"
-                          ShowStatisticsCards="false"
-                          StatisticsCardConfigs="@statisticsCardConfigs"
-                          RequiredPermission="Purchase.Read"
-                          CustomActionsTemplate="@GetCustomActionsTemplate()"/>
-    
+                          DataLoader="@LoadPurchaseOrdersAsync"
+                          InitializeBasicData="@LoadBasicDataAsync"
+                          FilterApplier="@ApplyPurchaseOrderFilters"
+                          GetEntityDisplayName="@(order => order.PurchaseOrderNumber)"
+                          RequiredPermission="PurchaseOrder.Read"
+                          @ref="indexComponent" />
+
 @code {
-    // 組件引用
-    private GenericIndexPageComponent<PurchaseOrder, IPurchaseOrderService> indexPageRef = default!;
-
+    // 組件參考
+    private GenericIndexPageComponent<PurchaseOrder, IPurchaseOrderService> indexComponent = default!;
+    
     // 選項清單
-    private List<SelectOption> supplierOptions = new();
-    private List<SelectOption> warehouseOptions = new();
-    private List<SelectOption> statusOptions = new();
-    private List<SelectOption> typeOptions = new();
-
-    // 組件配置
+    private List<Supplier> suppliers = new();
+    
+    // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
-    private List<StatisticsCardConfig> statisticsCardConfigs = new();
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         try
         {
-            // 設定麵包屑
+            InitializeBreadcrumbs();
+            InitializeFilters();
+            InitializeTableColumns();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(OnInitialized), 
+                GetType(),
+                additionalData: "PurchaseOrderIndex頁面初始化");
+        }
+    }    
+
+    private void InitializeBreadcrumbs()
+    {
+        try
+        {
             breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
             {
-                new() { Text = "首頁", Href = "/" },
-                new() { Text = "採購管理", Href = "/purchase" },
-                new() { Text = "採購訂單", Href = "/purchase/orders" }
+                new("首頁", "/"),
+                new("採購管理", "/purchase"),
+                new("採購單管理")
             };
-
-            // 初始化基本篩選器結構
-            InitializeBasicFilters();
-            
-            // 初始化表格欄位
-            InitializeColumns();
-            
-            // 初始化統計卡片
-            InitializeStatisticsCards();
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex, 
-                "頁面初始化", 
-                GetType(), 
-                Navigation
-            );
-        }
-    }
-
-    /// <summary>
-    /// 初始化基礎資料 - 由 GenericIndexPageComponent 調用
-    /// </summary>
-    private async Task InitializeBasicDataAsync()
-    {
-        await LoadOptionsAsync();
-        await InitializeFiltersAsync();
-    }
-
-    /// <summary>
-    /// 載入資料 - 由 GenericIndexPageComponent 調用
-    /// </summary>
-    private async Task<List<PurchaseOrder>> LoadDataAsync()
-    {
-        return await PurchaseOrderService.GetAllAsync();
-    }
-
-    /// <summary>
-    /// 載入統計資料 - 由 GenericIndexPageComponent 調用
-    /// </summary>
-    private async Task<Dictionary<string, object>> LoadStatisticsDataAsync()
-    {
-        // 這裡可以放置更複雜的統計邏輯，目前返回空字典，由篩選後自動計算
-        await Task.CompletedTask;
-        return new Dictionary<string, object>();
-    }
-
-    /// <summary>
-    /// 套用篩選 - 由 GenericIndexPageComponent 調用
-    /// </summary>
-    private IQueryable<PurchaseOrder> ApplyFilters(SearchFilterModel filterModel, IQueryable<PurchaseOrder> query)
-    {
-        try
-        {
-            // 將 SearchFilterModel 轉換為 PurchaseOrderSearchModel
-            var searchModel = new PurchaseOrderSearchModel
-            {
-                SearchTerm = filterModel.GetFilterValue("SearchTerm") as string,
-                SupplierId = int.TryParse(filterModel.GetFilterValue("SupplierId")?.ToString(), out var supplierId) ? (int?)supplierId : null,
-                WarehouseId = int.TryParse(filterModel.GetFilterValue("WarehouseId")?.ToString(), out var warehouseId) ? (int?)warehouseId : null,
-                OrderStatus = Enum.TryParse<PurchaseOrderStatus>(filterModel.GetFilterValue("OrderStatus")?.ToString(), out var status) ? (PurchaseOrderStatus?)status : null,
-                PurchaseType = Enum.TryParse<PurchaseType>(filterModel.GetFilterValue("PurchaseType")?.ToString(), out var type) ? (PurchaseType?)type : null
-            };
-
-            // 處理日期範圍
-            var dateRange = filterModel.GetFilterValue("OrderDateRange") as DateRange;
-            if (dateRange != null)
-            {
-                searchModel.OrderDateFrom = dateRange.StartDate;
-                searchModel.OrderDateTo = dateRange.EndDate;
-            }
-
-            // 套用篩選邏輯
-            var filteredQuery = query;
-
-            // 文字搜尋
-            if (!string.IsNullOrWhiteSpace(searchModel.SearchTerm))
-            {
-                var searchTerm = searchModel.SearchTerm.ToLower();
-                filteredQuery = filteredQuery.Where(o =>
-                    o.PurchaseOrderNumber.ToLower().Contains(searchTerm) ||
-                    o.Supplier.CompanyName.ToLower().Contains(searchTerm) ||
-                    (o.PurchasePersonnel != null && o.PurchasePersonnel.ToLower().Contains(searchTerm)) ||
-                    (o.OrderRemarks != null && o.OrderRemarks.ToLower().Contains(searchTerm))
-                );
-            }
-
-            // 供應商篩選
-            if (searchModel.SupplierId.HasValue)
-            {
-                filteredQuery = filteredQuery.Where(o => o.SupplierId == searchModel.SupplierId.Value);
-            }
-
-            // 倉庫篩選
-            if (searchModel.WarehouseId.HasValue)
-            {
-                filteredQuery = filteredQuery.Where(o => o.WarehouseId == searchModel.WarehouseId.Value);
-            }
-
-            // 狀態篩選
-            if (searchModel.OrderStatus.HasValue)
-            {
-                filteredQuery = filteredQuery.Where(o => o.OrderStatus == searchModel.OrderStatus.Value);
-            }
-
-            // 類型篩選
-            if (searchModel.PurchaseType.HasValue)
-            {
-                filteredQuery = filteredQuery.Where(o => o.PurchaseType == searchModel.PurchaseType.Value);
-            }
-
-            // 日期範圍篩選
-            if (searchModel.OrderDateFrom.HasValue)
-            {
-                filteredQuery = filteredQuery.Where(o => o.OrderDate >= searchModel.OrderDateFrom.Value);
-            }
-            if (searchModel.OrderDateTo.HasValue)
-            {
-                filteredQuery = filteredQuery.Where(o => o.OrderDate <= searchModel.OrderDateTo.Value);
-            }
-
-            return filteredQuery;
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(ApplyFilters),
+                nameof(InitializeBreadcrumbs), 
                 GetType(),
-                additionalData: "套用篩選失敗"
-            );
-            return query;
-        }
-    }
-
-    /// <summary>
-    /// 取得實體顯示名稱 - 由 GenericIndexPageComponent 調用
-    /// </summary>
-    private string GetEntityDisplayName(PurchaseOrder entity)
-    {
-        return entity.PurchaseOrderNumber;
-    }
-
-    private async Task LoadOptionsAsync()
-    {
-        try
-        {
-            // 載入供應商選項
-            var suppliers = await SupplierService.GetAllAsync();
-            supplierOptions = suppliers.Select(s => new SelectOption
-            {
-                Text = $"{s.SupplierCode} - {s.CompanyName}",
-                Value = s.Id.ToString()
-            }).ToList();
-
-            // 載入倉庫選項
-            var warehouses = await WarehouseService.GetAllAsync();
-            warehouseOptions = warehouses.Select(w => new SelectOption
-            {
-                Text = $"{w.WarehouseCode} - {w.WarehouseName}",
-                Value = w.Id.ToString()
-            }).ToList();
-
-            // 載入狀態選項
-            statusOptions = Enum.GetValues(typeof(PurchaseOrderStatus))
-                .Cast<PurchaseOrderStatus>()
-                .Select(s => new SelectOption
-                {
-                    Text = GetStatusDisplayName(s),
-                    Value = ((int)s).ToString()
-                }).ToList();
-
-            // 載入類型選項
-            typeOptions = Enum.GetValues(typeof(PurchaseType))
-                .Cast<PurchaseType>()
-                .Select(t => new SelectOption
-                {
-                    Text = GetTypeDisplayName(t),
-                    Value = ((int)t).ToString()
-                }).ToList();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(LoadOptionsAsync),
-                GetType()
-            );
-        }
-    }
-
-    private void InitializeBasicFilters()
-    {
-        try
-        {
-            // 建立基本篩選定義（不包含下拉選單選項，這些將在 InitializeFiltersAsync 中載入）
-            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("SearchTerm", "搜尋", "請輸入採購單號、供應商名稱...")
-                .AddSelect("SupplierId", "供應商", new List<SelectOption>()) // 空的選項，稍後載入
-                .AddSelect("WarehouseId", "倉庫", new List<SelectOption>()) // 空的選項，稍後載入
-                .AddSelect("OrderStatus", "訂單狀態", new List<SelectOption>()) // 空的選項，稍後載入
-                .AddSelect("PurchaseType", "採購類型", new List<SelectOption>()) // 空的選項，稍後載入
-                .AddDateRange("OrderDateRange", "訂單日期")
-                .Build();
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeBasicFilters),
-                GetType(),
-                additionalData: "初始化基本篩選器失敗"
-            );
+                additionalData: "PurchaseOrderIndex麵包屑初始化");
             
-            // 設定安全的預設值
-            filterDefinitions = new List<SearchFilterDefinition>();
+            // 設定預設值以防頁面無法正常運作
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
         }
     }
 
-    private async Task InitializeFiltersAsync()
+    // 載入基礎資料（選項清單等）
+    private async Task LoadBasicDataAsync()
     {
         try
         {
-            // 重新建立篩選定義，包含載入的選項
-            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("SearchTerm", "搜尋", "請輸入採購單號、供應商名稱...")
-                .AddSelect("SupplierId", "供應商", supplierOptions)
-                .AddSelect("WarehouseId", "倉庫", warehouseOptions)
-                .AddSelect("OrderStatus", "訂單狀態", statusOptions)
-                .AddSelect("PurchaseType", "採購類型", typeOptions)
-                .AddDateRange("OrderDateRange", "訂單日期")
-                .Build();
+            // 重新初始化篩選器以載入下拉選單選項
+            await InitializeFiltersAsync();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(LoadBasicDataAsync), 
+                GetType(),
+                additionalData: "PurchaseOrderIndex基礎資料載入");
+        }
+    }
 
-            // 通知組件狀態已改變
+    // 載入採購單資料
+    private async Task<List<PurchaseOrder>> LoadPurchaseOrdersAsync()
+    {
+        try
+        {
+            return await PurchaseOrderService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, 
+                nameof(LoadPurchaseOrdersAsync), 
+                GetType(),
+                additionalData: "PurchaseOrderIndex採購單資料載入");
+            
             StateHasChanged();
-            
-            // 如果組件已經初始化，刷新組件以更新篩選器
-            if (indexPageRef != null)
-            {
-                await indexPageRef.Refresh();
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeFiltersAsync),
-                GetType(),
-                additionalData: "初始化篩選器失敗"
-            );
+            return new List<PurchaseOrder>();
         }
     }
 
@@ -313,356 +116,172 @@
     {
         try
         {
-            filterDefinitions = new List<SearchFilterDefinition>
-            {
-                new SearchFilterDefinition
+            // 建立基本篩選定義（不包含下拉選單選項，這些將在 InitializeFiltersAsync 中載入）
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("PurchaseOrderNumber", "採購單號", "輸入採購單號搜尋")
+                .AddSelect("SupplierId", "供應商", new List<SelectOption>()) // 空的選項，稍後載入
+                .AddSelect("Status", "狀態", new List<SelectOption>
                 {
-                    Name = "SearchTerm",
-                    Label = "搜尋",
-                    FilterType = SearchFilterType.Text,
-                    Placeholder = "請輸入採購單號、供應商名稱..."
-                },
-                new SearchFilterDefinition
-                {
-                    Name = "SupplierId",
-                    Label = "供應商",
-                    FilterType = SearchFilterType.Select,
-                    Options = supplierOptions
-                },
-                new SearchFilterDefinition
-                {
-                    Name = "WarehouseId",
-                    Label = "倉庫",
-                    FilterType = SearchFilterType.Select,
-                    Options = warehouseOptions
-                },
-                new SearchFilterDefinition
-                {
-                    Name = "OrderStatus",
-                    Label = "訂單狀態",
-                    FilterType = SearchFilterType.Select,
-                    Options = statusOptions
-                },
-                new SearchFilterDefinition
-                {
-                    Name = "PurchaseType",
-                    Label = "採購類型",
-                    FilterType = SearchFilterType.Select,
-                    Options = typeOptions
-                },
-                new SearchFilterDefinition
-                {
-                    Name = "OrderDateRange",
-                    Label = "訂單日期",
-                    FilterType = SearchFilterType.DateRange
-                }
-            };
+                    new SelectOption { Text = "草稿", Value = "Draft" },
+                    new SelectOption { Text = "已送出", Value = "Submitted" },
+                    new SelectOption { Text = "已核准", Value = "Approved" },
+                    new SelectOption { Text = "部分進貨", Value = "PartialReceived" },
+                    new SelectOption { Text = "已完成", Value = "Completed" },
+                    new SelectOption { Text = "已取消", Value = "Cancelled" },
+                    new SelectOption { Text = "已關閉", Value = "Closed" }
+                })
+                .AddDateRange("PurchaseOrderDate", "採購日期")
+                .AddDateRange("ExpectedDeliveryDate", "預定交貨日期")
+                .Build();
         }
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeFilters),
+                ex, 
+                nameof(InitializeFilters), 
                 GetType(),
-                additionalData: "初始化篩選器失敗"
-            );
+                additionalData: "PurchaseOrderIndex篩選器初始化");
+            
+            // 設定預設值以防頁面無法正常運作
+            filterDefinitions = new List<SearchFilterDefinition>();
         }
     }
 
-    private void InitializeColumns()
+    private void InitializeTableColumns()
     {
         try
         {
             columnDefinitions = new List<TableColumnDefinition>
             {
-                new TableColumnDefinition
-                {
-                    Title = "採購單號",
-                    PropertyName = "PurchaseOrderNumber",
-                    DataType = ColumnDataType.Text,
-                    HeaderStyle = "width: 120px;",
-                    IsSortable = true
-                },
-                new TableColumnDefinition
-                {
-                    Title = "訂單日期",
-                    PropertyName = "OrderDate",
-                    DataType = ColumnDataType.Date,
-                    HeaderStyle = "width: 100px;",
-                    IsSortable = true
-                },
-                new TableColumnDefinition
-                {
-                    Title = "供應商",
-                    PropertyName = "Supplier.CompanyName",
-                    DataType = ColumnDataType.Text,
-                    HeaderStyle = "width: 150px;"
-                },
-                new TableColumnDefinition
-                {
-                    Title = "倉庫",
-                    PropertyName = "Warehouse.WarehouseName",
-                    DataType = ColumnDataType.Text,
-                    HeaderStyle = "width: 100px;",
-                    NullDisplayText = "-"
-                },
-                new TableColumnDefinition
-                {
-                    Title = "採購類型",
-                    PropertyName = "PurchaseType",
-                    DataType = ColumnDataType.Html,
-                    HeaderStyle = "width: 100px;",
-                    CustomTemplate = item => builder =>
-                    {
-                        var order = (PurchaseOrder)item;
-                        var typeClass = GetTypeClass(order.PurchaseType);
-                        builder.OpenElement(0, "span");
-                        builder.AddAttribute(1, "class", $"badge {typeClass}");
-                        builder.AddContent(2, GetTypeDisplayName(order.PurchaseType));
-                        builder.CloseElement();
-                    }
-                },
-                new TableColumnDefinition
-                {
-                    Title = "訂單狀態",
-                    PropertyName = "OrderStatus",
-                    DataType = ColumnDataType.Html,
-                    HeaderStyle = "width: 100px;",
-                    CustomTemplate = item => builder =>
-                    {
-                        var order = (PurchaseOrder)item;
-                        var statusClass = GetStatusClass(order.OrderStatus);
-                        builder.OpenElement(0, "span");
-                        builder.AddAttribute(1, "class", $"badge {statusClass}");
-                        builder.AddContent(2, GetStatusDisplayName(order.OrderStatus));
-                        builder.CloseElement();
-                    }
-                },
-                new TableColumnDefinition
-                {
-                    Title = "預計到貨日",
-                    PropertyName = "ExpectedDeliveryDate",
-                    DataType = ColumnDataType.Date,
-                    HeaderStyle = "width: 100px;",
-                    NullDisplayText = "-"
-                },
-                new TableColumnDefinition
-                {
-                    Title = "訂單金額",
-                    PropertyName = "TotalAmount",
-                    DataType = ColumnDataType.Currency,
-                    HeaderStyle = "width: 120px;",
-                    HeaderCssClass = "text-end",
-                    CellCssClass = "text-end"
-                },
-                new TableColumnDefinition
-                {
-                    Title = "已進貨金額",
-                    PropertyName = "ReceivedAmount",
-                    DataType = ColumnDataType.Currency,
-                    HeaderStyle = "width: 120px;",
-                    HeaderCssClass = "text-end",
-                    CellCssClass = "text-end"
-                },
-                new TableColumnDefinition
-                {
-                    Title = "採購人員",
-                    PropertyName = "PurchasePersonnel",
-                    DataType = ColumnDataType.Text,
-                    HeaderStyle = "width: 100px;",
-                    NullDisplayText = "-"
-                }
+                TableColumnDefinition.Text("採購單號", nameof(PurchaseOrder.PurchaseOrderNumber)),
+                TableColumnDefinition.Text("供應商", "Supplier.CompanyName"),
+                TableColumnDefinition.Date("採購日期", nameof(PurchaseOrder.OrderDate)),
+                TableColumnDefinition.Date("預定交貨日期", nameof(PurchaseOrder.ExpectedDeliveryDate)),
+                TableColumnDefinition.Currency("總金額", nameof(PurchaseOrder.TotalAmount)),
+                TableColumnDefinition.Text("備註", nameof(PurchaseOrder.OrderRemarks))
             };
         }
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeColumns),
+                ex, 
+                nameof(InitializeTableColumns), 
                 GetType(),
-                additionalData: "初始化欄位定義失敗"
-            );
+                additionalData: "PurchaseOrderIndex表格欄位初始化");
+            
+            // 設定預設值以防頁面無法正常運作
+            columnDefinitions = new List<TableColumnDefinition>();
         }
-    }
+    }    
 
-    private void InitializeStatisticsCards()
+    // 自定義篩選邏輯
+    private IQueryable<PurchaseOrder> ApplyPurchaseOrderFilters(SearchFilterModel searchModel, IQueryable<PurchaseOrder> query)
     {
         try
         {
-            statisticsCardConfigs = new List<StatisticsCardConfig>
+            // 採購單號篩選
+            var orderNumberFilter = searchModel.GetFilterValue("PurchaseOrderNumber")?.ToString();
+            if (!string.IsNullOrWhiteSpace(orderNumberFilter))
             {
-                new StatisticsCardConfig
-                {
-                    Title = "總訂單數",
-                    DataKey = "TotalOrders",
-                    IconClass = "fas fa-file-invoice",
-                    BorderColor = "primary",
-                    TextColor = "primary",
-                    IsCurrency = false
-                },
-                new StatisticsCardConfig
-                {
-                    Title = "待進貨訂單",
-                    DataKey = "PendingOrders",
-                    IconClass = "fas fa-clock",
-                    BorderColor = "warning",
-                    TextColor = "warning",
-                    IsCurrency = false
-                },
-                new StatisticsCardConfig
-                {
-                    Title = "已完成訂單",
-                    DataKey = "CompletedOrders",
-                    IconClass = "fas fa-check-circle",
-                    BorderColor = "success",
-                    TextColor = "success",
-                    IsCurrency = false
-                },
-                new StatisticsCardConfig
-                {
-                    Title = "訂單總金額",
-                    DataKey = "TotalAmount",
-                    IconClass = "fas fa-dollar-sign",
-                    BorderColor = "info",
-                    TextColor = "info",
-                    IsCurrency = true
-                }
-            };
+                query = query.Where(po => 
+                    po.PurchaseOrderNumber.Contains(orderNumberFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 供應商篩選
+            var supplierIdFilter = searchModel.GetFilterValue("SupplierId")?.ToString();
+            if (!string.IsNullOrWhiteSpace(supplierIdFilter) && int.TryParse(supplierIdFilter, out var supplierId))
+            {
+                query = query.Where(po => po.SupplierId == supplierId);
+            }
+
+            // 採購日期篩選
+            var startDate = searchModel.GetFilterValue("PurchaseOrderDate_Start") as DateTime?;
+            var endDate = searchModel.GetFilterValue("PurchaseOrderDate_End") as DateTime?;
+            
+            if (startDate.HasValue)
+            {
+                query = query.Where(po => po.OrderDate >= startDate.Value);
+            }
+            
+            if (endDate.HasValue)
+            {
+                query = query.Where(po => po.OrderDate <= endDate.Value);
+            }
+
+            // 預定交貨日期篩選
+            var expectedStartDate = searchModel.GetFilterValue("ExpectedDeliveryDate_Start") as DateTime?;
+            var expectedEndDate = searchModel.GetFilterValue("ExpectedDeliveryDate_End") as DateTime?;
+            
+            if (expectedStartDate.HasValue)
+            {
+                query = query.Where(po => po.ExpectedDeliveryDate >= expectedStartDate.Value);
+            }
+            
+            if (expectedEndDate.HasValue)
+            {
+                query = query.Where(po => po.ExpectedDeliveryDate <= expectedEndDate.Value);
+            }
+
+            return query.OrderByDescending(po => po.OrderDate)
+                       .ThenByDescending(po => po.Id);
         }
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeStatisticsCards),
+                ex, 
+                nameof(ApplyPurchaseOrderFilters), 
                 GetType(),
-                additionalData: "初始化統計卡片失敗"
-            );
+                additionalData: "PurchaseOrderIndex篩選器套用");
+            
+            // 發生錯誤時回傳原始查詢
+            return query;
         }
     }
 
-    // 輔助方法
-    private static string GetStatusDisplayName(PurchaseOrderStatus status)
+    private async Task InitializeFiltersAsync()
     {
-        return status switch
-        {
-            PurchaseOrderStatus.Draft => "草稿",
-            PurchaseOrderStatus.Submitted => "已送出",
-            PurchaseOrderStatus.Approved => "已核准",
-            PurchaseOrderStatus.PartialReceived => "部分進貨",
-            PurchaseOrderStatus.Completed => "已完成",
-            PurchaseOrderStatus.Cancelled => "已取消",
-            PurchaseOrderStatus.Closed => "已關閉",
-            _ => status.ToString()
-        };
-    }
-
-    private static string GetStatusClass(PurchaseOrderStatus status)
-    {
-        return status switch
-        {
-            PurchaseOrderStatus.Draft => "bg-secondary",
-            PurchaseOrderStatus.Submitted => "bg-info",
-            PurchaseOrderStatus.Approved => "bg-primary",
-            PurchaseOrderStatus.PartialReceived => "bg-warning",
-            PurchaseOrderStatus.Completed => "bg-success",
-            PurchaseOrderStatus.Cancelled => "bg-danger",
-            PurchaseOrderStatus.Closed => "bg-dark",
-            _ => "bg-secondary"
-        };
-    }
-
-    private static string GetTypeDisplayName(PurchaseType type)
-    {
-        return type switch
-        {
-            PurchaseType.Normal => "一般採購",
-            PurchaseType.Urgent => "緊急採購",
-            PurchaseType.Replenishment => "補貨採購",
-            PurchaseType.Project => "專案採購",
-            _ => type.ToString()
-        };
-    }
-
-    private static string GetTypeClass(PurchaseType type)
-    {
-        return type switch
-        {
-            PurchaseType.Normal => "bg-primary",
-            PurchaseType.Urgent => "bg-danger",
-            PurchaseType.Replenishment => "bg-warning",
-            PurchaseType.Project => "bg-info",
-            _ => "bg-secondary"
-        };
-    }
-    
-    /// <summary>
-    /// 取得自定義操作模板
-    /// </summary>
-    private RenderFragment<PurchaseOrder> GetCustomActionsTemplate()
-    {
-        return entity => 
-            @<div class="table-actions-group">
-                <button class="btn btn-outline-info btn-sm" 
-                        @onclick="() => NavigateToDetail(entity)" 
-                        @onclick:stopPropagation="true" 
-                        title="檢視詳細">
-                    <i class="bi bi-eye"></i>
-                </button>
-                <button class="btn btn-outline-warning btn-sm" 
-                        @onclick="() => NavigateToEdit(entity)" 
-                        @onclick:stopPropagation="true" 
-                        title="編輯">
-                    <i class="bi bi-pencil"></i>
-                </button>
-                <button class="btn btn-outline-danger btn-sm" 
-                        @onclick="@(async () => await DeleteEntityAsync(entity))" 
-                        @onclick:stopPropagation="true" 
-                        title="刪除">
-                    <i class="bi bi-trash"></i>
-                </button>
-            </div>;
-    }
-    
-    /// <summary>
-    /// 導航到詳細頁面
-    /// </summary>
-    private void NavigateToDetail(PurchaseOrder entity)
-    {
-        Navigation.NavigateTo($"/purchase/orders/detail/{entity.Id}");
-    }
-    
-    /// <summary>
-    /// 導航到編輯頁面
-    /// </summary>
-    private void NavigateToEdit(PurchaseOrder entity)
-    {
-        Navigation.NavigateTo($"/purchase/orders/edit/{entity.Id}");
-    }
-    
-    /// <summary>
-    /// 刪除實體
-    /// </summary>
-    private async Task DeleteEntityAsync(PurchaseOrder entity)
-    {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"確定要刪除採購訂單 '{entity.PurchaseOrderNumber}' 嗎？");
-        if (!confirmed) return;
-        
         try
         {
-            var result = await PurchaseOrderService.DeleteAsync(entity.Id);
-            if (result.IsSuccess)
+            // 載入供應商選項
+            suppliers = await SupplierService.GetAllAsync();
+            var supplierOptions = suppliers.Where(s => s.Status == EntityStatus.Active)
+                .Select(s => new SelectOption
+                {
+                    Text = s.CompanyName,
+                    Value = s.Id.ToString()
+                }).ToList();
+
+            // 重新建立篩選定義，包含載入的選項
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("PurchaseOrderNumber", "採購單號", "輸入採購單號搜尋")
+                .AddSelect("SupplierId", "供應商", supplierOptions)
+                .AddSelect("Status", "狀態", new List<SelectOption>
+                {
+                    new SelectOption { Text = "草稿", Value = "Draft" },
+                    new SelectOption { Text = "已送出", Value = "Submitted" },
+                    new SelectOption { Text = "已核准", Value = "Approved" },
+                    new SelectOption { Text = "部分進貨", Value = "PartialReceived" },
+                    new SelectOption { Text = "已完成", Value = "Completed" },
+                    new SelectOption { Text = "已取消", Value = "Cancelled" },
+                    new SelectOption { Text = "已關閉", Value = "Closed" }
+                })
+                .AddDateRange("PurchaseOrderDate", "採購日期")
+                .AddDateRange("ExpectedDeliveryDate", "預定交貨日期")
+                .Build();
+
+            // 通知組件狀態已改變
+            StateHasChanged();
+            
+            // 如果組件已經初始化，刷新組件以更新篩選器
+            if (indexComponent != null)
             {
-                await NotificationService.ShowSuccessAsync("刪除成功！");
-                await indexPageRef.Refresh();
-            }
-            else
-            {
-                await NotificationService.ShowErrorAsync($"刪除失敗：{result.ErrorMessage}");
+                await indexComponent.Refresh();
             }
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"刪除時發生錯誤：{ex.Message}");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFiltersAsync), GetType(),
+                additionalData: new { PageName = "PurchaseOrderIndex", Action = "InitializeFiltersAsync" });
         }
     }
 }

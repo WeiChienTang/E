@@ -466,18 +466,6 @@
             },
             new()
             {
-                Label = "訂單狀態",
-                Type = BasicInfoDisplayComponent.FieldType.Custom,
-                CustomContent = @<span class="badge @GetOrderStatusBadgeClass(purchaseOrder.OrderStatus)">
-                                    @GetOrderStatusDisplayText(purchaseOrder.OrderStatus)
-                                </span>,
-                IconClass = "fas fa-flag",
-                IconBgClass = "bg-info bg-opacity-10",
-                IconTextClass = "text-info",
-                ColSize = 6
-            },
-            new()
-            {
                 Label = "供應商",
                 Value = purchaseOrder.Supplier?.CompanyName,
                 IconClass = "fas fa-building",
@@ -504,15 +492,6 @@
                 IconClass = "fas fa-truck",
                 IconBgClass = "bg-info bg-opacity-10",
                 IconTextClass = "text-info",
-                ColSize = 6
-            },
-            new()
-            {
-                Label = "採購類型",
-                Value = GetPurchaseTypeDisplayText(purchaseOrder.PurchaseType),
-                IconClass = "fas fa-tag",
-                IconBgClass = "bg-secondary bg-opacity-10",
-                IconTextClass = "text-secondary",
                 ColSize = 6
             },
             new()
@@ -571,45 +550,4 @@
         };
     }
     
-    private string GetOrderStatusBadgeClass(PurchaseOrderStatus status)
-    {
-        return status switch
-        {
-            PurchaseOrderStatus.Draft => "bg-secondary",
-            PurchaseOrderStatus.Submitted => "bg-primary",
-            PurchaseOrderStatus.Approved => "bg-success",
-            PurchaseOrderStatus.PartialReceived => "bg-warning",
-            PurchaseOrderStatus.Completed => "bg-info",
-            PurchaseOrderStatus.Cancelled => "bg-danger",
-            PurchaseOrderStatus.Closed => "bg-dark",
-            _ => "bg-secondary"
-        };
-    }
-    
-    private string GetOrderStatusDisplayText(PurchaseOrderStatus status)
-    {
-        return status switch
-        {
-            PurchaseOrderStatus.Draft => "草稿",
-            PurchaseOrderStatus.Submitted => "已送出",
-            PurchaseOrderStatus.Approved => "已核准",
-            PurchaseOrderStatus.PartialReceived => "部分進貨",
-            PurchaseOrderStatus.Completed => "已完成",
-            PurchaseOrderStatus.Cancelled => "已取消",
-            PurchaseOrderStatus.Closed => "已關閉",
-            _ => "未知狀態"
-        };
-    }
-    
-    private string GetPurchaseTypeDisplayText(PurchaseType type)
-    {
-        return type switch
-        {
-            PurchaseType.Normal => "一般採購",
-            PurchaseType.Urgent => "緊急採購",
-            PurchaseType.Replenishment => "補貨採購",
-            PurchaseType.Project => "專案採購",
-            _ => "未知類型"
-        };
-    }
 }

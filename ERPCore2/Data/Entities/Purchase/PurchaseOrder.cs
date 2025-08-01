@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Data.Entities
 {
@@ -10,7 +9,6 @@ namespace ERPCore2.Data.Entities
     /// </summary>
     [Index(nameof(PurchaseOrderNumber), IsUnique = true)]
     [Index(nameof(SupplierId), nameof(OrderDate))]
-    [Index(nameof(OrderStatus), nameof(OrderDate))]
     public class PurchaseOrder : BaseEntity
     {
         [Required(ErrorMessage = "採購單號為必填")]
@@ -24,14 +22,6 @@ namespace ERPCore2.Data.Entities
 
         [Display(Name = "預計到貨日期")]
         public DateTime? ExpectedDeliveryDate { get; set; }
-
-        [Required(ErrorMessage = "訂單狀態為必填")]
-        [Display(Name = "訂單狀態")]
-        public PurchaseOrderStatus OrderStatus { get; set; } = PurchaseOrderStatus.Draft;
-
-        [Required(ErrorMessage = "採購類型為必填")]
-        [Display(Name = "採購類型")]
-        public PurchaseType PurchaseType { get; set; } = PurchaseType.Normal;
 
         [MaxLength(100, ErrorMessage = "採購人員不可超過100個字元")]
         [Display(Name = "採購人員")]

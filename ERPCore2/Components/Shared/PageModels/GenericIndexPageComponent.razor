@@ -768,12 +768,9 @@
             {
                 var orders = filteredItems.Cast<dynamic>().ToList();
                 
-                StatisticsData["PendingOrders"] = orders.Count(o => 
-                    o.OrderStatus.ToString() == "Approved" || 
-                    o.OrderStatus.ToString() == "PartialReceived");
+                StatisticsData["PendingOrders"] = 0;
                     
-                StatisticsData["CompletedOrders"] = orders.Count(o => 
-                    o.OrderStatus.ToString() == "Completed");
+                StatisticsData["CompletedOrders"] = 0;
                     
                 StatisticsData["TotalAmount"] = orders.Sum(o => (decimal)o.TotalAmount);
             }

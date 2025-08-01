@@ -1,5 +1,3 @@
-using ERPCore2.Data.Enums;
-
 namespace ERPCore2.Models;
 
 /// <summary>
@@ -21,16 +19,6 @@ public class PurchaseOrderSearchModel
     /// 倉庫ID
     /// </summary>
     public int? WarehouseId { get; set; }
-
-    /// <summary>
-    /// 採購訂單狀態
-    /// </summary>
-    public PurchaseOrderStatus? OrderStatus { get; set; }
-
-    /// <summary>
-    /// 採購類型
-    /// </summary>
-    public PurchaseType? PurchaseType { get; set; }
 
     /// <summary>
     /// 訂單開始日期

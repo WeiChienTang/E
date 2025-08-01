@@ -10,9 +10,9 @@
                           TService="IPurchaseReceivingService"
                           Service="@PurchaseReceivingService"
                           EntityBasePath="/purchase-receivings"
-                          PageTitle="採購進貨管理"
-                          PageSubtitle="管理所有採購進貨與入庫資料"
-                          EntityName="採購進貨"
+                          PageTitle="採購入庫管理"
+                          PageSubtitle="管理所有採購入庫與入庫資料"
+                          EntityName="採購入庫"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
@@ -53,7 +53,7 @@
                 ex,
                 nameof(OnInitialized),
                 GetType(),
-                additionalData: "初始化採購進貨頁面失敗"
+                additionalData: "初始化採購入庫頁面失敗"
             );
         }
     }
@@ -66,7 +66,7 @@
             {
                 new("首頁", "/"),
                 new("採購管理", "/"),
-                new("採購進貨", "/purchase-receivings")
+                new("採購入庫", "/purchase-receivings")
             };
         }
         catch (Exception ex)
@@ -205,7 +205,7 @@
                 ex,
                 nameof(LoadPurchaseReceivingsAsync),
                 GetType(),
-                additionalData: "載入採購進貨資料失敗"
+                additionalData: "載入採購入庫資料失敗"
             );
             
             StateHasChanged();
@@ -409,37 +409,6 @@
                     HeaderStyle = "width: 150px;",
                     NullDisplayText = "-",
                     IsSortable = true
-                },
-                new TableColumnDefinition
-                {
-                    Title = "操作",
-                    PropertyName = "Actions",
-                    DataType = ColumnDataType.Html,
-                    HeaderStyle = "width: 150px;",
-                    CustomTemplate = item => builder =>
-                    {
-                        var entity = (PurchaseReceiving)item;
-                        
-                        // 檢視按鈕
-                        builder.OpenElement(0, "a");
-                        builder.AddAttribute(1, "href", $"/purchase-receivings/detail/{entity.Id}");
-                        builder.AddAttribute(2, "class", "btn btn-sm btn-outline-info me-1");
-                        builder.AddAttribute(3, "title", "檢視詳細");
-                        builder.OpenElement(4, "i");
-                        builder.AddAttribute(5, "class", "bi bi-eye");
-                        builder.CloseElement();
-                        builder.CloseElement();
-                        
-                        // 編輯按鈕
-                        builder.OpenElement(6, "a");
-                        builder.AddAttribute(7, "href", $"/purchase-receivings/edit/{entity.Id}");
-                        builder.AddAttribute(8, "class", "btn btn-sm btn-outline-primary me-1");
-                        builder.AddAttribute(9, "title", "編輯");
-                        builder.OpenElement(10, "i");
-                        builder.AddAttribute(11, "class", "bi bi-pencil");
-                        builder.CloseElement();
-                        builder.CloseElement();
-                    }
                 }
             };
         }

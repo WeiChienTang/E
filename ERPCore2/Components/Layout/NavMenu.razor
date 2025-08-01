@@ -73,12 +73,21 @@
         <NavMenuItem Text="產品管理" IconClass="bi bi-box-seam-fill" MenuKey="product_management">
             <DropdownItems>
                 <NavDropdownItem Text="產品主檔" Url="/products" RequiredPermission="Product.Read" ParentMenuKey="product_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="產品定價" Url="/product-pricing" RequiredPermission="ProductPricing.Read" ParentMenuKey="product_management" IconClass="bi bi-caret-right-fill"/>
+                @* <NavDropdownItem Text="產品定價" Url="/product-pricing" RequiredPermission="ProductPricing.Read" ParentMenuKey="product_management" IconClass="bi bi-caret-right-fill"/> *@
                 <NavDropdownItem Text="類型" Url="/product-categories" RequiredPermission="ProductCategory.Read" ParentMenuKey="product_management"/> 
                 <NavDropdownItem Text="單位" Url="/units" RequiredPermission="Unit.Read" ParentMenuKey="product_management"/>
                 <NavDropdownItem Text="尺寸" Url="/sizes" RequiredPermission="Size.Read" ParentMenuKey="product_management" />                                                                                        
             </DropdownItems>
-        </NavMenuItem>           
+        </NavMenuItem>      
+
+        <!-- 採購管理下拉選單 -->
+        <NavMenuItem Text="採購管理" IconClass="bi bi-truck" MenuKey="purchase_management">
+            <DropdownItems>
+                <NavDropdownItem Text="採購訂單" Url="/purchase/orders" RequiredPermission="Purchase.Read" ParentMenuKey="purchase_management" />
+                <NavDropdownItem Text="採購入庫" Url="/purchase-receivings" RequiredPermission="PurchaseReceiving.Read" ParentMenuKey="purchase_management" />
+                <NavDropdownItem Text="採購退回" Url="/purchase-returns" RequiredPermission="PurchaseReturn.Read" ParentMenuKey="purchase_management" />
+            </DropdownItems>
+        </NavMenuItem>     
         
         <!-- 銷貨管理下拉選單 -->
         <NavMenuItem Text="銷貨管理" IconClass="bi bi-cart-fill" MenuKey="sales_management">
@@ -86,15 +95,6 @@
                 <NavDropdownItem Text="銷貨訂單" Url="/sales-orders" RequiredPermission="SalesOrder.Read" ParentMenuKey="sales_management" />
                 <NavDropdownItem Text="銷貨出貨" Url="/sales-deliveries" RequiredPermission="SalesDelivery.Read" ParentMenuKey="sales_management" />
                 <NavDropdownItem Text="銷貨退回" Url="/sales-returns" RequiredPermission="SalesReturn.Read" ParentMenuKey="sales_management" />
-            </DropdownItems>
-        </NavMenuItem>
-
-        <!-- 採購管理下拉選單 -->
-        <NavMenuItem Text="採購管理" IconClass="bi bi-truck" MenuKey="purchase_management">
-            <DropdownItems>
-                <NavDropdownItem Text="採購訂單" Url="/purchase/orders" RequiredPermission="Purchase.Read" ParentMenuKey="purchase_management" />
-                <NavDropdownItem Text="採購進貨" Url="/purchase-receivings" RequiredPermission="PurchaseReceiving.Read" ParentMenuKey="purchase_management" />
-                <NavDropdownItem Text="採購退回" Url="/purchase-returns" RequiredPermission="PurchaseReturn.Read" ParentMenuKey="purchase_management" />
             </DropdownItems>
         </NavMenuItem>
 

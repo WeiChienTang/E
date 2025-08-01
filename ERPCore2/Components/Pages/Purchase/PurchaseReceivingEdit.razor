@@ -13,11 +13,11 @@
                         Id="@Id"
                         Entity="@purchaseReceiving"
                         Service="@PurchaseReceivingService"
-                        EntityName="採購進貨"
-                        EntityNamePlural="採購進貨"
-                        PageTitle="@(Id.HasValue ? "編輯採購進貨" : "新增採購進貨")"
+                        EntityName="採購入庫"
+                        EntityNamePlural="採購入庫"
+                        PageTitle="@(Id.HasValue ? "編輯採購入庫" : "新增採購入庫")"
                         FormTitle="基本資料"
-                        FormSubtitle="採購進貨的基本資訊"
+                        FormSubtitle="採購入庫的基本資訊"
                         RequiredPermission="@(Id.HasValue ? "PurchaseReceiving.Update" : "PurchaseReceiving.Create")"
                         IndexRoute="/purchase-receivings"
                         FormFields="@formFields"
@@ -65,7 +65,7 @@
                 ex,
                 nameof(OnInitializedAsync),
                 GetType(),
-                additionalData: "初始化採購進貨編輯頁面失敗"
+                additionalData: "初始化採購入庫編輯頁面失敗"
             );
             
             // 確保基本初始化完成，避免程式崩潰
@@ -83,8 +83,8 @@
             {
                 new("首頁", "/"),
                 new("採購管理", "/"),
-                new("採購進貨", "/purchase-receivings"),
-                new(Id.HasValue ? "編輯採購進貨" : "新增採購進貨", "")
+                new("採購入庫", "/purchase-receivings"),
+                new(Id.HasValue ? "編輯採購入庫" : "新增採購入庫", "")
             };
         }
         catch (Exception ex)
@@ -385,12 +385,12 @@
 
             if (result.IsSuccess)
             {
-                await NotificationService.ShowSuccessAsync($"採購進貨{(entity.Id == 0 ? "新增" : "更新")}成功");
+                await NotificationService.ShowSuccessAsync($"採購入庫{(entity.Id == 0 ? "新增" : "更新")}成功");
                 return true;
             }
             else
             {
-                await NotificationService.ShowErrorAsync($"採購進貨{(entity.Id == 0 ? "新增" : "更新")}失敗：{result.ErrorMessage}");
+                await NotificationService.ShowErrorAsync($"採購入庫{(entity.Id == 0 ? "新增" : "更新")}失敗：{result.ErrorMessage}");
                 return false;
             }
         }
