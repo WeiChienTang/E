@@ -174,25 +174,6 @@
                 },
                 new()
                 {
-                    Label = "圖示",
-                    Value = weather?.Icon,
-                    VisibilityCondition = () => !string.IsNullOrEmpty(weather?.Icon),
-                    IconClass = "fas fa-image",
-                    IconBgClass = "bg-secondary bg-opacity-10",
-                    IconTextClass = "text-secondary"
-                },
-                new()
-                {
-                    Label = "參考溫度",
-                    Value = weather?.ReferenceTemperature,
-                    Format = BasicInfoDisplayComponent.FieldFormat.Temperature,
-                    VisibilityCondition = () => weather?.ReferenceTemperature.HasValue == true,
-                    IconClass = "fas fa-thermometer-half",
-                    IconBgClass = "bg-warning bg-opacity-10",
-                    IconTextClass = "text-warning"
-                },
-                new()
-                {
                     Label = "狀態",
                     CustomContent = @<div>
                         @if (weather?.Status != null)

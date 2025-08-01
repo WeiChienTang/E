@@ -20,14 +20,5 @@ namespace ERPCore2.Data.Entities
         [MaxLength(200, ErrorMessage = "描述不可超過200個字元")]
         [Display(Name = "描述")]
         public string? Description { get; set; }
-
-        [MaxLength(50, ErrorMessage = "圖示不可超過50個字元")]
-        [Display(Name = "圖示")]
-        public string? Icon { get; set; }
-
-        [Range(-50, 50, ErrorMessage = "溫度範圍應在-50到50度之間")]
-        [Display(Name = "參考溫度")]
-        [Column(TypeName = "decimal(5,2)")]
-        public decimal? ReferenceTemperature { get; set; }
     }
 }

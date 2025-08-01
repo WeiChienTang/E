@@ -178,33 +178,5 @@ namespace ERPCore2.Services
                 return null;
             }
         }
-
-        /// <summary>
-        /// 根據溫度範圍取得天氣資料
-        /// </summary>
-        public async Task<List<Weather>> GetByTemperatureRangeAsync(decimal minTemperature, decimal maxTemperature)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Weathers
-                    .Where(w => !w.IsDeleted &&
-                               w.ReferenceTemperature.HasValue &&
-                               w.ReferenceTemperature >= minTemperature &&
-                               w.ReferenceTemperature <= maxTemperature)
-                    .OrderBy(w => w.ReferenceTemperature)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByTemperatureRangeAsync), GetType(), _logger, new { 
-                    Method = nameof(GetByTemperatureRangeAsync),
-                    MinTemperature = minTemperature,
-                    MaxTemperature = maxTemperature,
-                    ServiceType = GetType().Name 
-                });
-                return new List<Weather>();
-            }
-        }
     }
 }

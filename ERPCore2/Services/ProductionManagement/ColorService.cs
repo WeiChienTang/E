@@ -57,8 +57,7 @@ namespace ERPCore2.Services
                     .Where(c => !c.IsDeleted &&
                                (c.Name.Contains(searchTerm) ||
                                 c.Code.Contains(searchTerm) ||
-                                (c.Description != null && c.Description.Contains(searchTerm)) ||
-                                (c.HexCode != null && c.HexCode.Contains(searchTerm))))
+                                (c.Description != null && c.Description.Contains(searchTerm))))
                     .OrderBy(c => c.Name)
                     .ToListAsync();
             }
@@ -91,11 +90,6 @@ namespace ERPCore2.Services
                 // 檢查名稱是否重複
                 if (await IsNameExistsAsync(entity.Name, entity.Id))
                     return ServiceResult.Failure("顏色名稱已存在");
-
-                // 檢查十六進位色碼是否重複（如果有提供）
-                if (!string.IsNullOrWhiteSpace(entity.HexCode) &&
-                    await IsHexCodeExistsAsync(entity.HexCode, entity.Id))
-                    return ServiceResult.Failure("十六進位色碼已存在");
 
                 return ServiceResult.Success();
             }
@@ -188,54 +182,5 @@ namespace ERPCore2.Services
             }
         }
 
-        /// <summary>
-        /// 根據十六進位色碼取得顏色資料
-        /// </summary>
-        public async Task<Color?> GetByHexCodeAsync(string hexCode)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Colors
-                    .Where(c => c.HexCode == hexCode && !c.IsDeleted)
-                    .FirstOrDefaultAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByHexCodeAsync), GetType(), _logger, new { 
-                    Method = nameof(GetByHexCodeAsync),
-                    ServiceType = GetType().Name,
-                    HexCode = hexCode 
-                });
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// 檢查十六進位色碼是否已存在
-        /// </summary>
-        public async Task<bool> IsHexCodeExistsAsync(string hexCode, int? excludeId = null)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Colors.Where(c => c.HexCode == hexCode && !c.IsDeleted);
-
-                if (excludeId.HasValue)
-                    query = query.Where(c => c.Id != excludeId.Value);
-
-                return await query.AnyAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsHexCodeExistsAsync), GetType(), _logger, new { 
-                    Method = nameof(IsHexCodeExistsAsync),
-                    ServiceType = GetType().Name,
-                    HexCode = hexCode,
-                    ExcludeId = excludeId 
-                });
-                return false;
-            }
-        }
     }
 }

@@ -76,54 +76,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-20),
                     CreatedBy = "System"
-                },
-                new Customer
-                {
-                    CustomerCode = "C004",
-                    CompanyName = "優質服務顧問公司",
-                    ContactPerson = "劉總監",
-                    TaxNumber = "45678901",
-                    CustomerTypeId = generalCustomerType?.Id ?? 2,
-                    IndustryTypeId = svcIndustry?.Id ?? 4,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-15),
-                    CreatedBy = "System"
-                },
-                new Customer
-                {
-                    CustomerCode = "C005",
-                    CompanyName = "新興金融集團",
-                    ContactPerson = "陳協理",
-                    TaxNumber = "56789012",
-                    CustomerTypeId = potentialCustomerType?.Id ?? 3,
-                    IndustryTypeId = finIndustry?.Id ?? 5,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-10),
-                    CreatedBy = "System"
-                },
-                new Customer
-                {
-                    CustomerCode = "C006",
-                    CompanyName = "創新軟體開發股份有限公司",
-                    ContactPerson = "黃經理",
-                    TaxNumber = "67890123",
-                    CustomerTypeId = generalCustomerType?.Id ?? 2,
-                    IndustryTypeId = itIndustry?.Id ?? 1,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-5),
-                    CreatedBy = "System"
-                },
-                new Customer
-                {
-                    CustomerCode = "C007",
-                    CompanyName = "暫停合作企業有限公司",
-                    ContactPerson = "林主管",
-                    TaxNumber = "78901234",
-                    CustomerTypeId = generalCustomerType?.Id ?? 2,
-                    IndustryTypeId = mfgIndustry?.Id ?? 2,
-                    Status = EntityStatus.Inactive,
-                    CreatedAt = DateTime.Now.AddDays(-60),
-                    CreatedBy = "System"
                 }
             };
 

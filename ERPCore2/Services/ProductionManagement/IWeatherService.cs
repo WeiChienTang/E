@@ -19,12 +19,6 @@ namespace ERPCore2.Services
         /// <returns>天氣資料</returns>
         Task<Weather?> GetByCodeAsync(string code);
 
-        /// <summary>
-        /// 根據溫度範圍取得天氣資料
-        /// </summary>
-        /// <param name="minTemperature">最低溫度</param>
-        /// <param name="maxTemperature">最高溫度</param>
-        /// <returns>天氣資料列表</returns>
-        Task<List<Weather>> GetByTemperatureRangeAsync(decimal minTemperature, decimal maxTemperature);
+
     }
 }

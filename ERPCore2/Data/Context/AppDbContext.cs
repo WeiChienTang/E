@@ -322,15 +322,6 @@ namespace ERPCore2.Data.Context
                         .OnDelete(DeleteBehavior.Restrict);
                   });
 
-                  // BOM 基礎
-                  modelBuilder.Entity<Material>(entity =>
-                  {
-                        entity.HasOne(m => m.Supplier)
-                        .WithMany()
-                        .HasForeignKey(m => m.SupplierId)
-                        .OnDelete(DeleteBehavior.SetNull);
-                  });
-
                   // 庫存盤點相關
                   modelBuilder.Entity<StockTaking>(entity =>
                   {

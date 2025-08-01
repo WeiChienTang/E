@@ -29,10 +29,8 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Materials
-                    .Include(m => m.Supplier)
                     .Where(m => !m.IsDeleted)
-                    .OrderBy(m => m.Category)
-                    .ThenBy(m => m.Name)
+                    .OrderBy(m => m.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -54,7 +52,6 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Materials
-                    .Include(m => m.Supplier)
                     .FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted);
             }
             catch (Exception ex)
@@ -80,15 +77,11 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Materials
-                    .Include(m => m.Supplier)
                     .Where(m => !m.IsDeleted &&
                                (m.Name.Contains(searchTerm) ||
                                 m.Code.Contains(searchTerm) ||
-                                (m.Description != null && m.Description.Contains(searchTerm)) ||
-                                (m.Category != null && m.Category.Contains(searchTerm)) ||
-                                (m.Supplier != null && m.Supplier.CompanyName.Contains(searchTerm))))
-                    .OrderBy(m => m.Category)
-                    .ThenBy(m => m.Name)
+                                (m.Description != null && m.Description.Contains(searchTerm))))
+                    .OrderBy(m => m.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -123,24 +116,6 @@ namespace ERPCore2.Services
                 // 檢查名稱是否重複
                 if (await IsNameExistsAsync(entity.Name, entity.Id))
                     return ServiceResult.Failure("材質名稱已存在");
-
-                // 檢查供應商是否存在（如果有指定）
-                if (entity.SupplierId.HasValue)
-                {
-                    using var context = await _contextFactory.CreateDbContextAsync();
-                    var supplierExists = await context.Suppliers
-                        .AnyAsync(s => s.Id == entity.SupplierId.Value && !s.IsDeleted);
-                    
-                    if (!supplierExists)
-                        return ServiceResult.Failure("指定的供應商不存在");
-                }
-
-                // 檢查數值範圍
-                if (entity.Density.HasValue && entity.Density.Value < 0)
-                    return ServiceResult.Failure("密度不能為負數");
-
-                if (entity.MeltingPoint.HasValue && entity.MeltingPoint.Value < -273.15m)
-                    return ServiceResult.Failure("熔點不能低於絕對零度");
 
                 return ServiceResult.Success();
             }
@@ -220,7 +195,6 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Materials
-                    .Include(m => m.Supplier)
                     .Where(m => m.Code == code && !m.IsDeleted)
                     .FirstOrDefaultAsync();
             }
@@ -232,177 +206,6 @@ namespace ERPCore2.Services
                     Code = code
                 });
                 return null;
-            }
-        }
-
-        /// <summary>
-        /// 根據材質類別取得材質清單
-        /// </summary>
-        public async Task<List<Material>> GetByCategoryAsync(string category)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Materials
-                    .Include(m => m.Supplier)
-                    .Where(m => !m.IsDeleted && m.Category == category)
-                    .OrderBy(m => m.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByCategoryAsync), GetType(), _logger, new { 
-                    Method = nameof(GetByCategoryAsync),
-                    ServiceType = GetType().Name,
-                    Category = category
-                });
-                return new List<Material>();
-            }
-        }
-
-        /// <summary>
-        /// 取得所有材質類別
-        /// </summary>
-        public async Task<List<string>> GetCategoriesAsync()
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Materials
-                    .Where(m => !m.IsDeleted && !string.IsNullOrEmpty(m.Category))
-                    .Select(m => m.Category!)
-                    .Distinct()
-                    .OrderBy(c => c)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCategoriesAsync), GetType(), _logger, new { 
-                    Method = nameof(GetCategoriesAsync),
-                    ServiceType = GetType().Name
-                });
-                return new List<string>();
-            }
-        }
-
-        /// <summary>
-        /// 根據供應商ID取得材質清單
-        /// </summary>
-        public async Task<List<Material>> GetBySupplierAsync(int supplierId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Materials
-                    .Include(m => m.Supplier)
-                    .Where(m => !m.IsDeleted && m.SupplierId == supplierId)
-                    .OrderBy(m => m.Category)
-                    .ThenBy(m => m.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySupplierAsync), GetType(), _logger, new { 
-                    Method = nameof(GetBySupplierAsync),
-                    ServiceType = GetType().Name,
-                    SupplierId = supplierId
-                });
-                return new List<Material>();
-            }
-        }
-
-        /// <summary>
-        /// 取得環保材質清單
-        /// </summary>
-        public async Task<List<Material>> GetEcoFriendlyMaterialsAsync()
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Materials
-                    .Include(m => m.Supplier)
-                    .Where(m => !m.IsDeleted && m.IsEcoFriendly)
-                    .OrderBy(m => m.Category)
-                    .ThenBy(m => m.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetEcoFriendlyMaterialsAsync), GetType(), _logger, new { 
-                    Method = nameof(GetEcoFriendlyMaterialsAsync),
-                    ServiceType = GetType().Name
-                });
-                return new List<Material>();
-            }
-        }
-
-        /// <summary>
-        /// 根據密度範圍取得材質清單
-        /// </summary>
-        public async Task<List<Material>> GetByDensityRangeAsync(decimal? minDensity = null, decimal? maxDensity = null)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Materials
-                    .Include(m => m.Supplier)
-                    .Where(m => !m.IsDeleted);
-
-                if (minDensity.HasValue)
-                    query = query.Where(m => m.Density >= minDensity.Value);
-
-                if (maxDensity.HasValue)
-                    query = query.Where(m => m.Density <= maxDensity.Value);
-
-                return await query
-                    .OrderBy(m => m.Density)
-                    .ThenBy(m => m.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByDensityRangeAsync), GetType(), _logger, new { 
-                    Method = nameof(GetByDensityRangeAsync),
-                    ServiceType = GetType().Name,
-                    MinDensity = minDensity,
-                    MaxDensity = maxDensity
-                });
-                return new List<Material>();
-            }
-        }
-
-        /// <summary>
-        /// 根據熔點範圍取得材質清單
-        /// </summary>
-        public async Task<List<Material>> GetByMeltingPointRangeAsync(decimal? minMeltingPoint = null, decimal? maxMeltingPoint = null)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Materials
-                    .Include(m => m.Supplier)
-                    .Where(m => !m.IsDeleted);
-
-                if (minMeltingPoint.HasValue)
-                    query = query.Where(m => m.MeltingPoint >= minMeltingPoint.Value);
-
-                if (maxMeltingPoint.HasValue)
-                    query = query.Where(m => m.MeltingPoint <= maxMeltingPoint.Value);
-
-                return await query
-                    .OrderBy(m => m.MeltingPoint)
-                    .ThenBy(m => m.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByMeltingPointRangeAsync), GetType(), _logger, new { 
-                    Method = nameof(GetByMeltingPointRangeAsync),
-                    ServiceType = GetType().Name,
-                    MinMeltingPoint = minMeltingPoint,
-                    MaxMeltingPoint = maxMeltingPoint
-                });
-                return new List<Material>();
             }
         }
     }
