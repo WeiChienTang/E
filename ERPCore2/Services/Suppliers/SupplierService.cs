@@ -39,7 +39,6 @@ namespace ERPCore2.Services
             {
                 return await context.Suppliers
                     .Include(s => s.SupplierType)
-                    .Include(s => s.IndustryType)
                     .Where(s => !s.IsDeleted)
                     .OrderBy(s => s.CompanyName)
                     .ToListAsync();
@@ -59,7 +58,6 @@ namespace ERPCore2.Services
             {
                 return await context.Suppliers
                     .Include(s => s.SupplierType)
-                    .Include(s => s.IndustryType)
                     .Include(s => s.SupplierContacts)
                         .ThenInclude(sc => sc.ContactType)
                     .Include(s => s.SupplierAddresses)
@@ -84,7 +82,6 @@ namespace ERPCore2.Services
 
                 return await context.Suppliers
                     .Include(s => s.SupplierType)
-                    .Include(s => s.IndustryType)
                     .Where(s => !s.IsDeleted &&
                                (s.CompanyName.Contains(searchTerm) ||
                                 s.SupplierCode.Contains(searchTerm) ||
@@ -133,11 +130,7 @@ namespace ERPCore2.Services
                     errors.Add("統一編號必須為8位數字");
                 }
 
-                // 驗證信用額度
-                if (entity.CreditLimit.HasValue && entity.CreditLimit.Value < 0)
-                {
-                    errors.Add("信用額度不能為負數");
-                }
+
 
                 return errors.Any() 
                     ? ServiceResult.Failure(string.Join("; ", errors))
@@ -163,7 +156,6 @@ namespace ERPCore2.Services
             {
                 return await context.Suppliers
                     .Include(s => s.SupplierType)
-                    .Include(s => s.IndustryType)
                     .FirstOrDefaultAsync(s => s.SupplierCode == supplierCode && !s.IsDeleted);
             }
             catch (Exception ex)
@@ -203,7 +195,6 @@ namespace ERPCore2.Services
             {
                 return await context.Suppliers
                     .Include(s => s.SupplierType)
-                    .Include(s => s.IndustryType)
                     .Where(s => s.SupplierTypeId == supplierTypeId && !s.IsDeleted)
                     .OrderBy(s => s.CompanyName)
                     .ToListAsync();
@@ -212,27 +203,6 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySupplierTypeAsync), GetType(), _logger, 
                     new { SupplierTypeId = supplierTypeId });
-                throw;
-            }
-        }
-
-        public async Task<List<Supplier>> GetByIndustryTypeAsync(int industryTypeId)
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
-
-            try
-            {
-                return await context.Suppliers
-                    .Include(s => s.SupplierType)
-                    .Include(s => s.IndustryType)
-                    .Where(s => s.IndustryTypeId == industryTypeId && !s.IsDeleted)
-                    .OrderBy(s => s.CompanyName)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByIndustryTypeAsync), GetType(), _logger, 
-                    new { IndustryTypeId = industryTypeId });
                 throw;
             }
         }
@@ -258,25 +228,6 @@ namespace ERPCore2.Services
                 throw;
             }
         }
-
-        public async Task<List<IndustryType>> GetIndustryTypesAsync()
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
-
-            try
-            {
-                return await context.IndustryTypes
-                    .Where(it => it.Status == EntityStatus.Active && !it.IsDeleted)
-                    .OrderBy(it => it.IndustryTypeName)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetIndustryTypesAsync), GetType(), _logger);
-                throw;
-            }
-        }
-
         #endregion
 
         #region 聯絡資料管理
@@ -497,10 +448,7 @@ namespace ERPCore2.Services
                 supplier.CompanyName = string.Empty;
                 supplier.ContactPerson = string.Empty;
                 supplier.TaxNumber = string.Empty;
-                supplier.PaymentTerms = string.Empty;
                 supplier.SupplierTypeId = null;
-                supplier.IndustryTypeId = null;
-                supplier.CreditLimit = null;
                 supplier.Status = EntityStatus.Active;
             }
             catch (Exception ex)

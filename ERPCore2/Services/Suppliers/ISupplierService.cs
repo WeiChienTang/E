@@ -25,11 +25,6 @@ namespace ERPCore2.Services
         /// </summary>
         Task<List<Supplier>> GetBySupplierTypeAsync(int supplierTypeId);
         
-        /// <summary>
-        /// 根據行業類型取得廠商列表
-        /// </summary>
-        Task<List<Supplier>> GetByIndustryTypeAsync(int industryTypeId);
-        
         #endregion
 
         #region 輔助資料查詢
@@ -38,11 +33,6 @@ namespace ERPCore2.Services
         /// 取得所有廠商類型
         /// </summary>
         Task<List<SupplierType>> GetSupplierTypesAsync();
-        
-        /// <summary>
-        /// 取得所有行業類型
-        /// </summary>
-        Task<List<IndustryType>> GetIndustryTypesAsync();
         
         #endregion
 

@@ -82,7 +82,6 @@
     
     // 選項清單
     private List<SupplierType> supplierTypes = new();
-    private List<IndustryType> industryTypes = new();
     private List<ContactType> contactTypes = new();
     private List<AddressType> addressTypes = new();
     
@@ -154,7 +153,6 @@
             
             // 順序執行以避免DbContext併發問題
             supplierTypes = await SupplierService.GetSupplierTypesAsync();
-            industryTypes = await SupplierService.GetIndustryTypesAsync();
             contactTypes = await ContactTypeService.GetActiveAsync();
             addressTypes = await AddressTypeService.GetActiveAsync();
             
@@ -167,7 +165,6 @@
                 additionalData: new { Id, _isLoadingData });
             // 初始化空列表以防止UI錯誤
             supplierTypes = new List<SupplierType>();
-            industryTypes = new List<IndustryType>();
             contactTypes = new List<ContactType>();
             addressTypes = new List<AddressType>();
             InitializeFormFields(); // 即使出錯也要初始化表單欄位
@@ -188,13 +185,6 @@
             {
                 Text = st.TypeName,
                 Value = st.Id.ToString()
-            }).ToList();
-
-            // 行業類型選項
-            var industryTypeOptions = industryTypes.Select(it => new SelectOption
-            {
-                Text = it.IndustryTypeName,
-                Value = it.Id.ToString()
             }).ToList();
 
             basicFormFields = new List<FormFieldDefinition>
@@ -239,30 +229,6 @@
                     FieldType = FormFieldType.Select,
                     Options = supplierTypeOptions,
                     
-                },
-                new()
-                {
-                    PropertyName = nameof(Supplier.IndustryTypeId),
-                    Label = "行業類型",
-                    FieldType = FormFieldType.Select,
-                    Options = industryTypeOptions,
-                    
-                },
-                new()
-                {
-                    PropertyName = nameof(Supplier.PaymentTerms),
-                    Label = "付款條件",
-                    FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入付款條件",
-                    
-                },
-                new()
-                {
-                    PropertyName = nameof(Supplier.CreditLimit),
-                    Label = "信用額度",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入信用額度",
-                    
                 }
             };
 
@@ -272,18 +238,14 @@
                 { nameof(Supplier.CompanyName), "基本資訊" },
                 { nameof(Supplier.ContactPerson), "聯絡資訊" },
                 { nameof(Supplier.TaxNumber), "財務資訊" },
-                { nameof(Supplier.SupplierTypeId), "分類資訊" },
-                { nameof(Supplier.IndustryTypeId), "分類資訊" },
-                { nameof(Supplier.PaymentTerms), "財務資訊" },
-                { nameof(Supplier.CreditLimit), "財務資訊" }
+                { nameof(Supplier.SupplierTypeId), "分類資訊" }
             };
         }
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFormFields), GetType(),
                 additionalData: new { 
-                    SupplierTypesCount = supplierTypes?.Count ?? 0,
-                    IndustryTypesCount = industryTypes?.Count ?? 0
+                    SupplierTypesCount = supplierTypes?.Count ?? 0
                 });
         }
     }

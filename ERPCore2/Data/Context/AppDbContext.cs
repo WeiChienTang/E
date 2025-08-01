@@ -143,10 +143,6 @@ namespace ERPCore2.Data.Context
                         entity.HasOne(e => e.SupplierType)
                         .WithMany(st => st.Suppliers)
                         .OnDelete(DeleteBehavior.SetNull);
-
-                        entity.HasOne(e => e.IndustryType)
-                        .WithMany(i => i.Suppliers)
-                        .OnDelete(DeleteBehavior.SetNull);
                   });
                   
                   modelBuilder.Entity<SupplierContact>(entity =>

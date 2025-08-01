@@ -278,39 +278,11 @@
                 },
                 new()
                 {
-                    Label = "付款條件",
-                    Value = supplier?.PaymentTerms,
-                    IconClass = "fas fa-credit-card",
-                    IconBgClass = "bg-secondary bg-opacity-10",
-                    IconTextClass = "text-secondary",
-                    ColSize = 6
-                },
-                new()
-                {
-                    Label = "信用額度",
-                    Value = supplier?.CreditLimit,
-                    Format = BasicInfoDisplayComponent.FieldFormat.Currency,
-                    IconClass = "fas fa-money-check",
-                    IconBgClass = "bg-success bg-opacity-10",
-                    IconTextClass = "text-success",
-                    ColSize = 6
-                },
-                new()
-                {
                     Label = "廠商類型",
                     Value = supplier?.SupplierType?.TypeName,
                     IconClass = "fas fa-tags",
                     IconBgClass = "bg-info bg-opacity-10",
                     IconTextClass = "text-info",
-                    ColSize = 6
-                },
-                new()
-                {
-                    Label = "行業類型",
-                    Value = supplier?.IndustryType?.IndustryTypeName,
-                    IconClass = "fas fa-industry",
-                    IconBgClass = "bg-secondary bg-opacity-10",
-                    IconTextClass = "text-secondary",
                     ColSize = 6
                 },
                 new()

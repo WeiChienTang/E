@@ -54,10 +54,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CompanyName = "精密科技製造股份有限公司",
                     ContactPerson = "張總經理",
                     TaxNumber = "20123456",
-                    PaymentTerms = "月結30天",
-                    CreditLimit = 5000000,
                     SupplierTypeId = manufacturerType?.Id ?? 1,
-                    IndustryTypeId = mfgIndustry?.Id ?? 1,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-90),
                     CreatedBy = "System"
@@ -68,10 +65,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CompanyName = "台灣電子元件有限公司",
                     ContactPerson = "李經理",
                     TaxNumber = "20234567",
-                    PaymentTerms = "貨到付款",
-                    CreditLimit = 3000000,
                     SupplierTypeId = manufacturerType?.Id ?? 1,
-                    IndustryTypeId = mfgIndustry?.Id ?? 1,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-85),
                     CreatedBy = "System"
@@ -82,10 +76,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CompanyName = "全球軟體代理商",
                     ContactPerson = "王協理",
                     TaxNumber = "20345678",
-                    PaymentTerms = "預付款",
-                    CreditLimit = 2000000,
                     SupplierTypeId = agentType?.Id ?? 2,
-                    IndustryTypeId = itIndustry?.Id ?? 2,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-80),
                     CreatedBy = "System"

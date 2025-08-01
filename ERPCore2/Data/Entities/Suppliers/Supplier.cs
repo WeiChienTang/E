@@ -31,26 +31,13 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "統一編號")]
         public string? TaxNumber { get; set; }
         
-        [MaxLength(50, ErrorMessage = "付款條件不可超過50個字元")]
-        [Display(Name = "付款條件")]
-        public string? PaymentTerms { get; set; }
-        
-        [Display(Name = "信用額度")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal? CreditLimit { get; set; }
-        
         // Foreign Keys
         [Display(Name = "廠商類型")]
         [ForeignKey(nameof(SupplierType))]
         public int? SupplierTypeId { get; set; }
         
-        [Display(Name = "行業類型")]
-        [ForeignKey(nameof(IndustryType))]
-        public int? IndustryTypeId { get; set; }
-        
         // Navigation Properties
         public SupplierType? SupplierType { get; set; }
-        public IndustryType? IndustryType { get; set; }
         public ICollection<SupplierContact> SupplierContacts { get; set; } = new List<SupplierContact>();
         public ICollection<SupplierAddress> SupplierAddresses { get; set; } = new List<SupplierAddress>();
         public ICollection<ProductSupplier> ProductSuppliers { get; set; } = new List<ProductSupplier>();
