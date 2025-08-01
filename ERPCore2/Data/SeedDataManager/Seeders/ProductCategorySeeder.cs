@@ -32,8 +32,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new ProductCategory
                 {
                     CategoryCode = "PC001",
-                    CategoryName = "電子產品",
-                    Description = "電腦週邊、電子設備",
+                    CategoryName = "原物料",
+                    Description = "生產原料材料",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-30),
                     CreatedBy = "System"
@@ -41,8 +41,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new ProductCategory
                 {
                     CategoryCode = "PC002",
-                    CategoryName = "辦公用品",
-                    Description = "辦公室文具用品",
+                    CategoryName = "半成品",
+                    Description = "半成品",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-30),
                     CreatedBy = "System"
@@ -50,26 +50,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new ProductCategory
                 {
                     CategoryCode = "PC003",
-                    CategoryName = "工業設備",
-                    Description = "工業生產設備及工具",
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-30),
-                    CreatedBy = "System"
-                },
-                new ProductCategory
-                {
-                    CategoryCode = "PC004",
-                    CategoryName = "軟體授權",
-                    Description = "軟體授權及服務",
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-30),
-                    CreatedBy = "System"
-                },
-                new ProductCategory
-                {
-                    CategoryCode = "PC005",
-                    CategoryName = "原物料",
-                    Description = "生產原料材料",
+                    CategoryName = "成品",
+                    Description = "已完成製造的產品",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-30),
                     CreatedBy = "System"

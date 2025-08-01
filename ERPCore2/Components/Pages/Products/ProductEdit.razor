@@ -249,7 +249,7 @@
             var productCategoryField = new FormFieldDefinition
             {
                 PropertyName = nameof(Product.ProductCategoryId),
-                Label = "產品分類",
+                Label = "產品類型",
                 FieldType = FormFieldType.Select,
                 IsRequired = productCategories.Any(), // 只有當有分類資料時才設為必填
                 Options = productCategories.Select(pc => new SelectOption 
@@ -291,6 +291,19 @@
                 }).ToList(),
             };
 
+            var supplierField = new FormFieldDefinition
+            {
+                PropertyName = nameof(Product.PrimarySupplierId),
+                Label = "主要供應商",
+                FieldType = FormFieldType.Select,
+                IsRequired = false, // 供應商不是必填
+                Options = suppliers.Select(s => new SelectOption 
+                { 
+                    Value = s.Id.ToString(), 
+                    Text = $"{s.CompanyName} ({s.SupplierCode})" 
+                }).ToList(),
+            };
+
             // 插入到適當位置（ProductName之後）
             var insertIndex = formFields.FindIndex(f => f.PropertyName == nameof(Product.ProductName)) + 1;
             if (insertIndex > 0)
@@ -298,6 +311,7 @@
                 formFields.Insert(insertIndex, productCategoryField);
                 formFields.Insert(insertIndex + 1, unitField);
                 formFields.Insert(insertIndex + 2, sizeField);
+                formFields.Insert(insertIndex + 3, supplierField);
             }
             else
             {
@@ -305,12 +319,14 @@
                 formFields.Insert(0, productCategoryField);
                 formFields.Insert(1, unitField);
                 formFields.Insert(2, sizeField);
+                formFields.Insert(3, supplierField);
             }
 
             // 更新表單區段
             formSections[nameof(Product.ProductCategoryId)] = "基本資訊";
             formSections[nameof(Product.UnitId)] = "基本資訊";
             formSections[nameof(Product.SizeId)] = "基本資訊";
+            formSections[nameof(Product.PrimarySupplierId)] = "基本資訊";
         }
         catch (Exception ex)
         {
