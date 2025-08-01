@@ -166,6 +166,7 @@
                 TableColumnDefinition.Text("公司名稱", nameof(Supplier.CompanyName)),
                 TableColumnDefinition.Text("聯絡人", nameof(Supplier.ContactPerson)),
                 TableColumnDefinition.Text("廠商類型", "SupplierType.TypeName"),
+                TableColumnDefinition.Text("統一編號", nameof(Supplier.TaxNumber)),
             };
         }
         catch (Exception ex)
@@ -211,8 +212,6 @@
             {
                 query = query.Where(s => s.SupplierTypeId == supplierTypeId);
             }
-
-
 
             // 統一編號篩選
             var taxNumberFilter = searchModel.GetFilterValue("TaxNumber")?.ToString();

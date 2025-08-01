@@ -4,18 +4,12 @@
 @using ERPCore2.Data.Enums
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Services
 @using Microsoft.JSInterop
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
 
 <div class="card mb-4">    
-    @* <div class="card-header">
-        <h5 class="card-title mb-0">
-            <i class="bi bi-@Icon me-2"></i>
-            @Title
-        </h5>
-        <small class="text-muted">@GetSubtitle()</small>
-    </div>     *@
     <div class="card-body">
         @if (Items.Any())
         {
@@ -23,43 +17,46 @@
                 @for (int i = 0; i < Items.Count; i++)
                 {
                     var index = i; // 為了閉包
-                    var item = Items[index];                    
-                    <div class="col-lg-3 col-md-6">
-                        <div class="card border h-100">
-                            <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
-                                <small class="fw-bold text-muted">#@(index + 1)</small>
-                                <div class="btn-group btn-group-sm">
-                                    @if (GetIsPrimary(item))
-                                    {
-                                        <span class="badge bg-primary rounded-pill px-2">
-                                            <i class="bi bi-star-fill me-1"></i>主要
-                                        </span>                                
-                                    }
-                                    else if (!IsReadOnly)
-                                    {
-                                        <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" 
-                                                              Size="ButtonSize.Small"
-                                                              IconClass="bi bi-star"
-                                                              OnClick="() => SetPrimaryAsync(index)" 
-                                                              Title="設為主要" />
-                                    }
+                    var item = Items[index];
+                    <div class="col-12">
+                        <div class="card h-100 relation-card">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div class="flex-grow-1">
+                                        <h6 class="card-title mb-1 text-truncate" title="@GetContactDisplayName(item)">
+                                            <i class="bi bi-telephone me-1"></i>@GetContactDisplayName(item)
+                                        </h6>
+                                        @if (GetIsPrimary(item))
+                                        {
+                                            <span class="badge bg-primary">主要</span>
+                                        }
+                                    </div>
                                     @if (!IsReadOnly)
                                     {
-                                        <GenericButtonComponent Variant="ButtonVariant.OutlineDanger" 
-                                                              Size="ButtonSize.Small"
-                                                              IconClass="bi bi-trash"
-                                                              OnClick="() => RemoveItemAsync(index)" 
-                                                              Title="移除" />
+                                        <div class="btn-group btn-group-sm">
+                                            @if (!GetIsPrimary(item))
+                                            {
+                                                <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" 
+                                                                      Size="ButtonSize.Small"
+                                                                      IconClass="bi bi-star"
+                                                                      OnClick="() => SetPrimaryAsync(index)" 
+                                                                      Title="設為主要" />
+                                            }
+                                            <GenericButtonComponent Variant="ButtonVariant.OutlineDanger" 
+                                                                  Size="ButtonSize.Small"
+                                                                  IconClass="bi bi-trash"
+                                                                  OnClick="() => RemoveItemAsync(index)" 
+                                                                  Title="移除" />
+                                        </div>
                                     }
                                 </div>
-                            </div>
-                            <div class="card-body p-3">
+                                
                                 <div class="row g-2">
                                     @* 聯絡類型選擇 *@
-                                    <div class="col-12">
+                                    <div class="col-md-4">
                                         <label class="form-label">@TypeDisplayName <span class="text-danger">*</span></label>
                                         <select class="form-select" 
-                                                @onchange="@(e => UpdateContactType(index, e.Value?.ToString()))"
+                                                @onchange="@((ChangeEventArgs e) => UpdateContactType(index, e.Value?.ToString()))"
                                                 value="@GetTypeId(item)"
                                                 disabled="@IsReadOnly">
                                             <option value="">請選擇 @TypeDisplayName</option>
@@ -70,13 +67,13 @@
                                         </select>
                                     </div>
                                     @* 聯絡內容輸入 *@
-                                    <div class="col-12">
+                                    <div class="col-md-8">
                                         <label class="form-label">@ValueDisplayName <span class="text-danger">*</span></label>
                                         <input type="text" 
                                                class="form-control" 
                                                placeholder="@ValuePlaceholder"
                                                value="@GetContactValue(item)"
-                                               @onchange="@(e => UpdateContactValue(index, e.Value?.ToString()))"
+                                               @onchange="@((ChangeEventArgs e) => UpdateContactValue(index, e.Value?.ToString()))"
                                                readonly="@IsReadOnly" />                                        
                                     </div>
                                 </div>
@@ -84,24 +81,18 @@
                         </div>
                     </div>
                 }
-                
-                @* 新增按鈕 - 始終顯示在下一個位置 *@
-                @if (!IsReadOnly)
-                {                
-                    <div class="col-lg-3 col-md-6">
-                        <div class="card border-dashed h-100 d-flex align-items-center justify-content-center" 
-                             style="border-style: dashed !important; border-color: #dee2e6;">
-                            <div class="text-center p-4">
-                                <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" 
-                                                      Size="ButtonSize.Large"
-                                                      IconClass="bi bi-plus-lg"
-                                                      Text="新增聯繫"
-                                                      OnClick="AddItemAsync" />
-                            </div>
-                        </div>
-                    </div>
-                }
             </div>
+            
+            @* 新增按鈕 - 放在列表下方 *@
+            @if (!IsReadOnly)
+            {
+                <div class="text-center mt-3">
+                    <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" 
+                                          IconClass="bi bi-plus-lg"
+                                          Text="新增聯繫"
+                                          OnClick="AddItemAsync" />
+                </div>
+            }
         }
         else
         {
@@ -110,7 +101,7 @@
                 <div class="mb-3">
                     <i class="@EmptyIcon text-muted" style="font-size: 3rem;"></i>
                 </div>
-                <h6 class="text-muted mb-3">尚無資料</h6>
+                <h6 class="text-muted mb-3">@EmptyMessage</h6>
                 @if (!IsReadOnly)
                 {
                     <GenericButtonComponent Variant="ButtonVariant.Primary" 
@@ -138,12 +129,24 @@
     [Parameter] public string ValueDisplayName { get; set; } = "聯絡內容";
     [Parameter] public string ValuePlaceholder { get; set; } = "請輸入聯絡內容";
     [Parameter] public string EmptyIcon { get; set; } = "bi-telephone-x";
+    [Parameter] public string EmptyMessage { get; set; } = "尚無資料";
     
     // ===== 委派參數 =====
     [Parameter] public Func<TContactEntity, bool> GetIsPrimary { get; set; } = item => false;
     [Parameter] public Func<TContactEntity, int?> GetTypeId { get; set; } = item => null;
-    [Parameter] public Func<TContactEntity, string> GetContactValue { get; set; } = item => string.Empty;    [Parameter] public Func<ERPCore2.Data.BaseEntity, int> GetOptionId { get; set; } = option => option.Id;
-    [Parameter] public Func<ERPCore2.Data.BaseEntity, string> GetOptionDisplayText { get; set; } = option => option.ToString() ?? "";
+    [Parameter] public Func<TContactEntity, string> GetContactValue { get; set; } = item => string.Empty;
+    [Parameter] public Func<ERPCore2.Data.BaseEntity, int> GetOptionId { get; set; } = option => option.Id;
+    [Parameter] public Func<ERPCore2.Data.BaseEntity, string> GetOptionDisplayText { get; set; } = option => 
+    {
+        // 檢查是否有 TypeName 屬性並取得其值
+        var typeNameProperty = option.GetType().GetProperty("TypeName");
+        if (typeNameProperty != null)
+        {
+            var typeName = typeNameProperty.GetValue(option) as string;
+            return typeName ?? option.ToString() ?? "";
+        }
+        return option.ToString() ?? "";
+    };
     
     [Parameter] public Action<TContactEntity, bool> SetIsPrimary { get; set; } = (item, isPrimary) => { };
     [Parameter] public Action<TContactEntity, int?> SetTypeId { get; set; } = (item, typeId) => { };
@@ -161,19 +164,40 @@
     private string GetSubtitle()
     {
         return $"管理{ItemDisplayName}資訊 ({Items.Count} 筆)";
+    }
+
+    private string GetContactDisplayName(TContactEntity item)
+    {
+        var parts = new List<string>();
+        
+        // 聯絡類型
+        var typeId = GetTypeId(item);
+        if (typeId.HasValue)
+        {
+            var typeOption = Options.FirstOrDefault(o => GetOptionId(o) == typeId.Value);
+            if (typeOption != null)
+            {
+                parts.Add(GetOptionDisplayText(typeOption));
+            }
+        }
+        
+        // 聯絡內容
+        var contactValue = GetContactValue(item);
+        if (!string.IsNullOrWhiteSpace(contactValue))
+        {
+            parts.Add(contactValue);
+        }
+        
+        return parts.Any() ? string.Join(" - ", parts) : "未設定聯絡方式";
     }    public async Task AddItemAsync()
     {
         if (IsReadOnly) return;
         
         var newItem = new TContactEntity();
-        // 使用臨時負數 ID 來區分新項目（避免與資料庫現有 ID 衝突）
-        newItem.Id = -(Items.Count + 1 + DateTime.Now.Millisecond);
+        // 初始化基本屬性
         SetParentId(newItem, ParentEntityId);
         SetContactValue(newItem, "");
         SetIsPrimary(newItem, Items.Count == 0); // 第一個自動設為主要
-        newItem.Status = EntityStatus.Active;
-        newItem.CreatedAt = DateTime.Now;
-        newItem.IsDeleted = false;
         
         Items.Add(newItem);
         

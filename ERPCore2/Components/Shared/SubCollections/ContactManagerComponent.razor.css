@@ -1,5 +1,30 @@
 /* ContactManagerComponent 專用樣式 */
 
+/* List 樣式 - 關聯卡片 */
+.relation-card {
+    cursor: default;
+    transition: box-shadow 0.15s ease-in-out;
+    border: 1px solid #dee2e6;
+}
+
+.relation-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-title {
+    color: #495057;
+    font-weight: 600;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
 /* SubCollection 卡片樣式 */
 .subcollection-card {
     transition: all 0.2s ease-in-out;
