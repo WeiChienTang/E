@@ -139,7 +139,6 @@ namespace ERPCore2.Services
     public interface ICustomerService : IGenericManagementService<Customer>
     {
         Task<bool> IsCustomerCodeExistsAsync(string customerCode, int? excludeId = null);
-        Task<List<Customer>> GetByIndustryTypeAsync(int industryTypeId);
     }
 
     public class CustomerService : GenericManagementService<Customer>, ICustomerService
@@ -157,7 +156,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
                     .Include(c => c.CustomerType)
-                    .Include(c => c.IndustryType)
                     .Where(c => !c.IsDeleted)
                     .OrderBy(c => c.CustomerCode)
                     .ToListAsync();

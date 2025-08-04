@@ -121,7 +121,7 @@
                 additionalData: new { 
                     PageName = "CustomerIndex",
                     Action = "LoadBasicData",
-                    ExpectedData = "CustomerTypes, IndustryTypes"
+                    ExpectedData = "CustomerTypes"
                 });
         }
     }
@@ -156,12 +156,6 @@
     {
         try
         {
-            // 準備狀態選項
-            var statusOptions = new List<SelectOption>
-            {
-                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-            };
 
             // 建立基本篩選定義（不包含下拉選單選項，這些將在 InitializeFiltersAsync 中載入）
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
@@ -169,8 +163,6 @@
                 .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
                 .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
                 .AddSelect("CustomerTypeId", "客戶類型", new List<SelectOption>()) // 空的選項，稍後載入
-                .AddSelect("IndustryTypeId", "行業類型", new List<SelectOption>()) // 空的選項，稍後載入
-                .AddSelect("Status", "狀態", statusOptions)
                 .AddText("TaxNumber", "統一編號", "輸入統一編號搜尋")
                 .Build();
         }
@@ -204,13 +196,6 @@
                 TableColumnDefinition.Text("公司名稱", nameof(Customer.CompanyName)),
                 TableColumnDefinition.Text("聯絡人", nameof(Customer.ContactPerson)),
                 TableColumnDefinition.Text("客戶類型", "CustomerType.TypeName"),
-                TableColumnDefinition.Text("行業類型", "IndustryType.IndustryTypeName"),
-                TableColumnDefinition.Status("狀態", nameof(Customer.Status), new Dictionary<object, string>
-                {
-                    { EntityStatus.Active, "bg-success" },
-                    { EntityStatus.Inactive, "bg-secondary" }
-                }),
-                TableColumnDefinition.Date("建立日期", nameof(Customer.CreatedAt), "yyyy/MM/dd")
             };
         }
         catch (Exception ex)
@@ -270,13 +255,6 @@
                 query = query.Where(c => c.CustomerTypeId == customerTypeId);
             }
 
-            // 行業類型篩選 - 改為ID篩選
-            var industryTypeIdFilter = searchModel.GetFilterValue("IndustryTypeId")?.ToString();
-            if (!string.IsNullOrWhiteSpace(industryTypeIdFilter) && int.TryParse(industryTypeIdFilter, out var industryTypeId))
-            {
-                query = query.Where(c => c.IndustryTypeId == industryTypeId);
-            }
-
             // 狀態篩選
             var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
             if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
@@ -328,14 +306,6 @@
                 Value = ct.Id.ToString()
             }).ToList();
 
-            // 載入行業類型選項
-            var industryTypes = await CustomerService.GetIndustryTypesAsync();
-            var industryTypeOptions = industryTypes.Select(it => new SelectOption
-            {
-                Text = it.IndustryTypeName,
-                Value = it.Id.ToString()
-            }).ToList();
-
             // 準備狀態選項
             var statusOptions = new List<SelectOption>
             {
@@ -349,7 +319,6 @@
                 .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
                 .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
                 .AddSelect("CustomerTypeId", "客戶類型", customerTypeOptions)
-                .AddSelect("IndustryTypeId", "行業類型", industryTypeOptions)
                 .AddSelect("Status", "狀態", statusOptions)
                 .AddText("TaxNumber", "統一編號", "輸入統一編號搜尋")
                 .Build();

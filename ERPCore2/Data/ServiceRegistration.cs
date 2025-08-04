@@ -41,9 +41,6 @@ namespace ERPCore2.Data
             services.AddScoped<IContactTypeService, ContactTypeService>();
             services.AddScoped<IAddressTypeService, AddressTypeService>();
 
-            // 行業類型服務
-            services.AddScoped<IIndustryTypeService, IndustryTypeService>();
-
             // 廠商相關服務
             services.AddScoped<ISupplierService, SupplierService>();
             services.AddScoped<ISupplierContactService, SupplierContactService>();

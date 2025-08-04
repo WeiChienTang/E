@@ -88,7 +88,6 @@
     private List<CustomerAddress> customerAddresses = new();
       // 選項清單
     private List<CustomerType> customerTypes = new();
-    private List<IndustryType> industryTypes = new();
     private List<ContactType> contactTypes = new();
     private List<AddressType> addressTypes = new();
     
@@ -181,7 +180,6 @@
         try
         {
             customerTypes = await CustomerService.GetCustomerTypesAsync();
-            industryTypes = await CustomerService.GetIndustryTypesAsync();
             contactTypes = await CustomerService.GetContactTypesAsync();
             addressTypes = await CustomerService.GetAddressTypesAsync();
             
@@ -209,7 +207,6 @@
             
             // 設定安全的預設值，確保程式不會崩潰
             customerTypes = new List<CustomerType>();
-            industryTypes = new List<IndustryType>();
             contactTypes = new List<ContactType>();
             addressTypes = new List<AddressType>();
             contactTypeOptions = new List<ERPCore2.Data.BaseEntity>();
@@ -272,8 +269,8 @@
             {
                 { nameof(Customer.CustomerCode), "基本資訊" },
                 { nameof(Customer.CompanyName), "基本資訊" },
-                { nameof(Customer.ContactPerson), "聯絡資訊" },
-                { nameof(Customer.TaxNumber), "財務資訊" }
+                { nameof(Customer.TaxNumber), "基本資訊" },
+                { nameof(Customer.ContactPerson), "聯絡資訊" },                
             };
         }
         catch (Exception ex)
@@ -296,7 +293,8 @@
             basicFormFields = new List<FormFieldDefinition>();
             basicFormSections = new Dictionary<string, string>();
         }
-    }    private void InitializeFormFields()
+    }    
+    private void InitializeFormFields()
     {
         try
         {
@@ -321,26 +319,6 @@
                 }).ToList();
             });
 
-            var industryTypeSearchFunction = new Func<string, Task<List<SelectOption>>>(async (keyword) =>
-            {
-                List<IndustryType> results;
-                if (string.IsNullOrWhiteSpace(keyword))
-                {
-                    // 如果關鍵字為空，返回所有行業類型（用於初始化顯示值）
-                    results = industryTypes.Take(10).ToList();
-                }
-                else
-                {
-                    results = await CustomerService.SearchIndustryTypesAsync(keyword);
-                }
-                
-                return results.Select(it => new SelectOption
-                {
-                    Text = it.IndustryTypeName,
-                    Value = it.Id.ToString()
-                }).ToList();
-            });
-
             // 添加需要自動完成的欄位到現有的basicFormFields
             basicFormFields.AddRange(new List<FormFieldDefinition>
             {
@@ -354,21 +332,10 @@
                     MinSearchLength = 1,
                     AutoCompleteDelayMs = 300,
                 },
-                new()
-                {
-                    PropertyName = nameof(Customer.IndustryTypeId),
-                    Label = "行業類型",
-                    FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "輸入行業類型名稱進行搜尋...",
-                    SearchFunction = industryTypeSearchFunction,
-                    MinSearchLength = 1,
-                    AutoCompleteDelayMs = 300,
-                }
             });
 
             // 更新表單區段
             basicFormSections[nameof(Customer.CustomerTypeId)] = "分類資訊";
-            basicFormSections[nameof(Customer.IndustryTypeId)] = "分類資訊";
         }
         catch (Exception ex)
         {

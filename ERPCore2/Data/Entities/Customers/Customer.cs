@@ -36,13 +36,8 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(CustomerType))]
         public int? CustomerTypeId { get; set; }
         
-        [Display(Name = "行業類型")]
-        [ForeignKey(nameof(IndustryType))]
-        public int? IndustryTypeId { get; set; }
-        
         // Navigation Properties
         public CustomerType? CustomerType { get; set; }
-        public IndustryType? IndustryType { get; set; }
         public ICollection<CustomerContact> CustomerContacts { get; set; } = new List<CustomerContact>();
         public ICollection<CustomerAddress> CustomerAddresses { get; set; } = new List<CustomerAddress>();
     }

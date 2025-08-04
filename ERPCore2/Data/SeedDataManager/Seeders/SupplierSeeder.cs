@@ -28,7 +28,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             if (await context.Suppliers.AnyAsync())
                 return; // 供應商資料已存在
 
-            // 取得供應商類型和行業類型
+            // 取得供應商類型
             var manufacturerType = await context.SupplierTypes.FirstOrDefaultAsync(st => st.TypeName == "製造商");
             var agentType = await context.SupplierTypes.FirstOrDefaultAsync(st => st.TypeName == "代理商");
             var wholesalerType = await context.SupplierTypes.FirstOrDefaultAsync(st => st.TypeName == "批發商");
@@ -38,13 +38,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             var equipmentType = await context.SupplierTypes.FirstOrDefaultAsync(st => st.TypeName == "設備供應商");
             var softwareType = await context.SupplierTypes.FirstOrDefaultAsync(st => st.TypeName == "軟體供應商");
 
-            var itIndustry = await context.IndustryTypes.FirstOrDefaultAsync(it => it.IndustryTypeCode == "IT");
-            var mfgIndustry = await context.IndustryTypes.FirstOrDefaultAsync(it => it.IndustryTypeCode == "MFG");
-            var svcIndustry = await context.IndustryTypes.FirstOrDefaultAsync(it => it.IndustryTypeCode == "SVC");
-            var trdIndustry = await context.IndustryTypes.FirstOrDefaultAsync(it => it.IndustryTypeCode == "TRD");
-            var conIndustry = await context.IndustryTypes.FirstOrDefaultAsync(it => it.IndustryTypeCode == "CON");
-            var finIndustry = await context.IndustryTypes.FirstOrDefaultAsync(it => it.IndustryTypeCode == "FIN");
-            var rtlIndustry = await context.IndustryTypes.FirstOrDefaultAsync(it => it.IndustryTypeCode == "RTL");
 
             var suppliers = new[]
             {

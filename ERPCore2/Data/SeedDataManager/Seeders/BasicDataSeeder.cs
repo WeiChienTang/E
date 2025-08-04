@@ -19,7 +19,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             await SeedContactTypesAsync(context);
             await SeedAddressTypesAsync(context);
             await SeedCustomerTypesAsync(context);
-            await SeedIndustryTypesAsync(context);
             await SeedSupplierTypesAsync(context);
         }
 
@@ -104,30 +103,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             };
 
             await context.CustomerTypes.AddRangeAsync(customerTypes);
-            await context.SaveChangesAsync();
-        }
-
-        /// <summary>
-        /// 新增行業別資料
-        /// </summary>
-        private static async Task SeedIndustryTypesAsync(AppDbContext context)
-        {
-            if (await context.IndustryTypes.AnyAsync())
-                return;
-
-            var industryTypes = new[]
-            {
-                new IndustryType { IndustryTypeName = "製造業", IndustryTypeCode = "MFG" },
-                new IndustryType { IndustryTypeName = "資訊科技業", IndustryTypeCode = "IT" },
-                new IndustryType { IndustryTypeName = "服務業", IndustryTypeCode = "SVC" },
-                new IndustryType { IndustryTypeName = "貿易業", IndustryTypeCode = "TRD" },
-                new IndustryType { IndustryTypeName = "建築業", IndustryTypeCode = "CON" },
-                new IndustryType { IndustryTypeName = "金融業", IndustryTypeCode = "FIN" },
-                new IndustryType { IndustryTypeName = "零售業", IndustryTypeCode = "RTL" },
-                new IndustryType { IndustryTypeName = "餐飲業", IndustryTypeCode = "F&B" }
-            };
-
-            await context.IndustryTypes.AddRangeAsync(industryTypes);
             await context.SaveChangesAsync();
         }
 

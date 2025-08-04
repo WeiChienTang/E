@@ -28,16 +28,10 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             if (await context.Customers.AnyAsync())
                 return; // 客戶資料已存在
 
-            // 取得客戶類型和行業類型
+            // 取得客戶類型
             var vipCustomerType = await context.CustomerTypes.FirstOrDefaultAsync(ct => ct.TypeName == "VIP客戶");
             var generalCustomerType = await context.CustomerTypes.FirstOrDefaultAsync(ct => ct.TypeName == "一般客戶");
             var potentialCustomerType = await context.CustomerTypes.FirstOrDefaultAsync(ct => ct.TypeName == "潛在客戶");
-
-            var itIndustry = await context.IndustryTypes.FirstOrDefaultAsync(it => it.IndustryTypeCode == "IT");
-            var mfgIndustry = await context.IndustryTypes.FirstOrDefaultAsync(it => it.IndustryTypeCode == "MFG");
-            var svcIndustry = await context.IndustryTypes.FirstOrDefaultAsync(it => it.IndustryTypeCode == "SVC");
-            var trdIndustry = await context.IndustryTypes.FirstOrDefaultAsync(it => it.IndustryTypeCode == "TRD");
-            var finIndustry = await context.IndustryTypes.FirstOrDefaultAsync(it => it.IndustryTypeCode == "FIN");
 
             var customers = new[]
             {
@@ -48,7 +42,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ContactPerson = "張經理",
                     TaxNumber = "12345678",
                     CustomerTypeId = vipCustomerType?.Id ?? 1,
-                    IndustryTypeId = itIndustry?.Id ?? 1,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-30),
                     CreatedBy = "System"
@@ -60,7 +53,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ContactPerson = "李副理",
                     TaxNumber = "23456789",
                     CustomerTypeId = vipCustomerType?.Id ?? 1,
-                    IndustryTypeId = mfgIndustry?.Id ?? 2,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-25),
                     CreatedBy = "System"
@@ -72,7 +64,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ContactPerson = "王主任",
                     TaxNumber = "34567890",
                     CustomerTypeId = generalCustomerType?.Id ?? 2,
-                    IndustryTypeId = trdIndustry?.Id ?? 3,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-20),
                     CreatedBy = "System"

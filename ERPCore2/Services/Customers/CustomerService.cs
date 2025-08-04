@@ -38,7 +38,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
                     .Include(c => c.CustomerType)
-                    .Include(c => c.IndustryType)
                     .Where(c => !c.IsDeleted)
                     .OrderBy(c => c.CompanyName)
                     .ToListAsync();
@@ -57,7 +56,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
                     .Include(c => c.CustomerType)
-                    .Include(c => c.IndustryType)
                     .Include(c => c.CustomerContacts)
                         .ThenInclude(cc => cc.ContactType)
                     .Include(c => c.CustomerAddresses)
@@ -81,7 +79,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
                     .Include(c => c.CustomerType)
-                    .Include(c => c.IndustryType)
                     .Where(c => !c.IsDeleted && 
                                (c.CustomerCode.Contains(searchTerm) ||
                                 c.CompanyName.Contains(searchTerm) ||
@@ -146,16 +143,6 @@ namespace ERPCore2.Services
                         errors.Add("指定的客戶類型不存在或已停用");
                 }
 
-                // 檢查行業類型是否存在
-                if (entity.IndustryTypeId.HasValue)
-                {
-                    var industryTypeExists = await context.IndustryTypes
-                        .AnyAsync(it => it.Id == entity.IndustryTypeId.Value && it.Status == EntityStatus.Active);
-
-                    if (!industryTypeExists)
-                        errors.Add("指定的行業類型不存在或已停用");
-                }
-
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));
 
@@ -185,7 +172,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
                     .Include(c => c.CustomerType)
-                    .Include(c => c.IndustryType)
                     .FirstOrDefaultAsync(c => c.CustomerCode == customerCode && !c.IsDeleted);
             }
             catch (Exception ex)
@@ -205,7 +191,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
                     .Include(c => c.CustomerType)
-                    .Include(c => c.IndustryType)
                     .Where(c => c.CompanyName.Contains(companyName) && !c.IsDeleted)
                     .OrderBy(c => c.CompanyName)
                     .ToListAsync();
@@ -263,23 +248,6 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<IndustryType>> GetIndustryTypesAsync()
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.IndustryTypes
-                    .Where(it => it.Status == EntityStatus.Active)
-                    .OrderBy(it => it.IndustryTypeName)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetIndustryTypesAsync), GetType(), _logger);
-                throw;
-            }
-        }
-
         public async Task<List<ContactType>> GetContactTypesAsync()
         {
             try
@@ -332,28 +300,6 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchCustomerTypesAsync), GetType(), _logger, new { Keyword = keyword });
-                throw;
-            }
-        }
-        
-        public async Task<List<IndustryType>> SearchIndustryTypesAsync(string keyword)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(keyword))
-                    return new List<IndustryType>();
-
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.IndustryTypes
-                    .Where(it => it.Status == EntityStatus.Active && 
-                                it.IndustryTypeName.Contains(keyword))
-                    .OrderBy(it => it.IndustryTypeName)
-                    .Take(10) // 限制結果數量
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchIndustryTypesAsync), GetType(), _logger, new { Keyword = keyword });
                 throw;
             }
         }
@@ -445,7 +391,6 @@ namespace ERPCore2.Services
                 customer.ContactPerson = string.Empty;
                 customer.TaxNumber = string.Empty;
                 customer.CustomerTypeId = null;
-                customer.IndustryTypeId = null;
                 customer.Status = EntityStatus.Active;
             }
             catch (Exception ex)

@@ -5,7 +5,7 @@
 namespace ERPCore2.Migrations
 {
     /// <inheritdoc />
-    public partial class RemoveSupplierIndustryTypeIdFinal : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

@@ -11,7 +11,6 @@ namespace ERPCore2.Data.Context
       }
       public DbSet<Customer> Customers { get; set; }
       public DbSet<CustomerType> CustomerTypes { get; set; }
-      public DbSet<IndustryType> IndustryTypes { get; set; }
       public DbSet<ContactType> ContactTypes { get; set; }
       public DbSet<AddressType> AddressTypes { get; set; }
       public DbSet<CustomerContact> CustomerContacts { get; set; }
@@ -90,10 +89,6 @@ namespace ERPCore2.Data.Context
                         // 關聯設定
                         entity.HasOne(e => e.CustomerType)
                         .WithMany(ct => ct.Customers)
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                        entity.HasOne(e => e.IndustryType)
-                        .WithMany(i => i.Customers)
                         .OnDelete(DeleteBehavior.SetNull);
                   });
                   
@@ -267,12 +262,6 @@ namespace ERPCore2.Data.Context
                   });
                   
                   // 共用參考資料
-                  modelBuilder.Entity<IndustryType>(entity =>
-                  {
-                        // 欄位對應                        
-                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
-                  });
-                  
                   modelBuilder.Entity<AddressType>(entity =>
                   {
                         // 欄位對應                        

@@ -197,9 +197,6 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("CustomerTypeId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("IndustryTypeId")
-                        .HasColumnType("int");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -227,8 +224,6 @@ namespace ERPCore2.Migrations
                         .IsUnique();
 
                     b.HasIndex("CustomerTypeId");
-
-                    b.HasIndex("IndustryTypeId");
 
                     b.ToTable("Customers");
                 });
@@ -836,52 +831,6 @@ namespace ERPCore2.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ErrorLogs");
-                });
-
-            modelBuilder.Entity("ERPCore2.Data.Entities.IndustryType", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("IndustryTypeCode")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<string>("IndustryTypeName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Remarks")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("IndustryTypes");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.InventoryReservation", b =>
@@ -3155,9 +3104,6 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int?>("IndustryTypeId")
-                        .HasColumnType("int");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -3188,8 +3134,6 @@ namespace ERPCore2.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("IndustryTypeId");
 
                     b.HasIndex("SupplierCode")
                         .IsUnique();
@@ -3762,14 +3706,7 @@ namespace ERPCore2.Migrations
                         .HasForeignKey("CustomerTypeId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("ERPCore2.Data.Entities.IndustryType", "IndustryType")
-                        .WithMany("Customers")
-                        .HasForeignKey("IndustryTypeId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("CustomerType");
-
-                    b.Navigation("IndustryType");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.CustomerAddress", b =>
@@ -4482,10 +4419,6 @@ namespace ERPCore2.Migrations
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Supplier", b =>
                 {
-                    b.HasOne("ERPCore2.Data.Entities.IndustryType", null)
-                        .WithMany("Suppliers")
-                        .HasForeignKey("IndustryTypeId");
-
                     b.HasOne("ERPCore2.Data.Entities.SupplierType", "SupplierType")
                         .WithMany("Suppliers")
                         .HasForeignKey("SupplierTypeId")
@@ -4622,13 +4555,6 @@ namespace ERPCore2.Migrations
             modelBuilder.Entity("ERPCore2.Data.Entities.EmployeePosition", b =>
                 {
                     b.Navigation("Employees");
-                });
-
-            modelBuilder.Entity("ERPCore2.Data.Entities.IndustryType", b =>
-                {
-                    b.Navigation("Customers");
-
-                    b.Navigation("Suppliers");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.InventoryStock", b =>

@@ -4,7 +4,7 @@
 @rendermode InteractiveServer
 
 
-    <GenericDetailPageComponent TEntity="CustomerType" 
+<GenericDetailPageComponent TEntity="CustomerType" 
                             TService="ICustomerTypeService"
                             EntityId="@CustomerTypeId"
                             Entity="@customerType"
@@ -22,7 +22,7 @@
                             OnDataLoaded="@OnCustomerTypeDataLoaded"                           
                             TabSections="@GetTabSections()"
                             RequiredPermission="CustomerType.Read">
-    </GenericDetailPageComponent>
+</GenericDetailPageComponent>
 
 @code {
     [Parameter] public int CustomerTypeId { get; set; }
