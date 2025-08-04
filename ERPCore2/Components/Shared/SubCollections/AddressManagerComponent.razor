@@ -1,134 +1,161 @@
 @typeparam TAddressEntity where TAddressEntity : ERPCore2.Data.BaseEntity, new()
 @typeparam TParentEntity where TParentEntity : ERPCore2.Data.BaseEntity
-@using ERPCore2.Data
-@using ERPCore2.Data.Enums
-@using ERPCore2.Components.Shared.Headers
-@using ERPCore2.Components.Shared.Buttons
-@using Microsoft.JSInterop
-@inject IJSRuntime JSRuntime
 
 <div class="card mb-4">    
+    <GenericHeaderComponent Title="@Title"
+                           Subtitle="@GetSubtitle()"
+                           IsCardHeader="true">        
+        <ActionButtons>
+            @if (!IsReadOnly)
+            {
+                <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@($"新增{ItemDisplayName}")" 
+                                       IconClass="bi-plus me-1" OnClick="ShowAddModal" />
+            }
+        </ActionButtons>
+    </GenericHeaderComponent>
     <div class="card-body">
         @if (Items.Any())
         {
-            <div class="row g-3">
-                @for (int i = 0; i < Items.Count; i++)
-                {
-                    var index = i; // 為了閉包
-                    var item = Items[index];
-                    <div class="col-12">
-                        <div class="card h-100 relation-card">
-                            <div class="card-body p-3">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div class="flex-grow-1">
-                                        <h6 class="card-title mb-1 text-truncate" title="@GetAddressDisplayName(item)">
-                                            <i class="bi bi-geo-alt me-1"></i>@GetAddressDisplayName(item)
-                                        </h6>
-                                        @if (GetIsPrimary(item))
-                                        {
-                                            <span class="badge bg-primary">主要</span>
-                                        }
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>地址資訊</th>
+                            <th>@TypeDisplayName</th>
+                            <th>城市</th>
+                            <th>郵遞區號</th>
+                            <th>狀態</th>
+                            @if (!IsReadOnly)
+                            {
+                                <th width="120">操作</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Items.Count; i++)
+                        {
+                            var index = i;
+                            var item = Items[index];
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-geo-alt me-2"></i>
+                                        <div>
+                                            @if (GetIsPrimary(item))
+                                            {
+                                                <span class="badge bg-primary me-2">主要</span>
+                                            }
+                                            <span>@GetAddressDisplayText(item)</span>
+                                        </div>
                                     </div>
-                                    @if (!IsReadOnly)
-                                    {
+                                </td>
+                                <td>
+                                    @{
+                                        var typeId = GetTypeId(item);
+                                        var typeOption = typeId.HasValue ? Options.FirstOrDefault(o => GetOptionId(o) == typeId.Value) : null;
+                                    }
+                                    @(typeOption != null ? GetOptionDisplayText(typeOption) : "-")
+                                </td>
+                                <td>@(GetCity(item) ?? "-")</td>
+                                <td>@(GetPostalCode(item) ?? "-")</td>
+                                <td>
+                                    <span class="badge bg-success">啟用</span>
+                                </td>
+                                @if (!IsReadOnly)
+                                {
+                                    <td>
                                         <div class="btn-group btn-group-sm">
                                             @if (!GetIsPrimary(item))
                                             {
-                                                <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" 
-                                                                      Size="ButtonSize.Small"
-                                                                      IconClass="bi bi-star"
-                                                                      OnClick="() => SetPrimaryAsync(index)" 
-                                                                      Title="設為主要" />
+                                                <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" Size="ButtonSize.Small"
+                                                                       IconClass="bi bi-star" OnClick="() => SetPrimaryAsync(index)" 
+                                                                       Title="設為主要" />
                                             }
-                                            <GenericButtonComponent Variant="ButtonVariant.OutlineDanger" 
-                                                                  Size="ButtonSize.Small"
-                                                                  IconClass="bi bi-trash"
-                                                                  OnClick="() => RemoveItemAsync(index)" 
-                                                                  Title="移除" />
+                                            <GenericButtonComponent Variant="ButtonVariant.OutlineWarning" Size="ButtonSize.Small"
+                                                                   IconClass="bi bi-pencil" OnClick="() => ShowEditModal(index)" 
+                                                                   Title="編輯" />
+                                            <GenericButtonComponent Variant="ButtonVariant.OutlineDanger" Size="ButtonSize.Small"
+                                                                   IconClass="bi bi-trash" OnClick="() => RemoveItemAsync(index)" 
+                                                                   Title="移除" />
                                         </div>
-                                    }
-                                </div>
-                                
-                                <div class="row g-2">
-                                    @* 地址類型 *@
-                                    <div class="col-md-3">
-                                        <label class="form-label">@TypeDisplayName <span class="text-danger">*</span></label>
-                                        <select class="form-select" 
-                                                @onchange="@((ChangeEventArgs e) => UpdateAddressType(index, e.Value?.ToString()))"
-                                                value="@GetTypeId(item)"
-                                                disabled="@IsReadOnly">
-                                            <option value="">請選擇 @TypeDisplayName</option>
-                                            @foreach (var option in Options)
-                                            {
-                                                <option value="@GetOptionId(option)">@GetOptionDisplayText(option)</option>
-                                            }
-                                        </select>
-                                    </div>
-                                    @* 郵遞區號和縣市 *@
-                                    <div class="col-md-2">
-                                        <label class="form-label">郵遞區號</label>
-                                        <input type="text" 
-                                               class="form-control" 
-                                               placeholder="郵遞區號"
-                                               value="@GetPostalCode(item)"
-                                               @onchange="@((ChangeEventArgs e) => UpdatePostalCode(index, e.Value?.ToString()))"
-                                               readonly="@IsReadOnly" />
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label">縣市</label>
-                                        <input type="text" 
-                                               class="form-control" 
-                                               placeholder="縣市"
-                                               value="@GetCity(item)"
-                                               @onchange="@((ChangeEventArgs e) => UpdateCity(index, e.Value?.ToString()))"
-                                               readonly="@IsReadOnly" />
-                                    </div>
-                                    @* 詳細地址 *@
-                                    <div class="col-md-5">
-                                        <label class="form-label">詳細地址</label>
-                                        <textarea class="form-control" 
-                                                  rows="1" 
-                                                  placeholder="詳細地址"
-                                                  readonly="@IsReadOnly"
-                                                  @onchange="@((ChangeEventArgs e) => UpdateAddress(index, e.Value?.ToString()))">@GetAddress(item)</textarea>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
-            
-            @* 新增按鈕 - 放在列表下方 *@
-            @if (!IsReadOnly)
-            {
-                <div class="text-center mt-3">
-                    <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" 
-                                          IconClass="bi bi-plus-lg"
-                                          Text="新增地址"
-                                          OnClick="AddItemAsync" />
-                </div>
-            }
         }
         else
         {
-            @* 空狀態顯示 *@
-            <div class="text-center py-5">
-                <div class="mb-3">
-                    <i class="@EmptyIcon text-muted" style="font-size: 3rem;"></i>
-                </div>
-                <h6 class="text-muted mb-3">@EmptyMessage</h6>
+            <div class="text-center py-4 text-muted">
+                <i class="bi @EmptyIcon fs-1 mb-3 d-block"></i>
+                <p>@EmptyMessage</p>
                 @if (!IsReadOnly)
-                {
-                    <GenericButtonComponent Variant="ButtonVariant.Primary" 
-                                          IconClass="bi bi-plus-lg"
-                                          Text="新增地址"
-                                          OnClick="AddItemAsync" />
+                {                    
+                    <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" Text="@($"新增第一個{ItemDisplayName}")" 
+                                           IconClass="bi-plus me-1" OnClick="ShowAddModal" />
                 }
             </div>
-        }    
+        }
     </div>
 </div>
+
+@* 新增/編輯地址 Modal *@
+@if (showAddModal || showEditModal)
+{
+    <div class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(showEditModal ? "編輯" : "新增")地址</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">@TypeDisplayName <span class="text-danger">*</span></label>
+                            <select class="form-select" @bind="currentAddressTypeId">
+                                <option value="">請選擇@TypeDisplayName</option>
+                                @foreach (var option in Options)
+                                {
+                                    <option value="@GetOptionId(option)">@GetOptionDisplayText(option)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" @bind="currentIsPrimary" id="isPrimary">
+                                <label class="form-check-label" for="isPrimary">
+                                    設為主要地址
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">郵遞區號</label>
+                            <input type="text" class="form-control" @bind="currentPostalCode" placeholder="郵遞區號">
+                        </div>
+                        <div class="col-md-9">
+                            <label class="form-label">縣市</label>
+                            <input type="text" class="form-control" @bind="currentCity" placeholder="縣市">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">詳細地址 <span class="text-danger">*</span></label>
+                            <textarea class="form-control" rows="3" @bind="currentAddress" placeholder="請輸入詳細地址"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="取消" OnClick="CloseModal" />
+                    <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@(showEditModal ? "更新" : "新增")" 
+                                           OnClick="@(showEditModal ? () => UpdateItemAsync() : () => AddItemAsync())" 
+                                           IsDisabled="@(string.IsNullOrEmpty(currentAddressTypeId) || string.IsNullOrEmpty(currentAddress))" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
 
 @code {
     // ===== 基本參數 =====
@@ -180,6 +207,16 @@
     [Parameter] public EventCallback<TAddressEntity> ItemRemoved { get; set; }
     [Parameter] public EventCallback<TAddressEntity> PrimaryChanged { get; set; }
     
+    // ===== Modal 狀態 =====
+    private bool showAddModal = false;
+    private bool showEditModal = false;
+    private int editingIndex = -1;
+    private string currentAddressTypeId = string.Empty;
+    private string currentPostalCode = string.Empty;
+    private string currentCity = string.Empty;
+    private string currentAddress = string.Empty;
+    private bool currentIsPrimary = false;
+    
     // ===== 內部方法 =====
     
     private string GetSubtitle()
@@ -187,53 +224,129 @@
         return $"管理{ItemDisplayName}資料 ({Items.Count} 筆)";
     }
 
-    private string GetAddressDisplayName(TAddressEntity item)
+    private string GetAddressDisplayText(TAddressEntity item)
     {
-        var parts = new List<string>();
-        
-        // 地址類型
-        var typeId = GetTypeId(item);
-        if (typeId.HasValue)
-        {
-            var typeOption = Options.FirstOrDefault(o => GetOptionId(o) == typeId.Value);
-            if (typeOption != null)
-            {
-                parts.Add(GetOptionDisplayText(typeOption));
-            }
-        }
-        
-        // 城市
-        var city = GetCity(item);
-        if (!string.IsNullOrWhiteSpace(city))
-        {
-            parts.Add(city);
-        }
-        
-        // 詳細地址
         var address = GetAddress(item);
+        var city = GetCity(item);
+        
         if (!string.IsNullOrWhiteSpace(address))
         {
-            parts.Add(address.Length > 20 ? address.Substring(0, 20) + "..." : address);
+            if (!string.IsNullOrWhiteSpace(city))
+            {
+                return $"{city} - {(address.Length > 30 ? address.Substring(0, 30) + "..." : address)}";
+            }
+            return address.Length > 40 ? address.Substring(0, 40) + "..." : address;
         }
         
-        return parts.Any() ? string.Join(" - ", parts) : "未設定地址";
-    }    
-    public async Task AddItemAsync()
+        return "未設定地址";
+    }
+    
+    private void ShowAddModal()
     {
         if (IsReadOnly) return;
         
+        ClearModalData();
+        currentIsPrimary = Items.Count == 0; // 第一個自動設為主要
+        showAddModal = true;
+    }
+    
+    private void ShowEditModal(int index)
+    {
+        if (IsReadOnly || index < 0 || index >= Items.Count) return;
+        
+        editingIndex = index;
+        var item = Items[index];
+        
+        var typeId = GetTypeId(item);
+        currentAddressTypeId = typeId?.ToString() ?? string.Empty;
+        currentPostalCode = GetPostalCode(item) ?? string.Empty;
+        currentCity = GetCity(item) ?? string.Empty;
+        currentAddress = GetAddress(item) ?? string.Empty;
+        currentIsPrimary = GetIsPrimary(item);
+        
+        showEditModal = true;
+    }
+    
+    private void CloseModal()
+    {
+        showAddModal = false;
+        showEditModal = false;
+        editingIndex = -1;
+        ClearModalData();
+    }
+    
+    private void ClearModalData()
+    {
+        currentAddressTypeId = string.Empty;
+        currentPostalCode = string.Empty;
+        currentCity = string.Empty;
+        currentAddress = string.Empty;
+        currentIsPrimary = false;
+    }
+    
+    public async Task AddItemAsync()
+    {
+        if (IsReadOnly || string.IsNullOrEmpty(currentAddressTypeId) || string.IsNullOrEmpty(currentAddress)) return;
+        
+        if (!int.TryParse(currentAddressTypeId, out var typeId)) return;
+        
         var newItem = new TAddressEntity();
-        // 初始化基本屬性
         SetParentId(newItem, ParentEntityId);
-        SetPostalCode(newItem, "");
-        SetCity(newItem, "");
-        SetAddress(newItem, "");
-        SetIsPrimary(newItem, Items.Count == 0); // 第一個自動設為主要
+        SetTypeId(newItem, typeId);
+        SetPostalCode(newItem, string.IsNullOrEmpty(currentPostalCode) ? null : currentPostalCode);
+        SetCity(newItem, string.IsNullOrEmpty(currentCity) ? null : currentCity);
+        SetAddress(newItem, currentAddress);
+        SetIsPrimary(newItem, currentIsPrimary);
+        
+        // 如果設為主要，先將其他項目設為非主要
+        if (currentIsPrimary)
+        {
+            foreach (var item in Items)
+            {
+                SetIsPrimary(item, false);
+            }
+        }
         
         Items.Add(newItem);
         
         await ItemAdded.InvokeAsync(newItem);
         await ItemsChanged.InvokeAsync(Items);
+        
+        CloseModal();
+        StateHasChanged();
+    }
+    
+    public async Task UpdateItemAsync()
+    {
+        if (IsReadOnly || editingIndex < 0 || editingIndex >= Items.Count) return;
+        if (string.IsNullOrEmpty(currentAddressTypeId) || string.IsNullOrEmpty(currentAddress)) return;
+        
+        if (!int.TryParse(currentAddressTypeId, out var typeId)) return;
+        
+        var item = Items[editingIndex];
+        var wasPrimary = GetIsPrimary(item);
+        
+        SetTypeId(item, typeId);
+        SetPostalCode(item, string.IsNullOrEmpty(currentPostalCode) ? null : currentPostalCode);
+        SetCity(item, string.IsNullOrEmpty(currentCity) ? null : currentCity);
+        SetAddress(item, currentAddress);
+        SetIsPrimary(item, currentIsPrimary);
+        
+        // 如果從非主要改為主要，先將其他項目設為非主要
+        if (!wasPrimary && currentIsPrimary)
+        {
+            for (int i = 0; i < Items.Count; i++)
+            {
+                if (i != editingIndex)
+                {
+                    SetIsPrimary(Items[i], false);
+                }
+            }
+        }
+        
+        await ItemsChanged.InvokeAsync(Items);
+        
+        CloseModal();
         StateHasChanged();
     }
     
@@ -276,46 +389,6 @@
         StateHasChanged();
     }
     
-    private async Task UpdateAddressType(int index, string? typeIdStr)
-    {
-        if (IsReadOnly || index < 0 || index >= Items.Count) return;
-        
-        if (int.TryParse(typeIdStr, out var typeId))
-        {
-            SetTypeId(Items[index], typeId);
-        }
-        else
-        {
-            SetTypeId(Items[index], null);
-        }
-        
-        await ItemsChanged.InvokeAsync(Items);
-        StateHasChanged();
-    }
-    
-    private async Task UpdatePostalCode(int index, string? value)
-    {
-        if (IsReadOnly || index < 0 || index >= Items.Count) return;
-        SetPostalCode(Items[index], value);
-        await ItemsChanged.InvokeAsync(Items);
-        StateHasChanged();
-    }
-    
-    private async Task UpdateCity(int index, string? value)
-    {
-        if (IsReadOnly || index < 0 || index >= Items.Count) return;
-        SetCity(Items[index], value);
-        await ItemsChanged.InvokeAsync(Items);
-        StateHasChanged();
-    }
-    
-    private async Task UpdateAddress(int index, string? value)
-    {
-        if (IsReadOnly || index < 0 || index >= Items.Count) return;
-        SetAddress(Items[index], value);
-        await ItemsChanged.InvokeAsync(Items);
-        StateHasChanged();
-    }
     public Task<bool> ValidateAsync()
     {
         // 地址通常不強制驗證，可以根據需要自訂
