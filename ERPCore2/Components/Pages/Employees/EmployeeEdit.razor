@@ -44,53 +44,29 @@
             @* 編輯模式的帳號管理功能 *@
             @if (Id.HasValue && employee.IsSystemUser)
             {
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi-gear me-2"></i>帳號管理
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="isLocked" 
-                                               checked="@employee.IsLocked" 
-                                               @onchange="@OnIsLockedChange" />
-                                        <label class="form-check-label" for="isLocked">鎖定帳號</label>
-                                        <div class="form-text">勾選此項將阻止使用者登入</div>
-                                    </div>
+                <div class="mb-4">
+                    @if (employee.FailedLoginAttempts > 0)
+                    {
+                        <div class="col-md-4">
+                                <label class="form-label">失敗登入次數</label>
+                                <div class="fw-bold @(employee.FailedLoginAttempts >= 3 ? "text-danger" : "text-warning")">
+                                    @employee.FailedLoginAttempts
                                 </div>
-                            </div>
-                            @if (employee.FailedLoginAttempts > 0)
+                                <button type="button" class="btn btn-outline-secondary btn-sm mt-1" @onclick="ResetFailedAttempts">
+                                    重設登入失敗次數
+                                </button>
+                        </div>
+                    }
+                    <div class="col-md-4">
+                            <button type="button" class="btn btn-warning" @onclick="ShowPasswordResetDialog">
+                                <i class="bi-key me-1"></i>@GetPasswordButtonText()
+                            </button>
+                            @if (string.IsNullOrEmpty(employee.Password))
                             {
-                                <div class="col-md-3">
-                                    <div class="mb-3">
-                                        <label class="form-label">失敗登入次數</label>
-                                        <div class="fw-bold @(employee.FailedLoginAttempts >= 3 ? "text-danger" : "text-warning")">
-                                            @employee.FailedLoginAttempts
-                                        </div>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" @onclick="ResetFailedAttempts">
-                                            重設登入失敗次數
-                                        </button>
-                                    </div>
+                                <div class="form-text text-warning mt-1">
+                                    <i class="bi-exclamation-triangle me-1"></i>此帳號尚未設定密碼
                                 </div>
                             }
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <button type="button" class="btn btn-warning" @onclick="ShowPasswordResetDialog">
-                                        <i class="bi-key me-1"></i>@GetPasswordButtonText()
-                                    </button>
-                                    @if (string.IsNullOrEmpty(employee.Password))
-                                    {
-                                        <div class="form-text text-warning mt-1">
-                                            <i class="bi-exclamation-triangle me-1"></i>此帳號尚未設定密碼
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             }
@@ -611,7 +587,6 @@
                     DepartmentId = null,
                     EmployeePositionId = null,
                     Status = EntityStatus.Active,
-                    IsLocked = false,
                     FailedLoginAttempts = 0
                 };
                 employee = newEmployee;
@@ -919,41 +894,6 @@
     
     #region 帳號管理方法
 
-    private async void OnIsLockedChange(ChangeEventArgs e)
-    {
-        if (employee != null)
-        {
-            try
-            {
-                var newValue = (bool)e.Value!;
-                employee.IsLocked = newValue;
-                
-                // 儲存到資料庫
-                var updateResult = await EmployeeService.UpdateAsync(employee);
-                if (updateResult.IsSuccess)
-                {
-                    var statusMessage = newValue ? "帳號已鎖定" : "帳號已解鎖";
-                    await NotificationService.ShowSuccessAsync(statusMessage);
-                }
-                else
-                {
-                    // 如果儲存失敗，還原狀態
-                    employee.IsLocked = !newValue;
-                    await NotificationService.ShowErrorAsync($"更新帳號鎖定狀態失敗：{updateResult.ErrorMessage}");
-                }
-                
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                // 如果發生錯誤，還原狀態
-                employee.IsLocked = !(bool)e.Value!;
-                await NotificationService.ShowErrorAsync($"更新帳號鎖定狀態時發生錯誤：{ex.Message}");
-                StateHasChanged();
-            }
-        }
-    }
-
     private async Task ResetFailedAttempts()
     {
         try
@@ -962,7 +902,6 @@
             {
                 // 更新資料庫中的失敗登入次數
                 employee.FailedLoginAttempts = 0;
-                employee.IsLocked = false;
                 
                 // 儲存到資料庫
                 var updateResult = await EmployeeService.UpdateAsync(employee);
@@ -1046,9 +985,8 @@
                     employee.Password = updatedEmployee.Password;
                 }
                 
-                // 重設登入失敗次數和帳號鎖定狀態
+                // 重設登入失敗次數
                 employee.FailedLoginAttempts = 0;
-                employee.IsLocked = false;
                 
                 // 關閉對話框
                 ClosePasswordResetDialog();

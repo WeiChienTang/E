@@ -198,13 +198,6 @@
                 Value = p.Id.ToString()
             }).ToList();
 
-            // 準備狀態選項
-            var statusOptions = new List<SelectOption>
-            {
-                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-            };
-
             // 準備帳號鎖定狀態選項
             var lockOptions = new List<SelectOption>
             {
@@ -222,7 +215,6 @@
                 .AddSelect("DepartmentId", "部門", departmentOptions)
                 .AddSelect("EmployeePositionId", "職位", positionOptions)
                 .AddSelect("RoleId", "角色", roleOptions)
-                .AddSelect("Status", "狀態", statusOptions)
                 .AddSelect("IsLocked", "帳號狀態", lockOptions)
                 .Build();
         }
@@ -277,12 +269,6 @@
                 TableColumnDefinition.Text("職位", "EmployeePosition.Name"),
                 TableColumnDefinition.Text("角色", "Role.RoleName"),
                 TableColumnDefinition.Date("最後登入", nameof(Employee.LastLoginAt), "yyyy/MM/dd HH:mm"),
-                TableColumnDefinition.Status("狀態", nameof(Employee.Status), new Dictionary<object, string>
-                {
-                    { EntityStatus.Active, "bg-success" },
-                    { EntityStatus.Inactive, "bg-secondary" }
-                }),
-                TableColumnDefinition.Date("建立日期", nameof(Employee.CreatedAt), "yyyy/MM/dd")
             };
         }
         catch (Exception ex)
