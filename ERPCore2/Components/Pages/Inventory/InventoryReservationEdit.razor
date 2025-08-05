@@ -20,7 +20,7 @@
                         FormTitle="基本資料"
                         FormSubtitle="庫存預留的基本資訊"
                         IndexRoute="/inventory/reservations"
-                        RequiredPermission="@(Id.HasValue ? "InventoryReservation.Update" : "InventoryReservation.Create")"
+                        RequiredPermission="InventoryReservation.Read"
                         FormFields="@formFields"
                         FormSections="@formSections"
                         BreadcrumbItems="@breadcrumbItems"
@@ -599,3 +599,4 @@
         };
     }
 }
+

@@ -22,7 +22,7 @@
                          FormTitle="基本資料"
                          FormSubtitle="產品的基本資訊"
                          IndexRoute="/products"
-                         RequiredPermission="@(Id.HasValue ? "Product.Update" : "Product.Create")"
+                         RequiredPermission="Product.Read"
                          BreadcrumbItems="@breadcrumbItems"
                          FormFields="@formFields"                         
                          FormSections="@formSections"

@@ -17,7 +17,7 @@
                      FormTitle="庫存資料"
                      FormSubtitle="產品庫存基本資訊"
                      IndexRoute="/inventory/stock"
-                     RequiredPermission="@(Id.HasValue ? "InventoryStock.Update" : "InventoryStock.Create")"
+                     RequiredPermission="InventoryStock.Read"
                      FormFields="@formFields"
                      FormSections="@formSections"
                      BreadcrumbItems="@breadcrumbItems"                         

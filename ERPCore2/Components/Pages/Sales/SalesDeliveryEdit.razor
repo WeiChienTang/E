@@ -18,7 +18,7 @@
                         PageTitle="@(Id.HasValue ? "編輯銷貨出貨" : "新增銷貨出貨")"
                         FormTitle="基本資料"
                         FormSubtitle="銷貨出貨的基本資訊"
-                        RequiredPermission="@(Id.HasValue ? "SalesDelivery.Update" : "SalesDelivery.Create")"
+                        RequiredPermission="SalesDelivery.Read"
                         IndexRoute="/sales-deliveries"
                         FormFields="@formFields"
                         FormSections="@formSections"

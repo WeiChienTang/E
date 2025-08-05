@@ -19,7 +19,7 @@
                          IndexRoute="/materials"
                          FormTitle="基本資料"
                          FormSubtitle="材質的基本資訊"
-                         RequiredPermission="@(Id.HasValue ? "Material.Update" : "Material.Create")"
+                         RequiredPermission="Material.Read"
                          UseGenericForm="true"
                          FormFields="@GetFormFields()"
                          FormSections="@formSections"

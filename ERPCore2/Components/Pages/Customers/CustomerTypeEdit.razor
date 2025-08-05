@@ -18,7 +18,7 @@
                          FormTitle="基本資料"
                          FormSubtitle="客戶類型的基本設定資訊"
                          IndexRoute="/customer-types"
-                         RequiredPermission="@(Id.HasValue ? "CustomerType.Update" : "CustomerType.Create")"
+                         RequiredPermission="CustomerType.Read"
                          UseGenericForm="true"
                          FormFields="@formFields"
                          FormSections="@formSections"
@@ -252,3 +252,4 @@
         }
     }
 }
+

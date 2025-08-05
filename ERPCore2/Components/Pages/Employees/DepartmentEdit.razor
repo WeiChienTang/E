@@ -23,7 +23,7 @@
                         UseGenericSave="true"
                         SaveSuccessMessage="@(Id.HasValue ? "部門更新成功" : "部門新增成功")"
                         SaveFailureMessage="部門儲存失敗"
-                        RequiredPermission="@(Id.HasValue ? "Department.Update" : "Department.Create")" />
+                        RequiredPermission="Department.Read" />
 
 @code {
     [Parameter] public int? Id { get; set; }

@@ -19,7 +19,7 @@
                         PageTitle="@(Id.HasValue ? "編輯銷貨退回" : "新增銷貨退回")"
                         FormTitle="基本資料"
                         FormSubtitle="銷貨退回的基本資訊"
-                        RequiredPermission="@(Id.HasValue ? "SalesReturn.Update" : "SalesReturn.Create")"
+                        RequiredPermission="SalesReturn.Read"
                         IndexRoute="/sales-returns"
                         FormFields="@formFields"
                         FormSections="@formSections"

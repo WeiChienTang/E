@@ -18,7 +18,7 @@
                      FormTitle="異動資訊"
                      FormSubtitle="庫存異動的詳細資訊"
                      IndexRoute="/inventory/transactions"
-                     RequiredPermission="@(Id.HasValue ? "InventoryTransaction.Update" : "InventoryTransaction.Create")"
+                     RequiredPermission="InventoryTransaction.Read"
                      UseGenericForm="true"
                      FormFields="@formFields"
                      FormSections="@formSections"
@@ -504,3 +504,4 @@
         }
     }
 }
+

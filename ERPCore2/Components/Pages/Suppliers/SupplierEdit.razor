@@ -20,7 +20,7 @@
                          Id="@Id"
                          Entity="@supplier"
                          Service="@SupplierService"
-                         RequiredPermission="@(Id.HasValue ? "Supplier.Update" : "Supplier.Create")"
+                         RequiredPermission="Supplier.Read"
                              EntityName="廠商"
                              EntityNamePlural="廠商"
                              PageTitle="@GetPageTitle()"

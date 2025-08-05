@@ -22,7 +22,7 @@
                          BreadcrumbItems="@breadcrumbItems"
                          DataLoader="@LoadUnitData"
                          SaveHandler="@SaveUnit"
-                         RequiredPermission="@(Id.HasValue ? "Unit.Update" : "Unit.Create")"
+                         RequiredPermission="Unit.Read"
                          @ref="editComponent" />
 
 

@@ -15,7 +15,7 @@
                      FormTitle="類型資訊"
                      FormSubtitle="庫存異動類型的詳細設定"
                      IndexRoute="/inventory-transaction-types"
-                     RequiredPermission="@(Id.HasValue ? "InventoryTransactionType.Update" : "InventoryTransactionType.Create")"
+                     RequiredPermission="InventoryTransactionType.Read"
                      UseGenericForm="true"
                      FormFields="@formFields"
                      FormSections="@formSections"

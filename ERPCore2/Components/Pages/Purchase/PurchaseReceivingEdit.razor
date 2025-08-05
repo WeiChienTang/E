@@ -18,7 +18,7 @@
                         PageTitle="@(Id.HasValue ? "編輯採購入庫" : "新增採購入庫")"
                         FormTitle="基本資料"
                         FormSubtitle="採購入庫的基本資訊"
-                        RequiredPermission="@(Id.HasValue ? "PurchaseReceiving.Update" : "PurchaseReceiving.Create")"
+                        RequiredPermission="PurchaseReceiving.Read"
                         IndexRoute="/purchase-receivings"
                         FormFields="@formFields"
                         FormSections="@formSections"

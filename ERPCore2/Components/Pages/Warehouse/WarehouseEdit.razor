@@ -19,7 +19,7 @@
                         FormTitle="基本資料"
                         FormSubtitle="倉庫的基本資訊"
                         IndexRoute="/warehouses"
-                        RequiredPermission="@(Id.HasValue ? "Warehouse.Update" : "Warehouse.Create")"
+                        RequiredPermission="Warehouse.Read"
                         UseGenericForm="true"
                         FormFields="@formFields"
                         FormSections="@formSections"

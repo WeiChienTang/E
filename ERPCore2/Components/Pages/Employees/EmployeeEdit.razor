@@ -37,7 +37,7 @@
                             SaveSuccessMessage="@(Id.HasValue ? "員工更新成功" : "員工新增成功")"
                             SaveFailureMessage="員工儲存失敗"
                             AdditionalDataLoader="@LoadAdditionalData"
-                            RequiredPermission="@(Id.HasValue ? "Employee.Update" : "Employee.Create")"
+                            RequiredPermission="Employee.Read"
                             OnFieldChanged="@HandleFieldChanged">
 
         <AdditionalSections>
