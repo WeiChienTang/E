@@ -250,6 +250,8 @@
             var codeValidationResult = PermissionService.ValidatePermissionCode(entity.PermissionCode);
             if (!codeValidationResult.IsSuccess)
             {
+                // 如果格式錯誤，恢復原本的權限主要名稱，移除自動添加的動作後綴
+                entity.PermissionCode = permissionMainName;
                 await NotificationService.ShowErrorAsync($"權限代碼格式不正確：{codeValidationResult.ErrorMessage}", "驗證失敗");
                 return false;
             }
@@ -258,12 +260,16 @@
             var codeCheckResult = await PermissionService.IsPermissionCodeExistsAsync(entity.PermissionCode, entity.Id);
             if (!codeCheckResult.IsSuccess)
             {
+                // 如果驗證失敗，恢復原本的權限主要名稱
+                entity.PermissionCode = permissionMainName;
                 await NotificationService.ShowErrorAsync($"驗證失敗：{codeCheckResult.ErrorMessage}", "驗證失敗");
                 return false;
             }
 
             if (codeCheckResult.Data)
             {
+                // 如果權限代碼重複，恢復原本的權限主要名稱
+                entity.PermissionCode = permissionMainName;
                 await NotificationService.ShowErrorAsync("權限代碼已存在，請使用不同的權限主要名稱或動作組合", "驗證失敗");
                 return false;
             }
