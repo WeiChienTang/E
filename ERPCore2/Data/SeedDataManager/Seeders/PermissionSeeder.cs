@@ -29,6 +29,12 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             var permissions = new[]
             {
+                // 系統管理權限 (請勿刪除，此為最高權限)
+                new Permission { PermissionCode = "System.Admin", PermissionName = "系統管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                
+                // 系統控制權限
+                new Permission { PermissionCode = "SystemControl.Read", PermissionName = "檢視系統控制", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                
                 // 使用者管理權限
                 new Permission { PermissionCode = "User.Read", PermissionName = "檢視使用者", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 
@@ -38,11 +44,12 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 // 供應商管理權限
                 new Permission { PermissionCode = "Supplier.Read", PermissionName = "檢視供應商", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 
-                // 員工管理權限
+                // 員工相關管理權限 (根據資料夾內容排列)
                 new Permission { PermissionCode = "Employee.Read", PermissionName = "檢視員工", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
-
-                // 部門管理權限
                 new Permission { PermissionCode = "Department.Read", PermissionName = "檢視部門", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "EmployeePosition.Read", PermissionName = "檢視員工職位", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "Permission.Read", PermissionName = "檢視權限", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
+                new Permission { PermissionCode = "Role.Read", PermissionName = "檢視角色", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
 
                 // 產品管理權限
                 new Permission { PermissionCode = "Product.Read", PermissionName = "檢視產品", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
@@ -53,7 +60,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 // 產品定價管理權限
                 new Permission { PermissionCode = "ProductPricing.Read", PermissionName = "檢視產品定價", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 
-                // MasterData管理權限
                 new Permission { PermissionCode = "MasterData.Read", PermissionName = "檢視基礎資料", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Material.Read", PermissionName = "檢視材質", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "Weather.Read", PermissionName = "檢視天氣", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
@@ -62,13 +68,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { PermissionCode = "Unit.Read", PermissionName = "檢視單位", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "SupplierType.Read", PermissionName = "檢視供應商類型", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 new Permission { PermissionCode = "CustomerType.Read", PermissionName = "檢視客戶類型", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
-                new Permission { PermissionCode = "EmployeePosition.Read", PermissionName = "檢視員工職位", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
-                
-                // 角色管理權限
-                new Permission { PermissionCode = "Role.Read", PermissionName = "檢視角色", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
-                
-                // 權限管理權限
-                new Permission { PermissionCode = "Permission.Read", PermissionName = "檢視權限", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },
                 
                 // 倉庫管理權限
                 new Permission { PermissionCode = "Warehouse.Read", PermissionName = "檢視倉庫", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" },

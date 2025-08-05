@@ -18,6 +18,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
         public async Task SeedAsync(AppDbContext context)
         {
             await SeedDefaultAdminAsync(context);
+            await SeedDefaultEmployeesAsync(context);
         }
 
         /// <summary>
@@ -53,6 +54,50 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             // 為系統管理員添加Email聯絡資料
             await SeedEmployeeContactAsync(context, adminEmployee);
+        }
+
+        /// <summary>
+        /// 建立預設一般員工帳號
+        /// </summary>
+        private static async Task SeedDefaultEmployeesAsync(AppDbContext context)
+        {
+            // 定義要建立的員工資料
+            var defaultEmployees = new[]
+            {
+                new { Code = "EMP001", FirstName = "測試01", LastName = "測試用員工", Account = "zhang.xiaoming", RoleName = "Employee" },
+            };
+
+            foreach (var emp in defaultEmployees)
+            {
+                // 檢查員工是否已存在
+                if (await context.Employees.AnyAsync(e => e.EmployeeCode == emp.Code))
+                    continue;
+
+                // 取得角色
+                var role = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == emp.RoleName);
+
+                // 建立員工
+                var employee = new Employee
+                {
+                    EmployeeCode = emp.Code,
+                    FirstName = emp.FirstName,
+                    LastName = emp.LastName,
+                    Account = emp.Account,
+                    Password = SeedDataHelper.HashPassword("1234"), // 預設密碼
+                    IsSystemUser = false, // 一般使用者
+                    DepartmentId = null, // 可在之後設定部門
+                    RoleId = role?.Id ?? 2, // 預設為 Employee 角色
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "System"
+                };
+
+                await context.Employees.AddAsync(employee);
+                await context.SaveChangesAsync();
+
+                // 為員工添加Email聯絡資料
+                await SeedEmployeeContactAsync(context, employee);
+            }
         }
 
         /// <summary>

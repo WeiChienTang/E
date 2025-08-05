@@ -2,7 +2,7 @@
 @attribute [Authorize]
 @inject IUpdateService UpdateService
 @inject IJSRuntime JSRuntime
-<PagePermissionCheck RequiredPermission="SystemControl.ViewUpdates">
+<PagePermissionCheck RequiredPermission="SystemControl.Read">
 <div class="container-fluid">
     <GenericHeaderComponent Title="系統更新紀錄"
                           Subtitle="@($"最後更新：{DateTime.Now:yyyy-MM-dd}")"
