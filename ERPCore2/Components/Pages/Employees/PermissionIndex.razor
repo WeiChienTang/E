@@ -90,9 +90,6 @@
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("PermissionName", "權限名稱", "輸入權限名稱搜尋")
                 .AddText("PermissionCode", "權限代碼", "輸入權限代碼搜尋")
-                .AddText("Module", "模組", "輸入模組名稱搜尋")
-                .AddText("Action", "動作", "輸入動作名稱搜尋")
-                .AddText("PermissionGroup", "權限群組", "輸入權限群組搜尋")
                 .Build();
         }
         catch (Exception ex)
@@ -111,9 +108,6 @@
             {
                 TableColumnDefinition.Text("權限代碼", nameof(Permission.PermissionCode)),
                 TableColumnDefinition.Text("權限名稱", nameof(Permission.PermissionName)),
-                TableColumnDefinition.Text("模組", nameof(Permission.Module)),
-                TableColumnDefinition.Text("動作", nameof(Permission.Action)),
-                TableColumnDefinition.Text("權限群組", nameof(Permission.PermissionGroup)),
                 TableColumnDefinition.Date("建立日期", nameof(Permission.CreatedAt), "yyyy/MM/dd")
             };
         }
@@ -146,32 +140,7 @@
                     p.PermissionCode.Contains(permissionCodeFilter, StringComparison.OrdinalIgnoreCase));
             }
 
-            // 模組篩選
-            var moduleFilter = searchModel.GetFilterValue("Module")?.ToString();
-            if (!string.IsNullOrWhiteSpace(moduleFilter))
-            {
-                query = query.Where(p => 
-                    p.Module.Contains(moduleFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 動作篩選
-            var actionFilter = searchModel.GetFilterValue("Action")?.ToString();
-            if (!string.IsNullOrWhiteSpace(actionFilter))
-            {
-                query = query.Where(p => 
-                    p.Action.Contains(actionFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 權限群組篩選
-            var permissionGroupFilter = searchModel.GetFilterValue("PermissionGroup")?.ToString();
-            if (!string.IsNullOrWhiteSpace(permissionGroupFilter))
-            {
-                query = query.Where(p => 
-                    !string.IsNullOrEmpty(p.PermissionGroup) && 
-                    p.PermissionGroup.Contains(permissionGroupFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            return query.OrderBy(p => p.Module).ThenBy(p => p.Action).ThenBy(p => p.PermissionName);
+            return query.OrderBy(p => p.PermissionCode).ThenBy(p => p.PermissionName);
         }
         catch (Exception ex)
         {

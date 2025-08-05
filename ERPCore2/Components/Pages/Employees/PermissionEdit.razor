@@ -35,9 +35,6 @@
     
     // 資料模型
     private Permission permission = new();
-    private List<string> availableModules = new();
-    private List<string> availableActions = new();
-    private List<string> availableGroups = new();
     
     // 表單欄位定義
     private List<FormFieldDefinition> basicFormFields = new();
@@ -81,21 +78,8 @@
     {
         try
         {
-            // 載入可用的模組清單
-            var modulesResult = await PermissionService.GetAllModulesAsync();
-            if (modulesResult.IsSuccess && modulesResult.Data != null)
-            {
-                availableModules = modulesResult.Data;
-            }
-
-            // 預設的動作類型
-            availableActions = new List<string> { "Read", "Create", "Update", "Delete"};
-            
-            // 預設的權限群組
-            availableGroups = new List<string> { "基礎資料", "業務管理", "系統管理", "報表", "設定" };
-
-            // 更新表單欄位的選項
-            UpdateFormFieldOptions();
+            // 不需要載入額外資料
+            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
@@ -107,26 +91,7 @@
     {
         try
         {
-            // 更新模組選項
-            var moduleField = basicFormFields.FirstOrDefault(f => f.PropertyName == nameof(Permission.Module));
-            if (moduleField != null)
-            {
-                moduleField.Options = availableModules.Select(m => new SelectOption { Text = m, Value = m }).ToList();
-            }
-
-            // 更新動作選項
-            var actionField = basicFormFields.FirstOrDefault(f => f.PropertyName == nameof(Permission.Action));
-            if (actionField != null)
-            {
-                actionField.Options = availableActions.Select(a => new SelectOption { Text = a, Value = a }).ToList();
-            }
-
-            // 更新權限群組選項
-            var groupField = basicFormFields.FirstOrDefault(f => f.PropertyName == nameof(Permission.PermissionGroup));
-            if (groupField != null)
-            {
-                groupField.Options = availableGroups.Select(g => new SelectOption { Text = g, Value = g }).ToList();
-            }
+            // 不需要更新選項
         }
         catch (Exception ex)
         {
@@ -159,47 +124,13 @@
                     FieldType = FormFieldType.Text,
                     MaxLength = 100,
                     HelpText = "使用者友善的權限名稱"
-                },
-                new FormFieldDefinition
-                {
-                    PropertyName = nameof(Permission.Module),
-                    Label = "模組",
-                    IsRequired = true,
-                    Placeholder = "請選擇模組",
-                    FieldType = FormFieldType.Select,
-                    MaxLength = 50,
-                    Options = new List<SelectOption>() // 將在 LoadAdditionalData 中更新
-                },
-                new FormFieldDefinition
-                {
-                    PropertyName = nameof(Permission.Action),
-                    Label = "動作",
-                    IsRequired = true,
-                    Placeholder = "請選擇動作",
-                    FieldType = FormFieldType.Select,
-                    MaxLength = 50,
-                    Options = new List<SelectOption>() // 將在 LoadAdditionalData 中更新
-                },
-                new FormFieldDefinition
-                {
-                    PropertyName = nameof(Permission.PermissionGroup),
-                    Label = "權限群組",
-                    IsRequired = false,
-                    Placeholder = "請選擇權限群組",
-                    FieldType = FormFieldType.Select,
-                    MaxLength = 50,
-                    HelpText = "用於UI分組顯示",
-                    Options = new List<SelectOption>() // 將在 LoadAdditionalData 中更新
                 }
             };
 
             basicFormSections = new Dictionary<string, string>
             {
                 { nameof(Permission.PermissionCode), "基本資訊" },
-                { nameof(Permission.PermissionName), "基本資訊" },
-                { nameof(Permission.Module), "分類設定" },
-                { nameof(Permission.Action), "分類設定" },
-                { nameof(Permission.PermissionGroup), "分類設定" }
+                { nameof(Permission.PermissionName), "基本資訊" }
             };
         }
         catch (Exception ex)

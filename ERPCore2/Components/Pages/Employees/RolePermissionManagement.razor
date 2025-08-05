@@ -239,13 +239,6 @@
                 PropertyName = nameof(Permission.PermissionName),
                 Title = "權限名稱",
                 DataType = ColumnDataType.Text
-            },
-            new()
-            {
-                PropertyName = nameof(Permission.Module),
-                Title = "模組",
-                DataType = ColumnDataType.Text,
-                CellCssClass = "badge bg-secondary"
             }
         };
     }
@@ -531,13 +524,6 @@
                     builder.AddContent(rowIndex++, permission.PermissionName);
                     builder.CloseElement();
                     
-                    builder.OpenElement(rowIndex++, "td");
-                    builder.OpenElement(rowIndex++, "span");
-                    builder.AddAttribute(rowIndex++, "class", "badge bg-secondary");
-                    builder.AddContent(rowIndex++, permission.Module);
-                    builder.CloseElement();
-                    builder.CloseElement();
-                    
                     builder.CloseElement(); // tr
                 }
             }
@@ -546,7 +532,7 @@
                 int emptyRowIndex = 22;
                 builder.OpenElement(emptyRowIndex++, "tr");
                 builder.OpenElement(emptyRowIndex++, "td");
-                builder.AddAttribute(emptyRowIndex++, "colspan", isReadOnly ? "3" : "4");
+                builder.AddAttribute(emptyRowIndex++, "colspan", isReadOnly ? "2" : "3");
                 builder.AddAttribute(emptyRowIndex++, "class", "text-center py-4 text-muted");
                 builder.AddContent(emptyRowIndex++, "沒有找到權限資料");
                 builder.CloseElement();

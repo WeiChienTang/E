@@ -191,14 +191,6 @@ namespace ERPCore2.Services
                     permission.CreatedAt = DateTime.UtcNow;
                     permission.UpdatedAt = DateTime.UtcNow;
                     permission.Status = EntityStatus.Active;
-
-                    // 自動解析 Module 和 Action 從 PermissionCode
-                    var parts = permission.PermissionCode.Split('.');
-                    if (parts.Length == 2)
-                    {
-                        permission.Module = parts[0];
-                        permission.Action = parts[1];
-                    }
                 }
 
                 using var context = await _contextFactory.CreateDbContextAsync();
@@ -368,14 +360,6 @@ namespace ERPCore2.Services
         {
             try
             {
-                // 自動解析 Module 和 Action 從 PermissionCode
-                var parts = entity.PermissionCode.Split('.');
-                if (parts.Length == 2)
-                {
-                    entity.Module = parts[0];
-                    entity.Action = parts[1];
-                }
-
                 return await base.CreateAsync(entity);
             }
             catch (Exception ex)
@@ -391,14 +375,6 @@ namespace ERPCore2.Services
         {
             try
             {
-                // 自動解析 Module 和 Action 從 PermissionCode
-                var parts = entity.PermissionCode.Split('.');
-                if (parts.Length == 2)
-                {
-                    entity.Module = parts[0];
-                    entity.Action = parts[1];
-                }
-
                 return await base.UpdateAsync(entity);
             }
             catch (Exception ex)

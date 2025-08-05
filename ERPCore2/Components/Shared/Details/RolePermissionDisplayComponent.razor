@@ -245,7 +245,7 @@ else
         
         var moduleGroups = RolePermissions
             .Where(rp => rp.Permission != null)
-            .GroupBy(rp => rp.Permission!.Module)
+            .GroupBy(rp => rp.Permission!.PermissionCode.Split('.')[0]) // 從 PermissionCode 取得模組名稱
             .OrderBy(g => g.Key);
         
         var result = new List<ModulePermissionMatrix>();
@@ -258,11 +258,12 @@ else
             {
                 ModuleName = moduleGroup.Key,
                 ModuleDisplayName = GetModuleDisplayName(moduleGroup.Key),
-                CanView = permissions.Any(p => p.Action.Equals("View", StringComparison.OrdinalIgnoreCase)),
-                CanCreate = permissions.Any(p => p.Action.Equals("Create", StringComparison.OrdinalIgnoreCase)),
-                CanUpdate = permissions.Any(p => p.Action.Equals("Update", StringComparison.OrdinalIgnoreCase) || 
-                                              p.Action.Equals("Edit", StringComparison.OrdinalIgnoreCase)),
-                CanDelete = permissions.Any(p => p.Action.Equals("Delete", StringComparison.OrdinalIgnoreCase)),
+                CanView = permissions.Any(p => p.PermissionCode.EndsWith(".Read", StringComparison.OrdinalIgnoreCase) || 
+                                             p.PermissionCode.EndsWith(".View", StringComparison.OrdinalIgnoreCase)),
+                CanCreate = permissions.Any(p => p.PermissionCode.EndsWith(".Create", StringComparison.OrdinalIgnoreCase)),
+                CanUpdate = permissions.Any(p => p.PermissionCode.EndsWith(".Update", StringComparison.OrdinalIgnoreCase) || 
+                                              p.PermissionCode.EndsWith(".Edit", StringComparison.OrdinalIgnoreCase)),
+                CanDelete = permissions.Any(p => p.PermissionCode.EndsWith(".Delete", StringComparison.OrdinalIgnoreCase)),
                 TotalPermissions = permissions.Count,
                 PermissionCodes = permissions.Select(p => p.PermissionCode).ToList(),
                 PermissionNames = permissions.Select(p => p.PermissionName).ToList()
@@ -281,7 +282,7 @@ else
         
         return RolePermissions
             .Where(rp => rp.Permission != null)
-            .GroupBy(rp => rp.Permission!.Module)
+            .GroupBy(rp => rp.Permission!.PermissionCode.Split('.')[0]) // 從 PermissionCode 取得模組名稱
             .OrderBy(g => g.Key);
     }
 
