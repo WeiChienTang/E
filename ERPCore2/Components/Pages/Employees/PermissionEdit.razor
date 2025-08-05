@@ -23,7 +23,6 @@
                             BreadcrumbItems="@breadcrumbItems"
                             DataLoader="@LoadPermissionData"
                             SaveHandler="@SavePermission"
-                            AdditionalDataLoader="@LoadAdditionalData"
                             @ref="editComponent">
     </GenericEditPageComponent>
 
@@ -74,31 +73,6 @@
         }
     }
 
-    private async Task LoadAdditionalData()
-    {
-        try
-        {
-            // 不需要載入額外資料
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalData), GetType());
-        }
-    }
-
-    private void UpdateFormFieldOptions()
-    {
-        try
-        {
-            // 不需要更新選項
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(UpdateFormFieldOptions), GetType());
-        }
-    }
-
     private void InitializeBasicFormFields()
     {
         try
@@ -124,13 +98,25 @@
                     FieldType = FormFieldType.Text,
                     MaxLength = 100,
                     HelpText = "使用者友善的權限名稱"
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Permission.Remarks),
+                    Label = "備註",
+                    IsRequired = false,
+                    Placeholder = "請輸入備註",
+                    FieldType = FormFieldType.TextArea,
+                    MaxLength = 500,
+                    Rows = 2,
+                    HelpText = "輸入備註內容"                    
                 }
             };
 
             basicFormSections = new Dictionary<string, string>
             {
                 { nameof(Permission.PermissionCode), "基本資訊" },
-                { nameof(Permission.PermissionName), "基本資訊" }
+                { nameof(Permission.PermissionName), "基本資訊" },
+                { nameof(Permission.Remarks), "額外資訊" }
             };
         }
         catch (Exception ex)

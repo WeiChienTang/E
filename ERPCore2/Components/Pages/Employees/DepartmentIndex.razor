@@ -1,5 +1,6 @@
 @page "/departments"
 @inject IDepartmentService DepartmentService
+@using ERPCore2.Helpers
 
 @rendermode InteractiveServer
 
@@ -75,7 +76,6 @@
                 .AddText("DepartmentCode", "部門代碼", "輸入部門代碼搜尋")
                 .AddText("Name", "部門名稱", "輸入部門名稱搜尋")                
                 .AddText("Description", "部門描述", "輸入部門描述搜尋")      
-                .AddText("Remarks", "部門備註", "輸入部門備註搜尋")
                 .Build();
         }
         catch (Exception ex)
@@ -126,7 +126,6 @@
                     }
                 },
                 TableColumnDefinition.Text("部門描述", nameof(Department.Description)),
-                TableColumnDefinition.Text("部門備註", nameof(Department.Remarks))
             };
         }
         catch (Exception ex)
@@ -159,56 +158,31 @@
         }
     }
 
-    // 篩選邏輯委派
+    // 篩選邏輯委派 - 使用 FilterHelper 簡化代碼
     private IQueryable<Department> ApplyDepartmentFilters(SearchFilterModel searchModel, IQueryable<Department> query)
     {
-        try
+        var filterActions = new List<Func<SearchFilterModel, IQueryable<Department>, IQueryable<Department>>>
         {
+            // 應用基礎實體篩選（狀態、備註）
+            (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
+            
             // 部門名稱篩選
-            var nameFilter = searchModel.GetFilterValue("Name")?.ToString();
-            if (!string.IsNullOrWhiteSpace(nameFilter))
-            {
-                query = query.Where(d => d.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Name", d => d.Name),
+            
             // 部門代碼篩選
-            var codeFilter = searchModel.GetFilterValue("DepartmentCode")?.ToString();
-            if (!string.IsNullOrWhiteSpace(codeFilter))
-            {
-                query = query.Where(d => d.DepartmentCode.Contains(codeFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "DepartmentCode", d => d.DepartmentCode),
+            
             // 部門描述篩選
-            var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
-            if (!string.IsNullOrWhiteSpace(descriptionFilter))
-            {
-                query = query.Where(d => d.Description != null && d.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
-            }
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Description", d => d.Description, allowNull: true)
+        };
 
-            // 狀態篩選
-            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
-            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
-            {
-                query = query.Where(d => d.Status == status);
-            }
-
-            // 部門備註篩選
-            var remarksFilter = searchModel.GetFilterValue("Remarks")?.ToString();
-            if (!string.IsNullOrWhiteSpace(remarksFilter))
-            {
-                query = query.Where(d => d.Remarks != null && d.Remarks.Contains(remarksFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            return query.OrderBy(d => d.Name);
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(ApplyDepartmentFilters),
-                GetType()
-            );
-            return query.OrderBy(d => d.Name);
-        }
+        return FilterHelper.ApplyFiltersWithErrorHandling(
+            searchModel,
+            query,
+            filterActions,
+            q => q.OrderBy(d => d.Name), // 預設排序
+            nameof(ApplyDepartmentFilters),
+            GetType()
+        );
     }
 }

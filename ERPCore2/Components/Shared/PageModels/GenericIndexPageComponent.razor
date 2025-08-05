@@ -168,11 +168,15 @@
     [Parameter] public Func<SearchFilterModel, IQueryable<TEntity>, IQueryable<TEntity>> FilterApplier { get; set; } = default!;
     
     // 自動標準欄位設定
+    [Parameter] public bool AutoAddRemarksColumn { get; set; } = true;
     [Parameter] public bool AutoAddStatusColumn { get; set; } = true;
     [Parameter] public bool AutoAddCreatedAtColumn { get; set; } = true;
+    [Parameter] public bool AutoAddRemarksFilter { get; set; } = true;
     [Parameter] public bool AutoAddStatusFilter { get; set; } = true;
+    [Parameter] public string RemarksColumnTitle { get; set; } = "備註";
     [Parameter] public string StatusColumnTitle { get; set; } = "狀態";
     [Parameter] public string CreatedAtColumnTitle { get; set; } = "建立日期";
+    [Parameter] public string RemarksFilterTitle { get; set; } = "備註內容";
     [Parameter] public string StatusFilterTitle { get; set; } = "狀態";
     
     // 搜尋組件設定
@@ -503,20 +507,6 @@
     }
 
     /// <summary>
-    /// 取得狀態的中文顯示文字
-    /// </summary>
-    public static string GetStatusDisplayText(EntityStatus status)
-    {
-        return status switch
-        {
-            EntityStatus.Active => "啟用",
-            EntityStatus.Inactive => "停用",
-            EntityStatus.Deleted => "已刪除",
-            _ => "未知"
-        };
-    }
-
-    /// <summary>
     /// 取得預設的狀態列定義（含中文顯示文字）
     /// </summary>
     public static TableColumnDefinition GetDefaultStatusColumn(string title = "狀態", string propertyName = "Status")
@@ -543,6 +533,20 @@
     private List<TableColumnDefinition> GetFinalColumnDefinitions()
     {
         var columns = new List<TableColumnDefinition>(ColumnDefinitions);
+        
+        // 自動添加備註欄位
+        if (AutoAddRemarksColumn)
+        {
+            // 檢查是否已經有備註欄位，避免重複添加
+            if (!columns.Any(c => c.PropertyName == "Remarks"))
+            {
+                var remarksColumn = TableColumnDefinition.Text(RemarksColumnTitle, nameof(BaseEntity.Remarks));
+                // 設定備註欄位樣式
+                remarksColumn.HeaderStyle = "width: 150px;";
+                remarksColumn.CellCssClass = "text-truncate";
+                columns.Add(remarksColumn);
+            }
+        }
         
         // 自動添加狀態欄位
         if (AutoAddStatusColumn)
@@ -577,6 +581,31 @@
     private List<SearchFilterDefinition> GetFinalFilterDefinitions()
     {
         var filters = new List<SearchFilterDefinition>(FilterDefinitions);
+        
+        // 自動添加備註篩選器
+        if (AutoAddRemarksFilter)
+        {
+            // 檢查是否已經有備註篩選器，避免重複添加
+            if (!filters.Any(f => f.PropertyName == "Remarks"))
+            {
+                try
+                {
+                    var remarksFilter = new SearchFilterDefinition
+                    {
+                        Name = "Remarks",
+                        Label = RemarksFilterTitle,
+                        Type = SearchFilterType.Text,
+                        Placeholder = "輸入備註關鍵字..."
+                    };
+                    
+                    filters.Add(remarksFilter);
+                }
+                catch
+                {
+                    // 如果有錯誤，跳過添加備註篩選器
+                }
+            }
+        }
         
         // 自動添加狀態篩選器
         if (AutoAddStatusFilter)
@@ -737,6 +766,16 @@
     /// </summary>
     private IQueryable<TEntity> ApplyStandardFilters(SearchFilterModel searchModel, IQueryable<TEntity> query)
     {
+        // 備註篩選
+        if (AutoAddRemarksFilter)
+        {
+            var remarksFilter = searchModel.GetFilterValue("Remarks")?.ToString();
+            if (!string.IsNullOrWhiteSpace(remarksFilter))
+            {
+                query = query.Where(entity => entity.Remarks != null && entity.Remarks.Contains(remarksFilter));
+            }
+        }
+        
         // 狀態篩選
         if (AutoAddStatusFilter)
         {

@@ -140,6 +140,14 @@
                     p.PermissionCode.Contains(permissionCodeFilter, StringComparison.OrdinalIgnoreCase));
             }
 
+            // 備註篩選
+            var remarksFilter = searchModel.GetFilterValue("Remarks")?.ToString();
+            if (!string.IsNullOrWhiteSpace(remarksFilter))
+            {
+                query = query.Where(p => 
+                    p.Remarks != null && p.Remarks.Contains(remarksFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
             return query.OrderBy(p => p.PermissionCode).ThenBy(p => p.PermissionName);
         }
         catch (Exception ex)
