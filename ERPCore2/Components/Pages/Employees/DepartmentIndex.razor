@@ -157,7 +157,6 @@
         }
     }
 
-    // 篩選邏輯委派 - 使用 FilterHelper 簡化代碼
     private IQueryable<Department> ApplyDepartmentFilters(SearchFilterModel searchModel, IQueryable<Department> query)
     {
         var filterActions = new List<Func<SearchFilterModel, IQueryable<Department>, IQueryable<Department>>>

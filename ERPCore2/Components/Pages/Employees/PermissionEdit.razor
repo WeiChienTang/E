@@ -1,9 +1,11 @@
 @page "/permissions/edit"
 @page "/permissions/edit/{id:int?}"
 
+@using System.Linq
+
 @inject IPermissionManagementService PermissionService
 @inject INotificationService NotificationService
-@inject IJSRuntime JSRuntime
+
 @rendermode InteractiveServer
 
 <GenericEditPageComponent TEntity="Permission" 
@@ -12,19 +14,18 @@
                         Entity="@permission"
                         Service="@PermissionService"
                         RequiredPermission="@(Id.HasValue ? "Permission.Update" : "Permission.Create")"
-                            EntityName="權限"
-                            EntityNamePlural="權限"
-                            PageTitle="@(Id.HasValue ? "編輯權限" : "新增權限")"
-                            FormTitle="基本資料"
-                            FormSubtitle="權限的基本資訊與設定"
-                            IndexRoute="/permissions"
-                            FormFields="@basicFormFields"
-                            FormSections="@basicFormSections"
-                            BreadcrumbItems="@breadcrumbItems"
-                            DataLoader="@LoadPermissionData"
-                            SaveHandler="@SavePermission"
-                            @ref="editComponent">
-    </GenericEditPageComponent>
+                        EntityName="權限"
+                        EntityNamePlural="權限"
+                        PageTitle="@(Id.HasValue ? "編輯權限" : "新增權限")"
+                        FormTitle="基本資料"
+                        FormSubtitle="權限的基本資訊與設定"
+                        IndexRoute="/permissions"
+                        FormFields="@basicFormFields"
+                        FormSections="@basicFormSections"
+                        BreadcrumbItems="@breadcrumbItems"
+                        DataLoader="@LoadPermissionData"
+                        SaveHandler="@SavePermission"
+                        @ref="editComponent"/>
 
 @code {
     [Parameter] public int? Id { get; set; }
@@ -34,6 +35,10 @@
     
     // 資料模型
     private Permission permission = new();
+    
+    // 權限代碼相關欄位
+    private string permissionName = string.Empty;
+    private PermissionAction selectedAction = PermissionAction.Read;
     
     // 表單欄位定義
     private List<FormFieldDefinition> basicFormFields = new();
@@ -82,12 +87,26 @@
                 new FormFieldDefinition
                 {
                     PropertyName = nameof(Permission.PermissionCode),
-                    Label = "權限代碼",
+                    Label = "權限主要名稱",
                     IsRequired = true,
-                    Placeholder = "例如：Customer.View, Product.Create",
+                    Placeholder = "請輸入權限主要名稱",
                     FieldType = FormFieldType.Text,
-                    MaxLength = 100,
-                    HelpText = "格式：模組.動作 (例如：Customer.View)"
+                    MaxLength = 50,
+                    HelpText = "權限主要名稱 (例如：Customer, Product, User...)"
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(selectedAction),
+                    Label = "權限動作",
+                    IsRequired = true,
+                    FieldType = FormFieldType.Select,
+                    Options = Enum.GetValues<PermissionAction>()
+                        .Select(e => new SelectOption 
+                        { 
+                            Value = ((int)e).ToString(), 
+                            Text = GetPermissionActionDisplayName(e) 
+                        }).ToList(),
+                    HelpText = "選擇權限動作類型"
                 },
                 new FormFieldDefinition
                 {
@@ -109,13 +128,14 @@
                     MaxLength = 500,
                     Rows = 2,
                     HelpText = "輸入備註內容"                    
-                }
+                }                
             };
 
             basicFormSections = new Dictionary<string, string>
             {
-                { nameof(Permission.PermissionCode), "基本資訊" },
+                { nameof(Permission.PermissionCode), "基本資訊" },                
                 { nameof(Permission.PermissionName), "基本資訊" },
+                { nameof(selectedAction), "基本資訊" },
                 { nameof(Permission.Remarks), "額外資訊" }
             };
         }
@@ -125,6 +145,15 @@
         }
     }
 
+    private string GetPermissionActionDisplayName(PermissionAction action)
+    {
+        return action switch
+        {
+            PermissionAction.Read => "讀取/查看",
+            _ => action.ToString()
+        };
+    }
+
     private async Task<Permission?> LoadPermissionData()
     {
         try
@@ -132,6 +161,9 @@
             if (!Id.HasValue) 
             {
                 permission = new Permission();
+                // 為新建權限設定預設值
+                permissionName = string.Empty;
+                selectedAction = PermissionAction.Read; // 預設選取第一個選項
                 return permission;
             }
 
@@ -139,6 +171,38 @@
             if (result != null)
             {
                 permission = result;
+                
+                // 解析權限代碼，分離權限主要名稱和動作
+                if (!string.IsNullOrEmpty(permission.PermissionCode))
+                {
+                    var parts = permission.PermissionCode.Split('.');
+                    if (parts.Length == 2)
+                    {
+                        permissionName = parts[0];
+                        if (Enum.TryParse<PermissionAction>(parts[1], out var action))
+                        {
+                            selectedAction = action;
+                        }
+                        else
+                        {
+                            // 如果無法解析動作，使用預設值
+                            selectedAction = PermissionAction.Read;
+                        }
+                    }
+                    else
+                    {
+                        // 如果權限代碼格式不正確，嘗試推斷或使用預設值
+                        permissionName = permission.PermissionCode;
+                        selectedAction = PermissionAction.Read;
+                    }
+                }
+                else
+                {
+                    // 如果沒有權限代碼，設定預設值
+                    permissionName = string.Empty;
+                    selectedAction = PermissionAction.Read;
+                }
+                
                 return result;
             }
             
@@ -155,6 +219,33 @@
     {
         try
         {
+            // 檢查所有必填欄位
+            var validationErrors = new List<string>();
+
+            // 檢查權限代碼
+            if (string.IsNullOrWhiteSpace(entity.PermissionCode))
+            {
+                validationErrors.Add("請輸入權限代碼");
+            }
+
+            // 檢查權限名稱
+            if (string.IsNullOrWhiteSpace(entity.PermissionName))
+            {
+                validationErrors.Add("請輸入權限名稱");
+            }
+
+            // 如果有驗證錯誤，顯示所有錯誤訊息
+            if (validationErrors.Any())
+            {
+                var errorMessage = string.Join("、", validationErrors);
+                await NotificationService.ShowErrorAsync($"請完成以下必填欄位：{errorMessage}", "驗證失敗");
+                return false;
+            }
+
+            // 組合最終的權限代碼：使用表單中輸入的權限主要名稱 + 選擇的動作
+            var permissionMainName = entity.PermissionCode.Trim();
+            entity.PermissionCode = $"{permissionMainName}.{selectedAction}";
+
             // 驗證權限代碼格式
             var codeValidationResult = PermissionService.ValidatePermissionCode(entity.PermissionCode);
             if (!codeValidationResult.IsSuccess)
@@ -173,7 +264,7 @@
 
             if (codeCheckResult.Data)
             {
-                await NotificationService.ShowErrorAsync("權限代碼已存在", "驗證失敗");
+                await NotificationService.ShowErrorAsync("權限代碼已存在，請使用不同的權限主要名稱或動作組合", "驗證失敗");
                 return false;
             }
 
@@ -200,7 +291,8 @@
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SavePermission), GetType(), 
-                additionalData: new { EntityId = entity?.Id, PermissionCode = entity?.PermissionCode });
+                additionalData: new { EntityId = entity?.Id, PermissionCode = entity?.PermissionCode, PermissionName = permissionName, SelectedAction = selectedAction });
+            await NotificationService.ShowErrorAsync("儲存過程中發生未預期的錯誤，請稍後再試", "系統錯誤");
             return false;
         }
     }

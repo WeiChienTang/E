@@ -11,7 +11,7 @@ namespace ERPCore2.Data.Entities
     public class Permission : BaseEntity
     {
         /// <summary>
-        /// 權限代碼 (如: Customer.View, Customer.Create)
+        /// 權限代碼 (Customer.Create)
         /// </summary>
         [Display(Name = "權限代碼")]
         [Required(ErrorMessage = "請輸入權限代碼")]
