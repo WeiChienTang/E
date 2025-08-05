@@ -46,8 +46,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "總經理",
                     Code = "CEO",
                     Description = "公司最高執行主管",
-                    Level = 10,
-                    SortOrder = 1,
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt1,
                     CreatedBy = createdBy
@@ -57,8 +55,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "副總經理",
                     Code = "VP",
                     Description = "協助總經理管理公司業務",
-                    Level = 9,
-                    SortOrder = 2,
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt2,
                     CreatedBy = createdBy
@@ -68,8 +64,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "部門經理",
                     Code = "DM",
                     Description = "負責部門整體管理",
-                    Level = 8,
-                    SortOrder = 3,
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt3,
                     CreatedBy = createdBy
@@ -79,8 +73,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "專案經理",
                     Code = "PM",
                     Description = "負責專案規劃與執行",
-                    Level = 7,
-                    SortOrder = 4,
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt4,
                     CreatedBy = createdBy
@@ -90,8 +82,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "資深工程師",
                     Code = "SE",
                     Description = "具備豐富經驗的技術人員",
-                    Level = 6,
-                    SortOrder = 5,
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt5,
                     CreatedBy = createdBy
@@ -101,8 +91,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "工程師",
                     Code = "ENG",
                     Description = "負責技術開發與維護",
-                    Level = 5,
-                    SortOrder = 6,
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt6,
                     CreatedBy = createdBy
@@ -112,8 +100,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "初級工程師",
                     Code = "JE",
                     Description = "入門級技術人員",
-                    Level = 4,
-                    SortOrder = 7,
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt7,
                     CreatedBy = createdBy
@@ -123,8 +109,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "實習生",
                     Code = "INT",
                     Description = "學習階段的實習人員",
-                    Level = 1,
-                    SortOrder = 8,
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt8,
                     CreatedBy = createdBy

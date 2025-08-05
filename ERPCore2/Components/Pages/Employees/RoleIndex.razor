@@ -122,12 +122,21 @@
             {
                 TableColumnDefinition.Text("角色名稱", nameof(Role.RoleName)),
                 TableColumnDefinition.Text("角色描述", nameof(Role.Description)),
-                TableColumnDefinition.Status("系統角色", nameof(Role.IsSystemRole), new Dictionary<object, string>
+                new TableColumnDefinition
                 {
-                    { true, "bg-primary" },
-                    { false, "bg-secondary" }
-                }),
-                TableColumnDefinition.Date("建立日期", nameof(Role.CreatedAt), "yyyy/MM/dd")
+                    Title = "系統角色",
+                    PropertyName = nameof(Role.IsSystemRole),
+                    CustomTemplate = item => builder =>
+                    {
+                        var role = (Role)item;
+                        builder.OpenElement(0, "span");
+                        builder.AddAttribute(1, "class", "badge text-white");
+                        builder.AddAttribute(2, "style", role.IsSystemRole ? "background-color: #28a745;" : "background-color: #dc3545;");
+                        builder.AddContent(3, role.IsSystemRole ? "是" : "否");
+                        builder.CloseElement();
+                    }
+                },
+                TableColumnDefinition.Text("備註", nameof(Role.Remarks)),
             };
         }
         catch (Exception ex)

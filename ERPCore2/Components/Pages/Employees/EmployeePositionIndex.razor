@@ -71,20 +71,12 @@
     {
         try
         {
-            // 準備狀態選項
-            var statusOptions = new List<SelectOption>
-            {
-                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-            };
-
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("Name", "職位名稱", "輸入職位名稱搜尋")
                 .AddText("Code", "職位代碼", "輸入職位代碼搜尋")
-                .AddText("Description", "職位描述", "輸入職位描述搜尋")
-                .AddNumber("Level", "職位等級", "輸入職位等級搜尋")
-                .AddSelect("Status", "狀態", statusOptions)            
+                .AddText("Description", "職位描述", "輸入職位描述搜尋")   
+                .AddText("remarks", "職位備註", "輸入職位備註搜尋") 
                 .Build();
         }
         catch (Exception ex)
@@ -104,17 +96,10 @@
         {
             columnDefinitions = new List<TableColumnDefinition>
             {
-                TableColumnDefinition.Text("職位名稱", nameof(EmployeePosition.Name)),
                 TableColumnDefinition.Text("職位代碼", nameof(EmployeePosition.Code)),
+                TableColumnDefinition.Text("職位名稱", nameof(EmployeePosition.Name)),                
                 TableColumnDefinition.Text("職位描述", nameof(EmployeePosition.Description)),
-                TableColumnDefinition.Number("職位等級", nameof(EmployeePosition.Level), "N0"),
-                TableColumnDefinition.Number("排序", nameof(EmployeePosition.SortOrder), "N0"),
-                TableColumnDefinition.Status("狀態", nameof(EmployeePosition.Status), new Dictionary<object, string>
-                {
-                    { EntityStatus.Active, "bg-success" },
-                    { EntityStatus.Inactive, "bg-secondary" }
-                }),
-                TableColumnDefinition.Date("建立日期", nameof(EmployeePosition.CreatedAt), "yyyy/MM/dd")
+                TableColumnDefinition.Text("職位備註", nameof(EmployeePosition.Remarks)),
             };
         }
         catch (Exception ex)
@@ -163,25 +148,14 @@
             var codeFilter = searchModel.GetFilterValue("Code")?.ToString();
             if (!string.IsNullOrWhiteSpace(codeFilter))
             {
-                query = query.Where(p => 
-                    !string.IsNullOrEmpty(p.Code) && 
-                    p.Code.Contains(codeFilter, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(p => p.Code != null && p.Code.Contains(codeFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 職位描述篩選
             var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
             if (!string.IsNullOrWhiteSpace(descriptionFilter))
             {
-                query = query.Where(p => 
-                    !string.IsNullOrEmpty(p.Description) && 
-                    p.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 職位等級篩選
-            var levelFilter = searchModel.GetFilterValue("Level")?.ToString();
-            if (!string.IsNullOrWhiteSpace(levelFilter) && int.TryParse(levelFilter, out var level))
-            {
-                query = query.Where(p => p.Level == level);
+                query = query.Where(p => p.Description != null && p.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 狀態篩選
@@ -191,7 +165,14 @@
                 query = query.Where(p => p.Status == status);
             }
 
-            return query.OrderBy(p => p.SortOrder).ThenBy(p => p.Name);
+            // 職位備註篩選
+            var remarksFilter = searchModel.GetFilterValue("Remarks")?.ToString();
+            if (!string.IsNullOrWhiteSpace(remarksFilter))
+            {
+                query = query.Where(d => d.Remarks != null && d.Remarks.Contains(remarksFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return query.OrderBy(p => p.Name);
         }
         catch (Exception ex)
         {
@@ -201,7 +182,7 @@
                 GetType(),
                 additionalData: "應用篩選條件失敗"
             );
-            return query.OrderBy(p => p.SortOrder).ThenBy(p => p.Name);
+            return query.OrderBy(p => p.Name);
         }
     }
 }

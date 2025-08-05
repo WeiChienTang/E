@@ -129,8 +129,17 @@
                     Label = "部門描述",
                     FieldType = FormFieldType.TextArea,
                     Placeholder = "請輸入部門描述",
-                    Rows = 3,
+                    Rows = 2,
                     HelpText = "詳細描述部門的職責範圍、工作內容或其他相關資訊"
+                },
+                new()
+                {
+                    PropertyName = nameof(Department.Remarks),
+                    Label = "部門備註",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入部門備註",
+                    Rows = 2,
+                    HelpText = "其他需要補充的資訊"
                 }
             };
 
@@ -139,7 +148,8 @@
                 { nameof(Department.DepartmentCode), "基本資訊" },
                 { nameof(Department.Name), "基本資訊" },
                 { nameof(Department.ManagerId), "基本資訊" },
-                { nameof(Department.Description), "詳細資訊" }
+                { nameof(Department.Description), "額外資料" },
+                { nameof(Department.Remarks), "額外資料" }
             };
         }
         catch (Exception ex)

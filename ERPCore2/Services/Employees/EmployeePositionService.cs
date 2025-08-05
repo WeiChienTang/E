@@ -25,8 +25,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.EmployeePositions
                     .Where(ep => !ep.IsDeleted)
-                    .OrderBy(ep => ep.SortOrder)
-                    .ThenBy(ep => ep.Name)
+                    .OrderBy(ep => ep.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -54,8 +53,7 @@ namespace ERPCore2.Services
                                 (ep.Name.ToUpper().Contains(normalizedSearch) ||
                                  (ep.Code != null && ep.Code.ToUpper().Contains(normalizedSearch)) ||
                                  (ep.Description != null && ep.Description.ToUpper().Contains(normalizedSearch))))
-                    .OrderBy(ep => ep.SortOrder)
-                    .ThenBy(ep => ep.Name)
+                    .OrderBy(ep => ep.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -77,6 +75,9 @@ namespace ERPCore2.Services
                 
                 if (string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("職位名稱不能為空");
+                
+                if (string.IsNullOrWhiteSpace(entity.Code))
+                    errors.Add("職位代碼不能為空");
                 
                 if (!string.IsNullOrWhiteSpace(entity.Name) && 
                     await IsNameExistsAsync(entity.Name, entity.Id == 0 ? null : entity.Id))
@@ -129,47 +130,29 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<EmployeePosition>> GetByLevelAsync(int level)
+        public override async Task<bool> IsNameExistsAsync(string name, int? excludeId = null)
         {
             try
             {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.EmployeePositions
-                    .Where(ep => !ep.IsDeleted && ep.Level == level)
-                    .OrderBy(ep => ep.SortOrder)
-                    .ThenBy(ep => ep.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByLevelAsync), GetType(), _logger, new { 
-                    Method = nameof(GetByLevelAsync),
-                    ServiceType = GetType().Name,
-                    Level = level 
-                });
-                return new List<EmployeePosition>();
-            }
-        }
+                if (string.IsNullOrWhiteSpace(name))
+                    return false;
 
-        public async Task<List<EmployeePosition>> GetOrderedByLevelAsync()
-        {
-            try
-            {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.EmployeePositions
-                    .Where(ep => !ep.IsDeleted)
-                    .OrderByDescending(ep => ep.Level ?? 0)
-                    .ThenBy(ep => ep.SortOrder)
-                    .ThenBy(ep => ep.Name)
-                    .ToListAsync();
+                var query = context.EmployeePositions.Where(ep => ep.Name == name && !ep.IsDeleted);
+                if (excludeId.HasValue)
+                    query = query.Where(ep => ep.Id != excludeId.Value);
+                
+                return await query.AnyAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetOrderedByLevelAsync), GetType(), _logger, new { 
-                    Method = nameof(GetOrderedByLevelAsync),
-                    ServiceType = GetType().Name 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsNameExistsAsync), GetType(), _logger, new { 
+                    Method = nameof(IsNameExistsAsync),
+                    ServiceType = GetType().Name,
+                    Name = name,
+                    ExcludeId = excludeId 
                 });
-                return new List<EmployeePosition>();
+                return false;
             }
         }
     }

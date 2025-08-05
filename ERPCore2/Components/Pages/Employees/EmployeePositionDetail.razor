@@ -18,7 +18,7 @@
                         DataLoader="@LoadPositionDataAsync"
                         AdditionalDataLoader="@LoadAdditionalDataAsync"
                         EntityTitleSelector="@(p => p.Name)"
-                        EntitySubtitleSelector="@(p => $"職位代碼：{p.Code ?? "未設定"} | 等級：{p.Level?.ToString() ?? "未設定"}")"
+                        EntitySubtitleSelector="@(p => $"職位代碼：{p.Code ?? "未設定"}")"
                         EntityDisplayNameSelector="@(p => p.Name)"
                         OnDataLoaded="@OnPositionDataLoaded"
                         TabSections="@GetTabSections()" RequiredPermission="EmployeePosition.Read">
@@ -239,23 +239,6 @@
                     IconClass = "fas fa-briefcase",
                     IconBgClass = "bg-info bg-opacity-10",
                     IconTextClass = "text-info"
-                },
-                new()
-                {
-                    Label = "職位等級",
-                    Value = position?.Level?.ToString(),
-                    EmptyText = "未設定",
-                    IconClass = "fas fa-layer-group",
-                    IconBgClass = "bg-warning bg-opacity-10",
-                    IconTextClass = "text-warning"
-                },
-                new()
-                {
-                    Label = "排序順序",
-                    Value = position?.SortOrder.ToString(),
-                    IconClass = "fas fa-sort-numeric-up",
-                    IconBgClass = "bg-secondary bg-opacity-10",
-                    IconTextClass = "text-secondary"
                 },
                 new()
                 {

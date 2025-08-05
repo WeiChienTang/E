@@ -72,9 +72,10 @@
         {
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("Name", "部門名稱", "輸入部門名稱搜尋")
                 .AddText("DepartmentCode", "部門代碼", "輸入部門代碼搜尋")
-                .AddText("Description", "部門描述", "輸入部門描述搜尋")        
+                .AddText("Name", "部門名稱", "輸入部門名稱搜尋")                
+                .AddText("Description", "部門描述", "輸入部門描述搜尋")      
+                .AddText("Remarks", "部門備註", "輸入部門備註搜尋")
                 .Build();
         }
         catch (Exception ex)
@@ -125,6 +126,7 @@
                     }
                 },
                 TableColumnDefinition.Text("部門描述", nameof(Department.Description)),
+                TableColumnDefinition.Text("部門備註", nameof(Department.Remarks))
             };
         }
         catch (Exception ex)
@@ -188,6 +190,13 @@
             if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
             {
                 query = query.Where(d => d.Status == status);
+            }
+
+            // 部門備註篩選
+            var remarksFilter = searchModel.GetFilterValue("Remarks")?.ToString();
+            if (!string.IsNullOrWhiteSpace(remarksFilter))
+            {
+                query = query.Where(d => d.Remarks != null && d.Remarks.Contains(remarksFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             return query.OrderBy(d => d.Name);

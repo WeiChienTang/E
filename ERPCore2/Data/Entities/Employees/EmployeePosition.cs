@@ -32,18 +32,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "職位代碼")]
         public string? Code { get; set; }
 
-        /// <summary>
-        /// 職位等級
-        /// </summary>
-        [Display(Name = "職位等級")]
-        public int? Level { get; set; }
-
-        /// <summary>
-        /// 排序順序
-        /// </summary>
-        [Display(Name = "排序")]
-        public int SortOrder { get; set; }
-
         // 導航屬性
         public ICollection<Employee> Employees { get; set; } = new List<Employee>();
     }

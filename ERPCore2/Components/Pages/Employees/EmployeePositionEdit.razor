@@ -78,7 +78,7 @@
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入職位名稱",
                     IsRequired = true,
-                    
+                    HelpText = "輸入職位的正式名稱，例如：經理、主管、專員等"
                 },
                 new()
                 {
@@ -86,39 +86,8 @@
                     Label = "職位代碼",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入職位代碼",
-                    IsRequired = false,
-                    
-                },
-                new()
-                {
-                    PropertyName = nameof(EmployeePosition.Status),
-                    Label = "狀態",
-                    FieldType = FormFieldType.Select,
-                    Options = new List<SelectOption>
-                    {
-                        new() { Text = "啟用", Value = "Active" },
-                        new() { Text = "停用", Value = "Inactive" }
-                    },
-                    
-                },
-                // 職位設定區段
-                new()
-                {
-                    PropertyName = nameof(EmployeePosition.Level),
-                    Label = "職位等級",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入職位等級",
-                    IsRequired = false,
-                    
-                },
-                new()
-                {
-                    PropertyName = nameof(EmployeePosition.SortOrder),
-                    Label = "排序順序",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入排序順序",
                     IsRequired = true,
-                    
+                    HelpText = "職位的唯一識別代碼，新增時系統會自動產生，也可手動修改"
                 },
                 // 詳細資訊區段
                 new()
@@ -127,7 +96,8 @@
                     Label = "職位描述",
                     FieldType = FormFieldType.TextArea,
                     Placeholder = "請輸入職位描述",
-                    Rows = 3,
+                    Rows = 2,
+                    HelpText = "詳細描述此職位的職責範圍、工作內容及要求"
                 },
                 // 其他資訊區段
                 new()
@@ -137,17 +107,15 @@
                     FieldType = FormFieldType.TextArea,
                     Placeholder = "請輸入備註",
                     Rows = 2,
+                    HelpText = "記錄此職位的額外資訊或特殊說明"
                 }
             };
 
             formSections = new Dictionary<string, string>
             {
-                { nameof(EmployeePosition.Name), "基本資訊" },
                 { nameof(EmployeePosition.Code), "基本資訊" },
-                { nameof(EmployeePosition.Status), "設定" },
-                { nameof(EmployeePosition.Level), "職位設定" },
-                { nameof(EmployeePosition.SortOrder), "職位設定" },
-                { nameof(EmployeePosition.Description), "詳細資訊" },
+                { nameof(EmployeePosition.Name), "基本資訊" },                
+                { nameof(EmployeePosition.Description), "額外資訊" },
                 { nameof(EmployeePosition.Remarks), "額外資訊" }
             };
         }
@@ -176,10 +144,12 @@
         {
             if (!Id.HasValue) 
             {
+                // 新增模式：建立新的職位實體並生成代碼
                 return new EmployeePosition
                 {
-                    Status = EntityStatus.Active,
-                    SortOrder = 0
+                    Name = string.Empty,
+                    Code = GeneratePositionCode(),
+                    Status = EntityStatus.Active
                 };
             }
 
@@ -190,8 +160,7 @@
                 // 如果找不到職位，建立新的預設職位
                 return new EmployeePosition
                 {
-                    Status = EntityStatus.Active,
-                    SortOrder = 0
+                    Status = EntityStatus.Active
                 };
             }
             return position;
@@ -205,9 +174,27 @@
             {
                 Code = "ERROR",
                 Name = "ERROR",
-                Status = EntityStatus.Active,
-                SortOrder = 0
+                Status = EntityStatus.Active
             };
+        }
+    }
+
+    private string GeneratePositionCode()
+    {
+        try
+        {
+            // 簡單的職位代碼生成邏輯：POS + 時間戳 + 隨機數
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var random = new Random().Next(100, 999);
+            var baseCode = $"POS{timestamp}{random}";
+            
+            return baseCode;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GeneratePositionCode), GetType(), NotificationService);
+            // 如果生成失敗，返回預設格式
+            return $"POS{DateTime.Now:yyyyMMddHHmmss}";
         }
     }
 }

@@ -198,12 +198,6 @@
                 Value = p.Id.ToString()
             }).ToList();
 
-            // 準備帳號鎖定狀態選項
-            var lockOptions = new List<SelectOption>
-            {
-                new() { Text = "正常", Value = "false" },
-                new() { Text = "鎖定", Value = "true" }
-            };
 
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
@@ -215,7 +209,6 @@
                 .AddSelect("DepartmentId", "部門", departmentOptions)
                 .AddSelect("EmployeePositionId", "職位", positionOptions)
                 .AddSelect("RoleId", "角色", roleOptions)
-                .AddSelect("IsLocked", "帳號狀態", lockOptions)
                 .Build();
         }
         catch (Exception ex)

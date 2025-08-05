@@ -3,6 +3,7 @@
 
 @inject IRoleService RoleService
 @inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
 @rendermode InteractiveServer
 
 <GenericEditPageComponent TEntity="Role" 
@@ -103,7 +104,8 @@
                     IsRequired = true,
                     Placeholder = "請輸入角色名稱",
                     FieldType = FormFieldType.Text,
-                    MaxLength = 50
+                    MaxLength = 50,
+                    HelpText = "角色的唯一名稱，用於區別不同的系統權限群組，最多50個字元"
                 },
                 new FormFieldDefinition
                 {
@@ -113,22 +115,35 @@
                     Placeholder = "請輸入角色描述",
                     FieldType = FormFieldType.TextArea,
                     MaxLength = 200,
-                    Rows = 3
+                    Rows = 2,
+                    HelpText = "簡要說明此角色的職責與用途，幫助了解角色功能，最多200個字元"
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Role.Remarks),
+                    Label = "備註",
+                    IsRequired = false,
+                    Placeholder = "請輸入備註",
+                    FieldType = FormFieldType.TextArea,
+                    MaxLength = 500,
+                    Rows = 2,
+                    HelpText = "角色的額外說明或注意事項，可記錄特殊使用情況或限制，最多500個字元"
                 },
                 new FormFieldDefinition
                 {
                     PropertyName = nameof(Role.IsSystemRole),
                     Label = "系統角色",
                     FieldType = FormFieldType.Checkbox,
-                    HelpText = "系統角色無法刪除且權限受限制"
+                    HelpText = "系統角色無法刪除且權限受限制，通常為系統預設的重要角色"
                 }
             };
 
             basicFormSections = new Dictionary<string, string>
             {
-                { nameof(Role.RoleName), "基本資訊" },
-                { nameof(Role.Description), "基本資訊" },
-                { nameof(Role.IsSystemRole), "角色設定" }
+                { nameof(Role.RoleName), "基本資訊" },                
+                { nameof(Role.IsSystemRole), "基本資訊" },
+                { nameof(Role.Description), "額外資訊" },
+                { nameof(Role.Remarks), "額外資訊" }
             };
         }
         catch (Exception ex)
@@ -172,6 +187,7 @@
             var nameCheckResult = await RoleService.IsRoleNameExistsAsync(entity.RoleName, entity.Id);
             if (!nameCheckResult.IsSuccess)
             {
+                await NotificationService.ShowErrorAsync($"驗證角色名稱時發生錯誤：{nameCheckResult.ErrorMessage}", "驗證失敗");
                 _ = ErrorHandlingHelper.HandlePageErrorAsync(
                     new Exception($"驗證失敗：{nameCheckResult.ErrorMessage}"), 
                     nameof(SaveRole), 
@@ -182,6 +198,7 @@
 
             if (nameCheckResult.Data)
             {
+                await NotificationService.ShowErrorAsync($"角色名稱「{entity.RoleName}」已經存在，請輸入不同的角色名稱", "角色名稱重複");
                 _ = ErrorHandlingHelper.HandlePageErrorAsync(
                     new Exception("角色名稱重複"), 
                     nameof(SaveRole), 
@@ -203,6 +220,7 @@
 
             if (!result.IsSuccess)
             {
+                await NotificationService.ShowErrorAsync($"儲存角色時發生錯誤：{result.ErrorMessage}", "儲存失敗");
                 _ = ErrorHandlingHelper.HandlePageErrorAsync(
                     new Exception($"儲存失敗：{result.ErrorMessage}"), 
                     nameof(SaveRole), 
@@ -216,6 +234,7 @@
         }
         catch (Exception ex)
         {
+            await NotificationService.ShowErrorAsync("儲存角色時發生未預期的錯誤，請稍後再試或聯絡系統管理員", "系統錯誤");
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveRole), GetType(),
                 additionalData: new { Id = Id, RoleName = entity.RoleName });
             return false;
