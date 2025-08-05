@@ -9,36 +9,21 @@
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
 
-<div class="card mb-4">    
-    <GenericHeaderComponent Title="@Title"
-                           Subtitle="@GetSubtitle()"
-                           IsCardHeader="true">        
-        <ActionButtons>
-            @if (!IsReadOnly)
-            {
-                <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@($"新增{ItemDisplayName}")" 
-                                       IconClass="bi-plus me-1" OnClick="ShowAddModal" />
-            }
-        </ActionButtons>
-    </GenericHeaderComponent>
-    <div class="card-body">
-        @if (Items.Any())
-        {
-            <div class="table-responsive">
-                <table class="table table-sm table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th>聯絡資訊</th>
-                            <th>@TypeDisplayName</th>
-                            <th>@ValueDisplayName</th>
-                            <th>狀態</th>
-                            @if (!IsReadOnly)
-                            {
-                                <th width="120">操作</th>
-                            }
-                        </tr>
-                    </thead>
-                    <tbody>
+<div class="table-responsive">
+    <table class="table table-sm table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>聯絡資訊</th>
+                <th>@TypeDisplayName</th>
+                <th>@ValueDisplayName</th>
+                <th>狀態</th>
+                @if (!IsReadOnly)
+                {
+                    <th width="120">操作</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
                         @for (int i = 0; i < Items.Count; i++)
                         {
                             var index = i;
@@ -90,24 +75,30 @@
                                 }
                             </tr>
                         }
+                        @* 新增按鈕行 *@
+                        @if (!IsReadOnly)
+                        {
+                            <tr>
+                                <td colspan="@(IsReadOnly ? 4 : 5)" class="text-center py-3 border-top">
+                                    <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" 
+                                                           Text="@($"新增{ItemDisplayName}")" 
+                                                           IconClass="bi-plus me-1" 
+                                                           OnClick="ShowAddModal" />
+                                </td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
-        }
-        else
-        {
-            <div class="text-center py-4 text-muted">
-                <i class="bi @EmptyIcon fs-1 mb-3 d-block"></i>
-                <p>@EmptyMessage</p>
-                @if (!IsReadOnly)
-                {                    
-                    <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" Text="@($"新增第一個{ItemDisplayName}")" 
-                                           IconClass="bi-plus me-1" OnClick="ShowAddModal" />
-                }
-            </div>
-        }
+
+@* 如果沒有任何資料時的顯示 *@
+@if (!Items.Any())
+{
+    <div class="text-center py-4 text-muted">
+        <i class="bi @EmptyIcon fs-3 mb-2 d-block"></i>
+        <p class="mb-0">@EmptyMessage</p>
     </div>
-</div>
+}
 
 @* 新增/編輯聯絡方式 Modal *@
 @if (showAddModal || showEditModal)
@@ -214,11 +205,6 @@
     private bool currentIsPrimary = false;
     
     // ===== 內部方法 =====
-    
-    private string GetSubtitle()
-    {
-        return $"管理{ItemDisplayName}資訊 ({Items.Count} 筆)";
-    }
 
     private string GetContactDisplayText(TContactEntity item)
     {

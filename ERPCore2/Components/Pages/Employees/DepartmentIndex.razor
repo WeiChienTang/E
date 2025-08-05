@@ -70,19 +70,11 @@
     {
         try
         {
-            // 準備狀態選項
-            var statusOptions = new List<SelectOption>
-            {
-                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-            };
-
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("Name", "部門名稱", "輸入部門名稱搜尋")
                 .AddText("DepartmentCode", "部門代碼", "輸入部門代碼搜尋")
-                .AddText("Description", "部門描述", "輸入部門描述搜尋")
-                .AddSelect("Status", "狀態", statusOptions)            
+                .AddText("Description", "部門描述", "輸入部門描述搜尋")        
                 .Build();
         }
         catch (Exception ex)
@@ -104,14 +96,35 @@
             {
                 TableColumnDefinition.Text("部門代碼", nameof(Department.DepartmentCode)),
                 TableColumnDefinition.Text("部門名稱", nameof(Department.Name)),
-                TableColumnDefinition.Text("上級部門", "ParentDepartment.Name"),
-                TableColumnDefinition.Text("部門描述", nameof(Department.Description)),
-                TableColumnDefinition.Number("排序順序", nameof(Department.SortOrder)),
-                TableColumnDefinition.Status("狀態", nameof(Department.Status), new Dictionary<object, string>
+                new TableColumnDefinition
                 {
-                    { EntityStatus.Inactive, "bg-secondary" }
-                }),
-                TableColumnDefinition.Date("建立日期", nameof(Department.CreatedAt), "yyyy/MM/dd")
+                    Title = "部門主管",
+                    PropertyName = "Manager.FirstName",
+                    DataType = ColumnDataType.Html,
+                    HeaderStyle = "width: 120px;",
+                    NullDisplayText = "未指派",
+                    CustomTemplate = item => builder =>
+                    {
+                        var department = (Department)item;
+                        if (department.Manager != null)
+                        {
+                            var managerName = $"{department.Manager.FirstName}{department.Manager.LastName}".Trim();
+                            if (string.IsNullOrWhiteSpace(managerName))
+                            {
+                                managerName = department.Manager.EmployeeCode;
+                            }
+                            builder.AddContent(0, managerName);
+                        }
+                        else
+                        {
+                            builder.OpenElement(0, "span");
+                            builder.AddAttribute(1, "class", "text-muted");
+                            builder.AddContent(2, "未指派");
+                            builder.CloseElement();
+                        }
+                    }
+                },
+                TableColumnDefinition.Text("部門描述", nameof(Department.Description)),
             };
         }
         catch (Exception ex)
@@ -177,7 +190,7 @@
                 query = query.Where(d => d.Status == status);
             }
 
-            return query.OrderBy(d => d.SortOrder).ThenBy(d => d.Name);
+            return query.OrderBy(d => d.Name);
         }
         catch (Exception ex)
         {
@@ -186,7 +199,7 @@
                 nameof(ApplyDepartmentFilters),
                 GetType()
             );
-            return query.OrderBy(d => d.SortOrder).ThenBy(d => d.Name);
+            return query.OrderBy(d => d.Name);
         }
     }
 }

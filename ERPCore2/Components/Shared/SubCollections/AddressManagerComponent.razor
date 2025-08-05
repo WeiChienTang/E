@@ -1,37 +1,22 @@
 @typeparam TAddressEntity where TAddressEntity : ERPCore2.Data.BaseEntity, new()
 @typeparam TParentEntity where TParentEntity : ERPCore2.Data.BaseEntity
 
-<div class="card mb-4">    
-    <GenericHeaderComponent Title="@Title"
-                           Subtitle="@GetSubtitle()"
-                           IsCardHeader="true">        
-        <ActionButtons>
-            @if (!IsReadOnly)
-            {
-                <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@($"新增{ItemDisplayName}")" 
-                                       IconClass="bi-plus me-1" OnClick="ShowAddModal" />
-            }
-        </ActionButtons>
-    </GenericHeaderComponent>
-    <div class="card-body">
-        @if (Items.Any())
-        {
-            <div class="table-responsive">
-                <table class="table table-sm table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th>地址資訊</th>
-                            <th>@TypeDisplayName</th>
-                            <th>城市</th>
-                            <th>郵遞區號</th>
-                            <th>狀態</th>
-                            @if (!IsReadOnly)
-                            {
-                                <th width="120">操作</th>
-                            }
-                        </tr>
-                    </thead>
-                    <tbody>
+<div class="table-responsive">
+    <table class="table table-sm table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>地址資訊</th>
+                <th>@TypeDisplayName</th>
+                <th>城市</th>
+                <th>郵遞區號</th>
+                <th>狀態</th>
+                @if (!IsReadOnly)
+                {
+                    <th width="120">操作</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
                         @for (int i = 0; i < Items.Count; i++)
                         {
                             var index = i;
@@ -82,24 +67,30 @@
                                 }
                             </tr>
                         }
+                        @* 新增按鈕行 *@
+                        @if (!IsReadOnly)
+                        {
+                            <tr>
+                                <td colspan="@(IsReadOnly ? 5 : 6)" class="text-center py-3 border-top">
+                                    <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" 
+                                                           Text="@($"新增{ItemDisplayName}")" 
+                                                           IconClass="bi-plus me-1" 
+                                                           OnClick="ShowAddModal" />
+                                </td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
-        }
-        else
-        {
-            <div class="text-center py-4 text-muted">
-                <i class="bi @EmptyIcon fs-1 mb-3 d-block"></i>
-                <p>@EmptyMessage</p>
-                @if (!IsReadOnly)
-                {                    
-                    <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" Text="@($"新增第一個{ItemDisplayName}")" 
-                                           IconClass="bi-plus me-1" OnClick="ShowAddModal" />
-                }
-            </div>
-        }
+
+@* 如果沒有任何資料時的顯示 *@
+@if (!Items.Any())
+{
+    <div class="text-center py-4 text-muted">
+        <i class="bi @EmptyIcon fs-3 mb-2 d-block"></i>
+        <p class="mb-0">@EmptyMessage</p>
     </div>
-</div>
+}
 
 @* 新增/編輯地址 Modal *@
 @if (showAddModal || showEditModal)
@@ -115,13 +106,21 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">@TypeDisplayName <span class="text-danger">*</span></label>
-                            <select class="form-select" @bind="currentAddressTypeId">
-                                <option value="">請選擇@TypeDisplayName</option>
-                                @foreach (var option in Options)
-                                {
-                                    <option value="@GetOptionId(option)">@GetOptionDisplayText(option)</option>
-                                }
-                            </select>
+                            @if (Options.Any())
+                            {
+                                <select class="form-select" @bind="currentAddressTypeId">
+                                    @foreach (var option in Options)
+                                    {
+                                        <option value="@GetOptionId(option)">@GetOptionDisplayText(option)</option>
+                                    }
+                                </select>
+                            }
+                            else
+                            {
+                                <div class="form-control bg-light text-muted">
+                                    沒有資料，請新增@TypeDisplayName
+                                </div>
+                            }
                         </div>
                         <div class="col-md-6">
                             <div class="form-check mt-4">
@@ -149,7 +148,7 @@
                     <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="取消" OnClick="CloseModal" />
                     <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@(showEditModal ? "更新" : "新增")" 
                                            OnClick="@(showEditModal ? () => UpdateItemAsync() : () => AddItemAsync())" 
-                                           IsDisabled="@(string.IsNullOrEmpty(currentAddressTypeId) || string.IsNullOrEmpty(currentAddress))" />
+                                           IsDisabled="@(!Options.Any() || string.IsNullOrEmpty(currentAddress))" />
                 </div>
             </div>
         </div>
@@ -218,11 +217,6 @@
     private bool currentIsPrimary = false;
     
     // ===== 內部方法 =====
-    
-    private string GetSubtitle()
-    {
-        return $"管理{ItemDisplayName}資料 ({Items.Count} 筆)";
-    }
 
     private string GetAddressDisplayText(TAddressEntity item)
     {
@@ -247,6 +241,28 @@
         
         ClearModalData();
         currentIsPrimary = Items.Count == 0; // 第一個自動設為主要
+        
+        // 自動選擇地址類型
+        if (Options.Any())
+        {
+            // 優先選擇"公司地址"或類似的營業地址類型
+            var companyAddressType = Options.FirstOrDefault(o => 
+                GetOptionDisplayText(o).Contains("公司") || 
+                GetOptionDisplayText(o).Contains("營業") ||
+                GetOptionDisplayText(o).Contains("辦公"));
+            
+            if (companyAddressType != null)
+            {
+                currentAddressTypeId = GetOptionId(companyAddressType).ToString();
+            }
+            else
+            {
+                // 如果沒有公司地址類型，選擇第一個
+                var firstOption = Options.First();
+                currentAddressTypeId = GetOptionId(firstOption).ToString();
+            }
+        }
+        
         showAddModal = true;
     }
     
@@ -286,7 +302,14 @@
     
     public async Task AddItemAsync()
     {
-        if (IsReadOnly || string.IsNullOrEmpty(currentAddressTypeId) || string.IsNullOrEmpty(currentAddress)) return;
+        if (IsReadOnly || !Options.Any() || string.IsNullOrEmpty(currentAddress)) return;
+        
+        // 如果 currentAddressTypeId 為空，使用預設選中的類型
+        if (string.IsNullOrEmpty(currentAddressTypeId) && Options.Any())
+        {
+            var firstOption = Options.First();
+            currentAddressTypeId = GetOptionId(firstOption).ToString();
+        }
         
         if (!int.TryParse(currentAddressTypeId, out var typeId)) return;
         
@@ -319,7 +342,14 @@
     public async Task UpdateItemAsync()
     {
         if (IsReadOnly || editingIndex < 0 || editingIndex >= Items.Count) return;
-        if (string.IsNullOrEmpty(currentAddressTypeId) || string.IsNullOrEmpty(currentAddress)) return;
+        if (!Options.Any() || string.IsNullOrEmpty(currentAddress)) return;
+        
+        // 如果 currentAddressTypeId 為空，使用預設選中的類型
+        if (string.IsNullOrEmpty(currentAddressTypeId) && Options.Any())
+        {
+            var firstOption = Options.First();
+            currentAddressTypeId = GetOptionId(firstOption).ToString();
+        }
         
         if (!int.TryParse(currentAddressTypeId, out var typeId)) return;
         

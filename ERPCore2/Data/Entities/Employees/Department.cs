@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Data.Entities
@@ -32,33 +33,17 @@ namespace ERPCore2.Data.Entities
         public string? Description { get; set; }
 
         /// <summary>
-        /// 上級部門ID
-        /// </summary>
-        [Display(Name = "上級部門")]
-        public int? ParentDepartmentId { get; set; }
-
-        /// <summary>
         /// 部門主管ID
         /// </summary>
         [Display(Name = "部門主管")]
+        [ForeignKey(nameof(Manager))]
         public int? ManagerId { get; set; }
-
-        /// <summary>
-        /// 排序順序
-        /// </summary>
-        [Display(Name = "排序順序")]
-        public int SortOrder { get; set; } = 0;
 
         // 導航屬性
         /// <summary>
-        /// 上級部門
+        /// 部門主管
         /// </summary>
-        public Department? ParentDepartment { get; set; }
-
-        /// <summary>
-        /// 下級部門
-        /// </summary>
-        public ICollection<Department> ChildDepartments { get; set; } = new List<Department>();
+        public Employee? Manager { get; set; }
 
         /// <summary>
         /// 部門員工

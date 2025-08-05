@@ -483,6 +483,16 @@
                 Label = "系統使用者",
                 FieldType = FormFieldType.Checkbox,
                 HelpText = "勾選此項目表示該員工可以登入系統"
+            },
+            new()
+            {
+                PropertyName = nameof(Employee.RoleId),
+                Label = "角色(權限)",
+                FieldType = FormFieldType.Select,
+                Placeholder = "請選擇角色",
+                Options = roleOptions,
+                IsRequired = employee?.IsSystemUser == true, // 只有系統使用者才必填
+                HelpText = employee?.IsSystemUser == true ? "系統使用者必須選擇角色" : "可選擇角色以控制權限"
             }
         };
 
@@ -499,14 +509,6 @@
                     Placeholder = "請輸入帳號（用於登入系統）",
                     IsRequired = true,
                     HelpText = "系統使用者必須設定帳號"
-                },
-                new()
-                {
-                    PropertyName = nameof(Employee.RoleId),
-                    Label = "角色",
-                    FieldType = FormFieldType.Select,
-                    Options = roleOptions,
-                    IsRequired = true
                 }
             };
 
@@ -547,6 +549,7 @@
             
             { nameof(Employee.DepartmentId), "工作資訊" },
             { nameof(Employee.EmployeePositionId), "工作資訊" },
+            { nameof(Employee.RoleId), "工作資訊" },
 
             { nameof(Employee.IsSystemUser), "帳號設定" }
         };
@@ -555,7 +558,6 @@
         if (employee?.IsSystemUser == true)
         {
             basicFormSections.Add(nameof(Employee.Account), "帳號設定");
-            basicFormSections.Add(nameof(Employee.RoleId), "帳號設定");
             
             // 只有在新增模式才添加密碼欄位區段
             if (!Id.HasValue)
@@ -573,17 +575,13 @@
         {
             if (!Id.HasValue) 
             {
-                // 取得第一個可用的角色作為預設值
-                var defaultRole = roles.FirstOrDefault();
-                var defaultRoleId = defaultRole?.Id;
-                
                 var newEmployee = new Employee
                 {
                     EmployeeCode = GenerateEmployeeCode(),
                     Account = "",
                     LastName = "",
                     FirstName = "",
-                    RoleId = defaultRoleId, // 設置預設角色
+                    RoleId = null, // 預設不選擇任何角色
                     DepartmentId = null,
                     EmployeePositionId = null,
                     Status = EntityStatus.Active,

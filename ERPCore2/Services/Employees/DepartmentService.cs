@@ -27,10 +27,9 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Departments
-                    .Include(d => d.ParentDepartment)
+                    .Include(d => d.Manager)
                     .Where(d => !d.IsDeleted)
-                    .OrderBy(d => d.SortOrder)
-                    .ThenBy(d => d.Name)
+                    .OrderBy(d => d.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -49,8 +48,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Departments
-                    .Include(d => d.ParentDepartment)
-                    .Include(d => d.ChildDepartments.Where(c => !c.IsDeleted))
+                    .Include(d => d.Manager)
                     .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
             }
             catch (Exception ex)
@@ -70,13 +68,11 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Departments
-                    .Include(d => d.ParentDepartment)
                     .Where(d => !d.IsDeleted &&
                         (d.Name.Contains(searchTerm) ||
                          d.DepartmentCode.Contains(searchTerm) ||
                          (d.Description != null && d.Description.Contains(searchTerm))))
-                    .OrderBy(d => d.SortOrder)
-                    .ThenBy(d => d.Name)
+                    .OrderBy(d => d.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -105,13 +101,6 @@ namespace ERPCore2.Services
                 if (!string.IsNullOrWhiteSpace(entity.DepartmentCode) && 
                     await IsDepartmentCodeExistsAsync(entity.DepartmentCode, entity.Id == 0 ? null : entity.Id))
                     errors.Add("部門代碼已存在");
-                
-                // 檢查是否會造成循環參考
-                if (entity.ParentDepartmentId.HasValue && entity.Id > 0)
-                {
-                    if (await WouldCreateCircularReferenceAsync(entity.Id, entity.ParentDepartmentId.Value))
-                        errors.Add("不能選擇自己或下級部門作為上級部門");
-                }
                 
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));
@@ -153,71 +142,6 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<Department>> GetTopLevelDepartmentsAsync()
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Departments
-                    .Where(d => !d.IsDeleted && d.ParentDepartmentId == null)
-                    .OrderBy(d => d.SortOrder)
-                    .ThenBy(d => d.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetTopLevelDepartmentsAsync), GetType(), _logger, new { 
-                    Method = nameof(GetTopLevelDepartmentsAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<Department>();
-            }
-        }
-
-        public async Task<List<Department>> GetChildDepartmentsAsync(int parentId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Departments
-                    .Where(d => !d.IsDeleted && d.ParentDepartmentId == parentId)
-                    .OrderBy(d => d.SortOrder)
-                    .ThenBy(d => d.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetChildDepartmentsAsync), GetType(), _logger, new { 
-                    Method = nameof(GetChildDepartmentsAsync),
-                    ServiceType = GetType().Name,
-                    ParentId = parentId 
-                });
-                return new List<Department>();
-            }
-        }
-
-        public async Task<List<Department>> GetDepartmentTreeAsync()
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Departments
-                    .Include(d => d.ChildDepartments.Where(c => !c.IsDeleted))
-                    .Where(d => !d.IsDeleted)
-                    .OrderBy(d => d.SortOrder)
-                    .ThenBy(d => d.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetDepartmentTreeAsync), GetType(), _logger, new { 
-                    Method = nameof(GetDepartmentTreeAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<Department>();
-            }
-        }
-
         public async Task<bool> CanDeleteDepartmentAsync(int departmentId)
         {
             try
@@ -228,11 +152,7 @@ namespace ERPCore2.Services
                 var hasEmployees = await context.Employees
                     .AnyAsync(e => e.DepartmentId == departmentId && !e.IsDeleted);
                 
-                // 檢查是否有下級部門
-                var hasChildDepartments = await context.Departments
-                    .AnyAsync(d => d.ParentDepartmentId == departmentId && !d.IsDeleted);
-                
-                return !hasEmployees && !hasChildDepartments;
+                return !hasEmployees;
             }
             catch (Exception ex)
             {
@@ -245,37 +165,23 @@ namespace ERPCore2.Services
             }
         }
 
-        private async Task<bool> WouldCreateCircularReferenceAsync(int departmentId, int parentId)
+        public async Task<List<Employee>> GetAvailableManagersAsync()
         {
             try
             {
-                if (departmentId == parentId)
-                    return true;
-
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var currentParent = await context.Departments
-                    .FirstOrDefaultAsync(d => d.Id == parentId && !d.IsDeleted);
-
-                while (currentParent?.ParentDepartmentId != null)
-                {
-                    if (currentParent.ParentDepartmentId == departmentId)
-                        return true;
-
-                    currentParent = await context.Departments
-                        .FirstOrDefaultAsync(d => d.Id == currentParent.ParentDepartmentId && !d.IsDeleted);
-                }
-
-                return false;
+                return await context.Employees
+                    .Where(e => !e.IsDeleted && e.IsSystemUser)
+                    .OrderBy(e => e.EmployeeCode)
+                    .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(WouldCreateCircularReferenceAsync), GetType(), _logger, new { 
-                    Method = nameof(WouldCreateCircularReferenceAsync),
-                    ServiceType = GetType().Name,
-                    DepartmentId = departmentId,
-                    ParentId = parentId 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAvailableManagersAsync), GetType(), _logger, new { 
+                    Method = nameof(GetAvailableManagersAsync),
+                    ServiceType = GetType().Name 
                 });
-                return true; // 安全起見，如果檢查失敗就假設會造成循環參考
+                return new List<Employee>();
             }
         }
     }

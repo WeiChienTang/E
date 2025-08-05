@@ -1,145 +1,202 @@
 /* ContactManagerComponent 專用樣式 */
 
-/* List 樣式 - 關聯卡片 */
-.relation-card {
-    cursor: default;
-    transition: box-shadow 0.15s ease-in-out;
-    border: 1px solid #dee2e6;
+/* Table 樣式 - 簡潔的表格設計 */
+.table-responsive {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
 }
 
-.relation-card:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+.table {
+    margin-bottom: 0;
+    background-color: white;
 }
 
-.card-title {
-    color: #495057;
+.table thead th {
+    background-color: var(--bg-secondary);
+    border-bottom: 2px solid var(--border-light);
     font-weight: 600;
+    color: var(--text-primary);
+    padding: 0.75rem;
+}
+
+.table tbody td {
+    padding: 0.75rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.table tbody tr:hover {
+    background-color: var(--bg-tertiary);
+}
+
+/* 新增按鈕行樣式 */
+.table tbody tr:last-child td {
+    background-color: var(--bg-light);
+    border-top: 2px solid var(--border-light);
+}
+
+.table tbody tr:last-child:hover td {
+    background-color: var(--bg-secondary);
+}
+
+/* 聯絡資訊樣式 */
+.contact-info {
+    display: flex;
+    align-items: center;
+}
+
+.contact-icon {
+    color: var(--primary-blue);
+    margin-right: 0.5rem;
+}
+
+.contact-content {
+    flex: 1;
+}
+
+.contact-text {
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+/* 主要聯絡方式標記樣式 */
+.badge-primary-marker {
+    background-color: var(--primary-blue);
+    color: white;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius);
+    margin-right: 0.5rem;
 }
 
 .badge {
     font-size: 0.75em;
 }
 
+/* 操作按鈕樣式 */
 .btn-group-sm .btn {
     padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
+    border-radius: var(--radius);
 }
 
-/* SubCollection 卡片樣式 */
-.subcollection-card {
-    transition: all 0.2s ease-in-out;
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
+.btn-group-sm .btn:first-child {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
 }
 
-.subcollection-card:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+.btn-group-sm .btn:not(:first-child):not(:last-child) {
+    border-radius: 0;
 }
 
-.subcollection-card .card-header {
-    background-color: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-light);
-    padding: 0.75rem 1rem;
+.btn-group-sm .btn:last-child {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
 }
 
-.subcollection-card .card-body {
-    padding: 1rem;
-}
-
-/* 項目編號樣式 */
-.subcollection-item-number {
-    color: var(--text-secondary);
-    font-weight: 600;
-}
-
-/* 按鈕組樣式 */
-.subcollection-actions .btn-group-sm .btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-}
-
-.subcollection-actions .btn-outline-primary:hover {
+/* 設為主要按鈕特殊樣式 */
+.btn-outline-primary:hover {
     background-color: var(--primary-blue);
     border-color: var(--primary-blue);
     color: white;
 }
 
-.subcollection-actions .btn-outline-danger:hover {
+.btn-outline-warning:hover {
+    background-color: var(--warning-color);
+    border-color: var(--warning-color);
+    color: white;
+}
+
+.btn-outline-danger:hover {
     background-color: var(--danger-color);
     border-color: var(--danger-color);
     color: white;
 }
 
-/* 主要項目標記樣式 */
-.badge-primary-marker {
-    background-color: var(--success-color);
-    color: white;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 2rem;
-    height: calc(1.5em + 0.5rem + 2px);
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-    line-height: 1.5;
-    border: 1px solid var(--success-color);
-    border-radius: 0.25rem;
-    position: relative;
-    box-sizing: border-box;
-    vertical-align: top;
-}
-
-.btn-group .badge-primary-marker:not(:first-child) {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    margin-left: -1px;
-}
-
-.btn-group .badge-primary-marker:not(:last-child) {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-}
-
-.badge-primary-marker:hover {
-    background-color: var(--success-color-hover);
-}
-
-/* 星號圖示樣式 */
-.bi-star-fill-primary {
-    display: inline-block;
-    width: 1rem;
-    height: 1rem;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-star-fill' viewBox='0 0 16 16'%3E%3Cpath d='M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
-}
-
 /* 空狀態樣式 */
-.subcollection-empty-state {
+.empty-state {
     padding: 3rem 1rem;
     text-align: center;
     color: var(--text-light);
+    background-color: var(--bg-light);
+    border-radius: var(--radius-lg);
 }
 
-.subcollection-empty-state .empty-icon {
-    font-size: 3rem;
+.empty-state .empty-icon {
+    font-size: 2.5rem;
     margin-bottom: 1rem;
     opacity: 0.5;
+    color: var(--text-secondary);
 }
 
-/* 表單控制項樣式 */
-.subcollection-form .form-select-sm,
-.subcollection-form .form-control-sm {
-    font-size: 0.875rem;
-    padding: 0.25rem 0.5rem;
+.empty-state p {
+    color: var(--text-secondary);
+    margin-bottom: 0;
 }
 
-/* 聯絡人類型樣式 */
+/* Modal 樣式調整 */
+.modal-content {
+    border-radius: var(--radius-lg);
+    border: none;
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-light);
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    background-color: var(--bg-light);
+    border-top: 1px solid var(--border-light);
+    border-bottom-left-radius: var(--radius-lg);
+    border-bottom-right-radius: var(--radius-lg);
+}
+
+/* 表單樣式 */
+.form-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.form-control,
+.form-select {
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: 0.5rem 0.75rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 0.2rem rgba(var(--primary-blue-rgb), 0.25);
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-blue);
+    border-color: var(--primary-blue);
+}
+
+/* 聯絡類型和狀態樣式 */
 .contact-type-badge {
     background-color: var(--info-color);
+    color: white;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius);
+}
+
+.status-badge {
+    background-color: var(--success-color);
     color: white;
     font-size: 0.75rem;
     padding: 0.25rem 0.5rem;
@@ -157,12 +214,44 @@
 
 /* 響應式設計 */
 @media (max-width: 767.98px) {
-    .subcollection-card {
-        margin-bottom: 1rem;
+    .table tbody td {
+        padding: 0.5rem;
+        font-size: 0.875rem;
     }
     
-    .subcollection-actions .btn-group-sm .btn {
+    .btn-group-sm .btn {
         padding: 0.375rem 0.75rem;
         font-size: 0.875rem;
     }
+    
+    .empty-state {
+        padding: 2rem 1rem;
+    }
+    
+    .empty-state .empty-icon {
+        font-size: 2rem;
+    }
+}
+
+/* CSS 變數定義 */
+:root {
+    --primary-blue: #0d6efd;
+    --primary-blue-rgb: 13, 110, 253;
+    --success-color: #198754;
+    --success-color-hover: #157347;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: #0dcaf0;
+    --bg-light: #f8f9fa;
+    --bg-secondary: #e9ecef;
+    --bg-tertiary: #f1f3f5;
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-light: #adb5bd;
+    --border-light: #dee2e6;
+    --radius: 0.375rem;
+    --radius-lg: 0.5rem;
+    --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
 }

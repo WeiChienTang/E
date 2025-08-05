@@ -200,12 +200,6 @@ namespace ERPCore2.Data.Context
                   {
                         // 欄位對應                        
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
-                        
-                        // 關聯設定 - 自我參考（上下級部門）
-                        entity.HasOne(d => d.ParentDepartment)
-                        .WithMany(d => d.ChildDepartments)
-                        .HasForeignKey(d => d.ParentDepartmentId)
-                        .OnDelete(DeleteBehavior.Restrict);
                   });
                   
                   modelBuilder.Entity<EmployeePosition>(entity =>

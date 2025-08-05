@@ -428,9 +428,9 @@ namespace ERPCore2.Services
                 if (!Regex.IsMatch(employee.Account, @"^[a-zA-Z0-9_]+$"))
                     return ServiceResult<bool>.Failure("使用者名稱只能包含英文字母、數字和底線");
 
-                // 驗證角色ID
-                if (!employee.RoleId.HasValue || employee.RoleId.Value <= 0)
-                    return ServiceResult<bool>.Failure("必須指定有效的角色");
+                // 驗證角色ID（只有系統使用者才需要角色）
+                if (employee.IsSystemUser && (!employee.RoleId.HasValue || employee.RoleId.Value <= 0))
+                    return ServiceResult<bool>.Failure("系統使用者必須指定有效的角色");
 
                 return ServiceResult<bool>.Success(true);
             }
@@ -541,7 +541,7 @@ namespace ERPCore2.Services
                         errors.Add("員工代碼已存在");
                 }
 
-                // 檢查角色是否存在
+                // 檢查角色是否存在（只有當指定了角色時才檢查）
                 if (entity.RoleId.HasValue && entity.RoleId.Value > 0)
                 {
                     var roleExists = await context.Roles
@@ -550,9 +550,10 @@ namespace ERPCore2.Services
                     if (!roleExists)
                         errors.Add("指定的角色不存在或已停用");
                 }
-                else
+                // 系統使用者必須有角色
+                else if (entity.IsSystemUser)
                 {
-                    errors.Add("必須指定有效的角色");
+                    errors.Add("系統使用者必須指定有效的角色");
                 }
 
                 if (errors.Any())

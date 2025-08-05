@@ -30,6 +30,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             // 取得角色和權限
             var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Administrator");
+            var employeeRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Employee");
             var allPermissions = await context.Permissions.ToListAsync();
             var rolePermissions = new List<RolePermission>();
 
@@ -45,6 +46,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CreatedBy = "System"
                 }));
             }
+
+            // 員工角色不分配任何權限 (保留此註解以明確說明設計意圖)
 
             await context.RolePermissions.AddRangeAsync(rolePermissions);
             await context.SaveChangesAsync();
