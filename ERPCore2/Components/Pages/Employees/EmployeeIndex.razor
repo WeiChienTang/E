@@ -285,112 +285,69 @@
     }    // 自定義篩選邏輯
     private IQueryable<Employee> ApplyEmployeeFilters(SearchFilterModel searchModel, IQueryable<Employee> query)
     {
-        try
+        var filterActions = new List<Func<SearchFilterModel, IQueryable<Employee>, IQueryable<Employee>>>
         {
-            // 員工代碼篩選
-            var employeeCodeFilter = searchModel.GetFilterValue("EmployeeCode")?.ToString();
-            if (!string.IsNullOrWhiteSpace(employeeCodeFilter))
-            {
-                query = query.Where(e => 
-                    e.EmployeeCode.Contains(employeeCodeFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 帳號篩選
-            var accountFilter = searchModel.GetFilterValue("Account")?.ToString();
-            if (!string.IsNullOrWhiteSpace(accountFilter))
-            {
-                query = query.Where(e => 
-                    e.Account != null && e.Account.Contains(accountFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 名字篩選
-            var firstNameFilter = searchModel.GetFilterValue("FirstName")?.ToString();
-            if (!string.IsNullOrWhiteSpace(firstNameFilter))
-            {
-                query = query.Where(e => 
-                    !string.IsNullOrEmpty(e.FirstName) && 
-                    e.FirstName.Contains(firstNameFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 姓氏篩選
-            var lastNameFilter = searchModel.GetFilterValue("LastName")?.ToString();
-            if (!string.IsNullOrWhiteSpace(lastNameFilter))
-            {
-                query = query.Where(e => 
-                    !string.IsNullOrEmpty(e.LastName) && 
-                    e.LastName.Contains(lastNameFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 電子郵件篩選 (由於需要存取導航屬性，轉為記憶體查詢)
-            var emailFilter = searchModel.GetFilterValue("Email")?.ToString();
-            if (!string.IsNullOrWhiteSpace(emailFilter))
-            {
-                var filteredList = query.ToList().Where(e => 
-                {
-                    var emailContact = e.EmployeeContacts?
-                        .FirstOrDefault(ec => ec.ContactType?.TypeName == "Email");
-                    return emailContact != null && 
-                           !string.IsNullOrEmpty(emailContact.ContactValue) &&
-                           emailContact.ContactValue.Contains(emailFilter, StringComparison.OrdinalIgnoreCase);
-                });
-                query = filteredList.AsQueryable();
-            }
-
-            // 部門篩選
-            var departmentIdFilter = searchModel.GetFilterValue("DepartmentId")?.ToString();
-            if (!string.IsNullOrWhiteSpace(departmentIdFilter) && int.TryParse(departmentIdFilter, out var departmentId))
-            {
-                query = query.Where(e => e.DepartmentId == departmentId);
-            }
-
-            // 職位篩選
-            var positionIdFilter = searchModel.GetFilterValue("EmployeePositionId")?.ToString();
-            if (!string.IsNullOrWhiteSpace(positionIdFilter) && int.TryParse(positionIdFilter, out var positionId))
-            {
-                query = query.Where(e => e.EmployeePositionId == positionId);
-            }
-
-            // 角色篩選
-            var roleIdFilter = searchModel.GetFilterValue("RoleId")?.ToString();
-            if (!string.IsNullOrWhiteSpace(roleIdFilter) && int.TryParse(roleIdFilter, out var roleId))
-            {
-                query = query.Where(e => e.RoleId.HasValue && e.RoleId.Value == roleId);
-            }
-
-            // 狀態篩選
-            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
-            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
-            {
-                query = query.Where(e => e.Status == status);
-            }
-
-            // 帳號鎖定狀態篩選
-            var isLockedFilter = searchModel.GetFilterValue("IsLocked")?.ToString();
-            if (!string.IsNullOrWhiteSpace(isLockedFilter) && bool.TryParse(isLockedFilter, out var isLocked))
-            {
-                query = query.Where(e => e.IsLocked == isLocked);
-            }
-
-            return query.OrderBy(e => e.EmployeeCode);
-        }
-        catch (Exception ex)
-        {
-            // 記錄篩選錯誤（這裡不能用 async，所以使用 Fire-and-Forget）
-            _ = Task.Run(async () =>
-            {
-                await ErrorHandlingHelper.HandlePageErrorAsync(
-                    ex, 
-                    nameof(ApplyEmployeeFilters), 
-                    GetType(),
-                    additionalData: new { 
-                        PageName = "EmployeeIndex",
-                        Action = "ApplyFilters",
-                        FilterModel = searchModel
-                    });
-            });
+            // 應用基礎實體篩選（狀態、備註）
+            (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
             
-            // 回傳原始查詢，確保程式不會崩潰
-            return query.OrderBy(e => e.EmployeeCode);
-        }
+            // 員工代碼篩選
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "EmployeeCode", e => e.EmployeeCode),
+            
+            // 帳號篩選
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Account", e => e.Account, allowNull: true),
+            
+            // 名字篩選
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "FirstName", e => e.FirstName, allowNull: true),
+            
+            // 姓氏篩選
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "LastName", e => e.LastName, allowNull: true),
+            
+            // 部門篩選
+            (model, q) => FilterHelper.ApplyNullableIntIdFilter(model, q, "DepartmentId", e => e.DepartmentId),
+            
+            // 職位篩選
+            (model, q) => FilterHelper.ApplyNullableIntIdFilter(model, q, "EmployeePositionId", e => e.EmployeePositionId),
+            
+            // 角色篩選  
+            (model, q) => FilterHelper.ApplyNullableIntIdFilter(model, q, "RoleId", e => e.RoleId),
+            
+            // 帳號鎖定狀態篩選
+            (model, q) => {
+                var isLockedFilter = model.GetFilterValue("IsLocked")?.ToString();
+                if (!string.IsNullOrWhiteSpace(isLockedFilter) && bool.TryParse(isLockedFilter, out var isLocked))
+                {
+                    q = q.Where(e => e.IsLocked == isLocked);
+                }
+                return q;
+            },
+            
+            // 電子郵件篩選（需要特殊處理導航屬性）
+            (model, q) => {
+                var emailFilter = model.GetFilterValue("Email")?.ToString();
+                if (!string.IsNullOrWhiteSpace(emailFilter))
+                {
+                    // 由於需要存取導航屬性，轉為記憶體查詢
+                    var filteredList = q.ToList().Where(e => 
+                    {
+                        var emailContact = e.EmployeeContacts?
+                            .FirstOrDefault(ec => ec.ContactType?.TypeName == "Email");
+                        return emailContact != null && 
+                               !string.IsNullOrEmpty(emailContact.ContactValue) &&
+                               emailContact.ContactValue.Contains(emailFilter, StringComparison.OrdinalIgnoreCase);
+                    });
+                    q = filteredList.AsQueryable();
+                }
+                return q;
+            }
+        };
+
+        return FilterHelper.ApplyFiltersWithErrorHandling(
+            searchModel,
+            query,
+            filterActions,
+            q => q.OrderBy(e => e.EmployeeCode), // 預設排序
+            nameof(ApplyEmployeeFilters),
+            GetType()
+        );
     }
 }

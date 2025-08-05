@@ -153,48 +153,35 @@
     // 自定義篩選邏輯
     private IQueryable<Role> ApplyRoleFilters(SearchFilterModel searchModel, IQueryable<Role> query)
     {
-        try
+        var filterActions = new List<Func<SearchFilterModel, IQueryable<Role>, IQueryable<Role>>>
         {
+            // 應用基礎實體篩選（狀態、備註）
+            (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
+            
             // 角色名稱篩選
-            var roleNameFilter = searchModel.GetFilterValue("RoleName")?.ToString();
-            if (!string.IsNullOrWhiteSpace(roleNameFilter))
-            {
-                query = query.Where(r => 
-                    r.RoleName.Contains(roleNameFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "RoleName", r => r.RoleName),
+            
             // 角色描述篩選
-            var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
-            if (!string.IsNullOrWhiteSpace(descriptionFilter))
-            {
-                query = query.Where(r => 
-                    !string.IsNullOrEmpty(r.Description) && 
-                    r.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Description", r => r.Description, allowNull: true),
+            
             // 系統角色篩選
-            var isSystemRoleFilter = searchModel.GetFilterValue("IsSystemRole")?.ToString();
-            if (!string.IsNullOrWhiteSpace(isSystemRoleFilter) && bool.TryParse(isSystemRoleFilter, out var isSystemRole))
-            {
-                query = query.Where(r => r.IsSystemRole == isSystemRole);
-            }
-
-            return query.OrderBy(r => r.RoleName);
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(ApplyRoleFilters),
-                GetType(),
-                additionalData: new { 
-                    PageName = "RoleIndex",
-                    Action = "ApplyFilters",
-                    FilterModel = searchModel
+            (model, q) => {
+                var isSystemRoleFilter = model.GetFilterValue("IsSystemRole")?.ToString();
+                if (!string.IsNullOrWhiteSpace(isSystemRoleFilter) && bool.TryParse(isSystemRoleFilter, out var isSystemRole))
+                {
+                    q = q.Where(r => r.IsSystemRole == isSystemRole);
                 }
-            );
-            // 發生錯誤時返回未過濾的查詢結果
-            return query.OrderBy(r => r.RoleName);
-        }
+                return q;
+            }
+        };
+
+        return FilterHelper.ApplyFiltersWithErrorHandling(
+            searchModel,
+            query,
+            filterActions,
+            q => q.OrderBy(r => r.RoleName), // 預設排序
+            nameof(ApplyRoleFilters),
+            GetType()
+        );
     }
 }
