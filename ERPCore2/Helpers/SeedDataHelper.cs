@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace ERPCore2.Data.SeedDataManager.Helpers
+namespace ERPCore2.Helpers
 {
     /// <summary>
     /// 種子資料共用工具類別

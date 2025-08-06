@@ -30,7 +30,8 @@
                         DataLoader="@LoadEmployeeData"
                         SaveHandler="@SaveEmployee"
                         AdditionalDataLoader="@LoadAdditionalDataAsync"
-                        RequiredPermission="Employee.Read" />
+                        RequiredPermission="Employee.Read"
+                        OnFieldChanged="@OnFieldValueChanged" />
 
 @* 聯絡資訊與地址管理 *@
 @if (editComponent?.Entity != null)
@@ -123,7 +124,7 @@
         {
             InitializeBreadcrumbs();
             await LoadAdditionalDataAsync();
-            InitializeFormFields();
+            InitializeFormFields(false); // 預設為非系統使用者
         }
         catch (Exception ex)
         {
@@ -184,7 +185,7 @@
         }
     }
 
-    private void InitializeFormFields()
+    private void InitializeFormFields(bool isSystemUser = false)
     {
         try
         {
@@ -209,9 +210,20 @@
                 Value = r.Id.ToString()
             }).ToList();
 
-            // 找出預設的系統角色 (Employee-非系統使用者)
-            var defaultRole = availableRoles.FirstOrDefault(r => 
-                r.RoleName.Contains("Employee") && r.RoleName.Contains("非系統使用者"));
+            // 根據系統使用者狀態選擇預設角色
+            Role? defaultRole;
+            if (isSystemUser)
+            {
+                // 系統使用者：選擇 Employee-系統使用者
+                defaultRole = availableRoles.FirstOrDefault(r => 
+                    r.RoleName.Contains("Employee") && r.RoleName.Contains("系統使用者"));
+            }
+            else
+            {
+                // 非系統使用者：選擇 Employee-非系統使用者
+                defaultRole = availableRoles.FirstOrDefault(r => 
+                    r.RoleName.Contains("Employee") && r.RoleName.Contains("非系統使用者"));
+            }
             var defaultRoleValue = defaultRole?.Id.ToString();
 
             formFields = new List<FormFieldDefinition>
@@ -261,18 +273,22 @@
                     PropertyName = nameof(Employee.Account),
                     Label = "帳號",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入登入帳號",
+                    Placeholder = isSystemUser ? "請輸入登入帳號" : "非系統使用者無需設定帳號",
                     MaxLength = 50,
-                    HelpText = "系統登入帳號，僅當員工為系統使用者時才需要設定"
+                    IsRequired = isSystemUser,
+                    IsReadOnly = !isSystemUser,
+                    HelpText = isSystemUser ? "系統登入帳號" : "僅系統使用者需要設定登入帳號"
                 },
                 new()
                 {
                     PropertyName = nameof(Employee.Password),
                     Label = "密碼",
                     FieldType = FormFieldType.Password,
-                    Placeholder = "請輸入密碼",
+                    Placeholder = isSystemUser ? "請輸入密碼" : "非系統使用者無需設定密碼",
                     MaxLength = 255,
-                    HelpText = "登入密碼，僅當員工為系統使用者時才需要設定"
+                    IsRequired = isSystemUser,
+                    IsReadOnly = !isSystemUser,
+                    HelpText = isSystemUser ? "系統登入密碼" : "僅系統使用者需要設定登入密碼"
                 },
                 
                 // 組織架構區段
@@ -302,7 +318,8 @@
                     Placeholder = defaultRoleValue != null ? string.Empty : "請選擇系統角色",
                     Options = roleOptions,
                     DefaultValue = defaultRoleValue,
-                    HelpText = "選擇員工在系統中的權限角色"
+                    IsReadOnly = !isSystemUser,
+                    HelpText = isSystemUser ? "選擇員工在系統中的權限角色" : "僅系統使用者可以選擇系統角色"
                 },
                 
                 // 備註區段
@@ -350,6 +367,47 @@
         }
     }
 
+    private void UpdateFormFieldsForSystemUser(bool isSystemUser)
+    {
+        try
+        {
+            // 重新初始化表單欄位
+            InitializeFormFields(isSystemUser);
+            
+            // 如果有編輯組件的參考，通知更新
+            if (editComponent?.Entity != null)
+            {
+                // 根據系統使用者狀態自動設定角色
+                Role? targetRole;
+                if (isSystemUser)
+                {
+                    targetRole = availableRoles.FirstOrDefault(r => 
+                        r.RoleName.Contains("Employee") && r.RoleName.Contains("系統使用者"));
+                }
+                else
+                {
+                    targetRole = availableRoles.FirstOrDefault(r => 
+                        r.RoleName.Contains("Employee") && r.RoleName.Contains("非系統使用者"));
+                    
+                    // 清空帳號和密碼
+                    editComponent.Entity.Account = string.Empty;
+                    editComponent.Entity.Password = string.Empty;
+                }
+                
+                if (targetRole != null)
+                {
+                    editComponent.Entity.RoleId = targetRole.Id;
+                }
+                
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(UpdateFormFieldsForSystemUser), GetType(), NotificationService);
+        }
+    }
+
     private async Task<Employee?> LoadEmployeeData()
     {
         try
@@ -364,7 +422,7 @@
                 var defaultRole = availableRoles.FirstOrDefault(r => 
                     r.RoleName.Contains("Employee") && r.RoleName.Contains("非系統使用者"));
                 
-                return new Employee
+                var newEmployee = new Employee
                 {
                     EmployeeCode = await GenerateEmployeeCodeAsync(),
                     FirstName = string.Empty,
@@ -373,6 +431,11 @@
                     RoleId = defaultRole?.Id, // 設定預設角色
                     Status = EntityStatus.Active
                 };
+                
+                // 根據預設的系統使用者狀態初始化表單欄位
+                InitializeFormFields(newEmployee.IsSystemUser);
+                
+                return newEmployee;
             }
 
             var employee = await EmployeeService.GetByIdAsync(Id.Value);            
@@ -399,6 +462,9 @@
                 : new List<EmployeeContact>();
                 
             employeeAddresses = await EmployeeAddressService.GetByEmployeeIdAsync(Id.Value);
+            
+            // 根據員工的系統使用者狀態重新初始化表單欄位
+            InitializeFormFields(employee.IsSystemUser);
             
             return employee;
         }
@@ -464,6 +530,55 @@
             {
                 await NotificationService.ShowErrorAsync("員工姓氏為必填");
                 return false;
+            }
+
+            // 系統使用者特殊驗證
+            if (entity.IsSystemUser)
+            {
+                if (string.IsNullOrWhiteSpace(entity.Account))
+                {
+                    await NotificationService.ShowErrorAsync("系統使用者必須設定帳號");
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(entity.Password))
+                {
+                    await NotificationService.ShowErrorAsync("系統使用者必須設定密碼");
+                    return false;
+                }
+
+                if (!entity.RoleId.HasValue)
+                {
+                    await NotificationService.ShowErrorAsync("系統使用者必須選擇系統角色");
+                    return false;
+                }
+            }
+
+            // 處理密碼雜湊 - 只有在新增或密碼有變更時才雜湊
+            if (entity.IsSystemUser && !string.IsNullOrWhiteSpace(entity.Password))
+            {
+                // 檢查是否為新密碼（新增模式或密碼欄位被修改）
+                bool isNewPassword = false;
+                
+                if (!Id.HasValue)
+                {
+                    // 新增模式，一定是新密碼
+                    isNewPassword = true;
+                }
+                else
+                {
+                    // 編輯模式，檢查密碼是否有變更
+                    var originalEmployee = await EmployeeService.GetByIdAsync(Id.Value);
+                    if (originalEmployee != null && originalEmployee.Password != entity.Password)
+                    {
+                        isNewPassword = true;
+                    }
+                }
+                
+                if (isNewPassword)
+                {
+                    entity.Password = ERPCore2.Helpers.SeedDataHelper.HashPassword(entity.Password);
+                }
             }
 
             ServiceResult result;
@@ -582,6 +697,24 @@
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnEmployeeAddressesChanged), GetType(), NotificationService);
+            return Task.CompletedTask;
+        }
+    }
+
+    private Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    {
+        try
+        {
+            // 監聽 IsSystemUser 欄位變更
+            if (fieldChange.PropertyName == nameof(Employee.IsSystemUser) && fieldChange.Value is bool isSystemUser)
+            {
+                UpdateFormFieldsForSystemUser(isSystemUser);
+            }
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnFieldValueChanged), GetType(), NotificationService);
             return Task.CompletedTask;
         }
     }

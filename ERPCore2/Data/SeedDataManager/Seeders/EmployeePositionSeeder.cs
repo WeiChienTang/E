@@ -1,7 +1,7 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
-using ERPCore2.Data.SeedDataManager.Helpers;
+using ERPCore2.Helpers;
 using ERPCore2.Data.SeedDataManager.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
