@@ -214,16 +214,7 @@
                                 <span class="badge bg-danger">停用</span>
                             }
                         </DetailFieldComponent>
-                        <DetailFieldComponent Label="鎖定狀態">
-                            @if (employee?.IsLocked == true)
-                            {
-                                <span class="badge bg-danger">已鎖定</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-success">正常</span>
-                            }
-                        </DetailFieldComponent>
+                        <!-- 鎖定狀態欄位已移除 -->
                         @if (employee?.FailedLoginAttempts > 0)
                         {
                             <DetailFieldComponent Label="失敗登入次數" Value="@employee.FailedLoginAttempts.ToString()" />

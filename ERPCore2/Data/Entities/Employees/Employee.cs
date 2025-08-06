@@ -74,17 +74,12 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "角色")]
         [ForeignKey(nameof(Role))]
         public int? RoleId { get; set; }
+
         /// <summary>
         /// 最後登入時間
         /// </summary>
         [Display(Name = "最後登入時間")]
         public DateTime? LastLoginAt { get; set; }
-
-        /// <summary>
-        /// 帳號是否鎖定
-        /// </summary>
-        [Display(Name = "帳號鎖定")]
-        public bool IsLocked { get; set; } = false;
 
         /// <summary>
         /// 登入失敗次數

@@ -38,15 +38,7 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-4">
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="isLocked" 
-                                       checked="@Employee.IsLocked" 
-                                       @onchange="@OnIsLockedChange" />
-                                <label class="form-check-label" for="isLocked">鎖定帳號</label>
-                                <div class="form-text">勾選此項將阻止使用者登入</div>
-                            </div>
-                        </div>
+                        <!-- IsLocked 功能已移除 -->
                     </div>
                 </div>
                 
@@ -181,7 +173,6 @@
             if (Employee != null)
             {
                 Employee.FailedLoginAttempts = 0;
-                Employee.IsLocked = false;
                 
                 await OnEmployeeChanged.InvokeAsync(Employee);
                 await NotificationService.ShowSuccessAsync("登入失敗次數已重設");
@@ -244,9 +235,8 @@
             
             if (resetResult.IsSuccess)
             {
-                // 重設登入失敗次數和帳號鎖定狀態
+                // 重設登入失敗次數
                 Employee.FailedLoginAttempts = 0;
-                Employee.IsLocked = false;
                 
                 await OnEmployeeChanged.InvokeAsync(Employee);
                 
@@ -304,17 +294,6 @@
         if (Employee != null)
         {
             Employee.Status = newStatus;
-            await OnEmployeeChanged.InvokeAsync(Employee);
-            StateHasChanged();
-        }
-    }
-
-    private async Task OnIsLockedChange(ChangeEventArgs e)
-    {
-        if (Employee != null)
-        {
-            var newValue = (bool)e.Value!;
-            Employee.IsLocked = newValue;
             await OnEmployeeChanged.InvokeAsync(Employee);
             StateHasChanged();
         }

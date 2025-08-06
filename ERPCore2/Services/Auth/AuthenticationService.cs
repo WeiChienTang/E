@@ -55,13 +55,6 @@ namespace ERPCore2.Services
                     return ServiceResult<Employee>.Failure("該帳號無法登入系統");
                 }
 
-                // 檢查帳號是否被鎖定
-                if (employee.IsLocked)
-                {
-                    _logger?.LogWarning("Login attempt for locked user: {Account}", account);
-                    return ServiceResult<Employee>.Failure("帳號已被鎖定，請聯絡管理員");
-                }
-
                 // 驗證密碼
                 if (!VerifyPassword(password, employee.Password))
                 {
@@ -302,10 +295,8 @@ namespace ERPCore2.Services
                     return ServiceResult<bool>.Failure("找不到指定的員工");
                 }
 
-                // 檢查帳號是否被鎖定
-                bool isLocked = employee.IsLocked;
-                
-                return ServiceResult<bool>.Success(isLocked);
+                // IsLocked 屬性已移除，始終返回 false
+                return ServiceResult<bool>.Success(false);
             }
             catch (Exception ex)
             {
@@ -329,13 +320,13 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("找不到指定的員工");
                 }
 
-                employee.IsLocked = true;
+                // IsLocked 屬性已移除，此方法不再執行任何操作
                 employee.UpdatedAt = DateTime.UtcNow;
                 employee.UpdatedBy = "System";
 
                 await context.SaveChangesAsync();
 
-                _logger?.LogInformation("User account locked for employee {EmployeeId}", employeeId);
+                _logger?.LogInformation("Lock user request for employee {EmployeeId} - but IsLocked property has been removed", employeeId);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -360,13 +351,13 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("找不到指定的員工");
                 }
 
-                employee.IsLocked = false;
+                // IsLocked 屬性已移除，此方法不再執行任何操作
                 employee.UpdatedAt = DateTime.UtcNow;
                 employee.UpdatedBy = "System";
 
                 await context.SaveChangesAsync();
 
-                _logger?.LogInformation("User account unlocked for employee {EmployeeId}", employeeId);
+                _logger?.LogInformation("Unlock user request for employee {EmployeeId} - but IsLocked property has been removed", employeeId);
                 return ServiceResult.Success();
             }
             catch (Exception ex)

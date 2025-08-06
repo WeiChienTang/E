@@ -840,7 +840,6 @@ namespace ERPCore2.Services
                 // 復原員工
                 employee.IsDeleted = false;
                 employee.Status = EntityStatus.Active; // 復原時預設為啟用狀態
-                employee.IsLocked = false; // 解除鎖定
                 employee.FailedLoginAttempts = 0; // 重設失敗次數
                 employee.UpdatedAt = DateTime.Now;
 
@@ -912,7 +911,6 @@ namespace ERPCore2.Services
                 // 復原員工並更新資料
                 employee.IsDeleted = false;
                 employee.Status = EntityStatus.Active;
-                employee.IsLocked = false;
                 employee.FailedLoginAttempts = 0;
                 employee.UpdatedAt = DateTime.Now;
                 

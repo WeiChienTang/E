@@ -39,12 +39,12 @@ namespace ERPCore2.Services
                 using var scope = _scopeFactory.CreateScope();
                 var employeeService = scope.ServiceProvider.GetRequiredService<IEmployeeService>();
                 
-                // 驗證員工是否仍然存在且未被刪除或鎖定
+                // 驗證員工是否仍然存在且未被刪除
                 var employee = await employeeService.GetByIdAsync(userId);
                 if (employee == null)
                     return false;
 
-                return !employee.IsDeleted && !employee.IsLocked;
+                return !employee.IsDeleted;
             }
             catch (Exception ex)
             {

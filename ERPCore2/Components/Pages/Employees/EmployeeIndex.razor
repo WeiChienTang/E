@@ -209,6 +209,11 @@
                 .AddSelect("DepartmentId", "部門", departmentOptions)
                 .AddSelect("EmployeePositionId", "職位", positionOptions)
                 .AddSelect("RoleId", "角色", roleOptions)
+                .AddSelect("IsSystemUser", "系統使用者", new List<SelectOption>
+                {
+                    new SelectOption { Text = "是", Value = "true" },
+                    new SelectOption { Text = "否", Value = "false" }
+                })
                 .Build();
         }
         catch (Exception ex)
@@ -261,6 +266,20 @@
                 TableColumnDefinition.Text("部門", "Department.Name"),
                 TableColumnDefinition.Text("職位", "EmployeePosition.Name"),
                 TableColumnDefinition.Text("角色", "Role.RoleName"),
+                new TableColumnDefinition
+                {
+                    Title = "系統使用者",
+                    PropertyName = nameof(Employee.IsSystemUser),
+                    CustomTemplate = item => builder =>
+                    {
+                        var employee = (Employee)item;
+                        builder.OpenElement(0, "span");
+                        builder.AddAttribute(1, "class", "badge text-white");
+                        builder.AddAttribute(2, "style", employee.IsSystemUser ? "background-color: #28a745;" : "background-color: #dc3545;");
+                        builder.AddContent(3, employee.IsSystemUser ? "是" : "否");
+                        builder.CloseElement();
+                    }
+                },
                 TableColumnDefinition.Date("最後登入", nameof(Employee.LastLoginAt), "yyyy/MM/dd HH:mm"),
             };
         }
@@ -311,16 +330,6 @@
             // 角色篩選  
             (model, q) => FilterHelper.ApplyNullableIntIdFilter(model, q, "RoleId", e => e.RoleId),
             
-            // 帳號鎖定狀態篩選
-            (model, q) => {
-                var isLockedFilter = model.GetFilterValue("IsLocked")?.ToString();
-                if (!string.IsNullOrWhiteSpace(isLockedFilter) && bool.TryParse(isLockedFilter, out var isLocked))
-                {
-                    q = q.Where(e => e.IsLocked == isLocked);
-                }
-                return q;
-            },
-            
             // 電子郵件篩選（需要特殊處理導航屬性）
             (model, q) => {
                 var emailFilter = model.GetFilterValue("Email")?.ToString();
@@ -338,7 +347,17 @@
                     q = filteredList.AsQueryable();
                 }
                 return q;
-            }
+            },
+            // 系統使用者篩選
+            (model, q) => {
+                var isSystemUserFilter = model.GetFilterValue("IsSystemUser")?.ToString();
+                if (!string.IsNullOrWhiteSpace(isSystemUserFilter))
+                {
+                    var isSystemUser = bool.Parse(isSystemUserFilter);
+                    q = q.Where(e => e.IsSystemUser == isSystemUser);
+                }
+                return q;
+            },
         };
 
         return FilterHelper.ApplyFiltersWithErrorHandling(
