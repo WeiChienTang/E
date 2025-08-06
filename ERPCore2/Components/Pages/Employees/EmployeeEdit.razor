@@ -124,7 +124,21 @@
         {
             InitializeBreadcrumbs();
             await LoadAdditionalDataAsync();
-            InitializeFormFields(false); // 預設為非系統使用者
+            
+            // 根據是否為編輯模式來決定初始的系統使用者狀態
+            bool initialIsSystemUser = false; // 新增模式預設為非系統使用者
+            
+            if (Id.HasValue)
+            {
+                // 編輯模式：先取得現有員工資料來確定系統使用者狀態
+                var existingEmployee = await EmployeeService.GetByIdAsync(Id.Value);
+                if (existingEmployee != null)
+                {
+                    initialIsSystemUser = existingEmployee.IsSystemUser;
+                }
+            }
+            
+            InitializeFormFields(initialIsSystemUser);
         }
         catch (Exception ex)
         {
