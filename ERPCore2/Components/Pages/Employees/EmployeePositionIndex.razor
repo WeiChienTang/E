@@ -1,5 +1,6 @@
 @page "/employee-positions"
 @inject IEmployeePositionService EmployeePositionService
+@inject INotificationService NotificationService
 
 @rendermode InteractiveServer
 
@@ -17,10 +18,22 @@
                         EntityName="職位設定"
                         GetEntityDisplayName="@(position => position.Name)"
                         RequiredPermission="EmployeePosition.Read"
-                        @ref="indexComponent">
-</GenericIndexPageComponent>
+                        OnAddClick="@ShowAddModal"
+                        OnRowClick="@ShowEditModal"
+                        @ref="indexComponent"/>
+
+@* 職位編輯 Modal *@
+<EmployeePositionEditModalComponent IsVisible="@showEditModal"
+                                   IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                                   EmployeePositionId="@editingEmployeePositionId"
+                                   OnEmployeePositionSaved="@OnEmployeePositionSaved"
+                                   OnCancel="@OnModalCancel" />
 @code {
     private GenericIndexPageComponent<EmployeePosition, IEmployeePositionService> indexComponent = default!;
+    
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingEmployeePositionId = null;
     
     // 設定選項
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
@@ -31,9 +44,9 @@
     {
         try
         {
-            InitializeBreadcrumbs();
-            InitializeFilters();
-            InitializeTableColumns();
+            await InitializeBreadcrumbs();
+            await InitializeFilters();
+            await InitializeTableColumns();
         }
         catch (Exception ex)
         {
@@ -46,7 +59,78 @@
         }
     }
 
-    private void InitializeBreadcrumbs()
+    // ===== Modal 相關方法 =====
+
+    private async Task ShowAddModal()
+    {
+        try
+        {
+            editingEmployeePositionId = null;
+            showEditModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModal), GetType());
+        }
+    }
+
+    private async Task ShowEditModal(EmployeePosition employeePosition)
+    {
+        try
+        {
+            if (employeePosition?.Id != null)
+            {
+                editingEmployeePositionId = employeePosition.Id;
+                showEditModal = true;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowEditModal), GetType());
+        }
+    }
+
+    private async Task OnEmployeePositionSaved(EmployeePosition savedEmployeePosition)
+    {
+        try
+        {
+            // 關閉 Modal
+            showEditModal = false;
+            editingEmployeePositionId = null;
+            
+            // 重新載入資料
+            if (indexComponent != null)
+            {
+                await indexComponent.Refresh();
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnEmployeePositionSaved), GetType());
+        }
+    }
+
+    private async Task OnModalCancel()
+    {
+        try
+        {
+            showEditModal = false;
+            editingEmployeePositionId = null;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnModalCancel), GetType());
+        }
+    }
+
+    // ===== 原有的初始化方法 =====
+
+    private async Task InitializeBreadcrumbs()
     {
         try
         {
@@ -59,7 +143,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(InitializeBreadcrumbs),
                 GetType()
@@ -67,7 +151,7 @@
         }
     }
 
-    private void InitializeFilters()
+    private async Task InitializeFilters()
     {
         try
         {
@@ -80,7 +164,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(InitializeFilters),
                 GetType(),
@@ -89,7 +173,7 @@
         }
     }
 
-    private void InitializeTableColumns()
+    private async Task InitializeTableColumns()
     {
         try
         {
@@ -102,7 +186,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+            await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(InitializeTableColumns),
                 GetType(),

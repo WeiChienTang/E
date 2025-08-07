@@ -3,7 +3,7 @@ using ERPCore2.Components.Shared.Forms;
 using ERPCore2.Services;
 using Microsoft.AspNetCore.Components;
 
-namespace ERPCore2.Components.Shared.Forms;
+namespace ERPCore2.Components.Shared.Modals;
 
 /// <summary>
 /// 泛型的相關實體 Modal 管理器

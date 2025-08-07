@@ -5,7 +5,7 @@ using ERPCore2.Components.Shared.Modals;
 using ERPCore2.Services;
 using Microsoft.AspNetCore.Components;
 
-namespace ERPCore2.Components.Shared.Forms;
+namespace ERPCore2.Components.Shared.Modals;
 
 /// <summary>
 /// Modal 組件的 RelatedEntityModalManager 輔助擴展方法
