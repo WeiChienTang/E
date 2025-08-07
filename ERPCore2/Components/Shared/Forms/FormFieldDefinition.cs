@@ -125,6 +125,11 @@ public class FormFieldDefinition
     /// 分組名稱
     /// </summary>
     public string? GroupName { get; set; }
+    
+    /// <summary>
+    /// 標籤旁邊的操作按鈕
+    /// </summary>
+    public List<FieldActionButton>? ActionButtons { get; set; }
 }
 
 /// <summary>
@@ -303,4 +308,45 @@ public enum ValidationType
     /// 自定義驗證
     /// </summary>
     Custom
+}
+
+/// <summary>
+/// 欄位操作按鈕定義
+/// </summary>
+public class FieldActionButton
+{
+    /// <summary>
+    /// 按鈕文字
+    /// </summary>
+    public string Text { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 按鈕樣式變體
+    /// </summary>
+    public string Variant { get; set; } = "OutlinePrimary";
+    
+    /// <summary>
+    /// 按鈕大小
+    /// </summary>
+    public string Size { get; set; } = "Small";
+    
+    /// <summary>
+    /// 按鈕圖示 CSS 類別
+    /// </summary>
+    public string? IconClass { get; set; }
+    
+    /// <summary>
+    /// 按鈕標題 (用於 tooltip)
+    /// </summary>
+    public string? Title { get; set; }
+    
+    /// <summary>
+    /// 按鈕點擊事件回調
+    /// </summary>
+    public Func<Task>? OnClick { get; set; }
+    
+    /// <summary>
+    /// 是否停用
+    /// </summary>
+    public bool IsDisabled { get; set; } = false;
 }

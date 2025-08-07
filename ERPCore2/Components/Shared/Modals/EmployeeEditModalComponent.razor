@@ -1,4 +1,5 @@
 @* 可重用的員工編輯組件 - 可在任何頁面中嵌入 *@
+@using ERPCore2.Components.Shared.Buttons
 @inject IEmployeeService EmployeeService
 @inject IDepartmentService DepartmentService
 @inject IEmployeePositionService EmployeePositionService
@@ -28,7 +29,17 @@
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           OnSaveSuccess="@OnSaveSuccess"
                           OnCancel="@OnCancel"
-                          OnFieldChanged="@OnFieldValueChanged" />
+                          OnFieldChanged="@OnFieldValueChanged">
+
+</GenericEditModalComponent>
+
+@* 部門編輯 Modal *@
+<DepartmentEditModalComponent @ref="departmentEditModal"
+                             IsVisible="@isDepartmentModalVisible"
+                             IsVisibleChanged="@OnDepartmentModalVisibilityChanged"
+                             DepartmentId="@selectedDepartmentId"
+                             OnDepartmentSaved="@OnDepartmentSaved"
+                             OnCancel="@OnDepartmentModalCancel" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; }
@@ -40,6 +51,11 @@
     private GenericEditModalComponent<Employee, IEmployeeService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    
+    // 部門編輯 Modal 相關變數
+    private DepartmentEditModalComponent? departmentEditModal;
+    private bool isDepartmentModalVisible = false;
+    private int? selectedDepartmentId = null;
     
     // 選項資料
     private List<Department> availableDepartments = new();
@@ -227,11 +243,12 @@
                 new()
                 {
                     PropertyName = nameof(Employee.DepartmentId),
-                    Label = "所屬部門",
+                    Label = "部門",
                     FieldType = FormFieldType.Select,
-                    Placeholder = "請選擇所屬部門",
+                    Placeholder = "請選擇部門",
                     Options = departmentOptions,
-                    HelpText = "選擇員工所屬的部門"
+                    HelpText = "選擇員工的部門",
+                    ActionButtons = GetDepartmentActionButtons()
                 },
                 new()
                 {
@@ -602,12 +619,181 @@
             {
                 UpdateFormFieldsForSystemUser(isSystemUser);
             }
+            
+            // 監聽部門欄位變更，更新按鈕狀態
+            if (fieldChange.PropertyName == nameof(Employee.DepartmentId))
+            {
+                // 更新部門欄位的 ActionButtons
+                var departmentField = formFields?.FirstOrDefault(f => f.PropertyName == nameof(Employee.DepartmentId));
+                if (departmentField != null)
+                {
+                    // 獲取新的部門ID值
+                    int? newDepartmentId = null;
+                    if (fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int deptId))
+                    {
+                        newDepartmentId = deptId;
+                    }
+                    
+                    // 更新按鈕
+                    var buttonText = newDepartmentId.HasValue ? "編輯" : "新增";
+                    var buttonTitle = newDepartmentId.HasValue ? "編輯目前選擇的部門" : "新增新的部門";
+                    
+                    departmentField.ActionButtons = new List<FieldActionButton>
+                    {
+                        new FieldActionButton
+                        {
+                            Text = buttonText,
+                            Variant = "OutlinePrimary",
+                            Size = "Small",
+                            Title = buttonTitle,
+                            OnClick = () => OpenDepartmentModal(newDepartmentId)
+                        }
+                    };
+                    
+                    StateHasChanged();
+                }
+            }
+            
             return Task.CompletedTask;
         }
         catch (Exception)
         {
             _ = NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
             return Task.CompletedTask;
+        }
+    }
+
+    // ===== 部門管理相關方法 =====
+
+    /// <summary>
+    /// 開啟部門編輯 Modal
+    /// </summary>
+    private async Task OpenDepartmentModal(int? departmentId)
+    {
+        try
+        {
+            selectedDepartmentId = departmentId;
+            isDepartmentModalVisible = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"開啟部門編輯視窗時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 取得目前選擇的部門 ID
+    /// </summary>
+    private int? GetSelectedDepartmentId()
+    {
+        try
+        {
+            return editModalComponent?.Entity?.DepartmentId;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 取得部門欄位的操作按鈕
+    /// </summary>
+    private List<FieldActionButton> GetDepartmentActionButtons()
+    {
+        // 從表單實體獲取目前的部門ID
+        int? selectedDepartmentId = null;
+        
+        try
+        {
+            selectedDepartmentId = editModalComponent?.Entity?.DepartmentId;
+        }
+        catch
+        {
+            selectedDepartmentId = null;
+        }
+        
+        var buttonText = selectedDepartmentId.HasValue ? "編輯" : "新增";
+        var buttonTitle = selectedDepartmentId.HasValue ? "編輯目前選擇的部門" : "新增新的部門";
+
+        return new List<FieldActionButton>
+        {
+            new FieldActionButton
+            {
+                Text = buttonText,
+                Variant = "OutlinePrimary",
+                Size = "Small",
+                Title = buttonTitle,
+                OnClick = () => OpenDepartmentModal(selectedDepartmentId)
+            }
+        };
+    }
+
+    /// <summary>
+    /// 部門 Modal 可見性變更事件
+    /// </summary>
+    private async Task OnDepartmentModalVisibilityChanged(bool isVisible)
+    {
+        try
+        {
+            isDepartmentModalVisible = isVisible;
+            if (!isVisible)
+            {
+                selectedDepartmentId = null;
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理部門視窗狀態變更時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 部門儲存成功事件
+    /// </summary>
+    private async Task OnDepartmentSaved(Department savedDepartment)
+    {
+        try
+        {
+            // 重新載入部門選項
+            await LoadAdditionalDataAsync();
+            InitializeFormFields(editModalComponent?.Entity?.IsSystemUser ?? false);
+
+            // 如果是新增部門，自動選擇這個新部門
+            if (editModalComponent?.Entity != null && !editModalComponent.Entity.DepartmentId.HasValue)
+            {
+                editModalComponent.Entity.DepartmentId = savedDepartment.Id;
+                StateHasChanged();
+            }
+
+            // 關閉部門 Modal
+            isDepartmentModalVisible = false;
+            selectedDepartmentId = null;
+
+            await NotificationService.ShowSuccessAsync($"部門「{savedDepartment.Name}」已成功儲存，員工部門選項已更新");
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理部門儲存成功事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 部門 Modal 取消事件
+    /// </summary>
+    private async Task OnDepartmentModalCancel()
+    {
+        try
+        {
+            isDepartmentModalVisible = false;
+            selectedDepartmentId = null;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理部門編輯取消時發生錯誤：{ex.Message}");
         }
     }
 }

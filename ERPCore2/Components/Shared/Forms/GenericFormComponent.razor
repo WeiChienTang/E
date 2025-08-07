@@ -5,6 +5,7 @@
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.Components.Forms
 @using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Components.Shared.Forms
 @inject IJSRuntime JSRuntime
 @typeparam TModel
 @implements IDisposable
@@ -248,19 +249,52 @@
         // 欄位標籤
         if (!string.IsNullOrEmpty(field.Label))
         {
-            builder.OpenElement(2, "label");
-            builder.AddAttribute(3, "class", "form-label");
-            builder.AddAttribute(4, "for", field.PropertyName);
-            builder.AddContent(5, field.Label);
+            builder.OpenElement(2, "div");
+            builder.AddAttribute(3, "class", "d-flex align-items-center gap-2 mb-2");
+            
+            builder.OpenElement(4, "label");
+            builder.AddAttribute(5, "class", "form-label mb-0");
+            builder.AddAttribute(6, "for", field.PropertyName);
+            builder.AddContent(7, field.Label);
             
             if (field.IsRequired)
             {
-                builder.OpenElement(6, "span");
-                builder.AddAttribute(7, "class", "text-danger");
-                builder.AddContent(8, " *");
+                builder.OpenElement(8, "span");
+                builder.AddAttribute(9, "class", "text-danger");
+                builder.AddContent(10, " *");
                 builder.CloseElement();
             }
-            builder.CloseElement();
+            builder.CloseElement(); // label
+            
+            // 渲染操作按鈕
+            if (field.ActionButtons != null && field.ActionButtons.Any())
+            {
+                var buttonSequence = 11;
+                foreach (var actionButton in field.ActionButtons)
+                {
+                    builder.OpenComponent(buttonSequence, typeof(ERPCore2.Components.Shared.Buttons.GenericButtonComponent));
+                    builder.AddAttribute(buttonSequence + 1, "Text", actionButton.Text);
+                    builder.AddAttribute(buttonSequence + 2, "Variant", GetButtonVariant(actionButton.Variant));
+                    builder.AddAttribute(buttonSequence + 3, "Size", GetButtonSize(actionButton.Size));
+                    if (!string.IsNullOrEmpty(actionButton.IconClass))
+                    {
+                        builder.AddAttribute(buttonSequence + 4, "IconClass", actionButton.IconClass);
+                    }
+                    if (!string.IsNullOrEmpty(actionButton.Title))
+                    {
+                        builder.AddAttribute(buttonSequence + 5, "Title", actionButton.Title);
+                    }
+                    if (actionButton.OnClick != null)
+                    {
+                        builder.AddAttribute(buttonSequence + 6, "OnClick", EventCallback.Factory.Create(this, actionButton.OnClick));
+                    }
+                    builder.AddAttribute(buttonSequence + 7, "IsDisabled", actionButton.IsDisabled);
+                    builder.CloseComponent();
+                    buttonSequence += 8;
+                }
+            }
+            
+            builder.CloseElement(); // div
         }
         
         // 根據欄位類型渲染不同的輸入控制項
@@ -890,7 +924,7 @@
                 // 觸發欄位變更事件
                 if (OnFieldChanged.HasDelegate)
                 {
-                    await OnFieldChanged.InvokeAsync((propertyName, convertedValue));
+                    await OnFieldChanged.InvokeAsync((PropertyName: propertyName, Value: convertedValue));
                 }
             }
             else
@@ -922,5 +956,36 @@
         {
             return null;
         }
+    }
+
+    private ERPCore2.Components.Shared.Buttons.ButtonVariant GetButtonVariant(string variant)
+    {
+        return variant switch
+        {
+            "Primary" => ERPCore2.Components.Shared.Buttons.ButtonVariant.Primary,
+            "Secondary" => ERPCore2.Components.Shared.Buttons.ButtonVariant.Secondary,
+            "Success" => ERPCore2.Components.Shared.Buttons.ButtonVariant.Success,
+            "Danger" => ERPCore2.Components.Shared.Buttons.ButtonVariant.Danger,
+            "Warning" => ERPCore2.Components.Shared.Buttons.ButtonVariant.Warning,
+            "Info" => ERPCore2.Components.Shared.Buttons.ButtonVariant.Info,
+            "OutlinePrimary" => ERPCore2.Components.Shared.Buttons.ButtonVariant.OutlinePrimary,
+            "OutlineSecondary" => ERPCore2.Components.Shared.Buttons.ButtonVariant.OutlineSecondary,
+            "OutlineSuccess" => ERPCore2.Components.Shared.Buttons.ButtonVariant.OutlineSuccess,
+            "OutlineDanger" => ERPCore2.Components.Shared.Buttons.ButtonVariant.OutlineDanger,
+            "OutlineWarning" => ERPCore2.Components.Shared.Buttons.ButtonVariant.OutlineWarning,
+            "OutlineInfo" => ERPCore2.Components.Shared.Buttons.ButtonVariant.OutlineInfo,
+            _ => ERPCore2.Components.Shared.Buttons.ButtonVariant.OutlinePrimary
+        };
+    }
+
+    private ERPCore2.Components.Shared.Buttons.ButtonSize GetButtonSize(string size)
+    {
+        return size switch
+        {
+            "Large" => ERPCore2.Components.Shared.Buttons.ButtonSize.Large,
+            "Normal" => ERPCore2.Components.Shared.Buttons.ButtonSize.Normal,
+            "Small" => ERPCore2.Components.Shared.Buttons.ButtonSize.Small,
+            _ => ERPCore2.Components.Shared.Buttons.ButtonSize.Small
+        };
     }
 }

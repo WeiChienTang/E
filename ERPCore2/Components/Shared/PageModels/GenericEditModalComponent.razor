@@ -7,6 +7,7 @@
 
 @using Microsoft.AspNetCore.Components.Forms
 @using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.Buttons
 
 @{
     // 權限檢查 - 如果沒有設定權限，預設拒絕存取
@@ -32,7 +33,10 @@
                         <i class="@GetModalIcon() me-2"></i>
                         @GetModalTitle()
                     </h5>
-                    <button type="button" class="btn-close" @onclick="HandleCancel" aria-label="關閉"></button>
+                    <GenericButtonComponent Type="button" 
+                                          CssClass="btn-close" 
+                                          OnClick="HandleCancel" 
+                                          Title="關閉" />
                 </div>
 
                 @* Modal Body *@
@@ -111,16 +115,15 @@
 
                 @* Modal Footer *@
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="HandleCancel" disabled="@IsSubmitting">
-                        @CancelButtonText
-                    </button>
-                    <button type="button" class="btn btn-primary" @onclick="HandleSave" disabled="@(IsSubmitting || IsLoading)">
-                        @if (IsSubmitting)
-                        {
-                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                        }
-                        @SaveButtonText
-                    </button>
+                    <GenericButtonComponent Text="@CancelButtonText" 
+                                          Variant="ButtonVariant.Secondary" 
+                                          OnClick="HandleCancel" 
+                                          IsDisabled="@IsSubmitting" />
+                    <GenericButtonComponent Text="@SaveButtonText" 
+                                          Variant="ButtonVariant.Primary" 
+                                          OnClick="HandleSave" 
+                                          IsDisabled="@(IsSubmitting || IsLoading)" 
+                                          IsLoading="@IsSubmitting" />
                 </div>
             </div>
         </div>
