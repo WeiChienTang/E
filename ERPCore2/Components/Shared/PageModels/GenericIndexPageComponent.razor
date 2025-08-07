@@ -202,7 +202,8 @@
     [Parameter] public string DeleteSuccessMessage { get; set; } = "";
     [Parameter] public string DeleteConfirmMessage { get; set; } = "";
     [Parameter] public bool EnableStandardActions { get; set; } = true;
-    [Parameter] public bool ShowEditButton { get; set; } = true;
+    [Parameter] public bool ShowViewButton { get; set; } = true;
+    [Parameter] public bool ShowEditButton { get; set; } = false;
     [Parameter] public bool ShowDeleteButton { get; set; } = true;
     [Parameter] public bool ShowToggleStatusButton { get; set; } = true;
     [Parameter] public RenderFragment<TEntity>? CustomActionsTemplate { get; set; }
@@ -279,7 +280,7 @@
     }
     
     // ===== 通用刪除操作 =====
-      /// <summary>
+    /// <summary>
     /// 通用刪除方法
     /// </summary>
     public async Task DeleteEntityAsync(TEntity entity)
@@ -402,6 +403,12 @@
                 @if (CustomActionsTemplate != null)
                 {
                     @CustomActionsTemplate(entity)
+                }
+                @if (ShowViewButton)
+                {
+                    <button class="btn btn-outline-info" @onclick="() => NavigateToDetail(entity)" @onclick:stopPropagation="true" title="檢視">
+                        <i class="bi bi-eye"></i>
+                    </button>
                 }
                 @if (ShowEditButton)
                 {

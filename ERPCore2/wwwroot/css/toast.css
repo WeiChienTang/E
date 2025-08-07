@@ -26,22 +26,26 @@
 /* 不同類型的 Toast 樣式 */
 .toast-success {
     border-left-color: var(--success-color);
-    background-color: rgba(5, 150, 105, 0.05) !important;
+    background-color: rgba(5, 150, 105, 1) !important;
+    color: white !important;
 }
 
 .toast-error {
     border-left-color: var(--danger-color);
-    background-color: rgba(220, 38, 38, 0.05) !important;
+    background-color: rgba(220, 38, 38, 1) !important;
+    color: white !important;
 }
 
 .toast-warning {
     border-left-color: var(--warning-color);
-    background-color: rgba(234, 88, 12, 0.05) !important;
+    background-color: rgba(234, 88, 12, 1) !important;
+    color: white !important;
 }
 
 .toast-info {
     border-left-color: var(--info-color);
-    background-color: rgba(30, 58, 138, 0.05) !important;
+    background-color: rgba(30, 58, 138, 1) !important;
+    color: white !important;
 }
 
 .toast-body {
