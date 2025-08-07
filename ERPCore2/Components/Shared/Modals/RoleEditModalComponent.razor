@@ -1,0 +1,207 @@
+@* 可重用的角色編輯組件 - 可在任何頁面中嵌入 *@
+@inject IRoleService RoleService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="Role" 
+                          TService="IRoleService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@RoleId"
+                          Service="@RoleService"
+                          EntityName="角色"
+                          EntityNamePlural="角色"
+                          ModalTitle="@(RoleId.HasValue ? "編輯角色" : "新增角色")"
+                          Size="GenericEditModalComponent<Role, IRoleService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadRoleData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(RoleId.HasValue ? "角色更新成功" : "角色新增成功")"
+                          SaveFailureMessage="角色儲存失敗"
+                          RequiredPermission="Role.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? RoleId { get; set; }
+    [Parameter] public EventCallback<Role> OnRoleSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<Role, IRoleService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    // ===== 生命週期 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadAdditionalDataAsync();
+            InitializeFormFields();
+        }
+    }
+
+    // ===== 事件處理 =====
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            // 如果父組件需要知道角色已儲存
+            if (OnRoleSaved.HasDelegate && editModalComponent?.Entity != null)
+            {
+                await OnRoleSaved.InvokeAsync(editModalComponent.Entity);
+            }
+
+            // 關閉 Modal
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+
+    // ===== 資料載入 =====
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            // 角色編輯通常不需要額外載入其他資料
+            // 如果未來需要載入權限清單等資料，可以在這裡實作
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task<Role?> LoadRoleData()
+    {
+        try
+        {
+            if (!RoleId.HasValue)
+            {
+                // 新增模式 - 建立新的角色實體並設定預設值
+                return new Role
+                {
+                    Status = EntityStatus.Active,
+                    IsSystemRole = false
+                };
+            }
+
+            // 編輯模式 - 載入現有角色資料
+            return await RoleService.GetByIdAsync(RoleId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入角色資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    // ===== 表單配置 =====
+    private void InitializeFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(Role.RoleName),
+                    Label = "角色名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入角色名稱",
+                    IsRequired = true,
+                    MaxLength = 50,
+                    HelpText = "角色的唯一名稱，用於區別不同的系統權限群組，最多50個字元"
+                },
+                new()
+                {
+                    PropertyName = nameof(Role.Description),
+                    Label = "角色描述",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入角色描述",
+                    IsRequired = false,
+                    MaxLength = 200,
+                    Rows = 3,
+                    HelpText = "簡要說明此角色的職責與用途，幫助了解角色功能，最多200個字元"
+                },
+                new()
+                {
+                    PropertyName = nameof(Role.IsSystemRole),
+                    Label = "系統角色",
+                    FieldType = FormFieldType.Checkbox,
+                    HelpText = "系統角色無法刪除且權限受限制，通常為系統預設的重要角色"
+                },
+                new()
+                {
+                    PropertyName = nameof(Role.Remarks),
+                    Label = "備註",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入備註",
+                    IsRequired = false,
+                    MaxLength = 500,
+                    Rows = 2,
+                    HelpText = "角色的額外說明或注意事項，可記錄特殊使用情況或限制，最多500個字元"
+                }
+            };
+
+            // 設定表單區段
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(Role.RoleName), "基本資訊" },
+                { nameof(Role.IsSystemRole), "基本資訊" },
+                { nameof(Role.Description), "額外資訊" },
+                { nameof(Role.Remarks), "額外資訊" }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeFormFields),
+                GetType(),
+                additionalData: new { RoleId }
+            );
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+}
