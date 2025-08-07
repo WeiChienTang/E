@@ -1,0 +1,393 @@
+/* GenericEditModalComponent 專用樣式 */
+
+/* ===== Modal 尺寸調整 ===== */
+
+/* 桌面專用尺寸 - 最大化利用螢幕空間 */
+.modal-desktop {
+    max-width: 1400px !important;
+    width: 95% !important;
+}
+
+/* 自訂超大尺寸 Modal - 適合桌面螢幕 */
+.modal-xl {
+    max-width: 1200px !important;
+    width: 90% !important;
+}
+
+/* 大尺寸 Modal - 調整為更大 */
+.modal-lg {
+    max-width: 900px !important;
+    width: 85% !important;
+}
+
+/* Modal 整體樣式 */
+.modal-dialog {
+    margin: 1.5rem auto !important;
+}
+
+.modal-content {
+    border-radius: 12px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
+    border: none !important;
+}
+
+/* ===== Modal Header 樣式 ===== */
+
+.modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 1.25rem 1.5rem !important;
+    border-bottom: none !important;
+}
+
+.modal-title {
+    font-weight: 600 !important;
+    font-size: 1.25rem !important;
+    margin: 0 !important;
+}
+
+.modal-title i {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.btn-close {
+    background: none !important;
+    border: none !important;
+    opacity: 0.8 !important;
+    filter: invert(1) !important;
+}
+
+.btn-close:hover {
+    opacity: 1 !important;
+    transform: scale(1.1) !important;
+}
+
+/* ===== Modal Body 樣式 ===== */
+
+.modal-body {
+    padding: 2rem 1.5rem !important;
+    background-color: #fafafa !important;
+    min-height: 400px !important;
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+}
+
+/* 載入狀態樣式 */
+.modal-body .spinner-border {
+    width: 2rem !important;
+    height: 2rem !important;
+}
+
+.modal-body .py-4 {
+    padding-top: 3rem !important;
+    padding-bottom: 3rem !important;
+}
+
+/* ===== 表單樣式調整 ===== */
+
+/* 表單容器樣式 */
+.edit-form-container {
+    padding: 0 !important;
+}
+
+/* 表單區段間距調整 */
+::deep .form-section {
+    margin-bottom: 1.25rem !important;
+    background-color: white !important;
+    padding: 1.5rem !important;
+    border-radius: 10px !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 表單欄位間距縮短 */
+::deep .form-group,
+::deep .mb-3 {
+    margin-bottom: 0.75rem !important; /* 從 1rem 縮短到 0.75rem */
+}
+
+/* 最後一個欄位不需要底部間距 */
+::deep .form-group:last-child,
+::deep .mb-3:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* 表單標籤樣式 */
+::deep .form-label {
+    font-weight: 600 !important;
+    color: #374151 !important;
+    margin-bottom: 0.4rem !important; /* 縮短標籤與欄位間距 */
+    font-size: 1rem !important; /* 增大標籤字體 */
+}
+
+/* 表單控制項放大 */
+::deep .form-control,
+::deep .form-select {
+    font-size: 1.1rem !important; /* 增大字體 */
+    padding: 1rem 1.25rem !important; /* 增大內邊距 */
+    border-radius: 8px !important;
+    border: 2px solid #e5e7eb !important;
+    background-color: white !important;
+    transition: all 0.2s ease !important;
+    min-height: 48px !important; /* 確保最小高度 */
+}
+
+::deep .form-control:focus,
+::deep .form-select:focus {
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15) !important;
+    background-color: #fff !important;
+    outline: none !important;
+}
+
+/* TextArea 特別調整 */
+::deep textarea.form-control {
+    min-height: 100px !important; /* 增大 TextArea 高度 */
+    resize: vertical !important;
+    line-height: 1.5 !important;
+}
+
+/* Select 下拉箭頭樣式 */
+::deep .form-select {
+    background-size: 16px 12px !important;
+    padding-right: 2.5rem !important;
+}
+
+/* 必填欄位標記 */
+::deep .text-danger {
+    color: #dc2626 !important;
+    font-weight: bold !important;
+}
+
+/* 幫助文字樣式 */
+::deep .form-text,
+::deep .help-text {
+    font-size: 0.9rem !important; /* 稍微增大幫助文字 */
+    color: #6b7280 !important;
+    margin-top: 0.3rem !important;
+    line-height: 1.4 !important;
+}
+
+/* ===== 表單區段標題樣式 ===== */
+
+::deep .section-title {
+    font-size: 1.2rem !important; /* 增大區段標題 */
+    font-weight: 600 !important;
+    color: #1f2937 !important;
+    margin-bottom: 1.25rem !important;
+    padding-bottom: 0.75rem !important;
+    border-bottom: 2px solid #e5e7eb !important;
+}
+
+/* Row 和 Column 間距調整 */
+::deep .row {
+    margin-left: -0.75rem !important;
+    margin-right: -0.75rem !important;
+    margin-bottom: 0.5rem !important; /* 縮短行間距 */
+}
+
+::deep .row > [class*="col-"] {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    margin-bottom: 0.5rem !important; /* 縮短列間距 */
+}
+
+/* ===== Modal Footer 樣式 ===== */
+
+.modal-footer {
+    background-color: #f9fafb !important;
+    border-top: 2px solid #e5e7eb !important;
+    border-radius: 0 0 12px 12px !important;
+    padding: 1.25rem 1.5rem !important;
+    gap: 0.75rem !important;
+}
+
+/* 按鈕樣式增強 */
+.modal-footer .btn {
+    padding: 0.75rem 2rem !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    font-size: 1rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.modal-footer .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+}
+
+.modal-footer .btn-primary:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4) !important;
+}
+
+.modal-footer .btn-secondary {
+    background-color: #6b7280 !important;
+    border: none !important;
+    color: white !important;
+}
+
+.modal-footer .btn-secondary:hover {
+    background-color: #4b5563 !important;
+    transform: translateY(-1px) !important;
+}
+
+/* 按鈕禁用狀態 */
+.modal-footer .btn:disabled {
+    opacity: 0.6 !important;
+    transform: none !important;
+    cursor: not-allowed !important;
+}
+
+/* ===== 錯誤和警告樣式 ===== */
+
+.alert {
+    border-radius: 8px !important;
+    border: none !important;
+    font-size: 0.95rem !important;
+}
+
+.alert-danger {
+    background-color: #fef2f2 !important;
+    color: #dc2626 !important;
+    border-left: 4px solid #dc2626 !important;
+}
+
+.alert-heading {
+    font-weight: 600 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* ===== 響應式設計 ===== */
+
+/* 平板尺寸調整 */
+@media (max-width: 1200px) {
+    .modal-xl {
+        max-width: 95% !important;
+        width: 95% !important;
+    }
+    
+    .modal-lg {
+        max-width: 90% !important;
+        width: 90% !important;
+    }
+}
+
+/* 小螢幕調整 */
+@media (max-width: 768px) {
+    .modal-dialog {
+        margin: 0.5rem !important;
+    }
+    
+    .modal-xl,
+    .modal-lg {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    
+    .modal-body {
+        padding: 1.5rem 1rem !important;
+        max-height: 60vh !important;
+    }
+    
+    .modal-header,
+    .modal-footer {
+        padding: 1rem !important;
+    }
+    
+    .modal-footer .btn {
+        padding: 0.6rem 1.5rem !important;
+        font-size: 0.9rem !important;
+    }
+    
+    /* 表單欄位在小螢幕上調整 */
+    ::deep .form-control,
+    ::deep .form-select {
+        font-size: 0.9rem !important;
+        padding: 0.6rem 0.8rem !important;
+    }
+}
+
+/* 極小螢幕調整 */
+@media (max-width: 576px) {
+    .modal-body {
+        padding: 1rem 0.75rem !important;
+    }
+    
+    /* 強制表單欄位堆疊 */
+    ::deep .row > [class*="col-"] {
+        margin-bottom: 0.75rem !important;
+    }
+}
+
+/* ===== 動畫效果 ===== */
+
+.modal.fade .modal-dialog {
+    transition: transform 0.3s ease-out !important;
+    transform: translate(0, -50px) !important;
+}
+
+.modal.show .modal-dialog {
+    transform: none !important;
+}
+
+/* 載入動畫 */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.modal-content {
+    animation: modalFadeIn 0.3s ease-out !important;
+}
+
+/* ===== 自訂模組樣式 ===== */
+
+::deep .custom-module {
+    background-color: white !important;
+    border-radius: 8px !important;
+    padding: 1.25rem !important;
+    margin-bottom: 1rem !important;
+    border: 1px solid #e5e7eb !important;
+}
+
+::deep .custom-module h6 {
+    color: #1f2937 !important;
+    font-weight: 600 !important;
+    margin-bottom: 1rem !important;
+}
+
+/* ===== 滾動條樣式 ===== */
+
+.modal-body::-webkit-scrollbar {
+    width: 8px !important;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: #f1f5f9 !important;
+    border-radius: 4px !important;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: #cbd5e1 !important;
+    border-radius: 4px !important;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8 !important;
+}
+
+/* ===== Backdrop 樣式 ===== */
+
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: blur(3px) !important;
+}

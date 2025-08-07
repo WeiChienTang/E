@@ -3,6 +3,8 @@
 @inject IRoleService RoleService
 @inject IDepartmentService DepartmentService
 @inject IEmployeePositionService EmployeePositionService
+@inject INotificationService NotificationService
+
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="Employee" 
@@ -20,10 +22,24 @@
                         EntityName="員工"
                         GetEntityDisplayName="@(employee => $"{employee.FirstName} {employee.LastName}".Trim())"
                         RequiredPermission="Employee.Read"
+                        OnAddClick="@ShowAddModal"
+                        OnRowClick="@ShowEditModal"
                         @ref="indexComponent" />
+
+@* 員工編輯 Modal *@
+<EmployeeEditModalComponent IsVisible="@showEditModal"
+                           IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                           EmployeeId="@editingEmployeeId"
+                           OnEmployeeSaved="@OnEmployeeSaved"
+                           OnCancel="@OnModalCancel" />
+
 @code {
     // 組件參考
     private GenericIndexPageComponent<Employee, IEmployeeService> indexComponent = default!;
+    
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingEmployeeId = null;
     
     // 選項清單
     private List<Role> roles = new();
@@ -33,7 +49,9 @@
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();    protected override void OnInitialized()
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override void OnInitialized()
     {
         try
         {
@@ -77,6 +95,77 @@
             }
         }
     }
+
+    // ===== Modal 相關方法 =====
+
+    private async Task ShowAddModal()
+    {
+        try
+        {
+            editingEmployeeId = null;
+            showEditModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModal), GetType());
+        }
+    }
+
+    private async Task ShowEditModal(Employee employee)
+    {
+        try
+        {
+            if (employee?.Id != null)
+            {
+                editingEmployeeId = employee.Id;
+                showEditModal = true;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowEditModal), GetType());
+        }
+    }
+
+    private async Task OnEmployeeSaved(Employee savedEmployee)
+    {
+        try
+        {
+            // 關閉 Modal
+            showEditModal = false;
+            editingEmployeeId = null;
+            
+            // 重新載入資料
+            if (indexComponent != null)
+            {
+                await indexComponent.Refresh();
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnEmployeeSaved), GetType());
+        }
+    }
+
+    private async Task OnModalCancel()
+    {
+        try
+        {
+            showEditModal = false;
+            editingEmployeeId = null;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnModalCancel), GetType());
+        }
+    }
+
+    // ===== 原有的初始化方法 =====
 
     private void InitializeBreadcrumbs()
     {
@@ -301,7 +390,9 @@
             // 設定安全的預設值
             columnDefinitions = new List<TableColumnDefinition>();
         }
-    }    // 自定義篩選邏輯
+    }
+
+    // 自定義篩選邏輯
     private IQueryable<Employee> ApplyEmployeeFilters(SearchFilterModel searchModel, IQueryable<Employee> query)
     {
         var filterActions = new List<Func<SearchFilterModel, IQueryable<Employee>, IQueryable<Employee>>>

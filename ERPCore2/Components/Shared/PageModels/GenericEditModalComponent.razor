@@ -1,0 +1,581 @@
+@* 泛型Edit Modal組件 *@
+@attribute [Authorize]
+@inject IJSRuntime JSRuntime
+@inject INotificationService NotificationService
+@typeparam TEntity where TEntity : BaseEntity, new()
+@typeparam TService
+
+@using Microsoft.AspNetCore.Components.Forms
+@using ERPCore2.Components.Shared.Forms
+
+@{
+    // 權限檢查 - 如果沒有設定權限，預設拒絕存取
+    string requiredPermission = RequiredPermission;
+    if (string.IsNullOrWhiteSpace(requiredPermission))
+    {
+        // 安全起見，如果沒有設定權限，設定為一個不存在的權限以確保拒絕存取
+        requiredPermission = "System.RequiredPermissionNotSet";
+    }
+}
+
+<PagePermissionCheck RequiredPermission="@requiredPermission">
+
+@* Bootstrap Modal *@
+@if (IsVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+        <div class="modal-dialog @GetModalSizeClass()">
+            <div class="modal-content">
+                @* Modal Header *@
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="@GetModalIcon() me-2"></i>
+                        @GetModalTitle()
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="HandleCancel" aria-label="關閉"></button>
+                </div>
+
+                @* Modal Body *@
+                <div class="modal-body edit-modal-body">
+                    @if (IsLoading)
+                    {
+                        <div class="d-flex justify-content-center align-items-center py-4">
+                            <div class="spinner-border text-primary me-3" role="status"></div>
+                            <span>@LoadingMessage</span>
+                        </div>
+                    }
+                    else if (!string.IsNullOrEmpty(ErrorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <h6 class="alert-heading">載入錯誤</h6>
+                            @ErrorMessage
+                        </div>
+                    }
+                    else
+                    {
+                        @* 基本表單 *@
+                        @if (UseGenericForm && FormFields.Any())
+                        {
+                            <div class="edit-form-container">
+                                <GenericFormComponent TModel="TEntity"
+                                                    Model="@Entity"
+                                                    FieldDefinitions="@FormFields"
+                                                    FieldSections="@FormSections"
+                                                    ShowFormHeader="false"
+                                                    ShowFormButtons="false"
+                                                    OnFieldChanged="@HandleFieldChanged" />
+                            </div>
+                        }
+
+                        @* 自訂表單內容 *@
+                        @if (CustomFormContent != null)
+                        {
+                            <div class="custom-form-content">
+                                <CascadingValue Value="@editContext">
+                                    @CustomFormContent
+                                </CascadingValue>
+                            </div>
+                        }
+
+                        @* 自訂模組系統 *@
+                        @if (CustomModules != null && CustomModules.Any())
+                        {
+                            @foreach (var module in CustomModules.Where(m => m.IsVisible).OrderBy(m => m.Order))
+                            {
+                                @if (module.Content != null)
+                                {
+                                    <div class="@GetModuleCssClass(module) custom-module">
+                                        @if (!string.IsNullOrWhiteSpace(module.Title))
+                                        {
+                                            <h6 class="mb-3">@module.Title</h6>
+                                        }
+                                        <CascadingValue Value="@editContext">
+                                            @module.Content
+                                        </CascadingValue>
+                                    </div>
+                                }
+                            }
+                        }
+
+                        @* 額外區段 *@
+                        @if (AdditionalSections != null)
+                        {
+                            <div class="additional-sections">
+                                <CascadingValue Value="@editContext">
+                                    @AdditionalSections
+                                </CascadingValue>
+                            </div>
+                        }
+                    }
+                </div>
+
+                @* Modal Footer *@
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="HandleCancel" disabled="@IsSubmitting">
+                        @CancelButtonText
+                    </button>
+                    <button type="button" class="btn btn-primary" @onclick="HandleSave" disabled="@(IsSubmitting || IsLoading)">
+                        @if (IsSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        }
+                        @SaveButtonText
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+</PagePermissionCheck>
+
+@code {
+    // ===== 自訂模組類別 =====
+    
+    /// <summary>
+    /// 自訂模組類別，用於定義可重複使用的頁面模組
+    /// </summary>
+    public class CustomModule
+    {
+        /// <summary>
+        /// 模組標題（可選）
+        /// </summary>
+        public string? Title { get; set; }
+        
+        /// <summary>
+        /// 模組內容
+        /// </summary>
+        public RenderFragment? Content { get; set; }
+        
+        /// <summary>
+        /// 排序順序，數字越小越靠前
+        /// </summary>
+        public int Order { get; set; } = 0;
+        
+        /// <summary>
+        /// 自訂 CSS 類別
+        /// </summary>
+        public string? CssClass { get; set; }
+        
+        /// <summary>
+        /// 模組唯一識別符（可選，用於除錯或特殊處理）
+        /// </summary>
+        public string? Id { get; set; }
+        
+        /// <summary>
+        /// 是否顯示此模組
+        /// </summary>
+        public bool IsVisible { get; set; } = true;
+    }
+    
+    // ===== 參數 =====
+    
+    // 顯示控制
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    
+    // 權限檢查參數
+    [Parameter] public string RequiredPermission { get; set; } = "";
+    
+    // 核心參數
+    [Parameter] public int? Id { get; set; }
+    [Parameter] public TEntity Entity { get; set; } = new();
+    [Parameter] public TService Service { get; set; } = default!;
+    
+    // 頁面基本設定
+    [Parameter] public string EntityName { get; set; } = "資料";
+    [Parameter] public string EntityNamePlural { get; set; } = "資料";
+    [Parameter] public string ModalTitle { get; set; } = string.Empty;
+    [Parameter] public ModalSize Size { get; set; } = ModalSize.Large;
+    
+    // 按鈕設定
+    [Parameter] public string SaveButtonText { get; set; } = "儲存";
+    [Parameter] public string CancelButtonText { get; set; } = "取消";
+    
+    // 表單設定
+    [Parameter] public bool UseGenericForm { get; set; } = true;
+    [Parameter] public List<FormFieldDefinition> FormFields { get; set; } = new();
+    [Parameter] public Dictionary<string, string> FormSections { get; set; } = new();
+    
+    // 自訂內容
+    [Parameter] public RenderFragment? CustomFormContent { get; set; }
+    [Parameter] public RenderFragment? AdditionalSections { get; set; }
+    
+    // 自訂模組系統
+    [Parameter] public List<CustomModule> CustomModules { get; set; } = new();
+    
+    // 委派參數 - 資料操作
+    [Parameter] public Func<Task<TEntity?>>? DataLoader { get; set; }
+    [Parameter] public Func<TEntity, Task<bool>>? SaveHandler { get; set; }
+    [Parameter] public Func<Task>? AdditionalDataLoader { get; set; }
+    
+    // 通用Save相關參數
+    [Parameter] public Func<TEntity, Task<bool>>? CustomValidator { get; set; }
+    [Parameter] public Func<TEntity, Task>? BeforeSave { get; set; }
+    [Parameter] public Func<TEntity, Task>? AfterSave { get; set; }
+    [Parameter] public bool UseGenericSave { get; set; } = false;
+    [Parameter] public string SaveSuccessMessage { get; set; } = "儲存成功";
+    [Parameter] public string SaveFailureMessage { get; set; } = "儲存失敗";
+    
+    // 委派參數 - 事件處理
+    [Parameter] public EventCallback OnSaveSuccess { get; set; }
+    [Parameter] public EventCallback OnSaveFailure { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Func<(string PropertyName, object? Value), Task>? OnFieldChanged { get; set; }
+    
+    // 訊息設定
+    [Parameter] public string LoadingMessage { get; set; } = "載入資料中...";
+    
+    // ===== 內部狀態 =====
+    
+    private bool IsLoading { get; set; } = false;
+    private bool IsSubmitting { get; set; } = false;
+    private string ErrorMessage { get; set; } = string.Empty;
+    private int? _lastId = null;
+    private bool _lastVisible = false;
+    private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
+    private EditContext? editContext;
+    
+    // ===== Modal 尺寸列舉 =====
+    
+    public enum ModalSize
+    {
+        Small,
+        Default,
+        Large,
+        ExtraLarge,
+        Desktop  // 新增桌面尺寸，更大更適合電腦螢幕
+    }
+    
+    // ===== 生命週期方法 =====
+    
+    protected override Task OnInitializedAsync()
+    {
+        // 初始化 EditContext
+        editContext = new EditContext(Entity);
+        return Task.CompletedTask;
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        // 只有當 Modal 顯示且 Id 參數真的變化時才重新載入
+        if (IsVisible && !_lastVisible)
+        {
+            // Modal 剛打開
+            _lastVisible = true;
+            _lastId = Id;
+            await LoadAllData();
+        }
+        else if (IsVisible && _lastId != Id)
+        {
+            // Modal 已打開但 Id 變更
+            _lastId = Id;
+            await LoadAllData();
+        }
+        else if (!IsVisible && _lastVisible)
+        {
+            // Modal 剛關閉
+            _lastVisible = false;
+            ResetState();
+        }
+    }
+    
+    // ===== 資料載入方法 =====
+    
+    private async Task LoadAllData()
+    {
+        await _loadingSemaphore.WaitAsync();
+        try
+        {
+            IsLoading = true;
+            ErrorMessage = string.Empty;
+            StateHasChanged();
+            
+            // 載入額外資料（如選項列表）
+            if (AdditionalDataLoader != null)
+            {
+                await AdditionalDataLoader();
+            }
+            
+            // 載入實體資料
+            if (DataLoader != null)
+            {
+                var loadedEntity = await DataLoader();
+                if (loadedEntity != null)
+                {
+                    Entity = loadedEntity;
+                    // 重新建立 EditContext
+                    editContext = new EditContext(Entity);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"載入資料時發生錯誤：{ex.Message}";
+            await LogError("LoadAllData", ex);
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+            _loadingSemaphore.Release();
+        }
+    }
+    
+    // ===== 事件處理方法 =====
+    
+    private async Task HandleSave()
+    {
+        if (IsSubmitting) return;
+        
+        try
+        {
+            IsSubmitting = true;
+            StateHasChanged();
+            
+            bool success;
+            
+            if (UseGenericSave)
+            {
+                success = await GenericSave(Entity);
+            }
+            else if (SaveHandler != null)
+            {
+                success = await SaveHandler(Entity);
+            }
+            else
+            {
+                await ShowErrorMessage("未設定儲存處理程序");
+                return;
+            }
+            
+            if (success)
+            {
+                await ShowSuccessMessage(SaveSuccessMessage);
+                
+                if (OnSaveSuccess.HasDelegate)
+                {
+                    await OnSaveSuccess.InvokeAsync();
+                }
+                
+                await CloseModal();
+            }
+            else
+            {
+                if (OnSaveFailure.HasDelegate)
+                {
+                    await OnSaveFailure.InvokeAsync();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorMessage($"儲存時發生錯誤：{ex.Message}");
+            await LogError("HandleSave", ex);
+            
+            if (OnSaveFailure.HasDelegate)
+            {
+                await OnSaveFailure.InvokeAsync();
+            }
+        }
+        finally
+        {
+            IsSubmitting = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task HandleCancel()
+    {
+        if (OnCancel.HasDelegate)
+        {
+            await OnCancel.InvokeAsync();
+        }
+        
+        await CloseModal();
+    }
+    
+    private async Task CloseModal()
+    {
+        await SetVisible(false);
+    }
+    
+    private async Task SetVisible(bool visible)
+    {
+        if (IsVisible != visible)
+        {
+            await IsVisibleChanged.InvokeAsync(visible);
+        }
+    }
+    
+    // ===== 輔助方法 =====
+    
+    private string GetModalTitle()
+    {
+        if (!string.IsNullOrEmpty(ModalTitle))
+            return ModalTitle;
+            
+        return Id.HasValue ? $"編輯{EntityName}" : $"新增{EntityName}";
+    }
+    
+    private string GetModalIcon()
+    {
+        return Id.HasValue ? "fas fa-edit" : "fas fa-plus";
+    }
+    
+    private string GetModalSizeClass()
+    {
+        return Size switch
+        {
+            ModalSize.Small => "modal-sm",
+            ModalSize.Default => "",
+            ModalSize.Large => "modal-lg",
+            ModalSize.ExtraLarge => "modal-xl",
+            ModalSize.Desktop => "modal-xl modal-desktop", // 新增桌面專用樣式
+            _ => "modal-lg"
+        };
+    }
+    
+    /// <summary>
+    /// 取得自訂模組的 CSS 類別
+    /// </summary>
+    private string GetModuleCssClass(CustomModule module)
+    {
+        var cssClasses = new List<string>();
+        
+        // 基本間距類別（Modal 中使用較小的間距）
+        if (!string.IsNullOrWhiteSpace(module.Title))
+        {
+            cssClasses.Add("mb-3");
+        }
+        else
+        {
+            cssClasses.Add("mb-2");
+        }
+        
+        // 自訂 CSS 類別
+        if (!string.IsNullOrWhiteSpace(module.CssClass))
+        {
+            cssClasses.Add(module.CssClass);
+        }
+        
+        return string.Join(" ", cssClasses);
+    }
+    
+    private void ResetState()
+    {
+        IsLoading = false;
+        IsSubmitting = false;
+        ErrorMessage = string.Empty;
+        Entity = new();
+        editContext = new EditContext(Entity);
+    }
+    
+    // ===== 通知方法 =====
+    
+    private async Task ShowSuccessMessage(string message)
+    {
+        await NotificationService.ShowSuccessAsync(message);
+    }
+    
+    private async Task ShowErrorMessage(string message)
+    {
+        await NotificationService.ShowErrorAsync(message);
+    }
+    
+    private async Task LogError(string method, Exception ex)
+    {
+        await JSRuntime.InvokeVoidAsync("console.error", $"[GenericEditModalComponent.{method}] 錯誤：", ex.Message);
+    }
+    
+    // ===== 通用Save方法 =====
+    
+    /// <summary>
+    /// 通用的保存方法，適用於大部分簡單實體
+    /// </summary>
+    private async Task<bool> GenericSave(TEntity entity)
+    {
+        try
+        {
+            // 自訂驗證
+            if (CustomValidator != null && !await CustomValidator(entity))
+            {
+                return false;
+            }
+            
+            // 儲存前處理
+            if (BeforeSave != null)
+            {
+                await BeforeSave(entity);
+            }
+            
+            // 直接轉型為基礎接口調用方法，避免反射問題
+            var genericService = Service as IGenericManagementService<TEntity>;
+            if (genericService == null)
+            {
+                await ShowErrorMessage("服務未實作泛型管理介面");
+                return false;
+            }
+            
+            ServiceResult<TEntity> serviceResult;
+            
+            if (Id.HasValue)
+            {
+                serviceResult = await genericService.UpdateAsync(entity);
+            }
+            else
+            {
+                serviceResult = await genericService.CreateAsync(entity);
+            }
+            
+            var result = new ServiceResult
+            {
+                IsSuccess = serviceResult.IsSuccess,
+                ErrorMessage = serviceResult.ErrorMessage,
+                ValidationErrors = serviceResult.ValidationErrors
+            };
+            
+            if (result.IsSuccess)
+            {
+                // 儲存後處理
+                if (AfterSave != null)
+                {
+                    await AfterSave(entity);
+                }
+                return true;
+            }
+            else
+            {
+                var errorMsg = !string.IsNullOrEmpty(result.ErrorMessage) 
+                    ? result.ErrorMessage 
+                    : "儲存失敗";
+                await ShowErrorMessage($"{SaveFailureMessage}：{errorMsg}");
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorMessage($"{SaveFailureMessage}：{ex.Message}");
+            await LogError("GenericSave", ex);
+            return false;
+        }
+    }
+    
+    // ===== 欄位變更處理 =====
+    
+    private async Task HandleFieldChanged((string PropertyName, object? Value) fieldChange)
+    {
+        if (OnFieldChanged != null)
+        {
+            await OnFieldChanged(fieldChange);
+        }
+    }
+    
+    // ===== 清理資源 =====
+    
+    public void Dispose()
+    {
+        _loadingSemaphore?.Dispose();
+    }
+}

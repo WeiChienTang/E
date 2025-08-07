@@ -1,0 +1,288 @@
+@* 可重用的部門編輯組件 - 可在任何頁面中嵌入 *@
+@inject IDepartmentService DepartmentService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="Department" 
+                          TService="IDepartmentService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@DepartmentId"
+                          Service="@DepartmentService"
+                          EntityName="部門"
+                          EntityNamePlural="部門"
+                          ModalTitle="@(DepartmentId.HasValue ? "編輯部門" : "新增部門")"
+                          Size="GenericEditModalComponent<Department, IDepartmentService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadDepartmentData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(DepartmentId.HasValue ? "部門更新成功" : "部門新增成功")"
+                          SaveFailureMessage="部門儲存失敗"
+                          RequiredPermission="Department.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel" />
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? DepartmentId { get; set; }
+    [Parameter] public EventCallback<Department> OnDepartmentSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<Department, IDepartmentService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<Employee> availableManagers = new();
+
+    // ===== 生命週期 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadAdditionalDataAsync();
+            InitializeFormFields();
+        }
+    }
+
+    // ===== 事件處理 =====
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            // 如果父組件需要知道部門已儲存
+            if (OnDepartmentSaved.HasDelegate && editModalComponent?.Entity != null)
+            {
+                await OnDepartmentSaved.InvokeAsync(editModalComponent.Entity);
+            }
+
+            // 關閉 Modal
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+
+    // ===== 資料載入 =====
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            // 載入可選擇的主管員工列表
+            availableManagers = await DepartmentService.GetAvailableManagersAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入部門資料時發生錯誤：{ex.Message}");
+            availableManagers = new List<Employee>();
+        }
+    }
+
+    private async Task<Department?> LoadDepartmentData()
+    {
+        try
+        {
+            if (!DepartmentId.HasValue) 
+            {
+                // 新增模式：建立新的部門實體並生成代碼
+                return new Department
+                {
+                    Name = string.Empty,
+                    DepartmentCode = await GenerateDepartmentCodeAsync(),
+                    Status = EntityStatus.Active
+                };
+            }
+
+            var department = await DepartmentService.GetByIdAsync(DepartmentId.Value);            
+            
+            if (department == null)
+            {
+                // 如果找不到部門，建立新的預設部門
+                return new Department
+                {
+                    Status = EntityStatus.Active
+                };
+            }
+            return department;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入部門資料時發生錯誤：{ex.Message}");
+            
+            // 設定安全的預設值，確保程式不會崩潰
+            return new Department
+            {
+                DepartmentCode = "ERROR",
+                Name = "ERROR",
+                Status = EntityStatus.Active
+            };
+        }
+    }
+
+    // ===== 表單初始化 =====
+    private void InitializeFormFields()
+    {
+        try
+        {
+            // 準備主管選項
+            var managerOptions = availableManagers.Select(e => new SelectOption
+            {
+                Text = $"{e.EmployeeCode} - {e.FirstName}{e.LastName}".Trim(),
+                Value = e.Id.ToString()
+            }).ToList();
+
+            formFields = new List<FormFieldDefinition>
+            {
+                // 基本資訊區段
+                new()
+                {
+                    PropertyName = nameof(Department.DepartmentCode),
+                    Label = "部門代碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入部門代碼",
+                    IsRequired = true,
+                    HelpText = "部門的唯一識別代碼，新增時系統會自動產生，也可手動修改"
+                },
+                new()
+                {
+                    PropertyName = nameof(Department.Name),
+                    Label = "部門名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入部門名稱",
+                    IsRequired = true,
+                    HelpText = "部門的正式名稱，將顯示在系統各處"
+                },
+                new()
+                {
+                    PropertyName = nameof(Department.ManagerId),
+                    Label = "部門主管",
+                    FieldType = FormFieldType.Select,
+                    Placeholder = "請選擇部門主管",
+                    Options = managerOptions,
+                    HelpText = "選擇負責管理此部門的員工"
+                },
+                
+                // 描述區段
+                new()
+                {
+                    PropertyName = nameof(Department.Description),
+                    Label = "部門描述",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入部門描述",
+                    Rows = 2,
+                    HelpText = "詳細描述部門的職責範圍、工作內容或其他相關資訊"
+                },
+                new()
+                {
+                    PropertyName = nameof(Department.Remarks),
+                    Label = "部門備註",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入部門備註",
+                    Rows = 2,
+                    HelpText = "其他需要補充的資訊"
+                }
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(Department.DepartmentCode), "基本資訊" },
+                { nameof(Department.Name), "基本資訊" },
+                { nameof(Department.ManagerId), "基本資訊" },
+                { nameof(Department.Description), "額外資料" },
+                { nameof(Department.Remarks), "額外資料" }
+            };
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    // ===== 輔助方法 =====
+    private async Task<string> GenerateDepartmentCodeAsync()
+    {
+        try
+        {
+            // 簡單的部門代碼生成邏輯：DEPT + 時間戳
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var baseCode = $"DEPT{timestamp}";
+            
+            // 檢查是否重複，如果重複則加上隨機數
+            var isExists = await DepartmentService.IsDepartmentCodeExistsAsync(baseCode);
+            if (isExists)
+            {
+                var random = new Random().Next(100, 999);
+                baseCode = $"DEPT{timestamp}{random}";
+            }
+            
+            return baseCode;
+        }
+        catch
+        {
+            // 如果生成失敗，返回預設格式
+            return $"DEPT{DateTime.Now:yyyyMMddHHmmss}";
+        }
+    }
+
+    // ===== 公開方法 (供父組件調用) =====
+
+    /// <summary>
+    /// 開啟新增部門 Modal
+    /// </summary>
+    public async Task ShowAddModal()
+    {
+        DepartmentId = null;
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(true);
+        }
+    }
+
+    /// <summary>
+    /// 開啟編輯部門 Modal
+    /// </summary>
+    public async Task ShowEditModal(int departmentId)
+    {
+        DepartmentId = departmentId;
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(true);
+        }
+    }
+}
