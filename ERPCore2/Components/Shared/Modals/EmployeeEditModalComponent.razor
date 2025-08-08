@@ -1,6 +1,4 @@
 @* 可重用的員工編輯組件 - 可在任何頁面中嵌入 *@
-@using ERPCore2.Components.Shared.Buttons
-@using ERPCore2.Components.Shared.Details
 @inject IEmployeeService EmployeeService
 @inject IDepartmentService DepartmentService
 @inject IEmployeePositionService EmployeePositionService
@@ -281,16 +279,6 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(Employee.FirstName),
-                    Label = "名字",
-                    FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入名字",
-                    IsRequired = true,
-                    MaxLength = 25,
-                    HelpText = "員工的名字"
-                },
-                new()
-                {
                     PropertyName = nameof(Employee.LastName),
                     Label = "姓氏",
                     FieldType = FormFieldType.Text,
@@ -299,7 +287,16 @@
                     MaxLength = 25,
                     HelpText = "員工的姓氏"
                 },
-                
+                new()
+                {
+                    PropertyName = nameof(Employee.FirstName),
+                    Label = "名字",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入名字",
+                    IsRequired = true,
+                    MaxLength = 25,
+                    HelpText = "員工的名字"
+                },
                 // 帳號資訊區段
                 new()
                 {
@@ -381,8 +378,8 @@
             formSections = new Dictionary<string, string>
             {
                 { nameof(Employee.EmployeeCode), "基本資訊" },
-                { nameof(Employee.FirstName), "基本資訊" },
                 { nameof(Employee.LastName), "基本資訊" },
+                { nameof(Employee.FirstName), "基本資訊" },                
                 { nameof(Employee.DepartmentId), "基本資訊" },
                 { nameof(Employee.EmployeePositionId), "基本資訊" },
                 { nameof(Employee.IsSystemUser), "帳號資訊" },
@@ -641,8 +638,8 @@
                 
                 if (isNewPassword)
                 {
-                    // 使用系統內建的方法暫時處理密碼（實際應用中應使用 BCrypt 或其他安全方法）
-                    entity.Password = $"HASHED_{entity.Password}";
+                    // 使用 SeedDataHelper 的密碼雜湊方法
+                    entity.Password = SeedDataHelper.HashPassword(entity.Password);
                 }
             }
 
