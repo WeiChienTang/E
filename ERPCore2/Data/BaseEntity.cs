@@ -47,7 +47,8 @@ namespace ERPCore2.Data
         [Display(Name = "建立者")]
         [MaxLength(50)]
         public string? CreatedBy { get; set; }
-          /// <summary>
+        
+        /// <summary>
         /// 最後更新者 ID
         /// </summary>
         [Display(Name = "修改者")]

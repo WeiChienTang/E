@@ -358,12 +358,13 @@
         builder.AddAttribute(sequence + 3, "id", field.PropertyName);
         builder.AddAttribute(sequence + 4, "placeholder", field.Placeholder);
         builder.AddAttribute(sequence + 5, "readonly", field.IsReadOnly);
+        builder.AddAttribute(sequence + 6, "disabled", field.IsDisabled);
         if (field.IsRequired)
         {
-            builder.AddAttribute(sequence + 6, "required", true);
+            builder.AddAttribute(sequence + 7, "required", true);
         }
-        builder.AddAttribute(sequence + 7, "value", GetPropertyValue(Model, field.PropertyName)?.ToString());
-        builder.AddAttribute(sequence + 8, "onchange", EventCallback.Factory.CreateBinder(this, 
+        builder.AddAttribute(sequence + 8, "value", GetPropertyValue(Model, field.PropertyName)?.ToString());
+        builder.AddAttribute(sequence + 9, "onchange", EventCallback.Factory.CreateBinder(this, 
             value => SetPropertyValue(Model, field.PropertyName, value), 
             GetPropertyValue(Model, field.PropertyName)?.ToString() ?? ""));
         builder.CloseElement();
@@ -375,21 +376,22 @@
         builder.AddAttribute(sequence + 3, "id", field.PropertyName);
         builder.AddAttribute(sequence + 4, "placeholder", field.Placeholder);
         builder.AddAttribute(sequence + 5, "readonly", field.IsReadOnly);
+        builder.AddAttribute(sequence + 6, "disabled", field.IsDisabled);
         
         if (field.IsRequired)
         {
-            builder.AddAttribute(sequence + 6, "required", true);
+            builder.AddAttribute(sequence + 7, "required", true);
         }
         
         if (field.Min.HasValue)
-            builder.AddAttribute(sequence + 7, "min", field.Min.Value);
+            builder.AddAttribute(sequence + 8, "min", field.Min.Value);
         if (field.Max.HasValue)
-            builder.AddAttribute(sequence + 8, "max", field.Max.Value);
+            builder.AddAttribute(sequence + 9, "max", field.Max.Value);
         if (field.Step.HasValue)
-            builder.AddAttribute(sequence + 9, "step", field.Step.Value);
+            builder.AddAttribute(sequence + 10, "step", field.Step.Value);
             
-        builder.AddAttribute(sequence + 10, "value", GetPropertyValue(Model, field.PropertyName)?.ToString());
-        builder.AddAttribute(sequence + 11, "onchange", EventCallback.Factory.CreateBinder(this, 
+        builder.AddAttribute(sequence + 11, "value", GetPropertyValue(Model, field.PropertyName)?.ToString());
+        builder.AddAttribute(sequence + 12, "onchange", EventCallback.Factory.CreateBinder(this, 
             value => SetPropertyValue(Model, field.PropertyName, value), 
             GetPropertyValue(Model, field.PropertyName)?.ToString() ?? ""));
         builder.CloseElement();
@@ -402,14 +404,15 @@
         builder.AddAttribute(sequence + 2, "class", GetInputCssClass(field));
         builder.AddAttribute(sequence + 3, "id", field.PropertyName);
         builder.AddAttribute(sequence + 4, "readonly", field.IsReadOnly);
+        builder.AddAttribute(sequence + 5, "disabled", field.IsDisabled);
         
         var dateValue = GetPropertyValue(Model, field.PropertyName);
         if (dateValue is DateTime dt)
         {
-            builder.AddAttribute(sequence + 5, "value", dt.ToString("yyyy-MM-dd"));
+            builder.AddAttribute(sequence + 6, "value", dt.ToString("yyyy-MM-dd"));
         }
         
-        builder.AddAttribute(sequence + 6, "onchange", EventCallback.Factory.CreateBinder(this, 
+        builder.AddAttribute(sequence + 7, "onchange", EventCallback.Factory.CreateBinder(this, 
             value => SetPropertyValue(Model, field.PropertyName, value), 
             dateValue?.ToString() ?? ""));
         builder.CloseElement();
@@ -422,14 +425,15 @@
         builder.AddAttribute(sequence + 2, "class", GetInputCssClass(field));
         builder.AddAttribute(sequence + 3, "id", field.PropertyName);
         builder.AddAttribute(sequence + 4, "readonly", field.IsReadOnly);
+        builder.AddAttribute(sequence + 5, "disabled", field.IsDisabled);
         
         var dateValue = GetPropertyValue(Model, field.PropertyName);
         if (dateValue is DateTime dt)
         {
-            builder.AddAttribute(sequence + 5, "value", dt.ToString("yyyy-MM-ddTHH:mm"));
+            builder.AddAttribute(sequence + 6, "value", dt.ToString("yyyy-MM-ddTHH:mm"));
         }
         
-        builder.AddAttribute(sequence + 6, "onchange", EventCallback.Factory.CreateBinder(this, 
+        builder.AddAttribute(sequence + 7, "onchange", EventCallback.Factory.CreateBinder(this, 
             value => SetPropertyValue(Model, field.PropertyName, value), 
             dateValue?.ToString() ?? ""));
         builder.CloseElement();
@@ -442,9 +446,10 @@
         builder.AddAttribute(sequence + 2, "id", field.PropertyName);
         builder.AddAttribute(sequence + 3, "placeholder", field.Placeholder);
         builder.AddAttribute(sequence + 4, "readonly", field.IsReadOnly);
-        builder.AddAttribute(sequence + 5, "rows", field.Rows ?? 3);
-        builder.AddAttribute(sequence + 6, "value", GetPropertyValue(Model, field.PropertyName)?.ToString());
-        builder.AddAttribute(sequence + 7, "onchange", EventCallback.Factory.CreateBinder(this, 
+        builder.AddAttribute(sequence + 5, "disabled", field.IsDisabled);
+        builder.AddAttribute(sequence + 6, "rows", field.Rows ?? 3);
+        builder.AddAttribute(sequence + 7, "value", GetPropertyValue(Model, field.PropertyName)?.ToString());
+        builder.AddAttribute(sequence + 8, "onchange", EventCallback.Factory.CreateBinder(this, 
             value => SetPropertyValue(Model, field.PropertyName, value), 
             GetPropertyValue(Model, field.PropertyName)?.ToString() ?? ""));
         builder.CloseElement();
@@ -453,7 +458,7 @@
         builder.OpenElement(sequence, "select");
         builder.AddAttribute(sequence + 1, "class", GetInputCssClass(field));
         builder.AddAttribute(sequence + 2, "id", field.PropertyName);
-        builder.AddAttribute(sequence + 3, "disabled", field.IsReadOnly);
+        builder.AddAttribute(sequence + 3, "disabled", field.IsReadOnly || field.IsDisabled);
         builder.AddAttribute(sequence + 4, "onchange", EventCallback.Factory.CreateBinder(this, 
             value => SetPropertyValue(Model, field.PropertyName, value), 
             GetPropertyValue(Model, field.PropertyName)?.ToString() ?? ""));
@@ -494,7 +499,7 @@
         builder.AddAttribute(sequence + 3, "type", "checkbox");
         builder.AddAttribute(sequence + 4, "class", "form-check-input");
         builder.AddAttribute(sequence + 5, "id", field.PropertyName);
-        builder.AddAttribute(sequence + 6, "disabled", field.IsReadOnly);
+        builder.AddAttribute(sequence + 6, "disabled", field.IsReadOnly || field.IsDisabled);
           var currentValue = GetPropertyValue(Model, field.PropertyName);
         bool boolValue = false;
         if (currentValue is bool b)
@@ -535,7 +540,7 @@
                 builder.AddAttribute(radioSequence + 5, "id", $"{field.PropertyName}_{option.Value}");
                 builder.AddAttribute(radioSequence + 6, "name", field.PropertyName);
                 builder.AddAttribute(radioSequence + 7, "value", option.Value);
-                builder.AddAttribute(radioSequence + 8, "disabled", field.IsReadOnly);
+                builder.AddAttribute(radioSequence + 8, "disabled", field.IsReadOnly || field.IsDisabled);
                 builder.AddAttribute(radioSequence + 9, "checked", option.Value == currentValue);
                 builder.AddAttribute(radioSequence + 10, "onchange", EventCallback.Factory.CreateBinder(this, 
                     value => SetPropertyValue(Model, field.PropertyName, value), 
@@ -570,10 +575,11 @@
         builder.AddAttribute(sequence + 5, "id", fieldId);
         builder.AddAttribute(sequence + 6, "placeholder", field.Placeholder);
         builder.AddAttribute(sequence + 7, "readonly", field.IsReadOnly);
-        builder.AddAttribute(sequence + 8, "value", displayValue);
+        builder.AddAttribute(sequence + 8, "disabled", field.IsDisabled);
+        builder.AddAttribute(sequence + 9, "value", displayValue);
         
         // 輸入事件處理
-        builder.AddAttribute(sequence + 9, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
+        builder.AddAttribute(sequence + 10, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
         {
             var inputValue = args.Value?.ToString() ?? "";
             autoCompleteDisplayValues[fieldId] = inputValue;
@@ -581,7 +587,7 @@
         }));
         
         // 焦點事件處理
-        builder.AddAttribute(sequence + 10, "onfocus", EventCallback.Factory.Create(this, () =>
+        builder.AddAttribute(sequence + 11, "onfocus", EventCallback.Factory.Create(this, () =>
         {
             var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "");
             if (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= field.MinSearchLength)
@@ -590,7 +596,7 @@
             }
         }));
           // 失去焦點事件處理
-        builder.AddAttribute(sequence + 11, "onblur", EventCallback.Factory.Create(this, () =>
+        builder.AddAttribute(sequence + 12, "onblur", EventCallback.Factory.Create(this, () =>
         {
             // 延遲隱藏下拉選單，讓使用者有時間點擊選項
             Timer? timer = null;
@@ -603,7 +609,7 @@
         }));
         
         // 鍵盤事件處理
-        builder.AddAttribute(sequence + 12, "onkeydown", EventCallback.Factory.Create<KeyboardEventArgs>(this, args =>
+        builder.AddAttribute(sequence + 13, "onkeydown", EventCallback.Factory.Create<KeyboardEventArgs>(this, args =>
         {
             _ = HandleKeyDown(field, args);
         }));
@@ -630,7 +636,8 @@
             {
                 builder.OpenElement(sequence + 30, "div");
                 builder.AddAttribute(sequence + 31, "class", "autocomplete-dropdown position-absolute w-100");
-                builder.AddAttribute(sequence + 32, "style", "max-height: 200px; overflow-y: auto; z-index: 1000;");                var optionSequence = sequence + 40;
+                builder.AddAttribute(sequence + 32, "style", "max-height: 200px; overflow-y: auto; z-index: 1000;");                
+                var optionSequence = sequence + 40;
                 var optionIndex = 0;
                 foreach (var option in options)
                 {

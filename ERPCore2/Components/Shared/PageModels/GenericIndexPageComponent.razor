@@ -169,10 +169,10 @@
     
     // 自動標準欄位設定
     [Parameter] public bool AutoAddRemarksColumn { get; set; } = true;
-    [Parameter] public bool AutoAddStatusColumn { get; set; } = true;
+    [Parameter] public bool AutoAddStatusColumn { get; set; } = false; // 預設關閉，因為狀態功能已停用
     [Parameter] public bool AutoAddCreatedAtColumn { get; set; } = true;
     [Parameter] public bool AutoAddRemarksFilter { get; set; } = true;
-    [Parameter] public bool AutoAddStatusFilter { get; set; } = true;
+    [Parameter] public bool AutoAddStatusFilter { get; set; } = false; // 預設關閉，因為狀態功能已停用
     [Parameter] public string RemarksColumnTitle { get; set; } = "備註";
     [Parameter] public string StatusColumnTitle { get; set; } = "狀態";
     [Parameter] public string CreatedAtColumnTitle { get; set; } = "建立日期";
@@ -205,7 +205,7 @@
     [Parameter] public bool ShowViewButton { get; set; } = true;
     [Parameter] public bool ShowEditButton { get; set; } = false;
     [Parameter] public bool ShowDeleteButton { get; set; } = true;
-    [Parameter] public bool ShowToggleStatusButton { get; set; } = true;
+    [Parameter] public bool ShowToggleStatusButton { get; set; } = false; // 預設關閉，因為狀態切換功能已停用
     [Parameter] public RenderFragment<TEntity>? CustomActionsTemplate { get; set; }
     
     // 事件處理 - 修改為內建導航
@@ -341,6 +341,7 @@
     /// <summary>
     /// 通用啟用/停用狀態切換方法
     /// </summary>
+    [Obsolete("此功能已停用，不再使用狀態切換功能")]
     public async Task ToggleEntityStatusAsync(TEntity entity)
     {
         var displayName = GetEntityDisplayName(entity);
@@ -416,21 +417,7 @@
                         <i class="bi bi-pencil"></i>
                     </button>
                 }
-                @if (ShowToggleStatusButton)
-                {
-                    @if (entity.Status == EntityStatus.Active)
-                    {
-                        <button class="btn btn-outline-secondary" @onclick="@(async () => await ToggleEntityStatusAsync(entity))" @onclick:stopPropagation="true" title="停用">
-                            <i class="bi bi-pause-circle"></i>
-                        </button>
-                    }
-                    else
-                    {
-                        <button class="btn btn-outline-success" @onclick="@(async () => await ToggleEntityStatusAsync(entity))" @onclick:stopPropagation="true" title="啟用">
-                            <i class="bi bi-play-circle"></i>
-                        </button>
-                    }
-                }
+                @* 狀態切換按鈕已移除，因為狀態切換功能已停用 *@
                 @if (ShowDeleteButton)
                 {
                     <button class="btn btn-outline-danger" @onclick="@(async () => await DeleteEntityAsync(entity))" @onclick:stopPropagation="true" title="刪除">
@@ -513,25 +500,6 @@
         return $"確定要刪除{EntityName}「{displayName}」嗎？";
     }
 
-    /// <summary>
-    /// 取得預設的狀態列定義（含中文顯示文字）
-    /// </summary>
-    public static TableColumnDefinition GetDefaultStatusColumn(string title = "狀態", string propertyName = "Status")
-    {
-        var column = TableColumnDefinition.Status(title, propertyName, new Dictionary<object, string>
-        {
-            { EntityStatus.Active, "啟用" },
-            { EntityStatus.Inactive, "停用" },
-            { EntityStatus.Deleted, "已刪除" }
-        });
-        
-        // 設定較小的欄位寬度，標題和內容都置中
-        column.HeaderStyle = "width: 80px; text-align: center;";
-        column.CellCssClass = "text-center";
-        
-        return column;
-    }
-
     // ===== 標準欄位和篩選器處理方法 =====
     
     /// <summary>
@@ -552,16 +520,6 @@
                 remarksColumn.HeaderStyle = "width: 150px;";
                 remarksColumn.CellCssClass = "text-truncate";
                 columns.Add(remarksColumn);
-            }
-        }
-        
-        // 自動添加狀態欄位
-        if (AutoAddStatusColumn)
-        {
-            // 檢查是否已經有狀態欄位，避免重複添加
-            if (!columns.Any(c => c.PropertyName == "Status"))
-            {
-                columns.Add(GetDefaultStatusColumn(StatusColumnTitle));
             }
         }
         
@@ -610,37 +568,6 @@
                 catch
                 {
                     // 如果有錯誤，跳過添加備註篩選器
-                }
-            }
-        }
-        
-        // 自動添加狀態篩選器
-        if (AutoAddStatusFilter)
-        {
-            // 檢查是否已經有狀態篩選器，避免重複添加
-            if (!filters.Any(f => f.PropertyName == "Status"))
-            {
-                try
-                {
-                    var statusOptions = new List<SelectOption>
-                    {
-                        new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-                        new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-                    };
-                    
-                    var statusFilter = new SearchFilterDefinition
-                    {
-                        Name = "Status",
-                        Label = StatusFilterTitle,
-                        Type = SearchFilterType.Select,
-                        Options = statusOptions
-                    };
-                    
-                    filters.Add(statusFilter);
-                }
-                catch
-                {
-                    // 如果有錯誤，跳過添加狀態篩選器
                 }
             }
         }
@@ -780,16 +707,6 @@
             if (!string.IsNullOrWhiteSpace(remarksFilter))
             {
                 query = query.Where(entity => entity.Remarks != null && entity.Remarks.Contains(remarksFilter));
-            }
-        }
-        
-        // 狀態篩選
-        if (AutoAddStatusFilter)
-        {
-            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
-            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
-            {
-                query = query.Where(entity => entity.Status == status);
             }
         }
         

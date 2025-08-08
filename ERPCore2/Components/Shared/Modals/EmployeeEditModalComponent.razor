@@ -1,5 +1,6 @@
 @* 可重用的員工編輯組件 - 可在任何頁面中嵌入 *@
 @using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Components.Shared.Details
 @inject IEmployeeService EmployeeService
 @inject IDepartmentService DepartmentService
 @inject IEmployeePositionService EmployeePositionService
@@ -29,9 +30,8 @@
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           OnSaveSuccess="@OnSaveSuccess"
                           OnCancel="@OnCancel"
-                          OnFieldChanged="@OnFieldValueChanged">
-
-</GenericEditModalComponent>
+                          OnFieldChanged="@OnFieldValueChanged"
+                          AdditionalSections="@GetAdditionalSections()" />
 
 @* 部門編輯 Modal *@
 <DepartmentEditModalComponent @ref="departmentEditModal"
@@ -99,6 +99,29 @@
         {
             _ = NotificationService.ShowErrorAsync("初始化員工編輯組件時發生錯誤");
         }
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        // 當 EmployeeId 參數變更時，重新初始化表單欄位
+        if (formFields != null) // 只有在已經初始化過的情況下才重新設定
+        {
+            bool initialIsSystemUser = false; // 新增模式預設為非系統使用者
+            
+            if (EmployeeId.HasValue)
+            {
+                // 編輯模式：先取得現有員工資料來確定系統使用者狀態
+                var existingEmployee = await EmployeeService.GetByIdAsync(EmployeeId.Value);
+                if (existingEmployee != null)
+                {
+                    initialIsSystemUser = existingEmployee.IsSystemUser;
+                }
+            }
+            
+            InitializeFormFields(initialIsSystemUser);
+        }
+        
+        await base.OnParametersSetAsync();
     }
     
     /// <summary>
@@ -190,13 +213,13 @@
             Role? defaultRole;
             if (isSystemUser)
             {
-                // 系統使用者：選擇 Employee-系統使用者
+                // 系統使用者：選擇辦公室員工角色
                 defaultRole = availableRoles.FirstOrDefault(r => 
                     r.RoleName.Contains("Employee") && r.RoleName.Contains("系統使用者"));
             }
             else
             {
-                // 非系統使用者：選擇 Employee-非系統使用者
+                // 非系統使用者：選擇員工角色（一般員工）
                 defaultRole = availableRoles.FirstOrDefault(r => 
                     r.RoleName.Contains("Employee") && r.RoleName.Contains("非系統使用者"));
             }
@@ -250,8 +273,9 @@
                     PropertyName = nameof(Employee.Account),
                     Label = "登入帳號",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入登入帳號",
+                    Placeholder = isSystemUser ? "請輸入登入帳號" : "僅系統使用者可設定",
                     IsRequired = isSystemUser,
+                    IsDisabled = !isSystemUser, // 非系統使用者時停用
                     MaxLength = 50,
                     HelpText = isSystemUser ? "系統登入帳號" : "僅系統使用者需要設定登入帳號"
                 },
@@ -260,8 +284,9 @@
                     PropertyName = nameof(Employee.Password),
                     Label = "登入密碼",
                     FieldType = FormFieldType.Password,
-                    Placeholder = "請輸入登入密碼",
+                    Placeholder = isSystemUser ? "請輸入登入密碼" : "僅系統使用者可設定",
                     IsRequired = isSystemUser && !EmployeeId.HasValue, // 新增時必填，編輯時選填
+                    IsDisabled = !isSystemUser, // 非系統使用者時停用
                     MaxLength = 100,
                     HelpText = isSystemUser ? "系統登入密碼" : "僅系統使用者需要設定登入密碼"
                 },
@@ -291,10 +316,11 @@
                     PropertyName = nameof(Employee.RoleId),
                     Label = "系統角色",
                     FieldType = FormFieldType.Select,
-                    Placeholder = "請選擇系統角色",
+                    Placeholder = isSystemUser ? "請選擇系統角色" : "僅系統使用者可選擇",
                     Options = roleOptions,
                     DefaultValue = defaultRoleValue,
                     IsRequired = isSystemUser,
+                    IsDisabled = !isSystemUser, // 非系統使用者時停用
                     HelpText = isSystemUser ? "選擇員工在系統中的權限角色" : "僅系統使用者可以選擇系統角色"
                 },
                 
@@ -349,15 +375,19 @@
                 Role? targetRole;
                 if (isSystemUser)
                 {
-                    // 系統使用者：選擇 Employee-系統使用者
+                    // 系統使用者：選擇辦公室員工角色
                     targetRole = availableRoles.FirstOrDefault(r => 
                         r.RoleName.Contains("Employee") && r.RoleName.Contains("系統使用者"));
                 }
                 else
                 {
-                    // 非系統使用者：選擇 Employee-非系統使用者
+                    // 非系統使用者：選擇員工角色，並清空帳號密碼
                     targetRole = availableRoles.FirstOrDefault(r => 
                         r.RoleName.Contains("Employee") && r.RoleName.Contains("非系統使用者"));
+                    
+                    // 清空帳號和密碼欄位，設為 null
+                    editModalComponent.Entity.Account = null;
+                    editModalComponent.Entity.Password = null;
                 }
                 
                 if (targetRole != null)
@@ -478,6 +508,14 @@
     {
         try
         {
+            // 處理非系統使用者的帳號和密碼 - 設為 null 以避免資料庫索引問題
+            if (!entity.IsSystemUser)
+            {
+                entity.Account = null;
+                entity.Password = null;
+                entity.RoleId = null; // 非系統使用者不需要系統角色
+            }
+
             // 基本驗證 - 使用通知服務
             if (string.IsNullOrWhiteSpace(entity.EmployeeCode))
             {
@@ -495,6 +533,25 @@
             {
                 await NotificationService.ShowErrorAsync("員工姓氏為必填");
                 return false;
+            }
+
+            // 檢查員工代碼是否重複
+            var employeeCodeExistsResult = await EmployeeService.IsEmployeeCodeExistsAsync(entity.EmployeeCode, EmployeeId);
+            if (employeeCodeExistsResult.IsSuccess && employeeCodeExistsResult.Data)
+            {
+                await NotificationService.ShowErrorAsync($"員工代碼 '{entity.EmployeeCode}' 已存在，請使用其他代碼");
+                return false;
+            }
+
+            // 檢查帳號是否重複（無論是否為系統使用者，只要有設定帳號就檢查）
+            if (!string.IsNullOrWhiteSpace(entity.Account))
+            {
+                var accountExistsResult = await EmployeeService.IsAccountExistsAsync(entity.Account, EmployeeId);
+                if (accountExistsResult.IsSuccess && accountExistsResult.Data)
+                {
+                    await NotificationService.ShowErrorAsync($"帳號 '{entity.Account}' 已存在，請使用其他帳號");
+                    return false;
+                }
             }
 
             // 系統使用者特殊驗證
@@ -703,5 +760,104 @@
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// 處理員工聯絡方式變更事件
+    /// </summary>
+    private Task OnEmployeeContactsChanged(List<EmployeeContact> updatedContacts)
+    {
+        try
+        {
+            employeeContacts = updatedContacts;
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("更新聯絡方式時發生錯誤");
+            return Task.CompletedTask;
+        }
+    }
+
+    /// <summary>
+    /// 處理員工地址變更事件
+    /// </summary>
+    private Task OnEmployeeAddressesChanged(List<EmployeeAddress> updatedAddresses)
+    {
+        try
+        {
+            employeeAddresses = updatedAddresses;
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("更新地址資料時發生錯誤");
+            return Task.CompletedTask;
+        }
+    }
+
+    /// <summary>
+    /// 取得額外區段內容（聯絡方式和地址管理）
+    /// </summary>
+    private RenderFragment? GetAdditionalSections()
+    {
+        return @<div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-gradient bg-light border-0">
+                        <h6 class="mb-0 d-flex align-items-center">
+                            <i class="fas fa-phone text-success me-2"></i>
+                            員工聯絡方式管理
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <ContactManagerComponent TContactEntity="EmployeeContact"
+                                               TParentEntity="Employee"
+                                               Items="@employeeContacts"
+                                               Options="@contactTypeOptions"
+                                               ParentEntityId="@(editModalComponent?.Entity?.Id ?? 0)"
+                                               GetIsPrimary="@(c => c.IsPrimary)"
+                                               GetTypeId="@(c => c.ContactTypeId)"
+                                               GetContactValue="@(c => c.ContactValue)"
+                                               SetIsPrimary="@((c, isPrimary) => c.IsPrimary = isPrimary)"
+                                               SetTypeId="@((c, typeId) => c.ContactTypeId = typeId)"
+                                               SetContactValue="@((c, value) => c.ContactValue = value)"
+                                               SetParentId="@((c, parentId) => c.EmployeeId = parentId)"
+                                               ItemsChanged="@OnEmployeeContactsChanged" />
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-gradient bg-light border-0">
+                        <h6 class="mb-0 d-flex align-items-center">
+                            <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                            員工地址資料管理
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <AddressManagerComponent TAddressEntity="EmployeeAddress"
+                                               TParentEntity="Employee"
+                                               Items="@employeeAddresses"
+                                               Options="@addressTypeOptions"
+                                               ParentEntityId="@(editModalComponent?.Entity?.Id ?? 0)"
+                                               GetIsPrimary="@(a => a.IsPrimary)"
+                                               GetTypeId="@(a => a.AddressTypeId)"
+                                               GetPostalCode="@(a => a.PostalCode)"
+                                               GetCity="@(a => a.City)"
+                                               GetAddress="@(a => a.Address)"
+                                               SetIsPrimary="@((a, isPrimary) => a.IsPrimary = isPrimary)"
+                                               SetTypeId="@((a, typeId) => a.AddressTypeId = typeId)"
+                                               SetPostalCode="@((a, postalCode) => a.PostalCode = postalCode)"
+                                               SetCity="@((a, city) => a.City = city)"
+                                               SetAddress="@((a, address) => a.Address = address)"
+                                               SetParentId="@((a, parentId) => a.EmployeeId = parentId)"
+                                               ItemsChanged="@OnEmployeeAddressesChanged" />
+                    </div>
+                </div>
+            </div>
+        </div>;
     }
 }

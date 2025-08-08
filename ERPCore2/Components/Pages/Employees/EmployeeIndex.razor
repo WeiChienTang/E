@@ -294,7 +294,6 @@
                 .AddText("Account", "帳號", "輸入帳號搜尋")
                 .AddText("FirstName", "名字", "輸入名字搜尋")
                 .AddText("LastName", "姓氏", "輸入姓氏搜尋")
-                .AddText("Email", "電子郵件", "輸入電子郵件搜尋")
                 .AddSelect("DepartmentId", "部門", departmentOptions)
                 .AddSelect("EmployeePositionId", "職位", positionOptions)
                 .AddSelect("RoleId", "角色", roleOptions)
@@ -340,24 +339,12 @@
                     var lastName = employee.LastName ?? "";
                     return @<span>@($"{lastName}{firstName}".Trim())</span>;
                 }),
-                TableColumnDefinition.Template("電子郵件", context =>
-                {
-                    var employee = (Employee)context;
-                    var emailContact = employee.EmployeeContacts?
-                        .FirstOrDefault(ec => ec.ContactType?.TypeName == "Email");
-                    var emailValue = emailContact?.ContactValue ?? "";
-                    
-                    return builder =>
-                    {
-                        builder.AddContent(0, emailValue);
-                    };
-                }),
                 TableColumnDefinition.Text("部門", "Department.Name"),
                 TableColumnDefinition.Text("職位", "EmployeePosition.Name"),
                 TableColumnDefinition.Text("角色", "Role.RoleName"),
                 new TableColumnDefinition
                 {
-                    Title = "系統使用者",
+                    Title = "系統操控",
                     PropertyName = nameof(Employee.IsSystemUser),
                     CustomTemplate = item => builder =>
                     {
@@ -365,7 +352,7 @@
                         builder.OpenElement(0, "span");
                         builder.AddAttribute(1, "class", "badge text-white");
                         builder.AddAttribute(2, "style", employee.IsSystemUser ? "background-color: #28a745;" : "background-color: #dc3545;");
-                        builder.AddContent(3, employee.IsSystemUser ? "是" : "否");
+                        builder.AddContent(3, employee.IsSystemUser ? "有權限" : "無權限");
                         builder.CloseElement();
                     }
                 },
@@ -421,24 +408,6 @@
             // 角色篩選  
             (model, q) => FilterHelper.ApplyNullableIntIdFilter(model, q, "RoleId", e => e.RoleId),
             
-            // 電子郵件篩選（需要特殊處理導航屬性）
-            (model, q) => {
-                var emailFilter = model.GetFilterValue("Email")?.ToString();
-                if (!string.IsNullOrWhiteSpace(emailFilter))
-                {
-                    // 由於需要存取導航屬性，轉為記憶體查詢
-                    var filteredList = q.ToList().Where(e => 
-                    {
-                        var emailContact = e.EmployeeContacts?
-                            .FirstOrDefault(ec => ec.ContactType?.TypeName == "Email");
-                        return emailContact != null && 
-                               !string.IsNullOrEmpty(emailContact.ContactValue) &&
-                               emailContact.ContactValue.Contains(emailFilter, StringComparison.OrdinalIgnoreCase);
-                    });
-                    q = filteredList.AsQueryable();
-                }
-                return q;
-            },
             // 系統使用者篩選
             (model, q) => {
                 var isSystemUserFilter = model.GetFilterValue("IsSystemUser")?.ToString();

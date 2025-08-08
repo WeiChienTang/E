@@ -19,7 +19,15 @@
                           FilterApplier="@ApplyPermissionFilters"
                           GetEntityDisplayName="@(permission => permission.PermissionName)"
                           RequiredPermission="Permission.Read"
+                          OnAddClick="@ShowAddModal"
+                          OnRowClick="@ShowEditModal"
                           @ref="indexComponent" />
+
+<PermissionEditModalComponent IsVisible="@showEditModal"
+                              IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                              PermissionId="@editingPermissionId"
+                              OnPermissionSaved="@OnPermissionSaved"
+                              OnCancel="@OnModalCancel" />
 
 @code {
     // 組件參考
@@ -29,6 +37,10 @@
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingPermissionId = null;
 
     protected override void OnInitialized()
     {
@@ -80,6 +92,47 @@
             await NotificationService.ShowErrorAsync("載入權限資料失敗");
             return new List<Permission>();
         }
+    }
+
+    // ===== Modal 相關方法 =====
+    private Task ShowAddModal()
+    {
+        editingPermissionId = null;
+        showEditModal = true;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task ShowEditModal(Permission permission)
+    {
+        if (permission?.Id != null)
+        {
+            editingPermissionId = permission.Id;
+            showEditModal = true;
+            StateHasChanged();
+        }
+        return Task.CompletedTask;
+    }
+
+    private async Task OnPermissionSaved(Permission savedPermission)
+    {
+        showEditModal = false;
+        editingPermissionId = null;
+        
+        if (indexComponent != null)
+        {
+            await indexComponent.Refresh();
+        }
+        
+        StateHasChanged();
+    }
+
+    private Task OnModalCancel()
+    {
+        showEditModal = false;
+        editingPermissionId = null;
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 
     private void InitializeFilters()

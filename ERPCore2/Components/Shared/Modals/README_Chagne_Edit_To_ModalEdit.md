@@ -310,12 +310,9 @@
 
     // 其他必要方法：InitializeBreadcrumbs, InitializeFilters, InitializeTableColumns, Apply{Entity}Filters
 }
-```### 3. 需要刪除的舊檔案
+```
 
-- 移除舊的 Modal 組件檔案（如果有獨立的 Modal 檔案）
-- 移除舊的 Edit 頁面檔案（如果使用獨立頁面編輯）
-
-### 4. 常見的表單欄位類型
+### 3. 常見的表單欄位類型
 
 ```csharp
 // 文字輸入
@@ -376,7 +373,7 @@ new() {
 }
 ```
 
-### 5. 疑難排解
+### 4. 疑難排解
 
 #### 常見編譯錯誤：
 

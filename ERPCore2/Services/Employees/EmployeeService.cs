@@ -158,11 +158,13 @@ namespace ERPCore2.Services
         {
             try
             {
+                // 如果帳號為空白，直接回傳不存在（允許多個空白帳號）
                 if (string.IsNullOrWhiteSpace(account))
-                    return ServiceResult<bool>.Failure("帳號不能為空");
+                    return ServiceResult<bool>.Success(false);
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Employees.Where(e => e.Account == account && !e.IsDeleted && e.IsSystemUser);
+                // 只檢查非空白帳號的重複性
+                var query = context.Employees.Where(e => e.Account == account && !e.IsDeleted);
 
                 if (excludeEmployeeId.HasValue)
                     query = query.Where(e => e.Id != excludeEmployeeId.Value);
@@ -491,9 +493,15 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
 
                 // 檢查必要欄位
-                // 帳號只有在系統使用者時才為必填
-                if (entity.IsSystemUser && string.IsNullOrWhiteSpace(entity.Account))
-                    errors.Add("系統使用者必須設定帳號");
+                // 系統使用者的帳號和密碼驗證
+                if (entity.IsSystemUser)
+                {
+                    if (string.IsNullOrWhiteSpace(entity.Account))
+                        errors.Add("系統使用者必須設定帳號");
+                    
+                    if (string.IsNullOrWhiteSpace(entity.Password))
+                        errors.Add("系統使用者必須設定密碼");
+                }
 
                 if (string.IsNullOrWhiteSpace(entity.FirstName))
                     errors.Add("名字為必填");
@@ -517,16 +525,16 @@ namespace ERPCore2.Services
                 if (!string.IsNullOrEmpty(entity.EmployeeCode) && entity.EmployeeCode.Length > 20)
                     errors.Add("員工代碼不可超過20個字元");
 
-                // 檢查使用者名稱是否重複（只有系統使用者才需要檢查）
+                // 檢查帳號是否重複（只有系統使用者需要檢查帳號唯一性）
                 if (entity.IsSystemUser && !string.IsNullOrWhiteSpace(entity.Account))
                 {
                     var isDuplicate = await context.Employees
-                        .Where(e => e.Account == entity.Account && !e.IsDeleted && e.IsSystemUser)
+                        .Where(e => e.Account == entity.Account && !e.IsDeleted)
                         .Where(e => e.Id != entity.Id) // 排除自己
                         .AnyAsync();
 
                     if (isDuplicate)
-                        errors.Add("此帳號已被其他系統使用者使用");
+                        errors.Add("此帳號已被其他員工使用");
                 }
 
                 // 檢查員工代碼是否重複
