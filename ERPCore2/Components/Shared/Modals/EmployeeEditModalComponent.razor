@@ -41,6 +41,15 @@
                              OnDepartmentSaved="@OnDepartmentSavedWrapper"
                              OnCancel="@departmentModalManager.HandleModalCancelAsync" />
 
+@* 職位編輯 Modal *@
+<EmployeePositionEditModalComponent @ref="positionEditModal"
+                                   IsVisible="@positionModalManager.IsModalVisible"
+                                   IsVisibleChanged="@positionModalManager.HandleModalVisibilityChangedAsync"
+                                   EmployeePositionId="@positionModalManager.SelectedEntityId"
+                                   OnEmployeePositionSaved="@OnEmployeePositionSavedWrapper"
+                                   OnCancel="@positionModalManager.HandleModalCancelAsync" />
+
+
 @code {
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
@@ -55,6 +64,10 @@
     // 部門編輯 Modal 相關變數 - 使用泛型管理器
     private DepartmentEditModalComponent? departmentEditModal;
     private RelatedEntityModalManager<Department> departmentModalManager = default!;
+    
+    // 職位編輯 Modal 相關變數 - 使用泛型管理器
+    private EmployeePositionEditModalComponent? positionEditModal;
+    private RelatedEntityModalManager<EmployeePosition> positionModalManager = default!;
     
     // 選項資料
     private List<Department> availableDepartments = new();
@@ -77,6 +90,9 @@
         {
             // 初始化部門 Modal 管理器
             InitializeDepartmentModalManager();
+            
+            // 初始化職位 Modal 管理器
+            InitializePositionModalManager();
             
             await LoadAdditionalDataAsync();
             
@@ -141,6 +157,31 @@
                 }
             })
             .WithCustomPostProcess(department => 
+            {
+                // 員工特定的後處理邏輯
+                InitializeFormFields(editModalComponent?.Entity?.IsSystemUser ?? false);
+                return Task.CompletedTask;
+            })
+            .Build();
+    }
+
+    /// <summary>
+    /// 初始化職位 Modal 管理器
+    /// </summary>
+    private void InitializePositionModalManager()
+    {
+        positionModalManager = new RelatedEntityManagerBuilder<EmployeePosition>(NotificationService, "職位")
+            .WithPropertyName(nameof(Employee.EmployeePositionId))
+            .WithReloadCallback(LoadAdditionalDataAsync)
+            .WithStateChangedCallback(StateHasChanged)
+            .WithAutoSelectCallback(positionId => 
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    editModalComponent.Entity.EmployeePositionId = positionId;
+                }
+            })
+            .WithCustomPostProcess(position => 
             {
                 // 員工特定的後處理邏輯
                 InitializeFormFields(editModalComponent?.Entity?.IsSystemUser ?? false);
@@ -309,7 +350,8 @@
                     FieldType = FormFieldType.Select,
                     Placeholder = "請選擇職位",
                     Options = positionOptions,
-                    HelpText = "選擇員工在組織中的職位"
+                    HelpText = "選擇員工在組織中的職位",
+                    ActionButtons = GetPositionActionButtons()
                 },
                 new()
                 {
@@ -711,6 +753,13 @@
                     fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int deptId) ? deptId : null);
             }
             
+            // 使用泛型管理器處理職位欄位變更
+            if (fieldChange.PropertyName == nameof(Employee.EmployeePositionId))
+            {
+                positionModalManager.UpdateFieldActionButtons(formFields, fieldChange.PropertyName, 
+                    fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int posId) ? posId : null);
+            }
+            
             return Task.CompletedTask;
         }
         catch (Exception)
@@ -729,12 +778,29 @@
     }
     
     /// <summary>
+    /// 包裝職位儲存事件以符合原有介面
+    /// </summary>
+    private async Task OnEmployeePositionSavedWrapper(EmployeePosition savedPosition)
+    {
+        await positionModalManager.HandleEntitySavedAsync(savedPosition, shouldAutoSelect: true);
+    }
+    
+    /// <summary>
     /// 使用泛型管理器產生部門操作按鈕
     /// </summary>
     private List<FieldActionButton> GetDepartmentActionButtons()
     {
         var currentDepartmentId = editModalComponent?.Entity?.DepartmentId;
         return departmentModalManager.GenerateActionButtons(currentDepartmentId);
+    }
+
+    /// <summary>
+    /// 使用泛型管理器產生職位操作按鈕
+    /// </summary>
+    private List<FieldActionButton> GetPositionActionButtons()
+    {
+        var currentPositionId = editModalComponent?.Entity?.EmployeePositionId;
+        return positionModalManager.GenerateActionButtons(currentPositionId);
     }
 
     // ===== 部門管理相關方法 - 已重構為使用泛型管理器 =====

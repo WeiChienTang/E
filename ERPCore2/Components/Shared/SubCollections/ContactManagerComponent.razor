@@ -14,9 +14,6 @@
         <thead class="table-light">
             <tr>
                 <th>聯絡資訊</th>
-                <th>@TypeDisplayName</th>
-                <th>@ValueDisplayName</th>
-                <th>狀態</th>
                 @if (!IsReadOnly)
                 {
                     <th width="120">操作</th>
@@ -40,19 +37,6 @@
                                             <span>@GetContactDisplayText(item)</span>
                                         </div>
                                     </div>
-                                </td>
-                                <td>
-                                    @{
-                                        var typeId = GetTypeId(item);
-                                        var typeOption = typeId.HasValue ? Options.FirstOrDefault(o => GetOptionId(o) == typeId.Value) : null;
-                                    }
-                                    @(typeOption != null ? GetOptionDisplayText(typeOption) : "-")
-                                </td>
-                                <td>
-                                    <span class="text-break">@GetContactValue(item)</span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-success">啟用</span>
                                 </td>
                                 @if (!IsReadOnly)
                                 {
@@ -79,7 +63,7 @@
                         @if (!IsReadOnly)
                         {
                             <tr>
-                                <td colspan="@(IsReadOnly ? 4 : 5)" class="text-center py-3 border-top">
+                                <td colspan="@(IsReadOnly ? 1 : 2)" class="text-center py-3 border-top">
                                     <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" 
                                                            Text="@($"新增{ItemDisplayName}")" 
                                                            IconClass="bi-plus me-1" 
