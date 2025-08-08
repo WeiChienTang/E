@@ -110,6 +110,9 @@ namespace ERPCore2.Data
             
             // 錯誤記錄服務
             services.AddScoped<IErrorLogService, ErrorLogService>();
+            
+            // 刪除記錄服務
+            services.AddScoped<IDeletedRecordService, DeletedRecordService>();
         }
 
         /// <summary>

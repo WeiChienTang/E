@@ -73,6 +73,7 @@ namespace ERPCore2.Data.Context
       
       // System Logs
       public DbSet<ErrorLog> ErrorLogs { get; set; }
+      public DbSet<DeletedRecord> DeletedRecords { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
             {

@@ -1,0 +1,317 @@
+@page "/deleted-records"
+@inject IDeletedRecordService DeletedRecordService
+@inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
+
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="DeletedRecord" 
+                        TService="IDeletedRecordService"
+                        Service="@DeletedRecordService"
+                        EntityBasePath="/deleted-records"                          
+                        PageTitle="刪除記錄管理"
+                        PageSubtitle="查看和管理系統中的軟刪除記錄"
+                        DataLoader="@LoadDataAsync"
+                        FilterApplier="@ApplyDeletedRecordFilters"
+                        BreadcrumbItems="@breadcrumbItems"
+                        FilterDefinitions="@filterDefinitions"
+                        ColumnDefinitions="@columnDefinitions"
+                        EntityName="刪除記錄"
+                        GetEntityDisplayName="@(record => $"{record.TableName} - {record.RecordDisplayName}")"
+                        RequiredPermission="System.DeletedRecord.Read"
+                        ShowDefaultActions="false"
+                        EnableStandardActions="false"
+                        ShowActions="true"
+                        ActionsTemplate="@CustomActionsTemplate"
+                        ShowViewButton="false"
+                        ShowEditButton="false"
+                        ShowDeleteButton="false"
+                        EnableRowClick="false"
+                        AutoAddCreatedAtColumn="false"
+                        @ref="indexComponent"/>
+
+@code {
+    private GenericIndexPageComponent<DeletedRecord, IDeletedRecordService> indexComponent = default!;
+    
+    // 設定選項
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+
+    // 自定義動作範本 - 包含真實刪除功能
+    private RenderFragment<DeletedRecord> CustomActionsTemplate => record =>
+        @<div class="table-actions-group">
+            <button class="btn btn-outline-info btn-sm" 
+                    @onclick="@(async () => await ShowDeletedRecordDetails(record))" 
+                    @onclick:stopPropagation="true" 
+                    title="查看詳細資訊">
+                <i class="bi bi-eye"></i>
+            </button>
+            <button class="btn btn-outline-danger btn-sm" 
+                    @onclick="@(async () => await PermanentlyDeleteRecord(record))" 
+                    @onclick:stopPropagation="true" 
+                    title="永久刪除">
+                <i class="bi bi-trash-fill"></i>
+            </button>
+        </div>;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await InitializeBreadcrumbs();
+            await InitializeFilters();
+            await InitializeTableColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(OnInitializedAsync),
+                GetType(),
+                additionalData: "初始化刪除記錄頁面失敗"
+            );
+        }
+    }
+
+    // ===== 初始化方法 =====
+
+    private async Task InitializeBreadcrumbs()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("系統管理", "#"),
+                new("刪除記錄管理")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeBreadcrumbs),
+                GetType()
+            );
+        }
+    }
+
+    private async Task InitializeFilters()
+    {
+        try
+        {
+            // 建立篩選定義
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("TableName", "資料表名稱", "輸入資料表名稱搜尋")
+                .AddText("RecordDisplayName", "記錄名稱", "輸入記錄顯示名稱搜尋")                
+                .AddText("DeletedBy", "刪除者", "輸入刪除者搜尋")
+                .AddText("DeleteReason", "刪除原因", "輸入刪除原因搜尋")
+                .AddDateRange("DeletedAt", "刪除日期")
+                .Build();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeFilters),
+                GetType(),
+                additionalData: "初始化篩選器失敗"
+            );
+        }
+    }
+
+    private async Task InitializeTableColumns()
+    {
+        try
+        {
+            columnDefinitions = new List<TableColumnDefinition>
+            {
+                new TableColumnDefinition
+                {
+                    Title = "資料表",
+                    PropertyName = nameof(DeletedRecord.TableName),
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 120px;",
+                    CellCssClass = "fw-bold text-primary"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "記錄ID",
+                    PropertyName = nameof(DeletedRecord.RecordId),
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 80px; text-align: center;",
+                    CellCssClass = "text-center font-monospace"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "記錄名稱",
+                    PropertyName = nameof(DeletedRecord.RecordDisplayName),
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 200px;",
+                    NullDisplayText = "未提供"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "刪除時間",
+                    PropertyName = nameof(DeletedRecord.DeletedAt),
+                    DataType = ColumnDataType.DateTime,
+                    HeaderStyle = "width: 150px; text-align: center;",
+                    CellCssClass = "text-center",
+                    Format = "yyyy/MM/dd HH:mm"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "刪除者",
+                    PropertyName = nameof(DeletedRecord.DeletedBy),
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 120px;",
+                    NullDisplayText = "系統"
+                },
+                new TableColumnDefinition
+                {
+                    Title = "刪除原因",
+                    PropertyName = nameof(DeletedRecord.DeleteReason),
+                    DataType = ColumnDataType.Text,
+                    HeaderStyle = "width: 250px;",
+                    CellCssClass = "text-truncate",
+                    NullDisplayText = "未提供"
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeTableColumns),
+                GetType(),
+                additionalData: "初始化表格欄位失敗"
+            );
+        }
+    }
+
+    // 資料載入委派
+    private async Task<List<DeletedRecord>> LoadDataAsync()
+    {
+        try
+        {
+            return await DeletedRecordService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(LoadDataAsync),
+                GetType(),
+                additionalData: "載入刪除記錄資料失敗"
+            );
+            return new List<DeletedRecord>();
+        }
+    }
+
+    private IQueryable<DeletedRecord> ApplyDeletedRecordFilters(SearchFilterModel searchModel, IQueryable<DeletedRecord> query)
+    {
+        var filterActions = new List<Func<SearchFilterModel, IQueryable<DeletedRecord>, IQueryable<DeletedRecord>>>
+        {
+            // 應用基礎實體篩選（狀態、備註）
+            (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
+            
+            // 資料表名稱篩選
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "TableName", dr => dr.TableName),
+            
+            // 記錄顯示名稱篩選
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "RecordDisplayName", dr => dr.RecordDisplayName, allowNull: true),
+            
+            // 刪除者篩選
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "DeletedBy", dr => dr.DeletedBy, allowNull: true),
+            
+            // 刪除原因篩選
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "DeleteReason", dr => dr.DeleteReason, allowNull: true),
+            
+            // 刪除日期範圍篩選
+            (model, q) => FilterHelper.ApplyDateRangeFilter(model, q, "DeletedAt", dr => dr.DeletedAt)
+        };
+
+        return FilterHelper.ApplyFiltersWithErrorHandling(
+            searchModel,
+            query,
+            filterActions,
+            q => q.OrderByDescending(dr => dr.DeletedAt), // 預設排序：最新刪除的在前
+            nameof(ApplyDeletedRecordFilters),
+            GetType()
+        );
+    }
+
+    // ===== 自定義動作方法 =====
+
+    /// <summary>
+    /// 顯示刪除記錄詳細資訊
+    /// </summary>
+    private async Task ShowDeletedRecordDetails(DeletedRecord record)
+    {
+        try
+        {
+            var message = "資料表：" + record.TableName + "\n" +
+                         "記錄ID：" + record.RecordId + "\n" +
+                         "記錄名稱：" + (record.RecordDisplayName ?? "未提供") + "\n" +
+                         "刪除時間：" + record.DeletedAt.ToString("yyyy/MM/dd HH:mm:ss") + "\n" +
+                         "刪除者：" + (record.DeletedBy ?? "系統") + "\n" +
+                         "刪除原因：" + (record.DeleteReason ?? "未提供");
+
+            await JSRuntime.InvokeVoidAsync("alert", message);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(ShowDeletedRecordDetails),
+                GetType(),
+                additionalData: $"顯示刪除記錄詳細資訊失敗 - ID: {record?.Id}"
+            );
+        }
+    }
+
+    /// <summary>
+    /// 永久刪除記錄（真實刪除）
+    /// </summary>
+    private async Task PermanentlyDeleteRecord(DeletedRecord record)
+    {
+        try
+        {
+            // 確認對話框
+            var confirmMessage = $"確定要永久刪除此記錄嗎？\n\n資料表：{record.TableName}\n記錄：{record.RecordDisplayName ?? record.RecordId.ToString()}\n\n此操作無法復原！";
+            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", confirmMessage);
+            
+            if (!confirmed)
+                return;
+
+            // 執行永久刪除
+            var result = await DeletedRecordService.PermanentlyDeleteAsync(record.Id, record.TableName, record.RecordId);
+            
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("永久刪除成功");
+                
+                // 重新載入資料
+                if (indexComponent != null)
+                {
+                    await indexComponent.ReloadData();
+                }
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"永久刪除失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(PermanentlyDeleteRecord),
+                GetType(),
+                additionalData: $"永久刪除記錄失敗 - ID: {record?.Id}"
+            );
+            await NotificationService.ShowErrorAsync("永久刪除時發生錯誤");
+        }
+    }
+}
