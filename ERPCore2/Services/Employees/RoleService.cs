@@ -179,8 +179,10 @@ namespace ERPCore2.Services
                 if (role == null)
                     return ServiceResult.Failure("角色不存在");
 
-                if (role.IsSystemRole)
-                    return ServiceResult.Failure("無法修改系統角色的權限");
+                // 只有管理員或admin角色不能修改權限
+                var roleName = role.RoleName?.Trim().ToLower();
+                if (roleName == "管理員" || roleName == "admin")
+                    return ServiceResult.Failure("無法修改管理員角色的權限");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
@@ -261,8 +263,10 @@ namespace ERPCore2.Services
                 if (role == null)
                     return ServiceResult.Failure("角色不存在");
 
-                if (role.IsSystemRole)
-                    return ServiceResult.Failure("無法修改系統角色的權限");
+                // 只有管理員或admin角色不能修改權限
+                var roleName = role.RoleName?.Trim().ToLower();
+                if (roleName == "管理員" || roleName == "admin")
+                    return ServiceResult.Failure("無法修改管理員角色的權限");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var rolePermissionsToRemove = await context.RolePermissions
@@ -295,8 +299,10 @@ namespace ERPCore2.Services
                 if (role == null)
                     return ServiceResult.Failure("角色不存在");
 
-                if (role.IsSystemRole)
-                    return ServiceResult.Failure("無法修改系統角色的權限");
+                // 只有管理員或admin角色不能修改權限
+                var roleName = role.RoleName?.Trim().ToLower();
+                if (roleName == "管理員" || roleName == "admin")
+                    return ServiceResult.Failure("無法修改管理員角色的權限");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var rolePermissions = await context.RolePermissions
@@ -333,8 +339,10 @@ namespace ERPCore2.Services
                 if (targetRole == null)
                     return ServiceResult.Failure("目標角色不存在");
 
-                if (targetRole.IsSystemRole)
-                    return ServiceResult.Failure("無法修改系統角色的權限");
+                // 只有管理員或admin角色不能修改權限
+                var targetRoleName = targetRole.RoleName?.Trim().ToLower();
+                if (targetRoleName == "管理員" || targetRoleName == "admin")
+                    return ServiceResult.Failure("無法修改管理員角色的權限");
 
                 // 取得來源角色的權限
                 var sourcePermissionIds = sourceRole.RolePermissions
@@ -387,8 +395,10 @@ namespace ERPCore2.Services
                 if (role == null)
                     return ServiceResult<bool>.Failure("角色不存在");
 
-                if (role.IsSystemRole)
-                    return ServiceResult<bool>.Success(false); // 系統角色不能刪除
+                // 只有管理員或admin角色不能刪除
+                var roleName = role.RoleName?.Trim().ToLower();
+                if (roleName == "管理員" || roleName == "admin")
+                    return ServiceResult<bool>.Success(false); // 管理員角色不能刪除
 
                 var employeeCount = await GetEmployeeCountByRoleAsync(roleId);
                 if (!employeeCount.IsSuccess)

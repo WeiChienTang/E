@@ -17,95 +17,85 @@
                             BreadcrumbItems="@breadcrumbItems">
         </GenericHeaderComponent>
 
-        <div class="row">
-            <!-- 左側：角色列表 -->
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-users me-2"></i>角色清單
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        @if (isLoadingRoles)
-                        {
-                            <div class="text-center py-4">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">載入中...</span>
-                                </div>
-                                <p class="mt-2 text-muted">載入角色資料中...</p>
-                            </div>
-                        }
-                        else if (roles.Any())
-                        {
-                            <GenericTableComponent TItem="Role"
-                                                Items="@roles"
-                                                ColumnDefinitions="@roleColumnDefinitions"
-                                                ShowHeader="true"
-                                                ShowActions="false"
-                                                IsStriped="true"
-                                                IsHoverable="true"
-                                                EnableRowClick="true"
-                                                OnRowClick="@HandleRoleSelection"
-                                                GetRowCssClass="@(role => role.Id == selectedRole?.Id ? "table-primary" : "")"
-                                                EmptyMessage="沒有找到角色資料" />
-                        }
-                        else
-                        {
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle me-2"></i>
-                                尚未建立任何角色
-                            </div>
-                        }
-                    </div>
-                </div>
+        <div class="card">
+            <!-- 角色選擇區域 -->
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users me-2"></i>角色權限管理
+                </h5>
             </div>
-
-            <!-- 右側：權限設定 -->
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-shield-alt me-2"></i>權限設定
-                        </h5>
-                        @if (selectedRole != null)
-                        {
-                            <div class="d-flex gap-2">
-                                <GenericButtonComponent Text="全選"
-                                                    IconClass="fas fa-check-square"
-                                                    Variant="ButtonVariant.OutlineSecondary"
-                                                    Size="ButtonSize.Small"
-                                                    OnClick="SelectAllPermissions"
-                                                    IsDisabled="@isSaving" />
-                                <GenericButtonComponent Text="全清"
-                                                    IconClass="fas fa-square"
-                                                    Variant="ButtonVariant.OutlineSecondary"
-                                                    Size="ButtonSize.Small"
-                                                    OnClick="ClearAllPermissions"
-                                                    IsDisabled="@isSaving" />
-                                <GenericButtonComponent Text="儲存權限"
-                                                    IconClass="fas fa-save"
-                                                    Variant="ButtonVariant.Primary"
-                                                    Size="ButtonSize.Small"
-                                                    OnClick="SaveRolePermissions"
-                                                    IsDisabled="@isSaving"
-                                                    IsLoading="@isSaving" />
-                            </div>
-                        }
+            <div class="card-body">
+                @if (isLoadingRoles)
+                {
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">載入中...</span>
+                        </div>
+                        <p class="mt-2 text-muted">載入角色資料中...</p>
                     </div>
-                    <div class="card-body">
-                        @if (selectedRole == null)
-                        {
-                            <div class="alert alert-info">
-                                <i class="fas fa-hand-point-left me-2"></i>
-                                請先選擇一個角色以管理其權限
-                            </div>
-                        }
-                        else if (selectedRole.IsSystemRole)
+                }
+                else if (roles.Any())
+                {
+                    <div class="mb-4">
+                        <label for="roleSelect" class="form-label">選擇角色：</label>
+                        <select id="roleSelect" class="form-select" @onchange="HandleRoleSelectionChanged">
+                            <option value="">-- 請選擇角色 --</option>
+                            @foreach (var role in roles)
+                            {
+                                <option value="@role.Id" selected="@(role.Id == selectedRole?.Id)">
+                                    @role.RoleName
+                                </option>
+                            }
+                        </select>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        尚未建立任何角色
+                    </div>
+                }
+
+                <!-- 權限設定區域 -->
+                @if (selectedRole != null)
+                {
+                    <div class="border-top pt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">
+                                <i class="fas fa-shield-alt me-2"></i>權限設定
+                            </h6>
+                            @if (!IsAdminRole(selectedRole))
+                            {
+                                <div class="d-flex gap-2">
+                                    <GenericButtonComponent Text="全選"
+                                                        IconClass="fas fa-check-square"
+                                                        Variant="ButtonVariant.OutlineSecondary"
+                                                        Size="ButtonSize.Small"
+                                                        OnClick="SelectAllPermissions"
+                                                        IsDisabled="@isSaving" />
+                                    <GenericButtonComponent Text="全清"
+                                                        IconClass="fas fa-square"
+                                                        Variant="ButtonVariant.OutlineSecondary"
+                                                        Size="ButtonSize.Small"
+                                                        OnClick="ClearAllPermissions"
+                                                        IsDisabled="@isSaving" />
+                                    <GenericButtonComponent Text="儲存權限"
+                                                        IconClass="fas fa-save"
+                                                        Variant="ButtonVariant.Primary"
+                                                        Size="ButtonSize.Small"
+                                                        OnClick="SaveRolePermissions"
+                                                        IsDisabled="@isSaving"
+                                                        IsLoading="@isSaving" />
+                                </div>
+                            }
+                        </div>
+
+                        @if (IsAdminRole(selectedRole))
                         {
                             <div class="alert alert-warning">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
-                                系統角色的權限無法修改
+                                管理員角色的權限無法修改
                             </div>
                             @if (isLoadingPermissions)
                             {
@@ -147,7 +137,16 @@
                             }
                         }
                     </div>
-                </div>
+                }
+                else
+                {
+                    <div class="border-top pt-4">
+                        <div class="alert alert-info">
+                            <i class="fas fa-hand-point-up me-2"></i>
+                            請先選擇一個角色以管理其權限
+                        </div>
+                    </div>
+                }
             </div>
         </div>
     </div>
@@ -166,7 +165,6 @@
     private bool isSaving = false;
 
     // 表格欄位定義
-    private List<TableColumnDefinition> roleColumnDefinitions = new();
     private List<TableColumnDefinition> permissionColumnDefinitions = new();
 
     // 麵包屑導航
@@ -198,42 +196,14 @@
 
     private void InitializeColumnDefinitions()
     {
-        roleColumnDefinitions = new List<TableColumnDefinition>
-        {
-            new()
-            {
-                PropertyName = nameof(Role.RoleName),
-                Title = "角色名稱",
-                DataType = ColumnDataType.Text,
-                CellCssClass = "fw-bold"
-            },
-            new()
-            {
-                PropertyName = nameof(Role.Description),
-                Title = "說明",
-                DataType = ColumnDataType.Text,
-                CellCssClass = "text-muted"
-            },
-            new()
-            {
-                PropertyName = nameof(Role.IsSystemRole),
-                Title = "系統角色",
-                DataType = ColumnDataType.Boolean,
-                TrueText = "是",
-                FalseText = "否",
-                CellCssClass = "text-center"
-            },
-            new()
-            {
-                PropertyName = nameof(Role.Remarks),
-                Title = "備註",
-                DataType = ColumnDataType.Text,
-                CellCssClass = "text-muted"
-            }
-        };
-
         permissionColumnDefinitions = new List<TableColumnDefinition>
         {
+            new()
+            {
+                PropertyName = nameof(Permission.PermissionName),
+                Title = "權限名稱",
+                DataType = ColumnDataType.Text
+            },
             new()
             {
                 PropertyName = nameof(Permission.PermissionCode),
@@ -241,12 +211,6 @@
                 DataType = ColumnDataType.Text,
                 CellCssClass = "font-monospace"
             },
-            new()
-            {
-                PropertyName = nameof(Permission.PermissionName),
-                Title = "權限名稱",
-                DataType = ColumnDataType.Text
-            }
         };
     }
 
@@ -322,6 +286,31 @@
         }
     }
 
+    private async Task HandleRoleSelectionChanged(ChangeEventArgs e)
+    {
+        try
+        {
+            if (int.TryParse(e.Value?.ToString(), out int roleId) && roleId > 0)
+            {
+                selectedRole = roles.FirstOrDefault(r => r.Id == roleId);
+                if (selectedRole != null)
+                {
+                    await LoadPermissionsAsync();
+                }
+            }
+            else
+            {
+                selectedRole = null;
+                permissionSelections.Clear();
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleRoleSelectionChanged), GetType());
+        }
+    }
+
     private async Task HandleRoleSelection(Role role)
     {
         try
@@ -358,6 +347,13 @@
         if (selectedRole == null)
         {
             await NotificationService.ShowWarningAsync("請先選擇一個角色", "警告");
+            return;
+        }
+
+        // 檢查是否為管理員角色
+        if (IsAdminRole(selectedRole))
+        {
+            await NotificationService.ShowWarningAsync("管理員角色的權限無法修改", "警告");
             return;
         }
 
@@ -448,6 +444,20 @@
         StateHasChanged();
     }
 
+    private void TogglePermissionSelection(int permissionId)
+    {
+        var currentValue = permissionSelections.GetValueOrDefault(permissionId, false);
+        permissionSelections[permissionId] = !currentValue;
+        StateHasChanged();
+    }
+
+    private bool IsAdminRole(Role? role)
+    {
+        if (role == null) return false;
+        var roleName = role.RoleName?.Trim().ToLower();
+        return roleName == "管理員" || roleName == "admin";
+    }
+
     private RenderFragment RenderPermissionTable(bool isReadOnly)
     {
         return builder =>
@@ -475,12 +485,12 @@
             
             builder.OpenElement(12, "th");
             builder.AddAttribute(13, "scope", "col");
-            builder.AddContent(14, "權限代碼");
+            builder.AddContent(14, "權限名稱");
             builder.CloseElement();
             
             builder.OpenElement(15, "th");
             builder.AddAttribute(16, "scope", "col");
-            builder.AddContent(17, "權限名稱");
+            builder.AddContent(17, "權限代碼");
             builder.CloseElement();
             
             builder.CloseElement(); // tr
@@ -495,10 +505,17 @@
                 foreach (var permission in permissions)
                 {
                     var isSelected = permissionSelections.GetValueOrDefault(permission.Id, false);
-                    var rowClass = isSelected ? "table-success" : "";
+                    var rowClass = isSelected ? "table-success user-select-none" : "user-select-none";
                     
                     builder.OpenElement(rowIndex++, "tr");
-                    builder.AddAttribute(rowIndex++, "class", rowClass);
+                    builder.AddAttribute(rowIndex++, "class", $"{rowClass} cursor-pointer");
+                    builder.AddAttribute(rowIndex++, "style", "cursor: pointer;");
+                    if (!isReadOnly)
+                    {
+                        builder.AddAttribute(rowIndex++, "onclick", 
+                            Microsoft.AspNetCore.Components.EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
+                                this, _ => TogglePermissionSelection(permission.Id)));
+                    }
                     
                     if (!isReadOnly)
                     {
@@ -509,21 +526,19 @@
                         builder.AddAttribute(rowIndex++, "type", "checkbox");
                         builder.AddAttribute(rowIndex++, "class", "form-check-input");
                         builder.AddAttribute(rowIndex++, "checked", isSelected);
-                        builder.AddAttribute(rowIndex++, "onchange", 
-                            Microsoft.AspNetCore.Components.EventCallback.Factory.Create<Microsoft.AspNetCore.Components.ChangeEventArgs>(
-                                this, args => OnPermissionSelectionChanged(permission.Id, (bool)(args.Value ?? false))));
+                        builder.AddAttribute(rowIndex++, "readonly", true);
                         builder.CloseElement();
                         
                         builder.CloseElement(); // td
                     }
                     
                     builder.OpenElement(rowIndex++, "td");
-                    builder.AddAttribute(rowIndex++, "class", "font-monospace");
-                    builder.AddContent(rowIndex++, permission.PermissionCode);
+                    builder.AddContent(rowIndex++, permission.PermissionName);
                     builder.CloseElement();
                     
                     builder.OpenElement(rowIndex++, "td");
-                    builder.AddContent(rowIndex++, permission.PermissionName);
+                    builder.AddAttribute(rowIndex++, "class", "font-monospace");
+                    builder.AddContent(rowIndex++, permission.PermissionCode);
                     builder.CloseElement();
                     
                     builder.CloseElement(); // tr
