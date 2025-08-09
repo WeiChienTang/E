@@ -29,8 +29,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 return;
 
             // 取得角色和權限
-            var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Administrator");
-            var employeeRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Employee");
+            var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "管理員");
+            var employeeRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "辦公室員工");
             var allPermissions = await context.Permissions.ToListAsync();
             var rolePermissions = new List<RolePermission>();
 
@@ -47,7 +47,22 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 }));
             }
 
-            // 員工角色不分配任何權限 (保留此註解以明確說明設計意圖)
+            // 辦公室員工擁有除了系統管理相關權限之外的所有權限
+            if (employeeRole != null)
+            {
+                var officeEmployeePermissions = allPermissions
+                    .Where(p => !p.PermissionCode.StartsWith("System"))
+                    .ToList();
+
+                rolePermissions.AddRange(officeEmployeePermissions.Select(p => new RolePermission
+                {
+                    RoleId = employeeRole.Id,
+                    PermissionId = p.Id,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "System"
+                }));
+            }
 
             await context.RolePermissions.AddRangeAsync(rolePermissions);
             await context.SaveChangesAsync();
