@@ -68,18 +68,53 @@
                             @if (!IsAdminRole(selectedRole))
                             {
                                 <div class="d-flex gap-2">
+                                    <div class="dropdown">
+                                        <GenericButtonComponent Text="複製權限"
+                                                            IconClass="fas fa-copy"
+                                                            Variant="ButtonVariant.OutlineInfo"
+                                                            Size="ButtonSize.Small"
+                                                            IsDisabled="@isSaving"
+                                                            AdditionalAttributes="@(new Dictionary<string, object> 
+                                                            { 
+                                                                { "data-bs-toggle", "dropdown" },
+                                                                { "aria-expanded", "false" }
+                                                            })" />
+                                        <ul class="dropdown-menu">
+                                            <li><h6 class="dropdown-header">從其他角色複製權限</h6></li>
+                                            @foreach (var role in roles.Where(r => r.Id != selectedRole.Id && !IsAdminRole(r)))
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item" href="#" @onclick="() => CopyPermissionsFromRole(role.Id)" @onclick:preventDefault="true">
+                                                        <i class="fas fa-user me-2"></i>@role.RoleName
+                                                    </a>
+                                                </li>
+                                            }
+                                            @if (!roles.Any(r => r.Id != selectedRole.Id && !IsAdminRole(r)))
+                                            {
+                                                <li><span class="dropdown-item-text text-muted">沒有可複製的角色</span></li>
+                                            }
+                                        </ul>
+                                    </div>
                                     <GenericButtonComponent Text="全選"
                                                         IconClass="fas fa-check-square"
                                                         Variant="ButtonVariant.OutlineSecondary"
                                                         Size="ButtonSize.Small"
                                                         OnClick="SelectAllPermissions"
-                                                        IsDisabled="@isSaving" />
+                                                        IsDisabled="@isSaving"
+                                                        AdditionalAttributes="@(new Dictionary<string, object> 
+                                                        { 
+                                                            { "title", "僅選擇一般權限，系統權限需手動選擇" }
+                                                        })" />
                                     <GenericButtonComponent Text="全清"
                                                         IconClass="fas fa-square"
                                                         Variant="ButtonVariant.OutlineSecondary"
                                                         Size="ButtonSize.Small"
                                                         OnClick="ClearAllPermissions"
-                                                        IsDisabled="@isSaving" />
+                                                        IsDisabled="@isSaving"
+                                                        AdditionalAttributes="@(new Dictionary<string, object> 
+                                                        { 
+                                                            { "title", "僅清除一般權限，系統權限需手動取消" }
+                                                        })" />
                                     <GenericButtonComponent Text="儲存權限"
                                                         IconClass="fas fa-save"
                                                         Variant="ButtonVariant.Primary"
@@ -109,7 +144,26 @@
                             else
                             {
                                 <div class="mt-3">
-                                    @RenderPermissionTable(true)
+                                    <!-- 一般權限表格 -->
+                                    <h6 class="mb-3">
+                                        <i class="fas fa-list me-2"></i>一般權限
+                                    </h6>
+                                    @RenderPermissionTable(true, false)
+                                    
+                                    <!-- 系統權限表格 -->
+                                    @if (permissions.Any(p => IsSystemPermission(p)))
+                                    {
+                                        <div class="mt-4">
+                                            <div class="alert alert-danger">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                                <strong>注意：</strong>以下為系統核心權限，管理員角色擁有所有權限。
+                                            </div>
+                                            <h6 class="mb-3 text-danger">
+                                                <i class="fas fa-shield-alt me-2"></i>系統權限
+                                            </h6>
+                                            @RenderPermissionTable(true, true)
+                                        </div>
+                                    }
                                 </div>
                             }
                         }
@@ -132,7 +186,32 @@
                             else
                             {
                                 <div class="mt-3">
-                                    @RenderPermissionTable(false)
+                                    <!-- 操作說明 -->
+                                    <div class="alert alert-info mb-3">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>提示：</strong> <strong>「全選」/「全清」</strong>按鈕僅影響一般權限，系統權限需要手動點擊個別選擇以確保安全性。
+                                    </div>
+                                    
+                                    <!-- 一般權限表格 -->
+                                    <h6 class="mb-3">
+                                        <i class="fas fa-list me-2"></i>一般權限
+                                    </h6>
+                                    @RenderPermissionTable(false, false)
+                                    
+                                    <!-- 系統權限表格 -->
+                                    @if (permissions.Any(p => IsSystemPermission(p)))
+                                    {
+                                        <div class="mt-4">
+                                            <div class="alert alert-danger">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                                <strong>注意：</strong>以下為系統核心權限，請謹慎授權！這些權限可能影響系統安全性和穩定性。
+                                            </div>
+                                            <h6 class="mb-3 text-danger">
+                                                <i class="fas fa-shield-alt me-2"></i>系統權限
+                                            </h6>
+                                            @RenderPermissionTable(false, true)
+                                        </div>
+                                    }
                                 </div>
                             }
                         }
@@ -324,22 +403,94 @@
         }
     }
 
+    /// <summary>
+    /// 全選權限 - 僅選擇一般權限，系統權限需要使用者手動選擇以確保安全性
+    /// </summary>
     private void SelectAllPermissions()
     {
         foreach (var permission in permissions)
         {
-            permissionSelections[permission.Id] = true;
+            // 只自動選擇一般權限，系統權限需要使用者手動點擊以確保安全
+            if (!IsSystemPermission(permission))
+            {
+                permissionSelections[permission.Id] = true;
+            }
         }
         StateHasChanged();
     }
 
+    /// <summary>
+    /// 清除所有權限 - 僅清除一般權限，系統權限需要使用者手動取消以避免意外操作
+    /// </summary>
     private void ClearAllPermissions()
     {
         foreach (var permission in permissions)
         {
-            permissionSelections[permission.Id] = false;
+            // 只自動清除一般權限，系統權限需要使用者手動點擊以避免意外取消
+            if (!IsSystemPermission(permission))
+            {
+                permissionSelections[permission.Id] = false;
+            }
         }
         StateHasChanged();
+    }
+
+    private async Task CopyPermissionsFromRole(int sourceRoleId)
+    {
+        if (selectedRole == null || isSaving)
+        {
+            return;
+        }
+
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            var sourceRole = roles.FirstOrDefault(r => r.Id == sourceRoleId);
+            if (sourceRole == null)
+            {
+                await NotificationService.ShowErrorAsync("來源角色不存在", "錯誤");
+                return;
+            }
+
+            // 檢查來源角色是否為管理員角色
+            if (IsAdminRole(sourceRole))
+            {
+                await NotificationService.ShowWarningAsync("無法複製管理員角色的權限", "警告");
+                return;
+            }
+
+            // 取得來源角色的權限
+            var sourcePermissionResult = await PermissionService.GetRolePermissionsAsync(sourceRoleId);
+            if (!sourcePermissionResult.IsSuccess || sourcePermissionResult.Data == null)
+            {
+                await NotificationService.ShowErrorAsync("載入來源角色權限時發生錯誤", "錯誤");
+                return;
+            }
+
+            // 更新權限選擇狀態
+            permissionSelections.Clear();
+            var sourcePermissionIds = sourcePermissionResult.Data.Select(p => p.Id).ToHashSet();
+            
+            foreach (var permission in permissions)
+            {
+                permissionSelections[permission.Id] = sourcePermissionIds.Contains(permission.Id);
+            }
+
+            StateHasChanged();
+            await NotificationService.ShowSuccessAsync($"已成功複製角色「{sourceRole.RoleName}」的權限設定", "複製成功");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(CopyPermissionsFromRole), GetType());
+            await NotificationService.ShowErrorAsync("複製權限時發生錯誤", "錯誤");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
     }
 
     private async Task SaveRolePermissions()
@@ -367,6 +518,38 @@
                 .Select(kvp => kvp.Key)
                 .ToList();
 
+            // 檢查是否授予了系統權限，需要確認
+            var selectedPermissions = permissions
+                .Where(p => selectedPermissionIds.Contains(p.Id))
+                .ToList();
+
+            var systemPermissions = selectedPermissions
+                .Where(p => IsSystemPermission(p))
+                .ToList();
+
+            // 如果包含系統權限，顯示確認對話框
+            if (systemPermissions.Any())
+            {
+                var systemPermissionNames = systemPermissions.Select(p => $"• {p.PermissionName} ({p.PermissionCode})").ToList();
+                var permissionList = string.Join("\n", systemPermissionNames);
+                
+                var confirmMessage = $"您即將為角色「{selectedRole.RoleName}」授予以下系統核心權限：\n\n{permissionList}\n\n" +
+                                   "⚠️ 警告：\n" +
+                                   "• 系統權限可能影響系統安全性和穩定性\n" +
+                                   "• 擁有這些權限的用戶可以執行敏感的系統操作\n" +
+                                   "• 包括但不限於：系統設定修改、權限管理、角色管理等\n\n" +
+                                   "請確認您了解這些權限的影響，是否繼續執行授權？";
+
+                var confirmed = await NotificationService.ShowConfirmAsync(confirmMessage, "系統權限授權確認");
+                
+                if (!confirmed)
+                {
+                    isSaving = false;
+                    StateHasChanged();
+                    return;
+                }
+            }
+
             // 調試資訊
             await JSRuntime.InvokeVoidAsync("console.log", $"準備儲存角色 {selectedRole.RoleName} 的權限");
             await JSRuntime.InvokeVoidAsync("console.log", $"選擇的權限ID: {string.Join(", ", selectedPermissionIds)}");
@@ -375,7 +558,12 @@
             
             if (result.IsSuccess)
             {
-                await NotificationService.ShowSuccessAsync($"已成功更新角色「{selectedRole.RoleName}」的權限", "儲存成功");
+                // 根據是否包含系統權限顯示不同的成功訊息
+                var successMessage = systemPermissions.Any() 
+                    ? $"已成功更新角色「{selectedRole.RoleName}」的權限（包含 {systemPermissions.Count} 個系統權限）"
+                    : $"已成功更新角色「{selectedRole.RoleName}」的權限";
+                
+                await NotificationService.ShowSuccessAsync(successMessage, "儲存成功");
                 
                 // 清除相關快取
                 await ClearPermissionCache();
@@ -458,7 +646,16 @@
         return roleName == "管理員" || roleName == "admin";
     }
 
-    private RenderFragment RenderPermissionTable(bool isReadOnly)
+    private bool IsSystemPermission(Permission permission)
+    {
+        var code = permission.PermissionCode;
+        return code.StartsWith("System.") || 
+               code.StartsWith("SystemControl.") || 
+               code.StartsWith("Permission.") || 
+               code.StartsWith("Role.");
+    }
+
+    private RenderFragment RenderPermissionTable(bool isReadOnly, bool showSystemPermissions = false)
     {
         return builder =>
         {
@@ -466,11 +663,15 @@
             builder.AddAttribute(1, "class", "table-responsive");
             
             builder.OpenElement(2, "table");
-            builder.AddAttribute(3, "class", "table table-hover");
+            var tableClass = showSystemPermissions 
+                ? "table table-hover table-bordered border-danger" 
+                : "table table-hover table-bordered";
+            builder.AddAttribute(3, "class", tableClass);
             
             // 表格標題
             builder.OpenElement(4, "thead");
-            builder.AddAttribute(5, "class", "table-header-primary"); // 已經移除廣域的 from shared-utlities.css
+            var headerClass = showSystemPermissions ? "table-danger" : "table-header-primary";
+            builder.AddAttribute(5, "class", headerClass);
             builder.OpenElement(6, "tr");
             
             if (!isReadOnly)
@@ -485,12 +686,19 @@
             
             builder.OpenElement(12, "th");
             builder.AddAttribute(13, "scope", "col");
-            builder.AddContent(14, "權限名稱");
+            builder.AddAttribute(14, "style", "width: 200px;");
+            builder.AddContent(15, "權限名稱");
             builder.CloseElement();
             
-            builder.OpenElement(15, "th");
-            builder.AddAttribute(16, "scope", "col");
-            builder.AddContent(17, "權限代碼");
+            builder.OpenElement(16, "th");
+            builder.AddAttribute(17, "scope", "col");
+            builder.AddAttribute(18, "style", "width: 300px;");
+            builder.AddContent(19, "權限代碼");
+            builder.CloseElement();
+            
+            builder.OpenElement(20, "th");
+            builder.AddAttribute(21, "scope", "col");
+            builder.AddContent(22, "備註");
             builder.CloseElement();
             
             builder.CloseElement(); // tr
@@ -499,13 +707,19 @@
             // 表格內容
             builder.OpenElement(21, "tbody");
             
-            if (permissions.Any())
+            // 根據 showSystemPermissions 參數過濾權限
+            var filteredPermissions = showSystemPermissions 
+                ? permissions.Where(p => IsSystemPermission(p)).ToList()
+                : permissions.Where(p => !IsSystemPermission(p)).ToList();
+            
+            if (filteredPermissions.Any())
             {
                 int rowIndex = 22;
-                foreach (var permission in permissions)
+                foreach (var permission in filteredPermissions)
                 {
                     var isSelected = permissionSelections.GetValueOrDefault(permission.Id, false);
-                    var rowClass = isSelected ? "table-success user-select-none" : "user-select-none";
+                    var baseRowClass = isSelected ? "table-success user-select-none" : "user-select-none";
+                    var rowClass = showSystemPermissions ? $"{baseRowClass} text-danger" : baseRowClass;
                     
                     builder.OpenElement(rowIndex++, "tr");
                     builder.AddAttribute(rowIndex++, "class", $"{rowClass} cursor-pointer");
@@ -541,6 +755,11 @@
                     builder.AddContent(rowIndex++, permission.PermissionCode);
                     builder.CloseElement();
                     
+                    builder.OpenElement(rowIndex++, "td");
+                    builder.AddAttribute(rowIndex++, "class", "text-muted");
+                    builder.AddContent(rowIndex++, permission.Remarks ?? "");
+                    builder.CloseElement();
+                    
                     builder.CloseElement(); // tr
                 }
             }
@@ -549,7 +768,7 @@
                 int emptyRowIndex = 22;
                 builder.OpenElement(emptyRowIndex++, "tr");
                 builder.OpenElement(emptyRowIndex++, "td");
-                builder.AddAttribute(emptyRowIndex++, "colspan", isReadOnly ? "2" : "3");
+                builder.AddAttribute(emptyRowIndex++, "colspan", isReadOnly ? "3" : "4");
                 builder.AddAttribute(emptyRowIndex++, "class", "text-center py-4 text-muted");
                 builder.AddContent(emptyRowIndex++, "沒有找到權限資料");
                 builder.CloseElement();
