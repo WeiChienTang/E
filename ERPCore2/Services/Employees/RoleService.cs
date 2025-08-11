@@ -466,6 +466,45 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
+        /// 根據當前使用者角色取得可指派的角色清單
+        /// </summary>
+        public async Task<ServiceResult<List<Role>>> GetAssignableRolesForCurrentUserAsync(string currentUserRole)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Roles
+                    .Where(r => !r.IsDeleted && r.Status == EntityStatus.Active);
+
+                // 檢查當前使用者是否為管理員
+                var currentRoleLower = currentUserRole?.Trim().ToLower() ?? "";
+                bool isAdmin = currentRoleLower == "管理員" || currentRoleLower == "admin" || 
+                               currentRoleLower.Contains("管理員") || currentRoleLower.Contains("admin");
+
+                // 如果當前使用者不是管理員，則排除管理員角色
+                if (!isAdmin)
+                {
+                    query = query.Where(r => 
+                        r.RoleName.ToLower() != "管理員" && 
+                        r.RoleName.ToLower() != "admin" && 
+                        !r.RoleName.ToLower().Contains("管理員") && 
+                        !r.RoleName.ToLower().Contains("admin"));
+                }
+
+                var roles = await query
+                    .OrderBy(r => r.RoleName)
+                    .ToListAsync();
+
+                return ServiceResult<List<Role>>.Success(roles);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAssignableRolesForCurrentUserAsync), GetType(), _logger);
+                return ServiceResult<List<Role>>.Failure($"取得可指派角色時發生錯誤：{ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// 驗證角色資料
         /// </summary>
         public ServiceResult<bool> ValidateRoleData(Role role)

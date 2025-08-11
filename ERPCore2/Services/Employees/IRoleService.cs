@@ -94,6 +94,13 @@ namespace ERPCore2.Services
         Task<ServiceResult<List<Role>>> GetAssignableRolesAsync();
 
         /// <summary>
+        /// 根據當前使用者角色取得可指派的角色清單
+        /// </summary>
+        /// <param name="currentUserRole">當前使用者的角色名稱</param>
+        /// <returns>可指派角色清單</returns>
+        Task<ServiceResult<List<Role>>> GetAssignableRolesForCurrentUserAsync(string currentUserRole);
+
+        /// <summary>
         /// 驗證角色資料
         /// </summary>
         /// <param name="role">角色資料</param>

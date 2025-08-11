@@ -97,5 +97,43 @@ namespace ERPCore2.Helpers
                 return "";
             }
         }
+        
+        /// <summary>
+        /// 取得當前使用者的角色名稱
+        /// </summary>
+        /// <param name="authenticationStateProvider">身份驗證狀態提供者</param>
+        /// <returns>角色名稱</returns>
+        public static async Task<string> GetCurrentRoleAsync(AuthenticationStateProvider authenticationStateProvider)
+        {
+            try
+            {
+                var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
+                return authState?.User?.FindFirst(ClaimTypes.Role)?.Value ?? "";
+            }
+            catch
+            {
+                return "";
+            }
+        }
+        
+        /// <summary>
+        /// 檢查當前使用者是否為管理員
+        /// </summary>
+        /// <param name="authenticationStateProvider">身份驗證狀態提供者</param>
+        /// <returns>是否為管理員</returns>
+        public static async Task<bool> IsCurrentUserAdminAsync(AuthenticationStateProvider authenticationStateProvider)
+        {
+            try
+            {
+                var roleName = await GetCurrentRoleAsync(authenticationStateProvider);
+                var roleNameLower = roleName.Trim().ToLower();
+                return roleNameLower == "管理員" || roleNameLower == "admin" || 
+                       roleNameLower.Contains("管理員") || roleNameLower.Contains("admin");
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

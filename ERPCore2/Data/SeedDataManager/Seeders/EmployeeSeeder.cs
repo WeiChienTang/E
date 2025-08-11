@@ -30,8 +30,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             if (await context.Employees.AnyAsync(e => e.EmployeeCode == "ADMIN001"))
                 return;
 
-            // 取得系統管理員角色
-            var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Administrator");
+            // 取得系統管理員角色 - 修正角色名稱
+            var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "管理員");
 
             // 建立系統管理員帳號
             var adminEmployee = new Employee
@@ -64,7 +64,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             // 定義要建立的員工資料
             var defaultEmployees = new[]
             {
-                new { Code = "EMP001", FirstName = "測試01", LastName = "測試用員工", Account = "zhang.xiaoming", RoleName = "Employee" },
+                new { Code = "EMP001", FirstName = "測試01", LastName = "測試用員工", Account = "tt", RoleName = "辦公室員工" },
             };
 
             foreach (var emp in defaultEmployees)
@@ -84,9 +84,9 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     LastName = emp.LastName,
                     Account = emp.Account,
                     Password = SeedDataHelper.HashPassword("1234"), // 預設密碼
-                    IsSystemUser = false, // 一般使用者
+                    IsSystemUser = true,
                     DepartmentId = null, // 可在之後設定部門
-                    RoleId = role?.Id ?? 2, // 預設為 Employee 角色
+                    RoleId = role?.Id ?? 3, // 預設為 員工 角色 (第三個角色)
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"

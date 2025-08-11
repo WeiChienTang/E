@@ -1,4 +1,5 @@
 @* 可重用的員工編輯組件 - 可在任何頁面中嵌入 *@
+@using System.Security.Claims
 @inject IEmployeeService EmployeeService
 @inject IDepartmentService DepartmentService
 @inject IEmployeePositionService EmployeePositionService
@@ -8,6 +9,7 @@
 @inject IContactTypeService ContactTypeService
 @inject IAddressTypeService AddressTypeService
 @inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <GenericEditModalComponent TEntity="Employee" 
                           TService="IEmployeeService"
@@ -27,6 +29,7 @@
                           SaveHandler="@SaveEmployee"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           OnSaveSuccess="@OnSaveSuccess"
+                          RequiredPermission="Employee.Read"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           AdditionalSections="@GetAdditionalSections()" />
@@ -198,8 +201,9 @@
             // 載入可選擇的職位列表
             availablePositions = await EmployeePositionService.GetAllAsync();
             
-            // 載入可指派的角色列表
-            var rolesResult = await RoleService.GetAssignableRolesAsync();
+            // 載入可指派的角色列表 - 根據當前使用者角色過濾
+            var currentUserRole = await CurrentUserHelper.GetCurrentRoleAsync(AuthenticationStateProvider);
+            var rolesResult = await RoleService.GetAssignableRolesForCurrentUserAsync(currentUserRole);
             availableRoles = rolesResult.IsSuccess ? rolesResult.Data ?? new List<Role>() : new List<Role>();
             
             // 載入聯絡類型和地址類型
@@ -220,6 +224,31 @@
             addressTypes = new List<AddressType>();
             contactTypeOptions = new List<ERPCore2.Data.BaseEntity>();
             addressTypeOptions = new List<ERPCore2.Data.BaseEntity>();
+        }
+    }
+
+    /// <summary>
+    /// 檢查當前使用者是否為管理員
+    /// </summary>
+    private bool GetCurrentUserIsAdmin()
+    {
+        try
+        {
+            var authState = AuthenticationStateProvider.GetAuthenticationStateAsync().Result;
+            var user = authState?.User;
+            
+            if (user == null || !user.Identity?.IsAuthenticated == true)
+                return false;
+                
+            var roleClaim = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role);
+            if (roleClaim == null) 
+                return false;
+                
+            return roleClaim.Value == "管理員";
+        }
+        catch
+        {
+            return false;
         }
     }
 
@@ -296,40 +325,53 @@
                     IsRequired = true,
                     MaxLength = 25,
                     HelpText = "員工的名字"
-                },
-                // 帳號資訊區段
-                new()
+                }
+            };
+
+            // 只有管理員才能看到系統使用者相關設定
+            var isCurrentUserAdmin = GetCurrentUserIsAdmin();
+            
+            if (isCurrentUserAdmin)
+            {
+                // 帳號資訊區段 - 僅管理員可見
+                formFields.AddRange(new List<FormFieldDefinition>
                 {
-                    PropertyName = nameof(Employee.IsSystemUser),
-                    Label = "系統使用者",
-                    FieldType = FormFieldType.Checkbox,
-                    DefaultValue = isSystemUser ? "true" : "false",
-                    HelpText = "是否允許此員工登入系統"
-                },
-                new()
-                {
-                    PropertyName = nameof(Employee.Account),
-                    Label = "登入帳號",
-                    FieldType = FormFieldType.Text,
-                    Placeholder = isSystemUser ? "請輸入登入帳號" : "僅系統使用者可設定",
-                    IsRequired = isSystemUser,
-                    IsDisabled = !isSystemUser, // 非系統使用者時停用
-                    MaxLength = 50,
-                    HelpText = isSystemUser ? "系統登入帳號" : "僅系統使用者需要設定登入帳號"
-                },
-                new()
-                {
-                    PropertyName = nameof(Employee.Password),
-                    Label = "登入密碼",
-                    FieldType = FormFieldType.Password,
-                    Placeholder = isSystemUser ? "請輸入登入密碼" : "僅系統使用者可設定",
-                    IsRequired = isSystemUser && !EmployeeId.HasValue, // 新增時必填，編輯時選填
-                    IsDisabled = !isSystemUser, // 非系統使用者時停用
-                    MaxLength = 100,
-                    HelpText = isSystemUser ? "系統登入密碼" : "僅系統使用者需要設定登入密碼"
-                },
-                
-                // 組織架構區段 - 使用泛型管理器產生的按鈕
+                    new()
+                    {
+                        PropertyName = nameof(Employee.IsSystemUser),
+                        Label = "系統使用者",
+                        FieldType = FormFieldType.Checkbox,
+                        DefaultValue = isSystemUser ? "true" : "false",
+                        HelpText = "是否允許此員工登入系統（僅管理員可設定）"
+                    },
+                    new()
+                    {
+                        PropertyName = nameof(Employee.Account),
+                        Label = "登入帳號",
+                        FieldType = FormFieldType.Text,
+                        Placeholder = isSystemUser ? "請輸入登入帳號" : "僅系統使用者可設定",
+                        IsRequired = isSystemUser,
+                        IsDisabled = !isSystemUser, // 非系統使用者時停用
+                        MaxLength = 50,
+                        HelpText = isSystemUser ? "系統登入帳號" : "僅系統使用者需要設定登入帳號"
+                    },
+                    new()
+                    {
+                        PropertyName = nameof(Employee.Password),
+                        Label = "登入密碼",
+                        FieldType = FormFieldType.Password,
+                        Placeholder = isSystemUser ? "請輸入登入密碼" : "僅系統使用者可設定",
+                        IsRequired = isSystemUser && !EmployeeId.HasValue, // 新增時必填，編輯時選填
+                        IsDisabled = !isSystemUser, // 非系統使用者時停用
+                        MaxLength = 100,
+                        HelpText = isSystemUser ? "系統登入密碼" : "僅系統使用者需要設定登入密碼"
+                    }
+                });
+            }
+            
+            // 組織架構區段 - 所有人都可見
+            formFields.AddRange(new List<FormFieldDefinition>
+            {
                 new()
                 {
                     PropertyName = nameof(Employee.DepartmentId),
@@ -349,32 +391,37 @@
                     Options = positionOptions,
                     HelpText = "選擇員工在組織中的職位",
                     ActionButtons = GetPositionActionButtons()
-                },
-                new()
+                }
+            });
+
+            // 系統角色 - 只有管理員且員工為系統使用者時才顯示
+            if (isCurrentUserAdmin && isSystemUser)
+            {
+                formFields.Add(new()
                 {
                     PropertyName = nameof(Employee.RoleId),
                     Label = "系統角色",
                     FieldType = FormFieldType.Select,
-                    Placeholder = isSystemUser ? "請選擇系統角色" : "僅系統使用者可選擇",
+                    Placeholder = "請選擇系統角色",
                     Options = roleOptions,
                     DefaultValue = defaultRoleValue,
-                    IsRequired = isSystemUser,
-                    IsDisabled = !isSystemUser, // 非系統使用者時停用
-                    HelpText = isSystemUser ? "選擇員工在系統中的權限角色" : "僅系統使用者可以選擇系統角色"
-                },
-                
-                // 備註區段
-                new()
-                {
-                    PropertyName = nameof(Employee.Remarks),
-                    Label = "備註",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入備註",
-                    Rows = 2,
-                    HelpText = "其他需要補充的資訊"
-                }
-            };
+                    IsRequired = true,
+                    HelpText = "選擇員工在系統中的權限角色"
+                });
+            }
 
+            // 備註區段 - 所有人都可見
+            formFields.Add(new()
+            {
+                PropertyName = nameof(Employee.Remarks),
+                Label = "備註",
+                FieldType = FormFieldType.TextArea,
+                Placeholder = "請輸入備註",
+                Rows = 2,
+                HelpText = "其他需要補充的資訊"
+            });
+
+            // 更新表單區段定義
             formSections = new Dictionary<string, string>
             {
                 { nameof(Employee.EmployeeCode), "基本資訊" },
@@ -382,12 +429,20 @@
                 { nameof(Employee.FirstName), "基本資訊" },                
                 { nameof(Employee.DepartmentId), "基本資訊" },
                 { nameof(Employee.EmployeePositionId), "基本資訊" },
-                { nameof(Employee.IsSystemUser), "帳號資訊" },
-                { nameof(Employee.Account), "帳號資訊" },
-                { nameof(Employee.Password), "帳號資訊" },
-                { nameof(Employee.RoleId), "帳號資訊" },
                 { nameof(Employee.Remarks), "額外資料" }
             };
+
+            // 只有管理員才加入帳號相關區段
+            if (isCurrentUserAdmin)
+            {
+                formSections.Add(nameof(Employee.IsSystemUser), "帳號資訊");
+                formSections.Add(nameof(Employee.Account), "帳號資訊");
+                formSections.Add(nameof(Employee.Password), "帳號資訊");
+                if (isSystemUser)
+                {
+                    formSections.Add(nameof(Employee.RoleId), "帳號資訊");
+                }
+            }
         }
         catch (Exception)
         {
@@ -404,6 +459,13 @@
     {
         try
         {
+            // 只有管理員才能變更系統使用者設定
+            var isCurrentUserAdmin = GetCurrentUserIsAdmin();
+            if (!isCurrentUserAdmin)
+            {
+                return; // 非管理員無法進行系統使用者相關的設定變更
+            }
+            
             // 重新初始化表單欄位
             InitializeFormFields(isSystemUser);
             
@@ -737,10 +799,20 @@
     {
         try
         {
-            // 監聽 IsSystemUser 欄位變更
+            // 監聽 IsSystemUser 欄位變更 - 只有管理員可以變更
             if (fieldChange.PropertyName == nameof(Employee.IsSystemUser) && fieldChange.Value is bool isSystemUser)
             {
-                UpdateFormFieldsForSystemUser(isSystemUser);
+                var isCurrentUserAdmin = GetCurrentUserIsAdmin();
+                if (isCurrentUserAdmin)
+                {
+                    UpdateFormFieldsForSystemUser(isSystemUser);
+                }
+                else
+                {
+                    // 非管理員無法變更系統使用者設定，顯示警告並回復原值
+                    _ = NotificationService.ShowWarningAsync("只有管理員可以變更系統使用者設定");
+                    // 這裡可以考慮重置該欄位的值
+                }
             }
             
             // 使用泛型管理器處理部門欄位變更

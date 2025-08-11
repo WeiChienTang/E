@@ -1,9 +1,11 @@
 @page "/employees"
+@using ERPCore2.Helpers
 @inject IEmployeeService EmployeeService
 @inject IRoleService RoleService
 @inject IDepartmentService DepartmentService
 @inject IEmployeePositionService EmployeePositionService
 @inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 @rendermode InteractiveServer
 
@@ -118,6 +120,24 @@
         {
             if (employee?.Id != null)
             {
+                // 檢查當前使用者是否為管理員
+                var isCurrentUserAdmin = await CurrentUserHelper.IsCurrentUserAdminAsync(AuthenticationStateProvider);
+                
+                // 檢查要編輯的員工是否具有管理員角色
+                if (employee.Role != null)
+                {
+                    var targetRoleLower = employee.Role.RoleName?.Trim().ToLower() ?? "";
+                    bool isTargetEmployeeAdmin = targetRoleLower == "管理員" || targetRoleLower == "admin" || 
+                                               targetRoleLower.Contains("管理員") || targetRoleLower.Contains("admin");
+                    
+                    // 如果目標員工是管理員，但當前使用者不是管理員，則拒絕編輯
+                    if (isTargetEmployeeAdmin && !isCurrentUserAdmin)
+                    {
+                        await NotificationService.ShowErrorAsync("權限不足", "無法編輯管理員帳號");
+                        return;
+                    }
+                }
+                
                 editingEmployeeId = employee.Id;
                 showEditModal = true;
                 StateHasChanged();

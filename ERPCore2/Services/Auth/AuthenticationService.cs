@@ -40,6 +40,9 @@ namespace ERPCore2.Services
                 using var context = _contextFactory.CreateDbContext();
                 
                 var employee = await context.Employees
+                    .Include(e => e.Role)
+                    .Include(e => e.Department)
+                    .Include(e => e.EmployeePosition)
                     .FirstOrDefaultAsync(e => e.Account == account && !e.IsDeleted);
 
                 if (employee == null)
