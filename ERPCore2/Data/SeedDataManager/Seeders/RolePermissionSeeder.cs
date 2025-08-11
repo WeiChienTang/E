@@ -47,11 +47,13 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 }));
             }
 
-            // 辦公室員工擁有除了系統管理相關權限之外的所有權限
+            // 辦公室員工擁有除了系統管理、角色管理、權限管理相關權限之外的所有權限
             if (employeeRole != null)
             {
                 var officeEmployeePermissions = allPermissions
-                    .Where(p => !p.PermissionCode.StartsWith("System"))
+                    .Where(p => !p.PermissionCode.StartsWith("System") && 
+                               !p.PermissionCode.StartsWith("Role") && 
+                               !p.PermissionCode.StartsWith("Permission"))
                     .ToList();
 
                 rolePermissions.AddRange(officeEmployeePermissions.Select(p => new RolePermission

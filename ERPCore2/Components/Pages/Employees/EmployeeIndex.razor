@@ -311,15 +311,14 @@
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("EmployeeCode", "員工代碼", "輸入員工代碼搜尋")
-                .AddText("FirstName", "名字", "輸入名字搜尋")
-                .AddText("LastName", "姓氏", "輸入姓氏搜尋")
+                .AddText("FullName", "姓名", "輸入姓名搜尋")
                 .AddSelect("DepartmentId", "部門", departmentOptions)
                 .AddSelect("EmployeePositionId", "職位", positionOptions)
                 .AddSelect("RoleId", "角色", roleOptions)
                 .AddSelect("IsSystemUser", "系統使用者", new List<SelectOption>
                 {
-                    new SelectOption { Text = "是", Value = "true" },
-                    new SelectOption { Text = "否", Value = "false" }
+                    new SelectOption { Text = "有權限", Value = "true" },
+                    new SelectOption { Text = "無權限", Value = "false" }
                 })
                 .Build();
         }
@@ -408,11 +407,18 @@
             // 員工代碼篩選
             (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "EmployeeCode", e => e.EmployeeCode),
             
-            // 名字篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "FirstName", e => e.FirstName, allowNull: true),
-            
-            // 姓氏篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "LastName", e => e.LastName, allowNull: true),
+            // 姓名篩選（合併姓氏和名字）
+            (model, q) => {
+                var fullNameFilter = model.GetFilterValue("FullName")?.ToString();
+                if (!string.IsNullOrWhiteSpace(fullNameFilter))
+                {
+                    q = q.Where(e => (e.FirstName != null && e.FirstName.Contains(fullNameFilter)) ||
+                                   (e.LastName != null && e.LastName.Contains(fullNameFilter)) ||
+                                   (!string.IsNullOrEmpty(e.FirstName) && !string.IsNullOrEmpty(e.LastName) && 
+                                    (e.LastName + e.FirstName).Contains(fullNameFilter)));
+                }
+                return q;
+            },
             
             // 部門篩選
             (model, q) => FilterHelper.ApplyNullableIntIdFilter(model, q, "DepartmentId", e => e.DepartmentId),
