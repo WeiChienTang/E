@@ -365,6 +365,18 @@
                         IsDisabled = !isSystemUser, // 非系統使用者時停用
                         MaxLength = 100,
                         HelpText = isSystemUser ? "系統登入密碼" : "僅系統使用者需要設定登入密碼"
+                    },
+                    new()
+                    {
+                        PropertyName = nameof(Employee.RoleId),
+                        Label = "系統角色",
+                        FieldType = FormFieldType.Select,
+                        Placeholder = isSystemUser ? "請選擇系統角色" : "僅系統使用者可選擇",
+                        Options = roleOptions,
+                        DefaultValue = defaultRoleValue,
+                        IsRequired = isSystemUser,
+                        IsDisabled = !isSystemUser, // 非系統使用者時停用
+                        HelpText = isSystemUser ? "選擇員工在系統中的權限角色" : "僅系統使用者可以選擇系統角色"
                     }
                 });
             }
@@ -393,22 +405,6 @@
                     ActionButtons = GetPositionActionButtons()
                 }
             });
-
-            // 系統角色 - 只有管理員且員工為系統使用者時才顯示
-            if (isCurrentUserAdmin && isSystemUser)
-            {
-                formFields.Add(new()
-                {
-                    PropertyName = nameof(Employee.RoleId),
-                    Label = "系統角色",
-                    FieldType = FormFieldType.Select,
-                    Placeholder = "請選擇系統角色",
-                    Options = roleOptions,
-                    DefaultValue = defaultRoleValue,
-                    IsRequired = true,
-                    HelpText = "選擇員工在系統中的權限角色"
-                });
-            }
 
             // 備註區段 - 所有人都可見
             formFields.Add(new()

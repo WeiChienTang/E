@@ -355,7 +355,7 @@
                     var employee = (Employee)item;
                     var firstName = employee.FirstName ?? "";
                     var lastName = employee.LastName ?? "";
-                    return @<span>@($"{firstName}{lastName}".Trim())</span>;
+                    return @<span>@($"{lastName}{firstName}".Trim())</span>;
                 }),
                 TableColumnDefinition.Text("部門", "Department.Name"),
                 TableColumnDefinition.Text("職位", "EmployeePosition.Name"),
