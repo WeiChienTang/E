@@ -27,7 +27,7 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "聯絡人")]
         public string? ContactPerson { get; set; }
         
-        [MaxLength(20, ErrorMessage = "統一編號不可超過20個字元")]
+        [MaxLength(8, ErrorMessage = "統一編號不可超過8個字元")]
         [Display(Name = "統一編號")]
         public string? TaxNumber { get; set; }
         

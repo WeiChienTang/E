@@ -114,8 +114,8 @@ namespace ERPCore2.Services
                 if (!string.IsNullOrEmpty(entity.ContactPerson) && entity.ContactPerson.Length > 50)
                     errors.Add("聯絡人不可超過50個字元");
 
-                if (!string.IsNullOrEmpty(entity.TaxNumber) && entity.TaxNumber.Length > 20)
-                    errors.Add("統一編號不可超過20個字元");
+                if (!string.IsNullOrEmpty(entity.TaxNumber) && entity.TaxNumber.Length > 8)
+                    errors.Add("統一編號不可超過8個字元");
 
                 // 檢查客戶代碼是否重複
                 if (!string.IsNullOrWhiteSpace(entity.CustomerCode))
