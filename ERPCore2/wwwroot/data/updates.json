@@ -1,6 +1,491 @@
 [
   {
     "version": "1",
+    "releaseDate": "2025-08-12",
+    "title": "更新日誌",
+    "type": "major",
+    "items": [
+      {
+        "category": "重構",
+        "description": "重構程式碼結構以提升可讀性和可維護性",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "修改",
+        "description": "移除角色資料表中的IsSystemRole欄位",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "新增",
+        "description": "新增角色管理頁面和功能",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修改",
+        "description": "更新導航菜單，合併姓名篩選，並調整角色權限種子器邏輯",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "更新員工編輯模態，新增系統角色選擇欄位，並調整顯示邏輯",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "新增",
+        "description": "增加角色權限檢查，限制非管理員編輯管理員帳號，並根據當前使用者角色過濾可指派角色",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "新增角色管理頁面和組件",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修改",
+        "description": "更新角色權限管理邏輯，禁止修改管理員角色的權限，並調整角色選擇介面",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "更新角色權限種子器以使用中文角色名稱，並為辦公室員工分配權限",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "新增",
+        "description": "實作DeletedRecordService用於軟刪除追蹤",
+        "icon": "fas fa-plus-circle"
+      }
+    ]
+  },
+  {
+    "version": "1",
+    "releaseDate": "2025-08-11",
+    "title": "更新日誌",
+    "type": "minor",
+    "items": [
+      {
+        "category": "修改",
+        "description": "調整DetailActionButtonsComponent按鈕顯示邏輯，隱藏編輯、啟用/停用、刪除和列印按鈕",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "移除員工編輯頁面中的帳號搜尋功能，調整姓名顯示順序，更新麵包屑導航標題",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "更新員工編輯Modal，新增職位編輯功能並重構相關邏輯",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "強化",
+        "description": "增強GenericFormComponent以支援表單欄位的停用狀態",
+        "icon": "fas fa-cog"
+      },
+      {
+        "category": "修改",
+        "description": "更新通用索引頁面組件，新增檢視按鈕並調整編輯按鈕顯示邏輯；調整Toast通知樣式，提升背景顏色不透明度",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "重構",
+        "description": "重構角色管理以使用模態進行角色編輯",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "重構",
+        "description": "重構模態組件以使用GenericEditModalComponent和RelatedEntityModalManager",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "新增",
+        "description": "實作RelatedEntityModalManager和擴展功能，用於動態模態管理",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "新增表單欄位操作按鈕功能，支援動態按鈕渲染及樣式調整",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "新增通用編輯模態組件，具備可自訂功能和樣式",
+        "icon": "fas fa-plus-circle"
+      }
+    ]
+  },
+  {
+    "version": "1",
+    "releaseDate": "2025-08-10",
+    "title": "更新日誌",
+    "type": "minor",
+    "items": [
+      {
+        "category": "重構",
+        "description": "更新角色設定頁面，調整系統角色標題及權限管理佈局，新增備註欄位",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "重構",
+        "description": "根據編輯模式初始化系統使用者狀態，改善員工編輯頁面邏輯",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "重構",
+        "description": "更新員工編輯頁面，新增系統使用者的欄位變更處理及角色選擇邏輯；移除過時的SeedDataHelper，並將其功能整合至新的Helpers命名空間",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "重構",
+        "description": "重構RoleSeeder以新增新角色並移除過時的CurrentUserHelper文件",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "修改",
+        "description": "移除員工資料表中的IsLocked欄位",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "重構",
+        "description": "更新權限要求為只需讀取權限，並新增預設員工帳號及相關權限至資料庫",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "重構",
+        "description": "更新各編輯頁面的權限要求為只需讀取權限，並新增相關權限至資料庫",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "實作",
+        "description": "實作程式碼變更以增強功能並改善效能",
+        "icon": "fas fa-cog"
+      }
+    ]
+  },
+  {
+    "version": "1",
+    "releaseDate": "2025-08-09",
+    "title": "更新日誌",
+    "type": "patch",
+    "items": [
+      {
+        "category": "修改",
+        "description": "移除權限模組操作群組欄位的遷移",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修正",
+        "description": "修正權限代碼驗證失敗時恢復原本的權限主要名稱",
+        "icon": "fas fa-bug"
+      },
+      {
+        "category": "重構",
+        "description": "調整權限代碼及相關欄位，簡化權限管理邏輯",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "重構",
+        "description": "重構篩選邏輯，簡化查詢過程並統一錯誤處理",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "新增",
+        "description": "新增備註欄位及篩選功能至部門和權限管理頁面，簡化篩選邏輯",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修改",
+        "description": "移除權限資料表中的Action、Module和PermissionGroup欄位",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "移除員工職位資料表中的Level和SortOrder欄位",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "新增",
+        "description": "新增遷移以將主管與部門建立關聯",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修改",
+        "description": "更新員工編輯頁面，移除帳號鎖定功能並調整失敗登入次數顯示",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "新增",
+        "description": "新增資料庫架構建立的初始遷移",
+        "icon": "fas fa-plus-circle"
+      }
+    ]
+  },
+  {
+    "version": "1",
+    "releaseDate": "2025-08-08",
+    "title": "更新日誌",
+    "type": "minor",
+    "items": [
+      {
+        "category": "修改",
+        "description": "更新地址和聯絡方式管理元件，改用表格顯示資料並新增編輯功能",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "在廠商列表中新增統一編號欄位，並優化地址和聯絡人顯示樣式",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "移除廠商資料表中的CreditLimit和PaymentTerms欄位",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "移除天氣資料表中的天氣圖示和參考溫度欄位",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "更新產品編輯頁面，將產品分類標籤改為「產品類型」，並新增主要供應商選項",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "在UpdatePurchaseOrderModel遷移中移除採購訂單的OrderStatus和PurchaseType欄位",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "重構",
+        "description": "重構採購模組：將「採購進貨」重新命名為「採購入庫」，移除未使用的枚舉和屬性，並簡化訂單狀態邏輯",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "修改",
+        "description": "更新商品定價編輯頁面表單區段分類及標題註解",
+        "icon": "fas fa-edit"
+      }
+    ]
+  },
+  {
+    "version": "1",
+    "releaseDate": "2025-08-07",
+    "title": "更新日誌",
+    "type": "minor",
+    "items": [
+      {
+        "category": "實作",
+        "description": "實作產品定價管理頁面和部門管理服務",
+        "icon": "fas fa-cog"
+      },
+      {
+        "category": "新增",
+        "description": "新增ProductPricingService和SupplierPricingService實作",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "遷移",
+        "description": "移除產品資料表中的CostPrice和UnitPrice欄位，並新增PriceHistories、ProductPricings和SupplierPricings資料表",
+        "icon": "fas fa-database"
+      },
+      {
+        "category": "新增",
+        "description": "新增生產管理實體和服務",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修改",
+        "description": "更新產品維護頁面標題為「產品主檔」並調整員工管理下拉選單項目",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "新增",
+        "description": "新增材質管理相關頁面，包含詳細資料、編輯及索引功能",
+        "icon": "fas fa-plus-circle"
+      }
+    ]
+  },
+  {
+    "version": "1",
+    "releaseDate": "2025-07-30",
+    "title": "更新日誌",
+    "type": "minor",
+    "items": [
+      {
+        "category": "重構",
+        "description": "重構顏色管理組件：移除ColorEdit和ColorIndex頁面，在ProductionManagement中實作新的功能。新增詳細的顏色檢視和編輯功能，改善錯誤處理和麵包屑導航。更新相關組件以包含備註欄位，改善產品類別、尺寸、材質和單位的資料呈現。調整員工種子器以變更預設管理員密碼以提升安全性",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "重構",
+        "description": "重構天氣管理組件並新增單位轉換種子器",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "修改",
+        "description": "移除單位資料表中的IsActive欄位",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "調整顏色、材質和天氣編輯頁面，優化顯示邏輯及移除不必要的欄位",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "更新顏色管理功能，調整顏色名稱與代碼的顯示及驗證邏輯",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "新增",
+        "description": "新增Color、Material和Weather實體類別，定義產品的顏色、材質和天氣屬性",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "新增單位和天氣管理頁面，具備CRUD功能",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修改",
+        "description": "更新尺寸詳細頁面以顯示關聯商品，並新增商品卡片點擊事件處理",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "在遷移20250730054942中移除尺寸資料表的IsActive欄位",
+        "icon": "fas fa-edit"
+      }
+    ]
+  },
+  {
+    "version": "1",
+    "releaseDate": "2025-07-29",
+    "title": "更新日誌",
+    "type": "minor",
+    "items": [
+      {
+        "category": "重構",
+        "description": "重構尺寸管理頁面",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "新增",
+        "description": "整合狀態選項邏輯，新增EntityStatusHelper類別以提供狀態選項和顯示名稱",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修改",
+        "description": "更新狀態顯示邏輯，整合狀態徽章樣式，並新增狀態切換功能",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "移除產品資料表中的IsActive欄位",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "新增",
+        "description": "新增尺寸篩選功能，整合尺寸選項至產品篩選邏輯",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "新增產品類別資料種子類別，確保產品類別在資料初始化時正確填充",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "新增欄位預設值處理邏輯，確保在適當情況下自動應用預設值",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修改",
+        "description": "移除產品類別資料表中的ParentCategoryId",
+        "icon": "fas fa-edit"
+      }
+    ]
+  },
+  {
+    "version": "1",
+    "releaseDate": "2025-07-28",
+    "title": "更新日誌",
+    "type": "patch",
+    "items": [
+      {
+        "category": "修改",
+        "description": "更新通知顯示邏輯，使用通知服務替代原有的警示框，並調整Toast容器位置",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "重構",
+        "description": "重構供應商顯示邏輯，新增通用關聯列表元件並移除舊的供應商卡片元件",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "修改",
+        "description": "更新供應商卡片顯示，新增圖示並移除不必要的邊框",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "新增",
+        "description": "新增供應商詳細頁面導航功能，重構供應商顯示邏輯",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "重構",
+        "description": "優化客戶與產品詳細頁面顯示邏輯，改善價格資訊呈現",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "修改",
+        "description": "移除產品資料表中的庫存相關欄位",
+        "icon": "fas fa-edit"
+      }
+    ]
+  },
+  {
+    "version": "1",
+    "releaseDate": "2025-07-27",
+    "title": "更新日誌",
+    "type": "patch",
+    "items": [
+      {
+        "category": "修正",
+        "description": "調整標籤頁結構的格式，改善可讀性",
+        "icon": "fas fa-bug"
+      },
+      {
+        "category": "新增",
+        "description": "新增庫存異動類型管理功能",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "新增庫存異動編輯和索引頁面",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "新增庫存預約管理頁面",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "新增庫存盤點管理功能，包括詳細資料、編輯頁面及索引頁面",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修正",
+        "description": "將「採購退貨」更改為「採購退回」，統一用詞以改善一致性",
+        "icon": "fas fa-bug"
+      }
+    ]
+  },
+  {
+    "version": "1",
     "releaseDate": "2025-07-26",
     "title": "更新日誌",
     "type": "patch",
