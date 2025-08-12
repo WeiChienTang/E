@@ -118,56 +118,56 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             {
                 new SupplierType { 
                     TypeName = "製造商", 
-                    Description = "產品製造廠商",
+                    Remarks = "產品製造廠商",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
                 },
                 new SupplierType { 
                     TypeName = "代理商", 
-                    Description = "產品代理經銷商",
+                    Remarks = "產品代理經銷商",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
                 },
                 new SupplierType { 
                     TypeName = "批發商", 
-                    Description = "批發供應商",
+                    Remarks = "批發供應商",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
                 },
                 new SupplierType { 
                     TypeName = "零售商", 
-                    Description = "零售供應商",
+                    Remarks = "零售供應商",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
                 },
                 new SupplierType { 
                     TypeName = "服務商", 
-                    Description = "服務提供商",
+                    Remarks = "服務提供商",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
                 },
                 new SupplierType { 
                     TypeName = "原料供應商", 
-                    Description = "原材料供應商",
+                    Remarks = "原材料供應商",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
                 },
                 new SupplierType { 
                     TypeName = "設備供應商", 
-                    Description = "設備器材供應商",
+                    Remarks = "設備器材供應商",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
                 },
                 new SupplierType { 
                     TypeName = "軟體供應商", 
-                    Description = "軟體系統供應商",
+                    Remarks = "軟體系統供應商",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"

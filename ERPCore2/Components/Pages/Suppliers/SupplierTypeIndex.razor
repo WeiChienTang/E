@@ -1,6 +1,7 @@
 @page "/supplier-types"
 
 @inject ISupplierTypeService SupplierTypeService
+@inject INotificationService NotificationService
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="SupplierType" 
@@ -20,11 +21,24 @@
                           EntityName="廠商類型"
                           GetEntityDisplayName="@(supplierType => supplierType.TypeName)"
                           RequiredPermission="SupplierType.Read"
+                          OnAddClick="@ShowAddModal"
+                          OnRowClick="@ShowEditModal"
                           @ref="indexComponent" />
+
+@* 廠商類型編輯 Modal *@
+<SupplierTypeEditModalComponent IsVisible="@showEditModal"
+                               IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                               SupplierTypeId="@editingSupplierTypeId"
+                               OnSupplierTypeSaved="@OnSupplierTypeSaved"
+                               OnCancel="@OnModalCancel" />
 
 @code {
     // 組件參考
     private GenericIndexPageComponent<SupplierType, ISupplierTypeService> indexComponent = default!;
+    
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingSupplierTypeId = null;
     
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
@@ -47,6 +61,75 @@
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(),
                 additionalData: new { Component = "SupplierTypeIndex", Action = "Initialize" }
             );
+        }
+    }
+
+    // ===== Modal 相關方法 =====
+
+    private async Task ShowAddModal()
+    {
+        try
+        {
+            editingSupplierTypeId = null;
+            showEditModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModal), GetType());
+        }
+    }
+
+    private async Task ShowEditModal(SupplierType supplierType)
+    {
+        try
+        {
+            if (supplierType?.Id != null)
+            {
+                editingSupplierTypeId = supplierType.Id;
+                showEditModal = true;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowEditModal), GetType());
+        }
+    }
+
+    private async Task OnSupplierTypeSaved(SupplierType savedSupplierType)
+    {
+        try
+        {
+            // 關閉 Modal
+            showEditModal = false;
+            editingSupplierTypeId = null;
+            
+            // 重新載入資料
+            if (indexComponent != null)
+            {
+                await indexComponent.Refresh();
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnSupplierTypeSaved), GetType());
+        }
+    }
+
+    private async Task OnModalCancel()
+    {
+        try
+        {
+            showEditModal = false;
+            editingSupplierTypeId = null;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnModalCancel), GetType());
         }
     }
 
