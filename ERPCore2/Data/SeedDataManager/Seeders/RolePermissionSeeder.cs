@@ -53,6 +53,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 var officeEmployeePermissions = allPermissions
                     .Where(p => !p.PermissionCode.StartsWith("System") && 
                                !p.PermissionCode.StartsWith("Role") && 
+                               !p.PermissionCode.StartsWith("EmployeeEdit_Account_Password") &&
                                !p.PermissionCode.StartsWith("Permission"))
                     .ToList();
 

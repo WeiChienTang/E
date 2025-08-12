@@ -65,6 +65,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             var defaultEmployees = new[]
             {
                 new { Code = "EMP001", FirstName = "測試01", LastName = "測試用員工", Account = "tt", RoleName = "辦公室員工" },
+                new { Code = "EMP002", FirstName = "測試02", LastName = "一般員工", Account = "tt2", RoleName = "員工" },
             };
 
             foreach (var emp in defaultEmployees)

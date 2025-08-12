@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250812023928_RemoveIsSystemRoleFromRole")]
-    partial class RemoveIsSystemRoleFromRole
+    [Migration("20250812031710_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

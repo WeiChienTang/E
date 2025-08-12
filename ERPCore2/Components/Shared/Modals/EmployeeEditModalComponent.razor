@@ -10,6 +10,7 @@
 @inject IAddressTypeService AddressTypeService
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject INavigationPermissionService NavigationPermissionService
 
 <GenericEditModalComponent TEntity="Employee" 
                           TService="IEmployeeService"
@@ -110,7 +111,7 @@
                 }
             }
             
-            InitializeFormFields(initialIsSystemUser);
+            await InitializeFormFieldsAsync(initialIsSystemUser);
         }
         catch (Exception)
         {
@@ -135,7 +136,7 @@
                 }
             }
             
-            InitializeFormFields(initialIsSystemUser);
+            await InitializeFormFieldsAsync(initialIsSystemUser);
         }
         
         await base.OnParametersSetAsync();
@@ -157,11 +158,10 @@
                     editModalComponent.Entity.DepartmentId = departmentId;
                 }
             })
-            .WithCustomPostProcess(department => 
+            .WithCustomPostProcess(async department => 
             {
                 // 員工特定的後處理邏輯
-                InitializeFormFields(editModalComponent?.Entity?.IsSystemUser ?? false);
-                return Task.CompletedTask;
+                await InitializeFormFieldsAsync(editModalComponent?.Entity?.IsSystemUser ?? false);
             })
             .Build();
     }
@@ -182,11 +182,10 @@
                     editModalComponent.Entity.EmployeePositionId = positionId;
                 }
             })
-            .WithCustomPostProcess(position => 
+            .WithCustomPostProcess(async position => 
             {
                 // 員工特定的後處理邏輯
-                InitializeFormFields(editModalComponent?.Entity?.IsSystemUser ?? false);
-                return Task.CompletedTask;
+                await InitializeFormFieldsAsync(editModalComponent?.Entity?.IsSystemUser ?? false);
             })
             .Build();
     }
@@ -228,23 +227,13 @@
     }
 
     /// <summary>
-    /// 檢查當前使用者是否為管理員
+    /// 檢查當前使用者是否擁有指定權限
     /// </summary>
-    private bool GetCurrentUserIsAdmin()
+    private async Task<bool> CheckCurrentUserPermissionAsync(string permission)
     {
         try
         {
-            var authState = AuthenticationStateProvider.GetAuthenticationStateAsync().Result;
-            var user = authState?.User;
-            
-            if (user == null || !user.Identity?.IsAuthenticated == true)
-                return false;
-                
-            var roleClaim = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role);
-            if (roleClaim == null) 
-                return false;
-                
-            return roleClaim.Value == "管理員";
+            return await NavigationPermissionService.CanAccessAsync(permission);
         }
         catch
         {
@@ -252,7 +241,7 @@
         }
     }
 
-    private void InitializeFormFields(bool isSystemUser = false)
+    private async Task InitializeFormFieldsAsync(bool isSystemUser = false)
     {
         try
         {
@@ -328,12 +317,12 @@
                 }
             };
 
-            // 只有管理員才能看到系統使用者相關設定
-            var isCurrentUserAdmin = GetCurrentUserIsAdmin();
+            // 檢查使用者是否擁有特定權限才可以看到系統使用者相關設定
+            var hasAccountPasswordPermission = await CheckCurrentUserPermissionAsync("EmployeeEdit_Account_Password.Read");
             
-            if (isCurrentUserAdmin)
+            if (hasAccountPasswordPermission)
             {
-                // 帳號資訊區段 - 僅管理員可見
+                // 帳號資訊區段 - 僅有權限的使用者可見
                 formFields.AddRange(new List<FormFieldDefinition>
                 {
                     new()
@@ -342,7 +331,7 @@
                         Label = "系統使用者",
                         FieldType = FormFieldType.Checkbox,
                         DefaultValue = isSystemUser ? "true" : "false",
-                        HelpText = "是否允許此員工登入系統（僅管理員可設定）"
+                        HelpText = "是否允許此員工登入系統（需要權限才能設定）"
                     },
                     new()
                     {
@@ -429,16 +418,13 @@
                 { nameof(Employee.Remarks), "額外資料" }
             };
 
-            // 只有管理員才加入帳號相關區段
-            if (isCurrentUserAdmin)
+            // 只有有權限的使用者才加入帳號相關區段
+            if (hasAccountPasswordPermission)
             {
                 formSections.Add(nameof(Employee.IsSystemUser), "帳號資訊");
                 formSections.Add(nameof(Employee.Account), "帳號資訊");
                 formSections.Add(nameof(Employee.Password), "帳號資訊");
-                if (isSystemUser)
-                {
-                    formSections.Add(nameof(Employee.RoleId), "帳號資訊");
-                }
+                formSections.Add(nameof(Employee.RoleId), "帳號資訊");                
             }
         }
         catch (Exception)
@@ -452,19 +438,19 @@
         return formFields;
     }
 
-    private void UpdateFormFieldsForSystemUser(bool isSystemUser)
+    private async Task UpdateFormFieldsForSystemUserAsync(bool isSystemUser)
     {
         try
         {
-            // 只有管理員才能變更系統使用者設定
-            var isCurrentUserAdmin = GetCurrentUserIsAdmin();
-            if (!isCurrentUserAdmin)
+            // 檢查使用者是否擁有權限來變更系統使用者設定
+            var hasAccountPasswordPermission = await CheckCurrentUserPermissionAsync("EmployeeEdit_Account_Password.Read");
+            if (!hasAccountPasswordPermission)
             {
-                return; // 非管理員無法進行系統使用者相關的設定變更
+                return; // 無權限的使用者無法進行系統使用者相關的設定變更
             }
             
             // 重新初始化表單欄位
-            InitializeFormFields(isSystemUser);
+            await InitializeFormFieldsAsync(isSystemUser);
             
             // 如果有編輯組件的參考，通知更新
             if (editModalComponent?.Entity != null)
@@ -527,7 +513,7 @@
                 };
                 
                 // 根據預設的系統使用者狀態初始化表單欄位
-                InitializeFormFields(newEmployee.IsSystemUser);
+                await InitializeFormFieldsAsync(newEmployee.IsSystemUser);
                 
                 return newEmployee;
             }
@@ -558,7 +544,7 @@
             employeeAddresses = await EmployeeAddressService.GetByEmployeeIdAsync(EmployeeId.Value);
             
             // 根據員工的系統使用者狀態重新初始化表單欄位
-            InitializeFormFields(employee.IsSystemUser);
+            await InitializeFormFieldsAsync(employee.IsSystemUser);
             
             return employee;
         }
@@ -792,22 +778,22 @@
         }
     }
 
-    private Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
     {
         try
         {
-            // 監聽 IsSystemUser 欄位變更 - 只有管理員可以變更
+            // 監聽 IsSystemUser 欄位變更 - 檢查權限
             if (fieldChange.PropertyName == nameof(Employee.IsSystemUser) && fieldChange.Value is bool isSystemUser)
             {
-                var isCurrentUserAdmin = GetCurrentUserIsAdmin();
-                if (isCurrentUserAdmin)
+                var hasAccountPasswordPermission = await CheckCurrentUserPermissionAsync("EmployeeEdit_Account_Password.Read");
+                if (hasAccountPasswordPermission)
                 {
-                    UpdateFormFieldsForSystemUser(isSystemUser);
+                    await UpdateFormFieldsForSystemUserAsync(isSystemUser);
                 }
                 else
                 {
-                    // 非管理員無法變更系統使用者設定，顯示警告並回復原值
-                    _ = NotificationService.ShowWarningAsync("只有管理員可以變更系統使用者設定");
+                    // 無權限的使用者無法變更系統使用者設定，顯示警告並回復原值
+                    _ = NotificationService.ShowWarningAsync("您沒有權限變更系統使用者設定");
                     // 這裡可以考慮重置該欄位的值
                 }
             }
@@ -825,13 +811,10 @@
                 positionModalManager.UpdateFieldActionButtons(formFields, fieldChange.PropertyName, 
                     fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int posId) ? posId : null);
             }
-            
-            return Task.CompletedTask;
         }
         catch (Exception)
         {
             _ = NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
-            return Task.CompletedTask;
         }
     }
     

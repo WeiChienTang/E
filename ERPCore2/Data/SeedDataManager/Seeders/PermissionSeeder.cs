@@ -46,6 +46,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 
                 // 員工相關管理權限 (根據資料夾內容排列)
                 new Permission { PermissionCode = "Employee.Read", PermissionName = "檢視員工", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視員工基本資料與組織架構" },
+                new Permission { PermissionCode = "EmployeeEdit_Account_Password.Read", PermissionName = "編輯員工帳號密碼", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "編輯員工系統帳號、密碼與角色設定權限" },
                 new Permission { PermissionCode = "Department.Read", PermissionName = "檢視部門", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視公司部門組織架構資料" },
                 new Permission { PermissionCode = "EmployeePosition.Read", PermissionName = "檢視員工職位", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視員工職位與職級設定" },
                 new Permission { PermissionCode = "Permission.Read", PermissionName = "檢視權限", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視系統功能權限設定" },

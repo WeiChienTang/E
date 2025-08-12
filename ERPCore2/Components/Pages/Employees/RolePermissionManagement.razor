@@ -650,6 +650,7 @@
     {
         var code = permission.PermissionCode;
         return code.StartsWith("System.") || 
+               code.StartsWith("EmployeeEdit_Account_Password.") ||
                code.StartsWith("SystemControl.") || 
                code.StartsWith("Permission.") || 
                code.StartsWith("Role.");
