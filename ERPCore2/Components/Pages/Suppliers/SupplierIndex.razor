@@ -206,20 +206,12 @@
                 Value = st.Id.ToString()
             }).ToList();
 
-            // 準備狀態選項
-            var statusOptions = new List<SelectOption>
-            {
-                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-            };
-
             // 重新建立篩選定義，包含載入的選項
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("SupplierCode", "廠商代碼", "輸入廠商代碼搜尋")
                 .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
                 .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
                 .AddSelect("SupplierTypeId", "廠商類型", supplierTypeOptions)
-                .AddSelect("Status", "狀態", statusOptions)
                 .AddText("TaxNumber", "統一編號", "輸入統一編號搜尋")
                 .Build();
 
@@ -262,64 +254,31 @@
     // 自定義篩選邏輯
     private IQueryable<Supplier> ApplySupplierFilters(SearchFilterModel searchModel, IQueryable<Supplier> query)
     {
-        try
+        var filterActions = new List<Func<SearchFilterModel, IQueryable<Supplier>, IQueryable<Supplier>>>
         {
             // 廠商代碼篩選
-            var supplierCodeFilter = searchModel.GetFilterValue("SupplierCode")?.ToString();
-            if (!string.IsNullOrWhiteSpace(supplierCodeFilter))
-            {
-                query = query.Where(s => 
-                    s.SupplierCode.Contains(supplierCodeFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 公司名稱篩選
-            var companyNameFilter = searchModel.GetFilterValue("CompanyName")?.ToString();
-            if (!string.IsNullOrWhiteSpace(companyNameFilter))
-            {
-                query = query.Where(s => 
-                    s.CompanyName.Contains(companyNameFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 聯絡人篩選
-            var contactPersonFilter = searchModel.GetFilterValue("ContactPerson")?.ToString();
-            if (!string.IsNullOrWhiteSpace(contactPersonFilter))
-            {
-                query = query.Where(s => 
-                    !string.IsNullOrEmpty(s.ContactPerson) && 
-                    s.ContactPerson.Contains(contactPersonFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 廠商類型篩選 - 改為ID篩選
-            var supplierTypeIdFilter = searchModel.GetFilterValue("SupplierTypeId")?.ToString();
-            if (!string.IsNullOrWhiteSpace(supplierTypeIdFilter) && int.TryParse(supplierTypeIdFilter, out var supplierTypeId))
-            {
-                query = query.Where(s => s.SupplierTypeId == supplierTypeId);
-            }
-
-            // 統一編號篩選
-            var taxNumberFilter = searchModel.GetFilterValue("TaxNumber")?.ToString();
-            if (!string.IsNullOrWhiteSpace(taxNumberFilter))
-            {
-                query = query.Where(s => 
-                    !string.IsNullOrEmpty(s.TaxNumber) && 
-                    s.TaxNumber.Contains(taxNumberFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 狀態篩選
-            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
-            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
-            {
-                query = query.Where(s => s.Status == status);
-            }
-
-            return query.OrderBy(s => s.SupplierCode);
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplySupplierFilters), GetType(),
-                additionalData: new { PageName = "SupplierIndex", Action = "ApplySupplierFilters" });
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "SupplierCode", s => s.SupplierCode),
             
-            return query.OrderBy(s => s.SupplierCode);
-        }
+            // 公司名稱篩選
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "CompanyName", s => s.CompanyName),
+            
+            // 聯絡人篩選 - 允許 null 值
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "ContactPerson", s => s.ContactPerson, allowNull: true),
+            
+            // 廠商類型篩選 - 使用 NullableIntIdFilter 因為 SupplierTypeId 是 int?
+            (model, q) => FilterHelper.ApplyNullableIntIdFilter(model, q, "SupplierTypeId", s => s.SupplierTypeId),
+            
+            // 統一編號篩選 - 允許 null 值
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "TaxNumber", s => s.TaxNumber, allowNull: true),
+        };
+
+        return FilterHelper.ApplyFiltersWithErrorHandling(
+            searchModel,
+            query,
+            filterActions,
+            q => q.OrderBy(s => s.SupplierCode), // 預設排序
+            nameof(ApplySupplierFilters),
+            GetType()
+        );
     }
 }

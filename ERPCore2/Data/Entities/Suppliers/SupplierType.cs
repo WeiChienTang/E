@@ -14,11 +14,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "類型名稱")]
         public string TypeName { get; set; } = string.Empty;
         
-        // Optional Properties
-        [MaxLength(200, ErrorMessage = "描述不可超過200個字元")]
-        [Display(Name = "描述")]
-        public string? Description { get; set; }
-        
         // Navigation Properties
         public ICollection<Supplier> Suppliers { get; set; } = new List<Supplier>();
     }

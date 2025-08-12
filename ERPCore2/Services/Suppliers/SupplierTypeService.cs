@@ -60,8 +60,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SupplierTypes
                     .Where(st => !st.IsDeleted &&
-                               (st.TypeName.Contains(searchTerm) ||
-                                (st.Description != null && st.Description.Contains(searchTerm))))
+                               st.TypeName.Contains(searchTerm))
                     .OrderBy(st => st.TypeName)
                     .ToListAsync();
             }
@@ -94,12 +93,6 @@ namespace ERPCore2.Services
                     {
                         errors.Add("廠商類型名稱已存在");
                     }
-                }
-
-                // 驗證描述長度
-                if (!string.IsNullOrWhiteSpace(entity.Description) && entity.Description.Length > 200)
-                {
-                    errors.Add("描述長度不能超過200個字元");
                 }
 
                 return errors.Any() 
