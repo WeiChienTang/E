@@ -95,54 +95,6 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得系統角色清單
-        /// </summary>
-        public async Task<ServiceResult<List<Role>>> GetSystemRolesAsync()
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var roles = await context.Roles
-                    .Include(r => r.RolePermissions)
-                    .ThenInclude(rp => rp.Permission)
-                    .Where(r => r.IsSystemRole && !r.IsDeleted)
-                    .OrderBy(r => r.RoleName)
-                    .ToListAsync();
-
-                return ServiceResult<List<Role>>.Success(roles);
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetSystemRolesAsync), GetType(), _logger);
-                return ServiceResult<List<Role>>.Failure($"取得系統角色時發生錯誤：{ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// 取得自訂角色清單
-        /// </summary>
-        public async Task<ServiceResult<List<Role>>> GetCustomRolesAsync()
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var roles = await context.Roles
-                    .Include(r => r.RolePermissions)
-                    .ThenInclude(rp => rp.Permission)
-                    .Where(r => !r.IsSystemRole && !r.IsDeleted)
-                    .OrderBy(r => r.RoleName)
-                    .ToListAsync();
-
-                return ServiceResult<List<Role>>.Success(roles);
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCustomRolesAsync), GetType(), _logger);
-                return ServiceResult<List<Role>>.Failure($"取得自訂角色時發生錯誤：{ex.Message}");
-            }
-        }
-
-        /// <summary>
         /// 檢查角色名稱是否已存在
         /// </summary>
         public async Task<ServiceResult<bool>> IsRoleNameExistsAsync(string roleName, int? excludeRoleId = null)

@@ -16,18 +16,6 @@ namespace ERPCore2.Services
         Task<ServiceResult<Role>> GetByNameAsync(string roleName);
 
         /// <summary>
-        /// 取得系統角色清單
-        /// </summary>
-        /// <returns>系統角色清單</returns>
-        Task<ServiceResult<List<Role>>> GetSystemRolesAsync();
-
-        /// <summary>
-        /// 取得自訂角色清單
-        /// </summary>
-        /// <returns>自訂角色清單</returns>
-        Task<ServiceResult<List<Role>>> GetCustomRolesAsync();
-
-        /// <summary>
         /// 檢查角色名稱是否已存在
         /// </summary>
         /// <param name="roleName">角色名稱</param>

@@ -5,22 +5,22 @@
 namespace ERPCore2.Migrations
 {
     /// <inheritdoc />
-    public partial class RemoveIsLockedFromEmployee : Migration
+    public partial class RemoveIsSystemRoleFromRole : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "IsLocked",
-                table: "Employees");
+                name: "IsSystemRole",
+                table: "Roles");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<bool>(
-                name: "IsLocked",
-                table: "Employees",
+                name: "IsSystemRole",
+                table: "Roles",
                 type: "bit",
                 nullable: false,
                 defaultValue: false);

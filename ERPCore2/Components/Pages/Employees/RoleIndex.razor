@@ -105,17 +105,10 @@
         try
         {
             // 準備系統角色選項
-            var systemRoleOptions = new List<SelectOption>
-            {
-                new() { Text = "是", Value = "true" },
-                new() { Text = "否", Value = "false" }
-            };
-
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("RoleName", "角色名稱", "輸入角色名稱搜尋")
                 .AddText("Description", "角色描述", "輸入角色描述搜尋")
-                .AddSelect("IsSystemRole", "系統預設角色", systemRoleOptions)
                 .Build();
         }
         catch (Exception ex)
@@ -127,7 +120,8 @@
                 additionalData: new { PageName = "RoleIndex" }
             );
         }
-    }    private void InitializeTableColumns()
+    }    
+    private void InitializeTableColumns()
     {
         try
         {
@@ -135,20 +129,6 @@
             {
                 TableColumnDefinition.Text("角色名稱", nameof(Role.RoleName)),
                 TableColumnDefinition.Text("角色描述", nameof(Role.Description)),
-                new TableColumnDefinition
-                {
-                    Title = "系統預設角色",
-                    PropertyName = nameof(Role.IsSystemRole),
-                    CustomTemplate = item => builder =>
-                    {
-                        var role = (Role)item;
-                        builder.OpenElement(0, "span");
-                        builder.AddAttribute(1, "class", "badge text-white");
-                        builder.AddAttribute(2, "style", role.IsSystemRole ? "background-color: #28a745;" : "background-color: #dc3545;");
-                        builder.AddContent(3, role.IsSystemRole ? "是" : "否");
-                        builder.CloseElement();
-                    }
-                },
             };
         }
         catch (Exception ex)
@@ -174,17 +154,7 @@
             (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "RoleName", r => r.RoleName),
             
             // 角色描述篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Description", r => r.Description, allowNull: true),
-            
-            // 系統角色篩選
-            (model, q) => {
-                var isSystemRoleFilter = model.GetFilterValue("IsSystemRole")?.ToString();
-                if (!string.IsNullOrWhiteSpace(isSystemRoleFilter) && bool.TryParse(isSystemRoleFilter, out var isSystemRole))
-                {
-                    q = q.Where(r => r.IsSystemRole == isSystemRole);
-                }
-                return q;
-            }
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Description", r => r.Description, allowNull: true)
         };
 
         return FilterHelper.ApplyFiltersWithErrorHandling(

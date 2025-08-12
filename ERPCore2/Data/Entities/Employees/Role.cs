@@ -25,12 +25,6 @@ namespace ERPCore2.Data.Entities
         [MaxLength(200, ErrorMessage = "角色描述不可超過200個字元")]
         public string? Description { get; set; }
 
-        /// <summary>
-        /// 是否為系統預設角色
-        /// </summary>
-        [Display(Name = "系統預設角色")]
-        public bool IsSystemRole { get; set; } = false;
-
         // 導航屬性
         public ICollection<Employee> Employees { get; set; } = new List<Employee>();
         public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();

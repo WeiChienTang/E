@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250808085442_AddDeletedRecordTable")]
-    partial class AddDeletedRecordTable
+    [Migration("20250812023928_RemoveIsSystemRoleFromRole")]
+    partial class RemoveIsSystemRoleFromRole
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -2244,9 +2244,6 @@ namespace ERPCore2.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsSystemRole")
                         .HasColumnType("bit");
 
                     b.Property<string>("Remarks")

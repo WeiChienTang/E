@@ -117,8 +117,7 @@
                 // 新增模式 - 建立新的角色實體並設定預設值
                 return new Role
                 {
-                    Status = EntityStatus.Active,
-                    IsSystemRole = false
+                    Status = EntityStatus.Active
                 };
             }
 
@@ -157,15 +156,10 @@
                     Placeholder = "請輸入角色描述",
                     IsRequired = false,
                     MaxLength = 200,
-                    Rows = 3,
-                    HelpText = "簡要說明此角色的職責與用途，幫助了解角色功能，最多200個字元"
-                },
-                new()
-                {
-                    PropertyName = nameof(Role.IsSystemRole),
-                    Label = "系統角色",
-                    FieldType = FormFieldType.Checkbox,
-                    HelpText = "系統角色無法刪除且權限受限制，通常為系統預設的重要角色"
+                    Rows = 2,
+                    HelpText = "簡要說明此角色的職責與用途，幫助了解角色功能，最多200個字元",
+                    ContainerCssClass = "col-12"
+
                 },
                 new()
                 {
@@ -176,7 +170,8 @@
                     IsRequired = false,
                     MaxLength = 500,
                     Rows = 2,
-                    HelpText = "角色的額外說明或注意事項，可記錄特殊使用情況或限制，最多500個字元"
+                    HelpText = "角色的額外說明或注意事項，可記錄特殊使用情況或限制，最多500個字元",
+                    ContainerCssClass = "col-12"
                 }
             };
 
@@ -184,7 +179,6 @@
             formSections = new Dictionary<string, string>
             {
                 { nameof(Role.RoleName), "基本資訊" },
-                { nameof(Role.IsSystemRole), "基本資訊" },
                 { nameof(Role.Description), "額外資訊" },
                 { nameof(Role.Remarks), "額外資訊" }
             };

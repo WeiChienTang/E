@@ -29,9 +29,9 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             var roles = new[]
             {
-                new Role { RoleName = "管理員", Description = "系統管理員", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System" , IsSystemRole = true},
-                new Role { RoleName = "辦公室員工", Description = "辦公室員工", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", IsSystemRole = true},
-                new Role { RoleName = "員工", Description = "員工", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", IsSystemRole = false},
+                new Role { RoleName = "管理員", Description = "系統管理員", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System"},
+                new Role { RoleName = "辦公室員工", Description = "辦公室員工", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System"},
+                new Role { RoleName = "員工", Description = "員工", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System"},
             };
 
             await context.Roles.AddRangeAsync(roles);

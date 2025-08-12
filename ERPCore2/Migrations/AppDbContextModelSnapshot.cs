@@ -2243,9 +2243,6 @@ namespace ERPCore2.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsSystemRole")
-                        .HasColumnType("bit");
-
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
