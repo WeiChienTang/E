@@ -363,8 +363,16 @@
         {
             builder.AddAttribute(sequence + 7, "required", true);
         }
-        builder.AddAttribute(sequence + 8, "value", GetPropertyValue(Model, field.PropertyName)?.ToString());
-        builder.AddAttribute(sequence + 9, "onchange", EventCallback.Factory.CreateBinder(this, 
+        if (field.MaxLength.HasValue)
+        {
+            builder.AddAttribute(sequence + 8, "maxlength", field.MaxLength.Value);
+        }
+        if (field.MinLength.HasValue)
+        {
+            builder.AddAttribute(sequence + 9, "minlength", field.MinLength.Value);
+        }
+        builder.AddAttribute(sequence + 10, "value", GetPropertyValue(Model, field.PropertyName)?.ToString());
+        builder.AddAttribute(sequence + 11, "onchange", EventCallback.Factory.CreateBinder(this, 
             value => SetPropertyValue(Model, field.PropertyName, value), 
             GetPropertyValue(Model, field.PropertyName)?.ToString() ?? ""));
         builder.CloseElement();
@@ -448,8 +456,16 @@
         builder.AddAttribute(sequence + 4, "readonly", field.IsReadOnly);
         builder.AddAttribute(sequence + 5, "disabled", field.IsDisabled);
         builder.AddAttribute(sequence + 6, "rows", field.Rows ?? 3);
-        builder.AddAttribute(sequence + 7, "value", GetPropertyValue(Model, field.PropertyName)?.ToString());
-        builder.AddAttribute(sequence + 8, "onchange", EventCallback.Factory.CreateBinder(this, 
+        if (field.MaxLength.HasValue)
+        {
+            builder.AddAttribute(sequence + 7, "maxlength", field.MaxLength.Value);
+        }
+        if (field.MinLength.HasValue)
+        {
+            builder.AddAttribute(sequence + 8, "minlength", field.MinLength.Value);
+        }
+        builder.AddAttribute(sequence + 9, "value", GetPropertyValue(Model, field.PropertyName)?.ToString());
+        builder.AddAttribute(sequence + 10, "onchange", EventCallback.Factory.CreateBinder(this, 
             value => SetPropertyValue(Model, field.PropertyName, value), 
             GetPropertyValue(Model, field.PropertyName)?.ToString() ?? ""));
         builder.CloseElement();
@@ -577,9 +593,17 @@
         builder.AddAttribute(sequence + 7, "readonly", field.IsReadOnly);
         builder.AddAttribute(sequence + 8, "disabled", field.IsDisabled);
         builder.AddAttribute(sequence + 9, "value", displayValue);
+        if (field.MaxLength.HasValue)
+        {
+            builder.AddAttribute(sequence + 10, "maxlength", field.MaxLength.Value);
+        }
+        if (field.MinLength.HasValue)
+        {
+            builder.AddAttribute(sequence + 11, "minlength", field.MinLength.Value);
+        }
         
         // 輸入事件處理
-        builder.AddAttribute(sequence + 10, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
+        builder.AddAttribute(sequence + 12, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
         {
             var inputValue = args.Value?.ToString() ?? "";
             autoCompleteDisplayValues[fieldId] = inputValue;
@@ -587,7 +611,7 @@
         }));
         
         // 焦點事件處理
-        builder.AddAttribute(sequence + 11, "onfocus", EventCallback.Factory.Create(this, () =>
+        builder.AddAttribute(sequence + 13, "onfocus", EventCallback.Factory.Create(this, () =>
         {
             var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "");
             if (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= field.MinSearchLength)
@@ -596,7 +620,7 @@
             }
         }));
           // 失去焦點事件處理
-        builder.AddAttribute(sequence + 12, "onblur", EventCallback.Factory.Create(this, () =>
+        builder.AddAttribute(sequence + 14, "onblur", EventCallback.Factory.Create(this, () =>
         {
             // 延遲隱藏下拉選單，讓使用者有時間點擊選項
             Timer? timer = null;
@@ -609,7 +633,7 @@
         }));
         
         // 鍵盤事件處理
-        builder.AddAttribute(sequence + 13, "onkeydown", EventCallback.Factory.Create<KeyboardEventArgs>(this, args =>
+        builder.AddAttribute(sequence + 15, "onkeydown", EventCallback.Factory.Create<KeyboardEventArgs>(this, args =>
         {
             _ = HandleKeyDown(field, args);
         }));

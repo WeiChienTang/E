@@ -4,6 +4,7 @@
 @inject IAddressService AddressService
 @inject IContactTypeService ContactTypeService
 @inject IAddressTypeService AddressTypeService
+@inject ISupplierTypeService SupplierTypeService
 @inject INotificationService NotificationService
 
 <GenericEditModalComponent TEntity="Supplier" 
@@ -26,7 +27,16 @@
                           OnSaveSuccess="@OnSaveSuccess"
                           RequiredPermission="Supplier.Read"
                           OnCancel="@OnCancel"
+                          OnFieldChanged="@OnFieldValueChanged"
                           AdditionalSections="@GetAdditionalSections()" />
+
+@* 廠商類型編輯 Modal *@
+<SupplierTypeEditModalComponent @ref="supplierTypeEditModal"
+                               IsVisible="@supplierTypeModalManager.IsModalVisible"
+                               IsVisibleChanged="@supplierTypeModalManager.HandleModalVisibilityChangedAsync"
+                               SupplierTypeId="@supplierTypeModalManager.SelectedEntityId"
+                               OnSupplierTypeSaved="@OnSupplierTypeSavedWrapper"
+                               OnCancel="@supplierTypeModalManager.HandleModalCancelAsync" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; }
@@ -38,6 +48,10 @@
     private GenericEditModalComponent<Supplier, ISupplierService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    
+    // 廠商類型編輯 Modal 相關變數 - 使用泛型管理器
+    private SupplierTypeEditModalComponent? supplierTypeEditModal;
+    private RelatedEntityModalManager<SupplierType> supplierTypeModalManager = default!;
     
     // 選項清單
     private List<SupplierType> supplierTypes = new();
@@ -56,6 +70,9 @@
     {
         try
         {
+            // 初始化廠商類型 Modal 管理器
+            InitializeSupplierTypeModalManager();
+            
             await LoadAdditionalDataAsync();
             InitializeFormFields();
         }
@@ -75,6 +92,31 @@
         }
         
         await base.OnParametersSetAsync();
+    }
+
+    /// <summary>
+    /// 初始化廠商類型 Modal 管理器
+    /// </summary>
+    private void InitializeSupplierTypeModalManager()
+    {
+        supplierTypeModalManager = new RelatedEntityManagerBuilder<SupplierType>(NotificationService, "廠商類型")
+            .WithPropertyName(nameof(Supplier.SupplierTypeId))
+            .WithReloadCallback(LoadAdditionalDataAsync)
+            .WithStateChangedCallback(StateHasChanged)
+            .WithAutoSelectCallback(supplierTypeId => 
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    editModalComponent.Entity.SupplierTypeId = supplierTypeId;
+                }
+            })
+            .WithCustomPostProcess(supplierType => 
+            {
+                // 重新初始化表單欄位以更新按鈕狀態
+                InitializeFormFields();
+                return Task.CompletedTask;
+            })
+            .Build();
     }
 
     private async Task LoadAdditionalDataAsync()
@@ -160,7 +202,8 @@
                     Label = "廠商類型",
                     FieldType = FormFieldType.Select,
                     Options = supplierTypeOptions,
-                    HelpText = "選擇廠商類型分類"
+                    HelpText = "選擇廠商類型分類",
+                    ActionButtons = GetSupplierTypeActionButtons()
                 },
                 new()
                 {
@@ -453,5 +496,53 @@
                                        ItemsChanged="@OnSupplierAddressesChanged" />
             </div>
         </div>;
+    }
+    
+    /// <summary>
+    /// 包裝廠商類型儲存事件以符合原有介面
+    /// </summary>
+    private async Task OnSupplierTypeSavedWrapper(SupplierType savedSupplierType)
+    {
+        await supplierTypeModalManager.HandleEntitySavedAsync(savedSupplierType, shouldAutoSelect: true);
+    }
+    
+    /// <summary>
+    /// 使用泛型管理器產生廠商類型操作按鈕
+    /// </summary>
+    private List<FieldActionButton> GetSupplierTypeActionButtons()
+    {
+        var currentSupplierTypeId = editModalComponent?.Entity?.SupplierTypeId;
+        return supplierTypeModalManager.GenerateActionButtons(currentSupplierTypeId);
+    }
+
+    /// <summary>
+    /// 開啟廠商類型編輯 Modal - 使用泛型管理器
+    /// </summary>
+    private async Task OpenSupplierTypeModal(int? supplierTypeId)
+    {
+        await supplierTypeModalManager.OpenModalAsync(supplierTypeId);
+    }
+
+    /// <summary>
+    /// 處理欄位值變更事件
+    /// </summary>
+    private Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    {
+        try
+        {
+            // 使用泛型管理器自動處理廠商類型欄位變更
+            if (fieldChange.PropertyName == nameof(Supplier.SupplierTypeId))
+            {
+                supplierTypeModalManager.UpdateFieldActionButtons(formFields, fieldChange.PropertyName, 
+                    fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int typeId) ? typeId : null);
+            }
+            
+            return Task.CompletedTask;
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
+            return Task.CompletedTask;
+        }
     }
 }
