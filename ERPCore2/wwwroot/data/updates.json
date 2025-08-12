@@ -1,9 +1,6 @@
 [
   {
-    "version": "1",
     "releaseDate": "2025-08-12",
-    "title": "更新日誌",
-    "type": "major",
     "items": [
       {
         "category": "重構",
@@ -58,10 +55,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-08-11",
-    "title": "更新日誌",
-    "type": "minor",
     "items": [
       {
         "category": "修改",
@@ -116,10 +110,10 @@
     ]
   },
   {
-    "version": "1",
+    
     "releaseDate": "2025-08-10",
-    "title": "更新日誌",
-    "type": "minor",
+    
+    
     "items": [
       {
         "category": "重構",
@@ -164,10 +158,10 @@
     ]
   },
   {
-    "version": "1",
+    
     "releaseDate": "2025-08-09",
-    "title": "更新日誌",
-    "type": "patch",
+    
+    
     "items": [
       {
         "category": "修改",
@@ -222,10 +216,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-08-08",
-    "title": "更新日誌",
-    "type": "minor",
     "items": [
       {
         "category": "修改",
@@ -270,10 +261,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-08-07",
-    "title": "更新日誌",
-    "type": "minor",
     "items": [
       {
         "category": "實作",
@@ -308,10 +296,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-30",
-    "title": "更新日誌",
-    "type": "minor",
     "items": [
       {
         "category": "重構",
@@ -361,10 +346,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-29",
-    "title": "更新日誌",
-    "type": "minor",
     "items": [
       {
         "category": "重構",
@@ -409,10 +391,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-28",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "修改",
@@ -447,10 +426,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-27",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "修正",
@@ -485,10 +461,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-26",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "新增",
@@ -558,10 +531,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-25",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "修改",
@@ -581,10 +551,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-24",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "修改",
@@ -599,10 +566,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-21",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "新增",
@@ -612,10 +576,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-20",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "修改",
@@ -640,10 +601,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-19",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "修改",
@@ -668,10 +626,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-18",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "修改",
@@ -706,10 +661,7 @@
     ]
   },
   {
-    "version": "1",
-    "releaseDate": "2025-07-17",
-    "title": "更新日誌",
-    "type": "patch",
+    "releaseDate": "2025-07-17",   
     "items": [
       {
         "category": "修改",
@@ -754,10 +706,7 @@
     ]
   },
   {
-    "version": "1",
-    "releaseDate": "2025-07-16",
-    "title": "更新日誌",
-    "type": "patch",
+    "releaseDate": "2025-07-16",  
     "items": [
       {
         "category": "修改",
@@ -812,10 +761,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-15",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "修改",
@@ -840,10 +786,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-14",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "修改",
@@ -883,10 +826,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-12",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "修改",
@@ -901,10 +841,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-11",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "新增",
@@ -959,10 +896,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-10",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "新增",
@@ -1002,10 +936,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-09",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "新增",
@@ -1070,10 +1001,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-08",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "新增",
@@ -1108,10 +1036,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-07",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "修改",
@@ -1146,10 +1071,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-06",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "修改",
@@ -1159,10 +1081,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-05",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "修改",
@@ -1182,10 +1101,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-04",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "新增",
@@ -1215,10 +1131,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-02",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "新增",
@@ -1248,10 +1161,7 @@
     ]
   },
   {
-    "version": "1",
     "releaseDate": "2025-07-01",
-    "title": "更新日誌",
-    "type": "patch",
     "items": [
       {
         "category": "新增",

@@ -42,19 +42,13 @@
     }
     else
     {
-        <div class="row">
-            <!-- 左側：更新列表 -->
-            <div class="col-lg-6">
+        <!-- 上方：更新列表 -->
+        <div class="row mb-4">
+            <div class="col-12">
                 <div class="card shadow-sm">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-list me-2"></i>
-                            更新列表
-                        </h5>
-                    </div>
                     <div class="card-body p-0">
                         <GenericTableComponent TItem="UpdateRecord"
-                                             Items="@updates"
+                                             Items="@GetPagedUpdates()"
                                              ColumnDefinitions="@GetTableColumns()"
                                              ShowHeader="true"
                                              IsStriped="true"
@@ -64,20 +58,31 @@
                                              OnRowClick="@HandleUpdateSelected"
                                              CssClass="mb-0"
                                              EmptyMessage="沒有找到更新紀錄"
-                                             GetRowCssClass="@GetRowCssClass" />
+                                             GetRowCssClass="@GetRowCssClass"
+                                             EnablePagination="true"
+                                             CurrentPage="@currentPage"
+                                             PageSize="@pageSize"
+                                             TotalItems="@updates.Count"
+                                             OnPageChanged="@HandlePageChanged"
+                                             OnPageSizeChanged="@HandlePageSizeChanged"
+                                             ShowPageSizeSelector="true"
+                                             PageSizeOptions="@(new List<int> { 5, 10, 20, 50 })" />
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- 右側：詳細資訊 -->
-            <div class="col-lg-6">
+        <!-- 下方：更新日誌 -->
+        <div class="row">
+            <div class="col-12">
                 <div class="card shadow-sm">
-                    <div class="card-header @GetVersionTypeClass(selectedUpdate?.Type ?? "")">
+                    <div class="card-header bg-info text-white">
                         @if (selectedUpdate != null)
                         {
                             <div class="d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">
-                                    @selectedUpdate.Title
+                                    <i class="fas fa-file-alt me-2"></i>
+                                    更新日誌
                                 </h5>
                                 <small class="text-light">
                                     <i class="fas fa-calendar-alt me-1"></i>
@@ -88,8 +93,8 @@
                         else
                         {
                             <h5 class="mb-0">
-                                <i class="fas fa-info-circle me-2"></i>
-                                更新詳情
+                                <i class="fas fa-file-alt me-2"></i>
+                                更新日誌
                             </h5>
                         }
                     </div>
@@ -126,7 +131,7 @@
                         {
                             <div class="text-center py-5">
                                 <i class="fas fa-hand-pointer fa-3x text-muted mb-3"></i>
-                                <h6 class="text-muted">請點選左側列表查看詳細資訊</h6>
+                                <h6 class="text-muted">請點選上方列表查看詳細資訊</h6>
                                 <p class="text-muted mb-0">選擇一個版本以查看該版本的更新內容</p>
                             </div>
                         }
@@ -141,6 +146,10 @@
     private List<UpdateRecord> updates = new();
     private UpdateRecord? selectedUpdate = null;
     private bool isLoading = true;
+    
+    // 分頁相關變數
+    private int currentPage = 1;
+    private int pageSize = 10;
 
     protected override async Task OnInitializedAsync()
     {
@@ -160,16 +169,54 @@
         }
     }
 
+    private List<UpdateRecord> GetPagedUpdates()
+    {
+        return updates
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+    }
+
+    private async Task HandlePageChanged(int newPage)
+    {
+        currentPage = newPage;
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task HandlePageSizeChanged(int newPageSize)
+    {
+        pageSize = newPageSize;
+        currentPage = 1; // 重置到第一頁
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
     private List<TableColumnDefinition> GetTableColumns()
     {
         return new List<TableColumnDefinition>
         {
-            TableColumnDefinition.Template("版本", context =>
-                @<span class="badge @GetVersionBadgeClass(((UpdateRecord)context).Type) me-2">
-                    v@(((UpdateRecord)context).Version)
-                </span>),
-            TableColumnDefinition.Text("標題", "Title"),
-            TableColumnDefinition.Date("發布日期", "ReleaseDate", "yyyy/MM/dd")
+            TableColumnDefinition.Date("發布日期", "ReleaseDate", "yyyy/MM/dd"),
+            TableColumnDefinition.Template("更新內容", context =>
+                @<div class="update-summary">
+                    <small class="text-muted">
+                        @{
+                            var record = (UpdateRecord)context;
+                            var itemCount = record.Items?.Count ?? 0;
+                        }
+                        包含 @itemCount 項更新
+                        @if (record.Items?.Any() == true)
+                        {
+                            <span class="ms-2">
+                                @string.Join("、", record.Items.GroupBy(i => i.Category).Select(g => g.Key).Take(3))
+                                @if (record.Items.GroupBy(i => i.Category).Count() > 3)
+                                {
+                                    <text>等</text>
+                                }
+                            </span>
+                        }
+                    </small>
+                </div>)
         };
     }
 
@@ -188,28 +235,6 @@
             return "table-primary";
         }
         return "";
-    }
-
-    private string GetVersionTypeClass(string type)
-    {
-        return type.ToLower() switch
-        {
-            "major" => "bg-primary text-white",
-            "minor" => "bg-info text-white", 
-            "patch" => "bg-secondary text-white",
-            _ => "bg-light"
-        };
-    }
-
-    private string GetVersionBadgeClass(string type)
-    {
-        return type.ToLower() switch
-        {
-            "major" => "bg-danger",
-            "minor" => "bg-warning text-dark",
-            "patch" => "bg-success",
-            _ => "bg-secondary"
-        };
     }
 
     private string GetCategoryColor(string category)
