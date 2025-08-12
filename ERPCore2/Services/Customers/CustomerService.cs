@@ -56,8 +56,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
                     .Include(c => c.CustomerType)
-                    .Include(c => c.CustomerContacts)
-                        .ThenInclude(cc => cc.ContactType)
                     .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
             }
             catch (Exception ex)
@@ -299,80 +297,6 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchCustomerTypesAsync), GetType(), _logger, new { Keyword = keyword });
                 throw;
-            }
-        }
-
-        #endregion
-
-        #region 聯絡資料管理
-
-        public async Task<List<CustomerContact>> GetCustomerContactsAsync(int customerId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.CustomerContacts
-                    .Include(cc => cc.ContactType)
-                    .Where(cc => cc.CustomerId == customerId && !cc.IsDeleted)
-                    .OrderBy(cc => cc.ContactType!.TypeName)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCustomerContactsAsync), GetType(), _logger, new { CustomerId = customerId });
-                throw;
-            }
-        }
-
-        public async Task<ServiceResult> UpdateCustomerContactsAsync(int customerId, List<CustomerContact> contacts)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                
-                // 驗證客戶是否存在
-                var customerExists = await context.Customers.AnyAsync(c => c.Id == customerId && !c.IsDeleted);
-                if (!customerExists)
-                    return ServiceResult.Failure("客戶不存在");
-
-                // 取得現有聯絡資料
-                var existingContacts = await context.CustomerContacts
-                    .Where(cc => cc.CustomerId == customerId)
-                    .ToListAsync();
-
-                // 刪除現有聯絡資料
-                context.CustomerContacts.RemoveRange(existingContacts);
-
-                // 新增更新的聯絡資料
-                foreach (var contact in contacts.Where(c => !string.IsNullOrWhiteSpace(c.ContactValue)))
-                {
-                    // 建立新的聯絡實體以避免 ID 衝突
-                    var newContact = new CustomerContact
-                    {
-                        CustomerId = customerId,
-                        ContactTypeId = contact.ContactTypeId,
-                        ContactValue = contact.ContactValue,
-                        IsPrimary = contact.IsPrimary,
-                        Status = EntityStatus.Active,
-                        IsDeleted = false,
-                        CreatedAt = DateTime.UtcNow,
-                        CreatedBy = "System", // TODO: 從認證取得使用者
-                        Remarks = contact.Remarks
-                    };
-                    context.CustomerContacts.Add(newContact);
-                }
-
-                await context.SaveChangesAsync();
-
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateCustomerContactsAsync), GetType(), _logger, new { 
-                    CustomerId = customerId,
-                    ContactsCount = contacts?.Count ?? 0 
-                });
-                return ServiceResult.Failure("更新客戶聯絡資料時發生錯誤");
             }
         }
 

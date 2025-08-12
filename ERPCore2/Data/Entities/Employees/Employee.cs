@@ -91,13 +91,14 @@ namespace ERPCore2.Data.Entities
         /// 帳號鎖定時間
         /// </summary>
         [Display(Name = "鎖定時間")]
-        public DateTime? LockedAt { get; set; }        // 導航屬性
+        public DateTime? LockedAt { get; set; }        
+        
+        // 導航屬性
         public Role? Role { get; set; }
         public Department? Department { get; set; }
         public EmployeePosition? EmployeePosition { get; set; }
-        public ICollection<EmployeeContact> EmployeeContacts { get; set; } = new List<EmployeeContact>();
         
+        // 聯絡資訊請使用 IContactService 取得 (OwnerType = "Employee", OwnerId = this.Id)
         // 地址資訊請使用 IAddressService 取得
-        // public ICollection<EmployeeAddress> EmployeeAddresses { get; set; } = new List<EmployeeAddress>();
     }
 }

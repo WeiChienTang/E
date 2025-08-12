@@ -33,10 +33,12 @@ namespace ERPCore2.Data
 
             // 統一地址服務 (推薦使用)
             services.AddScoped<IAddressService, AddressService>();
+            
+            // 統一聯絡方式服務 (推薦使用)
+            services.AddScoped<IContactService, ContactService>();
 
             // 客戶相關服務
             services.AddScoped<ICustomerService, CustomerService>();
-            services.AddScoped<ICustomerContactService, CustomerContactService>();
             services.AddScoped<ICustomerTypeService, CustomerTypeService>();
 
             // 共用資料服務
@@ -45,7 +47,6 @@ namespace ERPCore2.Data
 
             // 廠商相關服務
             services.AddScoped<ISupplierService, SupplierService>();
-            services.AddScoped<ISupplierContactService, SupplierContactService>();
             services.AddScoped<ISupplierTypeService, SupplierTypeService>();
 
             // 商品相關服務
@@ -91,7 +92,6 @@ namespace ERPCore2.Data
 
             // 認證和授權服務
             services.AddScoped<IEmployeeService, EmployeeService>();
-            services.AddScoped<IEmployeeContactService, EmployeeContactService>();
             services.AddScoped<IEmployeePositionService, EmployeePositionService>();
             services.AddScoped<IDepartmentService, DepartmentService>();
             services.AddScoped<IPermissionService, PermissionService>();

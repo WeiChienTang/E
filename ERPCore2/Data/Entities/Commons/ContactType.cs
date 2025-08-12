@@ -19,7 +19,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "描述")]
         public string? Description { get; set; } = string.Empty;
           // Navigation Properties
-        public ICollection<CustomerContact> CustomerContacts { get; set; } = new List<CustomerContact>();
-        public ICollection<SupplierContact> SupplierContacts { get; set; } = new List<SupplierContact>();
+        public ICollection<Contact> Contacts { get; set; } = new List<Contact>();
     }
 }

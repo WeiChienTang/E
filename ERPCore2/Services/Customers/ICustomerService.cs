@@ -49,20 +49,6 @@ namespace ERPCore2.Services
         
         #endregion
 
-        #region 聯絡資料管理
-        
-        /// <summary>
-        /// 取得客戶聯絡資料
-        /// </summary>
-        Task<List<CustomerContact>> GetCustomerContactsAsync(int customerId);
-        
-        /// <summary>
-        /// 更新客戶聯絡資料
-        /// </summary>
-        Task<ServiceResult> UpdateCustomerContactsAsync(int customerId, List<CustomerContact> contacts);
-        
-        #endregion
-
         #region 輔助方法
         
         /// <summary>

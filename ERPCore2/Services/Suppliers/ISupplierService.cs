@@ -38,15 +38,7 @@ namespace ERPCore2.Services
 
         #region 聯絡資料管理
         
-        /// <summary>
-        /// 取得廠商聯絡資料
-        /// </summary>
-        Task<List<SupplierContact>> GetSupplierContactsAsync(int supplierId);
-        
-        /// <summary>
-        /// 更新廠商聯絡資料
-        /// </summary>
-        Task<ServiceResult> UpdateSupplierContactsAsync(int supplierId, List<SupplierContact> contacts);
+        // 聯絡資料管理已移至 IContactService
         
         #endregion
 

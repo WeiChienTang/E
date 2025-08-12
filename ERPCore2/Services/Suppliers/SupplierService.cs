@@ -58,8 +58,6 @@ namespace ERPCore2.Services
             {
                 return await context.Suppliers
                     .Include(s => s.SupplierType)
-                    .Include(s => s.SupplierContacts)
-                        .ThenInclude(sc => sc.ContactType)
                     .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
             }
             catch (Exception ex)
@@ -228,98 +226,7 @@ namespace ERPCore2.Services
         }
         #endregion
 
-        #region 聯絡資料管理
-
-        public async Task<List<SupplierContact>> GetSupplierContactsAsync(int supplierId)
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
-
-            try
-            {
-                return await context.SupplierContacts
-                    .Include(sc => sc.ContactType)
-                    .Where(sc => sc.SupplierId == supplierId && !sc.IsDeleted)
-                    .OrderBy(sc => sc.ContactType!.TypeName)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetSupplierContactsAsync), GetType(), _logger, 
-                    new { SupplierId = supplierId });
-                throw;
-            }
-        }
-
-        public async Task<ServiceResult> UpdateSupplierContactsAsync(int supplierId, List<SupplierContact> contacts)
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
-
-            try
-            {
-                // 取得現有聯絡資料
-                var existingContacts = await context.SupplierContacts
-                    .Where(sc => sc.SupplierId == supplierId && !sc.IsDeleted)
-                    .ToListAsync();
-
-                // 刪除不在新列表中的聯絡資料
-                var contactsToDelete = existingContacts
-                    .Where(ec => !contacts.Any(c => c.Id == ec.Id))
-                    .ToList();
-
-                foreach (var contact in contactsToDelete)
-                {
-                    contact.IsDeleted = true;
-                    contact.UpdatedAt = DateTime.UtcNow;
-                }
-
-                // 更新或新增聯絡資料
-                foreach (var contact in contacts)
-                {
-                    if (contact.Id <= 0) // 新增（包括負數臨時 ID）
-                    {
-                        // 建立新的聯絡實體以避免 ID 衝突
-                        var newContact = new SupplierContact
-                        {
-                            SupplierId = supplierId,
-                            ContactTypeId = contact.ContactTypeId,
-                            ContactValue = contact.ContactValue,
-                            IsPrimary = contact.IsPrimary,
-                            Status = EntityStatus.Active,
-                            IsDeleted = false,
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow,
-                            CreatedBy = "System", // TODO: 從認證取得使用者
-                            Remarks = contact.Remarks
-                        };
-                        context.SupplierContacts.Add(newContact);
-                    }
-                    else
-                    {
-                        // 更新
-                        var existingContact = existingContacts.FirstOrDefault(ec => ec.Id == contact.Id);
-                        if (existingContact != null)
-                        {
-                            existingContact.ContactTypeId = contact.ContactTypeId;
-                            existingContact.ContactValue = contact.ContactValue;
-                            existingContact.IsPrimary = contact.IsPrimary;
-                            existingContact.UpdatedAt = DateTime.UtcNow;
-                        }
-                    }
-                }
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateSupplierContactsAsync), GetType(), _logger, 
-                    new { SupplierId = supplierId, ContactsCount = contacts.Count });
-                return ServiceResult.Failure($"更新廠商聯絡資料時發生錯誤: {ex.Message}");
-            }
-        }
-
-        #endregion
-
+        // 聯絡資料管理已移至 ContactService
         // 地址資料管理已移至 AddressService
         // #region 地址資料管理
         // ... 相關方法已移除，請使用 IAddressService

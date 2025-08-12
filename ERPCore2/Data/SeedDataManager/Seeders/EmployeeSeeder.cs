@@ -52,8 +52,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             await context.Employees.AddAsync(adminEmployee);
             await context.SaveChangesAsync();
 
-            // 為系統管理員添加Email聯絡資料
-            await SeedEmployeeContactAsync(context, adminEmployee);
+            // 聯絡資料將由 ContactSeeder 統一處理
         }
 
         /// <summary>
@@ -97,33 +96,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 await context.SaveChangesAsync();
 
                 // 為員工添加Email聯絡資料
-                await SeedEmployeeContactAsync(context, employee);
-            }
-        }
-
-        /// <summary>
-        /// 為員工添加聯絡資料
-        /// </summary>
-        private static async Task SeedEmployeeContactAsync(AppDbContext context, Employee employee)
-        {
-            var emailContactType = await context.ContactTypes
-                .FirstOrDefaultAsync(ct => ct.TypeName == "Email");
-
-            if (emailContactType != null)
-            {
-                var emailContact = new EmployeeContact
-                {
-                    EmployeeId = employee.Id,
-                    ContactTypeId = emailContactType.Id,
-                    ContactValue = $"{employee.Account}@erpcore2.com",
-                    IsPrimary = true,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                };
-
-                await context.EmployeeContacts.AddAsync(emailContact);
-                await context.SaveChangesAsync();
+                // 聯絡資料將由 ContactSeeder 統一處理
             }
         }
     }

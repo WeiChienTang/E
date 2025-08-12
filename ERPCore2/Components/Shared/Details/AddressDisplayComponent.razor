@@ -1,4 +1,6 @@
 @* 地址資料顯示組件 *@
+@using ERPCore2.Data.Enums
+@using ERPCore2.Data.Entities
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
 
@@ -14,7 +16,7 @@
         </div>
         <div class="card-body p-0">
             <div class="list-group list-group-flush">
-                @foreach (var address in Addresses.OrderBy(a => a.AddressType?.SortOrder ?? 0))
+                @foreach (var address in Addresses.OrderBy(a => a.AddressType?.TypeName ?? ""))
                 {
                     <div class="list-group-item py-3">
                         <div class="d-flex align-items-start">
@@ -33,10 +35,10 @@
                                         {
                                             <span class="badge bg-primary me-1">主要</span>
                                         }
-                                        @if (ShowStatus && address.Status != null)
+                                        @if (ShowStatus)
                                         {
-                                            <span class="badge @(address.Status == true ? "bg-success" : "bg-secondary")">
-                                                @(address.Status == true ? "有效" : "無效")
+                                            <span class="badge @(address.Status == EntityStatus.Active ? "bg-success" : "bg-secondary")">
+                                                @(address.Status == EntityStatus.Active ? "有效" : "無效")
                                             </span>
                                         }
                                     </div>
@@ -122,7 +124,7 @@
                     {
                         <div class="col">
                             <small class="text-muted">有效</small>
-                            <div class="fw-bold">@Addresses.Count(a => a.Status == true)</div>
+                            <div class="fw-bold">@Addresses.Count(a => a.Status == EntityStatus.Active)</div>
                         </div>
                     }
                 </div>
@@ -152,7 +154,7 @@ else
 }
 
 @code {
-    [Parameter] public IEnumerable<IAddressEntity>? Addresses { get; set; }
+    [Parameter] public IEnumerable<Address>? Addresses { get; set; }
     [Parameter] public string? Title { get; set; }
     [Parameter] public string? EmptyTitle { get; set; }
     [Parameter] public string? EmptyMessage { get; set; }
@@ -162,11 +164,11 @@ else
     [Parameter] public bool ShowMapLink { get; set; } = true;
     [Parameter] public bool ShowCreateButton { get; set; } = false;
     [Parameter] public EventCallback OnCreateClick { get; set; }
-    [Parameter] public EventCallback<IAddressEntity> OnMapClick { get; set; }
-    [Parameter] public EventCallback<IAddressEntity> OnCopyClick { get; set; }
+    [Parameter] public EventCallback<Address> OnMapClick { get; set; }
+    [Parameter] public EventCallback<Address> OnCopyClick { get; set; }
 
     // 建立完整地址文字
-    private string BuildFullAddress(IAddressEntity address)
+    private string BuildFullAddress(Address address)
     {
         var parts = new List<string>();
         
@@ -220,7 +222,7 @@ else
     }
 
     // 開啟地圖
-    private async Task OpenMap(IAddressEntity address)
+    private async Task OpenMap(Address address)
     {
         if (OnMapClick.HasDelegate)
         {
@@ -237,7 +239,7 @@ else
     }
 
     // 複製地址
-    private async Task CopyAddress(IAddressEntity address)
+    private async Task CopyAddress(Address address)
     {
         if (OnCopyClick.HasDelegate)
         {

@@ -3,7 +3,7 @@
 
 @inject ISupplierService SupplierService
 @inject IAddressService AddressService
-@inject ISupplierContactService SupplierContactService
+@inject IContactService ContactService
 @inject IContactTypeService ContactTypeService
 @inject IAddressTypeService AddressTypeService
 @inject INotificationService NotificationService
@@ -37,7 +37,7 @@
                          <AdditionalSections>        
                         
                         @* 聯絡方式管理 *@
-        <ContactManagerComponent TContactEntity="SupplierContact"
+        <ContactManagerComponent TContactEntity="Contact"
                                TParentEntity="Supplier"
                                Items="@supplierContacts"
                                Options="@(contactTypes.Cast<ERPCore2.Data.BaseEntity>().ToList())"
@@ -48,7 +48,7 @@
                                SetIsPrimary="@((c, isPrimary) => c.IsPrimary = isPrimary)"
                                SetTypeId="@((c, typeId) => c.ContactTypeId = typeId)"
                                SetContactValue="@((c, value) => c.ContactValue = value)"
-                               SetParentId="@((c, parentId) => c.SupplierId = parentId)"
+                               SetParentId="@((c, parentId) => { c.OwnerType = ContactOwnerTypes.Supplier; c.OwnerId = parentId; })"
                                ItemsChanged="@OnSupplierContactsChanged" />
                                
                                @* 地址管理 *@
@@ -77,7 +77,7 @@
     
     // 資料模型
     private Supplier supplier = new();
-    private List<SupplierContact> supplierContacts = new();
+    private List<Contact> supplierContacts = new();
     private List<Address> supplierAddresses = new();
     
     // 選項清單
@@ -266,7 +266,7 @@
                     Status = EntityStatus.Active
                 };
                 supplier = newSupplier;
-                supplierContacts = new List<SupplierContact>();
+                supplierContacts = new List<Contact>();
                 supplierAddresses = new List<Address>();
                 return newSupplier;
             }
@@ -278,7 +278,7 @@
                 supplier = loadedSupplier;
                 
                 // 載入聯絡方式
-                supplierContacts = await SupplierService.GetSupplierContactsAsync(Id.Value);
+                supplierContacts = await ContactService.GetByOwnerAsync(ContactOwnerTypes.Supplier, Id.Value);
                 
                 // 載入地址資料
                 supplierAddresses = await AddressService.GetSupplierAddressesAsync(Id.Value);
@@ -292,7 +292,7 @@
             {
                 // 如果找不到廠商，建立新的
                 supplier = new Supplier();
-                supplierContacts = new List<SupplierContact>();
+                supplierContacts = new List<Contact>();
                 supplierAddresses = new List<Address>();
                 return supplier;
             }
@@ -397,7 +397,7 @@
                 if (result.IsSuccess)
                 {
                     // 更新聯絡方式和地址資料
-                    await SupplierService.UpdateSupplierContactsAsync(entity.Id, supplierContacts);
+                    // ContactManagerComponent 會自動處理聯絡人的保存
                     await UpdateSupplierAddressesAsync(entity.Id, supplierAddresses);
                 }
             }
@@ -407,10 +407,11 @@
                 result = await SupplierService.CreateAsync(entity);
                 if (result.IsSuccess)
                 {
-                    // 更新聯絡方式的廠商ID
+                    // 更新聯絡方式的擁有者資訊
                     foreach (var contact in supplierContacts)
                     {
-                        contact.SupplierId = entity.Id;
+                        contact.OwnerType = ContactOwnerTypes.Supplier;
+                        contact.OwnerId = entity.Id;
                     }
                     
                     // 更新地址的廠商ID
@@ -420,7 +421,7 @@
                     }
                     
                     // 儲存聯絡方式和地址
-                    await SupplierService.UpdateSupplierContactsAsync(entity.Id, supplierContacts);
+                    // ContactManagerComponent 會自動處理聯絡人的保存
                     await UpdateSupplierAddressesAsync(entity.Id, supplierAddresses);
                 }
             }
@@ -445,7 +446,7 @@
 
 #region 事件處理方法
 
-    private Task OnSupplierContactsChanged(List<SupplierContact> updatedContacts)
+    private Task OnSupplierContactsChanged(List<Contact> updatedContacts)
     {
         try
         {

@@ -13,14 +13,15 @@ namespace ERPCore2.Data.Context
       public DbSet<CustomerType> CustomerTypes { get; set; }
       public DbSet<ContactType> ContactTypes { get; set; }
       public DbSet<AddressType> AddressTypes { get; set; }
-      public DbSet<CustomerContact> CustomerContacts { get; set; }
+      
+      // 統一聯絡方式管理
+      public DbSet<Contact> Contacts { get; set; }
       
       // 統一地址管理
       public DbSet<Address> Addresses { get; set; }
             
       public DbSet<Employee> Employees { get; set; }
       public DbSet<EmployeePosition> EmployeePositions { get; set; }
-      public DbSet<EmployeeContact> EmployeeContacts { get; set; }
       public DbSet<Department> Departments { get; set; }
       public DbSet<Role> Roles { get; set; }
       public DbSet<Permission> Permissions { get; set; }
@@ -36,7 +37,6 @@ namespace ERPCore2.Data.Context
       
       public DbSet<Supplier> Suppliers { get; set; }
       public DbSet<SupplierType> SupplierTypes { get; set; }
-      public DbSet<SupplierContact> SupplierContacts { get; set; }
       
       // Inventory Management
       public DbSet<Warehouse> Warehouses { get; set; }
@@ -119,21 +119,6 @@ namespace ERPCore2.Data.Context
                         .OnDelete(DeleteBehavior.SetNull);
                   });
                   
-                  modelBuilder.Entity<CustomerContact>(entity =>
-                  {
-                        // 欄位對應 - 主鍵在資料庫中就叫 Id，不需要欄位對應
-                        entity.Property(e => e.Id).ValueGeneratedOnAdd(); // 確保 Identity
-                        
-                        // 關聯設定
-                        entity.HasOne(e => e.Customer)
-                        .WithMany(c => c.CustomerContacts)
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                        entity.HasOne(e => e.ContactType)
-                        .WithMany(ct => ct.CustomerContacts)
-                        .OnDelete(DeleteBehavior.SetNull);
-                  });
-                  
                   modelBuilder.Entity<CustomerType>(entity =>
                   {
                         // 欄位對應 - 主鍵在資料庫中就叫 Id，不需要欄位對應
@@ -149,21 +134,6 @@ namespace ERPCore2.Data.Context
                         // 關聯設定
                         entity.HasOne(e => e.SupplierType)
                         .WithMany(st => st.Suppliers)
-                        .OnDelete(DeleteBehavior.SetNull);
-                  });
-                  
-                  modelBuilder.Entity<SupplierContact>(entity =>
-                  {
-                        // 欄位對應 - 主鍵在資料庫中就叫 Id，不需要欄位對應
-                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
-                        
-                        // 關聯設定
-                        entity.HasOne(e => e.Supplier)
-                        .WithMany(s => s.SupplierContacts)
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                        entity.HasOne(e => e.ContactType)
-                        .WithMany(ct => ct.SupplierContacts)
                         .OnDelete(DeleteBehavior.SetNull);
                   });
                   
@@ -200,12 +170,6 @@ namespace ERPCore2.Data.Context
                   });
                   
                   modelBuilder.Entity<EmployeePosition>(entity =>
-                  {
-                        // 欄位對應                        
-                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
-                  });
-                  
-                  modelBuilder.Entity<EmployeeContact>(entity =>
                   {
                         // 欄位對應                        
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();

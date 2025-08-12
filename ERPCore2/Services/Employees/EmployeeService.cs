@@ -40,8 +40,6 @@ namespace ERPCore2.Services
                     .Include(e => e.Role)
                     .Include(e => e.Department)
                     .Include(e => e.EmployeePosition)
-                    .Include(e => e.EmployeeContacts)
-                        .ThenInclude(ec => ec.ContactType)
                     .Where(e => !e.IsDeleted)
                     .OrderBy(e => e.EmployeeCode)
                     .ToListAsync();
@@ -66,8 +64,6 @@ namespace ERPCore2.Services
                     .Include(e => e.Role)
                     .Include(e => e.Department)
                     .Include(e => e.EmployeePosition)
-                    .Include(e => e.EmployeeContacts)
-                        .ThenInclude(ec => ec.ContactType)
                     .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
             }
             catch (Exception ex)
@@ -597,54 +593,7 @@ namespace ERPCore2.Services
 
         #region 聯絡資料管理
 
-        /// <summary>
-        /// 更新員工聯絡資料
-        /// </summary>
-        public async Task<ServiceResult> UpdateEmployeeContactsAsync(int employeeId, List<EmployeeContact> contacts)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                // 移除現有的聯絡資料
-                var existingContacts = await context.EmployeeContacts
-                    .Where(ec => ec.EmployeeId == employeeId)
-                    .ToListAsync();
-                context.EmployeeContacts.RemoveRange(existingContacts);
-
-                // 新增新的聯絡資料
-                foreach (var contact in contacts.Where(c => !string.IsNullOrWhiteSpace(c.ContactValue)))
-                {
-                    // 建立新的聯絡實體以避免 ID 衝突
-                    var newContact = new EmployeeContact
-                    {
-                        EmployeeId = employeeId,
-                        ContactTypeId = contact.ContactTypeId,
-                        ContactValue = contact.ContactValue,
-                        IsPrimary = contact.IsPrimary,
-                        Status = EntityStatus.Active,
-                        IsDeleted = false,
-                        CreatedAt = DateTime.Now,
-                        UpdatedAt = DateTime.Now,
-                        CreatedBy = "System", // TODO: 從認證取得使用者
-                        Remarks = contact.Remarks
-                    };
-                    context.EmployeeContacts.Add(newContact);
-                }
-                
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateEmployeeContactsAsync), GetType(), _logger, new { 
-                    Method = nameof(UpdateEmployeeContactsAsync),
-                    ServiceType = GetType().Name,
-                    EmployeeId = employeeId
-                });
-                return ServiceResult.Failure($"更新員工聯絡資料失敗：{ex.Message}");
-            }
-        }
-
+        // 聯絡資料管理已移至 ContactService
         // 地址資料管理已移至 AddressService
         // #region 地址資料管理
         // ... UpdateEmployeeAddressesAsync 方法已移除，請使用 IAddressService

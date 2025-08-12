@@ -38,9 +38,8 @@ namespace ERPCore2.Data.Entities
         
         // Navigation Properties
         public CustomerType? CustomerType { get; set; }
-        public ICollection<CustomerContact> CustomerContacts { get; set; } = new List<CustomerContact>();
         
+        // 聯絡資訊請使用 IContactService 取得 (OwnerType = "Customer", OwnerId = this.Id)
         // 地址資訊請使用 IAddressService 取得
-        // public ICollection<CustomerAddress> CustomerAddresses { get; set; } = new List<CustomerAddress>();
     }
 }

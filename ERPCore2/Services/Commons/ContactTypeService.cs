@@ -154,12 +154,12 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                // 檢查是否有關聯的客戶聯絡資料
-                var hasRelatedContacts = await context.CustomerContacts
-                    .AnyAsync(cc => cc.ContactTypeId == id && !cc.IsDeleted);
+                // 檢查是否有關聯的聯絡資料
+                var hasRelatedContacts = await context.Contacts
+                    .AnyAsync(c => c.ContactTypeId == id && !c.IsDeleted);
 
                 if (hasRelatedContacts)
-                    return ServiceResult.Failure("無法刪除，此聯絡類型已被客戶聯絡資料使用");
+                    return ServiceResult.Failure("無法刪除，此聯絡類型已被聯絡資料使用");
 
                 // 使用基底類別的刪除邏輯
                 return await base.DeleteAsync(id);

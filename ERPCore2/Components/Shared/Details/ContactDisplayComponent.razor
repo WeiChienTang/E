@@ -1,4 +1,6 @@
 @* 聯絡方式顯示組件 *@
+@using ERPCore2.Data.Enums
+@using ERPCore2.Data.Entities
 
 @if (Contacts?.Any() == true)
 {
@@ -12,7 +14,7 @@
         </div>
         <div class="card-body p-0">
             <div class="list-group list-group-flush">
-                @foreach (var contact in Contacts.OrderBy(c => c.ContactType?.SortOrder ?? 0))
+                @foreach (var contact in Contacts.OrderBy(c => c.ContactType?.TypeName ?? ""))
                 {
                     <div class="list-group-item d-flex align-items-center py-3">
                         <div class="flex-shrink-0 me-3">
@@ -65,10 +67,11 @@
                                     @if (contact.IsPrimary)
                                     {
                                         <span class="badge bg-primary">主要</span>
-                                    }                                    @if (ShowStatus && contact.Status != null)
+                                    }
+                                    @if (ShowStatus)
                                     {
-                                        <span class="badge @(contact.Status == true ? "bg-success" : "bg-secondary")">
-                                            @(contact.Status == true ? "有效" : "無效")
+                                        <span class="badge @(contact.Status == EntityStatus.Active ? "bg-success" : "bg-secondary")">
+                                            @(contact.Status == EntityStatus.Active ? "有效" : "無效")
                                         </span>
                                     }
                                 </div>
@@ -95,7 +98,7 @@
                     {
                         <div class="col">
                             <small class="text-muted">有效</small>
-                            <div class="fw-bold">@Contacts.Count(c => c.Status == true)</div>
+                            <div class="fw-bold">@Contacts.Count(c => c.Status == EntityStatus.Active)</div>
                         </div>
                     }
                 </div>
@@ -125,7 +128,7 @@ else
 }
 
 @code {
-    [Parameter] public IEnumerable<IContactEntity>? Contacts { get; set; }
+    [Parameter] public IEnumerable<Contact>? Contacts { get; set; }
     [Parameter] public string? Title { get; set; }
     [Parameter] public string? EmptyTitle { get; set; }
     [Parameter] public string? EmptyMessage { get; set; }

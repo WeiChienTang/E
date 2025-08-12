@@ -38,10 +38,9 @@ namespace ERPCore2.Data.Entities
         
         // Navigation Properties
         public SupplierType? SupplierType { get; set; }
-        public ICollection<SupplierContact> SupplierContacts { get; set; } = new List<SupplierContact>();
         
+        // 聯絡資訊請使用 IContactService 取得 (OwnerType = "Supplier", OwnerId = this.Id)
         // 地址資訊請使用 IAddressService 取得
-        // public ICollection<SupplierAddress> SupplierAddresses { get; set; } = new List<SupplierAddress>();
         public ICollection<ProductSupplier> ProductSuppliers { get; set; } = new List<ProductSupplier>();
         public ICollection<Product> PrimaryProducts { get; set; } = new List<Product>();
     }

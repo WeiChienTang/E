@@ -4,7 +4,7 @@
 @inject IDepartmentService DepartmentService
 @inject IEmployeePositionService EmployeePositionService
 @inject IRoleService RoleService
-@inject IEmployeeContactService EmployeeContactService
+@inject IContactService ContactService
 @inject IAddressService AddressService
 @inject IContactTypeService ContactTypeService
 @inject IAddressTypeService AddressTypeService
@@ -77,7 +77,7 @@
     private List<Role> availableRoles = new();
     
     // 聯絡資訊和地址資訊相關變數
-    private List<EmployeeContact> employeeContacts = new();
+    private List<Contact> employeeContacts = new();
     private List<Address> employeeAddresses = new();
     private List<ContactType> contactTypes = new();
     private List<AddressType> addressTypes = new();
@@ -495,7 +495,7 @@
             if (!EmployeeId.HasValue) 
             {
                 // 新增模式：建立新的員工實體並生成代碼
-                employeeContacts = new List<EmployeeContact>();
+                employeeContacts = new List<Contact>();
                 employeeAddresses = new List<Address>();
                 
                 // 找出預設的系統角色 (Employee-非系統使用者)
@@ -530,16 +530,13 @@
                     LastName = "ERROR",
                     Status = EntityStatus.Active
                 };
-                employeeContacts = new List<EmployeeContact>();
+                employeeContacts = new List<Contact>();
                 employeeAddresses = new List<Address>();
                 return employee;
             }
             
             // 載入聯絡資訊和地址資訊
-            var contactsResult = await EmployeeContactService.GetByEmployeeIdAsync(EmployeeId.Value);
-            employeeContacts = contactsResult.IsSuccess && contactsResult.Data != null 
-                ? contactsResult.Data 
-                : new List<EmployeeContact>();
+            employeeContacts = await ContactService.GetByOwnerAsync(ContactOwnerTypes.Employee, EmployeeId.Value);
                 
             employeeAddresses = await AddressService.GetEmployeeAddressesAsync(EmployeeId.Value);
             
@@ -724,21 +721,26 @@
         try
         {
             // 更新聯絡資訊
+            // TODO: 重新實作聯絡方式保存邏輯使用 ContactService
+            // 暫時註解掉舊的聯絡方式保存邏輯
+            /*
             if (employeeContacts.Any())
             {
                 foreach (var contact in employeeContacts)
                 {
-                    contact.EmployeeId = employeeId;
+                    contact.OwnerType = ContactOwnerTypes.Employee;
+                    contact.OwnerId = employeeId;
                     if (contact.Id > 0)
                     {
-                        await EmployeeContactService.UpdateAsync(contact);
+                        await ContactService.UpdateAsync(contact);
                     }
                     else
                     {
-                        await EmployeeContactService.CreateAsync(contact);
+                        await ContactService.CreateAsync(contact);
                     }
                 }
             }
+            */
 
             // 更新地址資訊
             if (employeeAddresses.Any())
@@ -880,7 +882,7 @@
     /// <summary>
     /// 處理員工聯絡方式變更事件
     /// </summary>
-    private Task OnEmployeeContactsChanged(List<EmployeeContact> updatedContacts)
+    private Task OnEmployeeContactsChanged(List<Contact> updatedContacts)
     {
         try
         {
@@ -928,7 +930,7 @@
                         </h6>
                     </div>
                     <div class="card-body">
-                        <ContactManagerComponent TContactEntity="EmployeeContact"
+                        <ContactManagerComponent TContactEntity="Contact"
                                                TParentEntity="Employee"
                                                Items="@employeeContacts"
                                                Options="@contactTypeOptions"
@@ -939,7 +941,7 @@
                                                SetIsPrimary="@((c, isPrimary) => c.IsPrimary = isPrimary)"
                                                SetTypeId="@((c, typeId) => c.ContactTypeId = typeId)"
                                                SetContactValue="@((c, value) => c.ContactValue = value)"
-                                               SetParentId="@((c, parentId) => c.EmployeeId = parentId)"
+                                               SetParentId="@((c, parentId) => { c.OwnerType = ContactOwnerTypes.Employee; c.OwnerId = parentId; })"
                                                ItemsChanged="@OnEmployeeContactsChanged" />
                     </div>
                 </div>

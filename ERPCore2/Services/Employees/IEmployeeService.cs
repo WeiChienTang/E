@@ -95,13 +95,7 @@ namespace ERPCore2.Services
         /// <returns>新的員工編號</returns>
         Task<ServiceResult<string>> GenerateNextEmployeeCodeAsync(string prefix = "EMP");
 
-        /// <summary>
-        /// 更新員工聯絡資料
-        /// </summary>
-        /// <param name="employeeId">員工ID</param>
-        /// <param name="contacts">聯絡資料清單</param>
-        /// <returns>更新結果</returns>
-        Task<ServiceResult> UpdateEmployeeContactsAsync(int employeeId, List<EmployeeContact> contacts);
+        // 聯絡資料管理已移至 IContactService
 
         /// <summary>
         /// 更新員工地址資料
