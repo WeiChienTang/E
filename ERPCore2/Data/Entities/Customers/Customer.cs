@@ -39,6 +39,8 @@ namespace ERPCore2.Data.Entities
         // Navigation Properties
         public CustomerType? CustomerType { get; set; }
         public ICollection<CustomerContact> CustomerContacts { get; set; } = new List<CustomerContact>();
-        public ICollection<CustomerAddress> CustomerAddresses { get; set; } = new List<CustomerAddress>();
+        
+        // 地址資訊請使用 IAddressService 取得
+        // public ICollection<CustomerAddress> CustomerAddresses { get; set; } = new List<CustomerAddress>();
     }
 }

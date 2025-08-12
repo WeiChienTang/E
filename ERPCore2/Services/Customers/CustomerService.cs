@@ -58,8 +58,6 @@ namespace ERPCore2.Services
                     .Include(c => c.CustomerType)
                     .Include(c => c.CustomerContacts)
                         .ThenInclude(cc => cc.ContactType)
-                    .Include(c => c.CustomerAddresses)
-                        .ThenInclude(ca => ca.AddressType)
                     .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
             }
             catch (Exception ex)

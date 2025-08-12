@@ -174,11 +174,11 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var hasRelatedAddresses = await context.CustomerAddresses
-                    .AnyAsync(ca => ca.AddressTypeId == entity.Id && !ca.IsDeleted);
+                var hasRelatedAddresses = await context.Addresses
+                    .AnyAsync(a => a.AddressTypeId == entity.Id && !a.IsDeleted);
 
                 if (hasRelatedAddresses)
-                    return ServiceResult.Failure("無法刪除，此地址類型已被客戶地址使用");
+                    return ServiceResult.Failure("無法刪除，此地址類型已被地址使用");
 
                 return ServiceResult.Success();
             }

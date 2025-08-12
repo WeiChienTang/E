@@ -14,11 +14,13 @@ namespace ERPCore2.Data.Context
       public DbSet<ContactType> ContactTypes { get; set; }
       public DbSet<AddressType> AddressTypes { get; set; }
       public DbSet<CustomerContact> CustomerContacts { get; set; }
-      public DbSet<CustomerAddress> CustomerAddresses { get; set; }      
+      
+      // 統一地址管理
+      public DbSet<Address> Addresses { get; set; }
+            
       public DbSet<Employee> Employees { get; set; }
       public DbSet<EmployeePosition> EmployeePositions { get; set; }
       public DbSet<EmployeeContact> EmployeeContacts { get; set; }
-      public DbSet<EmployeeAddress> EmployeeAddresses { get; set; }
       public DbSet<Department> Departments { get; set; }
       public DbSet<Role> Roles { get; set; }
       public DbSet<Permission> Permissions { get; set; }
@@ -34,7 +36,6 @@ namespace ERPCore2.Data.Context
       
       public DbSet<Supplier> Suppliers { get; set; }
       public DbSet<SupplierType> SupplierTypes { get; set; }
-      public DbSet<SupplierAddress> SupplierAddresses { get; set; }
       public DbSet<SupplierContact> SupplierContacts { get; set; }
       
       // Inventory Management
@@ -81,6 +82,31 @@ namespace ERPCore2.Data.Context
 
                   // === 實體設定（包含欄位對應和關聯） ===
                   
+                  // 統一地址配置
+                  modelBuilder.Entity<Address>(entity =>
+                  {
+                        // 欄位對應
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        entity.Property(e => e.OwnerType).IsRequired().HasMaxLength(20);
+                        entity.Property(e => e.OwnerId).IsRequired();
+                        entity.Property(e => e.PostalCode).HasMaxLength(10);
+                        entity.Property(e => e.City).HasMaxLength(50);
+                        entity.Property(e => e.District).HasMaxLength(50);
+                        entity.Property(e => e.AddressLine).HasMaxLength(200);
+                        
+                        // 索引設定
+                        entity.HasIndex(e => new { e.OwnerType, e.OwnerId })
+                              .HasDatabaseName("IX_Address_OwnerType_OwnerId");
+                        entity.HasIndex(e => new { e.OwnerType, e.OwnerId, e.IsPrimary })
+                              .HasDatabaseName("IX_Address_OwnerType_OwnerId_IsPrimary");
+                        
+                        // 關聯設定
+                        entity.HasOne(e => e.AddressType)
+                              .WithMany(at => at.Addresses)
+                              .HasForeignKey(e => e.AddressTypeId)
+                              .OnDelete(DeleteBehavior.SetNull);
+                  });
+                  
                   // 客戶相關
                   modelBuilder.Entity<Customer>(entity =>
                   {
@@ -105,21 +131,6 @@ namespace ERPCore2.Data.Context
 
                         entity.HasOne(e => e.ContactType)
                         .WithMany(ct => ct.CustomerContacts)
-                        .OnDelete(DeleteBehavior.SetNull);
-                  });
-                  
-                  modelBuilder.Entity<CustomerAddress>(entity =>
-                  {
-                        // 欄位對應 - 主鍵在資料庫中就叫 Id，不需要欄位對應
-                        entity.Property(e => e.Id).ValueGeneratedOnAdd(); // 確保 Identity
-                        
-                        // 關聯設定
-                        entity.HasOne(e => e.Customer)
-                        .WithMany(c => c.CustomerAddresses)
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                        entity.HasOne(e => e.AddressType)
-                        .WithMany(at => at.CustomerAddresses)
                         .OnDelete(DeleteBehavior.SetNull);
                   });
                   
@@ -153,21 +164,6 @@ namespace ERPCore2.Data.Context
 
                         entity.HasOne(e => e.ContactType)
                         .WithMany(ct => ct.SupplierContacts)
-                        .OnDelete(DeleteBehavior.SetNull);
-                  });
-                  
-                  modelBuilder.Entity<SupplierAddress>(entity =>
-                  {
-                        // 欄位對應 - 主鍵在資料庫中就叫 Id，不需要欄位對應
-                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
-                        
-                        // 關聯設定
-                        entity.HasOne(e => e.Supplier)
-                        .WithMany(s => s.SupplierAddresses)
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                        entity.HasOne(e => e.AddressType)
-                        .WithMany(at => at.SupplierAddresses)
                         .OnDelete(DeleteBehavior.SetNull);
                   });
                   
@@ -210,12 +206,6 @@ namespace ERPCore2.Data.Context
                   });
                   
                   modelBuilder.Entity<EmployeeContact>(entity =>
-                  {
-                        // 欄位對應                        
-                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
-                  });
-                  
-                  modelBuilder.Entity<EmployeeAddress>(entity =>
                   {
                         // 欄位對應                        
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();

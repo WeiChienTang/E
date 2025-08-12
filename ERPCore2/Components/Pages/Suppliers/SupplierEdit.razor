@@ -2,7 +2,7 @@
 @page "/suppliers/edit/{id:int?}"
 
 @inject ISupplierService SupplierService
-@inject ISupplierAddressService SupplierAddressService
+@inject IAddressService AddressService
 @inject ISupplierContactService SupplierContactService
 @inject IContactTypeService ContactTypeService
 @inject IAddressTypeService AddressTypeService
@@ -52,7 +52,7 @@
                                ItemsChanged="@OnSupplierContactsChanged" />
                                
                                @* 地址管理 *@
-        <AddressManagerComponent TAddressEntity="SupplierAddress"
+        <AddressManagerComponent TAddressEntity="Address"
                                TParentEntity="Supplier"
                                Items="@supplierAddresses"
                                Options="@(addressTypes.Cast<ERPCore2.Data.BaseEntity>().ToList())"
@@ -61,13 +61,13 @@
                                GetTypeId="@(a => a.AddressTypeId)"
                                GetPostalCode="@(a => a.PostalCode)"
                                GetCity="@(a => a.City)"
-                               GetAddress="@(a => a.Address)"
+                               GetAddress="@(a => a.AddressLine)"
                                SetIsPrimary="@((a, isPrimary) => a.IsPrimary = isPrimary)"
                                SetTypeId="@((a, typeId) => a.AddressTypeId = typeId)"
                                SetPostalCode="@((a, postalCode) => a.PostalCode = postalCode)"
                                SetCity="@((a, city) => a.City = city)"
-                               SetAddress="@((a, address) => a.Address = address)"
-                               SetParentId="@((a, parentId) => a.SupplierId = parentId)"
+                               SetAddress="@((a, address) => a.AddressLine = address)"
+                               SetParentId="@((a, parentId) => SetSupplierIdForAddress(a, parentId))"
                                ItemsChanged="@OnSupplierAddressesChanged" />
     </AdditionalSections>
 </GenericEditPageComponent>
@@ -78,7 +78,7 @@
     // 資料模型
     private Supplier supplier = new();
     private List<SupplierContact> supplierContacts = new();
-    private List<SupplierAddress> supplierAddresses = new();
+    private List<Address> supplierAddresses = new();
     
     // 選項清單
     private List<SupplierType> supplierTypes = new();
@@ -267,7 +267,7 @@
                 };
                 supplier = newSupplier;
                 supplierContacts = new List<SupplierContact>();
-                supplierAddresses = new List<SupplierAddress>();
+                supplierAddresses = new List<Address>();
                 return newSupplier;
             }
 
@@ -281,7 +281,7 @@
                 supplierContacts = await SupplierService.GetSupplierContactsAsync(Id.Value);
                 
                 // 載入地址資料
-                supplierAddresses = await SupplierAddressService.GetBySupplierIdAsync(Id.Value);
+                supplierAddresses = await AddressService.GetSupplierAddressesAsync(Id.Value);
                 
                 // 觸發 UI 更新
                 StateHasChanged();
@@ -293,7 +293,7 @@
                 // 如果找不到廠商，建立新的
                 supplier = new Supplier();
                 supplierContacts = new List<SupplierContact>();
-                supplierAddresses = new List<SupplierAddress>();
+                supplierAddresses = new List<Address>();
                 return supplier;
             }
         }
@@ -335,6 +335,41 @@
                 additionalData: new { Id });
             return "廠商管理";
         }
+    }
+
+    private void SetSupplierIdForAddress(Address address, int parentId)
+    {
+        address.OwnerId = parentId;
+        address.OwnerType = AddressOwnerTypes.Supplier;
+    }
+
+    private async Task UpdateSupplierAddressesAsync(int supplierId, List<Address> addresses)
+    {
+        try
+        {
+            // 確保所有地址都有正確的 OwnerType 和 OwnerId
+            foreach (var address in addresses)
+            {
+                SetSupplierIdForAddress(address, supplierId);
+                
+                if (address.Id == 0)
+                {
+                    // 新增地址
+                    await AddressService.CreateAddressAsync(AddressOwnerTypes.Supplier, supplierId, address);
+                }
+                else
+                {
+                    // 更新地址
+                    await AddressService.UpdateAddressAsync(address);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(UpdateSupplierAddressesAsync), GetType(),
+                additionalData: new { SupplierId = supplierId, AddressCount = addresses?.Count ?? 0 });
+            throw;
+        }
     }    
     private async Task<bool> SaveSupplier(Supplier entity)
     {
@@ -363,7 +398,7 @@
                 {
                     // 更新聯絡方式和地址資料
                     await SupplierService.UpdateSupplierContactsAsync(entity.Id, supplierContacts);
-                    await SupplierAddressService.UpdateSupplierAddressesAsync(entity.Id, supplierAddresses);
+                    await UpdateSupplierAddressesAsync(entity.Id, supplierAddresses);
                 }
             }
             else
@@ -381,12 +416,12 @@
                     // 更新地址的廠商ID
                     foreach (var address in supplierAddresses)
                     {
-                        address.SupplierId = entity.Id;
+                        SetSupplierIdForAddress(address, entity.Id);
                     }
                     
                     // 儲存聯絡方式和地址
                     await SupplierService.UpdateSupplierContactsAsync(entity.Id, supplierContacts);
-                    await SupplierAddressService.UpdateSupplierAddressesAsync(entity.Id, supplierAddresses);
+                    await UpdateSupplierAddressesAsync(entity.Id, supplierAddresses);
                 }
             }
 
@@ -429,7 +464,7 @@
         }
     }
 
-    private Task OnSupplierAddressesChanged(List<SupplierAddress> updatedAddresses)
+    private Task OnSupplierAddressesChanged(List<Address> updatedAddresses)
     {
         try
         {

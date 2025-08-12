@@ -17,8 +17,9 @@ namespace ERPCore2.Data.Entities
         // Optional Properties
         [MaxLength(100, ErrorMessage = "描述不可超過100個字元")]
         [Display(Name = "描述")]
-        public string? Description { get; set; }        // Navigation Properties
-        public ICollection<CustomerAddress> CustomerAddresses { get; set; } = new List<CustomerAddress>();
-        public ICollection<SupplierAddress> SupplierAddresses { get; set; } = new List<SupplierAddress>();
+        public string? Description { get; set; }
+        
+        // Navigation Properties
+        public ICollection<Address> Addresses { get; set; } = new List<Address>();
     }
 }

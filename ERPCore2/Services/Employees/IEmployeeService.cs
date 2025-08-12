@@ -107,9 +107,10 @@ namespace ERPCore2.Services
         /// 更新員工地址資料
         /// </summary>
         /// <param name="employeeId">員工ID</param>
-        /// <param name="addresses">地址資料清單</param>
-        /// <returns>更新結果</returns>
-        Task<ServiceResult> UpdateEmployeeAddressesAsync(int employeeId, List<EmployeeAddress> addresses);
+        // 地址相關方法已移至 IAddressService
+        // /// <param name="addresses">地址資料清單</param>
+        // /// <returns>更新結果</returns>
+        // Task<ServiceResult> UpdateEmployeeAddressesAsync(int employeeId, List<EmployeeAddress> addresses);
 
         /// <summary>
         /// 檢查軟刪除的員工資料（包含帳號和員工編號）

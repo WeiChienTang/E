@@ -26,7 +26,7 @@ namespace ERPCore2.Components.Shared.Details
         string? PostalCode { get; }
         string? City { get; }
         string? District { get; }
-        string? Address { get; }
+        string? AddressLine { get; } // 更新為 AddressLine
         bool IsPrimary { get; }
         bool? Status { get; }
         string? Remarks { get; }
@@ -73,12 +73,12 @@ namespace ERPCore2.Components.Shared.Details
         public int? SortOrder => null; // ContactType 沒有 SortOrder 屬性
     }
 
-    // CustomerAddress 適配器
-    public class CustomerAddressAdapter : IAddressEntity
+    // 統一地址適配器 (推薦使用)
+    public class AddressAdapter : IAddressEntity
     {
-        private readonly CustomerAddress _address;
+        private readonly Address _address;
 
-        public CustomerAddressAdapter(CustomerAddress address)
+        public AddressAdapter(Address address)
         {
             _address = address;
         }
@@ -86,7 +86,7 @@ namespace ERPCore2.Components.Shared.Details
         public string? PostalCode => _address.PostalCode;
         public string? City => _address.City;
         public string? District => _address.District;
-        public string? Address => _address.Address;
+        public string? AddressLine => _address.AddressLine;
         public bool IsPrimary => _address.IsPrimary;
         public bool? Status => _address.Status == EntityStatus.Active;
         public string? Remarks => _address.Remarks;
@@ -126,27 +126,6 @@ namespace ERPCore2.Components.Shared.Details
             _contact.ContactType != null ? new ContactTypeAdapter(_contact.ContactType) : null;
     }
 
-    // SupplierAddress 適配器
-    public class SupplierAddressAdapter : IAddressEntity
-    {
-        private readonly SupplierAddress _address;
-
-        public SupplierAddressAdapter(SupplierAddress address)
-        {
-            _address = address;
-        }
-
-        public string? PostalCode => _address.PostalCode;
-        public string? City => _address.City;
-        public string? District => _address.District;
-        public string? Address => _address.Address;
-        public bool IsPrimary => _address.IsPrimary;
-        public bool? Status => _address.Status == EntityStatus.Active;
-        public string? Remarks => _address.Remarks;
-        public IAddressTypeEntity? AddressType => 
-            _address.AddressType != null ? new AddressTypeAdapter(_address.AddressType) : null;
-    }
-
     // EmployeeContact 適配器
     public class EmployeeContactAdapter : IContactEntity
     {
@@ -164,27 +143,6 @@ namespace ERPCore2.Components.Shared.Details
         public IContactTypeEntity? ContactType => 
             _contact.ContactType != null ? new ContactTypeAdapter(_contact.ContactType) : null;
     }
-
-    // EmployeeAddress 適配器
-    public class EmployeeAddressAdapter : IAddressEntity
-    {
-        private readonly EmployeeAddress _address;
-
-        public EmployeeAddressAdapter(EmployeeAddress address)
-        {
-            _address = address;
-        }
-
-        public string? PostalCode => _address.PostalCode;
-        public string? City => _address.City;
-        public string? District => _address.District;
-        public string? Address => _address.Address;
-        public bool IsPrimary => _address.IsPrimary;
-        public bool? Status => _address.Status == EntityStatus.Active;
-        public string? Remarks => _address.Remarks;
-        public IAddressTypeEntity? AddressType => 
-            _address.AddressType != null ? new AddressTypeAdapter(_address.AddressType) : null;
-    }
 }
 
 // 擴展方法 - 放在不同的命名空間以避免衝突
@@ -194,18 +152,18 @@ namespace ERPCore2.Extensions
 
     public static class EntityAdapterExtensions
     {
+        // 轉換統一地址集合為適配器集合 (推薦使用)
+        public static IEnumerable<IAddressEntity> AsAddressDisplayEntities(
+            this IEnumerable<Address> addresses)
+        {
+            return addresses.Select(a => new AddressAdapter(a));
+        }
+
         // 轉換 CustomerContact 集合為適配器集合
         public static IEnumerable<IContactEntity> AsContactDisplayEntities(
             this IEnumerable<CustomerContact> contacts)
         {
             return contacts.Select(c => new CustomerContactAdapter(c));
-        }
-
-        // 轉換 CustomerAddress 集合為適配器集合
-        public static IEnumerable<IAddressEntity> AsAddressDisplayEntities(
-            this IEnumerable<CustomerAddress> addresses)
-        {
-            return addresses.Select(a => new CustomerAddressAdapter(a));
         }
 
         // 轉換 SupplierContact 集合為適配器集合
@@ -215,25 +173,11 @@ namespace ERPCore2.Extensions
             return contacts.Select(c => new SupplierContactAdapter(c));
         }
 
-        // 轉換 SupplierAddress 集合為適配器集合
-        public static IEnumerable<IAddressEntity> AsAddressDisplayEntities(
-            this IEnumerable<SupplierAddress> addresses)
-        {
-            return addresses.Select(a => new SupplierAddressAdapter(a));
-        }
-
         // 轉換 EmployeeContact 集合為適配器集合
         public static IEnumerable<IContactEntity> AsContactDisplayEntities(
             this IEnumerable<EmployeeContact> contacts)
         {
             return contacts.Select(c => new EmployeeContactAdapter(c));
-        }
-
-        // 轉換 EmployeeAddress 集合為適配器集合
-        public static IEnumerable<IAddressEntity> AsAddressDisplayEntities(
-            this IEnumerable<EmployeeAddress> addresses)
-        {
-            return addresses.Select(a => new EmployeeAddressAdapter(a));
         }
     }
 }

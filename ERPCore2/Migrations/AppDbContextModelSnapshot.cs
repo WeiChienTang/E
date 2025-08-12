@@ -22,6 +22,81 @@ namespace ERPCore2.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.Address", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AddressLine")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("AddressTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("District")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OwnerType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AddressTypeId");
+
+                    b.HasIndex("OwnerType", "OwnerId")
+                        .HasDatabaseName("IX_Address_OwnerType_OwnerId");
+
+                    b.HasIndex("OwnerType", "OwnerId", "IsPrimary")
+                        .HasDatabaseName("IX_Address_OwnerType_OwnerId_IsPrimary");
+
+                    b.ToTable("Addresses");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.AddressType", b =>
                 {
                     b.Property<int>("Id")
@@ -226,72 +301,6 @@ namespace ERPCore2.Migrations
                     b.HasIndex("CustomerTypeId");
 
                     b.ToTable("Customers");
-                });
-
-            modelBuilder.Entity("ERPCore2.Data.Entities.CustomerAddress", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Address")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int?>("AddressTypeId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("City")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("CustomerId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("District")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsPrimary")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("PostalCode")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<string>("Remarks")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AddressTypeId");
-
-                    b.HasIndex("CustomerId");
-
-                    b.ToTable("CustomerAddresses");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.CustomerContact", b =>
@@ -605,72 +614,6 @@ namespace ERPCore2.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("Employees");
-                });
-
-            modelBuilder.Entity("ERPCore2.Data.Entities.EmployeeAddress", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Address")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int?>("AddressTypeId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("City")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("District")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("EmployeeId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsPrimary")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("PostalCode")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<string>("Remarks")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AddressTypeId");
-
-                    b.HasIndex("EmployeeId");
-
-                    b.ToTable("EmployeeAddresses");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.EmployeeContact", b =>
@@ -3175,72 +3118,6 @@ namespace ERPCore2.Migrations
                     b.ToTable("Suppliers");
                 });
 
-            modelBuilder.Entity("ERPCore2.Data.Entities.SupplierAddress", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Address")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int?>("AddressTypeId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("City")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("District")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsPrimary")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("PostalCode")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<string>("Remarks")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SupplierId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AddressTypeId");
-
-                    b.HasIndex("SupplierId");
-
-                    b.ToTable("SupplierAddresses");
-                });
-
             modelBuilder.Entity("ERPCore2.Data.Entities.SupplierContact", b =>
                 {
                     b.Property<int>("Id")
@@ -3731,6 +3608,16 @@ namespace ERPCore2.Migrations
                     b.ToTable("Weathers");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.Address", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.AddressType", "AddressType")
+                        .WithMany("Addresses")
+                        .HasForeignKey("AddressTypeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("AddressType");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.Customer", b =>
                 {
                     b.HasOne("ERPCore2.Data.Entities.CustomerType", "CustomerType")
@@ -3739,24 +3626,6 @@ namespace ERPCore2.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("CustomerType");
-                });
-
-            modelBuilder.Entity("ERPCore2.Data.Entities.CustomerAddress", b =>
-                {
-                    b.HasOne("ERPCore2.Data.Entities.AddressType", "AddressType")
-                        .WithMany("CustomerAddresses")
-                        .HasForeignKey("AddressTypeId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("ERPCore2.Data.Entities.Customer", "Customer")
-                        .WithMany("CustomerAddresses")
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AddressType");
-
-                    b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.CustomerContact", b =>
@@ -3808,23 +3677,6 @@ namespace ERPCore2.Migrations
                     b.Navigation("EmployeePosition");
 
                     b.Navigation("Role");
-                });
-
-            modelBuilder.Entity("ERPCore2.Data.Entities.EmployeeAddress", b =>
-                {
-                    b.HasOne("ERPCore2.Data.Entities.AddressType", "AddressType")
-                        .WithMany()
-                        .HasForeignKey("AddressTypeId");
-
-                    b.HasOne("ERPCore2.Data.Entities.Employee", "Employee")
-                        .WithMany("EmployeeAddresses")
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AddressType");
-
-                    b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.EmployeeContact", b =>
@@ -4458,24 +4310,6 @@ namespace ERPCore2.Migrations
                     b.Navigation("SupplierType");
                 });
 
-            modelBuilder.Entity("ERPCore2.Data.Entities.SupplierAddress", b =>
-                {
-                    b.HasOne("ERPCore2.Data.Entities.AddressType", "AddressType")
-                        .WithMany("SupplierAddresses")
-                        .HasForeignKey("AddressTypeId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("ERPCore2.Data.Entities.Supplier", "Supplier")
-                        .WithMany("SupplierAddresses")
-                        .HasForeignKey("SupplierId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AddressType");
-
-                    b.Navigation("Supplier");
-                });
-
             modelBuilder.Entity("ERPCore2.Data.Entities.SupplierContact", b =>
                 {
                     b.HasOne("ERPCore2.Data.Entities.ContactType", "ContactType")
@@ -4545,9 +4379,7 @@ namespace ERPCore2.Migrations
 
             modelBuilder.Entity("ERPCore2.Data.Entities.AddressType", b =>
                 {
-                    b.Navigation("CustomerAddresses");
-
-                    b.Navigation("SupplierAddresses");
+                    b.Navigation("Addresses");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.ContactType", b =>
@@ -4559,8 +4391,6 @@ namespace ERPCore2.Migrations
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Customer", b =>
                 {
-                    b.Navigation("CustomerAddresses");
-
                     b.Navigation("CustomerContacts");
                 });
 
@@ -4576,8 +4406,6 @@ namespace ERPCore2.Migrations
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Employee", b =>
                 {
-                    b.Navigation("EmployeeAddresses");
-
                     b.Navigation("EmployeeContacts");
                 });
 
@@ -4676,8 +4504,6 @@ namespace ERPCore2.Migrations
                     b.Navigation("PrimaryProducts");
 
                     b.Navigation("ProductSuppliers");
-
-                    b.Navigation("SupplierAddresses");
 
                     b.Navigation("SupplierContacts");
                 });

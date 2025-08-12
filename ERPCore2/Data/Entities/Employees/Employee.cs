@@ -96,6 +96,8 @@ namespace ERPCore2.Data.Entities
         public Department? Department { get; set; }
         public EmployeePosition? EmployeePosition { get; set; }
         public ICollection<EmployeeContact> EmployeeContacts { get; set; } = new List<EmployeeContact>();
-        public ICollection<EmployeeAddress> EmployeeAddresses { get; set; } = new List<EmployeeAddress>();
+        
+        // 地址資訊請使用 IAddressService 取得
+        // public ICollection<EmployeeAddress> EmployeeAddresses { get; set; } = new List<EmployeeAddress>();
     }
 }

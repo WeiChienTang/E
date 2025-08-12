@@ -409,6 +409,39 @@ namespace ERPCore2.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Addresses",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    OwnerType = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    OwnerId = table.Column<int>(type: "int", nullable: false),
+                    AddressTypeId = table.Column<int>(type: "int", nullable: true),
+                    PostalCode = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
+                    City = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    District = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    AddressLine = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    IsPrimary = table.Column<bool>(type: "bit", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Addresses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Addresses_AddressTypes_AddressTypeId",
+                        column: x => x.AddressTypeId,
+                        principalTable: "AddressTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Customers",
                 columns: table => new
                 {
@@ -572,44 +605,6 @@ namespace ERPCore2.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "CustomerAddresses",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    CustomerId = table.Column<int>(type: "int", nullable: false),
-                    AddressTypeId = table.Column<int>(type: "int", nullable: true),
-                    PostalCode = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
-                    City = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    District = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Address = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    IsPrimary = table.Column<bool>(type: "bit", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CustomerAddresses", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_CustomerAddresses_AddressTypes_AddressTypeId",
-                        column: x => x.AddressTypeId,
-                        principalTable: "AddressTypes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_CustomerAddresses_Customers_CustomerId",
-                        column: x => x.CustomerId,
-                        principalTable: "Customers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "CustomerContacts",
                 columns: table => new
                 {
@@ -692,44 +687,6 @@ namespace ERPCore2.Migrations
                         principalTable: "Units",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SupplierAddresses",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    SupplierId = table.Column<int>(type: "int", nullable: false),
-                    AddressTypeId = table.Column<int>(type: "int", nullable: true),
-                    PostalCode = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
-                    City = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    District = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Address = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    IsPrimary = table.Column<bool>(type: "bit", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SupplierAddresses", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_SupplierAddresses_AddressTypes_AddressTypeId",
-                        column: x => x.AddressTypeId,
-                        principalTable: "AddressTypes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_SupplierAddresses_Suppliers_SupplierId",
-                        column: x => x.SupplierId,
-                        principalTable: "Suppliers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1158,43 +1115,6 @@ namespace ERPCore2.Migrations
                         principalTable: "Roles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "EmployeeAddresses",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    EmployeeId = table.Column<int>(type: "int", nullable: false),
-                    AddressTypeId = table.Column<int>(type: "int", nullable: true),
-                    PostalCode = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
-                    City = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    District = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Address = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    IsPrimary = table.Column<bool>(type: "bit", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_EmployeeAddresses", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_EmployeeAddresses_AddressTypes_AddressTypeId",
-                        column: x => x.AddressTypeId,
-                        principalTable: "AddressTypes",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_EmployeeAddresses_Employees_EmployeeId",
-                        column: x => x.EmployeeId,
-                        principalTable: "Employees",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1989,14 +1909,19 @@ namespace ERPCore2.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_CustomerAddresses_AddressTypeId",
-                table: "CustomerAddresses",
-                column: "AddressTypeId");
+                name: "IX_Address_OwnerType_OwnerId",
+                table: "Addresses",
+                columns: new[] { "OwnerType", "OwnerId" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_CustomerAddresses_CustomerId",
-                table: "CustomerAddresses",
-                column: "CustomerId");
+                name: "IX_Address_OwnerType_OwnerId_IsPrimary",
+                table: "Addresses",
+                columns: new[] { "OwnerType", "OwnerId", "IsPrimary" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Addresses_AddressTypeId",
+                table: "Addresses",
+                column: "AddressTypeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CustomerContacts_ContactTypeId",
@@ -2033,16 +1958,6 @@ namespace ERPCore2.Migrations
                 name: "IX_Departments_ManagerId",
                 table: "Departments",
                 column: "ManagerId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_EmployeeAddresses_AddressTypeId",
-                table: "EmployeeAddresses",
-                column: "AddressTypeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_EmployeeAddresses_EmployeeId",
-                table: "EmployeeAddresses",
-                column: "EmployeeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmployeeContacts_ContactTypeId",
@@ -2580,16 +2495,6 @@ namespace ERPCore2.Migrations
                 column: "WarehouseLocationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SupplierAddresses_AddressTypeId",
-                table: "SupplierAddresses",
-                column: "AddressTypeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SupplierAddresses_SupplierId",
-                table: "SupplierAddresses",
-                column: "SupplierId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_SupplierContacts_ContactTypeId",
                 table: "SupplierContacts",
                 column: "ContactTypeId");
@@ -2665,19 +2570,16 @@ namespace ERPCore2.Migrations
                 table: "Departments");
 
             migrationBuilder.DropTable(
-                name: "Colors");
+                name: "Addresses");
 
             migrationBuilder.DropTable(
-                name: "CustomerAddresses");
+                name: "Colors");
 
             migrationBuilder.DropTable(
                 name: "CustomerContacts");
 
             migrationBuilder.DropTable(
                 name: "DeletedRecords");
-
-            migrationBuilder.DropTable(
-                name: "EmployeeAddresses");
 
             migrationBuilder.DropTable(
                 name: "EmployeeContacts");
@@ -2719,9 +2621,6 @@ namespace ERPCore2.Migrations
                 name: "StockTakingDetails");
 
             migrationBuilder.DropTable(
-                name: "SupplierAddresses");
-
-            migrationBuilder.DropTable(
                 name: "SupplierContacts");
 
             migrationBuilder.DropTable(
@@ -2732,6 +2631,9 @@ namespace ERPCore2.Migrations
 
             migrationBuilder.DropTable(
                 name: "Weathers");
+
+            migrationBuilder.DropTable(
+                name: "AddressTypes");
 
             migrationBuilder.DropTable(
                 name: "InventoryStocks");
@@ -2753,9 +2655,6 @@ namespace ERPCore2.Migrations
 
             migrationBuilder.DropTable(
                 name: "StockTakings");
-
-            migrationBuilder.DropTable(
-                name: "AddressTypes");
 
             migrationBuilder.DropTable(
                 name: "ContactTypes");

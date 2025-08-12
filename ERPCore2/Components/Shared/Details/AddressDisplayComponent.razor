@@ -179,8 +179,8 @@ else
         if (!string.IsNullOrEmpty(address.District))
             parts.Add(address.District);
         
-        if (!string.IsNullOrEmpty(address.Address))
-            parts.Add(address.Address);
+        if (!string.IsNullOrEmpty(address.AddressLine))
+            parts.Add(address.AddressLine);
         
         return parts.Any() ? string.Join(" ", parts) : "地址不完整";
     }

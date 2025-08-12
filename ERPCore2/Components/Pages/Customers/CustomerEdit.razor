@@ -1,7 +1,7 @@
 @page "/customers/edit"
 @page "/customers/edit/{id:int?}"
 @inject ICustomerService CustomerService
-@inject ICustomerAddressService CustomerAddressService
+@inject IAddressService AddressService
 @inject ICustomerContactService CustomerContactService
 @inject INotificationService NotificationService
 
@@ -50,8 +50,8 @@
                                 SetParentId="@((contact, parentId) => contact.CustomerId = parentId)"
                                 ItemsChanged="@OnContactsChanged" />
 
-        @* 地址管理 - 使用新的子集合組件 *@
-        <AddressManagerComponent TAddressEntity="CustomerAddress" 
+        @* 地址管理 - 使用統一地址系統 *@
+        <AddressManagerComponent TAddressEntity="Address" 
                                 TParentEntity="Customer"
                                 Items="@customerAddresses"
                                 Options="@addressTypeOptions"
@@ -63,15 +63,15 @@
                                 GetTypeId="@(address => address.AddressTypeId)"
                                 GetPostalCode="@(address => address.PostalCode)"
                                 GetCity="@(address => address.City)"
-                                GetAddress="@(address => address.Address)"
+                                GetAddress="@(address => address.AddressLine)"
                                 GetOptionId="@(option => option.Id)"
                                 GetOptionDisplayText="@(option => ((AddressType)option).TypeName)"
                                 SetIsPrimary="@((address, isPrimary) => address.IsPrimary = isPrimary)"
                                 SetTypeId="@((address, typeId) => address.AddressTypeId = typeId)"
                                 SetPostalCode="@((address, value) => address.PostalCode = value)"
                                 SetCity="@((address, value) => address.City = value)"
-                                SetAddress="@((address, value) => address.Address = value)"
-                                SetParentId="@((address, parentId) => address.CustomerId = parentId)"
+                                SetAddress="@((address, value) => address.AddressLine = value)"
+                                SetParentId="@((address, parentId) => { address.OwnerType = AddressOwnerTypes.Customer; address.OwnerId = parentId; })"
                                 ItemsChanged="@OnAddressesChanged" />
     </AdditionalSections>
 </GenericEditPageComponent>
@@ -85,7 +85,7 @@
     // 資料模型
     private Customer customer = new();
     private List<CustomerContact> customerContacts = new();
-    private List<CustomerAddress> customerAddresses = new();
+    private List<Address> customerAddresses = new();
       // 選項清單
     private List<CustomerType> customerTypes = new();
     private List<ContactType> contactTypes = new();
@@ -375,7 +375,7 @@
                 };
                 customer = newCustomer;
                 customerContacts = new List<CustomerContact>();
-                customerAddresses = new List<CustomerAddress>();
+                customerAddresses = new List<Address>();
                 return newCustomer;
             }
 
@@ -387,7 +387,7 @@
                 
                 // 載入聯絡方式和地址資料
                 customerContacts = await CustomerService.GetCustomerContactsAsync(Id.Value);
-                customerAddresses = await CustomerAddressService.GetByCustomerIdAsync(Id.Value);
+                customerAddresses = await AddressService.GetCustomerAddressesAsync(Id.Value);
                 
                 return customer;
             }
@@ -396,7 +396,7 @@
                 // 如果找不到客戶，建立新的
                 customer = new Customer();
                 customerContacts = new List<CustomerContact>();
-                customerAddresses = new List<CustomerAddress>();
+                customerAddresses = new List<Address>();
                 return customer;
             }
         }
@@ -423,7 +423,7 @@
                 Status = EntityStatus.Active
             };
             customerContacts = new List<CustomerContact>();
-            customerAddresses = new List<CustomerAddress>();
+            customerAddresses = new List<Address>();
             
             return customer;
         }
@@ -488,7 +488,7 @@
                 {
                     // 更新聯絡方式和地址資料
                     await CustomerService.UpdateCustomerContactsAsync(entity.Id, customerContacts);
-                    await CustomerAddressService.UpdateCustomerAddressesAsync(entity.Id, customerAddresses);
+                    await UpdateCustomerAddressesAsync(entity.Id, customerAddresses);
                 }
             }
             else
@@ -499,7 +499,7 @@
                 {
                     // 更新聯絡方式和地址資料
                     await CustomerService.UpdateCustomerContactsAsync(entity.Id, customerContacts);
-                    await CustomerAddressService.UpdateCustomerAddressesAsync(entity.Id, customerAddresses);
+                    await UpdateCustomerAddressesAsync(entity.Id, customerAddresses);
                 }
             }
 
@@ -523,11 +523,52 @@
         return Task.CompletedTask;
     }
     
-    private Task OnAddressesChanged(List<CustomerAddress> addresses)
+    private Task OnAddressesChanged(List<Address> addresses)
     {
         customerAddresses = addresses;
         StateHasChanged();
         return Task.CompletedTask;
+    }
+    
+    /// <summary>
+    /// 更新客戶地址資料
+    /// </summary>
+    private async Task UpdateCustomerAddressesAsync(int customerId, List<Address> addresses)
+    {
+        try
+        {
+            // 取得現有地址
+            var existingAddresses = await AddressService.GetCustomerAddressesAsync(customerId);
+            
+            // 刪除不存在於新清單中的地址
+            foreach (var existingAddress in existingAddresses)
+            {
+                if (!addresses.Any(a => a.Id == existingAddress.Id))
+                {
+                    await AddressService.DeleteAddressAsync(existingAddress.Id);
+                }
+            }
+            
+            // 新增或更新地址
+            foreach (var address in addresses)
+            {
+                if (address.Id == 0)
+                {
+                    // 新增地址
+                    await AddressService.CreateAddressAsync(AddressOwnerTypes.Customer, customerId, address);
+                }
+                else
+                {
+                    // 更新地址
+                    await AddressService.UpdateAddressAsync(address);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"更新客戶地址時發生錯誤: {ex.Message}");
+            // 可以在這裡加入錯誤處理
+        }
     }
 }
 

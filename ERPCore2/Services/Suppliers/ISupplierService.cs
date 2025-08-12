@@ -52,15 +52,16 @@ namespace ERPCore2.Services
 
         #region 地址資料管理
         
-        /// <summary>
-        /// 取得廠商地址資料
-        /// </summary>
-        Task<List<SupplierAddress>> GetSupplierAddressesAsync(int supplierId);
+        // 地址相關方法已移至 IAddressService
+        // /// <summary>
+        // /// 取得廠商地址資料
+        // /// </summary>
+        // Task<List<SupplierAddress>> GetSupplierAddressesAsync(int supplierId);
         
-        /// <summary>
-        /// 更新廠商地址資料
-        /// </summary>
-        Task<ServiceResult> UpdateSupplierAddressesAsync(int supplierId, List<SupplierAddress> addresses);
+        // /// <summary>
+        // /// 更新廠商地址資料
+        // /// </summary>
+        // Task<ServiceResult> UpdateSupplierAddressesAsync(int supplierId, List<SupplierAddress> addresses);
         
         #endregion
 

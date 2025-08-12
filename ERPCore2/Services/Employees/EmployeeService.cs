@@ -42,8 +42,6 @@ namespace ERPCore2.Services
                     .Include(e => e.EmployeePosition)
                     .Include(e => e.EmployeeContacts)
                         .ThenInclude(ec => ec.ContactType)
-                    .Include(e => e.EmployeeAddresses)
-                        .ThenInclude(ea => ea.AddressType)
                     .Where(e => !e.IsDeleted)
                     .OrderBy(e => e.EmployeeCode)
                     .ToListAsync();
@@ -70,8 +68,6 @@ namespace ERPCore2.Services
                     .Include(e => e.EmployeePosition)
                     .Include(e => e.EmployeeContacts)
                         .ThenInclude(ec => ec.ContactType)
-                    .Include(e => e.EmployeeAddresses)
-                        .ThenInclude(ea => ea.AddressType)
                     .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
             }
             catch (Exception ex)
@@ -599,7 +595,7 @@ namespace ERPCore2.Services
             }
         }
 
-        #region 聯絡資料與地址管理
+        #region 聯絡資料管理
 
         /// <summary>
         /// 更新員工聯絡資料
@@ -649,56 +645,10 @@ namespace ERPCore2.Services
             }
         }
 
-        /// <summary>
-        /// 更新員工地址資料
-        /// </summary>
-        public async Task<ServiceResult> UpdateEmployeeAddressesAsync(int employeeId, List<EmployeeAddress> addresses)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                // 移除現有的地址資料
-                var existingAddresses = await context.EmployeeAddresses
-                    .Where(ea => ea.EmployeeId == employeeId)
-                    .ToListAsync();
-                context.EmployeeAddresses.RemoveRange(existingAddresses);
-
-                // 新增新的地址資料
-                foreach (var address in addresses.Where(a => !string.IsNullOrWhiteSpace(a.Address) || !string.IsNullOrWhiteSpace(a.City)))
-                {
-                    // 建立新的地址實體以避免 ID 衝突
-                    var newAddress = new EmployeeAddress
-                    {
-                        EmployeeId = employeeId,
-                        AddressTypeId = address.AddressTypeId,
-                        PostalCode = address.PostalCode,
-                        City = address.City,
-                        District = address.District,
-                        Address = address.Address,
-                        IsPrimary = address.IsPrimary,
-                        Status = EntityStatus.Active,
-                        IsDeleted = false,
-                        CreatedAt = DateTime.Now,
-                        UpdatedAt = DateTime.Now,
-                        CreatedBy = "System", // TODO: 從認證取得使用者
-                        Remarks = address.Remarks
-                    };
-                    context.EmployeeAddresses.Add(newAddress);
-                }
-                
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateEmployeeAddressesAsync), GetType(), _logger, new { 
-                    Method = nameof(UpdateEmployeeAddressesAsync),
-                    ServiceType = GetType().Name,
-                    EmployeeId = employeeId
-                });
-                return ServiceResult.Failure($"更新員工地址資料失敗：{ex.Message}");
-            }
-        }
+        // 地址資料管理已移至 AddressService
+        // #region 地址資料管理
+        // ... UpdateEmployeeAddressesAsync 方法已移除，請使用 IAddressService
+        // #endregion
 
         #endregion
 

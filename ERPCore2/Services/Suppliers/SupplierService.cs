@@ -60,8 +60,6 @@ namespace ERPCore2.Services
                     .Include(s => s.SupplierType)
                     .Include(s => s.SupplierContacts)
                         .ThenInclude(sc => sc.ContactType)
-                    .Include(s => s.SupplierAddresses)
-                        .ThenInclude(sa => sa.AddressType)
                     .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
             }
             catch (Exception ex)
@@ -322,91 +320,10 @@ namespace ERPCore2.Services
 
         #endregion
 
-        #region 地址資料管理
-
-        public async Task<List<SupplierAddress>> GetSupplierAddressesAsync(int supplierId)
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
-
-            try
-            {
-                return await context.SupplierAddresses
-                    .Include(sa => sa.AddressType)
-                    .Where(sa => sa.SupplierId == supplierId && !sa.IsDeleted)
-                    .OrderBy(sa => sa.AddressType!.TypeName)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetSupplierAddressesAsync), GetType(), _logger, 
-                    new { SupplierId = supplierId });
-                throw;
-            }
-        }
-
-        public async Task<ServiceResult> UpdateSupplierAddressesAsync(int supplierId, List<SupplierAddress> addresses)
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
-
-            try
-            {
-                // 取得現有地址資料
-                var existingAddresses = await context.SupplierAddresses
-                    .Where(sa => sa.SupplierId == supplierId && !sa.IsDeleted)
-                    .ToListAsync();
-
-                // 刪除不在新列表中的地址資料
-                var addressesToDelete = existingAddresses
-                    .Where(ea => !addresses.Any(a => a.Id == ea.Id))
-                    .ToList();
-
-                foreach (var address in addressesToDelete)
-                {
-                    address.IsDeleted = true;
-                    address.UpdatedAt = DateTime.UtcNow;
-                }
-
-                // 更新或新增地址資料
-                foreach (var address in addresses)
-                {
-                    address.SupplierId = supplierId;
-                    
-                    if (address.Id == 0)
-                    {
-                        // 新增
-                        address.CreatedAt = DateTime.UtcNow;
-                        address.UpdatedAt = DateTime.UtcNow;
-                        context.SupplierAddresses.Add(address);
-                    }
-                    else
-                    {
-                        // 更新
-                        var existingAddress = existingAddresses.FirstOrDefault(ea => ea.Id == address.Id);
-                        if (existingAddress != null)
-                        {
-                            existingAddress.AddressTypeId = address.AddressTypeId;
-                            existingAddress.PostalCode = address.PostalCode;
-                            existingAddress.City = address.City;
-                            existingAddress.District = address.District;
-                            existingAddress.Address = address.Address;
-                            existingAddress.IsPrimary = address.IsPrimary;
-                            existingAddress.UpdatedAt = DateTime.UtcNow;
-                        }
-                    }
-                }
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateSupplierAddressesAsync), GetType(), _logger, 
-                    new { SupplierId = supplierId, AddressesCount = addresses.Count });
-                return ServiceResult.Failure($"更新廠商地址資料時發生錯誤: {ex.Message}");
-            }
-        }
-
-        #endregion
+        // 地址資料管理已移至 AddressService
+        // #region 地址資料管理
+        // ... 相關方法已移除，請使用 IAddressService
+        // #endregion
 
         #region 狀態管理
 

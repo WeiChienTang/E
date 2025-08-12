@@ -5,7 +5,7 @@
 @inject IEmployeePositionService EmployeePositionService
 @inject IRoleService RoleService
 @inject IEmployeeContactService EmployeeContactService
-@inject IEmployeeAddressService EmployeeAddressService
+@inject IAddressService AddressService
 @inject IContactTypeService ContactTypeService
 @inject IAddressTypeService AddressTypeService
 @inject INotificationService NotificationService
@@ -78,7 +78,7 @@
     
     // 聯絡資訊和地址資訊相關變數
     private List<EmployeeContact> employeeContacts = new();
-    private List<EmployeeAddress> employeeAddresses = new();
+    private List<Address> employeeAddresses = new();
     private List<ContactType> contactTypes = new();
     private List<AddressType> addressTypes = new();
     
@@ -496,7 +496,7 @@
             {
                 // 新增模式：建立新的員工實體並生成代碼
                 employeeContacts = new List<EmployeeContact>();
-                employeeAddresses = new List<EmployeeAddress>();
+                employeeAddresses = new List<Address>();
                 
                 // 找出預設的系統角色 (Employee-非系統使用者)
                 var defaultRole = availableRoles.FirstOrDefault(r => 
@@ -531,7 +531,7 @@
                     Status = EntityStatus.Active
                 };
                 employeeContacts = new List<EmployeeContact>();
-                employeeAddresses = new List<EmployeeAddress>();
+                employeeAddresses = new List<Address>();
                 return employee;
             }
             
@@ -541,7 +541,7 @@
                 ? contactsResult.Data 
                 : new List<EmployeeContact>();
                 
-            employeeAddresses = await EmployeeAddressService.GetByEmployeeIdAsync(EmployeeId.Value);
+            employeeAddresses = await AddressService.GetEmployeeAddressesAsync(EmployeeId.Value);
             
             // 根據員工的系統使用者狀態重新初始化表單欄位
             await InitializeFormFieldsAsync(employee.IsSystemUser);
@@ -745,14 +745,14 @@
             {
                 foreach (var address in employeeAddresses)
                 {
-                    address.EmployeeId = employeeId;
+                    SetEmployeeIdForAddress(address, employeeId);
                     if (address.Id > 0)
                     {
-                        await EmployeeAddressService.UpdateAsync(address);
+                        await AddressService.UpdateAddressAsync(address);
                     }
                     else
                     {
-                        await EmployeeAddressService.CreateAsync(address);
+                        await AddressService.CreateAddressAsync(AddressOwnerTypes.Employee, employeeId, address);
                     }
                 }
             }
@@ -898,7 +898,7 @@
     /// <summary>
     /// 處理員工地址變更事件
     /// </summary>
-    private Task OnEmployeeAddressesChanged(List<EmployeeAddress> updatedAddresses)
+    private Task OnEmployeeAddressesChanged(List<Address> updatedAddresses)
     {
         try
         {
@@ -953,7 +953,7 @@
                         </h6>
                     </div>
                     <div class="card-body">
-                        <AddressManagerComponent TAddressEntity="EmployeeAddress"
+                        <AddressManagerComponent TAddressEntity="Address"
                                                TParentEntity="Employee"
                                                Items="@employeeAddresses"
                                                Options="@addressTypeOptions"
@@ -962,17 +962,23 @@
                                                GetTypeId="@(a => a.AddressTypeId)"
                                                GetPostalCode="@(a => a.PostalCode)"
                                                GetCity="@(a => a.City)"
-                                               GetAddress="@(a => a.Address)"
+                                               GetAddress="@(a => a.AddressLine)"
                                                SetIsPrimary="@((a, isPrimary) => a.IsPrimary = isPrimary)"
                                                SetTypeId="@((a, typeId) => a.AddressTypeId = typeId)"
                                                SetPostalCode="@((a, postalCode) => a.PostalCode = postalCode)"
                                                SetCity="@((a, city) => a.City = city)"
-                                               SetAddress="@((a, address) => a.Address = address)"
-                                               SetParentId="@((a, parentId) => a.EmployeeId = parentId)"
+                                               SetAddress="@((a, address) => a.AddressLine = address)"
+                                               SetParentId="@((a, parentId) => SetEmployeeIdForAddress(a, parentId))"
                                                ItemsChanged="@OnEmployeeAddressesChanged" />
                     </div>
                 </div>
             </div>
         </div>;
+    }
+
+    private void SetEmployeeIdForAddress(Address address, int parentId)
+    {
+        address.OwnerId = parentId;
+        address.OwnerType = AddressOwnerTypes.Employee;
     }
 }
