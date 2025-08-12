@@ -3,7 +3,7 @@ echo Cleaning old publish files...
 if exist "publish" rmdir /s /q "publish"
 
 echo Publishing project...
-dotnet publish -c Release -o publish --self-contained true -r win-x64
+dotnet publish ERPCore2.csproj -c Release -o publish --self-contained true -r win-x64
 
 if %errorlevel% equ 0 (
     echo.
