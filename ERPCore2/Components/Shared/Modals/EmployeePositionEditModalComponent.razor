@@ -160,18 +160,8 @@
                     IsRequired = true,
                     HelpText = "職位的正式名稱，將顯示在系統各處"
                 },
-                
-                // 描述區段
-                new()
-                {
-                    PropertyName = nameof(EmployeePosition.Description),
-                    Label = "職位描述",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入職位描述",
-                    Rows = 2,
-                    HelpText = "詳細描述職位的職責範圍、工作內容或其他相關資訊",
-                    ContainerCssClass = "col-12"
-                },
+
+                // 備註區段
                 new()
                 {
                     PropertyName = nameof(EmployeePosition.Remarks),
@@ -188,7 +178,6 @@
             {
                 { nameof(EmployeePosition.Code), "基本資訊" },
                 { nameof(EmployeePosition.Name), "基本資訊" },
-                { nameof(EmployeePosition.Description), "額外資料" },
                 { nameof(EmployeePosition.Remarks), "額外資料" }
             };
         }

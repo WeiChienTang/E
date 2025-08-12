@@ -108,7 +108,6 @@
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("RoleName", "角色名稱", "輸入角色名稱搜尋")
-                .AddText("Description", "角色描述", "輸入角色描述搜尋")
                 .Build();
         }
         catch (Exception ex)
@@ -128,7 +127,6 @@
             columnDefinitions = new List<TableColumnDefinition>
             {
                 TableColumnDefinition.Text("角色名稱", nameof(Role.RoleName)),
-                TableColumnDefinition.Text("角色描述", nameof(Role.Description)),
             };
         }
         catch (Exception ex)
@@ -152,9 +150,6 @@
             
             // 角色名稱篩選
             (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "RoleName", r => r.RoleName),
-            
-            // 角色描述篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Description", r => r.Description, allowNull: true)
         };
 
         return FilterHelper.ApplyFiltersWithErrorHandling(

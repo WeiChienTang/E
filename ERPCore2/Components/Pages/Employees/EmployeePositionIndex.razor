@@ -159,7 +159,6 @@
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("Code", "職位代碼", "輸入職位代碼搜尋")
                 .AddText("Name", "職位名稱", "輸入職位名稱搜尋")                
-                .AddText("Description", "職位描述", "輸入職位描述搜尋")   
                 .Build();
         }
         catch (Exception ex)
@@ -181,7 +180,6 @@
             {
                 TableColumnDefinition.Text("職位代碼", nameof(EmployeePosition.Code)),
                 TableColumnDefinition.Text("職位名稱", nameof(EmployeePosition.Name)),                
-                TableColumnDefinition.Text("職位描述", nameof(EmployeePosition.Description)),
             };
         }
         catch (Exception ex)
@@ -227,9 +225,6 @@
             
             // 職位代碼篩選
             (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Code", p => p.Code, allowNull: true),
-            
-            // 職位描述篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Description", p => p.Description, allowNull: true)
         };
 
         return FilterHelper.ApplyFiltersWithErrorHandling(

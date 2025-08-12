@@ -381,8 +381,7 @@ namespace ERPCore2.Services
                     .Include(r => r.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
                     .Where(r => !r.IsDeleted && 
-                               (r.RoleName.Contains(searchTerm) ||
-                                (r.Description != null && r.Description.Contains(searchTerm))))
+                               r.RoleName.Contains(searchTerm))
                     .OrderBy(r => r.RoleName)
                     .ToListAsync();
 
@@ -471,9 +470,6 @@ namespace ERPCore2.Services
 
                 if (role.RoleName.Length > 100)
                     return ServiceResult<bool>.Failure("角色名稱長度不能超過100個字元");
-
-                if (!string.IsNullOrEmpty(role.Description) && role.Description.Length > 500)
-                    return ServiceResult<bool>.Failure("角色描述長度不能超過500個字元");
 
                 return ServiceResult<bool>.Success(true);
             }

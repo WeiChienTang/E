@@ -192,18 +192,6 @@
                     Options = managerOptions,
                     HelpText = "選擇負責管理此部門的員工"
                 },
-                
-                // 描述區段
-                new()
-                {
-                    PropertyName = nameof(Department.Description),
-                    Label = "部門描述",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入部門描述",
-                    Rows = 2,
-                    HelpText = "詳細描述部門的職責範圍、工作內容或其他相關資訊",
-                    ContainerCssClass = "col-12"
-                },
                 new()
                 {
                     PropertyName = nameof(Department.Remarks),
@@ -221,7 +209,6 @@
                 { nameof(Department.DepartmentCode), "基本資訊" },
                 { nameof(Department.Name), "基本資訊" },
                 { nameof(Department.ManagerId), "基本資訊" },
-                { nameof(Department.Description), "額外資料" },
                 { nameof(Department.Remarks), "額外資料" }
             };
         }

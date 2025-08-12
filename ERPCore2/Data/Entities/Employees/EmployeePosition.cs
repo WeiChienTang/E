@@ -17,13 +17,6 @@ namespace ERPCore2.Data.Entities
         [MaxLength(50, ErrorMessage = "職位名稱不可超過50個字元")]
         [Display(Name = "職位名稱")]
         public string Name { get; set; } = string.Empty;
-        
-        /// <summary>
-        /// 職位描述
-        /// </summary>
-        [MaxLength(200, ErrorMessage = "職位描述不可超過200個字元")]
-        [Display(Name = "職位描述")]
-        public string? Description { get; set; }
 
         /// <summary>
         /// 職位代碼

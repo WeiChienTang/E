@@ -18,13 +18,6 @@ namespace ERPCore2.Data.Entities
         [MaxLength(50, ErrorMessage = "角色名稱不可超過50個字元")]
         public string RoleName { get; set; } = string.Empty;
 
-        /// <summary>
-        /// 角色描述
-        /// </summary>
-        [Display(Name = "角色描述")]
-        [MaxLength(200, ErrorMessage = "角色描述不可超過200個字元")]
-        public string? Description { get; set; }
-
         // 導航屬性
         public ICollection<Employee> Employees { get; set; } = new List<Employee>();
         public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();

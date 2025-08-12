@@ -150,19 +150,6 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(Role.Description),
-                    Label = "角色描述",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入角色描述",
-                    IsRequired = false,
-                    MaxLength = 200,
-                    Rows = 2,
-                    HelpText = "簡要說明此角色的職責與用途，幫助了解角色功能，最多200個字元",
-                    ContainerCssClass = "col-12"
-
-                },
-                new()
-                {
                     PropertyName = nameof(Role.Remarks),
                     Label = "備註",
                     FieldType = FormFieldType.TextArea,
@@ -179,7 +166,6 @@
             formSections = new Dictionary<string, string>
             {
                 { nameof(Role.RoleName), "基本資訊" },
-                { nameof(Role.Description), "額外資訊" },
                 { nameof(Role.Remarks), "額外資訊" }
             };
         }

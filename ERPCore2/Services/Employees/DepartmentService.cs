@@ -70,8 +70,7 @@ namespace ERPCore2.Services
                 return await context.Departments
                     .Where(d => !d.IsDeleted &&
                         (d.Name.Contains(searchTerm) ||
-                         d.DepartmentCode.Contains(searchTerm) ||
-                         (d.Description != null && d.Description.Contains(searchTerm))))
+                         d.DepartmentCode.Contains(searchTerm)))
                     .OrderBy(d => d.Name)
                     .ToListAsync();
             }

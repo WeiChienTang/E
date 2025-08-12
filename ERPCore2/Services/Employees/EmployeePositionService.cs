@@ -51,8 +51,7 @@ namespace ERPCore2.Services
                 return await context.EmployeePositions
                     .Where(ep => !ep.IsDeleted && 
                                 (ep.Name.ToUpper().Contains(normalizedSearch) ||
-                                 (ep.Code != null && ep.Code.ToUpper().Contains(normalizedSearch)) ||
-                                 (ep.Description != null && ep.Description.ToUpper().Contains(normalizedSearch))))
+                                 (ep.Code != null && ep.Code.ToUpper().Contains(normalizedSearch))))
                     .OrderBy(ep => ep.Name)
                     .ToListAsync();
             }

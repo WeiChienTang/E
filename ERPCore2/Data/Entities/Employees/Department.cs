@@ -26,13 +26,6 @@ namespace ERPCore2.Data.Entities
         public string Name { get; set; } = string.Empty;
 
         /// <summary>
-        /// 部門描述
-        /// </summary>
-        [Display(Name = "部門描述")]
-        [MaxLength(200, ErrorMessage = "部門描述不可超過200個字元")]
-        public string? Description { get; set; }
-
-        /// <summary>
         /// 部門主管ID
         /// </summary>
         [Display(Name = "部門主管")]

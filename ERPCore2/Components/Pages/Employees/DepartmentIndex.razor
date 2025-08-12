@@ -159,8 +159,7 @@
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("DepartmentCode", "部門代碼", "輸入部門代碼搜尋")
-                .AddText("Name", "部門名稱", "輸入部門名稱搜尋")                
-                .AddText("Description", "部門描述", "輸入部門描述搜尋")      
+                .AddText("Name", "部門名稱", "輸入部門名稱搜尋")
                 .Build();
         }
         catch (Exception ex)
@@ -210,7 +209,6 @@
                         }
                     }
                 },
-                TableColumnDefinition.Text("部門描述", nameof(Department.Description)),
             };
         }
         catch (Exception ex)
@@ -255,9 +253,6 @@
             
             // 部門代碼篩選
             (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "DepartmentCode", d => d.DepartmentCode),
-            
-            // 部門描述篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Description", d => d.Description, allowNull: true)
         };
 
         return FilterHelper.ApplyFiltersWithErrorHandling(
