@@ -297,6 +297,46 @@
         }
     }
     
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (IsVisible)
+        {
+            await SetupTabNavigationAsync();
+        }
+    }
+    
+    // ===== Tab 導航處理 =====
+    
+    /// <summary>
+    /// 設置 Tab 鍵導航，當焦點在按鈕上時自動跳到下一個非按鈕元素
+    /// </summary>
+    private async Task SetupTabNavigationAsync()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("setupButtonTabNavigation");
+        }
+        catch (Exception ex)
+        {
+            await LogError("SetupTabNavigation", ex);
+        }
+    }
+    
+    /// <summary>
+    /// 清理 Tab 鍵導航事件監聽器
+    /// </summary>
+    private async Task CleanupTabNavigationAsync()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("cleanupButtonTabNavigation");
+        }
+        catch (Exception ex)
+        {
+            await LogError("CleanupTabNavigation", ex);
+        }
+    }
+    
     // ===== 資料載入方法 =====
     
     private async Task LoadAllData()
@@ -414,6 +454,7 @@
     
     private async Task CloseModal()
     {
+        await CleanupTabNavigationAsync();
         await SetVisible(false);
     }
     
@@ -800,6 +841,26 @@
     
     public void Dispose()
     {
+        try
+        {
+            // 異步清理 Tab 導航，但不等待結果以避免阻塞 Dispose
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await CleanupTabNavigationAsync();
+                }
+                catch
+                {
+                    // 忽略清理過程中的錯誤
+                }
+            });
+        }
+        catch
+        {
+            // 忽略清理過程中的錯誤
+        }
+        
         _loadingSemaphore?.Dispose();
     }
 }
