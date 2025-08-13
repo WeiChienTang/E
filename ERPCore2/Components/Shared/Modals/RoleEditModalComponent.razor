@@ -30,6 +30,7 @@
     [Parameter] public bool IsVisible { get; set; } = false;
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
     [Parameter] public int? RoleId { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
     [Parameter] public EventCallback<Role> OnRoleSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
 
@@ -115,10 +116,33 @@
             if (!RoleId.HasValue)
             {
                 // 新增模式 - 建立新的角色實體並設定預設值
-                return new Role
+                var newRole = new Role
                 {
                     Status = EntityStatus.Active
                 };
+
+                // 應用預填值
+                if (PrefilledValues != null)
+                {
+                    foreach (var kvp in PrefilledValues)
+                    {
+                        var property = typeof(Role).GetProperty(kvp.Key);
+                        if (property != null && property.CanWrite && kvp.Value != null)
+                        {
+                            try
+                            {
+                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
+                                property.SetValue(newRole, convertedValue);
+                            }
+                            catch
+                            {
+                                // 忽略轉換失敗的情況
+                            }
+                        }
+                    }
+                }
+
+                return newRole;
             }
 
             // 編輯模式 - 載入現有角色資料

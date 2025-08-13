@@ -58,6 +58,15 @@
                                    OnEmployeePositionSaved="@OnEmployeePositionSavedWrapper"
                                    OnCancel="@positionModalManager.HandleModalCancelAsync" />
 
+@* 角色編輯 Modal *@
+<RoleEditModalComponent @ref="roleEditModal"
+                       IsVisible="@roleModalManager.IsModalVisible"
+                       IsVisibleChanged="@roleModalManager.HandleModalVisibilityChangedAsync"
+                       RoleId="@roleModalManager.SelectedEntityId"
+                       PrefilledValues="@roleModalManager.PrefilledValues"
+                       OnRoleSaved="@OnRoleSavedWrapper"
+                       OnCancel="@roleModalManager.HandleModalCancelAsync" />
+
 
 @code {
     [Parameter] public bool IsVisible { get; set; }
@@ -77,6 +86,10 @@
     // 職位編輯 Modal 相關變數 - 使用泛型管理器
     private EmployeePositionEditModalComponent? positionEditModal;
     private RelatedEntityModalManager<EmployeePosition> positionModalManager = default!;
+    
+    // 角色編輯 Modal 相關變數 - 使用泛型管理器
+    private RoleEditModalComponent? roleEditModal;
+    private RelatedEntityModalManager<Role> roleModalManager = default!;
     
     // 選項資料
     private List<Department> availableDepartments = new();
@@ -106,6 +119,9 @@
             
             // 初始化職位 Modal 管理器
             InitializePositionModalManager();
+            
+            // 初始化角色 Modal 管理器
+            InitializeRoleModalManager();
             
             await LoadAdditionalDataAsync();
             
@@ -194,6 +210,30 @@
                 }
             })
             .WithCustomPostProcess(async position => 
+            {
+                // 員工特定的後處理邏輯
+                await InitializeFormFieldsAsync(editModalComponent?.Entity?.IsSystemUser ?? false);
+            })
+            .Build();
+    }
+
+    /// <summary>
+    /// 初始化角色 Modal 管理器
+    /// </summary>
+    private void InitializeRoleModalManager()
+    {
+        roleModalManager = new RelatedEntityManagerBuilder<Role>(NotificationService, "角色")
+            .WithPropertyName(nameof(Employee.RoleId))
+            .WithReloadCallback(LoadAdditionalDataAsync)
+            .WithStateChangedCallback(StateHasChanged)
+            .WithAutoSelectCallback(roleId => 
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    editModalComponent.Entity.RoleId = roleId;
+                }
+            })
+            .WithCustomPostProcess(async role => 
             {
                 // 員工特定的後處理邏輯
                 await InitializeFormFieldsAsync(editModalComponent?.Entity?.IsSystemUser ?? false);
@@ -356,13 +396,13 @@
                     {
                         PropertyName = nameof(Employee.RoleId),
                         Label = "系統角色",
-                        FieldType = FormFieldType.Select,
-                        Placeholder = isSystemUser ? "請選擇系統角色" : "僅系統使用者可選擇",
-                        Options = roleOptions,
-                        DefaultValue = defaultRoleValue,
+                        FieldType = FormFieldType.AutoComplete,
+                        Placeholder = isSystemUser ? "請輸入或選擇系統角色" : "僅系統使用者可選擇",
+                        MinSearchLength = 0, // 允許空白搜尋以顯示所有選項
                         IsRequired = isSystemUser,
                         IsDisabled = !isSystemUser, // 非系統使用者時停用
-                        HelpText = isSystemUser ? "選擇員工在系統中的權限角色" : "僅系統使用者可以選擇系統角色"
+                        HelpText = isSystemUser ? "輸入角色名稱進行搜尋，或直接選擇員工在系統中的權限角色" : "僅系統使用者可以選擇系統角色",
+                        ActionButtons = GetRoleActionButtons()
                     }
                 });
             }
@@ -461,6 +501,15 @@
                     ["Name"] = searchTerm,
                     ["PositionCode"] = searchTerm.ToUpper().Replace(" ", "")
                 }
+            },
+            {
+                nameof(Employee.RoleId),
+                searchTerm => new Dictionary<string, object?>
+                {
+                    ["RoleName"] = searchTerm,
+                    // 可以根據搜尋詞智能推測角色類型
+                    ["Status"] = 1 // EntityStatus.Active
+                }
             }
         };
     }
@@ -473,7 +522,8 @@
         return new Dictionary<string, IEnumerable<object>>
         {
             { nameof(Employee.DepartmentId), availableDepartments.Cast<object>() },
-            { nameof(Employee.EmployeePositionId), availablePositions.Cast<object>() }
+            { nameof(Employee.EmployeePositionId), availablePositions.Cast<object>() },
+            { nameof(Employee.RoleId), availableRoles.Cast<object>() }
         };
     }
 
@@ -485,7 +535,8 @@
         return new Dictionary<string, string>
         {
             { nameof(Employee.DepartmentId), "Name" },
-            { nameof(Employee.EmployeePositionId), "Name" }
+            { nameof(Employee.EmployeePositionId), "Name" },
+            { nameof(Employee.RoleId), "RoleName" }
         };
     }
 
@@ -497,7 +548,8 @@
         return new Dictionary<string, string>
         {
             { nameof(Employee.DepartmentId), "Id" },
-            { nameof(Employee.EmployeePositionId), "Id" }
+            { nameof(Employee.EmployeePositionId), "Id" },
+            { nameof(Employee.RoleId), "Id" }
         };
     }
     
@@ -509,7 +561,8 @@
         return new Dictionary<string, object>
         {
             { nameof(Employee.DepartmentId), departmentModalManager },
-            { nameof(Employee.EmployeePositionId), positionModalManager }
+            { nameof(Employee.EmployeePositionId), positionModalManager },
+            { nameof(Employee.RoleId), roleModalManager }
         };
     }
 
@@ -866,6 +919,10 @@
                 if (hasAccountPasswordPermission)
                 {
                     await UpdateFormFieldsForSystemUserAsync(isSystemUser);
+                    
+                    // 當系統使用者狀態變更時，也要更新角色按鈕的狀態
+                    roleModalManager.UpdateFieldActionButtons(formFields, nameof(Employee.RoleId), 
+                        editModalComponent?.Entity?.RoleId);
                 }
                 else
                 {
@@ -887,6 +944,13 @@
             {
                 positionModalManager.UpdateFieldActionButtons(formFields, fieldChange.PropertyName, 
                     fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int posId) ? posId : null);
+            }
+            
+            // 使用泛型管理器處理角色欄位變更
+            if (fieldChange.PropertyName == nameof(Employee.RoleId))
+            {
+                roleModalManager.UpdateFieldActionButtons(formFields, fieldChange.PropertyName, 
+                    fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int roleId) ? roleId : null);
             }
         }
         catch (Exception)
@@ -912,6 +976,14 @@
     }
     
     /// <summary>
+    /// 包裝角色儲存事件以符合原有介面
+    /// </summary>
+    private async Task OnRoleSavedWrapper(Role savedRole)
+    {
+        await roleModalManager.HandleEntitySavedAsync(savedRole, shouldAutoSelect: true);
+    }
+    
+    /// <summary>
     /// 使用泛型管理器產生部門操作按鈕 - 簡化版本（智能預填已整合到 GenericEditModalComponent）
     /// </summary>
     private List<FieldActionButton> GetDepartmentActionButtons()
@@ -927,6 +999,38 @@
     {
         var currentPositionId = editModalComponent?.Entity?.EmployeePositionId;
         return positionModalManager.GenerateActionButtons(currentPositionId);
+    }
+
+    /// <summary>
+    /// 使用泛型管理器產生角色操作按鈕 - 簡化版本（智能預填已整合到 GenericEditModalComponent）
+    /// 注意：角色按鈕的啟用狀態取決於是否勾選了"系統使用者"
+    /// </summary>
+    private List<FieldActionButton> GetRoleActionButtons()
+    {
+        var currentRoleId = editModalComponent?.Entity?.RoleId;
+        var isSystemUser = editModalComponent?.Entity?.IsSystemUser ?? false;
+        
+        // 使用泛型管理器產生按鈕
+        var buttons = roleModalManager.GenerateActionButtons(currentRoleId);
+        
+        // 根據系統使用者狀態設定按鈕的啟用/停用狀態
+        foreach (var button in buttons)
+        {
+            button.IsDisabled = !isSystemUser; // 非系統使用者時停用按鈕
+            
+            // 更新按鈕標題，讓使用者知道為什麼按鈕被停用
+            if (!isSystemUser)
+            {
+                button.Title = "僅系統使用者可以管理系統角色";
+            }
+            else
+            {
+                // 系統使用者時使用原本的標題
+                button.Title = currentRoleId.HasValue ? "編輯選擇的角色" : "新增角色";
+            }
+        }
+        
+        return buttons;
     }
 
     // ===== 部門管理相關方法 - 已重構為使用泛型管理器 =====
