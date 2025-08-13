@@ -63,7 +63,7 @@
                             <div class="edit-form-container">
                                 <GenericFormComponent TModel="TEntity"
                                                     Model="@Entity"
-                                                    FieldDefinitions="@FormFields"
+                                                    FieldDefinitions="@GetProcessedFormFields()"
                                                     FieldSections="@FormSections"
                                                     ShowFormHeader="false"
                                                     ShowFormButtons="false"
@@ -201,6 +201,10 @@
     [Parameter] public List<FormFieldDefinition> FormFields { get; set; } = new();
     [Parameter] public Dictionary<string, string> FormSections { get; set; } = new();
     
+    // AutoComplete 智能預填支援
+    [Parameter] public Dictionary<string, Func<string, Dictionary<string, object?>>>? AutoCompletePrefillers { get; set; }
+    [Parameter] public Dictionary<string, object>? ModalManagers { get; set; }
+    
     // 自訂內容
     [Parameter] public RenderFragment? CustomFormContent { get; set; }
     [Parameter] public RenderFragment? AdditionalSections { get; set; }
@@ -239,6 +243,9 @@
     private bool _lastVisible = false;
     private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
     private EditContext? editContext;
+    
+    // AutoComplete 搜尋關鍵字追蹤
+    private readonly Dictionary<string, string> _lastSearchTerms = new();
     
     // ===== Modal 尺寸列舉 =====
     
@@ -573,6 +580,138 @@
         {
             await OnFieldChanged(fieldChange);
         }
+    }
+    
+    // ===== AutoComplete 智能處理 =====
+    
+    /// <summary>
+    /// 處理已處理的表單欄位，包含 AutoComplete 智能功能
+    /// </summary>
+    private List<FormFieldDefinition> GetProcessedFormFields()
+    {
+        var processedFields = new List<FormFieldDefinition>();
+        
+        foreach (var field in FormFields)
+        {
+            var processedField = new FormFieldDefinition
+            {
+                PropertyName = field.PropertyName,
+                Label = field.Label,
+                FieldType = field.FieldType,
+                Placeholder = field.Placeholder,
+                HelpText = field.HelpText,
+                IsRequired = field.IsRequired,
+                IsReadOnly = field.IsReadOnly,
+                IsDisabled = field.IsDisabled,
+                CssClass = field.CssClass,
+                ContainerCssClass = field.ContainerCssClass,
+                Min = field.Min,
+                Max = field.Max,
+                Step = field.Step,
+                MinLength = field.MinLength,
+                MaxLength = field.MaxLength,
+                Rows = field.Rows,
+                Options = field.Options,
+                AutoCompleteDelayMs = field.AutoCompleteDelayMs,
+                MinSearchLength = field.MinSearchLength,
+                DefaultValue = field.DefaultValue,
+                ValidationRules = field.ValidationRules,
+                Order = field.Order,
+                GroupName = field.GroupName,
+                ActionButtons = field.ActionButtons
+            };
+            
+            // 如果是 AutoComplete 欄位，包裝搜尋函式以支援智能預填
+            if (field.FieldType == FormFieldType.AutoComplete && field.SearchFunction != null)
+            {
+                var originalSearchFunction = field.SearchFunction;
+                processedField.SearchFunction = async (searchTerm) =>
+                {
+                    // 記錄搜尋關鍵字
+                    _lastSearchTerms[field.PropertyName] = searchTerm ?? string.Empty;
+                    
+                    // 調用原始搜尋函式
+                    return await originalSearchFunction(searchTerm ?? string.Empty);
+                };
+                
+                // 處理智能按鈕
+                if (field.ActionButtons != null && field.ActionButtons.Any())
+                {
+                    processedField.ActionButtons = ProcessActionButtonsForAutoComplete(field);
+                }
+            }
+            
+            processedFields.Add(processedField);
+        }
+        
+        return processedFields;
+    }
+    
+    /// <summary>
+    /// 處理 AutoComplete 欄位的操作按鈕，支援智能預填
+    /// </summary>
+    private List<FieldActionButton> ProcessActionButtonsForAutoComplete(FormFieldDefinition field)
+    {
+        var processedButtons = new List<FieldActionButton>();
+        
+        foreach (var button in field.ActionButtons!)
+        {
+            var processedButton = new FieldActionButton
+            {
+                Text = button.Text,
+                Variant = button.Variant,
+                Size = button.Size,
+                IconClass = button.IconClass,
+                Title = button.Title,
+                IsDisabled = button.IsDisabled
+            };
+            
+            // 如果是新增按鈕且有預填器，包裝點擊事件
+            if (button.Text == "新增" && 
+                AutoCompletePrefillers?.ContainsKey(field.PropertyName) == true &&
+                button.OnClick != null)
+            {
+                var originalOnClick = button.OnClick;
+                processedButton.OnClick = async () =>
+                {
+                    // 取得預填值
+                    var searchTerm = _lastSearchTerms.GetValueOrDefault(field.PropertyName, string.Empty);
+                    if (!string.IsNullOrWhiteSpace(searchTerm))
+                    {
+                        var prefilledValues = AutoCompletePrefillers[field.PropertyName](searchTerm);
+                        
+                        // 如果有對應的 Modal 管理器，使用智能開啟
+                        if (ModalManagers?.ContainsKey(field.PropertyName) == true)
+                        {
+                            var modalManager = ModalManagers[field.PropertyName];
+                            
+                            // 使用反射調用 OpenModalWithPrefilledValuesAsync
+                            var openMethod = modalManager.GetType().GetMethod("OpenModalWithPrefilledValuesAsync");
+                            if (openMethod != null)
+                            {
+                                var task = (Task?)openMethod.Invoke(modalManager, new object[] { null!, prefilledValues });
+                                if (task != null)
+                                {
+                                    await task;
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 否則使用原始點擊事件
+                    await originalOnClick();
+                };
+            }
+            else
+            {
+                processedButton.OnClick = button.OnClick;
+            }
+            
+            processedButtons.Add(processedButton);
+        }
+        
+        return processedButtons;
     }
     
     // ===== 清理資源 =====

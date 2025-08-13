@@ -1,0 +1,197 @@
+@* 展示如何在 GenericEditModalComponent 中使用 AutoComplete 智能功能的範例 *@
+@code {
+    
+    // 使用新的整合 AutoComplete 功能的範例
+    public class EmployeeEditModalComponentUsingGenericAutoComplete
+    {
+        // ===== Modal 管理器 =====
+        private RelatedEntityModalManager<Department> departmentModalManager = default!;
+        private RelatedEntityModalManager<EmployeePosition> positionModalManager = default!;
+        
+        // ===== 搜尋關鍵字追蹤（已整合到 GenericEditModalComponent 中，不再需要手動追蹤）=====
+        // private string lastDepartmentSearchTerm = string.Empty; // 不再需要
+        // private string lastPositionSearchTerm = string.Empty;   // 不再需要
+        
+        /// <summary>
+        /// 初始化表單欄位，使用整合的 AutoComplete 功能
+        /// </summary>
+        private List<FormFieldDefinition> GetFormFieldsWithIntegratedAutoComplete()
+        {
+            return new List<FormFieldDefinition>
+            {
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Employee.DepartmentId),
+                    Label = "部門",
+                    FieldType = FormFieldType.AutoComplete,  // 使用 AutoComplete
+                    SearchFunction = SearchDepartments,      // 搜尋函式
+                    AutoCompleteDelayMs = 300,               // 搜尋延遲
+                    ActionButtons = GetDepartmentActionButtons(),
+                    HelpText = "請選擇或搜尋部門",
+                    ContainerCssClass = "col-md-6"
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Employee.EmployeePositionId),
+                    Label = "職位",
+                    FieldType = FormFieldType.AutoComplete,  // 使用 AutoComplete
+                    SearchFunction = SearchPositions,        // 搜尋函式
+                    AutoCompleteDelayMs = 300,               // 搜尋延遲
+                    ActionButtons = GetPositionActionButtons(),
+                    HelpText = "請選擇或搜尋職位",
+                    ContainerCssClass = "col-md-6"
+                }
+            };
+        }
+        
+        /// <summary>
+        /// 配置 AutoComplete 預填器
+        /// </summary>
+        private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
+        {
+            return new Dictionary<string, Func<string, Dictionary<string, object?>>>
+            {
+                {
+                    nameof(Employee.DepartmentId),
+                    searchTerm => new Dictionary<string, object?>
+                    {
+                        ["Name"] = searchTerm,
+                        // 可以根據搜尋詞推測其他欄位
+                        ["DepartmentCode"] = searchTerm.Contains("財務") ? "FIN" : 
+                                           searchTerm.Contains("業務") ? "SALES" :
+                                           searchTerm.Contains("人資") ? "HR" : 
+                                           searchTerm.ToUpper().Replace(" ", "")
+                    }
+                },
+                {
+                    nameof(Employee.EmployeePositionId),
+                    searchTerm => new Dictionary<string, object?>
+                    {
+                        ["Name"] = searchTerm,
+                        ["PositionCode"] = searchTerm.ToUpper().Replace(" ", "")
+                    }
+                }
+            };
+        }
+        
+        /// <summary>
+        /// 配置 Modal 管理器
+        /// </summary>
+        private Dictionary<string, object> GetModalManagers()
+        {
+            return new Dictionary<string, object>
+            {
+                { nameof(Employee.DepartmentId), departmentModalManager },
+                { nameof(Employee.EmployeePositionId), positionModalManager }
+            };
+        }
+        
+        /// <summary>
+        /// 簡化的搜尋方法（不再需要手動追蹤搜尋關鍵字）
+        /// </summary>
+        private async Task<List<SelectOption>> SearchDepartments(string searchTerm)
+        {
+            await Task.Delay(1); // 模擬異步操作
+            
+            // GenericEditModalComponent 會自動追蹤搜尋關鍵字
+            // 我們只需要專注於搜尋邏輯
+            
+            var departments = new List<Department>(); // 假設的資料來源
+            var filteredDepartments = departments
+                .Where(d => string.IsNullOrEmpty(searchTerm) || 
+                           d.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .Take(10)
+                .Select(d => new SelectOption
+                {
+                    Text = d.Name,
+                    Value = d.Id.ToString()
+                })
+                .ToList();
+            
+            return filteredDepartments;
+        }
+        
+        /// <summary>
+        /// 簡化的搜尋方法（不再需要手動追蹤搜尋關鍵字）
+        /// </summary>
+        private async Task<List<SelectOption>> SearchPositions(string searchTerm)
+        {
+            await Task.Delay(1); // 模擬異步操作
+            
+            // GenericEditModalComponent 會自動追蹤搜尋關鍵字
+            // 我們只需要專注於搜尋邏輯
+            
+            var positions = new List<EmployeePosition>(); // 假設的資料來源
+            var filteredPositions = positions
+                .Where(p => string.IsNullOrEmpty(searchTerm) || 
+                           p.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .Take(10)
+                .Select(p => new SelectOption
+                {
+                    Text = p.Name,
+                    Value = p.Id.ToString()
+                })
+                .ToList();
+            
+            return filteredPositions;
+        }
+        
+        /// <summary>
+        /// 簡化的按鈕產生方法
+        /// </summary>
+        private List<FieldActionButton> GetDepartmentActionButtons()
+        {
+            // GenericEditModalComponent 會自動處理智能預填
+            // 我們只需要定義基本的按鈕行為
+            var currentDepartmentId = 1; // 假設的當前部門ID
+            return departmentModalManager.GenerateActionButtons(currentDepartmentId);
+        }
+        
+        /// <summary>
+        /// 簡化的按鈕產生方法
+        /// </summary>
+        private List<FieldActionButton> GetPositionActionButtons()
+        {
+            // GenericEditModalComponent 會自動處理智能預填
+            // 我們只需要定義基本的按鈕行為
+            var currentPositionId = 1; // 假設的當前職位ID
+            return positionModalManager.GenerateActionButtons(currentPositionId);
+        }
+    }
+}
+
+@* 
+使用範例：
+
+<GenericEditModalComponent TEntity="Employee" TService="IEmployeeService"
+                          IsVisible="@isVisible"
+                          IsVisibleChanged="@OnVisibilityChanged"
+                          Id="@employeeId"
+                          Service="@employeeService"
+                          EntityName="員工"
+                          RequiredPermission="Employee.Edit"
+                          FormFields="@GetFormFieldsWithIntegratedAutoComplete()"
+                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
+                          ModalManagers="@GetModalManagers()"
+                          DataLoader="@LoadEmployeeData"
+                          SaveHandler="@SaveEmployee"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          OnFieldChanged="@OnFieldValueChanged" />
+
+優勢：
+
+1. **減少重複代碼**：不需要在每個組件中重複實作搜尋關鍵字追蹤
+2. **自動智能預填**：GenericEditModalComponent 自動處理預填邏輯
+3. **統一的 API**：所有使用 AutoComplete 的組件都使用相同的模式
+4. **更好的維護性**：AutoComplete 相關邏輯集中在 GenericEditModalComponent 中
+5. **向後相容**：現有的組件可以選擇性地遷移到新的整合模式
+
+遷移步驟：
+
+1. 移除手動的搜尋關鍵字追蹤變數
+2. 簡化搜尋方法，專注於搜尋邏輯
+3. 配置 AutoCompletePrefillers 字典
+4. 配置 ModalManagers 字典
+5. 在 GenericEditModalComponent 中設定這些參數
+
+*@

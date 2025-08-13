@@ -31,6 +31,7 @@
     [Parameter] public int? EmployeePositionId { get; set; }
     [Parameter] public EventCallback<EmployeePosition> OnEmployeePositionSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
 
     // ===== 內部狀態 =====
     private GenericEditModalComponent<EmployeePosition, IEmployeePositionService>? editModalComponent;
@@ -100,12 +101,36 @@
             if (!EmployeePositionId.HasValue) 
             {
                 // 新增模式：建立新的職位實體並生成代碼
-                return new EmployeePosition
+                var newPosition = new EmployeePosition
                 {
                     Name = string.Empty,
                     Code = await GenerateEmployeePositionCodeAsync(),
                     Status = EntityStatus.Active
                 };
+                
+                // 應用預填值
+                if (PrefilledValues != null)
+                {
+                    foreach (var kvp in PrefilledValues)
+                    {
+                        var property = typeof(EmployeePosition).GetProperty(kvp.Key);
+                        if (property != null && property.CanWrite && kvp.Value != null)
+                        {
+                            try
+                            {
+                                // 轉換值的類型
+                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
+                                property.SetValue(newPosition, convertedValue);
+                            }
+                            catch (Exception)
+                            {
+                                // 忽略轉換失敗的值
+                            }
+                        }
+                    }
+                }
+                
+                return newPosition;
             }
 
             var employeePosition = await EmployeePositionService.GetByIdAsync(EmployeePositionId.Value);            

@@ -681,12 +681,16 @@
                         keyboardNavigationActive[fieldId] = false;
                         StateHasChanged();
                     }));
-                      builder.AddAttribute(optionSequence + 5, "onmousedown", EventCallback.Factory.Create(this, () =>
+                      builder.AddAttribute(optionSequence + 5, "onmousedown", EventCallback.Factory.Create(this, async () =>
                     {
                         autoCompleteDisplayValues[fieldId] = option.Text;
                         SetPropertyValue(Model, field.PropertyName, option.Value);
                         autoCompleteVisible[fieldId] = false;
                         ResetKeyboardNavigation(fieldId);
+                        
+                        // 觸發欄位變更事件
+                        await OnFieldChanged.InvokeAsync((field.PropertyName, option.Value));
+                        
                         StateHasChanged();
                     }));
                     builder.AddContent(optionSequence + 6, option.Text);
@@ -786,7 +790,22 @@
             case "Enter":
                 if (autoCompleteVisible.GetValueOrDefault(fieldId, false) && options.Any())
                 {
-                    await SelectHighlightedOption(field, options);
+                    // 如果只有一個選項，直接選擇它
+                    if (options.Count == 1)
+                    {
+                        var singleOption = options[0];
+                        autoCompleteDisplayValues[fieldId] = singleOption.Text;
+                        SetPropertyValue(Model, field.PropertyName, singleOption.Value);
+                        HideDropdown(fieldId);
+                        
+                        // 觸發欄位變更事件
+                        await OnFieldChanged.InvokeAsync((field.PropertyName, singleOption.Value));
+                    }
+                    else
+                    {
+                        // 多個選項時，選擇高亮的選項
+                        await SelectHighlightedOption(field, options);
+                    }
                 }
                 break;
                 
@@ -795,7 +814,22 @@
                 break;
                 
             case "Tab":
-                HideDropdown(fieldId);
+                // 如果只有一個選項，自動填入並隱藏下拉選單
+                if (autoCompleteVisible.GetValueOrDefault(fieldId, false) && 
+                    options.Count == 1)
+                {
+                    var singleOption = options[0];
+                    autoCompleteDisplayValues[fieldId] = singleOption.Text;
+                    SetPropertyValue(Model, field.PropertyName, singleOption.Value);
+                    HideDropdown(fieldId);
+                    
+                    // 觸發欄位變更事件
+                    await OnFieldChanged.InvokeAsync((field.PropertyName, singleOption.Value));
+                }
+                else
+                {
+                    HideDropdown(fieldId);
+                }
                 // 不阻止 Tab，讓它正常移動到下一個欄位
                 break;
         }
@@ -835,7 +869,7 @@
             Console.Error.WriteLine($"ScrollToHighlightedOption error: {ex.Message}");
         }
     }
-      private Task SelectHighlightedOption(FormFieldDefinition field, List<SelectOption> options)
+      private async Task SelectHighlightedOption(FormFieldDefinition field, List<SelectOption> options)
     {
         var fieldId = field.PropertyName;
         var highlightedIndex = highlightedOptionIndex.GetValueOrDefault(fieldId, -1);
@@ -846,9 +880,10 @@
             autoCompleteDisplayValues[fieldId] = selectedOption.Text;
             SetPropertyValue(Model, field.PropertyName, selectedOption.Value);
             HideDropdown(fieldId);
+            
+            // 觸發欄位變更事件
+            await OnFieldChanged.InvokeAsync((field.PropertyName, selectedOption.Value));
         }
-        
-        return Task.CompletedTask;
     }
     
     private void HideDropdown(string fieldId)

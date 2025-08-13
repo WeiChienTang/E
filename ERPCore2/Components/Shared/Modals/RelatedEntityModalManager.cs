@@ -73,6 +73,11 @@ public class RelatedEntityModalManager<TRelatedEntity> where TRelatedEntity : Ba
     public Action? StateHasChangedCallback { get; set; }
     
     /// <summary>
+    /// 預填值字典 - 用於新增模式時預設值
+    /// </summary>
+    public Dictionary<string, object?> PrefilledValues { get; private set; } = new();
+    
+    /// <summary>
     /// 開啟 Modal
     /// </summary>
     /// <param name="entityId">實體 ID，null 表示新增模式</param>
@@ -96,6 +101,31 @@ public class RelatedEntityModalManager<TRelatedEntity> where TRelatedEntity : Ba
     }
     
     /// <summary>
+    /// 開啟 Modal 並預填指定的欄位值
+    /// </summary>
+    /// <param name="entityId">實體 ID，null 表示新增模式</param>
+    /// <param name="prefilledValues">要預填的欄位值</param>
+    public async Task OpenModalWithPrefilledValuesAsync(int? entityId, Dictionary<string, object?> prefilledValues)
+    {
+        try
+        {
+            SelectedEntityId = entityId;
+            PrefilledValues = prefilledValues ?? new Dictionary<string, object?>();
+            IsModalVisible = true;
+            StateHasChangedCallback?.Invoke();
+            
+            if (IsModalVisibleChanged.HasDelegate)
+            {
+                await IsModalVisibleChanged.InvokeAsync(true);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"開啟{EntityDisplayName}編輯視窗時發生錯誤：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
     /// 關閉 Modal
     /// </summary>
     public async Task CloseModalAsync()
@@ -104,6 +134,7 @@ public class RelatedEntityModalManager<TRelatedEntity> where TRelatedEntity : Ba
         {
             IsModalVisible = false;
             SelectedEntityId = null;
+            PrefilledValues.Clear(); // 清理預填值
             StateHasChangedCallback?.Invoke();
             
             if (IsModalVisibleChanged.HasDelegate)

@@ -26,6 +26,8 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
+                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
+                          ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadEmployeeData"
                           SaveHandler="@SaveEmployee"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
@@ -40,6 +42,7 @@
                              IsVisible="@departmentModalManager.IsModalVisible"
                              IsVisibleChanged="@departmentModalManager.HandleModalVisibilityChangedAsync"
                              DepartmentId="@departmentModalManager.SelectedEntityId"
+                             PrefilledValues="@departmentModalManager.PrefilledValues"
                              OnDepartmentSaved="@OnDepartmentSavedWrapper"
                              OnCancel="@departmentModalManager.HandleModalCancelAsync" />
 
@@ -48,6 +51,7 @@
                                    IsVisible="@positionModalManager.IsModalVisible"
                                    IsVisibleChanged="@positionModalManager.HandleModalVisibilityChangedAsync"
                                    EmployeePositionId="@positionModalManager.SelectedEntityId"
+                                   PrefilledValues="@positionModalManager.PrefilledValues"
                                    OnEmployeePositionSaved="@OnEmployeePositionSavedWrapper"
                                    OnCancel="@positionModalManager.HandleModalCancelAsync" />
 
@@ -85,6 +89,10 @@
     // 子集合組件用的轉換清單
     private List<ERPCore2.Data.BaseEntity> contactTypeOptions = new();
     private List<ERPCore2.Data.BaseEntity> addressTypeOptions = new();
+    
+    // 注意：搜尋關鍵字追蹤已整合到 GenericEditModalComponent 中，不再需要手動追蹤
+    // private string lastDepartmentSearchTerm = string.Empty;  // 已移除
+    // private string lastPositionSearchTerm = string.Empty;    // 已移除
 
     protected override async Task OnInitializedAsync()
     {
@@ -245,20 +253,6 @@
     {
         try
         {
-            // 準備部門選項
-            var departmentOptions = availableDepartments.Select(d => new SelectOption
-            {
-                Text = d.Name,
-                Value = d.Id.ToString()
-            }).ToList();
-
-            // 準備職位選項
-            var positionOptions = availablePositions.Select(p => new SelectOption
-            {
-                Text = p.Name,
-                Value = p.Id.ToString()
-            }).ToList();
-
             // 準備角色選項
             var roleOptions = availableRoles.Select(r => new SelectOption
             {
@@ -377,20 +371,22 @@
                 {
                     PropertyName = nameof(Employee.DepartmentId),
                     Label = "部門",
-                    FieldType = FormFieldType.Select,
-                    Placeholder = "請選擇部門",
-                    Options = departmentOptions,
-                    HelpText = "選擇員工的部門",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇部門",
+                    SearchFunction = SearchDepartments,
+                    MinSearchLength = 0, // 允許空白搜尋以顯示所有選項
+                    HelpText = "輸入部門名稱進行搜尋，或直接選擇",
                     ActionButtons = GetDepartmentActionButtons()
                 },
                 new()
                 {
                     PropertyName = nameof(Employee.EmployeePositionId),
                     Label = "職位",
-                    FieldType = FormFieldType.Select,
-                    Placeholder = "請選擇職位",
-                    Options = positionOptions,
-                    HelpText = "選擇員工在組織中的職位",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇職位",
+                    SearchFunction = SearchPositions,
+                    MinSearchLength = 0, // 允許空白搜尋以顯示所有選項
+                    HelpText = "輸入職位名稱進行搜尋，或直接選擇",
                     ActionButtons = GetPositionActionButtons()
                 }
             });
@@ -436,6 +432,48 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
+    }
+    
+    /// <summary>
+    /// 配置 AutoComplete 預填器 - 使用整合方式
+    /// </summary>
+    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
+    {
+        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
+        {
+            {
+                nameof(Employee.DepartmentId),
+                searchTerm => new Dictionary<string, object?>
+                {
+                    ["Name"] = searchTerm,
+                    // 根據搜尋詞推測部門代碼
+                    ["DepartmentCode"] = searchTerm.Contains("財務") ? "FIN" : 
+                                       searchTerm.Contains("業務") ? "SALES" :
+                                       searchTerm.Contains("人資") ? "HR" : 
+                                       searchTerm.ToUpper().Replace(" ", "")
+                }
+            },
+            {
+                nameof(Employee.EmployeePositionId),
+                searchTerm => new Dictionary<string, object?>
+                {
+                    ["Name"] = searchTerm,
+                    ["PositionCode"] = searchTerm.ToUpper().Replace(" ", "")
+                }
+            }
+        };
+    }
+    
+    /// <summary>
+    /// 配置 Modal 管理器 - 使用整合方式
+    /// </summary>
+    private Dictionary<string, object> GetModalManagers()
+    {
+        return new Dictionary<string, object>
+        {
+            { nameof(Employee.DepartmentId), departmentModalManager },
+            { nameof(Employee.EmployeePositionId), positionModalManager }
+        };
     }
 
     private async Task UpdateFormFieldsForSystemUserAsync(bool isSystemUser)
@@ -837,7 +875,7 @@
     }
     
     /// <summary>
-    /// 使用泛型管理器產生部門操作按鈕
+    /// 使用泛型管理器產生部門操作按鈕 - 簡化版本（智能預填已整合到 GenericEditModalComponent）
     /// </summary>
     private List<FieldActionButton> GetDepartmentActionButtons()
     {
@@ -846,7 +884,7 @@
     }
 
     /// <summary>
-    /// 使用泛型管理器產生職位操作按鈕
+    /// 使用泛型管理器產生職位操作按鈕 - 簡化版本（智能預填已整合到 GenericEditModalComponent）
     /// </summary>
     private List<FieldActionButton> GetPositionActionButtons()
     {
@@ -982,5 +1020,65 @@
     {
         address.OwnerId = parentId;
         address.OwnerType = AddressOwnerTypes.Employee;
+    }
+
+    /// <summary>
+    /// 搜尋部門選項 - 簡化版本（搜尋關鍵字追蹤已整合到 GenericEditModalComponent）
+    /// </summary>
+    private async Task<List<SelectOption>> SearchDepartments(string searchTerm)
+    {
+        try
+        {
+            await Task.Delay(1); // 模擬異步操作
+            
+            // GenericEditModalComponent 會自動追蹤搜尋關鍵字，我們只需要專注於搜尋邏輯
+            var filteredDepartments = availableDepartments
+                .Where(d => string.IsNullOrEmpty(searchTerm) || 
+                           d.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .Take(10) // 限制結果數量以提升效能
+                .Select(d => new SelectOption
+                {
+                    Text = d.Name,
+                    Value = d.Id.ToString()
+                })
+                .ToList();
+            
+            return filteredDepartments;
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("搜尋部門時發生錯誤");
+            return new List<SelectOption>();
+        }
+    }
+
+    /// <summary>
+    /// 搜尋職位選項 - 簡化版本（搜尋關鍵字追蹤已整合到 GenericEditModalComponent）
+    /// </summary>
+    private async Task<List<SelectOption>> SearchPositions(string searchTerm)
+    {
+        try
+        {
+            await Task.Delay(1); // 模擬異步操作
+            
+            // GenericEditModalComponent 會自動追蹤搜尋關鍵字，我們只需要專注於搜尋邏輯
+            var filteredPositions = availablePositions
+                .Where(p => string.IsNullOrEmpty(searchTerm) || 
+                           p.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .Take(10) // 限制結果數量以提升效能
+                .Select(p => new SelectOption
+                {
+                    Text = p.Name,
+                    Value = p.Id.ToString()
+                })
+                .ToList();
+            
+            return filteredPositions;
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("搜尋職位時發生錯誤");
+            return new List<SelectOption>();
+        }
     }
 }
