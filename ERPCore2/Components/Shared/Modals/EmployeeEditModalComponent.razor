@@ -27,6 +27,9 @@
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
                           AutoCompletePrefillers="@GetAutoCompletePrefillers()"
+                          AutoCompleteCollections="@GetAutoCompleteCollections()"
+                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
+                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadEmployeeData"
                           SaveHandler="@SaveEmployee"
@@ -373,7 +376,6 @@
                     Label = "部門",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請輸入或選擇部門",
-                    SearchFunction = SearchDepartments,
                     MinSearchLength = 0, // 允許空白搜尋以顯示所有選項
                     HelpText = "輸入部門名稱進行搜尋，或直接選擇",
                     ActionButtons = GetDepartmentActionButtons()
@@ -384,7 +386,6 @@
                     Label = "職位",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請輸入或選擇職位",
-                    SearchFunction = SearchPositions,
                     MinSearchLength = 0, // 允許空白搜尋以顯示所有選項
                     HelpText = "輸入職位名稱進行搜尋，或直接選擇",
                     ActionButtons = GetPositionActionButtons()
@@ -461,6 +462,42 @@
                     ["PositionCode"] = searchTerm.ToUpper().Replace(" ", "")
                 }
             }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 資料集合
+    /// </summary>
+    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
+    {
+        return new Dictionary<string, IEnumerable<object>>
+        {
+            { nameof(Employee.DepartmentId), availableDepartments.Cast<object>() },
+            { nameof(Employee.EmployeePositionId), availablePositions.Cast<object>() }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 顯示屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(Employee.DepartmentId), "Name" },
+            { nameof(Employee.EmployeePositionId), "Name" }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 值屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteValueProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(Employee.DepartmentId), "Id" },
+            { nameof(Employee.EmployeePositionId), "Id" }
         };
     }
     
@@ -1020,65 +1057,5 @@
     {
         address.OwnerId = parentId;
         address.OwnerType = AddressOwnerTypes.Employee;
-    }
-
-    /// <summary>
-    /// 搜尋部門選項 - 簡化版本（搜尋關鍵字追蹤已整合到 GenericEditModalComponent）
-    /// </summary>
-    private async Task<List<SelectOption>> SearchDepartments(string searchTerm)
-    {
-        try
-        {
-            await Task.Delay(1); // 模擬異步操作
-            
-            // GenericEditModalComponent 會自動追蹤搜尋關鍵字，我們只需要專注於搜尋邏輯
-            var filteredDepartments = availableDepartments
-                .Where(d => string.IsNullOrEmpty(searchTerm) || 
-                           d.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
-                .Take(10) // 限制結果數量以提升效能
-                .Select(d => new SelectOption
-                {
-                    Text = d.Name,
-                    Value = d.Id.ToString()
-                })
-                .ToList();
-            
-            return filteredDepartments;
-        }
-        catch (Exception)
-        {
-            _ = NotificationService.ShowErrorAsync("搜尋部門時發生錯誤");
-            return new List<SelectOption>();
-        }
-    }
-
-    /// <summary>
-    /// 搜尋職位選項 - 簡化版本（搜尋關鍵字追蹤已整合到 GenericEditModalComponent）
-    /// </summary>
-    private async Task<List<SelectOption>> SearchPositions(string searchTerm)
-    {
-        try
-        {
-            await Task.Delay(1); // 模擬異步操作
-            
-            // GenericEditModalComponent 會自動追蹤搜尋關鍵字，我們只需要專注於搜尋邏輯
-            var filteredPositions = availablePositions
-                .Where(p => string.IsNullOrEmpty(searchTerm) || 
-                           p.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
-                .Take(10) // 限制結果數量以提升效能
-                .Select(p => new SelectOption
-                {
-                    Text = p.Name,
-                    Value = p.Id.ToString()
-                })
-                .ToList();
-            
-            return filteredPositions;
-        }
-        catch (Exception)
-        {
-            _ = NotificationService.ShowErrorAsync("搜尋職位時發生錯誤");
-            return new List<SelectOption>();
-        }
     }
 }

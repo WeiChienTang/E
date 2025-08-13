@@ -205,6 +205,12 @@
     [Parameter] public Dictionary<string, Func<string, Dictionary<string, object?>>>? AutoCompletePrefillers { get; set; }
     [Parameter] public Dictionary<string, object>? ModalManagers { get; set; }
     
+    // AutoComplete 自動搜尋集合支援
+    [Parameter] public Dictionary<string, IEnumerable<object>>? AutoCompleteCollections { get; set; }
+    [Parameter] public Dictionary<string, string>? AutoCompleteDisplayProperties { get; set; }
+    [Parameter] public Dictionary<string, string>? AutoCompleteValueProperties { get; set; }
+    [Parameter] public Dictionary<string, int>? AutoCompleteMaxResults { get; set; }
+    
     // 自訂內容
     [Parameter] public RenderFragment? CustomFormContent { get; set; }
     [Parameter] public RenderFragment? AdditionalSections { get; set; }
@@ -622,17 +628,26 @@
             };
             
             // 如果是 AutoComplete 欄位，包裝搜尋函式以支援智能預填
-            if (field.FieldType == FormFieldType.AutoComplete && field.SearchFunction != null)
+            if (field.FieldType == FormFieldType.AutoComplete)
             {
-                var originalSearchFunction = field.SearchFunction;
-                processedField.SearchFunction = async (searchTerm) =>
+                if (field.SearchFunction != null)
                 {
-                    // 記錄搜尋關鍵字
-                    _lastSearchTerms[field.PropertyName] = searchTerm ?? string.Empty;
-                    
-                    // 調用原始搜尋函式
-                    return await originalSearchFunction(searchTerm ?? string.Empty);
-                };
+                    // 使用自訂搜尋函式
+                    var originalSearchFunction = field.SearchFunction;
+                    processedField.SearchFunction = async (searchTerm) =>
+                    {
+                        // 記錄搜尋關鍵字
+                        _lastSearchTerms[field.PropertyName] = searchTerm ?? string.Empty;
+                        
+                        // 調用原始搜尋函式
+                        return await originalSearchFunction(searchTerm ?? string.Empty);
+                    };
+                }
+                else if (AutoCompleteCollections?.ContainsKey(field.PropertyName) == true)
+                {
+                    // 使用自動搜尋集合
+                    processedField.SearchFunction = CreateAutoSearchFunction(field.PropertyName);
+                }
                 
                 // 處理智能按鈕
                 if (field.ActionButtons != null && field.ActionButtons.Any())
@@ -712,6 +727,73 @@
         }
         
         return processedButtons;
+    }
+    
+    /// <summary>
+    /// 為指定屬性建立自動搜尋函式
+    /// </summary>
+    private Func<string, Task<List<SelectOption>>> CreateAutoSearchFunction(string propertyName)
+    {
+        return async (searchTerm) =>
+        {
+            try
+            {
+                await Task.Delay(1); // 模擬異步操作
+                
+                // 記錄搜尋關鍵字
+                _lastSearchTerms[propertyName] = searchTerm ?? string.Empty;
+                
+                if (!AutoCompleteCollections!.ContainsKey(propertyName))
+                {
+                    return new List<SelectOption>();
+                }
+                
+                var collection = AutoCompleteCollections[propertyName];
+                var displayProperty = AutoCompleteDisplayProperties?.GetValueOrDefault(propertyName, "Name") ?? "Name";
+                var valueProperty = AutoCompleteValueProperties?.GetValueOrDefault(propertyName, "Id") ?? "Id";
+                var maxResults = AutoCompleteMaxResults?.GetValueOrDefault(propertyName, 10) ?? 10;
+                
+                var filteredResults = collection
+                    .Where(item => 
+                    {
+                        if (string.IsNullOrEmpty(searchTerm))
+                            return true;
+                            
+                        var displayValue = GetPropertyValue(item, displayProperty)?.ToString() ?? string.Empty;
+                        return displayValue.Contains(searchTerm, StringComparison.OrdinalIgnoreCase);
+                    })
+                    .Take(maxResults)
+                    .Select(item => new SelectOption
+                    {
+                        Text = GetPropertyValue(item, displayProperty)?.ToString() ?? string.Empty,
+                        Value = GetPropertyValue(item, valueProperty)?.ToString() ?? string.Empty
+                    })
+                    .ToList();
+                
+                return filteredResults;
+            }
+            catch (Exception ex)
+            {
+                await LogError($"AutoSearch_{propertyName}", ex);
+                return new List<SelectOption>();
+            }
+        };
+    }
+    
+    /// <summary>
+    /// 使用反射取得物件屬性值
+    /// </summary>
+    private object? GetPropertyValue(object obj, string propertyName)
+    {
+        try
+        {
+            var property = obj.GetType().GetProperty(propertyName);
+            return property?.GetValue(obj);
+        }
+        catch
+        {
+            return null;
+        }
     }
     
     // ===== 清理資源 =====
