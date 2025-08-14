@@ -113,6 +113,22 @@
                     }
                 </div>
 
+                @* 元數據區段 - 顯示審計資訊 *@
+                @if (!IsLoading && Entity != null && Entity.Id > 0)
+                {
+                    <div class="modal-metadata border-top bg-light px-3 py-2">
+                        <div class="text-muted small d-flex flex-wrap gap-3">
+                            <span><strong>建立時間：</strong>@Entity.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")</span>
+                            <span><strong>創建者：</strong>@(Entity.CreatedBy ?? "系統")</span>
+                            @if (Entity.UpdatedAt.HasValue)
+                            {
+                                <span><strong>最後更新時間：</strong>@Entity.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</span>
+                                <span><strong>最後修改者：</strong>@(Entity.UpdatedBy ?? "系統")</span>
+                            }
+                        </div>
+                    </div>
+                }
+
                 @* Modal Footer *@
                 <div class="modal-footer">
                     <GenericButtonComponent Text="@CancelButtonText" 
