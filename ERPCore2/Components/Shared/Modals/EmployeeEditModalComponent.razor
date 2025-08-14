@@ -665,10 +665,8 @@
             
             // 載入聯絡資訊和地址資訊
             employeeContacts = await ContactService.GetByOwnerAsync(ContactOwnerTypes.Employee, EmployeeId.Value);
-            Console.WriteLine($"[DEBUG] 載入員工 {EmployeeId.Value} 的聯絡資料: {employeeContacts.Count} 筆");
             
             employeeAddresses = await AddressService.GetEmployeeAddressesAsync(EmployeeId.Value);
-            Console.WriteLine($"[DEBUG] 載入員工 {EmployeeId.Value} 的地址資料: {employeeAddresses.Count} 筆");
             
             // 根據員工的系統使用者狀態重新初始化表單欄位
             await InitializeFormFieldsAsync(employee.IsSystemUser);
@@ -870,7 +868,6 @@
 
             // 重新加載聯絡資料以更新UI顯示
             employeeContacts = await ContactService.GetByOwnerAsync(ContactOwnerTypes.Employee, employeeId);
-            Console.WriteLine($"[DEBUG] 重新載入員工 {employeeId} 的聯絡資料: {employeeContacts.Count} 筆");
 
             // 更新地址資訊 - 只更新或新增，不刪除
             foreach (var address in employeeAddresses)
@@ -892,7 +889,6 @@
 
             // 重新加載地址資料以更新UI顯示
             employeeAddresses = await AddressService.GetEmployeeAddressesAsync(employeeId);
-            Console.WriteLine($"[DEBUG] 重新載入員工 {employeeId} 的地址資料: {employeeAddresses.Count} 筆");
 
             StateHasChanged(); // 通知UI更新
         }

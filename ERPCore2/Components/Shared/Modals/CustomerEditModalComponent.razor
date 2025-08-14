@@ -347,10 +347,10 @@
 
             StateHasChanged(); // 通知UI更新
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // 記錄錯誤但不中斷流程，因為主要實體已經儲存成功
-            Console.WriteLine($"儲存子集合時發生錯誤: {ex.Message}");
+            // 可以考慮使用 Logger 記錄錯誤
         }
     }
 }

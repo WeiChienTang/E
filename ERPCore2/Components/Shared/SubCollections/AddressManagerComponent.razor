@@ -10,7 +10,7 @@
                 <th>地址資訊</th>
                 @if (!IsReadOnly)
                 {
-                    <th width="120">操作</th>
+                    <th width="60">操作</th>
                 }
             </tr>
         </thead>
@@ -19,7 +19,7 @@
                         {
                             var index = i;
                             var item = Items[index];
-                            <tr>
+                            <tr @onclick="() => { if (!IsReadOnly) ShowEditModal(index); }" style="@(IsReadOnly ? "cursor: default;" : "cursor: pointer;")" title="@(IsReadOnly ? "" : "點擊編輯")">
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <i class="bi bi-geo-alt me-2"></i>
@@ -30,15 +30,10 @@
                                 </td>
                                 @if (!IsReadOnly)
                                 {
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <GenericButtonComponent Variant="ButtonVariant.OutlineWarning" Size="ButtonSize.Small"
-                                                                   IconClass="bi bi-pencil" OnClick="() => ShowEditModal(index)" 
-                                                                   Title="編輯" />
-                                            <GenericButtonComponent Variant="ButtonVariant.OutlineDanger" Size="ButtonSize.Small"
-                                                                   IconClass="bi bi-trash" OnClick="() => RemoveItemAsync(index)" 
-                                                                   Title="移除" />
-                                        </div>
+                                    <td @onclick:stopPropagation="true">
+                                        <GenericButtonComponent Variant="ButtonVariant.OutlineDanger" Size="ButtonSize.Small"
+                                                               IconClass="bi bi-trash" OnClick="() => RemoveItemAsync(index)" 
+                                                               Title="移除" />
                                     </td>
                                 }
                             </tr>
@@ -102,8 +97,30 @@
                             <label class="form-label">詳細地址 <span class="text-danger">*</span></label>
                             <textarea class="form-control" rows="3" @bind="currentAddress" placeholder="請輸入詳細地址"></textarea>
                         </div>
+                        <div class="col-12">
+                            <label class="form-label">備註</label>
+                            <textarea class="form-control" rows="2" @bind="currentRemarks" placeholder="請輸入備註"></textarea>
+                        </div>
                     </div>
                 </div>
+
+                @* 元數據區段 - 顯示審計資訊 *@
+                @if (showEditModal && editingIndex >= 0 && editingIndex < Items.Count && Items[editingIndex].Id > 0)
+                {
+                    var editingItem = Items[editingIndex];
+                    <div class="modal-metadata border-top bg-light px-3 py-2">
+                        <div class="text-muted small d-flex flex-wrap gap-3">
+                            <span><strong>建立時間：</strong>@editingItem.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")</span>
+                            <span><strong>創建者：</strong>@(editingItem.CreatedBy ?? "系統")</span>
+                            @if (editingItem.UpdatedAt.HasValue)
+                            {
+                                <span><strong>最後更新時間：</strong>@editingItem.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</span>
+                                <span><strong>最後修改者：</strong>@(editingItem.UpdatedBy ?? "系統")</span>
+                            }
+                        </div>
+                    </div>
+                }
+
                 <div class="modal-footer">
                     <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="取消" OnClick="CloseModal" />
                     <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@(showEditModal ? "更新" : "新增")" 
@@ -136,6 +153,7 @@
     // ===== 委派參數 - Getter =====
     [Parameter] public Func<TAddressEntity, int?> GetTypeId { get; set; } = item => null;
     [Parameter] public Func<TAddressEntity, string?> GetAddress { get; set; } = item => null;
+    [Parameter] public Func<TAddressEntity, string?> GetRemarks { get; set; } = item => null;
     [Parameter] public Func<ERPCore2.Data.BaseEntity, int> GetOptionId { get; set; } = option => option.Id;
     [Parameter] public Func<ERPCore2.Data.BaseEntity, string> GetOptionDisplayText { get; set; } = option => 
     {
@@ -152,6 +170,7 @@
     // ===== 委派參數 - Setter =====
     [Parameter] public Action<TAddressEntity, int?> SetTypeId { get; set; } = (item, typeId) => { };
     [Parameter] public Action<TAddressEntity, string?> SetAddress { get; set; } = (item, value) => { };
+    [Parameter] public Action<TAddressEntity, string?> SetRemarks { get; set; } = (item, value) => { };
     [Parameter] public Action<TAddressEntity, int> SetParentId { get; set; } = (item, parentId) => { };
     
     // ===== 事件參數 =====
@@ -165,10 +184,10 @@
     private int editingIndex = -1;
     private string currentAddressTypeId = string.Empty;
     private string currentAddress = string.Empty;
+    private string currentRemarks = string.Empty;
     
     protected override void OnParametersSet()
     {
-        Console.WriteLine($"[DEBUG] AddressManagerComponent - ParentEntityId: {ParentEntityId}, Items.Count: {Items.Count}");
         base.OnParametersSet();
     }
     
@@ -226,6 +245,7 @@
         var typeId = GetTypeId(item);
         currentAddressTypeId = typeId?.ToString() ?? string.Empty;
         currentAddress = GetAddress(item) ?? string.Empty;
+        currentRemarks = GetRemarks(item) ?? string.Empty;
         
         showEditModal = true;
     }
@@ -242,6 +262,7 @@
     {
         currentAddressTypeId = string.Empty;
         currentAddress = string.Empty;
+        currentRemarks = string.Empty;
     }
     
     public async Task AddItemAsync()
@@ -272,6 +293,7 @@
         SetParentId(newItem, ParentEntityId);
         SetTypeId(newItem, typeId);
         SetAddress(newItem, currentAddress);
+        SetRemarks(newItem, currentRemarks);
         
         Items.Add(newItem);
         
@@ -311,6 +333,7 @@
         
         SetTypeId(item, typeId);
         SetAddress(item, currentAddress);
+        SetRemarks(item, currentRemarks);
         
         await ItemsChanged.InvokeAsync(Items);
         

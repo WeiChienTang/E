@@ -422,36 +422,48 @@
     {
         try
         {
-            // 更新聯絡資訊
-            // TODO: 重新實作聯絡方式保存邏輯使用 ContactService
-            // 暫時註解掉舊的聯絡方式保存邏輯
-            /*
-            if (supplierContacts.Any())
+            // 更新聯絡資訊 - 只更新或新增，不刪除
+            foreach (var contact in supplierContacts)
             {
-                // 聯絡方式的保存邏輯
-            }
-            */
-
-            // 更新地址資訊
-            if (supplierAddresses.Any())
-            {
-                // 地址的保存邏輯
-                foreach (var address in supplierAddresses)
+                contact.OwnerType = ContactOwnerTypes.Supplier;
+                contact.OwnerId = supplierId;
+                
+                if (contact.Id == 0)
                 {
-                    SetSupplierIdForAddress(address, supplierId);
-                    
-                    if (address.Id == 0)
-                    {
-                        // 新增地址
-                        await AddressService.CreateAddressAsync(AddressOwnerTypes.Supplier, supplierId, address);
-                    }
-                    else
-                    {
-                        // 更新地址
-                        await AddressService.UpdateAddressAsync(address);
-                    }
+                    // 新記錄
+                    await ContactService.CreateAsync(contact);
+                }
+                else
+                {
+                    // 更新現有記錄
+                    await ContactService.UpdateAsync(contact);
                 }
             }
+
+            // 重新加載聯絡資料以更新UI顯示
+            supplierContacts = await ContactService.GetByOwnerAsync(ContactOwnerTypes.Supplier, supplierId);
+
+            // 更新地址資訊 - 只更新或新增，不刪除
+            foreach (var address in supplierAddresses)
+            {
+                SetSupplierIdForAddress(address, supplierId);
+                
+                if (address.Id == 0)
+                {
+                    // 新增地址
+                    await AddressService.CreateAddressAsync(AddressOwnerTypes.Supplier, supplierId, address);
+                }
+                else
+                {
+                    // 更新地址
+                    await AddressService.UpdateAddressAsync(address);
+                }
+            }
+
+            // 重新加載地址資料以更新UI顯示
+            supplierAddresses = await AddressService.GetSupplierAddressesAsync(supplierId);
+
+            StateHasChanged(); // 通知UI更新
         }
         catch (Exception)
         {
@@ -527,9 +539,16 @@
                                        TParentEntity="Supplier"
                                        Items="@supplierContacts"
                                        Options="@contactTypeOptions"
-                                       ParentEntityId="@(SupplierId ?? 0)"
+                                       ParentEntityId="@(SupplierId ?? editModalComponent?.Entity?.Id ?? 0)"
+                                       Title="聯絡方式"
+                                       ItemDisplayName="聯絡方式"
+                                       TypeDisplayName="聯絡類型"
+                                       ValueDisplayName="聯絡內容"
+                                       ValuePlaceholder="請輸入聯絡內容"
                                        GetTypeId="@(c => c.ContactTypeId)"
                                        GetContactValue="@(c => c.ContactValue)"
+                                       GetOptionId="@(option => option.Id)"
+                                       GetOptionDisplayText="@(option => ((ContactType)option).TypeName)"
                                        SetTypeId="@((c, typeId) => c.ContactTypeId = typeId)"
                                        SetContactValue="@((c, value) => c.ContactValue = value)"
                                        SetParentId="@((c, parentId) => { c.OwnerType = ContactOwnerTypes.Supplier; c.OwnerId = parentId; })"
@@ -540,9 +559,14 @@
                                        TParentEntity="Supplier"
                                        Items="@supplierAddresses"
                                        Options="@addressTypeOptions"
-                                       ParentEntityId="@(SupplierId ?? 0)"
+                                       ParentEntityId="@(SupplierId ?? editModalComponent?.Entity?.Id ?? 0)"
+                                       Title="地址資訊"
+                                       ItemDisplayName="地址"
+                                       TypeDisplayName="地址類型"
                                        GetTypeId="@(a => a.AddressTypeId)"
                                        GetAddress="@(a => a.AddressLine)"
+                                       GetOptionId="@(option => option.Id)"
+                                       GetOptionDisplayText="@(option => ((AddressType)option).TypeName)"
                                        SetTypeId="@((a, typeId) => a.AddressTypeId = typeId)"
                                        SetAddress="@((a, address) => a.AddressLine = address)"
                                        SetParentId="@((a, parentId) => SetSupplierIdForAddress(a, parentId))"
