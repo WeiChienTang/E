@@ -17,7 +17,7 @@
 }
 
 .nav-dropdown-item:hover {
-    background-color: var(--table-hover-bg);
+    background-color: var(--table-hover-bg-striped);
     color: var(--table-hover-text);
     text-decoration: none;
     transform: translateX(5px);

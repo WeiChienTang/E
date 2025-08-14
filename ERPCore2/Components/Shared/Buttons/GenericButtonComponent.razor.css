@@ -19,11 +19,10 @@
 }
 
 .btn-primary:hover {
-    background-color: var(--primary-blue-hover);
-    border-color: var(--primary-blue-hover);
-    color: var(--primary-white);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    background-color: var(--table-hover-bg-striped);
+    border-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
 .btn-primary:focus {
@@ -46,11 +45,10 @@
 }
 
 .btn-secondary:hover {
-    background-color: var(--text-secondary-hover);
-    border-color: var(--text-secondary-hover);
-    color: var(--primary-white);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    background-color: var(--table-hover-bg-striped);
+    border-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
 /* 成功按鈕樣式 */
@@ -61,11 +59,10 @@
 }
 
 .btn-success:hover {
-    background-color: var(--success-color-hover);
-    border-color: var(--success-color-hover);
-    color: var(--primary-white);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    background-color: var(--table-hover-bg-striped);
+    border-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
 /* 警告按鈕樣式 */
@@ -76,11 +73,10 @@
 }
 
 .btn-warning:hover {
-    background-color: var(--warning-color-hover);
-    border-color: var(--warning-color-hover);
-    color: var(--primary-white);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    background-color: var(--table-hover-bg-striped);
+    border-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
 /* 危險按鈕樣式 */
@@ -91,11 +87,10 @@
 }
 
 .btn-danger:hover {
-    background-color: var(--danger-color-hover);
-    border-color: var(--danger-color-hover);
-    color: var(--primary-white);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    background-color: var(--table-hover-bg-striped);
+    border-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
 /* 資訊按鈕樣式 */
@@ -106,11 +101,10 @@
 }
 
 .btn-info:hover {
-    background-color: var(--info-color-hover);
-    border-color: var(--info-color-hover);
-    color: var(--primary-white);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    background-color: var(--table-hover-bg-striped);
+    border-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
 /* 輪廓按鈕樣式 */
@@ -121,11 +115,10 @@
 }
 
 .btn-outline-primary:hover {
-    background-color: var(--primary-blue);
-    border-color: var(--primary-blue);
-    color: var(--primary-white);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    background-color: var(--table-hover-bg-striped);
+    border-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
 .btn-outline-secondary {
@@ -135,11 +128,10 @@
 }
 
 .btn-outline-secondary:hover {
-    background-color: var(--text-secondary);
-    border-color: var(--text-secondary);
-    color: var(--primary-white);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    background-color: var(--table-hover-bg-striped);
+    border-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
 .btn-outline-success {
@@ -149,11 +141,10 @@
 }
 
 .btn-outline-success:hover {
-    background-color: var(--success-color);
-    border-color: var(--success-color);
-    color: var(--primary-white);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    background-color: var(--table-hover-bg-striped);
+    border-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
 .btn-outline-warning {
@@ -163,11 +154,10 @@
 }
 
 .btn-outline-warning:hover {
-    background-color: var(--warning-color);
-    border-color: var(--warning-color);
-    color: var(--primary-white);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    background-color: var(--table-hover-bg-striped);
+    border-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
 .btn-outline-danger {
@@ -177,11 +167,10 @@
 }
 
 .btn-outline-danger:hover {
-    background-color: var(--danger-color);
-    border-color: var(--danger-color);
-    color: var(--primary-white);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    background-color: var(--table-hover-bg-striped);
+    border-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
 .btn-outline-info {
@@ -191,11 +180,10 @@
 }
 
 .btn-outline-info:hover {
-    background-color: var(--info-color);
-    border-color: var(--info-color);
-    color: var(--primary-white);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    background-color: var(--table-hover-bg-striped);
+    border-color: var(--table-hover-bg-striped);
+    color: var(--table-hover-text);
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
 /* 按鈕尺寸 */

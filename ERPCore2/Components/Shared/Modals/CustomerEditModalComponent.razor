@@ -302,16 +302,6 @@
             },
             new()
             {
-                PropertyName = nameof(Customer.CustomerTypeId),
-                Label = "客戶類型",
-                FieldType = FormFieldType.AutoComplete,
-                Placeholder = "請輸入或選擇客戶類型",
-                MinSearchLength = 0, // 允許空白搜尋以顯示所有選項
-                HelpText = "輸入客戶類型名稱進行搜尋，或直接選擇",
-                ActionButtons = GetCustomerTypeActionButtons()
-            },
-            new()
-            {
                 PropertyName = nameof(Customer.TaxNumber),
                 Label = "統一編號",
                 FieldType = FormFieldType.Text,
@@ -319,6 +309,16 @@
                 IsRequired = false,
                 MaxLength = 8,
                 HelpText = "公司統一編號（8位數字）"
+            },
+            new()
+            {
+                PropertyName = nameof(Customer.CustomerTypeId),
+                Label = "客戶類型",
+                FieldType = FormFieldType.AutoComplete,
+                Placeholder = "請輸入或選擇客戶類型",
+                MinSearchLength = 0, // 允許空白搜尋以顯示所有選項
+                HelpText = "輸入客戶類型名稱進行搜尋，或直接選擇",
+                ActionButtons = GetCustomerTypeActionButtons()
             },
             new()
             {
@@ -339,8 +339,8 @@
             { nameof(Customer.CustomerCode), "基本資訊" },
             { nameof(Customer.CompanyName), "基本資訊" },
             { nameof(Customer.ContactPerson), "基本資訊" },
-            { nameof(Customer.CustomerTypeId), "基本資訊" },
             { nameof(Customer.TaxNumber), "基本資訊" },
+            { nameof(Customer.CustomerTypeId), "基本資訊" },            
             { nameof(Customer.Remarks), "其他資訊" }
         };
         }
