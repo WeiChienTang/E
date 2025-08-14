@@ -267,13 +267,6 @@
                 query = query.Where(c => c.CustomerTypeId == customerTypeId);
             }
 
-            // 狀態篩選
-            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
-            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
-            {
-                query = query.Where(c => c.Status == status);
-            }
-
             // 統一編號篩選
             var taxNumberFilter = searchModel.GetFilterValue("TaxNumber")?.ToString();
             if (!string.IsNullOrWhiteSpace(taxNumberFilter))
@@ -318,20 +311,12 @@
                 Value = ct.Id.ToString()
             }).ToList();
 
-            // 準備狀態選項
-            var statusOptions = new List<SelectOption>
-            {
-                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-            };
-
             // 重新建立篩選定義，包含載入的選項
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("CustomerCode", "客戶代碼", "輸入客戶代碼搜尋")
                 .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
                 .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
                 .AddSelect("CustomerTypeId", "客戶類型", customerTypeOptions)
-                .AddSelect("Status", "狀態", statusOptions)
                 .AddText("TaxNumber", "統一編號", "輸入統一編號搜尋")
                 .Build();
 

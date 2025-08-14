@@ -32,22 +32,6 @@
         <!-- 首頁 -->
         <NavMenuItem Text="首頁" IconClass="bi bi-house-door-fill-nav-menu" Url="/" />    
 
-        <!-- 客戶管理下拉選單 -->
-        <NavMenuItem Text="客戶管理" IconClass="bi bi-people-fill" MenuKey="customer_management">
-            <DropdownItems>
-                <NavDropdownItem Text="客戶維護" Url="/customers" RequiredPermission="Customer.Read" ParentMenuKey="customer_management"/>
-                <NavDropdownItem Text="客戶類型" Url="/customer-types" RequiredPermission="CustomerType.Read" ParentMenuKey="customer_management"/>               
-            </DropdownItems>
-        </NavMenuItem>
-
-          <!-- 廠商管理下拉選單 -->
-        <NavMenuItem Text="廠商管理" IconClass="bi bi-building-gear" MenuKey="supplier_management">
-            <DropdownItems>
-                <NavDropdownItem Text="廠商維護" Url="/suppliers" RequiredPermission="Supplier.Read" ParentMenuKey="supplier_management" IconClass="bi bi-caret-right-fill" />
-                <NavDropdownItem Text="廠商類型" Url="/supplier-types" RequiredPermission="SupplierType.Read" ParentMenuKey="supplier_management"/>
-            </DropdownItems>
-        </NavMenuItem>
-
         <!-- 員工管理下拉選單 -->
         <NavMenuItem Text="員工管理" IconClass="bi bi-person-badge-fill" MenuKey="employee_management">
             <DropdownItems>
@@ -56,9 +40,23 @@
                 <NavDropdownItem Text="職位" Url="/employee-positions" RequiredPermission="EmployeePosition.Read" ParentMenuKey="employee_management"/>   
                 <NavDropdownItem Text="角色權限" Url="/employees/role-permission-management" RequiredPermission="Role.Read" ParentMenuKey="employee_management" IconClass="bi bi-caret-right-fill"/>
                 <NavDropdownItem Text="角色" Url="/roles" RequiredPermission="Role.Read" ParentMenuKey="employee_management"/>       
-                <NavDropdownItem Text="權限" Url="/permissions" RequiredPermission="Permission.Read" ParentMenuKey="employee_management"/>
-     
+                <NavDropdownItem Text="權限" Url="/permissions" RequiredPermission="Permission.Read" ParentMenuKey="employee_management"/>     
+            </DropdownItems>
+        </NavMenuItem>
 
+        <!-- 廠商管理下拉選單 -->
+        <NavMenuItem Text="廠商管理" IconClass="bi bi-building-gear" MenuKey="supplier_management">
+            <DropdownItems>
+                <NavDropdownItem Text="廠商維護" Url="/suppliers" RequiredPermission="Supplier.Read" ParentMenuKey="supplier_management" IconClass="bi bi-caret-right-fill" />
+                <NavDropdownItem Text="廠商類型" Url="/supplier-types" RequiredPermission="SupplierType.Read" ParentMenuKey="supplier_management"/>
+            </DropdownItems>
+        </NavMenuItem>
+
+        <!-- 客戶管理下拉選單 -->
+        <NavMenuItem Text="客戶管理" IconClass="bi bi-people-fill" MenuKey="customer_management">
+            <DropdownItems>
+                <NavDropdownItem Text="客戶維護" Url="/customers" RequiredPermission="Customer.Read" ParentMenuKey="customer_management" IconClass="bi bi-caret-right-fill"/>
+                <NavDropdownItem Text="客戶類型" Url="/customer-types" RequiredPermission="CustomerType.Read" ParentMenuKey="customer_management"/>               
             </DropdownItems>
         </NavMenuItem>
 

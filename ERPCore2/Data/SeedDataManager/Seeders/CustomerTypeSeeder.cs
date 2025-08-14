@@ -22,13 +22,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             var customerTypes = new[]
             {
                 new CustomerType { 
-                    TypeName = "VIP客戶", 
-                    Description = "重要客戶",
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System",
-                    Status = EntityStatus.Active
-                },
-                new CustomerType { 
                     TypeName = "一般客戶", 
                     Description = "一般合作客戶",
                     CreatedAt = DateTime.Now,

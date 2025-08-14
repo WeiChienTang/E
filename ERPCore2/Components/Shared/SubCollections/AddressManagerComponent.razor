@@ -56,15 +56,6 @@
                 </table>
             </div>
 
-@* 如果沒有任何資料時的顯示 *@
-@if (!Items.Any())
-{
-    <div class="text-center py-4 text-muted">
-        <i class="bi @EmptyIcon fs-3 mb-2 d-block"></i>
-        <p class="mb-0">@EmptyMessage</p>
-    </div>
-}
-
 @* 新增/編輯地址 Modal *@
 @if (showAddModal || showEditModal)
 {
