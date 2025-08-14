@@ -64,7 +64,10 @@ namespace ERPCore2.Data
                 new PermissionSeeder(),
                 new RoleSeeder(),
                 new RolePermissionSeeder(),
-                new BasicDataSeeder(),          // 必須在 CustomerSeeder 和 SupplierSeeder 之前
+                new ContactTypeSeeder(),        // 聯絡類型
+                new AddressTypeSeeder(),        // 地址類型  
+                new CustomerTypeSeeder(),       // 客戶類型
+                new SupplierTypeSeeder(),       // 廠商類型
                 new EmployeeSeeder(),
                 new EmployeePositionSeeder(),
                 new DepartmentSeeder(),
@@ -75,14 +78,15 @@ namespace ERPCore2.Data
                 new UnitConversionSeeder(),     // 單位轉換關係 - 必須在 UnitSeeder 之後
                 new SizeSeeder(),
                 new WarehouseSeeder(),
-                new CustomerSeeder(),           // 依賴 CustomerTypes (在 BasicDataSeeder 中)
-                new SupplierSeeder(),           // 依賴 SupplierTypes (在 BasicDataSeeder 中)
+                new CustomerSeeder(),           // 依賴 CustomerTypes
+                new SupplierSeeder(),           // 依賴 SupplierTypes
                 new ProductSeeder(),            // 依賴 ProductCategory, Unit, Supplier
                 new InventorySeeder(),
                 new InventoryStockSeeder(), 
                 new SalesSeeder(),              // 依賴 Customer, Employee, Product (必須在這些之後)
                 new PurchaseReturnSeeder(),     // 依賴 Supplier, Product, Warehouse (必須在這些之後)
                 new WeatherSeeder(),
+                // new BasicDataSeeder(),       // 已廢棄，功能已分拆到專屬 Seeder
             };
         }
     }

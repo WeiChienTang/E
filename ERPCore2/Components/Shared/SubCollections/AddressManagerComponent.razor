@@ -1,7 +1,9 @@
 @typeparam TAddressEntity where TAddressEntity : ERPCore2.Data.BaseEntity, new()
 @typeparam TParentEntity where TParentEntity : ERPCore2.Data.BaseEntity
 @using ERPCore2.Services
+@using Microsoft.JSInterop
 @inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
 
 <div class="table-responsive">
     <table class="table table-sm table-hover">
@@ -10,7 +12,7 @@
                 <th>地址資訊</th>
                 @if (!IsReadOnly)
                 {
-                    <th width="60">操作</th>
+                    <th width="100">操作</th>
                 }
             </tr>
         </thead>
@@ -31,9 +33,14 @@
                                 @if (!IsReadOnly)
                                 {
                                     <td @onclick:stopPropagation="true">
-                                        <GenericButtonComponent Variant="ButtonVariant.OutlineDanger" Size="ButtonSize.Small"
-                                                               IconClass="bi bi-trash" OnClick="() => RemoveItemAsync(index)" 
-                                                               Title="移除" />
+                                        <div class="btn-group btn-group-sm">
+                                            <GenericButtonComponent Variant="ButtonVariant.OutlineInfo" Size="ButtonSize.Small"
+                                                                   IconClass="bi bi-geo-alt" OnClick="() => OpenGoogleMaps(item)" 
+                                                                   Title="在 Google 地圖中查看" />
+                                            <GenericButtonComponent Variant="ButtonVariant.OutlineDanger" Size="ButtonSize.Small"
+                                                                   IconClass="bi bi-trash" OnClick="() => RemoveItemAsync(index)" 
+                                                                   Title="移除" />
+                                        </div>
                                     </td>
                                 }
                             </tr>
@@ -95,7 +102,7 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label">詳細地址 <span class="text-danger">*</span></label>
-                            <textarea class="form-control" rows="3" @bind="currentAddress" placeholder="請輸入詳細地址"></textarea>
+                            <textarea class="form-control" rows="2" @bind="currentAddress" placeholder="請輸入詳細地址"></textarea>
                         </div>
                         <div class="col-12">
                             <label class="form-label">備註</label>
@@ -352,6 +359,31 @@
         await ItemRemoved.InvokeAsync(removedItem);
         await ItemsChanged.InvokeAsync(Items);
         StateHasChanged();
+    }
+    
+    private async Task OpenGoogleMaps(TAddressEntity item)
+    {
+        var address = GetAddress(item);
+        
+        if (string.IsNullOrWhiteSpace(address))
+        {
+            await NotificationService.ShowWarningAsync("地址資訊為空，無法查詢");
+            return;
+        }
+        
+        try
+        {
+            // 構建 Google Maps 查詢 URL
+            var encodedAddress = Uri.EscapeDataString(address);
+            var googleMapsUrl = $"https://www.google.com/maps/search/?api=1&query={encodedAddress}";
+            
+            // 使用 JavaScript 開啟新視窗
+            await JSRuntime.InvokeVoidAsync("open", googleMapsUrl, "_blank");
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"開啟 Google 地圖時發生錯誤：{ex.Message}");
+        }
     }
     
     public Task<bool> ValidateAsync()
