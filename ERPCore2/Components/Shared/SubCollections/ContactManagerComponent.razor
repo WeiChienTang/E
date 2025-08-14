@@ -1,6 +1,5 @@
 @typeparam TContactEntity where TContactEntity : ERPCore2.Data.BaseEntity, new()
 @typeparam TParentEntity where TParentEntity : ERPCore2.Data.BaseEntity
-@using ERPCore2.Data
 @using ERPCore2.Data.Enums
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Components.Shared.Buttons
@@ -30,10 +29,6 @@
                                     <div class="d-flex align-items-center">
                                         <i class="bi bi-@Icon me-2"></i>
                                         <div>
-                                            @if (GetIsPrimary(item))
-                                            {
-                                                <span class="badge bg-primary me-2">主要</span>
-                                            }
                                             <span>@GetContactDisplayText(item)</span>
                                         </div>
                                     </div>
@@ -42,12 +37,6 @@
                                 {
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            @if (!GetIsPrimary(item))
-                                            {
-                                                <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" Size="ButtonSize.Small"
-                                                                       IconClass="bi bi-star" OnClick="() => SetPrimaryAsync(index)" 
-                                                                       Title="設為主要" />
-                                            }
                                             <GenericButtonComponent Variant="ButtonVariant.OutlineWarning" Size="ButtonSize.Small"
                                                                    IconClass="bi bi-pencil" OnClick="() => ShowEditModal(index)" 
                                                                    Title="編輯" />
@@ -126,7 +115,7 @@
                     <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="取消" OnClick="CloseModal" />
                     <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@(showEditModal ? "更新" : "新增")" 
                                            OnClick="@(showEditModal ? () => UpdateItemAsync() : () => AddItemAsync())" 
-                                           IsDisabled="@(!Options.Any() || string.IsNullOrEmpty(currentContactValue))" />
+                                           IsDisabled="@(!Options.Any())" />
                 </div>
             </div>
         </div>
@@ -152,7 +141,6 @@
     [Parameter] public string EmptyMessage { get; set; } = "尚無資料";
     
     // ===== 委派參數 - Getter =====
-    [Parameter] public Func<TContactEntity, bool> GetIsPrimary { get; set; } = item => false;
     [Parameter] public Func<TContactEntity, int?> GetTypeId { get; set; } = item => null;
     [Parameter] public Func<TContactEntity, string> GetContactValue { get; set; } = item => string.Empty;
     [Parameter] public Func<ERPCore2.Data.BaseEntity, int> GetOptionId { get; set; } = option => option.Id;
@@ -169,7 +157,6 @@
     };
     
     // ===== 委派參數 - Setter =====
-    [Parameter] public Action<TContactEntity, bool> SetIsPrimary { get; set; } = (item, isPrimary) => { };
     [Parameter] public Action<TContactEntity, int?> SetTypeId { get; set; } = (item, typeId) => { };
     [Parameter] public Action<TContactEntity, string> SetContactValue { get; set; } = (item, value) => { };
     [Parameter] public Action<TContactEntity, int> SetParentId { get; set; } = (item, parentId) => { };
@@ -186,7 +173,12 @@
     private int editingIndex = -1;
     private string currentContactTypeId = string.Empty;
     private string currentContactValue = string.Empty;
-    private bool currentIsPrimary = false;
+    
+    protected override void OnParametersSet()
+    {
+        Console.WriteLine($"[DEBUG] ContactManagerComponent - ParentEntityId: {ParentEntityId}, Items.Count: {Items.Count}");
+        base.OnParametersSet();
+    }
     
     // ===== 內部方法 =====
 
@@ -217,7 +209,6 @@
         if (IsReadOnly) return;
         
         ClearModalData();
-        currentIsPrimary = Items.Count == 0; // 第一個自動設為主要
         
         // 設定預設聯絡類型：優先選擇電話，否則選第一個
         if (Options.Any())
@@ -250,7 +241,6 @@
         var typeId = GetTypeId(item);
         currentContactTypeId = typeId?.ToString() ?? string.Empty;
         currentContactValue = GetContactValue(item) ?? string.Empty;
-        currentIsPrimary = GetIsPrimary(item);
         
         showEditModal = true;
     }
@@ -267,12 +257,18 @@
     {
         currentContactTypeId = string.Empty;
         currentContactValue = string.Empty;
-        currentIsPrimary = false;
     }
     
     public async Task AddItemAsync()
     {
-        if (IsReadOnly || !Options.Any() || string.IsNullOrEmpty(currentContactValue)) return;
+        if (IsReadOnly || !Options.Any()) return;
+        
+        // 檢查必要欄位
+        if (string.IsNullOrWhiteSpace(currentContactValue))
+        {
+            await NotificationService.ShowErrorAsync($"{ValueDisplayName}為必填欄位");
+            return;
+        }
         
         // 如果沒有設定類型ID，使用第一個選項
         if (string.IsNullOrEmpty(currentContactTypeId) && Options.Any())
@@ -280,22 +276,16 @@
             currentContactTypeId = GetOptionId(Options.First()).ToString();
         }
         
-        if (!int.TryParse(currentContactTypeId, out var typeId)) return;
+        if (!int.TryParse(currentContactTypeId, out var typeId)) 
+        {
+            await NotificationService.ShowErrorAsync($"{TypeDisplayName}選擇錯誤");
+            return;
+        }
         
         var newItem = new TContactEntity();
         SetParentId(newItem, ParentEntityId);
         SetTypeId(newItem, typeId);
         SetContactValue(newItem, currentContactValue);
-        SetIsPrimary(newItem, currentIsPrimary);
-        
-        // 如果設為主要，先將其他項目設為非主要
-        if (currentIsPrimary)
-        {
-            foreach (var item in Items)
-            {
-                SetIsPrimary(item, false);
-            }
-        }
         
         Items.Add(newItem);
         
@@ -309,7 +299,14 @@
     public async Task UpdateItemAsync()
     {
         if (IsReadOnly || editingIndex < 0 || editingIndex >= Items.Count) return;
-        if (!Options.Any() || string.IsNullOrEmpty(currentContactValue)) return;
+        if (!Options.Any()) return;
+        
+        // 檢查必要欄位
+        if (string.IsNullOrWhiteSpace(currentContactValue))
+        {
+            await NotificationService.ShowErrorAsync($"{ValueDisplayName}為必填欄位");
+            return;
+        }
         
         // 如果沒有設定類型ID，使用第一個選項
         if (string.IsNullOrEmpty(currentContactTypeId) && Options.Any())
@@ -317,26 +314,16 @@
             currentContactTypeId = GetOptionId(Options.First()).ToString();
         }
         
-        if (!int.TryParse(currentContactTypeId, out var typeId)) return;
+        if (!int.TryParse(currentContactTypeId, out var typeId))
+        {
+            await NotificationService.ShowErrorAsync($"{TypeDisplayName}選擇錯誤");
+            return;
+        }
         
         var item = Items[editingIndex];
-        var wasPrimary = GetIsPrimary(item);
         
         SetTypeId(item, typeId);
         SetContactValue(item, currentContactValue);
-        SetIsPrimary(item, currentIsPrimary);
-        
-        // 如果從非主要改為主要，先將其他項目設為非主要
-        if (!wasPrimary && currentIsPrimary)
-        {
-            for (int i = 0; i < Items.Count; i++)
-            {
-                if (i != editingIndex)
-                {
-                    SetIsPrimary(Items[i], false);
-                }
-            }
-        }
         
         await ItemsChanged.InvokeAsync(Items);
         
@@ -349,36 +336,10 @@
         if (IsReadOnly || index < 0 || index >= Items.Count) return;
         
         var removedItem = Items[index];
-        var wasPrimary = GetIsPrimary(removedItem);
         
         Items.RemoveAt(index);
         
-        // 如果移除的是主要項目且還有其他項目，設定第一個為主要
-        if (wasPrimary && Items.Any())
-        {
-            SetIsPrimary(Items[0], true);
-            await PrimaryChanged.InvokeAsync(Items[0]);
-        }
-        
         await ItemRemoved.InvokeAsync(removedItem);
-        await ItemsChanged.InvokeAsync(Items);
-        StateHasChanged();
-    }
-    
-    public async Task SetPrimaryAsync(int index)
-    {
-        if (IsReadOnly || index < 0 || index >= Items.Count) return;
-        
-        // 清除所有主要標記
-        foreach (var item in Items)
-        {
-            SetIsPrimary(item, false);
-        }
-        
-        // 設定指定的為主要
-        SetIsPrimary(Items[index], true);
-        
-        await PrimaryChanged.InvokeAsync(Items[index]);
         await ItemsChanged.InvokeAsync(Items);
         StateHasChanged();
     }

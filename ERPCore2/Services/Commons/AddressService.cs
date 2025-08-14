@@ -26,11 +26,27 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _context.Addresses
+                // 偵錯：先查詢所有相關記錄
+                var allAddresses = await _context.Addresses
+                    .Where(a => a.OwnerType == ownerType && a.OwnerId == ownerId)
+                    .ToListAsync();
+                
+                Console.WriteLine($"[DEBUG] AddressService.GetAddressesByOwnerAsync - {ownerType} ID {ownerId}:");
+                Console.WriteLine($"[DEBUG] 總共找到 {allAddresses.Count} 筆地址記錄");
+                
+                foreach (var addr in allAddresses)
+                {
+                    Console.WriteLine($"[DEBUG] 地址 ID={addr.Id}, IsDeleted={addr.IsDeleted}, Status={addr.Status}, AddressLine={addr.AddressLine}");
+                }
+                
+                var result = await _context.Addresses
                     .Where(a => a.OwnerType == ownerType && a.OwnerId == ownerId && !a.IsDeleted)
                     .Include(a => a.AddressType)
                     .OrderBy(a => a.CreatedAt)
                     .ToListAsync();
+                
+                Console.WriteLine($"[DEBUG] 篩選後返回 {result.Count} 筆地址記錄");
+                return result;
             }
             catch (Exception ex)
             {

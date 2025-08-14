@@ -665,8 +665,10 @@
             
             // 載入聯絡資訊和地址資訊
             employeeContacts = await ContactService.GetByOwnerAsync(ContactOwnerTypes.Employee, EmployeeId.Value);
-                
+            Console.WriteLine($"[DEBUG] 載入員工 {EmployeeId.Value} 的聯絡資料: {employeeContacts.Count} 筆");
+            
             employeeAddresses = await AddressService.GetEmployeeAddressesAsync(EmployeeId.Value);
+            Console.WriteLine($"[DEBUG] 載入員工 {EmployeeId.Value} 的地址資料: {employeeAddresses.Count} 筆");
             
             // 根據員工的系統使用者狀態重新初始化表單欄位
             await InitializeFormFieldsAsync(employee.IsSystemUser);
@@ -848,44 +850,51 @@
     {
         try
         {
-            // 更新聯絡資訊
-            // TODO: 重新實作聯絡方式保存邏輯使用 ContactService
-            // 暫時註解掉舊的聯絡方式保存邏輯
-            /*
-            if (employeeContacts.Any())
+            // 更新聯絡資訊 - 只更新或新增，不刪除
+            foreach (var contact in employeeContacts)
             {
-                foreach (var contact in employeeContacts)
+                contact.OwnerType = ContactOwnerTypes.Employee;
+                contact.OwnerId = employeeId;
+                
+                if (contact.Id == 0)
                 {
-                    contact.OwnerType = ContactOwnerTypes.Employee;
-                    contact.OwnerId = employeeId;
-                    if (contact.Id > 0)
-                    {
-                        await ContactService.UpdateAsync(contact);
-                    }
-                    else
-                    {
-                        await ContactService.CreateAsync(contact);
-                    }
+                    // 新記錄
+                    await ContactService.CreateAsync(contact);
+                }
+                else
+                {
+                    // 更新現有記錄
+                    await ContactService.UpdateAsync(contact);
                 }
             }
-            */
 
-            // 更新地址資訊
-            if (employeeAddresses.Any())
+            // 重新加載聯絡資料以更新UI顯示
+            employeeContacts = await ContactService.GetByOwnerAsync(ContactOwnerTypes.Employee, employeeId);
+            Console.WriteLine($"[DEBUG] 重新載入員工 {employeeId} 的聯絡資料: {employeeContacts.Count} 筆");
+
+            // 更新地址資訊 - 只更新或新增，不刪除
+            foreach (var address in employeeAddresses)
             {
-                foreach (var address in employeeAddresses)
+                address.OwnerType = AddressOwnerTypes.Employee;
+                address.OwnerId = employeeId;
+                
+                if (address.Id == 0)
                 {
-                    SetEmployeeIdForAddress(address, employeeId);
-                    if (address.Id > 0)
-                    {
-                        await AddressService.UpdateAddressAsync(address);
-                    }
-                    else
-                    {
-                        await AddressService.CreateAddressAsync(AddressOwnerTypes.Employee, employeeId, address);
-                    }
+                    // 新記錄
+                    await AddressService.CreateAddressAsync(AddressOwnerTypes.Employee, employeeId, address);
+                }
+                else
+                {
+                    // 更新現有記錄
+                    await AddressService.UpdateAddressAsync(address);
                 }
             }
+
+            // 重新加載地址資料以更新UI顯示
+            employeeAddresses = await AddressService.GetEmployeeAddressesAsync(employeeId);
+            Console.WriteLine($"[DEBUG] 重新載入員工 {employeeId} 的地址資料: {employeeAddresses.Count} 筆");
+
+            StateHasChanged(); // 通知UI更新
         }
         catch (Exception)
         {
@@ -1113,7 +1122,7 @@
                                                TParentEntity="Employee"
                                                Items="@employeeContacts"
                                                Options="@contactTypeOptions"
-                                               ParentEntityId="@(editModalComponent?.Entity?.Id ?? 0)"
+                                               ParentEntityId="@(EmployeeId ?? editModalComponent?.Entity?.Id ?? 0)"
                                                GetTypeId="@(c => c.ContactTypeId)"
                                                GetContactValue="@(c => c.ContactValue)"
                                                SetTypeId="@((c, typeId) => c.ContactTypeId = typeId)"
@@ -1136,7 +1145,7 @@
                                                TParentEntity="Employee"
                                                Items="@employeeAddresses"
                                                Options="@addressTypeOptions"
-                                               ParentEntityId="@(editModalComponent?.Entity?.Id ?? 0)"
+                                               ParentEntityId="@(EmployeeId ?? editModalComponent?.Entity?.Id ?? 0)"
                                                GetTypeId="@(a => a.AddressTypeId)"
                                                GetAddress="@(a => a.AddressLine)"
                                                SetTypeId="@((a, typeId) => a.AddressTypeId = typeId)"

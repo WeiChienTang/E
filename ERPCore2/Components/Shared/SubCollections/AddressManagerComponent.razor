@@ -1,5 +1,7 @@
 @typeparam TAddressEntity where TAddressEntity : ERPCore2.Data.BaseEntity, new()
 @typeparam TParentEntity where TParentEntity : ERPCore2.Data.BaseEntity
+@using ERPCore2.Services
+@inject INotificationService NotificationService
 
 <div class="table-responsive">
     <table class="table table-sm table-hover">
@@ -106,7 +108,7 @@
                     <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="取消" OnClick="CloseModal" />
                     <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@(showEditModal ? "更新" : "新增")" 
                                            OnClick="@(showEditModal ? () => UpdateItemAsync() : () => AddItemAsync())" 
-                                           IsDisabled="@(!Options.Any() || string.IsNullOrEmpty(currentAddress))" />
+                                           IsDisabled="@(!Options.Any())" />
                 </div>
             </div>
         </div>
@@ -163,6 +165,12 @@
     private int editingIndex = -1;
     private string currentAddressTypeId = string.Empty;
     private string currentAddress = string.Empty;
+    
+    protected override void OnParametersSet()
+    {
+        Console.WriteLine($"[DEBUG] AddressManagerComponent - ParentEntityId: {ParentEntityId}, Items.Count: {Items.Count}");
+        base.OnParametersSet();
+    }
     
     // ===== 內部方法 =====
 
@@ -238,7 +246,14 @@
     
     public async Task AddItemAsync()
     {
-        if (IsReadOnly || !Options.Any() || string.IsNullOrEmpty(currentAddress)) return;
+        if (IsReadOnly || !Options.Any()) return;
+        
+        // 檢查必要欄位
+        if (string.IsNullOrWhiteSpace(currentAddress))
+        {
+            await NotificationService.ShowErrorAsync("詳細地址為必填欄位");
+            return;
+        }
         
         // 如果 currentAddressTypeId 為空，使用預設選中的類型
         if (string.IsNullOrEmpty(currentAddressTypeId) && Options.Any())
@@ -247,7 +262,11 @@
             currentAddressTypeId = GetOptionId(firstOption).ToString();
         }
         
-        if (!int.TryParse(currentAddressTypeId, out var typeId)) return;
+        if (!int.TryParse(currentAddressTypeId, out var typeId))
+        {
+            await NotificationService.ShowErrorAsync($"{TypeDisplayName}選擇錯誤");
+            return;
+        }
         
         var newItem = new TAddressEntity();
         SetParentId(newItem, ParentEntityId);
@@ -266,7 +285,14 @@
     public async Task UpdateItemAsync()
     {
         if (IsReadOnly || editingIndex < 0 || editingIndex >= Items.Count) return;
-        if (!Options.Any() || string.IsNullOrEmpty(currentAddress)) return;
+        if (!Options.Any()) return;
+        
+        // 檢查必要欄位
+        if (string.IsNullOrWhiteSpace(currentAddress))
+        {
+            await NotificationService.ShowErrorAsync("詳細地址為必填欄位");
+            return;
+        }
         
         // 如果 currentAddressTypeId 為空，使用預設選中的類型
         if (string.IsNullOrEmpty(currentAddressTypeId) && Options.Any())
@@ -275,7 +301,11 @@
             currentAddressTypeId = GetOptionId(firstOption).ToString();
         }
         
-        if (!int.TryParse(currentAddressTypeId, out var typeId)) return;
+        if (!int.TryParse(currentAddressTypeId, out var typeId))
+        {
+            await NotificationService.ShowErrorAsync($"{TypeDisplayName}選擇錯誤");
+            return;
+        }
         
         var item = Items[editingIndex];
         

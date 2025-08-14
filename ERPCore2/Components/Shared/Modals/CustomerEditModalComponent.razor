@@ -21,6 +21,7 @@
                           DataLoader="@LoadCustomerData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
+                          AfterSave="@SaveSubCollectionsAsync"
                           SaveSuccessMessage="@(CustomerId.HasValue ? "客戶更新成功" : "客戶新增成功")"
                           SaveFailureMessage="客戶儲存失敗"
                           RequiredPermission="Customer.Read"
@@ -32,7 +33,7 @@
                                 TParentEntity="Customer"
                                 Items="@customerContacts"
                                 Options="@contactTypeOptions"
-                                ParentEntityId="@(editModalComponent?.Entity?.Id ?? 0)"
+                                ParentEntityId="@(CustomerId ?? editModalComponent?.Entity?.Id ?? 0)"
                                 Title="聯絡方式"
                                 ItemDisplayName="聯絡方式"
                                 TypeDisplayName="聯絡類型"
@@ -52,7 +53,7 @@
                                 TParentEntity="Customer"
                                 Items="@customerAddresses"
                                 Options="@addressTypeOptions"
-                                ParentEntityId="@(editModalComponent?.Entity?.Id ?? 0)"
+                                ParentEntityId="@(CustomerId ?? editModalComponent?.Entity?.Id ?? 0)"
                                 Title="地址資訊"
                                 ItemDisplayName="地址"
                                 TypeDisplayName="地址類型"
@@ -290,5 +291,66 @@
         customerAddresses = updatedAddresses;
         StateHasChanged();
         return Task.CompletedTask;
+    }
+
+    private async Task SaveSubCollectionsAsync(Customer customer)
+    {
+        try
+        {
+            // 只有在客戶ID存在時才處理子集合（新增客戶時可能ID還是0）
+            if (customer.Id <= 0)
+            {
+                return; // 新增的客戶，ID可能還沒設定，跳過子集合儲存
+            }
+
+            // 更新聯絡資訊 - 只更新或新增，不刪除
+            foreach (var contact in customerContacts)
+            {
+                contact.OwnerType = ContactOwnerTypes.Customer;
+                contact.OwnerId = customer.Id;
+                
+                if (contact.Id == 0)
+                {
+                    // 新記錄
+                    await ContactService.CreateAsync(contact);
+                }
+                else
+                {
+                    // 更新現有記錄
+                    await ContactService.UpdateAsync(contact);
+                }
+            }
+
+            // 重新加載聯絡資料以更新UI顯示
+            customerContacts = await ContactService.GetByOwnerAsync(ContactOwnerTypes.Customer, customer.Id);
+
+            // 更新地址資訊 - 只更新或新增，不刪除
+            foreach (var address in customerAddresses)
+            {
+                address.OwnerType = AddressOwnerTypes.Customer;
+                address.OwnerId = customer.Id;
+                
+                if (address.Id == 0)
+                {
+                    // 新記錄
+                    await AddressService.CreateAddressAsync(AddressOwnerTypes.Customer, customer.Id, address);
+                }
+                else
+                {
+                    // 更新現有記錄
+                    await AddressService.UpdateAddressAsync(address);
+                }
+            }
+
+            // 重新加載地址資料以更新UI顯示
+            customerAddresses = await AddressService.GetCustomerAddressesAsync(customer.Id);
+
+            StateHasChanged(); // 通知UI更新
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤但不中斷流程，因為主要實體已經儲存成功
+            Console.WriteLine($"儲存子集合時發生錯誤: {ex.Message}");
+        }
     }
 }

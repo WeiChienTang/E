@@ -47,13 +47,29 @@ namespace ERPCore2.Services
         {
             try
             {
+                // 偵錯：先查詢所有相關記錄
+                var allContacts = await _contextFactory.CreateDbContextAsync().Result.Contacts
+                    .Where(c => c.OwnerType == ownerType && c.OwnerId == ownerId)
+                    .ToListAsync();
+                
+                Console.WriteLine($"[DEBUG] ContactService.GetByOwnerAsync - {ownerType} ID {ownerId}:");
+                Console.WriteLine($"[DEBUG] 總共找到 {allContacts.Count} 筆聯絡記錄");
+                
+                foreach (var contact in allContacts)
+                {
+                    Console.WriteLine($"[DEBUG] 聯絡 ID={contact.Id}, IsDeleted={contact.IsDeleted}, Status={contact.Status}, ContactValue={contact.ContactValue}");
+                }
+
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Contacts
+                var result = await context.Contacts
                     .Include(c => c.ContactType)
                     .Where(c => c.OwnerType == ownerType && c.OwnerId == ownerId && !c.IsDeleted)
                     .OrderByDescending(c => c.IsPrimary)
                     .ThenBy(c => c.ContactType!.TypeName)
                     .ToListAsync();
+                
+                Console.WriteLine($"[DEBUG] 篩選後返回 {result.Count} 筆聯絡記錄");
+                return result;
             }
             catch (Exception ex)
             {
