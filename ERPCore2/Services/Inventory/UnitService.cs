@@ -39,7 +39,7 @@ namespace ERPCore2.Services
                     .Include(u => u.FromUnitConversions)
                     .Include(u => u.ToUnitConversions)
                     .Where(u => !u.IsDeleted)
-                    .OrderBy(u => u.UnitCode)
+                    .OrderBy(u => u.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -65,8 +65,8 @@ namespace ERPCore2.Services
                     .Include(u => u.ToUnitConversions)
                     .Where(u => !u.IsDeleted &&
                                (u.UnitName.Contains(searchTerm) ||
-                                u.UnitCode.Contains(searchTerm)))
-                    .OrderBy(u => u.UnitCode)
+                                u.Code.Contains(searchTerm)))
+                    .OrderBy(u => u.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -85,7 +85,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Units.Where(u => u.UnitCode == unitCode && !u.IsDeleted);
+                var query = context.Units.Where(u => u.Code == unitCode && !u.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(u => u.Id != excludeId.Value);
@@ -110,7 +110,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Units
                     .Where(u => !u.IsDeleted)
-                    .OrderBy(u => u.UnitCode)
+                    .OrderBy(u => u.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -203,7 +203,7 @@ namespace ERPCore2.Services
 
                 return await context.Units
                     .Where(u => !u.IsDeleted && convertibleUnitIds.Contains(u.Id))
-                    .OrderBy(u => u.UnitCode)
+                    .OrderBy(u => u.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -222,14 +222,14 @@ namespace ERPCore2.Services
             try
             {
                 // 基本驗證
-                if (string.IsNullOrWhiteSpace(entity.UnitCode))
+                if (string.IsNullOrWhiteSpace(entity.Code))
                     return ServiceResult.Failure("單位代碼為必填");
                 
                 if (string.IsNullOrWhiteSpace(entity.UnitName))
                     return ServiceResult.Failure("單位名稱為必填");
 
                 // 檢查單位代碼是否重複
-                if (await IsUnitCodeExistsAsync(entity.UnitCode, entity.Id))
+                if (await IsUnitCodeExistsAsync(entity.Code, entity.Id))
                     return ServiceResult.Failure("單位代碼已存在");
 
                 return ServiceResult.Success();
@@ -237,7 +237,7 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, 
-                    new { UnitId = entity.Id, UnitCode = entity.UnitCode });
+                    new { UnitId = entity.Id, UnitCode = entity.Code });
                 return ServiceResult.Failure("驗證過程中發生錯誤");
             }
         }

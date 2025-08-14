@@ -324,7 +324,7 @@
                 // 基本資訊區段
                 new()
                 {
-                    PropertyName = nameof(Employee.EmployeeCode),
+                    PropertyName = nameof(Employee.Code),
                     Label = "員工代碼",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入員工代碼",
@@ -447,7 +447,7 @@
             // 更新表單區段定義
             formSections = new Dictionary<string, string>
             {
-                { nameof(Employee.EmployeeCode), "基本資訊" },
+                { nameof(Employee.Code), "基本資訊" },
                 { nameof(Employee.LastName), "基本資訊" },
                 { nameof(Employee.FirstName), "基本資訊" },                
                 { nameof(Employee.DepartmentId), "基本資訊" },
@@ -632,7 +632,7 @@
                 
                 var newEmployee = new Employee
                 {
-                    EmployeeCode = await GenerateEmployeeCodeAsync(),
+                    Code = await GenerateEmployeeCodeAsync(),
                     FirstName = string.Empty,
                     LastName = string.Empty,
                     IsSystemUser = false,
@@ -653,7 +653,7 @@
                 // 如果找不到員工，建立新的預設員工
                 employee = new Employee
                 {
-                    EmployeeCode = "ERROR",
+                    Code = "ERROR",
                     FirstName = "ERROR",
                     LastName = "ERROR",
                     Status = EntityStatus.Active
@@ -680,7 +680,7 @@
             // 設定安全的預設值，確保程式不會崩潰
             return new Employee
             {
-                EmployeeCode = "ERROR",
+                Code = "ERROR",
                 FirstName = "ERROR",
                 LastName = "ERROR",
                 Status = EntityStatus.Active
@@ -726,7 +726,7 @@
             }
 
             // 基本驗證 - 使用通知服務
-            if (string.IsNullOrWhiteSpace(entity.EmployeeCode))
+            if (string.IsNullOrWhiteSpace(entity.Code))
             {
                 await NotificationService.ShowErrorAsync("員工代碼為必填");
                 return false;
@@ -745,10 +745,10 @@
             }
 
             // 檢查員工代碼是否重複
-            var employeeCodeExistsResult = await EmployeeService.IsEmployeeCodeExistsAsync(entity.EmployeeCode, EmployeeId);
+            var employeeCodeExistsResult = await EmployeeService.IsEmployeeCodeExistsAsync(entity.Code, EmployeeId);
             if (employeeCodeExistsResult.IsSuccess && employeeCodeExistsResult.Data)
             {
-                await NotificationService.ShowErrorAsync($"員工代碼 '{entity.EmployeeCode}' 已存在，請使用其他代碼");
+                await NotificationService.ShowErrorAsync($"員工代碼 '{entity.Code}' 已存在，請使用其他代碼");
                 return false;
             }
 

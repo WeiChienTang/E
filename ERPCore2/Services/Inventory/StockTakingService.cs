@@ -391,7 +391,7 @@ namespace ERPCore2.Services
                     .Include(std => std.Product)
                     .Include(std => std.WarehouseLocation)
                     .Where(std => std.StockTakingId == stockTakingId && !std.IsDeleted)
-                    .OrderBy(std => std.Product.ProductCode)
+                    .OrderBy(std => std.Product.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -480,7 +480,7 @@ namespace ERPCore2.Services
                                   std.ActualStock.HasValue && 
                                   std.ActualStock.Value != std.SystemStock && 
                                   !std.IsDeleted)
-                    .OrderBy(std => std.Product.ProductCode)
+                    .OrderBy(std => std.Product.Code)
                     .ToListAsync();
             }
             catch (Exception ex)

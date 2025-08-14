@@ -106,7 +106,7 @@
             {
                 new()
                 {
-                    PropertyName = nameof(Size.SizeCode),
+                    PropertyName = nameof(Size.Code),
                     Label = "尺寸代碼",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入尺寸代碼",
@@ -137,7 +137,7 @@
 
             basicFormSections = new Dictionary<string, string>
             {
-                { nameof(Size.SizeCode), "基本資訊" },
+                { nameof(Size.Code), "基本資訊" },
                 { nameof(Size.SizeName), "基本資訊" },
                 { nameof(Size.Description), "額外資訊" }
             };
@@ -159,7 +159,7 @@
                 // 新增模式：建立新的尺寸實體並生成代碼
                 size = new Size
                 {
-                    SizeCode = await GenerateSizeCodeAsync(),
+                    Code = await GenerateSizeCodeAsync(),
                     Status = EntityStatus.Active
                 };
                 return size;

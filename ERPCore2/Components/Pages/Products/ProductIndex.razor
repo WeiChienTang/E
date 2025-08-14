@@ -147,7 +147,7 @@
         {
             columnDefinitions = new List<TableColumnDefinition>
             {
-                TableColumnDefinition.Text("產品代碼", nameof(Product.ProductCode)),
+                TableColumnDefinition.Text("產品代碼", nameof(Product.Code)),
                 TableColumnDefinition.Text("產品名稱", nameof(Product.ProductName)),
                 TableColumnDefinition.Text("尺寸", "Size.SizeName"),
                 TableColumnDefinition.Text("產品分類", "ProductCategory.CategoryName"),
@@ -177,7 +177,7 @@
             if (!string.IsNullOrWhiteSpace(productCodeFilter))
             {
                 query = query.Where(p => 
-                    p.ProductCode.Contains(productCodeFilter, StringComparison.OrdinalIgnoreCase));
+                    p.Code.Contains(productCodeFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 產品名稱篩選
@@ -222,7 +222,7 @@
             {
                 query = query.Where(p => p.UnitId == unitId);        
             }        
-            return query.OrderBy(p => p.ProductCode);
+            return query.OrderBy(p => p.Code);
         }
         catch (Exception ex)
         {

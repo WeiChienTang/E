@@ -202,7 +202,7 @@
             var productCodeFilter = searchModel.GetFilterValue("ProductCode")?.ToString();
             if (!string.IsNullOrWhiteSpace(productCodeFilter))
             {
-                query = query.Where(pp => pp.Product.ProductCode.Contains(productCodeFilter));
+                query = query.Where(pp => pp.Product.Code.Contains(productCodeFilter));
             }
 
             // 客戶名稱篩選
@@ -290,7 +290,7 @@
             var productOptions = products.Select(p => new SelectOption
             {
                 Value = p.Id.ToString(),
-                Text = $"{p.ProductCode} - {p.ProductName}"
+                Text = $"{p.Code} - {p.ProductName}"
             }).ToList();
 
             // 載入客戶選項
@@ -299,7 +299,7 @@
                                          .Select(c => new SelectOption
             {
                 Value = c.Id.ToString(),
-                Text = $"{c.CustomerCode} - {c.CompanyName}"
+                Text = $"{c.Code} - {c.CompanyName}"
             }).ToList();
 
             // 重新建立篩選定義，包含載入的選項

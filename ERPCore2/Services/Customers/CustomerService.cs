@@ -76,7 +76,7 @@ namespace ERPCore2.Services
                 return await context.Customers
                     .Include(c => c.CustomerType)
                     .Where(c => !c.IsDeleted && 
-                               (c.CustomerCode.Contains(searchTerm) ||
+                               (c.Code.Contains(searchTerm) ||
                                 c.CompanyName.Contains(searchTerm) ||
                                 (c.ContactPerson != null && c.ContactPerson.Contains(searchTerm)) ||
                                 (c.TaxNumber != null && c.TaxNumber.Contains(searchTerm))))
@@ -98,14 +98,14 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
 
                 // 檢查必要欄位
-                if (string.IsNullOrWhiteSpace(entity.CustomerCode))
+                if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("客戶代碼為必填");
                 
                 if (string.IsNullOrWhiteSpace(entity.CompanyName))
                     errors.Add("公司名稱為必填");
 
                 // 檢查長度限制
-                if (entity.CustomerCode?.Length > 20)
+                if (entity.Code?.Length > 20)
                     errors.Add("客戶代碼不可超過20個字元");
                 
                 if (entity.CompanyName?.Length > 100)
@@ -118,10 +118,10 @@ namespace ERPCore2.Services
                     errors.Add("統一編號不可超過8個字元");
 
                 // 檢查客戶代碼是否重複
-                if (!string.IsNullOrWhiteSpace(entity.CustomerCode))
+                if (!string.IsNullOrWhiteSpace(entity.Code))
                 {
                     var isDuplicate = await context.Customers
-                        .Where(c => c.CustomerCode == entity.CustomerCode && !c.IsDeleted)
+                        .Where(c => c.Code == entity.Code && !c.IsDeleted)
                         .Where(c => c.Id != entity.Id) // 排除自己
                         .AnyAsync();
 
@@ -148,7 +148,7 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { 
                     EntityId = entity.Id,
-                    CustomerCode = entity.CustomerCode 
+                    CustomerCode = entity.Code 
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
@@ -168,7 +168,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
                     .Include(c => c.CustomerType)
-                    .FirstOrDefaultAsync(c => c.CustomerCode == customerCode && !c.IsDeleted);
+                    .FirstOrDefaultAsync(c => c.Code == customerCode && !c.IsDeleted);
             }
             catch (Exception ex)
             {
@@ -206,7 +206,7 @@ namespace ERPCore2.Services
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Customers.Where(c => c.CustomerCode == customerCode && !c.IsDeleted);
+                var query = context.Customers.Where(c => c.Code == customerCode && !c.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(c => c.Id != excludeId.Value);
@@ -308,7 +308,7 @@ namespace ERPCore2.Services
         {
             try
             {
-                customer.CustomerCode = string.Empty;
+                customer.Code = string.Empty;
                 customer.CompanyName = string.Empty;
                 customer.ContactPerson = string.Empty;
                 customer.TaxNumber = string.Empty;
@@ -341,7 +341,7 @@ namespace ERPCore2.Services
             {
                 int count = 0;
 
-                if (!string.IsNullOrWhiteSpace(customer.CustomerCode))
+                if (!string.IsNullOrWhiteSpace(customer.Code))
                     count++;
 
                 if (!string.IsNullOrWhiteSpace(customer.CompanyName))

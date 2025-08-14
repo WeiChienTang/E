@@ -26,7 +26,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             {
                 new InventoryTransactionType
                 {
-                    TypeCode = "IN001",
+                    Code = "IN001",
                     TypeName = "採購入庫",
                     TransactionType = InventoryTransactionTypeEnum.Purchase,
                     AffectsCost = true,
@@ -40,7 +40,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new InventoryTransactionType
                 {
-                    TypeCode = "IN002",
+                    Code = "IN002",
                     TypeName = "生產入庫",
                     TransactionType = InventoryTransactionTypeEnum.ProductionCompletion,
                     AffectsCost = true,
@@ -54,7 +54,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new InventoryTransactionType
                 {
-                    TypeCode = "IN003",
+                    Code = "IN003",
                     TypeName = "調撥入庫",
                     TransactionType = InventoryTransactionTypeEnum.Transfer,
                     AffectsCost = false,
@@ -68,7 +68,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new InventoryTransactionType
                 {
-                    TypeCode = "OUT001",
+                    Code = "OUT001",
                     TypeName = "銷售出庫",
                     TransactionType = InventoryTransactionTypeEnum.Sale,
                     AffectsCost = false,
@@ -82,7 +82,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new InventoryTransactionType
                 {
-                    TypeCode = "OUT002",
+                    Code = "OUT002",
                     TypeName = "調撥出庫",
                     TransactionType = InventoryTransactionTypeEnum.Transfer,
                     AffectsCost = false,
@@ -96,7 +96,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new InventoryTransactionType
                 {
-                    TypeCode = "OUT003",
+                    Code = "OUT003",
                     TypeName = "盤虧出庫",
                     TransactionType = InventoryTransactionTypeEnum.StockTaking,
                     AffectsCost = true,
@@ -110,7 +110,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new InventoryTransactionType
                 {
-                    TypeCode = "ADJ001",
+                    Code = "ADJ001",
                     TypeName = "盤點調整",
                     TransactionType = InventoryTransactionTypeEnum.Adjustment,
                     AffectsCost = true,

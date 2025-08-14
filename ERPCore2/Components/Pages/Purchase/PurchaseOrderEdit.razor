@@ -290,14 +290,14 @@
             // 供應商選項
             var supplierOptions = suppliers.Select(s => new SelectOption
             {
-                Text = $"{s.SupplierCode} - {s.CompanyName}",
+                Text = $"{s.Code} - {s.CompanyName}",
                 Value = s.Id.ToString()
             }).Prepend(new SelectOption { Value = "", Text = "請選擇供應商" }).ToList();
             
             // 倉庫選項
             var warehouseOptions = warehouses.Select(w => new SelectOption
             {
-                Text = $"{w.WarehouseCode} - {w.WarehouseName}",
+                Text = $"{w.Code} - {w.WarehouseName}",
                 Value = w.Id.ToString()
             }).ToList();
             
@@ -564,7 +564,7 @@
     {
         if (productId <= 0 || allProducts == null) return "";
         var product = allProducts.FirstOrDefault(p => p.Id == productId);
-        return product?.ProductCode ?? "";
+        return product?.Code ?? "";
     }
     
     // 根據ProductId取得產品名稱
@@ -613,7 +613,7 @@
                         GetSubtotal="@((ERPCore2.Data.Entities.PurchaseOrderDetail d) => d.UnitPrice * (decimal)d.OrderQuantity)"
                         GetRemarks="@((ERPCore2.Data.Entities.PurchaseOrderDetail d) => d.DetailRemarks ?? "")"
                         
-                        GetProductCodeFromProduct="@((ERPCore2.Data.Entities.Product p) => p.ProductCode)"
+                        GetProductCodeFromProduct="@((ERPCore2.Data.Entities.Product p) => p.Code)"
                         GetProductNameFromProduct="@((ERPCore2.Data.Entities.Product p) => p.ProductName)"
                         GetProductPrice="@((ERPCore2.Data.Entities.Product p) => 0)"
                         

@@ -237,7 +237,7 @@
         {
             columnDefinitions = new List<TableColumnDefinition>
             {
-                TableColumnDefinition.Text("廠商代碼", nameof(Supplier.SupplierCode)),
+                TableColumnDefinition.Text("廠商代碼", nameof(Supplier.Code)),
                 TableColumnDefinition.Text("公司名稱", nameof(Supplier.CompanyName)),
                 TableColumnDefinition.Text("聯絡人", nameof(Supplier.ContactPerson)),
                 TableColumnDefinition.Text("廠商類型", "SupplierType.TypeName"),
@@ -257,7 +257,7 @@
         var filterActions = new List<Func<SearchFilterModel, IQueryable<Supplier>, IQueryable<Supplier>>>
         {
             // 廠商代碼篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "SupplierCode", s => s.SupplierCode),
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "SupplierCode", s => s.Code),
             
             // 公司名稱篩選
             (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "CompanyName", s => s.CompanyName),
@@ -276,7 +276,7 @@
             searchModel,
             query,
             filterActions,
-            q => q.OrderBy(s => s.SupplierCode), // 預設排序
+            q => q.OrderBy(s => s.Code), // 預設排序
             nameof(ApplySupplierFilters),
             GetType()
         );

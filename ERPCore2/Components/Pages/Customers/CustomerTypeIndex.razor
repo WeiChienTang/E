@@ -17,7 +17,16 @@
                         EntityName="客戶類型"
                         GetEntityDisplayName="@(customerType => customerType.TypeName)"
                         RequiredPermission="CustomerType.Read"
+                        OnAddClick="@ShowAddModal"
+                        OnRowClick="@ShowEditModal"
                         @ref="indexComponent" />
+
+@* 客戶類型編輯 Modal *@
+<CustomerTypeEditModalComponent IsVisible="@showEditModal"
+                               IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                               CustomerTypeId="@editingCustomerTypeId"
+                               OnCustomerTypeSaved="@OnCustomerTypeSaved"
+                               OnCancel="@OnModalCancel" />
 
 @code {
     // 組件參考
@@ -27,6 +36,10 @@
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingCustomerTypeId = null;
 
     protected override void OnInitialized()
     {
@@ -160,6 +173,75 @@
                 additionalData: "套用客戶類型篩選失敗"
             );
             return query.OrderBy(ct => ct.TypeName);
+        }
+    }
+
+    // ===== Modal 相關方法 =====
+
+    private async Task ShowAddModal()
+    {
+        try
+        {
+            editingCustomerTypeId = null;
+            showEditModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModal), GetType());
+        }
+    }
+
+    private async Task ShowEditModal(CustomerType customerType)
+    {
+        try
+        {
+            if (customerType?.Id != null)
+            {
+                editingCustomerTypeId = customerType.Id;
+                showEditModal = true;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowEditModal), GetType());
+        }
+    }
+
+    private async Task OnCustomerTypeSaved(CustomerType savedCustomerType)
+    {
+        try
+        {
+            // 關閉 Modal
+            showEditModal = false;
+            editingCustomerTypeId = null;
+            
+            // 重新載入資料
+            if (indexComponent != null)
+            {
+                await indexComponent.Refresh();
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnCustomerTypeSaved), GetType());
+        }
+    }
+
+    private async Task OnModalCancel()
+    {
+        try
+        {
+            showEditModal = false;
+            editingCustomerTypeId = null;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnModalCancel), GetType());
         }
     }
 }

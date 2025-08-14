@@ -37,7 +37,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             {
                 new Customer
                 {
-                    CustomerCode = "C001",
+                    Code = "C001",
                     CompanyName = "台灣科技股份有限公司",
                     ContactPerson = "張經理",
                     TaxNumber = "12345678",
@@ -48,7 +48,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Customer
                 {
-                    CustomerCode = "C002", 
+                    Code = "C002", 
                     CompanyName = "精密機械工業有限公司",
                     ContactPerson = "李副理",
                     TaxNumber = "23456789",
@@ -59,7 +59,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Customer
                 {
-                    CustomerCode = "C003",
+                    Code = "C003",
                     CompanyName = "全球貿易商行",
                     ContactPerson = "王主任",
                     TaxNumber = "34567890",

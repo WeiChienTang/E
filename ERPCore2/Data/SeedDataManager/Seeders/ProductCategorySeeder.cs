@@ -31,7 +31,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             {
                 new ProductCategory
                 {
-                    CategoryCode = "PC001",
+                    Code = "PC001",
                     CategoryName = "原物料",
                     Description = "生產原料材料",
                     Status = EntityStatus.Active,
@@ -40,7 +40,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new ProductCategory
                 {
-                    CategoryCode = "PC002",
+                    Code = "PC002",
                     CategoryName = "半成品",
                     Description = "半成品",
                     Status = EntityStatus.Active,
@@ -49,7 +49,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new ProductCategory
                 {
-                    CategoryCode = "PC003",
+                    Code = "PC003",
                     CategoryName = "成品",
                     Description = "已完成製造的產品",
                     Status = EntityStatus.Active,

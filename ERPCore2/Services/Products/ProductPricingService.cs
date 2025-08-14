@@ -46,9 +46,9 @@ namespace ERPCore2.Services
                     .Include(pp => pp.Customer)
                     .Where(pp => !pp.IsDeleted && (
                         pp.Product.ProductName.Contains(searchTerm) ||
-                        pp.Product.ProductCode.Contains(searchTerm) ||
+                        pp.Product.Code.Contains(searchTerm) ||
                         (pp.Customer != null && pp.Customer.CompanyName.Contains(searchTerm)) ||
-                        (pp.Customer != null && pp.Customer.CustomerCode.Contains(searchTerm)) ||
+                        (pp.Customer != null && pp.Customer.Code.Contains(searchTerm)) ||
                         pp.Currency.Contains(searchTerm) ||
                         (pp.PricingDescription != null && pp.PricingDescription.Contains(searchTerm))
                     ))

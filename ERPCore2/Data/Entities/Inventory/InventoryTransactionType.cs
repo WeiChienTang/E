@@ -7,15 +7,9 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 庫存異動類型實體 - 定義庫存異動的類型和規則
     /// </summary>
-    [Index(nameof(TypeCode), IsUnique = true)]
+    [Index(nameof(Code), IsUnique = true)]
     public class InventoryTransactionType : BaseEntity
-    {
-        // Required Properties
-        [Required(ErrorMessage = "類型代碼為必填")]
-        [MaxLength(20, ErrorMessage = "類型代碼不可超過20個字元")]
-        [Display(Name = "類型代碼")]
-        public string TypeCode { get; set; } = string.Empty;
-        
+    {        
         [Required(ErrorMessage = "類型名稱為必填")]
         [MaxLength(50, ErrorMessage = "類型名稱不可超過50個字元")]
         [Display(Name = "類型名稱")]

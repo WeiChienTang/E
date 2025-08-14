@@ -95,7 +95,7 @@
         {
             columnDefinitions = new List<TableColumnDefinition>
             {
-                TableColumnDefinition.Text("分類代碼", nameof(ProductCategory.CategoryCode)),
+                TableColumnDefinition.Text("分類代碼", nameof(ProductCategory.Code)),
                 TableColumnDefinition.Text("分類名稱", nameof(ProductCategory.CategoryName)),                
                 TableColumnDefinition.Template("商品數量", item => {
                     var category = (ProductCategory)item;
@@ -150,8 +150,8 @@
             if (!string.IsNullOrWhiteSpace(codeFilter))
             {
                 query = query.Where(c => 
-                    !string.IsNullOrEmpty(c.CategoryCode) && 
-                    c.CategoryCode.Contains(codeFilter, StringComparison.OrdinalIgnoreCase));
+                    !string.IsNullOrEmpty(c.Code) && 
+                    c.Code.Contains(codeFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 描述篩選

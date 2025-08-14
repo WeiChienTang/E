@@ -27,7 +27,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 // 基本計量單位  
                 new Unit
                 {
-                    UnitCode = "PCS",
+                    Code = "PCS",
                     UnitName = "個",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
@@ -35,7 +35,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Unit
                 {
-                    UnitCode = "KG",
+                    Code = "KG",
                     UnitName = "公斤",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
@@ -43,7 +43,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Unit
                 {
-                    UnitCode = "PACK",
+                    Code = "PACK",
                     UnitName = "包",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
@@ -51,7 +51,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Unit
                 {
-                    UnitCode = "M",
+                    Code = "M",
                     UnitName = "公尺",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
@@ -59,7 +59,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Unit
                 {
-                    UnitCode = "CM",
+                    Code = "CM",
                     UnitName = "公分",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
@@ -67,7 +67,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Unit
                 {
-                    UnitCode = "SQM",
+                    Code = "SQM",
                     UnitName = "平方公尺",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
@@ -77,7 +77,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 // 產品相關的額外單位
                 new Unit
                 {
-                    UnitCode = "PC",
+                    Code = "PC",
                     UnitName = "台",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-31),
@@ -85,7 +85,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Unit
                 {
-                    UnitCode = "PEN",
+                    Code = "PEN",
                     UnitName = "支",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-31),
@@ -93,7 +93,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Unit
                 {
-                    UnitCode = "BAG",
+                    Code = "BAG",
                     UnitName = "袋",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-31),
@@ -101,7 +101,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Unit
                 {
-                    UnitCode = "ROL",
+                    Code = "ROL",
                     UnitName = "捲",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-31),
@@ -109,7 +109,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Unit
                 {
-                    UnitCode = "TOP",
+                    Code = "TOP",
                     UnitName = "頂",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-31),
@@ -117,7 +117,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Unit
                 {
-                    UnitCode = "LIC",
+                    Code = "LIC",
                     UnitName = "授權",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-31),
@@ -125,7 +125,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Unit
                 {
-                    UnitCode = "SHT",
+                    Code = "SHT",
                     UnitName = "張",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-31),

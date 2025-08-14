@@ -75,9 +75,9 @@
             if (result != null)
             {
                 // 解析權限代碼，分離權限主要名稱和動作
-                if (!string.IsNullOrEmpty(result.PermissionCode))
+                if (!string.IsNullOrEmpty(result.Code))
                 {
-                    var parts = result.PermissionCode.Split('.');
+                    var parts = result.Code.Split('.');
                     if (parts.Length == 2)
                     {
                         permissionMainName = parts[0];
@@ -92,7 +92,7 @@
                     }
                     else
                     {
-                        permissionMainName = result.PermissionCode;
+                        permissionMainName = result.Code;
                         selectedAction = PermissionAction.Read;
                     }
                 }
@@ -103,7 +103,7 @@
                 }
                 
                 // 設定顯示用的權限主要名稱到 PermissionCode 欄位
-                result.PermissionCode = permissionMainName;
+                result.Code = permissionMainName;
                 return result;
             }
             
@@ -139,7 +139,7 @@
             {
                 new()
                 {
-                    PropertyName = nameof(Permission.PermissionCode),
+                    PropertyName = nameof(Permission.Code),
                     Label = "權限代碼",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入權限代碼",
@@ -188,7 +188,7 @@
 
             formSections = new Dictionary<string, string>
             {
-                { nameof(Permission.PermissionCode), "基本資訊" },
+                { nameof(Permission.Code), "基本資訊" },
                 { nameof(selectedAction), "基本資訊" },
                 { nameof(Permission.PermissionName), "基本資訊" },
                 { nameof(Permission.Remarks), "額外資訊" }
@@ -222,7 +222,7 @@
             var validationErrors = new List<string>();
 
             // 檢查權限主要名稱
-            if (string.IsNullOrWhiteSpace(entity.PermissionCode))
+            if (string.IsNullOrWhiteSpace(entity.Code))
             {
                 validationErrors.Add("請輸入權限主要名稱");
             }
@@ -242,25 +242,25 @@
             }
 
             // 組合最終的權限代碼：使用表單中輸入的權限主要名稱 + 選擇的動作
-            var permissionMainNameValue = entity.PermissionCode.Trim();
-            entity.PermissionCode = $"{permissionMainNameValue}.{selectedAction}";
+            var permissionMainNameValue = entity.Code.Trim();
+            entity.Code = $"{permissionMainNameValue}.{selectedAction}";
 
             // 驗證權限代碼格式
-            var codeValidationResult = PermissionService.ValidatePermissionCode(entity.PermissionCode);
+            var codeValidationResult = PermissionService.ValidatePermissionCode(entity.Code);
             if (!codeValidationResult.IsSuccess)
             {
                 // 如果格式錯誤，恢復原本的權限主要名稱，移除自動添加的動作後綴
-                entity.PermissionCode = permissionMainNameValue;
+                entity.Code = permissionMainNameValue;
                 await NotificationService.ShowErrorAsync($"權限代碼格式不正確：{codeValidationResult.ErrorMessage}", "驗證失敗");
                 return false;
             }
 
             // 檢查權限代碼是否重複
-            var codeCheckResult = await PermissionService.IsPermissionCodeExistsAsync(entity.PermissionCode, entity.Id);
+            var codeCheckResult = await PermissionService.IsPermissionCodeExistsAsync(entity.Code, entity.Id);
             if (!codeCheckResult.IsSuccess)
             {
                 // 如果驗證失敗，恢復原本的權限主要名稱
-                entity.PermissionCode = permissionMainNameValue;
+                entity.Code = permissionMainNameValue;
                 await NotificationService.ShowErrorAsync($"驗證失敗：{codeCheckResult.ErrorMessage}", "驗證失敗");
                 return false;
             }
@@ -268,7 +268,7 @@
             if (codeCheckResult.Data)
             {
                 // 如果權限代碼重複，恢復原本的權限主要名稱
-                entity.PermissionCode = permissionMainNameValue;
+                entity.Code = permissionMainNameValue;
                 await NotificationService.ShowErrorAsync("權限代碼已存在，請使用不同的權限主要名稱或動作組合", "驗證失敗");
                 return false;
             }
@@ -296,7 +296,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SavePermission), GetType(),
-                additionalData: new { EntityId = entity?.Id, PermissionCode = entity?.PermissionCode, SelectedAction = selectedAction });
+                additionalData: new { EntityId = entity?.Id, PermissionCode = entity?.Code, SelectedAction = selectedAction });
             await NotificationService.ShowErrorAsync("儲存過程中發生未預期的錯誤，請稍後再試", "系統錯誤");
             return false;
         }

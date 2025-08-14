@@ -322,7 +322,7 @@
             return products?.Select(p => new SelectOption
             {
                 Value = p.Id.ToString(),
-                Text = $"{p.ProductCode} - {p.ProductName}"
+                Text = $"{p.Code} - {p.ProductName}"
             }).ToList() ?? new List<SelectOption>();
         }
         catch (Exception ex)

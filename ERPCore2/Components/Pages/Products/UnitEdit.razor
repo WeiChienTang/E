@@ -83,7 +83,7 @@
             {
                 new()
                 {
-                    PropertyName = nameof(Unit.UnitCode),
+                    PropertyName = nameof(Unit.Code),
                     Label = "單位代碼",
                     FieldType = FormFieldType.Text,
                     IsRequired = true,
@@ -113,7 +113,7 @@
 
             formSections = new Dictionary<string, string>
             {
-                [nameof(Unit.UnitCode)] = "基本資料",
+                [nameof(Unit.Code)] = "基本資料",
                 [nameof(Unit.UnitName)] = "基本資料",
             };
         }
@@ -133,7 +133,7 @@
             {
                 var newUnit = new Unit
                 {
-                    UnitCode = await GenerateUnitCodeAsync(),
+                    Code = await GenerateUnitCodeAsync(),
                     UnitName = string.Empty
                 };
                 unit = newUnit;
@@ -167,8 +167,8 @@
         {
             var units = await UnitService.GetAllAsync();
             var maxCode = units
-                .Where(u => u.UnitCode.StartsWith("U"))
-                .Select(u => u.UnitCode)
+                .Where(u => u.Code.StartsWith("U"))
+                .Select(u => u.Code)
                 .Where(code => code.Length > 1 && int.TryParse(code.Substring(1), out _))
                 .Select(code => int.Parse(code.Substring(1)))
                 .DefaultIfEmpty(0)
@@ -189,7 +189,7 @@
         try
         {
             // 檢查單位代碼是否重複
-            if (await UnitService.IsUnitCodeExistsAsync(entity.UnitCode, entity.Id))
+            if (await UnitService.IsUnitCodeExistsAsync(entity.Code, entity.Id))
             {
                 await NotificationService.ShowWarningAsync("單位代碼已存在，請選擇其他代碼");
                 return false;

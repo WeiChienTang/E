@@ -189,7 +189,7 @@ namespace ERPCore2.Services
                     return ServiceResult<List<string>>.Failure(permissionsResult.ErrorMessage ?? "無法取得員工權限");
 
                 var permissionCodes = permissionsResult.Data
-                    .Select(p => p.PermissionCode)
+                    .Select(p => p.Code)
                     .ToList();
 
                 return ServiceResult<List<string>>.Success(permissionCodes);
@@ -265,7 +265,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var exists = await context.Permissions
-                    .AnyAsync(p => p.PermissionCode == permissionCode && !p.IsDeleted);
+                    .AnyAsync(p => p.Code == permissionCode && !p.IsDeleted);
 
                 return ServiceResult<bool>.Success(exists);
             }
@@ -358,8 +358,8 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var permissions = await context.Permissions
-                    .Where(p => p.PermissionCode.StartsWith(modulePrefix + ".") && !p.IsDeleted)
-                    .OrderBy(p => p.PermissionCode)
+                    .Where(p => p.Code.StartsWith(modulePrefix + ".") && !p.IsDeleted)
+                    .OrderBy(p => p.Code)
                     .ToListAsync();
 
                 return ServiceResult<List<Permission>>.Success(permissions);

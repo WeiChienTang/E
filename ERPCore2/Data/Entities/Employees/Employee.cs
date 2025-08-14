@@ -9,17 +9,9 @@ namespace ERPCore2.Data.Entities
     /// 員工實體 - 系統用戶和權限管理
     /// </summary>
     [Index(nameof(Account), IsUnique = true)]
-    [Index(nameof(EmployeeCode), IsUnique = true)]
+    [Index(nameof(Code), IsUnique = true)]
     public class Employee : BaseEntity
     {
-        /// <summary>
-        /// 員工代碼
-        /// </summary>
-        [Display(Name = "員工代碼")]
-        [Required(ErrorMessage = "請輸入員工代碼")]
-        [MaxLength(20, ErrorMessage = "員工代碼不可超過20個字元")]
-        public string EmployeeCode { get; set; } = string.Empty;
-        
         /// <summary>
         /// 名字
         /// </summary>

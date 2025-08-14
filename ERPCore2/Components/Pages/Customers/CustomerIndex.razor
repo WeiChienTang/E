@@ -204,7 +204,7 @@
         {
             columnDefinitions = new List<TableColumnDefinition>
             {
-                TableColumnDefinition.Text("客戶代碼", nameof(Customer.CustomerCode)),
+                TableColumnDefinition.Text("客戶代碼", nameof(Customer.Code)),
                 TableColumnDefinition.Text("公司名稱", nameof(Customer.CompanyName)),
                 TableColumnDefinition.Text("聯絡人", nameof(Customer.ContactPerson)),
                 TableColumnDefinition.Text("客戶類型", "CustomerType.TypeName"),
@@ -240,7 +240,7 @@
             if (!string.IsNullOrWhiteSpace(customerCodeFilter))
             {
                 query = query.Where(c => 
-                    c.CustomerCode.Contains(customerCodeFilter, StringComparison.OrdinalIgnoreCase));
+                    c.Code.Contains(customerCodeFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 公司名稱篩選
@@ -276,7 +276,7 @@
                     c.TaxNumber.Contains(taxNumberFilter, StringComparison.OrdinalIgnoreCase));
             }
 
-            return query.OrderBy(c => c.CustomerCode);
+            return query.OrderBy(c => c.Code);
         }
         catch (Exception ex)
         {
@@ -295,7 +295,7 @@
             });
             
             // 回傳原始查詢，確保程式不會崩潰
-            return query.OrderBy(c => c.CustomerCode);
+            return query.OrderBy(c => c.Code);
         }
     }
 

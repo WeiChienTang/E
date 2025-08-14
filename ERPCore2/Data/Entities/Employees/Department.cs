@@ -10,14 +10,6 @@ namespace ERPCore2.Data.Entities
     public class Department : BaseEntity
     {
         /// <summary>
-        /// 部門代碼
-        /// </summary>
-        [Display(Name = "部門代碼")]
-        [Required(ErrorMessage = "請輸入部門代碼")]
-        [MaxLength(20, ErrorMessage = "部門代碼不可超過20個字元")]
-        public string DepartmentCode { get; set; } = string.Empty;
-
-        /// <summary>
         /// 部門名稱
         /// </summary>
         [Display(Name = "部門名稱")]

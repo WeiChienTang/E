@@ -39,7 +39,7 @@ namespace ERPCore2.Services
                 return await context.Warehouses
                     .Include(w => w.WarehouseLocations)
                     .Where(w => !w.IsDeleted)
-                    .OrderBy(w => w.WarehouseCode)
+                    .OrderBy(w => w.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -64,8 +64,8 @@ namespace ERPCore2.Services
                     .Include(w => w.WarehouseLocations)
                     .Where(w => !w.IsDeleted &&
                                (w.WarehouseName.Contains(searchTerm) ||
-                                w.WarehouseCode.Contains(searchTerm)))
-                    .OrderBy(w => w.WarehouseCode)
+                                w.Code.Contains(searchTerm)))
+                    .OrderBy(w => w.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -83,7 +83,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Warehouses.Where(w => w.WarehouseCode == warehouseCode && !w.IsDeleted);
+                var query = context.Warehouses.Where(w => w.Code == warehouseCode && !w.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(w => w.Id != excludeId.Value);
@@ -108,7 +108,7 @@ namespace ERPCore2.Services
                 return await context.Warehouses
                     .Include(w => w.WarehouseLocations)
                     .Where(w => !w.IsDeleted && w.WarehouseType == warehouseType)
-                    .OrderBy(w => w.WarehouseCode)
+                    .OrderBy(w => w.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -190,14 +190,14 @@ namespace ERPCore2.Services
             try
             {
                 // 基本驗證
-                if (string.IsNullOrWhiteSpace(entity.WarehouseCode))
+                if (string.IsNullOrWhiteSpace(entity.Code))
                     return ServiceResult.Failure("倉庫代碼為必填");
                 
                 if (string.IsNullOrWhiteSpace(entity.WarehouseName))
                     return ServiceResult.Failure("倉庫名稱為必填");
 
                 // 檢查倉庫代碼是否重複
-                if (await IsWarehouseCodeExistsAsync(entity.WarehouseCode, entity.Id))
+                if (await IsWarehouseCodeExistsAsync(entity.Code, entity.Id))
                     return ServiceResult.Failure("倉庫代碼已存在");
 
                 return ServiceResult.Success();

@@ -526,7 +526,7 @@ namespace ERPCore2.Services
                     .Include(pod => pod.Product)
                         .ThenInclude(p => p.Unit)
                     .Where(pod => pod.PurchaseOrderId == orderId && !pod.IsDeleted)
-                    .OrderBy(pod => pod.Product.ProductCode)
+                    .OrderBy(pod => pod.Product.Code)
                     .ToListAsync();
             }
             catch (Exception ex)

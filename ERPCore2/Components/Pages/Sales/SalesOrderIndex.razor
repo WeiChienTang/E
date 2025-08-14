@@ -114,7 +114,7 @@
                 .OrderBy(c => c.CompanyName)
                 .Select(c => new SelectOption 
                 { 
-                    Text = $"{c.CompanyName} ({c.CustomerCode})", 
+                    Text = $"{c.CompanyName} ({c.Code})", 
                     Value = c.Id.ToString() 
                 })
                 .ToList();
@@ -127,7 +127,7 @@
                 .ThenBy(e => e.LastName)
                 .Select(e => new SelectOption 
                 { 
-                    Text = $"{e.FirstName} {e.LastName} ({e.EmployeeCode})", 
+                    Text = $"{e.FirstName} {e.LastName} ({e.Code})", 
                     Value = e.Id.ToString() 
                 })
                 .ToList();

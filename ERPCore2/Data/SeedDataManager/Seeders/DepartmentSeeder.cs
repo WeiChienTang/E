@@ -28,7 +28,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             {
                 new Department
                 {
-                    DepartmentCode = "ADMIN",
+                    Code = "ADMIN",
                     Name = "行政部",
                     Remarks = "行政管理部門",
                     Status = EntityStatus.Active,
@@ -37,7 +37,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Department
                 {
-                    DepartmentCode = "FINANCE",
+                    Code = "FINANCE",
                     Name = "財務部",
                     Remarks = "財務管理部門",
                     Status = EntityStatus.Active,
@@ -46,7 +46,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Department
                 {
-                    DepartmentCode = "SALES",
+                    Code = "SALES",
                     Name = "業務部",
                     Remarks = "業務推廣部門",
                     Status = EntityStatus.Active,
@@ -55,7 +55,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Department
                 {
-                    DepartmentCode = "PROD",
+                    Code = "PROD",
                     Name = "生產部",
                     Remarks = "生產製造部門",
                     Status = EntityStatus.Active,

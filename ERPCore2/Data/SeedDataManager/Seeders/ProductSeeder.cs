@@ -29,35 +29,35 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 return; // 資料已存在
 
             // 取得商品類別
-            var electronicsCategory = await context.ProductCategories.FirstOrDefaultAsync(pc => pc.CategoryCode == "PC001");
-            var officeCategory = await context.ProductCategories.FirstOrDefaultAsync(pc => pc.CategoryCode == "PC002");
-            var industrialCategory = await context.ProductCategories.FirstOrDefaultAsync(pc => pc.CategoryCode == "PC003");
-            var softwareCategory = await context.ProductCategories.FirstOrDefaultAsync(pc => pc.CategoryCode == "PC004");
-            var materialCategory = await context.ProductCategories.FirstOrDefaultAsync(pc => pc.CategoryCode == "PC005");
+            var electronicsCategory = await context.ProductCategories.FirstOrDefaultAsync(pc => pc.Code == "PC001");
+            var officeCategory = await context.ProductCategories.FirstOrDefaultAsync(pc => pc.Code == "PC002");
+            var industrialCategory = await context.ProductCategories.FirstOrDefaultAsync(pc => pc.Code == "PC003");
+            var softwareCategory = await context.ProductCategories.FirstOrDefaultAsync(pc => pc.Code == "PC004");
+            var materialCategory = await context.ProductCategories.FirstOrDefaultAsync(pc => pc.Code == "PC005");
 
             // 取得供應商
-            var supplier1 = await context.Suppliers.FirstOrDefaultAsync(s => s.SupplierCode == "S001");
-            var supplier2 = await context.Suppliers.FirstOrDefaultAsync(s => s.SupplierCode == "S002");
-            var supplier3 = await context.Suppliers.FirstOrDefaultAsync(s => s.SupplierCode == "S003");
-            var supplier4 = await context.Suppliers.FirstOrDefaultAsync(s => s.SupplierCode == "S004");
+            var supplier1 = await context.Suppliers.FirstOrDefaultAsync(s => s.Code == "S001");
+            var supplier2 = await context.Suppliers.FirstOrDefaultAsync(s => s.Code == "S002");
+            var supplier3 = await context.Suppliers.FirstOrDefaultAsync(s => s.Code == "S003");
+            var supplier4 = await context.Suppliers.FirstOrDefaultAsync(s => s.Code == "S004");
 
             // 取得單位
-            var unitPc = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "PC");     // 台
-            var unitPcs = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "PCS");   // 個
-            var unitPack = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "PACK"); // 包
-            var unitPen = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "PEN");   // 支
-            var unitTop = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "TOP");   // 頂
-            var unitLic = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "LIC");   // 授權
-            var unitSht = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "SHT");   // 張
-            var unitBag = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "BAG");   // 袋
-            var unitRol = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "ROL");   // 捲
+            var unitPc = await context.Units.FirstOrDefaultAsync(u => u.Code == "PC");     // 台
+            var unitPcs = await context.Units.FirstOrDefaultAsync(u => u.Code == "PCS");   // 個
+            var unitPack = await context.Units.FirstOrDefaultAsync(u => u.Code == "PACK"); // 包
+            var unitPen = await context.Units.FirstOrDefaultAsync(u => u.Code == "PEN");   // 支
+            var unitTop = await context.Units.FirstOrDefaultAsync(u => u.Code == "TOP");   // 頂
+            var unitLic = await context.Units.FirstOrDefaultAsync(u => u.Code == "LIC");   // 授權
+            var unitSht = await context.Units.FirstOrDefaultAsync(u => u.Code == "SHT");   // 張
+            var unitBag = await context.Units.FirstOrDefaultAsync(u => u.Code == "BAG");   // 袋
+            var unitRol = await context.Units.FirstOrDefaultAsync(u => u.Code == "ROL");   // 捲
 
             var products = new[]
             {
                 // 電子產品
                 new Product
                 {
-                    ProductCode = "P001",
+                    Code = "P001",
                     ProductName = "筆記型電腦 - ThinkPad X1",
                     Description = "高效能商務筆記型電腦，Intel i7處理器，16GB記憶體，512GB SSD",
                     Specification = "14吋FHD IPS螢幕，重量1.13kg，電池續航19.5小時",
@@ -71,7 +71,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 // 辦公用品
                 new Product
                 {
-                    ProductCode = "P002",
+                    Code = "P002",
                     ProductName = "A4影印紙",
                     Description = "高品質A4白色影印紙，適用各種印表機",
                     Specification = "80gsm，500張包裝，FSC認證環保紙張",
@@ -85,7 +85,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 // 工業設備
                 new Product
                 {
-                    ProductCode = "P003",
+                    Code = "P003",
                     ProductName = "安全帽",
                     Description = "工業用安全帽，符合CNS標準",
                     Specification = "ABS材質，可調整帽圍，重量350g",
@@ -99,7 +99,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 // 軟體授權
                 new Product
                 {
-                    ProductCode = "P004",
+                    Code = "P004",
                     ProductName = "Microsoft Office 365授權",
                     Description = "Microsoft Office 365商業年度授權",
                     Specification = "包含Word、Excel、PowerPoint、Outlook等應用程式",
@@ -113,7 +113,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 // 原物料
                 new Product
                 {
-                    ProductCode = "P005",
+                    Code = "P005",
                     ProductName = "不鏽鋼板材",
                     Description = "304不鏽鋼板材，適用工業用途",
                     Specification = "厚度2mm，尺寸1000x2000mm，表面2B處理",

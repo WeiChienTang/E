@@ -285,7 +285,7 @@
             },
             new()
             {
-                PropertyName = nameof(Permission.PermissionCode),
+                PropertyName = nameof(Permission.Code),
                 Title = "權限代碼",
                 DataType = ColumnDataType.Text,
                 CellCssClass = "font-monospace"
@@ -329,7 +329,7 @@
             var allPermissions = await PermissionManagementService.GetAllAsync();
             if (allPermissions != null)
             {
-                permissions = allPermissions.OrderBy(p => p.PermissionCode).ToList();
+                permissions = allPermissions.OrderBy(p => p.Code).ToList();
             }
 
             // 載入角色已有的權限
@@ -530,7 +530,7 @@
             // 如果包含系統權限，顯示確認對話框
             if (systemPermissions.Any())
             {
-                var systemPermissionNames = systemPermissions.Select(p => $"• {p.PermissionName} ({p.PermissionCode})").ToList();
+                var systemPermissionNames = systemPermissions.Select(p => $"• {p.PermissionName} ({p.Code})").ToList();
                 var permissionList = string.Join("\n", systemPermissionNames);
                 
                 var confirmMessage = $"您即將為角色「{selectedRole.RoleName}」授予以下系統核心權限：\n\n{permissionList}\n\n" +
@@ -648,7 +648,7 @@
 
     private bool IsSystemPermission(Permission permission)
     {
-        var code = permission.PermissionCode;
+        var code = permission.Code;
         return code.StartsWith("System.") || 
                code.StartsWith("EmployeeEdit_Account_Password.") ||
                code.StartsWith("SystemControl.") || 
@@ -753,7 +753,7 @@
                     
                     builder.OpenElement(rowIndex++, "td");
                     builder.AddAttribute(rowIndex++, "class", "font-monospace");
-                    builder.AddContent(rowIndex++, permission.PermissionCode);
+                    builder.AddContent(rowIndex++, permission.Code);
                     builder.CloseElement();
                     
                     builder.OpenElement(rowIndex++, "td");

@@ -13,10 +13,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "天氣名稱")]
         public string Name { get; set; } = string.Empty;
 
-        [MaxLength(20, ErrorMessage = "天氣代碼不可超過20個字元")]
-        [Display(Name = "天氣代碼")]
-        public string Code { get; set; } = string.Empty;
-
         [MaxLength(200, ErrorMessage = "描述不可超過200個字元")]
         [Display(Name = "描述")]
         public string? Description { get; set; }

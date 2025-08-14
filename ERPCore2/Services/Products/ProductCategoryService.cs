@@ -75,7 +75,7 @@ namespace ERPCore2.Services
                 return await context.ProductCategories
                     .Where(pc => !pc.IsDeleted &&
                                (pc.CategoryName.Contains(searchTerm) ||
-                                (pc.CategoryCode != null && pc.CategoryCode.Contains(searchTerm)) ||
+                                (pc.Code != null && pc.Code.Contains(searchTerm)) ||
                                 (pc.Description != null && pc.Description.Contains(searchTerm))))
                     .OrderBy(pc => pc.CategoryName)
                     .ToListAsync();
@@ -109,9 +109,9 @@ namespace ERPCore2.Services
                 }
 
                 // 驗證分類代碼唯一性（如果有提供）
-                if (!string.IsNullOrWhiteSpace(entity.CategoryCode))
+                if (!string.IsNullOrWhiteSpace(entity.Code))
                 {
-                    var isDuplicate = await IsCategoryCodeExistsAsync(entity.CategoryCode, entity.Id);
+                    var isDuplicate = await IsCategoryCodeExistsAsync(entity.Code, entity.Id);
                     if (isDuplicate)
                     {
                         errors.Add("分類代碼已存在");
@@ -197,7 +197,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.ProductCategories.Where(pc => pc.CategoryCode == categoryCode && !pc.IsDeleted);
+                var query = context.ProductCategories.Where(pc => pc.Code == categoryCode && !pc.IsDeleted);
                 
                 if (excludeId.HasValue)
                     query = query.Where(pc => pc.Id != excludeId.Value);
@@ -237,7 +237,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductCategories
-                    .FirstOrDefaultAsync(pc => pc.CategoryCode == categoryCode && !pc.IsDeleted);
+                    .FirstOrDefaultAsync(pc => pc.Code == categoryCode && !pc.IsDeleted);
             }
             catch (Exception ex)
             {

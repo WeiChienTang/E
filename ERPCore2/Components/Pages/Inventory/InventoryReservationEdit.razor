@@ -342,7 +342,7 @@
             productOptions = products.Select(p => new SelectOption
             {
                 Value = p.Id.ToString(),
-                Text = $"{p.ProductCode} - {p.ProductName}"
+                Text = $"{p.Code} - {p.ProductName}"
             }).ToList();
         }
         catch (Exception ex)
@@ -364,7 +364,7 @@
             warehouseOptions = warehouses.Select(w => new SelectOption
             {
                 Value = w.Id.ToString(),
-                Text = $"{w.WarehouseCode} - {w.WarehouseName}"
+                Text = $"{w.Code} - {w.WarehouseName}"
             }).ToList();
         }
         catch (Exception ex)

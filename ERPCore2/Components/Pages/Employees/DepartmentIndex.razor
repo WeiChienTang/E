@@ -158,7 +158,7 @@
         {
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("DepartmentCode", "部門代碼", "輸入部門代碼搜尋")
+                .AddText("Code", "部門代碼", "輸入部門代碼搜尋")
                 .AddText("Name", "部門名稱", "輸入部門名稱搜尋")
                 .Build();
         }
@@ -179,7 +179,7 @@
         {
             columnDefinitions = new List<TableColumnDefinition>
             {
-                TableColumnDefinition.Text("部門代碼", nameof(Department.DepartmentCode)),
+                TableColumnDefinition.Text("部門代碼", nameof(Department.Code)),
                 TableColumnDefinition.Text("部門名稱", nameof(Department.Name)),
                 new TableColumnDefinition
                 {
@@ -196,7 +196,7 @@
                             var managerName = $"{department.Manager.FirstName}{department.Manager.LastName}".Trim();
                             if (string.IsNullOrWhiteSpace(managerName))
                             {
-                                managerName = department.Manager.EmployeeCode;
+                                managerName = department.Manager.Code;
                             }
                             builder.AddContent(0, managerName);
                         }
@@ -252,7 +252,7 @@
             (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Name", d => d.Name),
             
             // 部門代碼篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "DepartmentCode", d => d.DepartmentCode),
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Code", d => d.Code),
         };
 
         return FilterHelper.ApplyFiltersWithErrorHandling(

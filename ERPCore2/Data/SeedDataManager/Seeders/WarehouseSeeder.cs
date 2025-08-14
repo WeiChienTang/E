@@ -29,7 +29,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             {
                 new Warehouse
                 {
-                    WarehouseCode = "WH001",
+                    Code = "WH001",
                     WarehouseName = "主倉庫",
                     Address = "台中市北屯區文心路四段123號",
                     ContactPerson = "王倉管",
@@ -42,7 +42,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Warehouse
                 {
-                    WarehouseCode = "WH002",
+                    Code = "WH002",
                     WarehouseName = "分倉庫A",
                     Address = "台中市西屯區台灣大道三段456號",
                     ContactPerson = "李倉管",
@@ -55,7 +55,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Warehouse
                 {
-                    WarehouseCode = "WH003",
+                    Code = "WH003",
                     WarehouseName = "分倉庫B",
                     Address = "台中市南屯區向上路二段789號",
                     ContactPerson = "張倉管",
@@ -68,7 +68,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Warehouse
                 {
-                    WarehouseCode = "WH004",
+                    Code = "WH004",
                     WarehouseName = "退貨倉庫",
                     Address = "台中市東區東英路100號",
                     ContactPerson = "陳倉管",
@@ -81,7 +81,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Warehouse
                 {
-                    WarehouseCode = "WH005",
+                    Code = "WH005",
                     WarehouseName = "虛擬倉庫",
                     Address = null,
                     ContactPerson = "系統管理員",
@@ -94,7 +94,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Warehouse
                 {
-                    WarehouseCode = "WH999",
+                    Code = "WH999",
                     WarehouseName = "測試倉庫(停用)",
                     Address = "台中市測試區測試路999號",
                     ContactPerson = "測試人員",
@@ -121,7 +121,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             var warehouseLocations = new List<WarehouseLocation>();
 
             // 主倉庫庫位 (WH001)
-            var mainWarehouse = warehouses.First(w => w.WarehouseCode == "WH001");
+            var mainWarehouse = warehouses.First(w => w.Code == "WH001");
             for (int zone = 1; zone <= 3; zone++)
             {
                 for (int aisle = 1; aisle <= 5; aisle++)
@@ -131,7 +131,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                         warehouseLocations.Add(new WarehouseLocation
                         {
                             WarehouseId = mainWarehouse.Id,
-                            LocationCode = $"A{zone:D1}-{aisle:D2}-{level:D2}",
+                            Code = $"A{zone:D1}-{aisle:D2}-{level:D2}",
                             LocationName = $"A區{zone}道{aisle}層{level}",
                             Zone = $"A{zone}",
                             Aisle = aisle.ToString("D2"),
@@ -147,7 +147,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             }
 
             // 分倉庫A庫位 (WH002)
-            var branchWarehouseA = warehouses.First(w => w.WarehouseCode == "WH002");
+            var branchWarehouseA = warehouses.First(w => w.Code == "WH002");
             for (int zone = 1; zone <= 2; zone++)
             {
                 for (int aisle = 1; aisle <= 3; aisle++)
@@ -157,7 +157,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                         warehouseLocations.Add(new WarehouseLocation
                         {
                             WarehouseId = branchWarehouseA.Id,
-                            LocationCode = $"B{zone:D1}-{aisle:D2}-{level:D2}",
+                            Code = $"B{zone:D1}-{aisle:D2}-{level:D2}",
                             LocationName = $"B區{zone}道{aisle}層{level}",
                             Zone = $"B{zone}",
                             Aisle = aisle.ToString("D2"),
@@ -173,7 +173,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             }
 
             // 分倉庫B庫位 (WH003)
-            var branchWarehouseB = warehouses.First(w => w.WarehouseCode == "WH003");
+            var branchWarehouseB = warehouses.First(w => w.Code == "WH003");
             for (int zone = 1; zone <= 2; zone++)
             {
                 for (int aisle = 1; aisle <= 4; aisle++)
@@ -183,7 +183,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                         warehouseLocations.Add(new WarehouseLocation
                         {
                             WarehouseId = branchWarehouseB.Id,
-                            LocationCode = $"C{zone:D1}-{aisle:D2}-{level:D2}",
+                            Code = $"C{zone:D1}-{aisle:D2}-{level:D2}",
                             LocationName = $"C區{zone}道{aisle}層{level}",
                             Zone = $"C{zone}",
                             Aisle = aisle.ToString("D2"),
@@ -199,7 +199,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             }
 
             // 退貨倉庫庫位 (WH004)
-            var returnWarehouse = warehouses.First(w => w.WarehouseCode == "WH004");
+            var returnWarehouse = warehouses.First(w => w.Code == "WH004");
             for (int aisle = 1; aisle <= 2; aisle++)
             {
                 for (int level = 1; level <= 2; level++)
@@ -207,7 +207,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     warehouseLocations.Add(new WarehouseLocation
                     {
                         WarehouseId = returnWarehouse.Id,
-                        LocationCode = $"R-{aisle:D2}-{level:D2}",
+                        Code = $"R-{aisle:D2}-{level:D2}",
                         LocationName = $"退貨區道{aisle}層{level}",
                         Zone = "R",
                         Aisle = aisle.ToString("D2"),

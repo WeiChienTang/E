@@ -139,7 +139,7 @@
         {
             columnDefinitions = new List<TableColumnDefinition>
             {
-                TableColumnDefinition.Text("倉庫代碼", nameof(Warehouse.WarehouseCode)),
+                TableColumnDefinition.Text("倉庫代碼", nameof(Warehouse.Code)),
                 TableColumnDefinition.Text("倉庫名稱", nameof(Warehouse.WarehouseName)),
                 TableColumnDefinition.Text("聯絡人", nameof(Warehouse.ContactPerson)),
                 TableColumnDefinition.Text("聯絡電話", nameof(Warehouse.Phone)),
@@ -176,7 +176,7 @@
             if (!string.IsNullOrWhiteSpace(warehouseCodeFilter))
             {
                 query = query.Where(w => 
-                    w.WarehouseCode.Contains(warehouseCodeFilter, StringComparison.OrdinalIgnoreCase));
+                    w.Code.Contains(warehouseCodeFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 倉庫名稱篩選
@@ -226,7 +226,7 @@
                 query = query.Where(w => w.IsDefault == isDefault);
             }
 
-            return query.OrderBy(w => w.WarehouseCode);
+            return query.OrderBy(w => w.Code);
         }
         catch (Exception ex)
         {
@@ -238,7 +238,7 @@
             );
             
             // 發生錯誤時返回原始查詢
-            return query.OrderBy(w => w.WarehouseCode);
+            return query.OrderBy(w => w.Code);
         }
     }
 }

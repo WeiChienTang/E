@@ -7,14 +7,9 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 尺寸實體 - 定義商品尺寸規格
     /// </summary>
-    [Index(nameof(SizeCode), IsUnique = true)]
+    [Index(nameof(Code), IsUnique = true)]
     public class Size : BaseEntity
     {
-        // Required Properties
-        [Required(ErrorMessage = "尺寸代碼為必填")]
-        [MaxLength(20, ErrorMessage = "尺寸代碼不可超過20個字元")]
-        [Display(Name = "尺寸代碼")]
-        public string SizeCode { get; set; } = string.Empty;
         
         [Required(ErrorMessage = "尺寸名稱為必填")]
         [MaxLength(50, ErrorMessage = "尺寸名稱不可超過50個字元")]

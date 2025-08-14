@@ -27,7 +27,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
         private static async Task SeedDefaultAdminAsync(AppDbContext context)
         {
             // 檢查是否已有 ADMIN001 員工
-            if (await context.Employees.AnyAsync(e => e.EmployeeCode == "ADMIN001"))
+            if (await context.Employees.AnyAsync(e => e.Code == "ADMIN001"))
                 return;
 
             // 取得系統管理員角色 - 修正角色名稱
@@ -36,7 +36,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             // 建立系統管理員帳號
             var adminEmployee = new Employee
             {
-                EmployeeCode = "ADMIN001",
+                Code = "ADMIN001",
                 FirstName = "系統",
                 LastName = "管理員",
                 Account = "admin",
@@ -70,7 +70,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             foreach (var emp in defaultEmployees)
             {
                 // 檢查員工是否已存在
-                if (await context.Employees.AnyAsync(e => e.EmployeeCode == emp.Code))
+                if (await context.Employees.AnyAsync(e => e.Code == emp.Code))
                     continue;
 
                 // 取得角色
@@ -79,7 +79,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 // 建立員工
                 var employee = new Employee
                 {
-                    EmployeeCode = emp.Code,
+                    Code = emp.Code,
                     FirstName = emp.FirstName,
                     LastName = emp.LastName,
                     Account = emp.Account,

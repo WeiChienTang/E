@@ -7,17 +7,9 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 權限實體 - 系統功能權限定義
     /// </summary>
-    [Index(nameof(PermissionCode), IsUnique = true)]
+    [Index(nameof(Code), IsUnique = true)]
     public class Permission : BaseEntity
     {
-        /// <summary>
-        /// 權限代碼 (Customer.Create)
-        /// </summary>
-        [Display(Name = "權限代碼")]
-        [Required(ErrorMessage = "請輸入權限代碼")]
-        [MaxLength(100, ErrorMessage = "權限代碼不可超過100個字元")]
-        public string PermissionCode { get; set; } = string.Empty;
-
         /// <summary>
         /// 權限名稱 (如: 客戶查看, 客戶新增)
         /// </summary>

@@ -7,15 +7,9 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 倉庫實體 - 定義倉庫基本資訊
     /// </summary>
-    [Index(nameof(WarehouseCode), IsUnique = true)]
+    [Index(nameof(Code), IsUnique = true)]
     public class Warehouse : BaseEntity
-    {
-        // Required Properties
-        [Required(ErrorMessage = "倉庫代碼為必填")]
-        [MaxLength(20, ErrorMessage = "倉庫代碼不可超過20個字元")]
-        [Display(Name = "倉庫代碼")]
-        public string WarehouseCode { get; set; } = string.Empty;
-        
+    {        
         [Required(ErrorMessage = "倉庫名稱為必填")]
         [MaxLength(50, ErrorMessage = "倉庫名稱不可超過50個字元")]
         [Display(Name = "倉庫名稱")]

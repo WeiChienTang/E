@@ -51,10 +51,10 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             if (employeeRole != null)
             {
                 var officeEmployeePermissions = allPermissions
-                    .Where(p => !p.PermissionCode.StartsWith("System") && 
-                               !p.PermissionCode.StartsWith("Role") && 
-                               !p.PermissionCode.StartsWith("EmployeeEdit_Account_Password") &&
-                               !p.PermissionCode.StartsWith("Permission"))
+                    .Where(p => !p.Code.StartsWith("System") && 
+                               !p.Code.StartsWith("Role") && 
+                               !p.Code.StartsWith("EmployeeEdit_Account_Password") &&
+                               !p.Code.StartsWith("Permission"))
                     .ToList();
 
                 rolePermissions.AddRange(officeEmployeePermissions.Select(p => new RolePermission

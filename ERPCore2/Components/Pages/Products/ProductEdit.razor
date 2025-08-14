@@ -49,7 +49,7 @@
                                        GetIsActive="@(ps => ps.Status == EntityStatus.Active)"
                                        GetRelatedEntityDisplayText="@(ps => ps.Supplier?.CompanyName ?? "")"
                                        GetRelatedEntityId="@(s => s.Id)"
-                                       GetRelatedEntityText="@(s => $"{s.CompanyName} ({s.SupplierCode})")"
+                                       GetRelatedEntityText="@(s => $"{s.CompanyName} ({s.Code})")"
                                        SetIsPrimary="@((ps, isPrimary) => ps.IsPrimarySupplier = isPrimary)"
                                        SetParentId="@((ps, parentId) => ps.ProductId = parentId)"
                                        SetRelatedEntityId="@((ps, supplierId) => ps.SupplierId = supplierId)"
@@ -144,7 +144,7 @@
             formFields = new List<FormFieldDefinition>
             {
                 new() {
-                    PropertyName = nameof(Product.ProductCode),
+                    PropertyName = nameof(Product.Code),
                     Label = "產品代碼",
                     FieldType = FormFieldType.Text,
                     IsRequired = true,
@@ -180,7 +180,7 @@
             formSections = new Dictionary<string, string>
             {
                 // 基本資訊區塊
-                { nameof(Product.ProductCode), "基本資訊" },
+                { nameof(Product.Code), "基本資訊" },
                 { nameof(Product.ProductName), "基本資訊" },
                 
                 // 詳細說明與其他資訊區塊（放在最下方）
@@ -300,7 +300,7 @@
                 Options = suppliers.Select(s => new SelectOption 
                 { 
                     Value = s.Id.ToString(), 
-                    Text = $"{s.CompanyName} ({s.SupplierCode})" 
+                    Text = $"{s.CompanyName} ({s.Code})" 
                 }).ToList(),
             };
 

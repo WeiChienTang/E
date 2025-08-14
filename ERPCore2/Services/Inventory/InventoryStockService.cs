@@ -35,8 +35,8 @@ namespace ERPCore2.Services
                     .Include(i => i.Warehouse)
                     .Include(i => i.WarehouseLocation)
                     .Where(i => !i.IsDeleted)
-                    .OrderBy(i => i.Product.ProductCode)
-                    .ThenBy(i => i.Warehouse.WarehouseCode)
+                    .OrderBy(i => i.Product.Code)
+                    .ThenBy(i => i.Warehouse.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -81,11 +81,11 @@ namespace ERPCore2.Services
                     .Include(i => i.Warehouse)
                     .Include(i => i.WarehouseLocation)
                     .Where(i => !i.IsDeleted && 
-                        (i.Product.ProductCode.ToLower().Contains(term) ||
+                        (i.Product.Code.ToLower().Contains(term) ||
                          i.Product.ProductName.ToLower().Contains(term) ||
-                         i.Warehouse.WarehouseCode.ToLower().Contains(term) ||
+                         i.Warehouse.Code.ToLower().Contains(term) ||
                          i.Warehouse.WarehouseName.ToLower().Contains(term)))
-                    .OrderBy(i => i.Product.ProductCode)
+                    .OrderBy(i => i.Product.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -152,7 +152,7 @@ namespace ERPCore2.Services
                     .Include(i => i.Warehouse)
                     .Include(i => i.WarehouseLocation)
                     .Where(i => i.ProductId == productId && !i.IsDeleted)
-                    .OrderBy(i => i.Warehouse.WarehouseCode)
+                    .OrderBy(i => i.Warehouse.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -171,7 +171,7 @@ namespace ERPCore2.Services
                     .Include(i => i.Product)
                     .Include(i => i.WarehouseLocation)
                     .Where(i => i.WarehouseId == warehouseId && !i.IsDeleted)
-                    .OrderBy(i => i.Product.ProductCode)
+                    .OrderBy(i => i.Product.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -213,7 +213,7 @@ namespace ERPCore2.Services
                     .Where(i => !i.IsDeleted && 
                               i.MinStockLevel.HasValue && 
                               i.CurrentStock <= i.MinStockLevel.Value)
-                    .OrderBy(i => i.Product.ProductCode)
+                    .OrderBy(i => i.Product.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -529,7 +529,7 @@ namespace ERPCore2.Services
 
                 return await query
                     .OrderBy(i => i.Warehouse.WarehouseName)
-                    .ThenBy(i => i.Product.ProductCode)
+                    .ThenBy(i => i.Product.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -561,7 +561,7 @@ namespace ERPCore2.Services
                                i.MinStockLevel.HasValue && 
                                i.CurrentStock <= i.MinStockLevel.Value)
                     .OrderBy(i => i.CurrentStock)
-                    .ThenBy(i => i.Product.ProductCode)
+                    .ThenBy(i => i.Product.Code)
                     .ToListAsync();
             }
             catch (Exception ex)

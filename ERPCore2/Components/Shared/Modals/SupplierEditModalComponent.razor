@@ -158,7 +158,7 @@
             {
                 new()
                 {
-                    PropertyName = nameof(Supplier.SupplierCode),
+                    PropertyName = nameof(Supplier.Code),
                     Label = "廠商代碼",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入廠商代碼",
@@ -221,7 +221,7 @@
             // 更新表單區段定義
             formSections = new Dictionary<string, string>
             {
-                { nameof(Supplier.SupplierCode), "基本資訊" },
+                { nameof(Supplier.Code), "基本資訊" },
                 { nameof(Supplier.CompanyName), "基本資訊" },
                 { nameof(Supplier.ContactPerson), "基本資訊" },
                 { nameof(Supplier.TaxNumber), "基本資訊" },
@@ -311,7 +311,7 @@
                 // 新增模式
                 var newSupplier = new Supplier
                 {
-                    SupplierCode = GenerateSupplierCode(),
+                    Code = GenerateSupplierCode(),
                     CompanyName = "",
                     ContactPerson = "",
                     TaxNumber = "",
@@ -345,7 +345,7 @@
             // 設定安全的預設值，確保程式不會崩潰
             return new Supplier
             {
-                SupplierCode = "",
+                Code = "",
                 CompanyName = "",
                 ContactPerson = "",
                 TaxNumber = "",
@@ -373,7 +373,7 @@
         try
         {
             // 基本驗證 - 使用通知服務
-            if (string.IsNullOrWhiteSpace(entity.SupplierCode))
+            if (string.IsNullOrWhiteSpace(entity.Code))
             {
                 _ = NotificationService.ShowErrorAsync("廠商代碼為必填");
                 return false;

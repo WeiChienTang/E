@@ -135,7 +135,7 @@
         {
             columnDefinitions = new List<TableColumnDefinition>
             {
-                TableColumnDefinition.Text("尺寸代碼", nameof(Size.SizeCode)),
+                TableColumnDefinition.Text("尺寸代碼", nameof(Size.Code)),
                 TableColumnDefinition.Text("尺寸名稱", nameof(Size.SizeName)),
                 TableColumnDefinition.Text("描述", nameof(Size.Description)),
                 TableColumnDefinition.Text("備註", nameof(Size.Remarks))
@@ -161,7 +161,7 @@
             if (!string.IsNullOrWhiteSpace(sizeCodeFilter))
             {
                 query = query.Where(s => 
-                    s.SizeCode.Contains(sizeCodeFilter, StringComparison.OrdinalIgnoreCase));
+                    s.Code.Contains(sizeCodeFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 尺寸名稱篩選

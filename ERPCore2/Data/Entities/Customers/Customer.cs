@@ -8,15 +8,9 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 客戶實體 - 定義客戶基本資訊
     /// </summary>
-    [Index(nameof(CustomerCode), IsUnique = true)]
+    [Index(nameof(Code), IsUnique = true)]
     public class Customer : BaseEntity
-    {
-        // Required Properties
-        [Required(ErrorMessage = "客戶代碼為必填")]
-        [MaxLength(20, ErrorMessage = "客戶代碼不可超過20個字元")]
-        [Display(Name = "客戶代碼")]
-        public string CustomerCode { get; set; } = string.Empty;
-        
+    {        
         [Required(ErrorMessage = "公司名稱為必填")]
         [MaxLength(100, ErrorMessage = "公司名稱不可超過100個字元")]
         [Display(Name = "公司名稱")]

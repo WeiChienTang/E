@@ -41,7 +41,7 @@ namespace ERPCore2.Services
                     .Include(e => e.Department)
                     .Include(e => e.EmployeePosition)
                     .Where(e => !e.IsDeleted)
-                    .OrderBy(e => e.EmployeeCode)
+                    .OrderBy(e => e.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -113,11 +113,11 @@ namespace ERPCore2.Services
         /// <summary>
         /// 根據員工編號取得員工
         /// </summary>
-        public async Task<ServiceResult<Employee>> GetByEmployeeCodeAsync(string employeeCode)
+        public async Task<ServiceResult<Employee>> GetByEmployeeCodeAsync(string Code)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(employeeCode))
+                if (string.IsNullOrWhiteSpace(Code))
                     return ServiceResult<Employee>.Failure("員工編號不能為空");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
@@ -125,7 +125,7 @@ namespace ERPCore2.Services
                     .Include(e => e.Role)
                     .Include(e => e.Department)
                     .Include(e => e.EmployeePosition)
-                    .FirstOrDefaultAsync(e => e.EmployeeCode == employeeCode && !e.IsDeleted);
+                    .FirstOrDefaultAsync(e => e.Code == Code && !e.IsDeleted);
 
                 if (employee == null)
                     return ServiceResult<Employee>.Failure("找不到指定的員工");
@@ -137,7 +137,7 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByEmployeeCodeAsync), GetType(), _logger, new { 
                     Method = nameof(GetByEmployeeCodeAsync),
                     ServiceType = GetType().Name,
-                    EmployeeCode = employeeCode
+                    Code = Code
                 });
                 return ServiceResult<Employee>.Failure($"取得員工資料時發生錯誤：{ex.Message}");
             }
@@ -179,15 +179,15 @@ namespace ERPCore2.Services
         /// <summary>
         /// 檢查員工編號是否已存在
         /// </summary>
-        public async Task<ServiceResult<bool>> IsEmployeeCodeExistsAsync(string employeeCode, int? excludeEmployeeId = null)
+        public async Task<ServiceResult<bool>> IsEmployeeCodeExistsAsync(string Code, int? excludeEmployeeId = null)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(employeeCode))
+                if (string.IsNullOrWhiteSpace(Code))
                     return ServiceResult<bool>.Failure("員工編號不能為空");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Employees.Where(e => e.EmployeeCode == employeeCode && !e.IsDeleted);
+                var query = context.Employees.Where(e => e.Code == Code && !e.IsDeleted);
 
                 if (excludeEmployeeId.HasValue)
                     query = query.Where(e => e.Id != excludeEmployeeId.Value);
@@ -200,7 +200,7 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsEmployeeCodeExistsAsync), GetType(), _logger, new { 
                     Method = nameof(IsEmployeeCodeExistsAsync),
                     ServiceType = GetType().Name,
-                    EmployeeCode = employeeCode,
+                    Code = Code,
                     ExcludeEmployeeId = excludeEmployeeId
                 });
                 return ServiceResult<bool>.Failure($"檢查員工編號時發生錯誤：{ex.Message}");
@@ -225,10 +225,10 @@ namespace ERPCore2.Services
                     .Where(e => !e.IsDeleted && 
                                ((e.FirstName != null && e.FirstName.Contains(searchTerm)) ||
                                 (e.LastName != null && e.LastName.Contains(searchTerm)) ||
-                                e.EmployeeCode.Contains(searchTerm) ||
+                                e.Code.Contains(searchTerm) ||
                                 (e.Account != null && e.Account.Contains(searchTerm)) ||
                                 (e.Department != null && e.Department.Name.Contains(searchTerm))))
-                    .OrderBy(e => e.EmployeeCode)
+                    .OrderBy(e => e.Code)
                     .ToListAsync();
 
                 return ServiceResult<List<Employee>>.Success(employees);
@@ -257,7 +257,7 @@ namespace ERPCore2.Services
                     .Include(e => e.Department)
                     .Include(e => e.EmployeePosition)
                     .Where(e => e.RoleId.HasValue && e.RoleId.Value == roleId && !e.IsDeleted)
-                    .OrderBy(e => e.EmployeeCode)
+                    .OrderBy(e => e.Code)
                     .ToListAsync();
 
                 return ServiceResult<List<Employee>>.Success(employees);
@@ -289,7 +289,7 @@ namespace ERPCore2.Services
                     .Include(e => e.Department)
                     .Include(e => e.EmployeePosition)
                     .Where(e => e.Department != null && e.Department.Name == department && !e.IsDeleted)
-                    .OrderBy(e => e.EmployeeCode)
+                    .OrderBy(e => e.Code)
                     .ToListAsync();
 
                 return ServiceResult<List<Employee>>.Success(employees);
@@ -376,7 +376,7 @@ namespace ERPCore2.Services
                     .Include(e => e.Department)
                     .Include(e => e.EmployeePosition)
                     .Where(e => !e.IsDeleted && e.Status == EntityStatus.Active)
-                    .OrderBy(e => e.EmployeeCode)
+                    .OrderBy(e => e.Code)
                     .ToListAsync();
 
                 return ServiceResult<List<Employee>>.Success(employees);
@@ -408,14 +408,14 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(employee.LastName))
                     return ServiceResult<bool>.Failure("姓氏不能為空");
 
-                if (string.IsNullOrWhiteSpace(employee.EmployeeCode))
+                if (string.IsNullOrWhiteSpace(employee.Code))
                     return ServiceResult<bool>.Failure("員工編號不能為空");
 
                 if (string.IsNullOrWhiteSpace(employee.Account))
                     return ServiceResult<bool>.Failure("使用者名稱不能為空");
 
                 // 驗證員工編號格式
-                if (!Regex.IsMatch(employee.EmployeeCode, @"^[A-Z0-9]+$"))
+                if (!Regex.IsMatch(employee.Code, @"^[A-Z0-9]+$"))
                     return ServiceResult<bool>.Failure("員工編號只能包含大寫字母和數字");
 
                 // 驗證使用者名稱格式
@@ -444,14 +444,14 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var lastEmployee = await context.Employees
-                    .Where(e => e.EmployeeCode.StartsWith(prefix))
-                    .OrderByDescending(e => e.EmployeeCode)
+                    .Where(e => e.Code.StartsWith(prefix))
+                    .OrderByDescending(e => e.Code)
                     .FirstOrDefaultAsync();
 
                 if (lastEmployee == null)
                     return ServiceResult<string>.Success($"{prefix}001");
 
-                var lastCode = lastEmployee.EmployeeCode;
+                var lastCode = lastEmployee.Code;
                 var numberPart = lastCode.Substring(prefix.Length);
 
                 if (int.TryParse(numberPart, out int lastNumber))
@@ -501,7 +501,7 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.LastName))
                     errors.Add("姓氏為必填");
 
-                if (string.IsNullOrWhiteSpace(entity.EmployeeCode))
+                if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("員工代碼為必填");
 
                 // 檢查長度限制
@@ -514,7 +514,7 @@ namespace ERPCore2.Services
                 if (entity.LastName?.Length > 50)
                     errors.Add("姓氏不可超過50個字元");
 
-                if (!string.IsNullOrEmpty(entity.EmployeeCode) && entity.EmployeeCode.Length > 20)
+                if (!string.IsNullOrEmpty(entity.Code) && entity.Code.Length > 20)
                     errors.Add("員工代碼不可超過20個字元");
 
                 // 檢查帳號是否重複（只有系統使用者需要檢查帳號唯一性）
@@ -530,10 +530,10 @@ namespace ERPCore2.Services
                 }
 
                 // 檢查員工代碼是否重複
-                if (!string.IsNullOrWhiteSpace(entity.EmployeeCode))
+                if (!string.IsNullOrWhiteSpace(entity.Code))
                 {
                     var isCodeDuplicate = await context.Employees
-                        .Where(e => e.EmployeeCode == entity.EmployeeCode && !e.IsDeleted)
+                        .Where(e => e.Code == entity.Code && !e.IsDeleted)
                         .Where(e => e.Id != entity.Id) // 排除自己
                         .AnyAsync();
 
@@ -606,11 +606,11 @@ namespace ERPCore2.Services
         /// <summary>
         /// 檢查軟刪除的員工資料
         /// </summary>
-        public async Task<ServiceResult<Employee?>> GetSoftDeletedEmployeeAsync(string username, string employeeCode)
+        public async Task<ServiceResult<Employee?>> GetSoftDeletedEmployeeAsync(string username, string Code)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(username) && string.IsNullOrWhiteSpace(employeeCode))
+                if (string.IsNullOrWhiteSpace(username) && string.IsNullOrWhiteSpace(Code))
                     return ServiceResult<Employee?>.Failure("使用者名稱和員工編號不能都為空");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
@@ -621,9 +621,9 @@ namespace ERPCore2.Services
                     .Include(e => e.EmployeePosition)
                     .Where(e => e.IsDeleted);
 
-                if (!string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(employeeCode))
+                if (!string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(Code))
                 {
-                    query = query.Where(e => e.Account == username || e.EmployeeCode == employeeCode);
+                    query = query.Where(e => e.Account == username || e.Code == Code);
                 }
                 else if (!string.IsNullOrWhiteSpace(username))
                 {
@@ -631,7 +631,7 @@ namespace ERPCore2.Services
                 }
                 else
                 {
-                    query = query.Where(e => e.EmployeeCode == employeeCode);
+                    query = query.Where(e => e.Code == Code);
                 }
 
                 var employee = await query.FirstOrDefaultAsync();
@@ -643,7 +643,7 @@ namespace ERPCore2.Services
                     Method = nameof(GetSoftDeletedEmployeeAsync),
                     ServiceType = GetType().Name,
                     Account = username,
-                    EmployeeCode = employeeCode
+                    Code = Code
                 });
                 return ServiceResult<Employee?>.Failure($"檢查軟刪除員工時發生錯誤：{ex.Message}");
             }
@@ -652,13 +652,13 @@ namespace ERPCore2.Services
         /// <summary>
         /// 檢查新增員工時是否與軟刪除員工衝突
         /// </summary>
-        public async Task<ServiceResult<IEmployeeService.SoftDeletedEmployeeCheckResult>> CheckSoftDeletedConflictAsync(string username, string employeeCode)
+        public async Task<ServiceResult<IEmployeeService.SoftDeletedEmployeeCheckResult>> CheckSoftDeletedConflictAsync(string username, string Code)
         {
             try
             {
                 var result = new IEmployeeService.SoftDeletedEmployeeCheckResult();
 
-                if (string.IsNullOrWhiteSpace(username) && string.IsNullOrWhiteSpace(employeeCode))
+                if (string.IsNullOrWhiteSpace(username) && string.IsNullOrWhiteSpace(Code))
                     return ServiceResult<IEmployeeService.SoftDeletedEmployeeCheckResult>.Success(result);
 
                 using var context = await _contextFactory.CreateDbContextAsync();
@@ -683,13 +683,13 @@ namespace ERPCore2.Services
                 }
 
                 // 檢查員工編號衝突
-                if (!string.IsNullOrWhiteSpace(employeeCode))
+                if (!string.IsNullOrWhiteSpace(Code))
                 {
                     var codeConflict = await context.Employees
                         .Include(e => e.Role)
                         .Include(e => e.Department)
                         .Include(e => e.EmployeePosition)
-                        .FirstOrDefaultAsync(e => e.EmployeeCode == employeeCode && e.IsDeleted);
+                        .FirstOrDefaultAsync(e => e.Code == Code && e.IsDeleted);
                     
                     if (codeConflict != null)
                     {
@@ -698,12 +698,12 @@ namespace ERPCore2.Services
                         {
                             softDeletedEmployee = codeConflict;
                             if (!conflictTypes.Contains("Account"))
-                                conflictTypes.Add("EmployeeCode");
+                                conflictTypes.Add("Code");
                         }
                         else
                         {
                             // 不同員工有不同的衝突，這種情況比較複雜
-                            conflictTypes.Add("EmployeeCode");
+                            conflictTypes.Add("Code");
                         }
                     }
                 }
@@ -723,7 +723,7 @@ namespace ERPCore2.Services
                     Method = nameof(CheckSoftDeletedConflictAsync),
                     ServiceType = GetType().Name,
                     Account = username,
-                    EmployeeCode = employeeCode
+                    Code = Code
                 });
                 return ServiceResult<IEmployeeService.SoftDeletedEmployeeCheckResult>.Failure($"檢查軟刪除衝突時發生錯誤：{ex.Message}");
             }
@@ -822,7 +822,7 @@ namespace ERPCore2.Services
                 employee.UpdatedAt = DateTime.Now;
                 
                 // 更新業務資料
-                employee.EmployeeCode = updateData.EmployeeCode;
+                employee.Code = updateData.Code;
                 employee.Account = updateData.Account;
                 employee.FirstName = updateData.FirstName;
                 employee.LastName = updateData.LastName;
@@ -849,7 +849,7 @@ namespace ERPCore2.Services
                     EmployeeId = employeeId,
                     UpdateData = new { 
                         updateData.Account, 
-                        updateData.EmployeeCode, 
+                        updateData.Code, 
                         updateData.RoleId, 
                         updateData.DepartmentId, 
                         updateData.EmployeePositionId 

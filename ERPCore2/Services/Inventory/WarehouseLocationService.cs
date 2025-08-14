@@ -36,7 +36,7 @@ namespace ERPCore2.Services
                     .Include(wl => wl.Warehouse)
                     .Where(wl => !wl.IsDeleted)
                     .OrderBy(wl => wl.Warehouse.WarehouseName)
-                    .ThenBy(wl => wl.LocationCode)
+                    .ThenBy(wl => wl.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -82,7 +82,7 @@ namespace ERPCore2.Services
                 var entities = await context.WarehouseLocations
                     .Include(wl => wl.Warehouse)
                     .Where(wl => wl.WarehouseId == warehouseId && !wl.IsDeleted)
-                    .OrderBy(wl => wl.LocationCode)
+                    .OrderBy(wl => wl.Code)
                     .ToListAsync();
 
                 return ServiceResult<IEnumerable<WarehouseLocation>>.Success(entities);
@@ -108,13 +108,13 @@ namespace ERPCore2.Services
                 // 檢查在同一倉庫中庫位代碼是否重複
                 var exists = await context.WarehouseLocations
                     .AnyAsync(wl => wl.WarehouseId == entity.WarehouseId && 
-                                   wl.LocationCode == entity.LocationCode && 
+                                   wl.Code == entity.Code && 
                                    wl.Id != entity.Id && 
                                    !wl.IsDeleted);
 
                 if (exists)
                 {
-                    return ServiceResult.Failure($"在倉庫中已存在庫位代碼 '{entity.LocationCode}'");
+                    return ServiceResult.Failure($"在倉庫中已存在庫位代碼 '{entity.Code}'");
                 }
 
                 return ServiceResult.Success();
@@ -129,7 +129,7 @@ namespace ERPCore2.Services
                     new { 
                         EntityId = entity.Id,
                         WarehouseId = entity.WarehouseId,
-                        LocationCode = entity.LocationCode,
+                        LocationCode = entity.Code,
                         ServiceType = GetType().Name 
                     }
                 );
@@ -148,11 +148,11 @@ namespace ERPCore2.Services
                 return await context.WarehouseLocations
                     .Include(wl => wl.Warehouse)
                     .Where(wl => !wl.IsDeleted && 
-                                (wl.LocationCode.Contains(searchTerm) || 
+                                (wl.Code.Contains(searchTerm) || 
                                  wl.LocationName.Contains(searchTerm) ||
                                  wl.Warehouse.WarehouseName.Contains(searchTerm)))
                     .OrderBy(wl => wl.Warehouse.WarehouseName)
-                    .ThenBy(wl => wl.LocationCode)
+                    .ThenBy(wl => wl.Code)
                     .ToListAsync();
             }
             catch (Exception ex)

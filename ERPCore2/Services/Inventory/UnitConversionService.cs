@@ -174,8 +174,8 @@ namespace ERPCore2.Services
                     .Where(uc => !uc.IsDeleted && 
                                 (uc.FromUnit.UnitName.Contains(searchTerm) || 
                                  uc.ToUnit.UnitName.Contains(searchTerm) ||
-                                 uc.FromUnit.UnitCode.Contains(searchTerm) ||
-                                 uc.ToUnit.UnitCode.Contains(searchTerm)))
+                                 uc.FromUnit.Code.Contains(searchTerm) ||
+                                 uc.ToUnit.Code.Contains(searchTerm)))
                     .OrderBy(uc => uc.FromUnit.UnitName)
                     .ThenBy(uc => uc.ToUnit.UnitName)
                     .ToListAsync();

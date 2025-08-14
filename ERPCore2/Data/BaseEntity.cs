@@ -16,6 +16,13 @@ namespace ERPCore2.Data
         public int Id { get; set; }
         
         /// <summary>
+        /// 代碼
+        /// </summary>
+        [Display(Name = "代碼")]
+        [MaxLength(20)]
+        public string? Code { get; set; }
+        
+        /// <summary>
         /// 實體狀態
         /// </summary>
         [Display(Name = "實體狀態")]

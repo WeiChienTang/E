@@ -1,27 +1,27 @@
-@* 可重用的部門編輯組件 - 可在任何頁面中嵌入 *@
-@inject IDepartmentService DepartmentService
+@* 可重用的客戶類型編輯組件 - 可在任何頁面中嵌入 *@
+@inject ICustomerTypeService CustomerTypeService
 @inject INotificationService NotificationService
 
-<GenericEditModalComponent TEntity="Department" 
-                          TService="IDepartmentService"
+<GenericEditModalComponent TEntity="CustomerType" 
+                          TService="ICustomerTypeService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
-                          Id="@DepartmentId"
-                          Service="@DepartmentService"
-                          EntityName="部門"
-                          EntityNamePlural="部門"
-                          ModalTitle="@(DepartmentId.HasValue ? "編輯部門" : "新增部門")"
-                          Size="GenericEditModalComponent<Department, IDepartmentService>.ModalSize.Desktop"
+                          Id="@CustomerTypeId"
+                          Service="@CustomerTypeService"
+                          EntityName="客戶類型"
+                          EntityNamePlural="客戶類型"
+                          ModalTitle="@(CustomerTypeId.HasValue ? "編輯客戶類型" : "新增客戶類型")"
+                          Size="GenericEditModalComponent<CustomerType, ICustomerTypeService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
-                          DataLoader="@LoadDepartmentData"
+                          DataLoader="@LoadCustomerTypeData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(DepartmentId.HasValue ? "部門更新成功" : "部門新增成功")"
-                          SaveFailureMessage="部門儲存失敗"
-                          RequiredPermission="Department.Read"
+                          SaveSuccessMessage="@(CustomerTypeId.HasValue ? "客戶類型更新成功" : "客戶類型新增成功")"
+                          SaveFailureMessage="客戶類型儲存失敗"
+                          RequiredPermission="CustomerType.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel" />
 
@@ -29,16 +29,15 @@
     // ===== 參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
-    [Parameter] public int? DepartmentId { get; set; }
-    [Parameter] public EventCallback<Department> OnDepartmentSaved { get; set; }
+    [Parameter] public int? CustomerTypeId { get; set; }
+    [Parameter] public EventCallback<CustomerType> OnCustomerTypeSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
 
     // ===== 內部狀態 =====
-    private GenericEditModalComponent<Department, IDepartmentService>? editModalComponent;
+    private GenericEditModalComponent<CustomerType, ICustomerTypeService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
-    private List<Employee> availableManagers = new();
 
     // ===== 生命週期 =====
     protected override async Task OnParametersSetAsync()
@@ -55,10 +54,10 @@
     {
         try
         {
-            // 如果父組件需要知道部門已儲存
-            if (OnDepartmentSaved.HasDelegate && editModalComponent?.Entity != null)
+            // 如果父組件需要知道客戶類型已儲存
+            if (OnCustomerTypeSaved.HasDelegate && editModalComponent?.Entity != null)
             {
-                await OnDepartmentSaved.InvokeAsync(editModalComponent.Entity);
+                await OnCustomerTypeSaved.InvokeAsync(editModalComponent.Entity);
             }
 
             // 關閉 Modal
@@ -100,27 +99,26 @@
     {
         try
         {
-            // 載入可選擇的主管員工列表
-            availableManagers = await DepartmentService.GetAvailableManagersAsync();
+            // 客戶類型通常不需要載入額外資料，但保留此方法以備未來擴展
+            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入部門資料時發生錯誤：{ex.Message}");
-            availableManagers = new List<Employee>();
+            await NotificationService.ShowErrorAsync($"載入客戶類型資料時發生錯誤：{ex.Message}");
         }
     }
 
-    private async Task<Department?> LoadDepartmentData()
+    private async Task<CustomerType?> LoadCustomerTypeData()
     {
         try
         {
-            if (!DepartmentId.HasValue) 
+            if (!CustomerTypeId.HasValue) 
             {
-                // 新增模式：建立新的部門實體並生成代碼
-                var newDepartment = new Department
+                // 新增模式：建立新的客戶類型實體並生成代碼
+                var newCustomerType = new CustomerType
                 {
-                    Name = string.Empty,
-                    Code = await GenerateDepartmentCodeAsync(),
+                    TypeName = string.Empty,
+                    Code = await GenerateCustomerTypeCodeAsync(),
                     Status = EntityStatus.Active
                 };
                 
@@ -129,14 +127,14 @@
                 {
                     foreach (var kvp in PrefilledValues)
                     {
-                        var property = typeof(Department).GetProperty(kvp.Key);
+                        var property = typeof(CustomerType).GetProperty(kvp.Key);
                         if (property != null && property.CanWrite && kvp.Value != null)
                         {
                             try
                             {
                                 // 轉換值的類型
                                 var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
-                                property.SetValue(newDepartment, convertedValue);
+                                property.SetValue(newCustomerType, convertedValue);
                             }
                             catch (Exception)
                             {
@@ -146,30 +144,30 @@
                     }
                 }
                 
-                return newDepartment;
+                return newCustomerType;
             }
 
-            var department = await DepartmentService.GetByIdAsync(DepartmentId.Value);            
+            var customerType = await CustomerTypeService.GetByIdAsync(CustomerTypeId.Value);            
             
-            if (department == null)
+            if (customerType == null)
             {
-                // 如果找不到部門，建立新的預設部門
-                return new Department
+                // 如果找不到客戶類型，建立新的預設客戶類型
+                return new CustomerType
                 {
                     Status = EntityStatus.Active
                 };
             }
-            return department;
+            return customerType;
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入部門資料時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入客戶類型資料時發生錯誤：{ex.Message}");
             
             // 設定安全的預設值，確保程式不會崩潰
-            return new Department
+            return new CustomerType
             {
                 Code = "ERROR",
-                Name = "ERROR",
+                TypeName = "ERROR",
                 Status = EntityStatus.Active
             };
         }
@@ -180,49 +178,33 @@
     {
         try
         {
-            // 準備主管選項
-            var managerOptions = availableManagers.Select(e => new SelectOption
-            {
-                Text = $"{e.Code} - {e.FirstName}{e.LastName}".Trim(),
-                Value = e.Id.ToString()
-            }).ToList();
-
             formFields = new List<FormFieldDefinition>
             {
                 // 基本資訊區段
                 new()
                 {
-                    PropertyName = nameof(Department.Code),
-                    Label = "部門代碼",
+                    PropertyName = nameof(CustomerType.Code),
+                    Label = "客戶類型代碼",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入部門代碼",
+                    Placeholder = "請輸入客戶類型代碼",
                     IsRequired = true,
-                    HelpText = "部門的唯一識別代碼，新增時系統會自動產生，也可手動修改"
+                    HelpText = "客戶類型的唯一識別代碼，新增時系統會自動產生，也可手動修改"
                 },
                 new()
                 {
-                    PropertyName = nameof(Department.Name),
-                    Label = "部門名稱",
+                    PropertyName = nameof(CustomerType.TypeName),
+                    Label = "類型名稱",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入部門名稱",
+                    Placeholder = "請輸入類型名稱",
                     IsRequired = true,
-                    HelpText = "部門的正式名稱，將顯示在系統各處"
+                    HelpText = "客戶類型的正式名稱，將顯示在系統各處"
                 },
                 new()
                 {
-                    PropertyName = nameof(Department.ManagerId),
-                    Label = "部門主管",
-                    FieldType = FormFieldType.Select,
-                    Placeholder = "請選擇部門主管",
-                    Options = managerOptions,
-                    HelpText = "選擇負責管理此部門的員工"
-                },
-                new()
-                {
-                    PropertyName = nameof(Department.Remarks),
-                    Label = "部門備註",
+                    PropertyName = nameof(CustomerType.Remarks),
+                    Label = "類型備註",
                     FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入部門備註",
+                    Placeholder = "請輸入類型備註",
                     Rows = 2,
                     HelpText = "其他需要補充的資訊",
                     ContainerCssClass = "col-12"
@@ -231,10 +213,9 @@
 
             formSections = new Dictionary<string, string>
             {
-                { nameof(Department.Code), "基本資訊" },
-                { nameof(Department.Name), "基本資訊" },
-                { nameof(Department.ManagerId), "基本資訊" },
-                { nameof(Department.Remarks), "額外資料" }
+                { nameof(CustomerType.Code), "基本資訊" },
+                { nameof(CustomerType.TypeName), "基本資訊" },
+                { nameof(CustomerType.Remarks), "額外資料" }
             };
         }
         catch (Exception)
@@ -249,39 +230,31 @@
     }
 
     // ===== 輔助方法 =====
-    private async Task<string> GenerateDepartmentCodeAsync()
+    private Task<string> GenerateCustomerTypeCodeAsync()
     {
         try
         {
-            // 簡單的部門代碼生成邏輯：DEPT + 時間戳
+            // 簡單的客戶類型代碼生成邏輯：CTYPE + 時間戳
             var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-            var baseCode = $"DEPT{timestamp}";
+            var baseCode = $"CTYPE{timestamp}";
             
-            // 檢查是否重複，如果重複則加上隨機數
-            var isExists = await DepartmentService.IsDepartmentCodeExistsAsync(baseCode);
-            if (isExists)
-            {
-                var random = new Random().Next(100, 999);
-                baseCode = $"DEPT{timestamp}{random}";
-            }
-            
-            return baseCode;
+            return Task.FromResult(baseCode);
         }
         catch
         {
             // 如果生成失敗，返回預設格式
-            return $"DEPT{DateTime.Now:yyyyMMddHHmmss}";
+            return Task.FromResult($"CTYPE{DateTime.Now:yyyyMMddHHmmss}");
         }
     }
 
     // ===== 公開方法 (供父組件調用) =====
 
     /// <summary>
-    /// 開啟新增部門 Modal
+    /// 開啟新增客戶類型 Modal
     /// </summary>
     public async Task ShowAddModal()
     {
-        DepartmentId = null;
+        CustomerTypeId = null;
         if (IsVisibleChanged.HasDelegate)
         {
             await IsVisibleChanged.InvokeAsync(true);
@@ -289,11 +262,11 @@
     }
 
     /// <summary>
-    /// 開啟編輯部門 Modal
+    /// 開啟編輯客戶類型 Modal
     /// </summary>
-    public async Task ShowEditModal(int departmentId)
+    public async Task ShowEditModal(int customerTypeId)
     {
-        DepartmentId = departmentId;
+        CustomerTypeId = customerTypeId;
         if (IsVisibleChanged.HasDelegate)
         {
             await IsVisibleChanged.InvokeAsync(true);

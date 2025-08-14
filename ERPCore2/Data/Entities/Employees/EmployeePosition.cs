@@ -18,13 +18,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "職位名稱")]
         public string Name { get; set; } = string.Empty;
 
-        /// <summary>
-        /// 職位代碼
-        /// </summary>
-        [MaxLength(20, ErrorMessage = "職位代碼不可超過20個字元")]
-        [Display(Name = "職位代碼")]
-        public string? Code { get; set; }
-
         // 導航屬性
         public ICollection<Employee> Employees { get; set; } = new List<Employee>();
     }

@@ -10,14 +10,6 @@ namespace ERPCore2.Data.Entities
     public class Material : BaseEntity
     {
         /// <summary>
-        /// 材質代碼
-        /// </summary>
-        [Required(ErrorMessage = "材質代碼為必填")]
-        [MaxLength(20, ErrorMessage = "材質代碼不可超過20個字元")]
-        [Display(Name = "材質代碼")]
-        public string Code { get; set; } = string.Empty;
-
-        /// <summary>
         /// 材質名稱
         /// </summary>
         [Required(ErrorMessage = "材質名稱為必填")]

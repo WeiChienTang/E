@@ -58,7 +58,7 @@ namespace ERPCore2.Controllers
                     new Claim(ClaimTypes.GivenName, employee.FirstName ?? ""),
                     new Claim(ClaimTypes.Surname, employee.LastName ?? ""),
                     new Claim(ClaimTypes.Role, employee.Role?.RoleName ?? "User"),
-                    new Claim("EmployeeCode", employee.EmployeeCode),
+                    new Claim("EmployeeCode", employee.Code),
                     new Claim("Department", employee.Department?.Name ?? ""),
                     new Claim("Position", employee.EmployeePosition?.Name ?? "")
                 };

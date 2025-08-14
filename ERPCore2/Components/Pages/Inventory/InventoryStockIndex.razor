@@ -246,7 +246,7 @@
             {
                 query = query.Where(s => 
                     s.Product != null && 
-                    s.Product.ProductCode.Contains(productCodeFilter, StringComparison.OrdinalIgnoreCase));
+                    s.Product.Code.Contains(productCodeFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 產品名稱篩選
@@ -292,7 +292,7 @@
                 query = query.Where(s => s.CurrentStock >= minStock);
             }
 
-            return query.OrderBy(s => s.Product != null ? s.Product.ProductCode : "");
+            return query.OrderBy(s => s.Product != null ? s.Product.Code : "");
         }
         catch (Exception ex)
         {
@@ -311,7 +311,7 @@
             });
             
             // 回傳原始查詢，確保程式不會崩潰
-            return query.OrderBy(s => s.Product != null ? s.Product.ProductCode : "");
+            return query.OrderBy(s => s.Product != null ? s.Product.Code : "");
         }
     }
 

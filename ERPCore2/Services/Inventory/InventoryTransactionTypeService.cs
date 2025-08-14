@@ -42,8 +42,8 @@ namespace ERPCore2.Services
                 return await context.InventoryTransactionTypes
                     .Where(t => !t.IsDeleted &&
                                (t.TypeName.Contains(searchTerm) ||
-                                t.TypeCode.Contains(searchTerm)))
-                    .OrderBy(t => t.TypeCode)
+                                t.Code.Contains(searchTerm)))
+                    .OrderBy(t => t.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -63,7 +63,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.InventoryTransactionTypes.Where(t => t.TypeCode == typeCode && !t.IsDeleted);
+                var query = context.InventoryTransactionTypes.Where(t => t.Code == typeCode && !t.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(t => t.Id != excludeId.Value);
@@ -90,7 +90,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryTransactionTypes
                     .Where(t => !t.IsDeleted && t.TransactionType == transactionType)
-                    .OrderBy(t => t.TypeCode)
+                    .OrderBy(t => t.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -112,7 +112,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryTransactionTypes
                     .Where(t => !t.IsDeleted && t.RequiresApproval)
-                    .OrderBy(t => t.TypeCode)
+                    .OrderBy(t => t.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -132,7 +132,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryTransactionTypes
                     .Where(t => !t.IsDeleted && t.AffectsCost)
-                    .OrderBy(t => t.TypeCode)
+                    .OrderBy(t => t.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -153,7 +153,7 @@ namespace ERPCore2.Services
                 if (transactionType == null || !transactionType.AutoGenerateNumber)
                     return string.Empty;
 
-                var prefix = transactionType.NumberPrefix ?? transactionType.TypeCode;
+                var prefix = transactionType.NumberPrefix ?? transactionType.Code;
                 var today = DateTime.Now.ToString("yyyyMMdd");
                 
                 // 這裡可以實作更複雜的單號產生邏輯
@@ -179,14 +179,14 @@ namespace ERPCore2.Services
             try
             {
                 // 基本驗證
-                if (string.IsNullOrWhiteSpace(entity.TypeCode))
+                if (string.IsNullOrWhiteSpace(entity.Code))
                     return ServiceResult.Failure("類型代碼為必填");
                 
                 if (string.IsNullOrWhiteSpace(entity.TypeName))
                     return ServiceResult.Failure("類型名稱為必填");
 
                 // 檢查類型代碼是否重複
-                if (await IsTypeCodeExistsAsync(entity.TypeCode, entity.Id))
+                if (await IsTypeCodeExistsAsync(entity.Code, entity.Id))
                     return ServiceResult.Failure("類型代碼已存在");
 
                 return ServiceResult.Success();

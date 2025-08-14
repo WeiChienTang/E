@@ -80,7 +80,7 @@ namespace ERPCore2.Services
                     .Include(s => s.SupplierType)
                     .Where(s => !s.IsDeleted &&
                                (s.CompanyName.Contains(searchTerm) ||
-                                s.SupplierCode.Contains(searchTerm) ||
+                                s.Code.Contains(searchTerm) ||
                                 (s.ContactPerson != null && s.ContactPerson.Contains(searchTerm)) ||
                                 (s.TaxNumber != null && s.TaxNumber.Contains(searchTerm))))
                     .OrderBy(s => s.CompanyName)
@@ -100,7 +100,7 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
 
                 // 驗證必填欄位
-                if (string.IsNullOrWhiteSpace(entity.SupplierCode))
+                if (string.IsNullOrWhiteSpace(entity.Code))
                 {
                     errors.Add("廠商代碼為必填欄位");
                 }
@@ -111,9 +111,9 @@ namespace ERPCore2.Services
                 }
 
                 // 驗證廠商代碼唯一性
-                if (!string.IsNullOrWhiteSpace(entity.SupplierCode))
+                if (!string.IsNullOrWhiteSpace(entity.Code))
                 {
-                    var isDuplicate = await IsSupplierCodeExistsAsync(entity.SupplierCode, entity.Id);
+                    var isDuplicate = await IsSupplierCodeExistsAsync(entity.Code, entity.Id);
                     if (isDuplicate)
                     {
                         errors.Add("廠商代碼已存在");
@@ -135,7 +135,7 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, 
-                    new { EntityId = entity.Id, SupplierCode = entity.SupplierCode });
+                    new { EntityId = entity.Id, SupplierCode = entity.Code });
                 throw;
             }
         }
@@ -152,7 +152,7 @@ namespace ERPCore2.Services
             {
                 return await context.Suppliers
                     .Include(s => s.SupplierType)
-                    .FirstOrDefaultAsync(s => s.SupplierCode == supplierCode && !s.IsDeleted);
+                    .FirstOrDefaultAsync(s => s.Code == supplierCode && !s.IsDeleted);
             }
             catch (Exception ex)
             {
@@ -168,7 +168,7 @@ namespace ERPCore2.Services
 
             try
             {
-                var query = context.Suppliers.Where(s => s.SupplierCode == supplierCode && !s.IsDeleted);
+                var query = context.Suppliers.Where(s => s.Code == supplierCode && !s.IsDeleted);
                 
                 if (excludeId.HasValue)
                     query = query.Where(s => s.Id != excludeId.Value);
@@ -268,7 +268,7 @@ namespace ERPCore2.Services
         {
             try
             {
-                supplier.SupplierCode = string.Empty;
+                supplier.Code = string.Empty;
                 supplier.CompanyName = string.Empty;
                 supplier.ContactPerson = string.Empty;
                 supplier.TaxNumber = string.Empty;
@@ -301,7 +301,7 @@ namespace ERPCore2.Services
             {
                 int count = 0;
 
-                if (!string.IsNullOrWhiteSpace(supplier.SupplierCode))
+                if (!string.IsNullOrWhiteSpace(supplier.Code))
                     count++;
 
                 if (!string.IsNullOrWhiteSpace(supplier.CompanyName))

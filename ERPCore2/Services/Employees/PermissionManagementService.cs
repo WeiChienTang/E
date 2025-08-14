@@ -38,7 +38,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Permissions
                     .Where(p => !p.IsDeleted)
-                    .OrderBy(p => p.PermissionCode)
+                    .OrderBy(p => p.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -60,7 +60,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var permission = await context.Permissions
-                    .FirstOrDefaultAsync(p => p.PermissionCode == permissionCode && !p.IsDeleted);
+                    .FirstOrDefaultAsync(p => p.Code == permissionCode && !p.IsDeleted);
 
                 if (permission == null)
                     return ServiceResult<Permission>.Failure("找不到指定的權限");
@@ -87,8 +87,8 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var permissions = await context.Permissions
-                    .Where(p => p.PermissionCode.StartsWith(modulePrefix + ".") && !p.IsDeleted)
-                    .OrderBy(p => p.PermissionCode)
+                    .Where(p => p.Code.StartsWith(modulePrefix + ".") && !p.IsDeleted)
+                    .OrderBy(p => p.Code)
                     .ToListAsync();
 
                 return ServiceResult<List<Permission>>.Success(permissions);
@@ -112,7 +112,7 @@ namespace ERPCore2.Services
                     return ServiceResult<bool>.Failure("權限代碼不能為空");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Permissions.Where(p => p.PermissionCode == permissionCode && !p.IsDeleted);
+                var query = context.Permissions.Where(p => p.Code == permissionCode && !p.IsDeleted);
 
                 if (excludePermissionId.HasValue)
                     query = query.Where(p => p.Id != excludePermissionId.Value);
@@ -139,8 +139,8 @@ namespace ERPCore2.Services
                 
                 // 先取得所有權限代碼，然後在客戶端處理
                 var permissionCodes = await context.Permissions
-                    .Where(p => !p.IsDeleted && !string.IsNullOrEmpty(p.PermissionCode))
-                    .Select(p => p.PermissionCode)
+                    .Where(p => !p.IsDeleted && !string.IsNullOrEmpty(p.Code))
+                    .Select(p => p.Code)
                     .ToListAsync();
 
                 // 在客戶端提取模組名稱（權限代碼中第一個點之前的部分）
@@ -173,16 +173,16 @@ namespace ERPCore2.Services
                 // 驗證每個權限
                 foreach (var permission in permissions)
                 {
-                    var validation = ValidatePermissionCode(permission.PermissionCode);
+                    var validation = ValidatePermissionCode(permission.Code);
                     if (!validation.IsSuccess)
-                        return ServiceResult.Failure($"權限代碼 '{permission.PermissionCode}' 格式錯誤：{validation.ErrorMessage}");
+                        return ServiceResult.Failure($"權限代碼 '{permission.Code}' 格式錯誤：{validation.ErrorMessage}");
 
-                    var existsResult = await IsPermissionCodeExistsAsync(permission.PermissionCode);
+                    var existsResult = await IsPermissionCodeExistsAsync(permission.Code);
                     if (!existsResult.IsSuccess)
                         return ServiceResult.Failure(existsResult.ErrorMessage);
 
                     if (existsResult.Data)
-                        return ServiceResult.Failure($"權限代碼 '{permission.PermissionCode}' 已存在");
+                        return ServiceResult.Failure($"權限代碼 '{permission.Code}' 已存在");
                 }
 
                 // 設定建立時間和狀態，並自動解析 Module 和 Action
@@ -220,10 +220,10 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var permissions = await context.Permissions
                     .Where(p => !p.IsDeleted && 
-                               (p.PermissionCode.Contains(searchTerm) ||
+                               (p.Code.Contains(searchTerm) ||
                                 p.PermissionName.Contains(searchTerm) ||
                                 (p.Remarks != null && p.Remarks.Contains(searchTerm))))
-                    .OrderBy(p => p.PermissionCode)
+                    .OrderBy(p => p.Code)
                     .ToListAsync();
 
                 return ServiceResult<List<Permission>>.Success(permissions);
@@ -283,12 +283,12 @@ namespace ERPCore2.Services
             try
             {
                 // 驗證權限代碼格式
-                var codeValidation = ValidatePermissionCode(entity.PermissionCode);
+                var codeValidation = ValidatePermissionCode(entity.Code);
                 if (!codeValidation.IsSuccess)
                     return ServiceResult.Failure(codeValidation.ErrorMessage);
 
                 // 檢查權限代碼是否已存在
-                var existsResult = await IsPermissionCodeExistsAsync(entity.PermissionCode, entity.Id);
+                var existsResult = await IsPermissionCodeExistsAsync(entity.Code, entity.Id);
                 if (!existsResult.IsSuccess)
                     return ServiceResult.Failure(existsResult.ErrorMessage);
 
@@ -311,7 +311,7 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, 
-                    new { EntityId = entity?.Id, PermissionCode = entity?.PermissionCode });
+                    new { EntityId = entity?.Id, PermissionCode = entity?.Code });
                 return ServiceResult.Failure($"驗證權限時發生錯誤：{ex.Message}");
             }
         }
@@ -365,7 +365,7 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CreateAsync), GetType(), _logger, 
-                    new { PermissionCode = entity?.PermissionCode });
+                    new { PermissionCode = entity?.Code });
                 return ServiceResult<Permission>.Failure($"建立權限時發生錯誤：{ex.Message}");
             }
         }
@@ -380,7 +380,7 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateAsync), GetType(), _logger, 
-                    new { PermissionCode = entity?.PermissionCode });
+                    new { PermissionCode = entity?.Code });
                 return ServiceResult<Permission>.Failure($"更新權限時發生錯誤：{ex.Message}");
             }
         }

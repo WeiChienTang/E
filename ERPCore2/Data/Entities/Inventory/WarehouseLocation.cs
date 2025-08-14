@@ -8,15 +8,9 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 庫位實體 - 定義倉庫內具體存放位置
     /// </summary>
-    [Index(nameof(WarehouseId), nameof(LocationCode), IsUnique = true)]
+    [Index(nameof(WarehouseId), nameof(Code), IsUnique = true)]
     public class WarehouseLocation : BaseEntity
-    {
-        // Required Properties
-        [Required(ErrorMessage = "庫位代碼為必填")]
-        [MaxLength(20, ErrorMessage = "庫位代碼不可超過20個字元")]
-        [Display(Name = "庫位代碼")]
-        public string LocationCode { get; set; } = string.Empty;
-        
+    {        
         [Required(ErrorMessage = "庫位名稱為必填")]
         [MaxLength(50, ErrorMessage = "庫位名稱不可超過50個字元")]
         [Display(Name = "庫位名稱")]

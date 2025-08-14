@@ -43,7 +43,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             {
                 new Supplier
                 {
-                    SupplierCode = "S001",
+                    Code = "S001",
                     CompanyName = "精密科技製造股份有限公司",
                     ContactPerson = "張總經理",
                     TaxNumber = "20123456",
@@ -54,7 +54,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Supplier
                 {
-                    SupplierCode = "S002",
+                    Code = "S002",
                     CompanyName = "台灣電子元件有限公司",
                     ContactPerson = "李經理",
                     TaxNumber = "20234567",
@@ -65,7 +65,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new Supplier
                 {
-                    SupplierCode = "S003",
+                    Code = "S003",
                     CompanyName = "全球軟體代理商",
                     ContactPerson = "王協理",
                     TaxNumber = "20345678",

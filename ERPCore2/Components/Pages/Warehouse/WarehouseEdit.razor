@@ -100,7 +100,7 @@
             {
                 new FormFieldDefinition
                 {
-                    PropertyName = nameof(Warehouse.WarehouseCode),
+                    PropertyName = nameof(Warehouse.Code),
                     Label = "倉庫代碼",
                     FieldType = FormFieldType.Text,
                     IsRequired = true,
@@ -172,7 +172,7 @@
 
             formSections = new Dictionary<string, string>
             {
-                { nameof(Warehouse.WarehouseCode), "基本資訊" },
+                { nameof(Warehouse.Code), "基本資訊" },
                 { nameof(Warehouse.WarehouseName), "基本資訊" },
                 { nameof(Warehouse.WarehouseType), "基本資訊" },
                 { nameof(Warehouse.Address), "聯絡資訊" },
@@ -200,7 +200,7 @@
             {
                 warehouse = new Warehouse
                 {
-                    WarehouseCode = await GenerateWarehouseCodeAsync(),
+                    Code = await GenerateWarehouseCodeAsync(),
                     WarehouseType = WarehouseTypeEnum.Main,
                     IsActive = true,
                     IsDefault = false
@@ -235,8 +235,8 @@
             // 生成倉庫代碼邏輯 - 可根據需求調整
             var existingWarehouses = await WarehouseService.GetAllAsync();
             var maxCode = existingWarehouses
-                .Where(w => w.WarehouseCode.StartsWith("WH"))
-                .Select(w => w.WarehouseCode.Substring(2))
+                .Where(w => w.Code.StartsWith("WH"))
+                .Select(w => w.Code.Substring(2))
                 .Where(code => int.TryParse(code, out _))
                 .Select(code => int.Parse(code))
                 .DefaultIfEmpty(0)

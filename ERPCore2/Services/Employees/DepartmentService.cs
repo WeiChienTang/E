@@ -70,7 +70,7 @@ namespace ERPCore2.Services
                 return await context.Departments
                     .Where(d => !d.IsDeleted &&
                         (d.Name.Contains(searchTerm) ||
-                         d.DepartmentCode.Contains(searchTerm)))
+                         d.Code.Contains(searchTerm)))
                     .OrderBy(d => d.Name)
                     .ToListAsync();
             }
@@ -91,14 +91,14 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
                 
-                if (string.IsNullOrWhiteSpace(entity.DepartmentCode))
+                if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("部門代碼不能為空");
                 
                 if (string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("部門名稱不能為空");
                 
-                if (!string.IsNullOrWhiteSpace(entity.DepartmentCode) && 
-                    await IsDepartmentCodeExistsAsync(entity.DepartmentCode, entity.Id == 0 ? null : entity.Id))
+                if (!string.IsNullOrWhiteSpace(entity.Code) && 
+                    await IsDepartmentCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
                     errors.Add("部門代碼已存在");
                 
                 if (errors.Any())
@@ -118,12 +118,12 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<bool> IsDepartmentCodeExistsAsync(string departmentCode, int? excludeId = null)
+        public async Task<bool> IsDepartmentCodeExistsAsync(string Code, int? excludeId = null)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Departments.Where(d => d.DepartmentCode == departmentCode && !d.IsDeleted);
+                var query = context.Departments.Where(d => d.Code == Code && !d.IsDeleted);
                 if (excludeId.HasValue)
                     query = query.Where(d => d.Id != excludeId.Value);
                 
@@ -134,7 +134,7 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsDepartmentCodeExistsAsync), GetType(), _logger, new { 
                     Method = nameof(IsDepartmentCodeExistsAsync),
                     ServiceType = GetType().Name,
-                    DepartmentCode = departmentCode,
+                    Code = Code,
                     ExcludeId = excludeId 
                 });
                 return false;
@@ -171,7 +171,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Employees
                     .Where(e => !e.IsDeleted && e.IsSystemUser)
-                    .OrderBy(e => e.EmployeeCode)
+                    .OrderBy(e => e.Code)
                     .ToListAsync();
             }
             catch (Exception ex)

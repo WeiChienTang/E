@@ -8,14 +8,9 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 廠商實體 - 定義廠商基本資訊
     /// </summary>
-    [Index(nameof(SupplierCode), IsUnique = true)]
+    [Index(nameof(Code), IsUnique = true)]
     public class Supplier : BaseEntity
     {
-        // Required Properties
-        [Required(ErrorMessage = "廠商代碼為必填")]
-        [MaxLength(20, ErrorMessage = "廠商代碼不可超過20個字元")]
-        [Display(Name = "廠商代碼")]
-        public string SupplierCode { get; set; } = string.Empty;
         
         [Required(ErrorMessage = "公司名稱為必填")]
         [MaxLength(100, ErrorMessage = "公司名稱不可超過100個字元")]

@@ -73,7 +73,7 @@ namespace ERPCore2.Services
                 return await context.Sizes
                     .Include(s => s.Products)
                     .Where(s => !s.IsDeleted && 
-                        (s.SizeCode.ToLower().Contains(lowerSearchTerm) ||
+                        (s.Code.ToLower().Contains(lowerSearchTerm) ||
                          s.SizeName.ToLower().Contains(lowerSearchTerm) ||
                          (s.Description != null && s.Description.ToLower().Contains(lowerSearchTerm))))
                     .OrderBy(s => s.SizeName)
@@ -93,14 +93,14 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
 
                 // 驗證必填欄位
-                if (string.IsNullOrWhiteSpace(entity.SizeCode))
+                if (string.IsNullOrWhiteSpace(entity.Code))
                 {
                     errors.Add("尺寸代碼為必填欄位");
                 }
                 else
                 {
                     // 檢查尺寸代碼唯一性
-                    var isDuplicate = await IsSizeCodeExistsAsync(entity.SizeCode, entity.Id);
+                    var isDuplicate = await IsSizeCodeExistsAsync(entity.Code, entity.Id);
                     if (isDuplicate)
                     {
                         errors.Add("尺寸代碼已存在");
@@ -137,7 +137,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Sizes
                     .Include(s => s.Products)
-                    .FirstOrDefaultAsync(s => s.SizeCode == sizeCode && !s.IsDeleted);
+                    .FirstOrDefaultAsync(s => s.Code == sizeCode && !s.IsDeleted);
             }
             catch (Exception ex)
             {
@@ -154,7 +154,7 @@ namespace ERPCore2.Services
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Sizes.Where(s => s.SizeCode == sizeCode && !s.IsDeleted);
+                var query = context.Sizes.Where(s => s.Code == sizeCode && !s.IsDeleted);
                 
                 if (excludeId.HasValue)
                 {

@@ -35,7 +35,7 @@ namespace ERPCore2.Services
                     .Include(srd => srd.SalesDeliveryDetail)
                     .Where(srd => !srd.IsDeleted)
                     .OrderBy(srd => srd.SalesReturnId)
-                    .ThenBy(srd => srd.Product.ProductCode)
+                    .ThenBy(srd => srd.Product.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -89,13 +89,13 @@ namespace ERPCore2.Services
                         .ThenInclude(sr => sr.Customer)
                     .Include(srd => srd.Product)
                     .Where(srd => !srd.IsDeleted &&
-                        (srd.Product.ProductCode.ToLower().Contains(lowerSearchTerm) ||
+                        (srd.Product.Code.ToLower().Contains(lowerSearchTerm) ||
                          srd.Product.ProductName.ToLower().Contains(lowerSearchTerm) ||
                          srd.SalesReturn.SalesReturnNumber.ToLower().Contains(lowerSearchTerm) ||
                          srd.SalesReturn.Customer.CompanyName.ToLower().Contains(lowerSearchTerm) ||
                          (srd.DetailRemarks != null && srd.DetailRemarks.ToLower().Contains(lowerSearchTerm))))
                     .OrderBy(srd => srd.SalesReturnId)
-                    .ThenBy(srd => srd.Product.ProductCode)
+                    .ThenBy(srd => srd.Product.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -183,7 +183,7 @@ namespace ERPCore2.Services
                     .Include(srd => srd.SalesOrderDetail)
                     .Include(srd => srd.SalesDeliveryDetail)
                     .Where(srd => srd.SalesReturnId == salesReturnId && !srd.IsDeleted)
-                    .OrderBy(srd => srd.Product.ProductCode)
+                    .OrderBy(srd => srd.Product.Code)
                     .ToListAsync();
             }
             catch (Exception ex)

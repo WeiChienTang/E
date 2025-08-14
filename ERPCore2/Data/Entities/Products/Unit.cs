@@ -7,14 +7,9 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 單位實體 - 定義商品計量單位
     /// </summary>
-    [Index(nameof(UnitCode), IsUnique = true)]
+    [Index(nameof(Code), IsUnique = true)]
     public class Unit : BaseEntity
     {
-        // Required Properties
-        [Required(ErrorMessage = "單位代碼為必填")]
-        [MaxLength(10, ErrorMessage = "單位代碼不可超過10個字元")]
-        [Display(Name = "單位代碼")]
-        public string UnitCode { get; set; } = string.Empty;
         
         [Required(ErrorMessage = "單位名稱為必填")]
         [MaxLength(20, ErrorMessage = "單位名稱不可超過20個字元")]

@@ -197,7 +197,7 @@
         {
             columnDefinitions = new List<TableColumnDefinition>
             {
-                TableColumnDefinition.Text("類型代碼", nameof(InventoryTransactionType.TypeCode)),
+                TableColumnDefinition.Text("類型代碼", nameof(InventoryTransactionType.Code)),
                 TableColumnDefinition.Text("類型名稱", nameof(InventoryTransactionType.TypeName)),
                 TableColumnDefinition.Text("異動類型", nameof(InventoryTransactionType.TransactionType)),
                 TableColumnDefinition.Boolean("影響成本", nameof(InventoryTransactionType.AffectsCost)),
@@ -271,7 +271,7 @@
             var typeCodeFilter = searchModel.GetFilterValue("TypeCode")?.ToString();
             if (!string.IsNullOrWhiteSpace(typeCodeFilter))
             {
-                query = query.Where(x => x.TypeCode != null && x.TypeCode.Contains(typeCodeFilter));
+                query = query.Where(x => x.Code != null && x.Code.Contains(typeCodeFilter));
             }
 
             // 類型名稱篩選

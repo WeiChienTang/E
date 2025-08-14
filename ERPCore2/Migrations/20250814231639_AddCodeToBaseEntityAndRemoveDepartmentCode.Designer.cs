@@ -4,6 +4,7 @@ using ERPCore2.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250814231639_AddCodeToBaseEntityAndRemoveDepartmentCode")]
+    partial class AddCodeToBaseEntityAndRemoveDepartmentCode
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -142,6 +145,7 @@ namespace ERPCore2.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Code")
+                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
@@ -323,6 +327,11 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("CustomerCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<int?>("CustomerTypeId")
                         .HasColumnType("int");
 
@@ -349,9 +358,8 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
-                        .IsUnique()
-                        .HasFilter("[Code] IS NOT NULL");
+                    b.HasIndex("CustomerCode")
+                        .IsUnique();
 
                     b.HasIndex("CustomerTypeId");
 
@@ -549,6 +557,11 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("DepartmentId")
                         .HasColumnType("int");
 
+                    b.Property<string>("EmployeeCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<int?>("EmployeePositionId")
                         .HasColumnType("int");
 
@@ -602,11 +615,10 @@ namespace ERPCore2.Migrations
                         .IsUnique()
                         .HasFilter("[Account] IS NOT NULL");
 
-                    b.HasIndex("Code")
-                        .IsUnique()
-                        .HasFilter("[Code] IS NOT NULL");
-
                     b.HasIndex("DepartmentId");
+
+                    b.HasIndex("EmployeeCode")
+                        .IsUnique();
 
                     b.HasIndex("EmployeePositionId");
 
@@ -1086,6 +1098,11 @@ namespace ERPCore2.Migrations
                     b.Property<int>("TransactionType")
                         .HasColumnType("int");
 
+                    b.Property<string>("TypeCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("TypeName")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -1100,9 +1117,8 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
-                        .IsUnique()
-                        .HasFilter("[Code] IS NOT NULL");
+                    b.HasIndex("TypeCode")
+                        .IsUnique();
 
                     b.ToTable("InventoryTransactionTypes");
                 });
@@ -1116,6 +1132,7 @@ namespace ERPCore2.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Code")
+                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
@@ -1179,6 +1196,11 @@ namespace ERPCore2.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<string>("PermissionCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("PermissionName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -1200,9 +1222,8 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
-                        .IsUnique()
-                        .HasFilter("[Code] IS NOT NULL");
+                    b.HasIndex("PermissionCode")
+                        .IsUnique();
 
                     b.ToTable("Permissions");
                 });
@@ -1325,6 +1346,11 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("ProductCategoryId")
                         .HasColumnType("int");
 
+                    b.Property<string>("ProductCode")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
                     b.Property<string>("ProductName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -1356,13 +1382,12 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
-                        .IsUnique()
-                        .HasFilter("[Code] IS NOT NULL");
-
                     b.HasIndex("PrimarySupplierId");
 
                     b.HasIndex("ProductCategoryId");
+
+                    b.HasIndex("ProductCode")
+                        .IsUnique();
 
                     b.HasIndex("SizeId");
 
@@ -1378,6 +1403,10 @@ namespace ERPCore2.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CategoryCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("CategoryName")
                         .IsRequired()
@@ -1418,9 +1447,9 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
+                    b.HasIndex("CategoryCode")
                         .IsUnique()
-                        .HasFilter("[Code] IS NOT NULL");
+                        .HasFilter("[CategoryCode] IS NOT NULL");
 
                     b.ToTable("ProductCategories");
                 });
@@ -2864,6 +2893,11 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("SizeCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("SizeName")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -2881,9 +2915,8 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
-                        .IsUnique()
-                        .HasFilter("[Code] IS NOT NULL");
+                    b.HasIndex("SizeCode")
+                        .IsUnique();
 
                     b.ToTable("Sizes");
                 });
@@ -3120,6 +3153,11 @@ namespace ERPCore2.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<string>("SupplierCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<int?>("SupplierTypeId")
                         .HasColumnType("int");
 
@@ -3136,9 +3174,8 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
-                        .IsUnique()
-                        .HasFilter("[Code] IS NOT NULL");
+                    b.HasIndex("SupplierCode")
+                        .IsUnique();
 
                     b.HasIndex("SupplierTypeId");
 
@@ -3309,6 +3346,11 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(5)
                         .HasColumnType("nvarchar(5)");
 
+                    b.Property<string>("UnitCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
                     b.Property<string>("UnitName")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -3323,9 +3365,8 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
-                        .IsUnique()
-                        .HasFilter("[Code] IS NOT NULL");
+                    b.HasIndex("UnitCode")
+                        .IsUnique();
 
                     b.ToTable("Units");
                 });
@@ -3442,6 +3483,11 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("WarehouseCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("WarehouseName")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -3452,9 +3498,8 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
-                        .IsUnique()
-                        .HasFilter("[Code] IS NOT NULL");
+                    b.HasIndex("WarehouseCode")
+                        .IsUnique();
 
                     b.ToTable("Warehouses");
                 });
@@ -3495,6 +3540,11 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
+                    b.Property<string>("LocationCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("LocationName")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -3530,9 +3580,8 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("WarehouseId", "Code")
-                        .IsUnique()
-                        .HasFilter("[Code] IS NOT NULL");
+                    b.HasIndex("WarehouseId", "LocationCode")
+                        .IsUnique();
 
                     b.ToTable("WarehouseLocations");
                 });
@@ -3546,6 +3595,7 @@ namespace ERPCore2.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Code")
+                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 

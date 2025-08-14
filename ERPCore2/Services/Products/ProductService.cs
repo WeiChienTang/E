@@ -90,7 +90,7 @@ namespace ERPCore2.Services
                     .Include(p => p.Size)
                     .Where(p => !p.IsDeleted &&
                                (p.ProductName.Contains(searchTerm) ||
-                                p.ProductCode.Contains(searchTerm) ||
+                                p.Code.Contains(searchTerm) ||
                                 (p.Description != null && p.Description.Contains(searchTerm)) ||
                                 (p.Specification != null && p.Specification.Contains(searchTerm))))
                     .OrderBy(p => p.ProductName)
@@ -110,14 +110,14 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
 
                 // 驗證必填欄位
-                if (string.IsNullOrWhiteSpace(entity.ProductCode))
+                if (string.IsNullOrWhiteSpace(entity.Code))
                 {
                     errors.Add("商品代碼為必填欄位");
                 }
                 else
                 {
                     // 檢查商品代碼唯一性
-                    var isDuplicate = await IsProductCodeExistsAsync(entity.ProductCode, entity.Id);
+                    var isDuplicate = await IsProductCodeExistsAsync(entity.Code, entity.Id);
                     if (isDuplicate)
                     {
                         errors.Add("商品代碼已存在");
@@ -135,7 +135,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { EntityId = entity.Id, ProductCode = entity.ProductCode });
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { EntityId = entity.Id, ProductCode = entity.Code });
                 return ServiceResult.Failure($"驗證商品時發生錯誤: {ex.Message}");
             }
         }
@@ -155,7 +155,7 @@ namespace ERPCore2.Services
                     .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
-                    .FirstOrDefaultAsync(p => p.ProductCode == productCode && !p.IsDeleted);
+                    .FirstOrDefaultAsync(p => p.Code == productCode && !p.IsDeleted);
             }
             catch (Exception ex)
             {
@@ -170,7 +170,7 @@ namespace ERPCore2.Services
 
             try
             {
-                var query = context.Products.Where(p => p.ProductCode == productCode && !p.IsDeleted);
+                var query = context.Products.Where(p => p.Code == productCode && !p.IsDeleted);
                 
                 if (excludeId.HasValue)
                     query = query.Where(p => p.Id != excludeId.Value);
@@ -434,7 +434,7 @@ namespace ERPCore2.Services
         {
             try
             {
-                product.ProductCode = string.Empty;
+                product.Code = string.Empty;
                 product.ProductName = string.Empty;
                 product.Description = string.Empty;
                 product.Specification = string.Empty;
@@ -470,7 +470,7 @@ namespace ERPCore2.Services
             {
                 int count = 0;
 
-                if (!string.IsNullOrWhiteSpace(product.ProductCode))
+                if (!string.IsNullOrWhiteSpace(product.Code))
                     count++;
 
                 if (!string.IsNullOrWhiteSpace(product.ProductName))

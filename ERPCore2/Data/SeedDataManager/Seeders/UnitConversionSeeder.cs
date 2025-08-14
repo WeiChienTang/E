@@ -25,10 +25,10 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             }
 
             // 取得已建立的單位
-            var packUnit = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "PACK");
-            var pcsUnit = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "PCS");
-            var meterUnit = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "M");
-            var cmUnit = await context.Units.FirstOrDefaultAsync(u => u.UnitCode == "CM");
+            var packUnit = await context.Units.FirstOrDefaultAsync(u => u.Code == "PACK");
+            var pcsUnit = await context.Units.FirstOrDefaultAsync(u => u.Code == "PCS");
+            var meterUnit = await context.Units.FirstOrDefaultAsync(u => u.Code == "M");
+            var cmUnit = await context.Units.FirstOrDefaultAsync(u => u.Code == "CM");
 
             // 建立單位轉換關係
             var unitConversions = new List<UnitConversion>();

@@ -8,15 +8,9 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 商品實體 - 定義商品基本資訊
     /// </summary>
-    [Index(nameof(ProductCode), IsUnique = true)]
+    [Index(nameof(Code), IsUnique = true)]
     public class Product : BaseEntity
-    {
-        // Required Properties
-        [Required(ErrorMessage = "商品代碼為必填")]
-        [MaxLength(30, ErrorMessage = "商品代碼不可超過30個字元")]
-        [Display(Name = "商品代碼")]
-        public string ProductCode { get; set; } = string.Empty;
-        
+    {        
         [Required(ErrorMessage = "商品名稱為必填")]
         [MaxLength(100, ErrorMessage = "商品名稱不可超過100個字元")]
         [Display(Name = "商品名稱")]
