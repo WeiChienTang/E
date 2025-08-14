@@ -19,7 +19,7 @@ namespace ERPCore2.Data
         /// 代碼
         /// </summary>
         [Display(Name = "代碼")]
-        [MaxLength(20)]
+        [MaxLength(50)]
         public string? Code { get; set; }
         
         /// <summary>
