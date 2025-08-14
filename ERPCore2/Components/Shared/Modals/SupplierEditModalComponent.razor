@@ -21,6 +21,11 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
+                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
+                          AutoCompleteCollections="@GetAutoCompleteCollections()"
+                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
+                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadSupplierData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           SaveHandler="@SaveSupplier"
@@ -149,13 +154,6 @@
     {
         try
         {
-            // 準備廠商類型選項
-            var supplierTypeOptions = supplierTypes.Select(st => new SelectOption
-            {
-                Text = st.TypeName,
-                Value = st.Id.ToString()
-            }).ToList();
-
             formFields = new List<FormFieldDefinition>
             {
                 new()
@@ -200,9 +198,10 @@
                 {
                     PropertyName = nameof(Supplier.SupplierTypeId),
                     Label = "廠商類型",
-                    FieldType = FormFieldType.Select,
-                    Options = supplierTypeOptions,
-                    HelpText = "選擇廠商類型分類",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇廠商類型",
+                    MinSearchLength = 0, // 允許空白搜尋以顯示所有選項
+                    HelpText = "輸入廠商類型名稱進行搜尋，或直接選擇",
                     ActionButtons = GetSupplierTypeActionButtons()
                 },
                 new()
@@ -239,6 +238,68 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
+    }
+    
+    /// <summary>
+    /// 配置 AutoComplete 預填器
+    /// </summary>
+    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
+    {
+        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
+        {
+            {
+                nameof(Supplier.SupplierTypeId),
+                searchTerm => new Dictionary<string, object?>
+                {
+                    ["TypeName"] = searchTerm,
+                    ["Status"] = 1 // EntityStatus.Active
+                }
+            }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 資料集合
+    /// </summary>
+    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
+    {
+        return new Dictionary<string, IEnumerable<object>>
+        {
+            { nameof(Supplier.SupplierTypeId), supplierTypes.Cast<object>() }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 顯示屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(Supplier.SupplierTypeId), "TypeName" }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 值屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteValueProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(Supplier.SupplierTypeId), "Id" }
+        };
+    }
+    
+    /// <summary>
+    /// 配置 Modal 管理器
+    /// </summary>
+    private Dictionary<string, object> GetModalManagers()
+    {
+        return new Dictionary<string, object>
+        {
+            { nameof(Supplier.SupplierTypeId), supplierTypeModalManager }
+        };
     }
 
     private async Task<Supplier?> LoadSupplierData()
