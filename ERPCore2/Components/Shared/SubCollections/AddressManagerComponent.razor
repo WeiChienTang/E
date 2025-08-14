@@ -23,12 +23,7 @@
                             var item = Items[index];
                             <tr @onclick="() => { if (!IsReadOnly) ShowEditModal(index); }" style="@(IsReadOnly ? "cursor: default;" : "cursor: pointer;")" title="@(IsReadOnly ? "" : "點擊編輯")">
                                 <td>
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-geo-alt me-2"></i>
-                                        <div>
-                                            <span>@GetAddressDisplayText(item)</span>
-                                        </div>
-                                    </div>
+                                    <span>@GetAddressDisplayText(item)</span>
                                 </td>
                                 @if (!IsReadOnly)
                                 {

@@ -9,7 +9,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 {
     public class PurchaseSeeder : IDataSeeder
     {
-        public int Order => 15; // 在庫存資料之後
+        public int Order => 25; // 在庫存資料之後
         public string Name => "採購測試資料";
 
         public async Task SeedAsync(AppDbContext context)

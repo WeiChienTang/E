@@ -57,20 +57,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Status = EntityStatus.Active
                 },
                 new ContactType { 
-                    TypeName = "Skype", 
-                    Description = "Skype 即時通訊",
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System",
-                    Status = EntityStatus.Active
-                },
-                new ContactType { 
-                    TypeName = "Telegram", 
-                    Description = "Telegram 即時通訊",
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System",
-                    Status = EntityStatus.Active
-                },
-                new ContactType { 
                     TypeName = "網站", 
                     Description = "公司或個人網站",
                     CreatedAt = DateTime.Now,

@@ -4,8 +4,6 @@
 @using ERPCore2.Components.Shared.Headers
 @using ERPCore2.Components.Shared.Buttons
 @using ERPCore2.Services
-@using Microsoft.JSInterop
-@inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
 
 <div class="table-responsive">
@@ -26,20 +24,12 @@
                             var item = Items[index];
                             <tr @onclick="() => { if (!IsReadOnly) ShowEditModal(index); }" style="@(IsReadOnly ? "cursor: default;" : "cursor: pointer;")" title="@(IsReadOnly ? "" : "點擊編輯")">
                                 <td>
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-@Icon me-2"></i>
-                                        <div>
-                                            <span>@GetContactDisplayText(item)</span>
-                                        </div>
-                                    </div>
+                                    <span>@GetContactDisplayText(item)</span>
                                 </td>
                                 @if (!IsReadOnly)
                                 {
                                     <td @onclick:stopPropagation="true">
                                         <div class="btn-group btn-group-sm">
-                                            <GenericButtonComponent Variant="ButtonVariant.OutlineSuccess" Size="ButtonSize.Small"
-                                                                   IconClass="bi bi-telephone" OnClick="() => OpenContactAction(item)" 
-                                                                   Title="開啟聯絡方式" />
                                             <GenericButtonComponent Variant="ButtonVariant.OutlineDanger" Size="ButtonSize.Small"
                                                                    IconClass="bi bi-trash" OnClick="() => RemoveItemAsync(index)" 
                                                                    Title="移除" />
@@ -372,75 +362,6 @@
         StateHasChanged();
     }
     
-    private async Task OpenContactAction(TContactEntity item)
-    {
-        var contactValue = GetContactValue(item);
-        var typeId = GetTypeId(item);
-        
-        if (string.IsNullOrWhiteSpace(contactValue))
-        {
-            await NotificationService.ShowWarningAsync("聯絡內容為空，無法開啟");
-            return;
-        }
-        
-        try
-        {
-            // 根據聯絡類型決定開啟方式
-            var typeOption = Options.FirstOrDefault(o => GetOptionId(o) == typeId);
-            var typeName = typeOption != null ? GetOptionDisplayText(typeOption).ToLower() : "";
-            
-            string url;
-            
-            if (typeName.Contains("email") || typeName.Contains("信箱") || typeName.Contains("郵件") || contactValue.Contains("@"))
-            {
-                // 電子郵件
-                url = $"mailto:{contactValue}";
-            }
-            else if (typeName.Contains("phone") || typeName.Contains("電話") || typeName.Contains("手機") || typeName.Contains("tel"))
-            {
-                // 電話號碼
-                url = $"tel:{contactValue}";
-            }
-            else if (typeName.Contains("line") || typeName.Contains("skype") || typeName.Contains("telegram"))
-            {
-                // 即時通訊軟體
-                if (typeName.Contains("line"))
-                {
-                    url = $"https://line.me/ti/p/{contactValue}";
-                }
-                else if (typeName.Contains("skype"))
-                {
-                    url = $"skype:{contactValue}?chat";
-                }
-                else if (typeName.Contains("telegram"))
-                {
-                    url = $"https://t.me/{contactValue}";
-                }
-                else
-                {
-                    // 預設用電話方式
-                    url = $"tel:{contactValue}";
-                }
-            }
-            else if (contactValue.StartsWith("http"))
-            {
-                // 網址
-                url = contactValue;
-            }
-            else
-            {
-                // 預設用電話方式
-                url = $"tel:{contactValue}";
-            }
-            
-            // 使用 JavaScript 開啟對應的應用程式或網頁
-            await JSRuntime.InvokeVoidAsync("open", url, "_blank");
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"開啟聯絡方式時發生錯誤：{ex.Message}");
-        }
-    }
     
     public async Task<bool> ValidateAsync()
     {

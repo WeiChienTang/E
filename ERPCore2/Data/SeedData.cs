@@ -82,9 +82,6 @@ namespace ERPCore2.Data
                 new SupplierSeeder(),           // 依賴 SupplierTypes
                 new ProductSeeder(),            // 依賴 ProductCategory, Unit, Supplier
                 new InventorySeeder(),
-                new InventoryStockSeeder(), 
-                new SalesSeeder(),              // 依賴 Customer, Employee, Product (必須在這些之後)
-                new PurchaseReturnSeeder(),     // 依賴 Supplier, Product, Warehouse (必須在這些之後)
                 new WeatherSeeder(),
                 // new BasicDataSeeder(),       // 已廢棄，功能已分拆到專屬 Seeder
             };

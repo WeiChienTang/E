@@ -9,7 +9,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 {
     public class InventoryStockSeeder : IDataSeeder
     {
-        public int Order => 16; // 在Product、Warehouse和InventorySeeder之後執行
+        public int Order => 24; // 在Product、Warehouse和InventorySeeder之後執行
         public string Name => "庫存主檔資料";
 
         public async Task SeedAsync(AppDbContext context)

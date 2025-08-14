@@ -9,7 +9,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 {
     public class SalesSeeder : IDataSeeder
     {
-        public int Order => 10; // 設定執行順序，在客戶、員工、產品之後
+        public int Order => 23; // 設定執行順序，在客戶、員工、產品之後
         public string Name => "銷貨資料";
 
         public async Task SeedAsync(AppDbContext context)
