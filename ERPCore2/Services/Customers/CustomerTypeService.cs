@@ -41,8 +41,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.CustomerTypes
                     .Where(ct => !ct.IsDeleted &&
-                               (ct.TypeName.Contains(searchTerm) ||
-                                (ct.Description != null && ct.Description.Contains(searchTerm))))
+                               ct.TypeName.Contains(searchTerm))
                     .OrderBy(ct => ct.TypeName)
                     .ToListAsync();
             }
@@ -78,12 +77,6 @@ namespace ERPCore2.Services
                     {
                         errors.Add("客戶類型名稱已存在");
                     }
-                }
-
-                // 驗證描述
-                if (!string.IsNullOrWhiteSpace(entity.Description) && entity.Description.Length > 500)
-                {
-                    errors.Add("描述長度不能超過500個字元");
                 }
 
                 return errors.Any() 

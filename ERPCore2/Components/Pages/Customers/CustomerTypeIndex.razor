@@ -92,18 +92,9 @@
     {
         try
         {
-            // 準備狀態選項
-            var statusOptions = new List<SelectOption>
-            {
-                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
-            };
-
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("TypeName", "類型名稱", "輸入類型名稱搜尋")
-                .AddText("Description", "描述", "輸入描述搜尋")
-                .AddSelect("Status", "狀態", statusOptions)
                 .Build();
         }
         catch (Exception ex)
@@ -124,14 +115,7 @@
             columnDefinitions = new List<TableColumnDefinition>
             {
                 TableColumnDefinition.Text("類型名稱", nameof(CustomerType.TypeName)),
-                TableColumnDefinition.Text("描述", nameof(CustomerType.Description)),
-                TableColumnDefinition.Status("狀態", nameof(CustomerType.Status), new Dictionary<object, string>
-                {
-                    { EntityStatus.Active, "bg-success" },
-                    { EntityStatus.Inactive, "bg-secondary" }
-                }),
-                TableColumnDefinition.Date("建立日期", nameof(CustomerType.CreatedAt), "yyyy/MM/dd"),
-                TableColumnDefinition.Date("更新日期", nameof(CustomerType.UpdatedAt), "yyyy/MM/dd")
+                TableColumnDefinition.Text("描述", nameof(CustomerType.Remarks)),
             };
         }
         catch (Exception ex)
@@ -156,15 +140,6 @@
             {
                 query = query.Where(ct => 
                     ct.TypeName.Contains(typeNameFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 描述篩選
-            var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
-            if (!string.IsNullOrWhiteSpace(descriptionFilter))
-            {
-                query = query.Where(ct => 
-                    !string.IsNullOrEmpty(ct.Description) && 
-                    ct.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 狀態篩選
