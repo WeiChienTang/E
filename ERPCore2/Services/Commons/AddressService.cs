@@ -29,8 +29,7 @@ namespace ERPCore2.Services
                 return await _context.Addresses
                     .Where(a => a.OwnerType == ownerType && a.OwnerId == ownerId && !a.IsDeleted)
                     .Include(a => a.AddressType)
-                    .OrderByDescending(a => a.IsPrimary)
-                    .ThenBy(a => a.CreatedAt)
+                    .OrderBy(a => a.CreatedAt)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -59,12 +58,12 @@ namespace ERPCore2.Services
         {
             try
             {
+                // 由於移除了 IsPrimary 屬性，回傳第一個找到的地址
                 return await _context.Addresses
                     .Include(a => a.AddressType)
                     .FirstOrDefaultAsync(a => 
                         a.OwnerType == ownerType && 
                         a.OwnerId == ownerId && 
-                        a.IsPrimary && 
                         !a.IsDeleted);
             }
             catch (Exception ex)
@@ -131,21 +130,6 @@ namespace ERPCore2.Services
                 address.CreatedAt = DateTime.Now;
                 address.Status = EntityStatus.Active;
 
-                // 如果這是第一個地址，自動設為主要地址
-                var existingAddresses = await _context.Addresses
-                    .Where(a => a.OwnerType == ownerType && a.OwnerId == ownerId && !a.IsDeleted)
-                    .CountAsync();
-
-                if (existingAddresses == 0)
-                {
-                    address.IsPrimary = true;
-                }
-                else if (address.IsPrimary)
-                {
-                    // 如果設為主要地址，先將其他地址設為非主要
-                    await SetAllAddressesAsNonPrimaryAsync(ownerType, ownerId);
-                }
-
                 _context.Addresses.Add(address);
                 await _context.SaveChangesAsync();
 
@@ -173,23 +157,9 @@ namespace ERPCore2.Services
 
                 // 更新欄位
                 existingAddress.AddressTypeId = address.AddressTypeId;
-                existingAddress.PostalCode = address.PostalCode;
-                existingAddress.City = address.City;
-                existingAddress.District = address.District;
                 existingAddress.AddressLine = address.AddressLine;
                 existingAddress.Remarks = address.Remarks;
                 existingAddress.UpdatedAt = DateTime.Now;
-
-                // 處理主要地址設定
-                if (address.IsPrimary && !existingAddress.IsPrimary)
-                {
-                    await SetAllAddressesAsNonPrimaryAsync(existingAddress.OwnerType, existingAddress.OwnerId);
-                    existingAddress.IsPrimary = true;
-                }
-                else if (!address.IsPrimary && existingAddress.IsPrimary)
-                {
-                    existingAddress.IsPrimary = false;
-                }
 
                 await _context.SaveChangesAsync();
 
@@ -218,22 +188,6 @@ namespace ERPCore2.Services
                 address.IsDeleted = true;
                 address.UpdatedAt = DateTime.Now;
 
-                // 如果刪除的是主要地址，設定其他地址為主要地址
-                if (address.IsPrimary)
-                {
-                    var otherAddress = await _context.Addresses
-                        .Where(a => a.OwnerType == address.OwnerType && 
-                                  a.OwnerId == address.OwnerId && 
-                                  a.Id != addressId && 
-                                  !a.IsDeleted)
-                        .FirstOrDefaultAsync();
-
-                    if (otherAddress != null)
-                    {
-                        otherAddress.IsPrimary = true;
-                    }
-                }
-
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("成功刪除地址 ID {AddressId}", addressId);
@@ -249,29 +203,11 @@ namespace ERPCore2.Services
         {
             try
             {
-                // 先將所有地址設為非主要
-                await SetAllAddressesAsNonPrimaryAsync(ownerType, ownerId);
-
-                // 設定指定地址為主要
-                var targetAddress = await _context.Addresses
-                    .FirstOrDefaultAsync(a => a.Id == addressId && 
-                                           a.OwnerType == ownerType && 
-                                           a.OwnerId == ownerId && 
-                                           !a.IsDeleted);
-
-                if (targetAddress != null)
-                {
-                    targetAddress.IsPrimary = true;
-                    targetAddress.UpdatedAt = DateTime.Now;
-                    await _context.SaveChangesAsync();
-
-                    _logger.LogInformation("成功設定 {OwnerType} ID {OwnerId} 的主要地址為 ID {AddressId}", 
-                        ownerType, ownerId, addressId);
-                }
-                else
-                {
-                    throw new ArgumentException($"地址不存在或已刪除: ID {addressId}");
-                }
+                // 由於移除了 IsPrimary 屬性，此方法保持為空實作以維持相容性
+                // 或者可以添加日誌記錄這個已不再使用的方法被呼叫
+                _logger.LogWarning("SetPrimaryAddressAsync 已不再使用，因為 IsPrimary 屬性已被移除");
+                
+                await Task.CompletedTask;
             }
             catch (Exception ex)
             {
@@ -307,16 +243,11 @@ namespace ERPCore2.Services
 
         #region 私有方法
 
+        // 保留方法以維持相容性，但已不再使用
         private async Task SetAllAddressesAsNonPrimaryAsync(string ownerType, int ownerId)
         {
-            var addresses = await _context.Addresses
-                .Where(a => a.OwnerType == ownerType && a.OwnerId == ownerId && !a.IsDeleted)
-                .ToListAsync();
-
-            foreach (var addr in addresses)
-            {
-                addr.IsPrimary = false;
-            }
+            // 由於 IsPrimary 屬性已移除，此方法不再執行任何操作
+            await Task.CompletedTask;
         }
 
         #endregion

@@ -17,7 +17,15 @@
                       FilterApplier="@ApplyCustomerFilters"
                       GetEntityDisplayName="@(customer => customer.CompanyName)"
                       RequiredPermission="Customer.Read"
+                      OnAddClick="@ShowAddModal"
+                      OnRowClick="@ShowEditModal"
                       @ref="indexComponent" />
+
+<CustomerEditModalComponent IsVisible="@showEditModal"
+                           IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                           CustomerId="@editingCustomerId"
+                           OnCustomerSaved="@OnCustomerSaved"
+                           OnCancel="@OnModalCancel" />
 
 @code {
     // 組件參考
@@ -27,6 +35,10 @@
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingCustomerId = null;
 
     protected override void OnInitialized()
     {
@@ -337,5 +349,46 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFiltersAsync), GetType(),
                 additionalData: new { PageName = "CustomerIndex", Action = "InitializeFiltersAsync" });
         }
+    }
+
+    // ===== Modal 相關方法 =====
+    private Task ShowAddModal()
+    {
+        editingCustomerId = null;
+        showEditModal = true;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task ShowEditModal(Customer customer)
+    {
+        if (customer?.Id != null)
+        {
+            editingCustomerId = customer.Id;
+            showEditModal = true;
+            StateHasChanged();
+        }
+        return Task.CompletedTask;
+    }
+
+    private async Task OnCustomerSaved(Customer savedCustomer)
+    {
+        showEditModal = false;
+        editingCustomerId = null;
+        
+        if (indexComponent != null)
+        {
+            await indexComponent.Refresh();
+        }
+        
+        StateHasChanged();
+    }
+
+    private Task OnModalCancel()
+    {
+        showEditModal = false;
+        editingCustomerId = null;
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 }

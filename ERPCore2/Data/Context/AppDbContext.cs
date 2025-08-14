@@ -89,16 +89,11 @@ namespace ERPCore2.Data.Context
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                         entity.Property(e => e.OwnerType).IsRequired().HasMaxLength(20);
                         entity.Property(e => e.OwnerId).IsRequired();
-                        entity.Property(e => e.PostalCode).HasMaxLength(10);
-                        entity.Property(e => e.City).HasMaxLength(50);
-                        entity.Property(e => e.District).HasMaxLength(50);
                         entity.Property(e => e.AddressLine).HasMaxLength(200);
                         
                         // 索引設定
                         entity.HasIndex(e => new { e.OwnerType, e.OwnerId })
                               .HasDatabaseName("IX_Address_OwnerType_OwnerId");
-                        entity.HasIndex(e => new { e.OwnerType, e.OwnerId, e.IsPrimary })
-                              .HasDatabaseName("IX_Address_OwnerType_OwnerId_IsPrimary");
                         
                         // 關聯設定
                         entity.HasOne(e => e.AddressType)
