@@ -50,38 +50,12 @@
         }
         catch (Exception ex)
         {
-            // 記錄初始化錯誤（使用 Fire-and-Forget 因為這裡不能用 async）
-            _ = Task.Run(async () =>
-            {
-                await ErrorHandlingHelper.HandlePageErrorAsync(
-                    ex, 
-                    nameof(OnInitialized), 
-                    GetType(),
-                    additionalData: new { 
-                        PageName = "CustomerIndex",
-                        Action = "Initialize",
-                        Phase = "ComponentInitialization"
-                    });
-            });
-            
-            // 確保基本初始化完成，避免程式崩潰
-            try
-            {
-                breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
-                {
-                    new("首頁", "/"),
-                    new("客戶管理")
-                };
-                filterDefinitions = new List<SearchFilterDefinition>();
-                columnDefinitions = new List<TableColumnDefinition>();
-            }
-            catch
-            {
-                // 如果連預設值都設定失敗，至少確保不是 null
-                breadcrumbItems ??= new List<GenericHeaderComponent.BreadcrumbItem>();
-                filterDefinitions ??= new List<SearchFilterDefinition>();
-                columnDefinitions ??= new List<TableColumnDefinition>();
-            }
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(OnInitialized),
+                GetType(),
+                additionalData: "初始化客戶頁面失敗"
+            );
         }
     }
 
@@ -97,18 +71,12 @@
         }
         catch (Exception ex)
         {
-            // 記錄麵包屑初始化錯誤
-            _ = Task.Run(async () =>
-            {
-                await ErrorHandlingHelper.HandlePageErrorAsync(
-                    ex, 
-                    nameof(InitializeBreadcrumbs), 
-                    GetType(),
-                    additionalData: new { 
-                        PageName = "CustomerIndex",
-                        Action = "InitializeBreadcrumbs"
-                    });
-            });
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeBreadcrumbs),
+                GetType(),
+                additionalData: "初始化麵包屑導航失敗"
+            );
             
             // 設定安全的預設值
             breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
@@ -180,18 +148,12 @@
         }
         catch (Exception ex)
         {
-            // 記錄篩選器初始化錯誤
-            _ = Task.Run(async () =>
-            {
-                await ErrorHandlingHelper.HandlePageErrorAsync(
-                    ex, 
-                    nameof(InitializeFilters), 
-                    GetType(),
-                    additionalData: new { 
-                        PageName = "CustomerIndex",
-                        Action = "InitializeFilters"
-                    });
-            });
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeFilters),
+                GetType(),
+                additionalData: "初始化篩選器失敗"
+            );
             
             // 設定安全的預設值
             filterDefinitions = new List<SearchFilterDefinition>();
@@ -212,18 +174,12 @@
         }
         catch (Exception ex)
         {
-            // 記錄表格欄位初始化錯誤
-            _ = Task.Run(async () =>
-            {
-                await ErrorHandlingHelper.HandlePageErrorAsync(
-                    ex, 
-                    nameof(InitializeTableColumns), 
-                    GetType(),
-                    additionalData: new { 
-                        PageName = "CustomerIndex",
-                        Action = "InitializeTableColumns"
-                    });
-            });
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeTableColumns),
+                GetType(),
+                additionalData: "初始化表格欄位失敗"
+            );
             
             // 設定安全的預設值
             columnDefinitions = new List<TableColumnDefinition>();
