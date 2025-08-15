@@ -202,7 +202,7 @@
             var productCodeFilter = searchModel.GetFilterValue("ProductCode")?.ToString();
             if (!string.IsNullOrWhiteSpace(productCodeFilter))
             {
-                query = query.Where(pp => pp.Product.Code.Contains(productCodeFilter));
+                query = query.Where(pp => pp.Product.Code != null && pp.Product.Code.Contains(productCodeFilter));
             }
 
             // 客戶名稱篩選

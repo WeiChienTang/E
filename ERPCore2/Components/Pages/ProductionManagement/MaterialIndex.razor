@@ -141,7 +141,7 @@
             if (!string.IsNullOrWhiteSpace(codeFilter))
             {
                 query = query.Where(m => 
-                    m.Code.Contains(codeFilter, StringComparison.OrdinalIgnoreCase));
+                    m.Code != null && m.Code.Contains(codeFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 材質名稱篩選

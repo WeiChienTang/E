@@ -64,8 +64,8 @@ namespace ERPCore2.Services
                     .Include(u => u.FromUnitConversions)
                     .Include(u => u.ToUnitConversions)
                     .Where(u => !u.IsDeleted &&
-                               (u.UnitName.Contains(searchTerm) ||
-                                u.Code.Contains(searchTerm)))
+                               ((u.UnitName != null && u.UnitName.Contains(searchTerm)) ||
+                                (u.Code != null && u.Code.Contains(searchTerm))))
                     .OrderBy(u => u.Code)
                     .ToListAsync();
             }

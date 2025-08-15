@@ -130,7 +130,7 @@
             if (!string.IsNullOrWhiteSpace(unitCodeFilter))
             {
                 query = query.Where(u => 
-                    u.Code.Contains(unitCodeFilter, StringComparison.OrdinalIgnoreCase));
+                    u.Code != null && u.Code.Contains(unitCodeFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 單位名稱篩選

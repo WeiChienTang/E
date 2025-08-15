@@ -161,7 +161,7 @@
             if (!string.IsNullOrWhiteSpace(sizeCodeFilter))
             {
                 query = query.Where(s => 
-                    s.Code.Contains(sizeCodeFilter, StringComparison.OrdinalIgnoreCase));
+                    s.Code != null && s.Code.Contains(sizeCodeFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 尺寸名稱篩選

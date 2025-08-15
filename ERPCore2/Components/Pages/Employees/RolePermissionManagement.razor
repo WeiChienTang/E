@@ -649,11 +649,11 @@
     private bool IsSystemPermission(Permission permission)
     {
         var code = permission.Code;
-        return code.StartsWith("System.") || 
+        return code != null && (code.StartsWith("System.") || 
                code.StartsWith("EmployeeEdit_Account_Password.") ||
                code.StartsWith("SystemControl.") || 
                code.StartsWith("Permission.") || 
-               code.StartsWith("Role.");
+               code.StartsWith("Role."));
     }
 
     private RenderFragment RenderPermissionTable(bool isReadOnly, bool showSystemPermissions = false)

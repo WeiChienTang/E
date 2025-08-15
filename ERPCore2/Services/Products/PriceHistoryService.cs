@@ -46,12 +46,12 @@ namespace ERPCore2.Services
                     .Include(ph => ph.RelatedCustomer)
                     .Include(ph => ph.RelatedSupplier)
                     .Where(ph => !ph.IsDeleted && (
-                        ph.Product.ProductName.Contains(searchTerm) ||
-                        ph.Product.Code.Contains(searchTerm) ||
-                        ph.ChangeReason.Contains(searchTerm) ||
+                        (ph.Product.ProductName != null && ph.Product.ProductName.Contains(searchTerm)) ||
+                        (ph.Product.Code != null && ph.Product.Code.Contains(searchTerm)) ||
+                        (ph.ChangeReason != null && ph.ChangeReason.Contains(searchTerm)) ||
                         (ph.ChangedByUserName != null && ph.ChangedByUserName.Contains(searchTerm)) ||
-                        (ph.RelatedCustomer != null && ph.RelatedCustomer.CompanyName.Contains(searchTerm)) ||
-                        (ph.RelatedSupplier != null && ph.RelatedSupplier.CompanyName.Contains(searchTerm))
+                        (ph.RelatedCustomer != null && ph.RelatedCustomer.CompanyName != null && ph.RelatedCustomer.CompanyName.Contains(searchTerm)) ||
+                        (ph.RelatedSupplier != null && ph.RelatedSupplier.CompanyName != null && ph.RelatedSupplier.CompanyName.Contains(searchTerm))
                     ))
                     .OrderByDescending(ph => ph.ChangeDate)
                     .ToListAsync();

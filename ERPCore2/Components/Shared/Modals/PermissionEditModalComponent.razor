@@ -242,7 +242,7 @@
             }
 
             // 組合最終的權限代碼：使用表單中輸入的權限主要名稱 + 選擇的動作
-            var permissionMainNameValue = entity.Code.Trim();
+            var permissionMainNameValue = entity.Code?.Trim() ?? "";
             entity.Code = $"{permissionMainNameValue}.{selectedAction}";
 
             // 驗證權限代碼格式

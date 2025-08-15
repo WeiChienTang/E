@@ -213,9 +213,9 @@ namespace ERPCore2.Services
                     .Include(prd => prd.Product)
                     .Include(prd => prd.Unit)
                     .Where(prd => !prd.IsDeleted && (
-                        prd.Product.ProductName.ToLower().Contains(lowerSearchTerm) ||
-                        prd.Product.Code.ToLower().Contains(lowerSearchTerm) ||
-                        prd.PurchaseReturn.PurchaseReturnNumber.ToLower().Contains(lowerSearchTerm) ||
+                        (prd.Product.ProductName != null && prd.Product.ProductName.ToLower().Contains(lowerSearchTerm)) ||
+                        (prd.Product.Code != null && prd.Product.Code.ToLower().Contains(lowerSearchTerm)) ||
+                        (prd.PurchaseReturn.PurchaseReturnNumber != null && prd.PurchaseReturn.PurchaseReturnNumber.ToLower().Contains(lowerSearchTerm)) ||
                         (prd.BatchNumber != null && prd.BatchNumber.ToLower().Contains(lowerSearchTerm)) ||
                         (prd.DetailRemarks != null && prd.DetailRemarks.ToLower().Contains(lowerSearchTerm))
                     ))

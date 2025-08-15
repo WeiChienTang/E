@@ -176,7 +176,7 @@
             if (!string.IsNullOrWhiteSpace(warehouseCodeFilter))
             {
                 query = query.Where(w => 
-                    w.Code.Contains(warehouseCodeFilter, StringComparison.OrdinalIgnoreCase));
+                    w.Code != null && w.Code.Contains(warehouseCodeFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 倉庫名稱篩選

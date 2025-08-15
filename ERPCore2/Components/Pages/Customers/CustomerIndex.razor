@@ -240,7 +240,7 @@
             if (!string.IsNullOrWhiteSpace(customerCodeFilter))
             {
                 query = query.Where(c => 
-                    c.Code.Contains(customerCodeFilter, StringComparison.OrdinalIgnoreCase));
+                    c.Code != null && c.Code.Contains(customerCodeFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 公司名稱篩選

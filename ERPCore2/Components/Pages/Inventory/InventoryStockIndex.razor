@@ -246,7 +246,7 @@
             {
                 query = query.Where(s => 
                     s.Product != null && 
-                    s.Product.Code.Contains(productCodeFilter, StringComparison.OrdinalIgnoreCase));
+                    s.Product.Code != null && s.Product.Code.Contains(productCodeFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 產品名稱篩選

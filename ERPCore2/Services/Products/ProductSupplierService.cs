@@ -58,10 +58,10 @@ namespace ERPCore2.Services
                     .Include(ps => ps.Product)
                     .Include(ps => ps.Supplier)
                     .Where(ps => !ps.IsDeleted &&
-                               (ps.Product.ProductName.Contains(searchTerm) ||
-                                ps.Product.Code.Contains(searchTerm) ||
-                                ps.Supplier.CompanyName.Contains(searchTerm) ||
-                                ps.Supplier.Code.Contains(searchTerm) ||
+                               ((ps.Product.ProductName != null && ps.Product.ProductName.Contains(searchTerm)) ||
+                                (ps.Product.Code != null && ps.Product.Code.Contains(searchTerm)) ||
+                                (ps.Supplier.CompanyName != null && ps.Supplier.CompanyName.Contains(searchTerm)) ||
+                                (ps.Supplier.Code != null && ps.Supplier.Code.Contains(searchTerm)) ||
                                 (ps.SupplierProductCode != null && ps.SupplierProductCode.Contains(searchTerm))))
                     .OrderBy(ps => ps.Product.ProductName)
                     .ThenBy(ps => ps.Supplier.CompanyName)

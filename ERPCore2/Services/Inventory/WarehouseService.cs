@@ -63,8 +63,8 @@ namespace ERPCore2.Services
                 return await context.Warehouses
                     .Include(w => w.WarehouseLocations)
                     .Where(w => !w.IsDeleted &&
-                               (w.WarehouseName.Contains(searchTerm) ||
-                                w.Code.Contains(searchTerm)))
+                               ((w.WarehouseName != null && w.WarehouseName.Contains(searchTerm)) ||
+                                (w.Code != null && w.Code.Contains(searchTerm))))
                     .OrderBy(w => w.Code)
                     .ToListAsync();
             }

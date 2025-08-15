@@ -235,8 +235,8 @@
             // 生成倉庫代碼邏輯 - 可根據需求調整
             var existingWarehouses = await WarehouseService.GetAllAsync();
             var maxCode = existingWarehouses
-                .Where(w => w.Code.StartsWith("WH"))
-                .Select(w => w.Code.Substring(2))
+                .Where(w => w.Code != null && w.Code.StartsWith("WH"))
+                .Select(w => w.Code!.Substring(2))
                 .Where(code => int.TryParse(code, out _))
                 .Select(code => int.Parse(code))
                 .DefaultIfEmpty(0)

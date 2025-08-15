@@ -167,8 +167,8 @@
         {
             var units = await UnitService.GetAllAsync();
             var maxCode = units
-                .Where(u => u.Code.StartsWith("U"))
-                .Select(u => u.Code)
+                .Where(u => u.Code != null && u.Code.StartsWith("U"))
+                .Select(u => u.Code!)
                 .Where(code => code.Length > 1 && int.TryParse(code.Substring(1), out _))
                 .Select(code => int.Parse(code.Substring(1)))
                 .DefaultIfEmpty(0)
@@ -189,7 +189,7 @@
         try
         {
             // 檢查單位代碼是否重複
-            if (await UnitService.IsUnitCodeExistsAsync(entity.Code, entity.Id))
+            if (entity.Code != null && await UnitService.IsUnitCodeExistsAsync(entity.Code, entity.Id))
             {
                 await NotificationService.ShowWarningAsync("單位代碼已存在，請選擇其他代碼");
                 return false;

@@ -148,9 +148,9 @@ namespace ERPCore2.Services
                 return await context.WarehouseLocations
                     .Include(wl => wl.Warehouse)
                     .Where(wl => !wl.IsDeleted && 
-                                (wl.Code.Contains(searchTerm) || 
-                                 wl.LocationName.Contains(searchTerm) ||
-                                 wl.Warehouse.WarehouseName.Contains(searchTerm)))
+                                ((wl.Code != null && wl.Code.Contains(searchTerm)) || 
+                                 (wl.LocationName != null && wl.LocationName.Contains(searchTerm)) ||
+                                 (wl.Warehouse.WarehouseName != null && wl.Warehouse.WarehouseName.Contains(searchTerm))))
                     .OrderBy(wl => wl.Warehouse.WarehouseName)
                     .ThenBy(wl => wl.Code)
                     .ToListAsync();

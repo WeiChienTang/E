@@ -172,10 +172,10 @@ namespace ERPCore2.Services
                     .Include(uc => uc.FromUnit)
                     .Include(uc => uc.ToUnit)
                     .Where(uc => !uc.IsDeleted && 
-                                (uc.FromUnit.UnitName.Contains(searchTerm) || 
-                                 uc.ToUnit.UnitName.Contains(searchTerm) ||
-                                 uc.FromUnit.Code.Contains(searchTerm) ||
-                                 uc.ToUnit.Code.Contains(searchTerm)))
+                                ((uc.FromUnit.UnitName != null && uc.FromUnit.UnitName.Contains(searchTerm)) || 
+                                 (uc.ToUnit.UnitName != null && uc.ToUnit.UnitName.Contains(searchTerm)) ||
+                                 (uc.FromUnit.Code != null && uc.FromUnit.Code.Contains(searchTerm)) ||
+                                 (uc.ToUnit.Code != null && uc.ToUnit.Code.Contains(searchTerm))))
                     .OrderBy(uc => uc.FromUnit.UnitName)
                     .ThenBy(uc => uc.ToUnit.UnitName)
                     .ToListAsync();
