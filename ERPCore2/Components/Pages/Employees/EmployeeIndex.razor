@@ -439,9 +439,6 @@
                 }
                 return q;
             },
-
-            // 備註篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Remarks", d => d.Remarks)
         };
 
         return FilterHelper.ApplyFiltersWithErrorHandling(

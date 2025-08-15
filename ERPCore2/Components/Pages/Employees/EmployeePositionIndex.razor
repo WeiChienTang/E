@@ -225,9 +225,6 @@
             
             // 職位代碼篩選
             (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Code", p => p.Code, allowNull: true),
-
-            // 備註篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Remarks", p => p.Remarks, allowNull: true)
         };
 
         return FilterHelper.ApplyFiltersWithErrorHandling(

@@ -209,6 +209,8 @@
     {
         var filterActions = new List<Func<SearchFilterModel, IQueryable<SupplierType>, IQueryable<SupplierType>>>
         {
+            // 應用基礎實體篩選（狀態、備註等）
+            (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
             // 類型名稱篩選
             (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "TypeName", st => st.TypeName),
         };

@@ -184,9 +184,6 @@
             
             // 權限代碼篩選
             (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "PermissionCode", p => p.Code),
-
-            // 備註篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Remarks", p => p.Remarks)
         };
 
         return FilterHelper.ApplyFiltersWithErrorHandling(

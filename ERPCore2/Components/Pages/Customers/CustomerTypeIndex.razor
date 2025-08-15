@@ -143,38 +143,28 @@
         }
     }
 
-    // 自定義篩選邏輯
     private IQueryable<CustomerType> ApplyCustomerTypeFilters(SearchFilterModel searchModel, IQueryable<CustomerType> query)
     {
-        try
+        var filterActions = new List<Func<SearchFilterModel, IQueryable<CustomerType>, IQueryable<CustomerType>>>
         {
-            // 類型名稱篩選
-            var typeNameFilter = searchModel.GetFilterValue("TypeName")?.ToString();
-            if (!string.IsNullOrWhiteSpace(typeNameFilter))
-            {
-                query = query.Where(ct => 
-                    ct.TypeName.Contains(typeNameFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 狀態篩選
-            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
-            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
-            {
-                query = query.Where(ct => ct.Status == status);
-            }
+            // 應用基礎實體篩選（狀態、備註）
+            (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
             
-            return query.OrderBy(ct => ct.TypeName);
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(ApplyCustomerTypeFilters),
-                GetType(),
-                additionalData: "套用客戶類型篩選失敗"
-            );
-            return query.OrderBy(ct => ct.TypeName);
-        }
+            // 類型代碼篩選
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Code", ct => ct.Code),
+            
+            // 類型名稱篩選
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "TypeName", ct => ct.TypeName),
+        };
+
+        return FilterHelper.ApplyFiltersWithErrorHandling(
+            searchModel,
+            query,
+            filterActions,
+            q => q.OrderBy(ct => ct.TypeName), // 預設排序
+            nameof(ApplyCustomerTypeFilters),
+            GetType()
+        );
     }
 
     // ===== Modal 相關方法 =====
