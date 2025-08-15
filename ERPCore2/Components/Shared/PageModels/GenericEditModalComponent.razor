@@ -379,6 +379,9 @@
                     Entity = loadedEntity;
                     // 重新建立 EditContext
                     editContext = new EditContext(Entity);
+                    
+                    // 方案三：主動更新所有 ActionButtons，確保按鈕狀態與實體資料同步
+                    UpdateAllActionButtons();
                 }
             }
         }
@@ -841,6 +844,63 @@
     /// 使用反射取得物件屬性值
     /// </summary>
     private object? GetPropertyValue(object obj, string propertyName)
+    {
+        try
+        {
+            var property = obj.GetType().GetProperty(propertyName);
+            return property?.GetValue(obj);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+    
+    /// <summary>
+    /// 更新所有帶有 ActionButtons 的欄位，確保按鈕狀態與實體資料同步
+    /// </summary>
+    private void UpdateAllActionButtons()
+    {
+        try
+        {
+            // 只有在實體資料存在且有 ModalManagers 和 FormFields 時才執行更新
+            if (Entity == null || ModalManagers == null || !ModalManagers.Any() || FormFields == null || !FormFields.Any())
+                return;
+
+            // 直接更新原始的 FormFields，而不是 GetProcessedFormFields 的結果
+            var fieldsWithButtons = FormFields.Where(f => f.ActionButtons != null && f.ActionButtons.Any()).ToList();
+            
+            foreach (var field in fieldsWithButtons)
+            {
+                // 從 ModalManagers 字典中找到對應的管理器並更新按鈕
+                if (ModalManagers.ContainsKey(field.PropertyName))
+                {
+                    var modalManager = ModalManagers[field.PropertyName];
+                    
+                    // 取得當前實體對應屬性的值
+                    var currentValue = GetEntityPropertyValue(Entity, field.PropertyName);
+                    var intValue = currentValue as int?;
+                    
+                    // 使用反射調用 UpdateFieldActionButtons 方法
+                    var updateMethod = modalManager?.GetType().GetMethod("UpdateFieldActionButtons");
+                    if (updateMethod != null && modalManager != null)
+                    {
+                        // 直接傳入原始的 FormFields，而不是處理過的
+                        updateMethod.Invoke(modalManager, new object?[] { FormFields, field.PropertyName, intValue });
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _ = Task.Run(async () => await LogError("UpdateAllActionButtons", ex));
+        }
+    }
+    
+    /// <summary>
+    /// 取得實體屬性值的輔助方法
+    /// </summary>
+    private object? GetEntityPropertyValue(object obj, string propertyName)
     {
         try
         {
