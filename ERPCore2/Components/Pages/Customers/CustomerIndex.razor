@@ -251,41 +251,4 @@
             GetType()
         );
     }
-
-    private async Task InitializeFiltersAsync()
-    {
-        try
-        {
-            // 載入客戶類型選項
-            var customerTypes = await CustomerService.GetCustomerTypesAsync();
-            var customerTypeOptions = customerTypes.Select(ct => new SelectOption
-            {
-                Text = ct.TypeName,
-                Value = ct.Id.ToString()
-            }).ToList();
-
-            // 重新建立篩選定義，包含載入的選項
-            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("Code", "客戶代碼", "輸入客戶代碼搜尋")
-                .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
-                .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
-                .AddSelect("CustomerTypeId", "客戶類型", customerTypeOptions)
-                .AddText("TaxNumber", "統一編號", "輸入統一編號搜尋")
-                .Build();
-
-            // 通知組件狀態已改變
-            StateHasChanged();
-            
-            // 如果組件已經初始化，刷新組件以更新篩選器
-            if (indexComponent != null)
-            {
-                await indexComponent.Refresh();
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFiltersAsync), GetType(),
-                additionalData: new { PageName = "CustomerIndex", Action = "InitializeFiltersAsync" });
-        }
-    }
 }
