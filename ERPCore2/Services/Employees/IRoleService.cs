@@ -24,6 +24,14 @@ namespace ERPCore2.Services
         Task<ServiceResult<bool>> IsRoleNameExistsAsync(string roleName, int? excludeRoleId = null);
 
         /// <summary>
+        /// 檢查角色代碼是否已存在
+        /// </summary>
+        /// <param name="roleCode">角色代碼</param>
+        /// <param name="excludeRoleId">排除的角色ID（用於更新時檢查）</param>
+        /// <returns>檢查結果</returns>
+        Task<bool> IsRoleCodeExistsAsync(string roleCode, int? excludeRoleId = null);
+
+        /// <summary>
         /// 為角色指派權限
         /// </summary>
         /// <param name="roleId">角色ID</param>

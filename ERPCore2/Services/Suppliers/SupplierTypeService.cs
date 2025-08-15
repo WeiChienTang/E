@@ -172,6 +172,32 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<bool> IsSupplierTypeCodeExistsAsync(string typeCode, int? excludeId = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(typeCode))
+                    return false;
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.SupplierTypes.Where(st => st.Code == typeCode && !st.IsDeleted);
+                
+                if (excludeId.HasValue)
+                    query = query.Where(st => st.Id != excludeId.Value);
+                    
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsSupplierTypeCodeExistsAsync), GetType(), _logger, new { 
+                    TypeCode = typeCode,
+                    ExcludeId = excludeId,
+                    ServiceType = GetType().Name 
+                });
+                return false; // 安全預設值
+            }
+        }
+
         public async Task<SupplierType?> GetByTypeNameAsync(string typeName)
         {
             try

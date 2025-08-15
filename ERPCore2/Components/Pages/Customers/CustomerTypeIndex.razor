@@ -107,6 +107,7 @@
         {
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("Code", "類型代碼", "輸入類型代碼搜尋")
                 .AddText("TypeName", "類型名稱", "輸入類型名稱搜尋")
                 .Build();
         }
@@ -127,8 +128,8 @@
         {
             columnDefinitions = new List<TableColumnDefinition>
             {
+                TableColumnDefinition.Text("類型代碼", nameof(CustomerType.Code)),
                 TableColumnDefinition.Text("類型名稱", nameof(CustomerType.TypeName)),
-                TableColumnDefinition.Text("描述", nameof(CustomerType.Remarks)),
             };
         }
         catch (Exception ex)

@@ -30,13 +30,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             // 取得供應商類型
             var manufacturerType = await context.SupplierTypes.FirstOrDefaultAsync(st => st.TypeName == "製造商");
-            var agentType = await context.SupplierTypes.FirstOrDefaultAsync(st => st.TypeName == "代理商");
-            var wholesalerType = await context.SupplierTypes.FirstOrDefaultAsync(st => st.TypeName == "批發商");
-            var retailerType = await context.SupplierTypes.FirstOrDefaultAsync(st => st.TypeName == "零售商");
-            var serviceType = await context.SupplierTypes.FirstOrDefaultAsync(st => st.TypeName == "服務商");
             var materialType = await context.SupplierTypes.FirstOrDefaultAsync(st => st.TypeName == "原料供應商");
-            var equipmentType = await context.SupplierTypes.FirstOrDefaultAsync(st => st.TypeName == "設備供應商");
-            var softwareType = await context.SupplierTypes.FirstOrDefaultAsync(st => st.TypeName == "軟體供應商");
 
 
             var suppliers = new[]
@@ -63,17 +57,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CreatedAt = DateTime.Now.AddDays(-85),
                     CreatedBy = "System"
                 },
-                new Supplier
-                {
-                    Code = "S003",
-                    CompanyName = "全球軟體代理商",
-                    ContactPerson = "王協理",
-                    TaxNumber = "20345678",
-                    SupplierTypeId = agentType?.Id ?? 2,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-80),
-                    CreatedBy = "System"
-                }
             };
 
             await context.Suppliers.AddRangeAsync(suppliers);

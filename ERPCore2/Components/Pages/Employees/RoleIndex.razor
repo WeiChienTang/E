@@ -107,6 +107,7 @@
             // 準備系統角色選項
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("Code", "角色代碼", "輸入角色代碼搜尋")
                 .AddText("RoleName", "角色名稱", "輸入角色名稱搜尋")
                 .Build();
         }
@@ -126,6 +127,7 @@
         {
             columnDefinitions = new List<TableColumnDefinition>
             {
+                TableColumnDefinition.Text("角色代碼", nameof(Role.Code)),
                 TableColumnDefinition.Text("角色名稱", nameof(Role.RoleName)),
             };
         }

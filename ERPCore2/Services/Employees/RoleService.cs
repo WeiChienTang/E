@@ -120,6 +120,32 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<bool> IsRoleCodeExistsAsync(string roleCode, int? excludeRoleId = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(roleCode))
+                    return false;
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Roles.Where(r => r.Code == roleCode && !r.IsDeleted);
+
+                if (excludeRoleId.HasValue)
+                    query = query.Where(r => r.Id != excludeRoleId.Value);
+
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsRoleCodeExistsAsync), GetType(), _logger, new { 
+                    RoleCode = roleCode, 
+                    ExcludeRoleId = excludeRoleId,
+                    Method = nameof(IsRoleCodeExistsAsync)
+                });
+                return false;
+            }
+        }
+
         /// <summary>
         /// 為角色指派權限
         /// </summary>

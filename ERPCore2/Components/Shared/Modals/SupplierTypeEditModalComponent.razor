@@ -64,6 +64,16 @@
             {
                 new()
                 {
+                    PropertyName = nameof(SupplierType.Code),
+                    Label = "類型代碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入類型代碼",
+                    IsRequired = true,
+                    MaxLength = 20,
+                    HelpText = "廠商類型的唯一代碼，用於區別不同的廠商分類，新增時系統會自動產生，也可手動修改"
+                },
+                new()
+                {
                     PropertyName = nameof(SupplierType.TypeName),
                     Label = "類型名稱",
                     FieldType = FormFieldType.Text,
@@ -88,6 +98,7 @@
 
             formSections = new Dictionary<string, string>
             {
+                { nameof(SupplierType.Code), "基本資訊" },
                 { nameof(SupplierType.TypeName), "基本資訊" },
                 { nameof(SupplierType.Remarks), "詳細資訊" }
             };
@@ -112,6 +123,7 @@
                 // 新增模式
                 return new SupplierType
                 {
+                    Code = await GenerateSupplierTypeCodeAsync(),
                     Status = EntityStatus.Active,
                     TypeName = string.Empty,
                     Remarks = null
@@ -196,6 +208,32 @@
         catch (Exception)
         {
             _ = NotificationService.ShowErrorAsync("儲存成功回調時發生錯誤");
+        }
+    }
+
+    // ===== 輔助方法 =====
+    private async Task<string> GenerateSupplierTypeCodeAsync()
+    {
+        try
+        {
+            // 簡單的廠商類型代碼生成邏輯：STYPE + 時間戳
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var baseCode = $"STYPE{timestamp}";
+            
+            // 檢查是否重複，如果重複則加上隨機數
+            var isExists = await SupplierTypeService.IsSupplierTypeCodeExistsAsync(baseCode);
+            if (isExists)
+            {
+                var random = new Random().Next(100, 999);
+                baseCode = $"STYPE{timestamp}{random}";
+            }
+            
+            return baseCode;
+        }
+        catch
+        {
+            // 如果生成失敗，返回預設格式
+            return $"STYPE{DateTime.Now:yyyyMMddHHmmss}";
         }
     }
 }
