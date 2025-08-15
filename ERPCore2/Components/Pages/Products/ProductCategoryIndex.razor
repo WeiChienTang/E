@@ -75,7 +75,6 @@
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("CategoryName", "分類名稱", "輸入分類名稱搜尋")
                 .AddText("CategoryCode", "分類代碼", "輸入分類代碼搜尋")
-                .AddText("Description", "描述", "輸入描述搜尋")
                 .Build();
         }
         catch (Exception ex)
@@ -101,7 +100,6 @@
                     var category = (ProductCategory)item;
                     return @<span class="badge bg-primary">@(category.Products?.Count ?? 0)</span>;
                 }),
-                TableColumnDefinition.Text("描述", nameof(ProductCategory.Description)),
                 TableColumnDefinition.Text("備註", nameof(ProductCategory.Remarks))
             };
         }
@@ -152,15 +150,6 @@
                 query = query.Where(c => 
                     !string.IsNullOrEmpty(c.Code) && 
                     c.Code.Contains(codeFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 描述篩選
-            var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
-            if (!string.IsNullOrWhiteSpace(descriptionFilter))
-            {
-                query = query.Where(c => 
-                    !string.IsNullOrEmpty(c.Description) && 
-                    c.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 狀態篩選

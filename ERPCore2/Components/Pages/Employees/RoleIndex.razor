@@ -152,6 +152,9 @@
             
             // 角色名稱篩選
             (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "RoleName", r => r.RoleName),
+
+            // 備註篩選
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Remarks", r => r.Remarks, allowNull: true)
         };
 
         return FilterHelper.ApplyFiltersWithErrorHandling(

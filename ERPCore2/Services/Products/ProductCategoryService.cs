@@ -75,8 +75,7 @@ namespace ERPCore2.Services
                 return await context.ProductCategories
                     .Where(pc => !pc.IsDeleted &&
                                (pc.CategoryName.Contains(searchTerm) ||
-                                (pc.Code != null && pc.Code.Contains(searchTerm)) ||
-                                (pc.Description != null && pc.Description.Contains(searchTerm))))
+                                (pc.Code != null && pc.Code.Contains(searchTerm))))
                     .OrderBy(pc => pc.CategoryName)
                     .ToListAsync();
             }

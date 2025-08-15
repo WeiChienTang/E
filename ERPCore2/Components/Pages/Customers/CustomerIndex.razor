@@ -274,7 +274,7 @@
                 query = query.Where(c => 
                     !string.IsNullOrEmpty(c.TaxNumber) && 
                     c.TaxNumber.Contains(taxNumberFilter, StringComparison.OrdinalIgnoreCase));
-            }
+            }            
 
             return query.OrderBy(c => c.Code);
         }

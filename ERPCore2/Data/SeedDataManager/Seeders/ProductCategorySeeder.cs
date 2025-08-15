@@ -33,7 +33,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "PC001",
                     CategoryName = "原物料",
-                    Description = "生產原料材料",
+                    Remarks = "生產原料材料",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-30),
                     CreatedBy = "System"
@@ -42,7 +42,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "PC002",
                     CategoryName = "半成品",
-                    Description = "半成品",
+                    Remarks = "半成品",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-30),
                     CreatedBy = "System"
@@ -51,7 +51,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "PC003",
                     CategoryName = "成品",
-                    Description = "已完成製造的產品",
+                    Remarks = "已完成製造的產品",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-30),
                     CreatedBy = "System"
