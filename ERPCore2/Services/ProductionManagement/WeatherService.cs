@@ -54,8 +54,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Weathers
                     .Where(w => !w.IsDeleted &&
-                               (w.Name.Contains(searchTerm) ||
-                                w.Code.Contains(searchTerm) ||
+                               ((w.Name != null && w.Name.Contains(searchTerm)) ||
+                                (w.Code != null && w.Code.Contains(searchTerm)) ||
                                 (w.Description != null && w.Description.Contains(searchTerm))))
                     .OrderBy(w => w.Name)
                     .ToListAsync();
@@ -79,6 +79,10 @@ namespace ERPCore2.Services
                 // 基本驗證
                 if (string.IsNullOrWhiteSpace(entity.Name))
                     return ServiceResult.Failure("天氣名稱為必填");
+
+                // 檢查代碼
+                if (string.IsNullOrWhiteSpace(entity.Code))
+                    return ServiceResult.Failure("天氣代碼為必填");
 
                 // 檢查代碼是否重複
                 if (await IsCodeExistsAsync(entity.Code, entity.Id))

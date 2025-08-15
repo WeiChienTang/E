@@ -225,9 +225,9 @@ namespace ERPCore2.Services
                     .Where(e => !e.IsDeleted && 
                                ((e.FirstName != null && e.FirstName.Contains(searchTerm)) ||
                                 (e.LastName != null && e.LastName.Contains(searchTerm)) ||
-                                e.Code.Contains(searchTerm) ||
+                                (e.Code != null && e.Code.Contains(searchTerm)) ||
                                 (e.Account != null && e.Account.Contains(searchTerm)) ||
-                                (e.Department != null && e.Department.Name.Contains(searchTerm))))
+                                (e.Department != null && e.Department.Name != null && e.Department.Name.Contains(searchTerm))))
                     .OrderBy(e => e.Code)
                     .ToListAsync();
 
@@ -444,11 +444,11 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var lastEmployee = await context.Employees
-                    .Where(e => e.Code.StartsWith(prefix))
+                    .Where(e => e.Code != null && e.Code.StartsWith(prefix))
                     .OrderByDescending(e => e.Code)
                     .FirstOrDefaultAsync();
 
-                if (lastEmployee == null)
+                if (lastEmployee == null || lastEmployee.Code == null)
                     return ServiceResult<string>.Success($"{prefix}001");
 
                 var lastCode = lastEmployee.Code;

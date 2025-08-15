@@ -41,8 +41,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryTransactionTypes
                     .Where(t => !t.IsDeleted &&
-                               (t.TypeName.Contains(searchTerm) ||
-                                t.Code.Contains(searchTerm)))
+                               ((t.TypeName != null && t.TypeName.Contains(searchTerm)) ||
+                                (t.Code != null && t.Code.Contains(searchTerm))))
                     .OrderBy(t => t.Code)
                     .ToListAsync();
             }

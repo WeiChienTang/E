@@ -76,8 +76,8 @@ namespace ERPCore2.Services
                 return await context.Customers
                     .Include(c => c.CustomerType)
                     .Where(c => !c.IsDeleted && 
-                               (c.Code.Contains(searchTerm) ||
-                                c.CompanyName.Contains(searchTerm) ||
+                               ((c.Code != null && c.Code.Contains(searchTerm)) ||
+                                (c.CompanyName != null && c.CompanyName.Contains(searchTerm)) ||
                                 (c.ContactPerson != null && c.ContactPerson.Contains(searchTerm)) ||
                                 (c.TaxNumber != null && c.TaxNumber.Contains(searchTerm))))
                     .OrderBy(c => c.CompanyName)

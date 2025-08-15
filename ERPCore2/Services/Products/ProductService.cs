@@ -89,8 +89,8 @@ namespace ERPCore2.Services
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
                     .Where(p => !p.IsDeleted &&
-                               (p.ProductName.Contains(searchTerm) ||
-                                p.Code.Contains(searchTerm) ||
+                               ((p.ProductName != null && p.ProductName.Contains(searchTerm)) ||
+                                (p.Code != null && p.Code.Contains(searchTerm)) ||
                                 (p.Description != null && p.Description.Contains(searchTerm)) ||
                                 (p.Specification != null && p.Specification.Contains(searchTerm))))
                     .OrderBy(p => p.ProductName)

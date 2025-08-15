@@ -78,8 +78,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Materials
                     .Where(m => !m.IsDeleted &&
-                               (m.Name.Contains(searchTerm) ||
-                                m.Code.Contains(searchTerm) ||
+                               ((m.Name != null && m.Name.Contains(searchTerm)) ||
+                                (m.Code != null && m.Code.Contains(searchTerm)) ||
                                 (m.Description != null && m.Description.Contains(searchTerm))))
                     .OrderBy(m => m.Name)
                     .ToListAsync();

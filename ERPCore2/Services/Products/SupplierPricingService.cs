@@ -45,12 +45,12 @@ namespace ERPCore2.Services
                     .Include(sp => sp.Product)
                     .Include(sp => sp.Supplier)
                     .Where(sp => !sp.IsDeleted && (
-                        sp.Product.ProductName.Contains(searchTerm) ||
-                        sp.Product.Code.Contains(searchTerm) ||
-                        sp.Supplier.CompanyName.Contains(searchTerm) ||
-                        sp.Supplier.Code.Contains(searchTerm) ||
+                        (sp.Product != null && sp.Product.ProductName != null && sp.Product.ProductName.Contains(searchTerm)) ||
+                        (sp.Product != null && sp.Product.Code != null && sp.Product.Code.Contains(searchTerm)) ||
+                        (sp.Supplier != null && sp.Supplier.CompanyName != null && sp.Supplier.CompanyName.Contains(searchTerm)) ||
+                        (sp.Supplier != null && sp.Supplier.Code != null && sp.Supplier.Code.Contains(searchTerm)) ||
                         (sp.SupplierProductCode != null && sp.SupplierProductCode.Contains(searchTerm)) ||
-                        sp.Currency.Contains(searchTerm)
+                        (sp.Currency != null && sp.Currency.Contains(searchTerm))
                     ))
                     .OrderByDescending(sp => sp.EffectiveDate)
                     .ToListAsync();

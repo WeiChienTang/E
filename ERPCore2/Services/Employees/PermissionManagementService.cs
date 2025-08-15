@@ -87,7 +87,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var permissions = await context.Permissions
-                    .Where(p => p.Code.StartsWith(modulePrefix + ".") && !p.IsDeleted)
+                    .Where(p => p.Code != null && p.Code.StartsWith(modulePrefix + ".") && !p.IsDeleted)
                     .OrderBy(p => p.Code)
                     .ToListAsync();
 
@@ -145,8 +145,8 @@ namespace ERPCore2.Services
 
                 // 在客戶端提取模組名稱（權限代碼中第一個點之前的部分）
                 var modules = permissionCodes
-                    .Where(code => code.Contains('.'))
-                    .Select(code => code.Substring(0, code.IndexOf('.')))
+                    .Where(code => code != null && code.Contains('.'))
+                    .Select(code => code!.Substring(0, code.IndexOf('.')))
                     .Distinct()
                     .OrderBy(m => m)
                     .ToList();
@@ -173,6 +173,9 @@ namespace ERPCore2.Services
                 // 驗證每個權限
                 foreach (var permission in permissions)
                 {
+                    if (permission.Code == null)
+                        return ServiceResult.Failure("權限代碼不能為空");
+                        
                     var validation = ValidatePermissionCode(permission.Code);
                     if (!validation.IsSuccess)
                         return ServiceResult.Failure($"權限代碼 '{permission.Code}' 格式錯誤：{validation.ErrorMessage}");
@@ -220,8 +223,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var permissions = await context.Permissions
                     .Where(p => !p.IsDeleted && 
-                               (p.Code.Contains(searchTerm) ||
-                                p.PermissionName.Contains(searchTerm) ||
+                               ((p.Code != null && p.Code.Contains(searchTerm)) ||
+                                (p.PermissionName != null && p.PermissionName.Contains(searchTerm)) ||
                                 (p.Remarks != null && p.Remarks.Contains(searchTerm))))
                     .OrderBy(p => p.Code)
                     .ToListAsync();
@@ -282,6 +285,10 @@ namespace ERPCore2.Services
         {
             try
             {
+                // 驗證權限代碼
+                if (entity.Code == null)
+                    return ServiceResult.Failure("權限代碼不能為空");
+                    
                 // 驗證權限代碼格式
                 var codeValidation = ValidatePermissionCode(entity.Code);
                 if (!codeValidation.IsSuccess)

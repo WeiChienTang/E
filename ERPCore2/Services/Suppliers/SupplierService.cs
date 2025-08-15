@@ -79,10 +79,10 @@ namespace ERPCore2.Services
                 return await context.Suppliers
                     .Include(s => s.SupplierType)
                     .Where(s => !s.IsDeleted &&
-                               (s.CompanyName.Contains(searchTerm) ||
-                                s.Code.Contains(searchTerm) ||
+                               (s.CompanyName != null && s.CompanyName.Contains(searchTerm)) ||
+                                (s.Code != null && s.Code.Contains(searchTerm)) ||
                                 (s.ContactPerson != null && s.ContactPerson.Contains(searchTerm)) ||
-                                (s.TaxNumber != null && s.TaxNumber.Contains(searchTerm))))
+                                (s.TaxNumber != null && s.TaxNumber.Contains(searchTerm)))
                     .OrderBy(s => s.CompanyName)
                     .ToListAsync();
             }
