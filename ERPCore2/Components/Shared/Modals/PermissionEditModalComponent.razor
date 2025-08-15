@@ -150,7 +150,7 @@
 
                 new()
                 {
-                    PropertyName = nameof(Permission.PermissionName),
+                    PropertyName = nameof(Permission.Name),
                     Label = "權限名稱",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入權限名稱",
@@ -190,7 +190,7 @@
             {
                 { nameof(Permission.Code), "基本資訊" },
                 { nameof(selectedAction), "基本資訊" },
-                { nameof(Permission.PermissionName), "基本資訊" },
+                { nameof(Permission.Name), "基本資訊" },
                 { nameof(Permission.Remarks), "額外資訊" }
             };
         }
@@ -228,7 +228,7 @@
             }
 
             // 檢查權限名稱
-            if (string.IsNullOrWhiteSpace(entity.PermissionName))
+            if (string.IsNullOrWhiteSpace(entity.Name))
             {
                 validationErrors.Add("請輸入權限名稱");
             }
@@ -290,7 +290,7 @@
                 return false;
             }
 
-            await NotificationService.ShowSuccessAsync($"權限「{entity.PermissionName}」已成功儲存", "儲存成功");
+            await NotificationService.ShowSuccessAsync($"權限「{entity.Name}」已成功儲存", "儲存成功");
             return true;
         }
         catch (Exception ex)

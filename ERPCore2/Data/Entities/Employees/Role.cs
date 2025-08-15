@@ -16,7 +16,7 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "角色名稱")]
         [Required(ErrorMessage = "請輸入角色名稱")]
         [MaxLength(50, ErrorMessage = "角色名稱不可超過50個字元")]
-        public string RoleName { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
 
         // 導航屬性
         public ICollection<Employee> Employees { get; set; } = new List<Employee>();

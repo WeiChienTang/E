@@ -14,16 +14,7 @@ namespace ERPCore2.Data.Entities
         [Required(ErrorMessage = "單位名稱為必填")]
         [MaxLength(20, ErrorMessage = "單位名稱不可超過20個字元")]
         [Display(Name = "單位名稱")]
-        public string UnitName { get; set; } = string.Empty;    
-        
-        // 保留但不使用
-        [MaxLength(5, ErrorMessage = "符號不可超過5個字元")]
-        [Display(Name = "單位符號")]
-        public string? Symbol { get; set; }
-        
-        // 保留但不使用
-        [Display(Name = "是否為基本單位")]
-        public bool IsBaseUnit { get; set; } = true;
+        public string UnitName { get; set; } = string.Empty;            
         
         // Navigation Properties
         public ICollection<Product> Products { get; set; } = new List<Product>();

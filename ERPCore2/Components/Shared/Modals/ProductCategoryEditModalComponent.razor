@@ -158,22 +158,37 @@
 
     private async Task HandleSaveSuccess()
     {
-        await CloseModal();
-        
-        if (OnProductCategorySaved.HasDelegate)
+        try
         {
-            // 這裡會在 GenericEditModalComponent 處理完成後呼叫
-            // 實際的 entity 會由 Index 頁面處理
+            // 如果父組件需要知道商品類型已儲存
+            if (OnProductCategorySaved.HasDelegate && editModalComponent?.Entity != null)
+            {
+                await OnProductCategorySaved.InvokeAsync(editModalComponent.Entity);
+            }
+
+            // 關閉 Modal
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
         }
     }
 
     private async Task HandleCancel()
     {
-        await CloseModal();
-        
-        if (OnCancel.HasDelegate)
+        try
         {
-            await OnCancel.InvokeAsync();
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
         }
     }
 

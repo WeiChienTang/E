@@ -211,6 +211,10 @@
         {
             // 應用基礎實體篩選（狀態、備註等）
             (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
+
+            // 類型代碼篩選
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Code", st => st.Code),
+
             // 類型名稱篩選
             (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "TypeName", st => st.TypeName),
         };

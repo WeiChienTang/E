@@ -175,7 +175,7 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(Role.RoleName),
+                    PropertyName = nameof(Role.Name),
                     Label = "角色名稱",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入角色名稱",
@@ -201,7 +201,7 @@
             formSections = new Dictionary<string, string>
             {
                 { nameof(Role.Code), "基本資訊" },
-                { nameof(Role.RoleName), "基本資訊" },
+                { nameof(Role.Name), "基本資訊" },
                 { nameof(Role.Remarks), "額外資訊" }
             };
         }

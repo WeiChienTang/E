@@ -299,7 +299,7 @@
             // 準備角色選項
             var roleOptions = availableRoles.Select(r => new SelectOption
             {
-                Text = r.RoleName,
+                Text = r.Name,
                 Value = r.Id.ToString()
             }).ToList();
 
@@ -309,13 +309,13 @@
             {
                 // 系統使用者：選擇辦公室員工角色
                 defaultRole = availableRoles.FirstOrDefault(r => 
-                    r.RoleName.Contains("Employee") && r.RoleName.Contains("系統使用者"));
+                    r.Name.Contains("Employee") && r.Name.Contains("系統使用者"));
             }
             else
             {
                 // 非系統使用者：選擇員工角色（一般員工）
                 defaultRole = availableRoles.FirstOrDefault(r => 
-                    r.RoleName.Contains("Employee") && r.RoleName.Contains("非系統使用者"));
+                    r.Name.Contains("Employee") && r.Name.Contains("非系統使用者"));
             }
             var defaultRoleValue = defaultRole?.Id.ToString();
 
@@ -589,13 +589,13 @@
                 {
                     // 系統使用者：選擇辦公室員工角色
                     targetRole = availableRoles.FirstOrDefault(r => 
-                        r.RoleName.Contains("Employee") && r.RoleName.Contains("系統使用者"));
+                        r.Name.Contains("Employee") && r.Name.Contains("系統使用者"));
                 }
                 else
                 {
                     // 非系統使用者：選擇員工角色，並清空帳號密碼
                     targetRole = availableRoles.FirstOrDefault(r => 
-                        r.RoleName.Contains("Employee") && r.RoleName.Contains("非系統使用者"));
+                        r.Name.Contains("Employee") && r.Name.Contains("非系統使用者"));
                     
                     // 清空帳號和密碼欄位，設為 null
                     editModalComponent.Entity.Account = null;
@@ -628,7 +628,7 @@
                 
                 // 找出預設的系統角色 (Employee-非系統使用者)
                 var defaultRole = availableRoles.FirstOrDefault(r => 
-                    r.RoleName.Contains("Employee") && r.RoleName.Contains("非系統使用者"));
+                    r.Name.Contains("Employee") && r.Name.Contains("非系統使用者"));
                 
                 var newEmployee = new Employee
                 {

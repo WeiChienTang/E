@@ -114,9 +114,8 @@
         {
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("SizeCode", "尺寸代碼", "輸入尺寸代碼搜尋")
+                .AddText("Code", "尺寸代碼", "輸入尺寸代碼搜尋")
                 .AddText("SizeName", "尺寸名稱", "輸入尺寸名稱搜尋")
-                .AddText("Description", "尺寸描述", "輸入描述內容搜尋")
                 .Build();
         }
         catch (Exception ex)
@@ -137,8 +136,6 @@
             {
                 TableColumnDefinition.Text("尺寸代碼", nameof(Size.Code)),
                 TableColumnDefinition.Text("尺寸名稱", nameof(Size.SizeName)),
-                TableColumnDefinition.Text("描述", nameof(Size.Description)),
-                TableColumnDefinition.Text("備註", nameof(Size.Remarks))
             };
         }
         catch (Exception ex)
@@ -157,11 +154,11 @@
         try
         {
             // 尺寸代碼篩選
-            var sizeCodeFilter = searchModel.GetFilterValue("SizeCode")?.ToString();
-            if (!string.IsNullOrWhiteSpace(sizeCodeFilter))
+            var CodeFilter = searchModel.GetFilterValue("Code")?.ToString();
+            if (!string.IsNullOrWhiteSpace(CodeFilter))
             {
                 query = query.Where(s => 
-                    s.Code != null && s.Code.Contains(sizeCodeFilter, StringComparison.OrdinalIgnoreCase));
+                    s.Code != null && s.Code.Contains(CodeFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 尺寸名稱篩選
@@ -170,15 +167,6 @@
             {
                 query = query.Where(s => 
                     s.SizeName.Contains(sizeNameFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 描述篩選
-            var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
-            if (!string.IsNullOrWhiteSpace(descriptionFilter))
-            {
-                query = query.Where(s => 
-                    !string.IsNullOrEmpty(s.Description) && 
-                    s.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             return query.OrderBy(s => s.SizeName);

@@ -14,7 +14,7 @@
                           ColumnDefinitions="@columnDefinitions"
                           DataLoader="@LoadRolesAsync"
                           FilterApplier="@ApplyRoleFilters"
-                          GetEntityDisplayName="@(role => role.RoleName)"
+                          GetEntityDisplayName="@(role => role.Name)"
                           RequiredPermission="Role.Read"
                           OnAddClick="@ShowAddModal"
                           OnRowClick="@ShowEditModal"
@@ -128,7 +128,7 @@
             columnDefinitions = new List<TableColumnDefinition>
             {
                 TableColumnDefinition.Text("角色代碼", nameof(Role.Code)),
-                TableColumnDefinition.Text("角色名稱", nameof(Role.RoleName)),
+                TableColumnDefinition.Text("角色名稱", nameof(Role.Name)),
             };
         }
         catch (Exception ex)
@@ -149,16 +149,19 @@
         {
             // 應用基礎實體篩選（狀態、備註）
             (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
-            
+
+            // 角色代碼篩選
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Code", r => r.Code),
+
             // 角色名稱篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "RoleName", r => r.RoleName),
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "RoleName", r => r.Name),
         };
 
         return FilterHelper.ApplyFiltersWithErrorHandling(
             searchModel,
             query,
             filterActions,
-            q => q.OrderBy(r => r.RoleName), // 預設排序
+            q => q.OrderBy(r => r.Name), // 預設排序
             nameof(ApplyRoleFilters),
             GetType()
         );

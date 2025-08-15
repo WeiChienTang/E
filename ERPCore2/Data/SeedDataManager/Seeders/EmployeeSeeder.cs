@@ -31,7 +31,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 return;
 
             // 取得系統管理員角色 - 修正角色名稱
-            var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "管理員");
+            var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "管理員");
 
             // 建立系統管理員帳號
             var adminEmployee = new Employee
@@ -74,7 +74,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     continue;
 
                 // 取得角色
-                var role = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == emp.RoleName);
+                var role = await context.Roles.FirstOrDefaultAsync(r => r.Name == emp.RoleName);
 
                 // 建立員工
                 var employee = new Employee

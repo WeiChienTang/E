@@ -126,7 +126,7 @@
                 // 檢查要編輯的員工是否具有管理員角色
                 if (employee.Role != null)
                 {
-                    var targetRoleLower = employee.Role.RoleName?.Trim().ToLower() ?? "";
+                    var targetRoleLower = employee.Role.Name?.Trim().ToLower() ?? "";
                     bool isTargetEmployeeAdmin = targetRoleLower == "管理員" || targetRoleLower == "admin" || 
                                                targetRoleLower.Contains("管理員") || targetRoleLower.Contains("admin");
                     
@@ -289,7 +289,7 @@
             // 準備角色選項
             var roleOptions = roles.Select(r => new SelectOption
             {
-                Text = r.RoleName,
+                Text = r.Name,
                 Value = r.Id.ToString()
             }).ToList();
 
@@ -310,7 +310,7 @@
 
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("EmployeeCode", "員工代碼", "輸入員工代碼搜尋")
+                .AddText("Code", "員工代碼", "輸入員工代碼搜尋")
                 .AddText("FullName", "姓名", "輸入姓名搜尋")
                 .AddSelect("DepartmentId", "部門", departmentOptions)
                 .AddSelect("EmployeePositionId", "職位", positionOptions)

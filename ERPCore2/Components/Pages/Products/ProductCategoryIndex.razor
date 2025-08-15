@@ -85,8 +85,8 @@
         {
             // 建立篩選定義（狀態篩選器會由 GenericIndexPageComponent 自動添加）
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("CategoryName", "分類名稱", "輸入分類名稱搜尋")
-                .AddText("CategoryCode", "分類代碼", "輸入分類代碼搜尋")
+                .AddText("Code", "分類代碼", "輸入分類代碼搜尋")
+                .AddText("CategoryName", "分類名稱", "輸入分類名稱搜尋")                
                 .Build();
         }
         catch (Exception ex)
@@ -107,11 +107,7 @@
             columnDefinitions = new List<TableColumnDefinition>
             {
                 TableColumnDefinition.Text("分類代碼", nameof(ProductCategory.Code)),
-                TableColumnDefinition.Text("分類名稱", nameof(ProductCategory.CategoryName)),                
-                TableColumnDefinition.Template("商品數量", item => {
-                    var category = (ProductCategory)item;
-                    return @<span class="badge bg-primary">@(category.Products?.Count ?? 0)</span>;
-                }),
+                TableColumnDefinition.Text("分類名稱", nameof(ProductCategory.CategoryName)),
                 TableColumnDefinition.Text("備註", nameof(ProductCategory.Remarks))
             };
         }
@@ -146,83 +142,94 @@
     // 篩選邏輯委派
     private IQueryable<ProductCategory> ApplyProductCategoryFilters(SearchFilterModel searchModel, IQueryable<ProductCategory> query)
     {
-        try
+        var filterActions = new List<Func<SearchFilterModel, IQueryable<ProductCategory>, IQueryable<ProductCategory>>>
         {
+            // 應用基礎實體篩選（狀態、備註）
+            (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
+            
             // 分類名稱篩選
-            var nameFilter = searchModel.GetFilterValue("CategoryName")?.ToString();
-            if (!string.IsNullOrWhiteSpace(nameFilter))
-            {
-                query = query.Where(c => c.CategoryName.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "CategoryName", c => c.CategoryName),
+            
             // 分類代碼篩選
-            var codeFilter = searchModel.GetFilterValue("CategoryCode")?.ToString();
-            if (!string.IsNullOrWhiteSpace(codeFilter))
-            {
-                query = query.Where(c => 
-                    !string.IsNullOrEmpty(c.Code) && 
-                    c.Code.Contains(codeFilter, StringComparison.OrdinalIgnoreCase));
-            }
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Code", c => c.Code, allowNull: true),
+        };
 
-            // 狀態篩選
-            var statusFilter = searchModel.GetFilterValue("Status")?.ToString();
-            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<EntityStatus>(statusFilter, out var status))
-            {
-                query = query.Where(c => c.Status == status);
-            }
-
-            return query.OrderBy(c => c.CategoryName);
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(ApplyProductCategoryFilters),
-                GetType(),
-                additionalData: "應用篩選條件失敗"
-            );
-            return query.OrderBy(c => c.CategoryName);
-        }
+        return FilterHelper.ApplyFiltersWithErrorHandling(
+            searchModel,
+            query,
+            filterActions,
+            q => q.OrderBy(c => c.CategoryName), // 預設排序
+            nameof(ApplyProductCategoryFilters),
+            GetType()
+        );
     }
 
     // ===== Modal 相關方法 =====
-    private Task ShowAddModal()
-    {
-        editingProductCategoryId = null;
-        showEditModal = true;
-        StateHasChanged();
-        return Task.CompletedTask;
-    }
 
-    private Task ShowEditModal(ProductCategory productCategory)
+    private async Task ShowAddModal()
     {
-        if (productCategory?.Id != null)
+        try
         {
-            editingProductCategoryId = productCategory.Id;
+            editingProductCategoryId = null;
             showEditModal = true;
             StateHasChanged();
         }
-        return Task.CompletedTask;
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModal), GetType());
+        }
+    }
+
+    private async Task ShowEditModal(ProductCategory productCategory)
+    {
+        try
+        {
+            if (productCategory?.Id != null)
+            {
+                editingProductCategoryId = productCategory.Id;
+                showEditModal = true;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowEditModal), GetType());
+        }
     }
 
     private async Task OnProductCategorySaved(ProductCategory savedProductCategory)
     {
-        showEditModal = false;
-        editingProductCategoryId = null;
-        
-        if (indexComponent != null)
+        try
         {
-            await indexComponent.Refresh();
+            // 關閉 Modal
+            showEditModal = false;
+            editingProductCategoryId = null;
+            
+            // 重新載入資料
+            if (indexComponent != null)
+            {
+                await indexComponent.Refresh();
+            }
+            
+            StateHasChanged();
         }
-        
-        StateHasChanged();
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnProductCategorySaved), GetType());
+        }
     }
 
-    private Task OnModalCancel()
+    private async Task OnModalCancel()
     {
-        showEditModal = false;
-        editingProductCategoryId = null;
-        StateHasChanged();
-        return Task.CompletedTask;
+        try
+        {
+            showEditModal = false;
+            editingProductCategoryId = null;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnModalCancel), GetType());
+        }
     }
 }

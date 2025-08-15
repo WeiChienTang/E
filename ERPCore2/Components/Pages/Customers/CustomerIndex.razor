@@ -171,7 +171,7 @@
 
             // 建立基本篩選定義（不包含下拉選單選項，這些將在 InitializeFiltersAsync 中載入）
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("CustomerCode", "客戶代碼", "輸入客戶代碼搜尋")
+                .AddText("Code", "客戶代碼", "輸入客戶代碼搜尋")
                 .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
                 .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
                 .AddSelect("CustomerTypeId", "客戶類型", new List<SelectOption>()) // 空的選項，稍後載入
@@ -238,7 +238,7 @@
             (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
             
             // 客戶代碼篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "CustomerCode", c => c.Code),
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Code", c => c.Code),
             
             // 公司名稱篩選
             (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "CompanyName", c => c.CompanyName),
@@ -277,7 +277,7 @@
 
             // 重新建立篩選定義，包含載入的選項
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("CustomerCode", "客戶代碼", "輸入客戶代碼搜尋")
+                .AddText("Code", "客戶代碼", "輸入客戶代碼搜尋")
                 .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
                 .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
                 .AddSelect("CustomerTypeId", "客戶類型", customerTypeOptions)

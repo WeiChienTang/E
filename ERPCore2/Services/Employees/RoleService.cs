@@ -38,7 +38,7 @@ namespace ERPCore2.Services
                     .Include(r => r.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
                     .Where(r => !r.IsDeleted)
-                    .OrderBy(r => r.RoleName)
+                    .OrderBy(r => r.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -80,7 +80,7 @@ namespace ERPCore2.Services
                 var role = await context.Roles
                     .Include(r => r.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
-                    .FirstOrDefaultAsync(r => r.RoleName == roleName && !r.IsDeleted);
+                    .FirstOrDefaultAsync(r => r.Name == roleName && !r.IsDeleted);
 
                 if (role == null)
                     return ServiceResult<Role>.Failure("找不到指定的角色");
@@ -105,7 +105,7 @@ namespace ERPCore2.Services
                     return ServiceResult<bool>.Failure("角色名稱不能為空");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Roles.Where(r => r.RoleName == roleName && !r.IsDeleted);
+                var query = context.Roles.Where(r => r.Name == roleName && !r.IsDeleted);
 
                 if (excludeRoleId.HasValue)
                     query = query.Where(r => r.Id != excludeRoleId.Value);
@@ -158,7 +158,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("角色不存在");
 
                 // 只有管理員或admin角色不能修改權限
-                var roleName = role.RoleName?.Trim().ToLower();
+                var roleName = role.Name?.Trim().ToLower();
                 if (roleName == "管理員" || roleName == "admin")
                     return ServiceResult.Failure("無法修改管理員角色的權限");
 
@@ -242,7 +242,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("角色不存在");
 
                 // 只有管理員或admin角色不能修改權限
-                var roleName = role.RoleName?.Trim().ToLower();
+                var roleName = role.Name?.Trim().ToLower();
                 if (roleName == "管理員" || roleName == "admin")
                     return ServiceResult.Failure("無法修改管理員角色的權限");
 
@@ -278,7 +278,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("角色不存在");
 
                 // 只有管理員或admin角色不能修改權限
-                var roleName = role.RoleName?.Trim().ToLower();
+                var roleName = role.Name?.Trim().ToLower();
                 if (roleName == "管理員" || roleName == "admin")
                     return ServiceResult.Failure("無法修改管理員角色的權限");
 
@@ -318,7 +318,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("目標角色不存在");
 
                 // 只有管理員或admin角色不能修改權限
-                var targetRoleName = targetRole.RoleName?.Trim().ToLower();
+                var targetRoleName = targetRole.Name?.Trim().ToLower();
                 if (targetRoleName == "管理員" || targetRoleName == "admin")
                     return ServiceResult.Failure("無法修改管理員角色的權限");
 
@@ -374,7 +374,7 @@ namespace ERPCore2.Services
                     return ServiceResult<bool>.Failure("角色不存在");
 
                 // 只有管理員或admin角色不能刪除
-                var roleName = role.RoleName?.Trim().ToLower();
+                var roleName = role.Name?.Trim().ToLower();
                 if (roleName == "管理員" || roleName == "admin")
                     return ServiceResult<bool>.Success(false); // 管理員角色不能刪除
 
@@ -407,8 +407,8 @@ namespace ERPCore2.Services
                     .Include(r => r.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
                     .Where(r => !r.IsDeleted && 
-                               r.RoleName.Contains(searchTerm))
-                    .OrderBy(r => r.RoleName)
+                               r.Name.Contains(searchTerm))
+                    .OrderBy(r => r.Name)
                     .ToListAsync();
 
                 return ServiceResult<List<Role>>.Success(roles);
@@ -430,7 +430,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var roles = await context.Roles
                     .Where(r => !r.IsDeleted && r.Status == EntityStatus.Active)
-                    .OrderBy(r => r.RoleName)
+                    .OrderBy(r => r.Name)
                     .ToListAsync();
 
                 return ServiceResult<List<Role>>.Success(roles);
@@ -462,14 +462,14 @@ namespace ERPCore2.Services
                 if (!isAdmin)
                 {
                     query = query.Where(r => 
-                        r.RoleName.ToLower() != "管理員" && 
-                        r.RoleName.ToLower() != "admin" && 
-                        !r.RoleName.ToLower().Contains("管理員") && 
-                        !r.RoleName.ToLower().Contains("admin"));
+                        r.Name.ToLower() != "管理員" && 
+                        r.Name.ToLower() != "admin" && 
+                        !r.Name.ToLower().Contains("管理員") && 
+                        !r.Name.ToLower().Contains("admin"));
                 }
 
                 var roles = await query
-                    .OrderBy(r => r.RoleName)
+                    .OrderBy(r => r.Name)
                     .ToListAsync();
 
                 return ServiceResult<List<Role>>.Success(roles);
@@ -491,10 +491,10 @@ namespace ERPCore2.Services
                 if (role == null)
                     return ServiceResult<bool>.Failure("角色資料不能為空");
 
-                if (string.IsNullOrWhiteSpace(role.RoleName))
+                if (string.IsNullOrWhiteSpace(role.Name))
                     return ServiceResult<bool>.Failure("角色名稱不能為空");
 
-                if (role.RoleName.Length > 100)
+                if (role.Name.Length > 100)
                     return ServiceResult<bool>.Failure("角色名稱長度不能超過100個字元");
 
                 return ServiceResult<bool>.Success(true);
@@ -517,7 +517,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure(businessValidation.ErrorMessage);
 
                 // 檢查角色名稱是否已存在
-                var nameCheck = await IsRoleNameExistsAsync(entity.RoleName, entity.Id);
+                var nameCheck = await IsRoleNameExistsAsync(entity.Name, entity.Id);
                 if (!nameCheck.IsSuccess)
                     return ServiceResult.Failure(nameCheck.ErrorMessage);
 
@@ -528,7 +528,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { EntityId = entity?.Id, EntityName = entity?.RoleName });
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { EntityId = entity?.Id, EntityName = entity?.Name });
                 return ServiceResult.Failure($"驗證角色時發生錯誤：{ex.Message}");
             }
         }

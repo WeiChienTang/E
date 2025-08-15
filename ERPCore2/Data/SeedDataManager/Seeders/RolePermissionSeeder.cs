@@ -29,8 +29,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 return;
 
             // 取得角色和權限
-            var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "管理員");
-            var employeeRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "辦公室員工");
+            var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "管理員");
+            var employeeRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "辦公室員工");
             var allPermissions = await context.Permissions.ToListAsync();
             var rolePermissions = new List<RolePermission>();
 

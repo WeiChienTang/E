@@ -224,7 +224,7 @@ namespace ERPCore2.Services
                 var permissions = await context.Permissions
                     .Where(p => !p.IsDeleted && 
                                ((p.Code != null && p.Code.Contains(searchTerm)) ||
-                                (p.PermissionName != null && p.PermissionName.Contains(searchTerm)) ||
+                                (p.Name != null && p.Name.Contains(searchTerm)) ||
                                 (p.Remarks != null && p.Remarks.Contains(searchTerm))))
                     .OrderBy(p => p.Code)
                     .ToListAsync();
@@ -303,10 +303,10 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("權限代碼已存在");
 
                 // 檢查權限名稱
-                if (string.IsNullOrWhiteSpace(entity.PermissionName))
+                if (string.IsNullOrWhiteSpace(entity.Name))
                     return ServiceResult.Failure("權限名稱不能為空");
 
-                if (entity.PermissionName.Length > 100)
+                if (entity.Name.Length > 100)
                     return ServiceResult.Failure("權限名稱長度不能超過100個字元");
 
                 // 檢查備註長度

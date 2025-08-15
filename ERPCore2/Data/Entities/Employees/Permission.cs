@@ -16,7 +16,7 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "權限名稱")]
         [Required(ErrorMessage = "請輸入權限名稱")]
         [MaxLength(100, ErrorMessage = "權限名稱不可超過100個字元")]
-        public string PermissionName { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
 
         // 導航屬性
         public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();

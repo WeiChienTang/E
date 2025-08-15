@@ -17,7 +17,7 @@
                           ColumnDefinitions="@columnDefinitions"
                           DataLoader="@LoadPermissionsAsync"
                           FilterApplier="@ApplyPermissionFilters"
-                          GetEntityDisplayName="@(permission => permission.PermissionName)"
+                          GetEntityDisplayName="@(permission => permission.Name)"
                           RequiredPermission="Permission.Read"
                           OnAddClick="@ShowAddModal"
                           OnRowClick="@ShowEditModal"
@@ -141,8 +141,8 @@
         {
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("PermissionName", "權限名稱", "輸入權限名稱搜尋")
-                .AddText("PermissionCode", "權限代碼", "輸入權限代碼搜尋")
+                .AddText("Code", "權限代碼", "輸入權限代碼搜尋")
+                .AddText("PermissionName", "權限名稱", "輸入權限名稱搜尋")                
                 .Build();
         }
         catch (Exception ex)
@@ -160,7 +160,7 @@
             columnDefinitions = new List<TableColumnDefinition>
             {
                 TableColumnDefinition.Text("權限代碼", nameof(Permission.Code)),
-                TableColumnDefinition.Text("權限名稱", nameof(Permission.PermissionName)),
+                TableColumnDefinition.Text("權限名稱", nameof(Permission.Name)),
             };
         }
         catch (Exception ex)
@@ -178,9 +178,12 @@
         {
             // 應用基礎實體篩選（狀態、備註）
             (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
-            
+
+            // 權限代碼篩選
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Code", p => p.Code),
+
             // 權限名稱篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "PermissionName", p => p.PermissionName),
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "PermissionName", p => p.Name),
             
             // 權限代碼篩選
             (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "PermissionCode", p => p.Code),
@@ -190,7 +193,7 @@
             searchModel,
             query,
             filterActions,
-            q => q.OrderBy(p => p.Code).ThenBy(p => p.PermissionName), // 預設排序
+            q => q.OrderBy(p => p.Code).ThenBy(p => p.Name), // 預設排序
             nameof(ApplyPermissionFilters),
             GetType()
         );
