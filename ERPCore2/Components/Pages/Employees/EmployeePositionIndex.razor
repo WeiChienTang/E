@@ -18,22 +18,25 @@
                         EntityName="職位設定"
                         GetEntityDisplayName="@(position => position.Name)"
                         RequiredPermission="EmployeePosition.Read"
-                        OnAddClick="@ShowAddModal"
-                        OnRowClick="@ShowEditModal"
+                        OnAddClick="@modalHandler.ShowAddModalAsync"
+                        OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent"/>
 
 @* 職位編輯 Modal *@
 <EmployeePositionEditModalComponent IsVisible="@showEditModal"
                                    IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                                    EmployeePositionId="@editingEmployeePositionId"
-                                   OnEmployeePositionSaved="@OnEmployeePositionSaved"
-                                   OnCancel="@OnModalCancel" />
+                                   OnEmployeePositionSaved="@modalHandler.OnEntitySavedAsync"
+                                   OnCancel="@modalHandler.OnModalCancelAsync" />
 @code {
     private GenericIndexPageComponent<EmployeePosition, IEmployeePositionService> indexComponent = default!;
     
     // Modal 相關狀態
     private bool showEditModal = false;
     private int? editingEmployeePositionId = null;
+    
+    // Modal 處理器
+    private ModalHandler<EmployeePosition, GenericIndexPageComponent<EmployeePosition, IEmployeePositionService>> modalHandler = default!;
     
     // 設定選項
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
@@ -44,6 +47,14 @@
     {
         try
         {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<EmployeePosition, GenericIndexPageComponent<EmployeePosition, IEmployeePositionService>>(
+                id => editingEmployeePositionId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
             await InitializeBreadcrumbs();
             await InitializeFilters();
             await InitializeTableColumns();
@@ -56,75 +67,6 @@
                 GetType(),
                 additionalData: "初始化職位設定頁面失敗"
             );
-        }
-    }
-
-    // ===== Modal 相關方法 =====
-
-    private async Task ShowAddModal()
-    {
-        try
-        {
-            editingEmployeePositionId = null;
-            showEditModal = true;
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModal), GetType());
-        }
-    }
-
-    private async Task ShowEditModal(EmployeePosition employeePosition)
-    {
-        try
-        {
-            if (employeePosition?.Id != null)
-            {
-                editingEmployeePositionId = employeePosition.Id;
-                showEditModal = true;
-                StateHasChanged();
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowEditModal), GetType());
-        }
-    }
-
-    private async Task OnEmployeePositionSaved(EmployeePosition savedEmployeePosition)
-    {
-        try
-        {
-            // 關閉 Modal
-            showEditModal = false;
-            editingEmployeePositionId = null;
-            
-            // 重新載入資料
-            if (indexComponent != null)
-            {
-                await indexComponent.Refresh();
-            }
-            
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnEmployeePositionSaved), GetType());
-        }
-    }
-
-    private async Task OnModalCancel()
-    {
-        try
-        {
-            showEditModal = false;
-            editingEmployeePositionId = null;
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnModalCancel), GetType());
         }
     }
 

@@ -18,16 +18,16 @@
                         EntityName="部門"
                         GetEntityDisplayName="@(dept => dept.Name)"
                         RequiredPermission="Department.Read"
-                        OnAddClick="@ShowAddModal"
-                        OnRowClick="@ShowEditModal"
+                        OnAddClick="@modalHandler.ShowAddModalAsync"
+                        OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent"/>
 
 @* 部門編輯 Modal *@
 <DepartmentEditModalComponent IsVisible="@showEditModal"
                              IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                              DepartmentId="@editingDepartmentId"
-                             OnDepartmentSaved="@OnDepartmentSaved"
-                             OnCancel="@OnModalCancel" />
+                             OnDepartmentSaved="@modalHandler.OnEntitySavedAsync"
+                             OnCancel="@modalHandler.OnModalCancelAsync" />
 
 @code {
     private GenericIndexPageComponent<Department, IDepartmentService> indexComponent = default!;
@@ -35,6 +35,9 @@
     // Modal 相關狀態
     private bool showEditModal = false;
     private int? editingDepartmentId = null;
+    
+    // Modal 處理器
+    private ModalHandler<Department, GenericIndexPageComponent<Department, IDepartmentService>> modalHandler = default!;
     
     // 設定選項
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
@@ -45,6 +48,14 @@
     {
         try
         {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<Department, GenericIndexPageComponent<Department, IDepartmentService>>(
+                id => editingDepartmentId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
             await InitializeBreadcrumbs();
             await InitializeFilters();
             await InitializeTableColumns();
@@ -57,75 +68,6 @@
                 GetType(),
                 additionalData: "初始化部門頁面失敗"
             );
-        }
-    }
-
-    // ===== Modal 相關方法 =====
-
-    private async Task ShowAddModal()
-    {
-        try
-        {
-            editingDepartmentId = null;
-            showEditModal = true;
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModal), GetType());
-        }
-    }
-
-    private async Task ShowEditModal(Department department)
-    {
-        try
-        {
-            if (department?.Id != null)
-            {
-                editingDepartmentId = department.Id;
-                showEditModal = true;
-                StateHasChanged();
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowEditModal), GetType());
-        }
-    }
-
-    private async Task OnDepartmentSaved(Department savedDepartment)
-    {
-        try
-        {
-            // 關閉 Modal
-            showEditModal = false;
-            editingDepartmentId = null;
-            
-            // 重新載入資料
-            if (indexComponent != null)
-            {
-                await indexComponent.Refresh();
-            }
-            
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnDepartmentSaved), GetType());
-        }
-    }
-
-    private async Task OnModalCancel()
-    {
-        try
-        {
-            showEditModal = false;
-            editingDepartmentId = null;
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnModalCancel), GetType());
         }
     }
 

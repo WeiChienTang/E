@@ -16,16 +16,16 @@
                           FilterApplier="@ApplyRoleFilters"
                           GetEntityDisplayName="@(role => role.Name)"
                           RequiredPermission="Role.Read"
-                          OnAddClick="@ShowAddModal"
-                          OnRowClick="@ShowEditModal"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />
 
 @* 角色編輯 Modal *@
 <RoleEditModalComponent IsVisible="@showEditModal"
                         IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                         RoleId="@editingRoleId"
-                        OnRoleSaved="@OnRoleSaved"
-                        OnCancel="@OnModalCancel" />
+                        OnRoleSaved="@modalHandler.OnEntitySavedAsync"
+                        OnCancel="@modalHandler.OnModalCancelAsync" />
 
 @code {
     // 組件參考
@@ -39,11 +39,22 @@
     // Modal 相關狀態
     private bool showEditModal = false;
     private int? editingRoleId = null;
+    
+    // Modal 處理器
+    private ModalHandler<Role, GenericIndexPageComponent<Role, IRoleService>> modalHandler = default!;
 
     protected override void OnInitialized()
     {
         try
         {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<Role, GenericIndexPageComponent<Role, IRoleService>>(
+                id => editingRoleId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
             InitializeBreadcrumbs();
             InitializeFilters();
             InitializeTableColumns();
@@ -165,46 +176,5 @@
             nameof(ApplyRoleFilters),
             GetType()
         );
-    }
-
-    // ===== Modal 相關方法 =====
-    private Task ShowAddModal()
-    {
-        editingRoleId = null;
-        showEditModal = true;
-        StateHasChanged();
-        return Task.CompletedTask;
-    }
-
-    private Task ShowEditModal(Role role)
-    {
-        if (role?.Id != null)
-        {
-            editingRoleId = role.Id;
-            showEditModal = true;
-            StateHasChanged();
-        }
-        return Task.CompletedTask;
-    }
-
-    private async Task OnRoleSaved(Role savedRole)
-    {
-        showEditModal = false;
-        editingRoleId = null;
-        
-        if (indexComponent != null)
-        {
-            await indexComponent.Refresh();
-        }
-        
-        StateHasChanged();
-    }
-
-    private Task OnModalCancel()
-    {
-        showEditModal = false;
-        editingRoleId = null;
-        StateHasChanged();
-        return Task.CompletedTask;
     }
 }

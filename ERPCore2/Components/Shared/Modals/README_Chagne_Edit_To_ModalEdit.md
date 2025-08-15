@@ -145,8 +145,8 @@
                           FilterApplier="@Apply{Entity}Filters"
                           GetEntityDisplayName="@(entity => entity.Name)"
                           RequiredPermission="{Entity}.Read"
-                          OnAddClick="@ShowAddModal"
-                          OnRowClick="@ShowEditModal"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />
 ```
 
@@ -154,12 +154,12 @@
 
 1. **Modal 組件引用**：
    ```razor
-   @* 將舊的 Modal 替換為新的組件 *@
+   @* 使用 ModalHelper 處理事件 *@
    <{Entity}EditModalComponent IsVisible="@showEditModal"
                               IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                               {Entity}Id="@editing{Entity}Id"
-                              On{Entity}Saved="@On{Entity}Saved"
-                              OnCancel="@OnModalCancel" />
+                              On{Entity}Saved="@modalHandler.OnEntitySavedAsync"
+                              OnCancel="@modalHandler.OnModalCancelAsync" />
    ```
 
 2. **Modal 狀態變數**：
@@ -169,47 +169,36 @@
    private int? editing{Entity}Id = null;
    ```
 
-   3. **Modal 相關方法**：
+3. **Modal處理器設定**（使用ModalHelper統一管理）：
    ```csharp
-   // ===== Modal 相關方法 =====
-   private Task ShowAddModal()
-   {
-       editing{Entity}Id = null;
-       showEditModal = true;
-       StateHasChanged();
-       return Task.CompletedTask;
-   }
+   // Modal 處理器 - 使用 ModalHelper 統一處理
+   private ModalHandler<{Entity}, GenericIndexPageComponent<{Entity}, I{Entity}Service>> modalHandler = default!;
 
-   private Task ShowEditModal({Entity} entity)
+   protected override void OnInitialized()
    {
-       if (entity?.Id != null)
+       try
        {
-           editing{Entity}Id = entity.Id;
-           showEditModal = true;
-           StateHasChanged();
+           // 初始化 Modal 處理器
+           modalHandler = ModalHelper.CreateModalHandler<{Entity}, GenericIndexPageComponent<{Entity}, I{Entity}Service>>(
+               id => editing{Entity}Id = id,
+               visible => showEditModal = visible,
+               () => indexComponent,
+               StateHasChanged,
+               GetType());
+           
+           InitializeBreadcrumbs();
+           InitializeFilters();
+           InitializeTableColumns();
        }
-       return Task.CompletedTask;
-   }
-
-   private async Task On{Entity}Saved({Entity} saved{Entity})
-   {
-       showEditModal = false;
-       editing{Entity}Id = null;
-       
-       if (indexComponent != null)
+       catch (Exception ex)
        {
-           await indexComponent.Refresh();
+           _ = ErrorHandlingHelper.HandlePageErrorAsync(
+               ex,
+               nameof(OnInitialized),
+               GetType(),
+               additionalData: new { PageName = "{Entity}Index" }
+           );
        }
-       
-       StateHasChanged();
-   }
-
-   private Task OnModalCancel()
-   {
-       showEditModal = false;
-       editing{Entity}Id = null;
-       StateHasChanged();
-       return Task.CompletedTask;
    }
    ```
 
@@ -228,11 +217,22 @@
     // Modal 相關狀態
     private bool showEditModal = false;
     private int? editing{Entity}Id = null;
+    
+    // Modal 處理器
+    private ModalHandler<{Entity}, GenericIndexPageComponent<{Entity}, I{Entity}Service>> modalHandler = default!;
 
     protected override void OnInitialized()
     {
         try
         {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<{Entity}, GenericIndexPageComponent<{Entity}, I{Entity}Service>>(
+                id => editing{Entity}Id = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
             InitializeBreadcrumbs();
             InitializeFilters();
             InitializeTableColumns();
@@ -265,47 +265,6 @@
             );
             return new List<{Entity}>();
         }
-    }
-
-    // Modal 相關方法
-    private Task ShowAddModal()
-    {
-        editing{Entity}Id = null;
-        showEditModal = true;
-        StateHasChanged();
-        return Task.CompletedTask;
-    }
-
-    private Task ShowEditModal({Entity} entity)
-    {
-        if (entity?.Id != null)
-        {
-            editing{Entity}Id = entity.Id;
-            showEditModal = true;
-            StateHasChanged();
-        }
-        return Task.CompletedTask;
-    }
-
-    private async Task On{Entity}Saved({Entity} saved{Entity})
-    {
-        showEditModal = false;
-        editing{Entity}Id = null;
-        
-        if (indexComponent != null)
-        {
-            await indexComponent.Refresh();
-        }
-        
-        StateHasChanged();
-    }
-
-    private Task OnModalCancel()
-    {
-        showEditModal = false;
-        editing{Entity}Id = null;
-        StateHasChanged();
-        return Task.CompletedTask;
     }
 
     // 其他必要方法：InitializeBreadcrumbs, InitializeFilters, InitializeTableColumns, Apply{Entity}Filters
@@ -529,59 +488,47 @@ new() {
                           Service="@RoleService"
                           EntityBasePath="/roles"
                           PageTitle="角色設定"
-                          OnAddClick="@ShowAddModal"
-                          OnRowClick="@ShowEditModal"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />
 
 <RoleEditModalComponent IsVisible="@showEditModal"
                         IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                         RoleId="@editingRoleId"
-                        OnRoleSaved="@OnRoleSaved"
-                        OnCancel="@OnModalCancel" />
+                        OnRoleSaved="@modalHandler.OnEntitySavedAsync"
+                        OnCancel="@modalHandler.OnModalCancelAsync" />
 
 @code {
     private GenericIndexPageComponent<Role, IRoleService> indexComponent = default!;
     private bool showEditModal = false;
     private int? editingRoleId = null;
+    
+    // Modal 處理器
+    private ModalHandler<Role, GenericIndexPageComponent<Role, IRoleService>> modalHandler = default!;
 
-    private Task ShowAddModal()
+    protected override void OnInitialized()
     {
-        editingRoleId = null;
-        showEditModal = true;
-        StateHasChanged();
-        return Task.CompletedTask;
-    }
-
-    private Task ShowEditModal(Role role)
-    {
-        if (role?.Id != null)
+        try
         {
-            editingRoleId = role.Id;
-            showEditModal = true;
-            StateHasChanged();
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<Role, GenericIndexPageComponent<Role, IRoleService>>(
+                id => editingRoleId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
+            // 其他初始化方法...
         }
-        return Task.CompletedTask;
-    }
-
-    private async Task OnRoleSaved(Role savedRole)
-    {
-        showEditModal = false;
-        editingRoleId = null;
-        
-        if (indexComponent != null)
+        catch (Exception ex)
         {
-            await indexComponent.Refresh();
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(OnInitialized),
+                GetType(),
+                additionalData: new { PageName = "RoleIndex" }
+            );
         }
-        
-        StateHasChanged();
-    }
-
-    private Task OnModalCancel()
-    {
-        showEditModal = false;
-        editingRoleId = null;
-        StateHasChanged();
-        return Task.CompletedTask;
     }
 }
 ```
