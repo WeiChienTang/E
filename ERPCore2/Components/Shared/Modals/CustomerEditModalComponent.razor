@@ -80,13 +80,13 @@
     </AdditionalSections>
 </GenericEditModalComponent>
 
-@* 客戶類型編輯 Modal - 暫時註解，等待實現 *@
-@* <CustomerTypeEditModalComponent @ref="customerTypeEditModal"
+@* 客戶類型編輯 Modal *@
+<CustomerTypeEditModalComponent @ref="customerTypeEditModal"
                                IsVisible="@customerTypeModalManager.IsModalVisible"
                                IsVisibleChanged="@customerTypeModalManager.HandleModalVisibilityChangedAsync"
                                CustomerTypeId="@customerTypeModalManager.SelectedEntityId"
                                OnCustomerTypeSaved="@OnCustomerTypeSavedWrapper"
-                               OnCancel="@customerTypeModalManager.HandleModalCancelAsync" /> *@
+                               OnCancel="@customerTypeModalManager.HandleModalCancelAsync" />
 
 @code {
     // ===== 必要參數 =====
@@ -101,8 +101,8 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     
-    // 客戶類型編輯 Modal 相關變數 - 使用泛型管理器（暫時註解，等待實現）
-    // private CustomerTypeEditModalComponent? customerTypeEditModal;
+    // 客戶類型編輯 Modal 相關變數 - 使用泛型管理器
+    private CustomerTypeEditModalComponent? customerTypeEditModal;
     private RelatedEntityModalManager<CustomerType> customerTypeModalManager = default!;
     
     // 資料模型
