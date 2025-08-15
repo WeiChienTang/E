@@ -123,23 +123,13 @@
                     IsRequired = true,
                     MaxLength = 50,
                     HelpText = "顯示用的尺寸名稱，最多50個字元"
-                },
-                new()
-                {
-                    PropertyName = nameof(Size.Description),
-                    Label = "尺寸描述",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入尺寸描述（選填）",
-                    MaxLength = 100,
-                    HelpText = "額外的尺寸說明，最多100個字元"
                 }
             };
 
             basicFormSections = new Dictionary<string, string>
             {
                 { nameof(Size.Code), "基本資訊" },
-                { nameof(Size.SizeName), "基本資訊" },
-                { nameof(Size.Description), "額外資訊" }
+                { nameof(Size.SizeName), "基本資訊" }
             };
         }
         catch (Exception ex)

@@ -74,8 +74,7 @@ namespace ERPCore2.Services
                     .Include(s => s.Products)
                     .Where(s => !s.IsDeleted && 
                         ((s.Code != null && s.Code.ToLower().Contains(lowerSearchTerm)) ||
-                         (s.SizeName != null && s.SizeName.ToLower().Contains(lowerSearchTerm)) ||
-                         (s.Description != null && s.Description.ToLower().Contains(lowerSearchTerm))))
+                         (s.SizeName != null && s.SizeName.ToLower().Contains(lowerSearchTerm))))
                     .OrderBy(s => s.SizeName)
                     .ToListAsync();
             }

@@ -16,11 +16,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "尺寸名稱")]
         public string SizeName { get; set; } = string.Empty;
         
-        // Optional Properties
-        [MaxLength(100, ErrorMessage = "尺寸描述不可超過100個字元")]
-        [Display(Name = "尺寸描述")]
-        public string? Description { get; set; }
-        
         // Navigation Properties
         public ICollection<Product> Products { get; set; } = new List<Product>();
     }
