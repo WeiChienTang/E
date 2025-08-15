@@ -546,26 +546,10 @@
     /// </summary>
     private async Task<string> GenerateCustomerCodeAsync()
     {
-        try
-        {
-            // 簡單的客戶代碼生成邏輯：CUST + 時間戳
-            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-            var baseCode = $"CUST{timestamp}";
-            
-            // 檢查是否重複，如果重複則加上隨機數
-            var isExists = await CustomerService.IsCustomerCodeExistsAsync(baseCode);
-            if (isExists)
-            {
-                var random = new Random().Next(100, 999);
-                baseCode = $"CUST{timestamp}{random}";
-            }
-            
-            return baseCode;
-        }
-        catch
-        {
-            // 如果生成失敗，返回預設格式
-            return $"CUST{DateTime.Now:yyyyMMddHHmmss}";
-        }
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            CustomerService,
+            "CUST",
+            (service, code, excludeId) => service.IsCustomerCodeExistsAsync(code, excludeId)
+        );
     }
 }

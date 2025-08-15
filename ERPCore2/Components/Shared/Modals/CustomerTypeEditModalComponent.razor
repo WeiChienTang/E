@@ -230,21 +230,13 @@
     }
 
     // ===== 輔助方法 =====
-    private Task<string> GenerateCustomerTypeCodeAsync()
+    private async Task<string> GenerateCustomerTypeCodeAsync()
     {
-        try
-        {
-            // 簡單的客戶類型代碼生成邏輯：CTYPE + 時間戳
-            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-            var baseCode = $"CTYPE{timestamp}";
-            
-            return Task.FromResult(baseCode);
-        }
-        catch
-        {
-            // 如果生成失敗，返回預設格式
-            return Task.FromResult($"CTYPE{DateTime.Now:yyyyMMddHHmmss}");
-        }
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            CustomerTypeService,
+            "CTYPE",
+            (service, code, excludeId) => service.IsCustomerTypeCodeExistsAsync(code, excludeId)
+        );
     }
 
     // ===== 公開方法 (供父組件調用) =====

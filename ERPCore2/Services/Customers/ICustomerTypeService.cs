@@ -10,6 +10,7 @@ namespace ERPCore2.Services
     {
         // 業務特定方法
         Task<bool> IsTypeNameExistsAsync(string typeName, int? excludeId = null);
+        Task<bool> IsCustomerTypeCodeExistsAsync(string typeCode, int? excludeId = null);
         
         // 分頁查詢
         Task<(List<CustomerType> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize);

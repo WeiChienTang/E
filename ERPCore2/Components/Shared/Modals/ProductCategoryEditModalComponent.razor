@@ -1,0 +1,194 @@
+@* 可重用的商品類型編輯組件 - 可在任何頁面中嵌入 *@
+@inject IProductCategoryService ProductCategoryService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="ProductCategory" 
+                          TService="IProductCategoryService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@ProductCategoryId"
+                          Service="@ProductCategoryService"
+                          EntityName="商品類型"
+                          EntityNamePlural="商品類型"
+                          ModalTitle="@(ProductCategoryId.HasValue ? "編輯商品類型" : "新增商品類型")"
+                          Size="GenericEditModalComponent<ProductCategory, IProductCategoryService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadProductCategoryData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(ProductCategoryId.HasValue ? "商品類型更新成功" : "商品類型新增成功")"
+                          SaveFailureMessage="商品類型儲存失敗"
+                          RequiredPermission="ProductCategory.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? ProductCategoryId { get; set; }
+    [Parameter] public EventCallback<ProductCategory> OnProductCategorySaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<ProductCategory, IProductCategoryService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    // ===== 必要方法 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadAdditionalDataAsync();
+            InitializeFormFields();
+        }
+    }
+
+    private async Task<ProductCategory?> LoadProductCategoryData()
+    {
+        try
+        {
+            if (!ProductCategoryId.HasValue)
+            {
+                // 新增模式：建立新的商品類型實體並生成代碼
+                var newProductCategory = new ProductCategory
+                {
+                    CategoryName = string.Empty,
+                    Code = await GenerateProductCategoryCodeAsync(),
+                    Status = EntityStatus.Active
+                };
+                
+                return newProductCategory;
+            }
+            
+            // 編輯模式
+            var productCategory = await ProductCategoryService.GetByIdAsync(ProductCategoryId.Value);
+            
+            if (productCategory == null)
+            {
+                // 如果找不到商品類型，建立新的預設商品類型
+                return new ProductCategory
+                {
+                    Status = EntityStatus.Active
+                };
+            }
+            return productCategory;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入商品類型資料時發生錯誤：{ex.Message}");
+            
+            // 設定安全的預設值，確保程式不會崩潰
+            return new ProductCategory
+            {
+                Code = "ERROR",
+                CategoryName = "ERROR",
+                Status = EntityStatus.Active
+            };
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            // 如果需要載入其他資料（如下拉選單選項），在此處理
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private void InitializeFormFields()
+    {
+        formFields = new List<FormFieldDefinition>
+        {
+            new()
+            {
+                PropertyName = nameof(ProductCategory.Code),
+                Label = "分類代碼",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入分類代碼",
+                IsRequired = false,
+                MaxLength = 50,
+                HelpText = "商品分類的唯一代碼，新增時系統會自動產生，也可手動修改"
+            },
+            new()
+            {
+                PropertyName = nameof(ProductCategory.CategoryName),
+                Label = "分類名稱",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入分類名稱",
+                IsRequired = true,
+                MaxLength = 50,
+                HelpText = "商品分類的名稱，用於區分不同的商品類型"
+            },
+            new()
+            {
+                PropertyName = nameof(ProductCategory.Remarks),
+                Label = "備註",
+                FieldType = FormFieldType.TextArea,
+                Placeholder = "請輸入備註",
+                IsRequired = false,
+                MaxLength = 500,
+                Rows = 2,
+                HelpText = "商品分類的額外說明或注意事項",
+                ContainerCssClass = "col-12"
+            }
+        };
+
+        formSections = new Dictionary<string, string>
+        {            
+            { nameof(ProductCategory.Code), "基本資訊" },
+            { nameof(ProductCategory.CategoryName), "基本資訊" },
+            { nameof(ProductCategory.Remarks), "額外資訊" }
+        };
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    private async Task HandleSaveSuccess()
+    {
+        await CloseModal();
+        
+        if (OnProductCategorySaved.HasDelegate)
+        {
+            // 這裡會在 GenericEditModalComponent 處理完成後呼叫
+            // 實際的 entity 會由 Index 頁面處理
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        await CloseModal();
+        
+        if (OnCancel.HasDelegate)
+        {
+            await OnCancel.InvokeAsync();
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    // ===== 輔助方法 =====
+    private async Task<string> GenerateProductCategoryCodeAsync()
+    {
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            ProductCategoryService,
+            "PCAT",
+            (service, code, excludeId) => service.IsCategoryCodeExistsAsync(code, excludeId)
+        );
+    }
+}

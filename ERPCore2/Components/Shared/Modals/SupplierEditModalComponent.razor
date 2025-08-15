@@ -311,7 +311,7 @@
                 // 新增模式
                 var newSupplier = new Supplier
                 {
-                    Code = GenerateSupplierCode(),
+                    Code = await GenerateSupplierCodeAsync(),
                     CompanyName = "",
                     ContactPerson = "",
                     TaxNumber = "",
@@ -354,18 +354,13 @@
         }
     }
 
-    private string GenerateSupplierCode()
+    private async Task<string> GenerateSupplierCodeAsync()
     {
-        try
-        {
-            // 簡單的廠商代碼生成邏輯：S + 時間戳
-            return $"S{DateTime.Now:yyyyMMddHHmmss}";
-        }
-        catch (Exception)
-        {
-            // 如果生成失敗，返回預設格式
-            return $"S{DateTime.Now:yyyyMMddHHmmss}";
-        }
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            SupplierService,
+            "S",
+            (service, code, excludeId) => service.IsSupplierCodeExistsAsync(code, excludeId)
+        );
     }
 
     private async Task<bool> SaveSupplier(Supplier entity)

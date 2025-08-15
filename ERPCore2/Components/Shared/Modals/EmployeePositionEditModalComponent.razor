@@ -220,27 +220,11 @@
     // ===== 輔助方法 =====
     private async Task<string> GenerateEmployeePositionCodeAsync()
     {
-        try
-        {
-            // 簡單的職位代碼生成邏輯：POS + 時間戳
-            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-            var baseCode = $"POS{timestamp}";
-            
-            // 檢查是否重複，如果重複則加上隨機數
-            var isExists = await EmployeePositionService.IsCodeExistsAsync(baseCode);
-            if (isExists)
-            {
-                var random = new Random().Next(100, 999);
-                baseCode = $"POS{timestamp}{random}";
-            }
-            
-            return baseCode;
-        }
-        catch
-        {
-            // 如果生成失敗，返回預設格式
-            return $"POS{DateTime.Now:yyyyMMddHHmmss}";
-        }
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            EmployeePositionService,
+            "POS",
+            (service, code, excludeId) => service.IsCodeExistsAsync(code, excludeId)
+        );
     }
 
     // ===== 公開方法 (供父組件調用) =====

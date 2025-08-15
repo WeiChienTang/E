@@ -101,6 +101,10 @@ namespace ERPCore2.Services
                     await IsDepartmentCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
                     errors.Add("部門代碼已存在");
                 
+                if (!string.IsNullOrWhiteSpace(entity.Name) && 
+                    await IsDepartmentNameExistsAsync(entity.Name, entity.Id == 0 ? null : entity.Id))
+                    errors.Add("部門名稱已存在");
+                
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));
                     
@@ -135,6 +139,29 @@ namespace ERPCore2.Services
                     Method = nameof(IsDepartmentCodeExistsAsync),
                     ServiceType = GetType().Name,
                     Code = Code,
+                    ExcludeId = excludeId 
+                });
+                return false;
+            }
+        }
+
+        public async Task<bool> IsDepartmentNameExistsAsync(string Name, int? excludeId = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Departments.Where(d => d.Name == Name && !d.IsDeleted);
+                if (excludeId.HasValue)
+                    query = query.Where(d => d.Id != excludeId.Value);
+                
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsDepartmentNameExistsAsync), GetType(), _logger, new { 
+                    Method = nameof(IsDepartmentNameExistsAsync),
+                    ServiceType = GetType().Name,
+                    Name = Name,
                     ExcludeId = excludeId 
                 });
                 return false;

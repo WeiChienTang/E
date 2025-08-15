@@ -214,26 +214,10 @@
     // ===== 輔助方法 =====
     private async Task<string> GenerateSupplierTypeCodeAsync()
     {
-        try
-        {
-            // 簡單的廠商類型代碼生成邏輯：STYPE + 時間戳
-            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-            var baseCode = $"STYPE{timestamp}";
-            
-            // 檢查是否重複，如果重複則加上隨機數
-            var isExists = await SupplierTypeService.IsSupplierTypeCodeExistsAsync(baseCode);
-            if (isExists)
-            {
-                var random = new Random().Next(100, 999);
-                baseCode = $"STYPE{timestamp}{random}";
-            }
-            
-            return baseCode;
-        }
-        catch
-        {
-            // 如果生成失敗，返回預設格式
-            return $"STYPE{DateTime.Now:yyyyMMddHHmmss}";
-        }
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            SupplierTypeService,
+            "STYPE",
+            (service, code, excludeId) => service.IsSupplierTypeCodeExistsAsync(code, excludeId)
+        );
     }
 }

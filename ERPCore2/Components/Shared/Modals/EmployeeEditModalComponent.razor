@@ -690,27 +690,11 @@
 
     private async Task<string> GenerateEmployeeCodeAsync()
     {
-        try
-        {
-            // 簡單的員工代碼生成邏輯：EMP + 時間戳
-            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-            var baseCode = $"EMP{timestamp}";
-            
-            // 檢查是否重複，如果重複則加上隨機數
-            var existsResult = await EmployeeService.IsEmployeeCodeExistsAsync(baseCode);
-            if (existsResult.IsSuccess && existsResult.Data)
-            {
-                var random = new Random().Next(100, 999);
-                baseCode = $"EMP{timestamp}{random}";
-            }
-            
-            return baseCode;
-        }
-        catch (Exception)
-        {
-            // 如果生成失敗，返回預設格式
-            return $"EMP{DateTime.Now:yyyyMMddHHmmss}";
-        }
+        return await CodeGenerationHelper.GenerateEntityCodeWithServiceResultAsync(
+            EmployeeService,
+            "EMP",
+            (service, code, excludeId) => service.IsEmployeeCodeExistsAsync(code, excludeId)
+        );
     }
 
     private async Task<bool> SaveEmployee(Employee entity)

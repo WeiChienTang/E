@@ -251,27 +251,11 @@
     // ===== 輔助方法 =====
     private async Task<string> GenerateDepartmentCodeAsync()
     {
-        try
-        {
-            // 簡單的部門代碼生成邏輯：DEPT + 時間戳
-            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-            var baseCode = $"DEPT{timestamp}";
-            
-            // 檢查是否重複，如果重複則加上隨機數
-            var isExists = await DepartmentService.IsDepartmentCodeExistsAsync(baseCode);
-            if (isExists)
-            {
-                var random = new Random().Next(100, 999);
-                baseCode = $"DEPT{timestamp}{random}";
-            }
-            
-            return baseCode;
-        }
-        catch
-        {
-            // 如果生成失敗，返回預設格式
-            return $"DEPT{DateTime.Now:yyyyMMddHHmmss}";
-        }
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            DepartmentService,
+            "DEPT",
+            (service, code, excludeId) => service.IsDepartmentCodeExistsAsync(code, excludeId)
+        );
     }
 
     // ===== 公開方法 (供父組件調用) =====

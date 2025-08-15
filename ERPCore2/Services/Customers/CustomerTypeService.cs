@@ -204,7 +204,39 @@ namespace ERPCore2.Services
                 });
                 return false;
             }
-        }        /// <summary>
+        }
+
+        /// <summary>
+        /// 檢查客戶類型代碼是否存在
+        /// </summary>
+        public async Task<bool> IsCustomerTypeCodeExistsAsync(string typeCode, int? excludeId = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(typeCode))
+                    return false;
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.CustomerTypes.Where(ct => ct.Code == typeCode && !ct.IsDeleted);
+                
+                if (excludeId.HasValue)
+                {
+                    query = query.Where(ct => ct.Id != excludeId.Value);
+                }
+
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCustomerTypeCodeExistsAsync), GetType(), _logger, new { 
+                    TypeCode = typeCode,
+                    ExcludeId = excludeId
+                });
+                return false;
+            }
+        }
+
+        /// <summary>
         /// 取得分頁的客戶類型資料
         /// </summary>
         public async Task<(List<CustomerType> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize)

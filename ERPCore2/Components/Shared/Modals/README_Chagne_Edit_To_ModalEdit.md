@@ -485,17 +485,6 @@ new() {
             },
             new()
             {
-                PropertyName = nameof(Role.Description),
-                Label = "角色描述",
-                FieldType = FormFieldType.TextArea,
-                Placeholder = "請輸入角色描述",
-                IsRequired = false,
-                MaxLength = 200,
-                Rows = 3,
-                HelpText = "簡要說明此角色的職責與用途"
-            },
-            new()
-            {
                 PropertyName = nameof(Role.IsSystemRole),
                 Label = "系統角色",
                 FieldType = FormFieldType.Checkbox,
@@ -510,7 +499,8 @@ new() {
                 IsRequired = false,
                 MaxLength = 500,
                 Rows = 2,
-                HelpText = "角色的額外說明或注意事項"
+                HelpText = "角色的額外說明或注意事項",
+                ContainerCssClass = "col-12"
             }
         };
 

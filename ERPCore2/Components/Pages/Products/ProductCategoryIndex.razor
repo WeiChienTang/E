@@ -17,8 +17,16 @@
                         EntityName="商品類型"
                         GetEntityDisplayName="@(category => category.CategoryName)"
                         RequiredPermission="ProductCategory.Read"
+                        OnAddClick="@ShowAddModal"
+                        OnRowClick="@ShowEditModal"
                         @ref="indexComponent">
 </GenericIndexPageComponent>
+
+<ProductCategoryEditModalComponent IsVisible="@showEditModal"
+                                  IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                                  ProductCategoryId="@editingProductCategoryId"
+                                  OnProductCategorySaved="@OnProductCategorySaved"
+                                  OnCancel="@OnModalCancel" />
 @code {
     private GenericIndexPageComponent<ProductCategory, IProductCategoryService> indexComponent = default!;
     
@@ -26,6 +34,10 @@
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
+
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingProductCategoryId = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -171,5 +183,46 @@
             );
             return query.OrderBy(c => c.CategoryName);
         }
+    }
+
+    // ===== Modal 相關方法 =====
+    private Task ShowAddModal()
+    {
+        editingProductCategoryId = null;
+        showEditModal = true;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task ShowEditModal(ProductCategory productCategory)
+    {
+        if (productCategory?.Id != null)
+        {
+            editingProductCategoryId = productCategory.Id;
+            showEditModal = true;
+            StateHasChanged();
+        }
+        return Task.CompletedTask;
+    }
+
+    private async Task OnProductCategorySaved(ProductCategory savedProductCategory)
+    {
+        showEditModal = false;
+        editingProductCategoryId = null;
+        
+        if (indexComponent != null)
+        {
+            await indexComponent.Refresh();
+        }
+        
+        StateHasChanged();
+    }
+
+    private Task OnModalCancel()
+    {
+        showEditModal = false;
+        editingProductCategoryId = null;
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 }
