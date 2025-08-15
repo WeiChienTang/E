@@ -236,28 +236,141 @@ public class RelatedEntityModalManager<TRelatedEntity> where TRelatedEntity : Ba
     }
     
     /// <summary>
-    /// 產生 FieldActionButton 列表
+    /// 產生 FieldActionButton 列表 (分開的新增和編輯按鈕)
     /// </summary>
     /// <param name="currentSelectedId">目前選擇的實體 ID</param>
     /// <returns>按鈕列表</returns>
     public List<FieldActionButton> GenerateActionButtons(int? currentSelectedId)
     {
-        var buttonText = currentSelectedId.HasValue ? "編輯" : "新增";
-        var buttonTitle = currentSelectedId.HasValue 
-            ? $"編輯目前選擇的{EntityDisplayName}" 
-            : $"新增新的{EntityDisplayName}";
-
-        return new List<FieldActionButton>
+        var buttons = new List<FieldActionButton>();
+        
+        // 新增按鈕 - 永遠顯示
+        buttons.Add(new FieldActionButton
         {
-            new FieldActionButton
+            Text = "新增",
+            Variant = "OutlinePrimary",
+            Size = "Small",
+            Title = $"新增新的{EntityDisplayName}",
+            OnClick = () => OpenModalAsync(null)
+        });
+        
+        // 編輯按鈕 - 只有在有選擇值時才顯示
+        if (currentSelectedId.HasValue)
+        {
+            buttons.Add(new FieldActionButton
             {
-                Text = buttonText,
-                Variant = "OutlinePrimary",
+                Text = "編輯",
+                Variant = "OutlineSecondary",
                 Size = "Small",
-                Title = buttonTitle,
-                OnClick = () => OpenModalAsync(currentSelectedId)
+                Title = $"編輯目前選擇的{EntityDisplayName}",
+                OnClick = () => OpenModalAsync(currentSelectedId.Value)
+            });
+        }
+        
+        return buttons;
+    }
+    
+    /// <summary>
+    /// 產生 FieldActionButton 列表 (分開的新增和編輯按鈕，支援智能檢查)
+    /// </summary>
+    /// <param name="currentSelectedId">目前選擇的實體 ID</param>
+    /// <param name="currentInputValue">目前輸入框的值</param>
+    /// <param name="availableEntities">可用的實體列表，用於檢查是否存在</param>
+    /// <param name="searchProperty">要搜尋的屬性名稱 (預設為 "Name")</param>
+    /// <returns>按鈕列表</returns>
+    public List<FieldActionButton> GenerateActionButtonsWithSmartCheck(
+        int? currentSelectedId, 
+        string? currentInputValue, 
+        IEnumerable<TRelatedEntity>? availableEntities = null,
+        string searchProperty = "Name")
+    {
+        var buttons = new List<FieldActionButton>();
+        
+        // 新增按鈕 - 永遠顯示，會讀取輸入框的值作為預填
+        buttons.Add(new FieldActionButton
+        {
+            Text = "新增",
+            Variant = "OutlinePrimary",
+            Size = "Small",
+            Title = $"新增新的{EntityDisplayName}",
+            OnClick = async () =>
+            {
+                var prefilledValues = new Dictionary<string, object?>();
+                
+                // 如果有輸入值，預填到對應的屬性
+                if (!string.IsNullOrWhiteSpace(currentInputValue))
+                {
+                    prefilledValues[searchProperty] = currentInputValue;
+                }
+                
+                await OpenModalWithPrefilledValuesAsync(null, prefilledValues);
             }
-        };
+        });
+        
+        // 編輯按鈕 - 智能檢查邏輯
+        if (!string.IsNullOrWhiteSpace(currentInputValue))
+        {
+            buttons.Add(new FieldActionButton
+            {
+                Text = "編輯",
+                Variant = "OutlineSecondary",
+                Size = "Small",
+                Title = $"編輯目前輸入的{EntityDisplayName}",
+                OnClick = async () =>
+                {
+                    // 如果有明確的選擇 ID，直接編輯
+                    if (currentSelectedId.HasValue)
+                    {
+                        await OpenModalAsync(currentSelectedId.Value);
+                        return;
+                    }
+                    
+                    // 如果沒有選擇 ID 但有輸入值，嘗試在可用實體中尋找
+                    if (availableEntities != null)
+                    {
+                        var matchedEntity = FindEntityByProperty(availableEntities, searchProperty, currentInputValue);
+                        if (matchedEntity != null)
+                        {
+                            await OpenModalAsync(matchedEntity.Id);
+                            return;
+                        }
+                    }
+                    
+                    // 如果找不到，顯示通知
+                    await NotificationService.ShowWarningAsync($"找不到名稱為「{currentInputValue}」的{EntityDisplayName}，請先新增此資料");
+                }
+            });
+        }
+        
+        return buttons;
+    }
+    
+    /// <summary>
+    /// 根據屬性值尋找實體
+    /// </summary>
+    /// <param name="entities">實體列表</param>
+    /// <param name="propertyName">屬性名稱</param>
+    /// <param name="searchValue">搜尋值</param>
+    /// <returns>匹配的實體，如果找不到則返回 null</returns>
+    private TRelatedEntity? FindEntityByProperty(IEnumerable<TRelatedEntity> entities, string propertyName, string searchValue)
+    {
+        try
+        {
+            var entityType = typeof(TRelatedEntity);
+            var property = entityType.GetProperty(propertyName);
+            if (property == null)
+                return null;
+            
+            return entities.FirstOrDefault(entity =>
+            {
+                var propertyValue = property.GetValue(entity)?.ToString();
+                return string.Equals(propertyValue, searchValue, StringComparison.OrdinalIgnoreCase);
+            });
+        }
+        catch
+        {
+            return null;
+        }
     }
     
     /// <summary>

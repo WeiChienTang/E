@@ -723,7 +723,7 @@
     }
     
     /// <summary>
-    /// 處理 AutoComplete 欄位的操作按鈕，支援智能預填
+    /// 處理 AutoComplete 欄位的操作按鈕，支援智能預填和分離的新增/編輯按鈕
     /// </summary>
     private List<FieldActionButton> ProcessActionButtonsForAutoComplete(FormFieldDefinition field)
     {
@@ -741,7 +741,7 @@
                 IsDisabled = button.IsDisabled
             };
             
-            // 如果是新增按鈕且有預填器，包裝點擊事件
+            // 如果是新增按鈕且有預填器，包裝點擊事件以支援智能預填
             if (button.Text == "新增" && 
                 AutoCompletePrefillers?.ContainsKey(field.PropertyName) == true &&
                 button.OnClick != null)
@@ -771,6 +771,56 @@
                                     return;
                                 }
                             }
+                        }
+                    }
+                    
+                    // 否則使用原始點擊事件
+                    await originalOnClick();
+                };
+            }
+            // 如果是編輯按鈕，包裝點擊事件以支援智能檢查
+            else if (button.Text == "編輯" && button.OnClick != null)
+            {
+                var originalOnClick = button.OnClick;
+                processedButton.OnClick = async () =>
+                {
+                    // 取得當前輸入值
+                    var searchTerm = _lastSearchTerms.GetValueOrDefault(field.PropertyName, string.Empty);
+                    
+                    // 如果有 Modal 管理器且有 AutoComplete 集合，使用智能檢查
+                    if (ModalManagers?.ContainsKey(field.PropertyName) == true && 
+                        AutoCompleteCollections?.ContainsKey(field.PropertyName) == true &&
+                        !string.IsNullOrWhiteSpace(searchTerm))
+                    {
+                        var modalManager = ModalManagers[field.PropertyName];
+                        var availableEntities = AutoCompleteCollections[field.PropertyName];
+                        var displayProperty = AutoCompleteDisplayProperties?.GetValueOrDefault(field.PropertyName, "Name") ?? "Name";
+                        
+                        // 檢查是否存在匹配的實體
+                        var matchedEntity = FindMatchingEntity(availableEntities, displayProperty, searchTerm);
+                        if (matchedEntity != null)
+                        {
+                            // 找到匹配的實體，開啟編輯模式
+                            var entityId = GetPropertyValue(matchedEntity, "Id") as int?;
+                            if (entityId.HasValue)
+                            {
+                                var openMethod = modalManager.GetType().GetMethod("OpenModalAsync");
+                                if (openMethod != null)
+                                {
+                                    var task = (Task?)openMethod.Invoke(modalManager, new object[] { entityId.Value });
+                                    if (task != null)
+                                    {
+                                        await task;
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // 找不到匹配的實體，顯示警告
+                            await ShowErrorMessage($"找不到名稱為「{searchTerm}」的資料，請先新增此資料");
+                            return;
                         }
                     }
                     
@@ -838,6 +888,29 @@
                 return new List<SelectOption>();
             }
         };
+    }
+    
+    /// <summary>
+    /// 在集合中尋找匹配的實體
+    /// </summary>
+    /// <param name="entities">實體集合</param>
+    /// <param name="propertyName">要比較的屬性名稱</param>
+    /// <param name="searchValue">搜尋值</param>
+    /// <returns>匹配的實體，如果找不到則返回 null</returns>
+    private object? FindMatchingEntity(IEnumerable<object> entities, string propertyName, string searchValue)
+    {
+        try
+        {
+            return entities.FirstOrDefault(entity =>
+            {
+                var propertyValue = GetPropertyValue(entity, propertyName)?.ToString();
+                return string.Equals(propertyValue, searchValue, StringComparison.OrdinalIgnoreCase);
+            });
+        }
+        catch
+        {
+            return null;
+        }
     }
     
     /// <summary>
