@@ -31,17 +31,20 @@
     // 組件參考
     private GenericIndexPageComponent<Customer, ICustomerService> indexComponent = default!;
     
-    // 配置相關
-    private List<SearchFilterDefinition> filterDefinitions = new();
-    private List<TableColumnDefinition> columnDefinitions = new();
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
-
     // Modal 相關狀態
     private bool showEditModal = false;
     private int? editingCustomerId = null;
     
     // Modal 處理器
     private ModalHandler<Customer, GenericIndexPageComponent<Customer, ICustomerService>> modalHandler = default!;
+    
+    // 選項清單
+    private List<CustomerType> customerTypes = new();
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
     protected override void OnInitialized()
     {
@@ -99,8 +102,13 @@
     {
         try
         {
-            // 重新初始化篩選器以載入下拉選單選項
-            await InitializeFiltersAsync();
+            customerTypes = await CustomerService.GetCustomerTypesAsync();
+            
+            // 重新初始化篩選器（因為需要選項資料）
+            InitializeFilters();
+            
+            // 重要：通知組件狀態已改變，確保參數更新
+            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -114,6 +122,13 @@
                     Action = "LoadBasicData",
                     ExpectedData = "CustomerTypes"
                 });
+                
+            // 設定安全的預設值，確保程式不會崩潰
+            customerTypes = new List<CustomerType>();
+            
+            // 即使失敗也要重新初始化篩選器
+            InitializeFilters();
+            StateHasChanged();
         }
     }
 
@@ -147,13 +162,19 @@
     {
         try
         {
+            // 準備客戶類型選項
+            var customerTypeOptions = customerTypes.Select(ct => new SelectOption
+            {
+                Text = ct.TypeName,
+                Value = ct.Id.ToString()
+            }).ToList();
 
-            // 建立基本篩選定義（不包含下拉選單選項，這些將在 InitializeFiltersAsync 中載入）
+            // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("Code", "客戶代碼", "輸入客戶代碼搜尋")
                 .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
                 .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
-                .AddSelect("CustomerTypeId", "客戶類型", new List<SelectOption>()) // 空的選項，稍後載入
+                .AddSelect("CustomerTypeId", "客戶類型", customerTypeOptions)
                 .AddText("TaxNumber", "統一編號", "輸入統一編號搜尋")
                 .Build();
         }
@@ -181,6 +202,7 @@
                 TableColumnDefinition.Text("公司名稱", nameof(Customer.CompanyName)),
                 TableColumnDefinition.Text("聯絡人", nameof(Customer.ContactPerson)),
                 TableColumnDefinition.Text("客戶類型", "CustomerType.TypeName"),
+                TableColumnDefinition.Text("統一編號", nameof(Customer.TaxNumber)),
             };
         }
         catch (Exception ex)
@@ -216,8 +238,8 @@
             // 客戶類型篩選
             (model, q) => FilterHelper.ApplyNullableIntIdFilter(model, q, "CustomerTypeId", c => c.CustomerTypeId),
             
-            // 統一編號篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "TaxNumber", c => c.TaxNumber),
+            // 統一編號篩選 - 允許 null 值
+            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "TaxNumber", c => c.TaxNumber, allowNull: true),
         };
 
         return FilterHelper.ApplyFiltersWithErrorHandling(

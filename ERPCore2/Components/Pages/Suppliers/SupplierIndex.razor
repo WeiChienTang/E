@@ -40,6 +40,9 @@
     // Modal 處理器
     private ModalHandler<Supplier, GenericIndexPageComponent<Supplier, ISupplierService>> modalHandler = default!;
     
+    // 選項清單
+    private List<SupplierType> supplierTypes = new();
+    
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
@@ -58,13 +61,32 @@
                 GetType());
             
             InitializeBreadcrumbs();
-            InitializeFilters(); // 初始化基本篩選器
+            InitializeFilters();
             InitializeTableColumns();
         }
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitialized), GetType(),
                 additionalData: new { PageName = "SupplierIndex", Action = "OnInitialized" });
+                
+            // 確保基本初始化完成，避免程式崩潰
+            try
+            {
+                breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+                {
+                    new("首頁", "/"),
+                    new("廠商管理")
+                };
+                filterDefinitions = new List<SearchFilterDefinition>();
+                columnDefinitions = new List<TableColumnDefinition>();
+            }
+            catch
+            {
+                // 如果連預設值都設定失敗，至少確保不是 null
+                breadcrumbItems ??= new List<GenericHeaderComponent.BreadcrumbItem>();
+                filterDefinitions ??= new List<SearchFilterDefinition>();
+                columnDefinitions ??= new List<TableColumnDefinition>();
+            }
         }
     }
 
@@ -89,13 +111,55 @@
     {
         try
         {
-            // 重新初始化篩選器以載入下拉選單選項
-            await InitializeFiltersAsync();
+            supplierTypes = await SupplierService.GetSupplierTypesAsync();
+            
+            // 重新初始化篩選器（因為需要選項資料）
+            InitializeFilters();
+            
+            // 重要：通知組件狀態已改變，確保參數更新
+            StateHasChanged();
         }
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadBasicDataAsync), GetType(),
                 additionalData: new { PageName = "SupplierIndex", Action = "LoadBasicDataAsync" });
+                
+            // 設定安全的預設值，確保程式不會崩潰
+            supplierTypes = new List<SupplierType>();
+            
+            // 即使失敗也要重新初始化篩選器
+            InitializeFilters();
+            StateHasChanged();
+        }
+    }
+
+    private void InitializeFilters()
+    {
+        try
+        {
+            // 準備廠商類型選項
+            var supplierTypeOptions = supplierTypes.Select(st => new SelectOption
+            {
+                Text = st.TypeName,
+                Value = st.Id.ToString()
+            }).ToList();
+
+            // 建立篩選定義
+            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
+                .AddText("Code", "廠商代碼", "輸入廠商代碼搜尋")
+                .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
+                .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
+                .AddSelect("SupplierTypeId", "廠商類型", supplierTypeOptions)
+                .AddText("TaxNumber", "統一編號", "輸入統一編號搜尋")
+                .Build();
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFilters), GetType(),
+                additionalData: new { PageName = "SupplierIndex", Action = "InitializeFilters" });
+                
+            // 設定安全的預設值
+            filterDefinitions = new List<SearchFilterDefinition>();
         }
     }
 
@@ -113,63 +177,6 @@
             
             StateHasChanged();
             return new List<Supplier>();
-        }
-    }
-
-    private void InitializeFilters()
-    {
-        try
-        {
-            // 建立基本篩選定義（不包含下拉選單選項，這些將在 InitializeFiltersAsync 中載入）
-            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("Code", "廠商代碼", "輸入廠商代碼搜尋")
-                .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
-                .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
-                .AddSelect("SupplierTypeId", "廠商類型", new List<SelectOption>()) // 空的選項，稍後載入
-                .AddText("TaxNumber", "統一編號", "輸入統一編號搜尋")
-                .Build();
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFilters), GetType(),
-                additionalData: new { PageName = "SupplierIndex", Action = "InitializeFilters" });
-        }
-    }
-
-    private async Task InitializeFiltersAsync()
-    {
-        try
-        {
-            // 載入廠商類型選項
-            var supplierTypes = await SupplierService.GetSupplierTypesAsync();
-            var supplierTypeOptions = supplierTypes.Select(st => new SelectOption
-            {
-                Text = st.TypeName,
-                Value = st.Id.ToString()
-            }).ToList();
-
-            // 重新建立篩選定義，包含載入的選項
-            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("Code", "廠商代碼", "輸入廠商代碼搜尋")
-                .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
-                .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
-                .AddSelect("SupplierTypeId", "廠商類型", supplierTypeOptions)
-                .AddText("TaxNumber", "統一編號", "輸入統一編號搜尋")
-                .Build();
-
-            // 通知組件狀態已改變
-            StateHasChanged();
-            
-            // 如果組件已經初始化，刷新組件以更新篩選器
-            if (indexComponent != null)
-            {
-                await indexComponent.Refresh();
-            }
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFiltersAsync), GetType(),
-                additionalData: new { PageName = "SupplierIndex", Action = "InitializeFiltersAsync" });
         }
     }
 
@@ -200,6 +207,7 @@
         {
             // 應用基礎實體篩選（狀態、備註等）
             (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
+
             // 廠商代碼篩選
             (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Code", s => s.Code),
             

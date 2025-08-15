@@ -145,7 +145,9 @@ namespace ERPCore2.Helpers
             var filterValue = searchModel.GetFilterValue(filterName)?.ToString();
             if (!string.IsNullOrWhiteSpace(filterValue) && int.TryParse(filterValue, out var id))
             {
-                query = query.Where(BuildEqualsExpression(propertySelector, id));
+                // 將 int 轉換為 int? 以匹配屬性型別
+                int? nullableId = id;
+                query = query.Where(BuildEqualsExpression(propertySelector, nullableId));
             }
             return query;
         }
@@ -275,6 +277,9 @@ namespace ERPCore2.Helpers
             var parameter = propertySelector.Parameters[0];
             var property = propertySelector.Body;
             
+            // 先檢查屬性是否為 null
+            var nullCheck = Expression.NotEqual(property, Expression.Constant(null, typeof(string)));
+            
             var method = typeof(string).GetMethod("Contains", new[] { typeof(string), typeof(StringComparison) });
             var containsCall = Expression.Call(
                 property, 
@@ -282,7 +287,10 @@ namespace ERPCore2.Helpers
                 Expression.Constant(value),
                 Expression.Constant(StringComparison.OrdinalIgnoreCase));
             
-            return Expression.Lambda<Func<T, bool>>(containsCall, parameter);
+            // 結合 null 檢查和 Contains 檢查
+            var andExpression = Expression.AndAlso(nullCheck, containsCall);
+            
+            return Expression.Lambda<Func<T, bool>>(andExpression, parameter);
         }
 
         /// <summary>
@@ -299,7 +307,9 @@ namespace ERPCore2.Helpers
         {
             var parameter = propertySelector.Parameters[0];
             var property = propertySelector.Body;
-            var constant = Expression.Constant(value);
+            
+            // 確保常數的型別與屬性型別匹配
+            var constant = Expression.Constant(value, typeof(TProperty));
             var equals = Expression.Equal(property, constant);
             
             return Expression.Lambda<Func<T, bool>>(equals, parameter);
