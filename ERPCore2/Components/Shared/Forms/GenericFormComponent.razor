@@ -706,7 +706,7 @@
         builder.CloseElement(); // container div
     }
     
-    private Task HandleAutoCompleteInput(FormFieldDefinition field, string inputValue)
+    private async Task HandleAutoCompleteInput(FormFieldDefinition field, string inputValue)
     {
         var fieldId = field.PropertyName;
         
@@ -715,12 +715,28 @@
         {
             autoCompleteTimers[fieldId]?.Dispose();
         }
-          // 如果輸入長度不足，隱藏下拉選單
+        
+        // 如果輸入為空，清空實體值並觸發變更事件
+        if (string.IsNullOrEmpty(inputValue))
+        {
+            // 檢查目前實體值是否不為空，如果不為空才清空
+            var currentValue = GetPropertyValue(Model, field.PropertyName);
+            if (currentValue != null)
+            {
+                SetPropertyValue(Model, field.PropertyName, null);
+                await OnFieldChanged.InvokeAsync((field.PropertyName, null));
+            }
+            autoCompleteVisible[fieldId] = false;
+            StateHasChanged();
+            return;
+        }
+        
+        // 如果輸入長度不足，隱藏下拉選單
         if (inputValue.Length < field.MinSearchLength)
         {
             autoCompleteVisible[fieldId] = false;
             StateHasChanged();
-            return Task.CompletedTask;
+            return;
         }
         
         // 設置載入狀態
@@ -751,9 +767,9 @@
                 {
                     autoCompleteLoading[fieldId] = false;
                     StateHasChanged();
-                }            });
+                }
+            });
         }, null, field.AutoCompleteDelayMs, Timeout.Infinite);
-          return Task.CompletedTask;
     }
     
     private async Task HandleKeyDown(FormFieldDefinition field, KeyboardEventArgs args)
