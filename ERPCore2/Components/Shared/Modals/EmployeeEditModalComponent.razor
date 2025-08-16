@@ -11,6 +11,8 @@
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject INavigationPermissionService NavigationPermissionService
+@inject ActionButtonHelper ActionButtonHelper
+@using ERPCore2.Helpers
 
 <GenericEditModalComponent TEntity="Employee" 
                           TService="IEmployeeService"
@@ -392,7 +394,7 @@
                         IsRequired = isSystemUser,
                         IsDisabled = !isSystemUser, // 非系統使用者時停用
                         HelpText = isSystemUser ? "輸入角色名稱進行搜尋，或直接選擇員工在系統中的權限角色" : "僅系統使用者可以選擇系統角色",
-                        ActionButtons = GetRoleActionButtons()
+                        ActionButtons = await GetRoleActionButtonsAsync()
                     }
                 });
             }
@@ -408,7 +410,7 @@
                     Placeholder = "請輸入或選擇部門",
                     MinSearchLength = 0, // 允許空白搜尋以顯示所有選項
                     HelpText = "輸入部門名稱進行搜尋，或直接選擇",
-                    ActionButtons = GetDepartmentActionButtons()
+                    ActionButtons = await GetDepartmentActionButtonsAsync()
                 },
                 new()
                 {
@@ -418,7 +420,7 @@
                     Placeholder = "請輸入或選擇職位",
                     MinSearchLength = 0, // 允許空白搜尋以顯示所有選項
                     HelpText = "輸入職位名稱進行搜尋，或直接選擇",
-                    ActionButtons = GetPositionActionButtons()
+                    ActionButtons = await GetPositionActionButtonsAsync()
                 }
             });
 
@@ -890,8 +892,8 @@
                     await UpdateFormFieldsForSystemUserAsync(isSystemUser);
                     
                     // 當系統使用者狀態變更時，也要更新角色按鈕的狀態
-                    roleModalManager.UpdateFieldActionButtons(formFields, nameof(Employee.RoleId), 
-                        editModalComponent?.Entity?.RoleId);
+                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                        roleModalManager, formFields, nameof(Employee.RoleId), editModalComponent?.Entity?.RoleId);
                 }
                 else
                 {
@@ -901,25 +903,25 @@
                 }
             }
             
-            // 使用泛型管理器處理部門欄位變更
+            // 使用統一 Helper 處理部門欄位變更
             if (fieldChange.PropertyName == nameof(Employee.DepartmentId))
             {
-                departmentModalManager.UpdateFieldActionButtons(formFields, fieldChange.PropertyName, 
-                    fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int deptId) ? deptId : null);
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    departmentModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
             }
             
-            // 使用泛型管理器處理職位欄位變更
+            // 使用統一 Helper 處理職位欄位變更
             if (fieldChange.PropertyName == nameof(Employee.EmployeePositionId))
             {
-                positionModalManager.UpdateFieldActionButtons(formFields, fieldChange.PropertyName, 
-                    fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int posId) ? posId : null);
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    positionModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
             }
             
-            // 使用泛型管理器處理角色欄位變更
+            // 使用統一 Helper 處理角色欄位變更
             if (fieldChange.PropertyName == nameof(Employee.RoleId))
             {
-                roleModalManager.UpdateFieldActionButtons(formFields, fieldChange.PropertyName, 
-                    fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int roleId) ? roleId : null);
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    roleModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
             }
         }
         catch (Exception)
@@ -953,53 +955,61 @@
     }
     
     /// <summary>
-    /// 使用泛型管理器產生部門操作按鈕 - 簡化版本（智能預填已整合到 GenericEditModalComponent）
+    /// 使用統一 Helper 產生部門操作按鈕
     /// </summary>
-    private List<FieldActionButton> GetDepartmentActionButtons()
+    private async Task<List<FieldActionButton>> GetDepartmentActionButtonsAsync()
     {
-        var currentDepartmentId = editModalComponent?.Entity?.DepartmentId;
-        return departmentModalManager.GenerateActionButtons(currentDepartmentId);
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            departmentModalManager, 
+            nameof(Employee.DepartmentId)
+        );
     }
 
     /// <summary>
-    /// 使用泛型管理器產生職位操作按鈕 - 簡化版本（智能預填已整合到 GenericEditModalComponent）
+    /// 使用統一 Helper 產生職位操作按鈕
     /// </summary>
-    private List<FieldActionButton> GetPositionActionButtons()
+    private async Task<List<FieldActionButton>> GetPositionActionButtonsAsync()
     {
-        var currentPositionId = editModalComponent?.Entity?.EmployeePositionId;
-        return positionModalManager.GenerateActionButtons(currentPositionId);
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            positionModalManager, 
+            nameof(Employee.EmployeePositionId)
+        );
     }
 
     /// <summary>
-    /// 使用泛型管理器產生角色操作按鈕 - 簡化版本（智能預填已整合到 GenericEditModalComponent）
-    /// 注意：角色按鈕的啟用狀態取決於是否勾選了"系統使用者"
+    /// 使用統一 Helper 產生角色操作按鈕 - 包含特殊的 IsSystemUser 邏輯
     /// </summary>
-    private List<FieldActionButton> GetRoleActionButtons()
+    private async Task<List<FieldActionButton>> GetRoleActionButtonsAsync()
     {
-        var currentRoleId = editModalComponent?.Entity?.RoleId;
-        var isSystemUser = editModalComponent?.Entity?.IsSystemUser ?? false;
-        
-        // 使用泛型管理器產生按鈕
-        var buttons = roleModalManager.GenerateActionButtons(currentRoleId);
-        
-        // 根據系統使用者狀態設定按鈕的啟用/停用狀態
-        foreach (var button in buttons)
-        {
-            button.IsDisabled = !isSystemUser; // 非系統使用者時停用按鈕
-            
-            // 更新按鈕標題，讓使用者知道為什麼按鈕被停用
-            if (!isSystemUser)
+        return await ActionButtonHelper.GenerateFieldActionButtonsWithCustomLogicAsync(
+            editModalComponent, 
+            roleModalManager, 
+            nameof(Employee.RoleId),
+            (buttons, employee) =>
             {
-                button.Title = "僅系統使用者可以管理系統角色";
+                var isSystemUser = employee?.IsSystemUser ?? false;
+                
+                // 根據系統使用者狀態設定按鈕的啟用/停用狀態
+                foreach (var button in buttons)
+                {
+                    button.IsDisabled = !isSystemUser; // 非系統使用者時停用按鈕
+                    
+                    // 更新按鈕標題，讓使用者知道為什麼按鈕被停用
+                    if (!isSystemUser)
+                    {
+                        button.Title = "僅系統使用者可以管理系統角色";
+                    }
+                    else
+                    {
+                        // 系統使用者時使用原本的標題
+                        var currentRoleId = employee?.RoleId;
+                        button.Title = currentRoleId.HasValue ? "編輯選擇的角色" : "新增角色";
+                    }
+                }
             }
-            else
-            {
-                // 系統使用者時使用原本的標題
-                button.Title = currentRoleId.HasValue ? "編輯選擇的角色" : "新增角色";
-            }
-        }
-        
-        return buttons;
+        );
     }
 
     // ===== 部門管理相關方法 - 已重構為使用泛型管理器 =====

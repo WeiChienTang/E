@@ -1,5 +1,6 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Services;
+using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERPCore2.Data
@@ -30,6 +31,9 @@ namespace ERPCore2.Data
         {
             // 通知服務
             services.AddScoped<INotificationService, NotificationService>();
+
+            // Helper 服務
+            services.AddScoped<ActionButtonHelper>();
 
             // 統一地址服務 (推薦使用)
             services.AddScoped<IAddressService, AddressService>();

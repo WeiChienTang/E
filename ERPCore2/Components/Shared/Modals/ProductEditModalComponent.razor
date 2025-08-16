@@ -5,6 +5,8 @@
 @inject IUnitService UnitService
 @inject ISupplierService SupplierService
 @inject INotificationService NotificationService
+@inject ActionButtonHelper ActionButtonHelper
+@using ERPCore2.Helpers
 
 <GenericEditModalComponent TEntity="Product" 
                           TService="IProductService"
@@ -131,7 +133,7 @@
         if (IsVisible)
         {
             await LoadAdditionalDataAsync();
-            InitializeFormFields();
+            await InitializeFormFieldsAsync();
         }
     }
 
@@ -251,7 +253,7 @@
         }
     }
 
-    private void InitializeFormFields()
+    private async Task InitializeFormFieldsAsync()
     {
         formFields = new List<FormFieldDefinition>
         {
@@ -284,7 +286,7 @@
                 IsRequired = false,
                 MinSearchLength = 0,
                 HelpText = "輸入分類名稱進行搜尋，或直接選擇",
-                ActionButtons = GetProductCategoryActionButtons()
+                ActionButtons = await GetProductCategoryActionButtonsAsync()
             },
             new()
             {
@@ -295,7 +297,7 @@
                 IsRequired = false,
                 MinSearchLength = 0,
                 HelpText = "輸入尺寸名稱進行搜尋，或直接選擇",
-                ActionButtons = GetSizeActionButtons()
+                ActionButtons = await GetSizeActionButtonsAsync()
             },
             new()
             {
@@ -306,7 +308,7 @@
                 IsRequired = false,
                 MinSearchLength = 0,
                 HelpText = "輸入單位名稱進行搜尋，或直接選擇",
-                ActionButtons = GetUnitActionButtons()
+                ActionButtons = await GetUnitActionButtonsAsync()
             },
             new()
             {
@@ -317,7 +319,7 @@
                 IsRequired = false,
                 MinSearchLength = 0,
                 HelpText = "輸入供應商名稱進行搜尋，或直接選擇",
-                ActionButtons = GetSupplierActionButtons()
+                ActionButtons = await GetSupplierActionButtonsAsync()
             },
             new()
             {
@@ -468,7 +470,7 @@
             })
             .WithCustomPostProcess(async category => 
             {
-                await Task.Run(() => InitializeFormFields());
+                await InitializeFormFieldsAsync();
             })
             .Build();
     }
@@ -491,7 +493,7 @@
             })
             .WithCustomPostProcess(async supplier => 
             {
-                await Task.Run(() => InitializeFormFields());
+                await InitializeFormFieldsAsync();
             })
             .Build();
     }
@@ -514,7 +516,7 @@
             })
             .WithCustomPostProcess(async unit => 
             {
-                await Task.Run(() => InitializeFormFields());
+                await InitializeFormFieldsAsync();
             })
             .Build();
     }
@@ -537,7 +539,7 @@
             })
             .WithCustomPostProcess(async size => 
             {
-                await Task.Run(() => InitializeFormFields());
+                await InitializeFormFieldsAsync();
             })
             .Build();
     }
@@ -545,39 +547,51 @@
     // ===== ActionButton 產生方法 =====
     
     /// <summary>
-    /// 產生產品分類操作按鈕
+    /// 產生產品分類操作按鈕 - 使用統一 Helper
     /// </summary>
-    private List<FieldActionButton> GetProductCategoryActionButtons()
+    private async Task<List<FieldActionButton>> GetProductCategoryActionButtonsAsync()
     {
-        var currentId = editModalComponent?.Entity?.ProductCategoryId;
-        return productCategoryModalManager.GenerateActionButtons(currentId);
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            productCategoryModalManager, 
+            nameof(Product.ProductCategoryId)
+        );
     }
 
     /// <summary>
-    /// 產生供應商操作按鈕
+    /// 產生供應商操作按鈕 - 使用統一 Helper
     /// </summary>
-    private List<FieldActionButton> GetSupplierActionButtons()
+    private async Task<List<FieldActionButton>> GetSupplierActionButtonsAsync()
     {
-        var currentId = editModalComponent?.Entity?.PrimarySupplierId;
-        return supplierModalManager.GenerateActionButtons(currentId);
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            supplierModalManager, 
+            nameof(Product.PrimarySupplierId)
+        );
     }
 
     /// <summary>
-    /// 產生單位操作按鈕
+    /// 產生單位操作按鈕 - 使用統一 Helper
     /// </summary>
-    private List<FieldActionButton> GetUnitActionButtons()
+    private async Task<List<FieldActionButton>> GetUnitActionButtonsAsync()
     {
-        var currentId = editModalComponent?.Entity?.UnitId;
-        return unitModalManager.GenerateActionButtons(currentId);
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            unitModalManager, 
+            nameof(Product.UnitId)
+        );
     }
 
     /// <summary>
-    /// 產生尺寸操作按鈕
+    /// 產生尺寸操作按鈕 - 使用統一 Helper
     /// </summary>
-    private List<FieldActionButton> GetSizeActionButtons()
+    private async Task<List<FieldActionButton>> GetSizeActionButtonsAsync()
     {
-        var currentId = editModalComponent?.Entity?.SizeId;
-        return sizeModalManager.GenerateActionButtons(currentId);
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            sizeModalManager, 
+            nameof(Product.SizeId)
+        );
     }
 
     // ===== Modal 事件包裝器方法 =====
@@ -615,43 +629,40 @@
     }
 
     /// <summary>
-    /// 處理欄位值變更事件
+    /// 處理欄位值變更事件 - 使用統一 Helper
     /// </summary>
-    private Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
     {
         try
         {
-            // 使用泛型管理器自動處理產品分類欄位變更
+            // 使用統一 Helper 處理產品分類欄位變更
             if (fieldChange.PropertyName == nameof(Product.ProductCategoryId))
             {
-                productCategoryModalManager.UpdateFieldActionButtons(formFields, fieldChange.PropertyName, 
-                    fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int categoryId) ? categoryId : null);
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    productCategoryModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
             }
-            // 使用泛型管理器自動處理供應商欄位變更
+            // 使用統一 Helper 處理供應商欄位變更
             else if (fieldChange.PropertyName == nameof(Product.PrimarySupplierId))
             {
-                supplierModalManager.UpdateFieldActionButtons(formFields, fieldChange.PropertyName, 
-                    fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int supplierId) ? supplierId : null);
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    supplierModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
             }
-            // 使用泛型管理器自動處理單位欄位變更
+            // 使用統一 Helper 處理單位欄位變更
             else if (fieldChange.PropertyName == nameof(Product.UnitId))
             {
-                unitModalManager.UpdateFieldActionButtons(formFields, fieldChange.PropertyName, 
-                    fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int unitId) ? unitId : null);
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    unitModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
             }
-            // 使用泛型管理器自動處理尺寸欄位變更
+            // 使用統一 Helper 處理尺寸欄位變更
             else if (fieldChange.PropertyName == nameof(Product.SizeId))
             {
-                sizeModalManager.UpdateFieldActionButtons(formFields, fieldChange.PropertyName, 
-                    fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int sizeId) ? sizeId : null);
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    sizeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
             }
-            
-            return Task.CompletedTask;
         }
         catch (Exception)
         {
-            _ = NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
-            return Task.CompletedTask;
+            await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
         }
     }
 }

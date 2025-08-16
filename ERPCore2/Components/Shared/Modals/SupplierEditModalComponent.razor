@@ -6,6 +6,8 @@
 @inject IAddressTypeService AddressTypeService
 @inject ISupplierTypeService SupplierTypeService
 @inject INotificationService NotificationService
+@inject ActionButtonHelper ActionButtonHelper
+@using ERPCore2.Helpers
 
 <GenericEditModalComponent TEntity="Supplier" 
                           TService="ISupplierService"
@@ -80,11 +82,11 @@
             InitializeSupplierTypeModalManager();
             
             await LoadAdditionalDataAsync();
-            InitializeFormFields();
+            await InitializeFormFieldsAsync();
         }
         catch (Exception)
         {
-            _ = NotificationService.ShowErrorAsync("初始化廠商編輯組件時發生錯誤");
+            await NotificationService.ShowErrorAsync("初始化廠商編輯組件時發生錯誤");
         }
     }
     
@@ -94,7 +96,7 @@
         if (formFields != null) // 只有在已經初始化過的情況下才重新設定
         {
             await LoadAdditionalDataAsync();
-            InitializeFormFields();
+            await InitializeFormFieldsAsync();
         }
         
         await base.OnParametersSetAsync();
@@ -116,11 +118,10 @@
                     editModalComponent.Entity.SupplierTypeId = supplierTypeId;
                 }
             })
-            .WithCustomPostProcess(supplierType => 
+            .WithCustomPostProcess(async supplierType => 
             {
                 // 重新初始化表單欄位以更新按鈕狀態
-                InitializeFormFields();
-                return Task.CompletedTask;
+                await InitializeFormFieldsAsync();
             })
             .Build();
     }
@@ -151,7 +152,7 @@
         }
     }
 
-    private void InitializeFormFields()
+    private async Task InitializeFormFieldsAsync()
     {
         try
         {
@@ -203,7 +204,7 @@
                     Placeholder = "請輸入或選擇廠商類型",
                     MinSearchLength = 0, // 允許空白搜尋以顯示所有選項
                     HelpText = "輸入廠商類型名稱進行搜尋，或直接選擇",
-                    ActionButtons = GetSupplierTypeActionButtons()
+                    ActionButtons = await GetSupplierTypeActionButtonsAsync()
                 },
                 new()
                 {
@@ -232,7 +233,7 @@
         }
         catch (Exception)
         {
-            _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
+            await NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
         }
     }
 
@@ -602,12 +603,15 @@
     }
     
     /// <summary>
-    /// 使用泛型管理器產生廠商類型操作按鈕
+    /// 使用統一 Helper 產生廠商類型操作按鈕
     /// </summary>
-    private List<FieldActionButton> GetSupplierTypeActionButtons()
+    private async Task<List<FieldActionButton>> GetSupplierTypeActionButtonsAsync()
     {
-        var currentSupplierTypeId = editModalComponent?.Entity?.SupplierTypeId;
-        return supplierTypeModalManager.GenerateActionButtons(currentSupplierTypeId);
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            supplierTypeModalManager, 
+            nameof(Supplier.SupplierTypeId)
+        );
     }
 
     /// <summary>
@@ -619,25 +623,22 @@
     }
 
     /// <summary>
-    /// 處理欄位值變更事件
+    /// 處理欄位值變更事件 - 使用統一 Helper
     /// </summary>
-    private Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
     {
         try
         {
-            // 使用泛型管理器自動處理廠商類型欄位變更
+            // 使用統一 Helper 處理廠商類型欄位變更
             if (fieldChange.PropertyName == nameof(Supplier.SupplierTypeId))
             {
-                supplierTypeModalManager.UpdateFieldActionButtons(formFields, fieldChange.PropertyName, 
-                    fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int typeId) ? typeId : null);
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    supplierTypeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
             }
-            
-            return Task.CompletedTask;
         }
         catch (Exception)
         {
-            _ = NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
-            return Task.CompletedTask;
+            await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
         }
     }
 }
