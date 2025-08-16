@@ -103,6 +103,7 @@
     private readonly Dictionary<string, bool> autoCompleteVisible = new();
     private readonly Dictionary<string, Timer?> autoCompleteTimers = new();
     private readonly Dictionary<string, string> autoCompleteDisplayValues = new();
+    private readonly HashSet<string> blurredFields = new(); // 追蹤失去焦點的欄位
     
     // 鍵盤導航狀態
     private readonly Dictionary<string, int> highlightedOptionIndex = new();
@@ -613,6 +614,9 @@
         // 焦點事件處理
         builder.AddAttribute(sequence + 13, "onfocus", EventCallback.Factory.Create(this, () =>
         {
+            // 清除失去焦點標記
+            blurredFields.Remove(fieldId);
+            
             var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "");
             if (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= field.MinSearchLength)
             {
@@ -620,8 +624,24 @@
             }
         }));
           // 失去焦點事件處理
-        builder.AddAttribute(sequence + 14, "onblur", EventCallback.Factory.Create(this, () =>
+        builder.AddAttribute(sequence + 14, "onblur", EventCallback.Factory.Create(this, async () =>
         {
+            // 標記為已失去焦點
+            blurredFields.Add(fieldId);
+            
+            // 取消正在進行的搜尋
+            if (autoCompleteTimers.ContainsKey(fieldId))
+            {
+                autoCompleteTimers[fieldId]?.Dispose();
+                autoCompleteTimers[fieldId] = null;
+            }
+            
+            // 清除載入狀態 (重要：因為計時器被取消，finally 塊不會執行)
+            autoCompleteLoading[fieldId] = false;
+            
+            // 嘗試智能匹配
+            await TrySmartMatch(field);
+            
             // 延遲隱藏下拉選單，讓使用者有時間點擊選項
             Timer? timer = null;
             timer = new Timer(_ =>
@@ -629,7 +649,7 @@
                 autoCompleteVisible[fieldId] = false;
                 InvokeAsync(StateHasChanged);
                 timer?.Dispose();
-            }, null, 150, Timeout.Infinite);
+            }, null, 300, Timeout.Infinite); // 增加延遲時間
         }));
         
         // 鍵盤事件處理
@@ -710,10 +730,18 @@
     {
         var fieldId = field.PropertyName;
         
-        // 清除之前的計時器
+        // 清除之前的計時器和載入狀態
         if (autoCompleteTimers.ContainsKey(fieldId))
         {
             autoCompleteTimers[fieldId]?.Dispose();
+            autoCompleteTimers[fieldId] = null; // 重要：清空引用
+        }
+        autoCompleteLoading[fieldId] = false; // 清除可能殘留的載入狀態
+        
+        // 如果欄位已經失去焦點，不要進行搜尋
+        if (blurredFields.Contains(fieldId))
+        {
+            return;
         }
         
         // 如果輸入為空，清空實體值並觸發變更事件
@@ -844,6 +872,8 @@
                 }
                 else
                 {
+                    // 嘗試智能匹配
+                    await TrySmartMatch(field);
                     HideDropdown(fieldId);
                 }
                 // 不阻止 Tab，讓它正常移動到下一個欄位
@@ -905,6 +935,7 @@
     private void HideDropdown(string fieldId)
     {
         autoCompleteVisible[fieldId] = false;
+        autoCompleteLoading[fieldId] = false; // 清除載入狀態
         ResetKeyboardNavigation(fieldId);
     }
     
@@ -912,6 +943,51 @@
     {
         highlightedOptionIndex[fieldId] = -1;
         keyboardNavigationActive[fieldId] = false;
+    }
+
+    /// <summary>
+    /// 嘗試智能匹配 AutoComplete 輸入值
+    /// </summary>
+    private async Task TrySmartMatch(FormFieldDefinition field)
+    {
+        var fieldId = field.PropertyName;
+        var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "").Trim();
+        
+        if (string.IsNullOrEmpty(inputValue)) return;
+        
+        try
+        {
+            if (field.SearchFunction != null)
+            {
+                var results = await field.SearchFunction(inputValue);
+                
+                // 精確匹配優先
+                var exactMatch = results.FirstOrDefault(r => 
+                    string.Equals(r.Text, inputValue, StringComparison.OrdinalIgnoreCase));
+                    
+                if (exactMatch != null)
+                {
+                    // 自動選擇精確匹配
+                    autoCompleteDisplayValues[fieldId] = exactMatch.Text;
+                    SetPropertyValue(Model, field.PropertyName, exactMatch.Value);
+                    await OnFieldChanged.InvokeAsync((field.PropertyName, exactMatch.Value));
+                    return;
+                }
+                
+                // 如果只有一個結果，也自動選擇
+                if (results.Count == 1)
+                {
+                    var singleResult = results[0];
+                    autoCompleteDisplayValues[fieldId] = singleResult.Text;
+                    SetPropertyValue(Model, field.PropertyName, singleResult.Value);
+                    await OnFieldChanged.InvokeAsync((field.PropertyName, singleResult.Value));
+                }
+            }
+        }
+        catch
+        {
+            // 靜默處理錯誤
+        }
     }
 
     public void Dispose()
