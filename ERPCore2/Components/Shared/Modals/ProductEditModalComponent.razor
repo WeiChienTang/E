@@ -1,0 +1,275 @@
+@* 可重用的產品編輯組件 - 可在任何頁面中嵌入 *@
+@inject IProductService ProductService
+@inject ISizeService SizeService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="Product" 
+                          TService="IProductService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@ProductId"
+                          Service="@ProductService"
+                          EntityName="產品"
+                          EntityNamePlural="產品"
+                          ModalTitle="@(ProductId.HasValue ? "編輯產品" : "新增產品")"
+                          Size="GenericEditModalComponent<Product, IProductService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadProductData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(ProductId.HasValue ? "產品更新成功" : "產品新增成功")"
+                          SaveFailureMessage="產品儲存失敗"
+                          RequiredPermission="Product.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? ProductId { get; set; }
+    [Parameter] public EventCallback<Product> OnProductSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<Product, IProductService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    
+    // 選項清單
+    private List<SelectOption> productCategoryOptions = new();
+    private List<SelectOption> supplierOptions = new();
+    private List<SelectOption> unitOptions = new();
+    private List<SelectOption> sizeOptions = new();
+
+    // ===== 必要方法 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadAdditionalDataAsync();
+            InitializeFormFields();
+        }
+    }
+
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            if (OnProductSaved.HasDelegate)
+            {
+                await OnProductSaved.InvokeAsync();
+            }
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存成功後處理失敗：{ex.Message}");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"取消操作失敗：{ex.Message}");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        try
+        {
+            if (IsVisibleChanged.HasDelegate)
+            {
+                await IsVisibleChanged.InvokeAsync(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"關閉視窗失敗：{ex.Message}");
+        }
+    }
+
+    private async Task<Product?> LoadProductData()
+    {
+        try
+        {
+            if (!ProductId.HasValue)
+            {
+                // 新增模式
+                return new Product
+                {
+                    Status = EntityStatus.Active
+                };
+            }
+            
+            // 編輯模式
+            return await ProductService.GetByIdAsync(ProductId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入產品資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            // 載入產品分類選項
+            var productCategories = await ProductService.GetProductCategoriesAsync();
+            productCategoryOptions = productCategories.Select(pc => new SelectOption
+            {
+                Text = pc.CategoryName,
+                Value = pc.Id.ToString()
+            }).ToList();
+
+            // 載入供應商選項
+            var suppliers = await ProductService.GetSuppliersAsync();
+            supplierOptions = suppliers.Select(s => new SelectOption
+            {
+                Text = s.CompanyName,
+                Value = s.Id.ToString()
+            }).ToList();
+
+            // 載入單位選項
+            var units = await ProductService.GetUnitsAsync();
+            unitOptions = units.Select(u => new SelectOption
+            {
+                Text = u.UnitName,
+                Value = u.Id.ToString()
+            }).ToList();
+
+            // 載入尺寸選項
+            var sizes = await SizeService.GetActiveSizesAsync();
+            sizeOptions = sizes.Select(s => new SelectOption
+            {
+                Text = s.SizeName,
+                Value = s.Id.ToString()
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private void InitializeFormFields()
+    {
+        formFields = new List<FormFieldDefinition>
+        {
+            new()
+            {
+                PropertyName = nameof(Product.ProductName),
+                Label = "產品名稱",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入產品名稱",
+                IsRequired = true,
+                MaxLength = 100,
+                HelpText = "產品的完整名稱"
+            },
+            new()
+            {
+                PropertyName = nameof(Product.ProductCategoryId),
+                Label = "產品分類",
+                FieldType = FormFieldType.Select,
+                Options = productCategoryOptions,
+                IsRequired = false,
+                HelpText = "請選擇產品所屬分類"
+            },
+            new()
+            {
+                PropertyName = nameof(Product.SizeId),
+                Label = "尺寸",
+                FieldType = FormFieldType.Select,
+                Options = sizeOptions,
+                IsRequired = false,
+                HelpText = "請選擇產品尺寸"
+            },
+            new()
+            {
+                PropertyName = nameof(Product.UnitId),
+                Label = "單位",
+                FieldType = FormFieldType.Select,
+                Options = unitOptions,
+                IsRequired = false,
+                HelpText = "請選擇產品計量單位"
+            },
+            new()
+            {
+                PropertyName = nameof(Product.PrimarySupplierId),
+                Label = "主要供應商",
+                FieldType = FormFieldType.Select,
+                Options = supplierOptions,
+                IsRequired = false,
+                HelpText = "請選擇主要供應商"
+            },
+            new()
+            {
+                PropertyName = nameof(Product.Description),
+                Label = "產品描述",
+                FieldType = FormFieldType.TextArea,
+                Placeholder = "請輸入產品描述",
+                IsRequired = false,
+                MaxLength = 500,
+                Rows = 3,
+                HelpText = "產品的詳細描述",
+                ContainerCssClass = "col-12"
+            },
+            new()
+            {
+                PropertyName = nameof(Product.Specification),
+                Label = "規格說明",
+                FieldType = FormFieldType.TextArea,
+                Placeholder = "請輸入產品規格說明",
+                IsRequired = false,
+                MaxLength = 200,
+                Rows = 3,
+                HelpText = "產品的詳細規格說明",
+                ContainerCssClass = "col-12"
+            },
+            new()
+            {
+                PropertyName = nameof(Product.Remarks),
+                Label = "備註",
+                FieldType = FormFieldType.TextArea,
+                Placeholder = "請輸入備註",
+                IsRequired = false,
+                MaxLength = 500,
+                Rows = 2,
+                HelpText = "產品的額外說明或注意事項",
+                ContainerCssClass = "col-12"
+            }
+        };
+
+        formSections = new Dictionary<string, string>
+        {
+            { nameof(Product.ProductName), "基本資訊" },
+            { nameof(Product.ProductCategoryId), "基本資訊" },
+            { nameof(Product.SizeId), "基本資訊" },
+            { nameof(Product.UnitId), "基本資訊" },
+            { nameof(Product.PrimarySupplierId), "基本資訊" },
+            { nameof(Product.Description), "額外資訊" },
+            { nameof(Product.Specification), "額外資訊" },
+            { nameof(Product.Remarks), "額外資訊" }
+        };
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+}

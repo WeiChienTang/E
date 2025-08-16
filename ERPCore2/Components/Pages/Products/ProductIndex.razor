@@ -1,4 +1,5 @@
 @page "/products"
+@using ERPCore2.Components.Shared.Modals
 @inject IProductService ProductService
 @inject ISizeService SizeService
 @rendermode InteractiveServer
@@ -18,7 +19,16 @@
                           FilterApplier="@ApplyProductFilters"
                           GetEntityDisplayName="@(product => product.ProductName)"
                           RequiredPermission="Product.Read"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />
+
+@* 使用 ModalHelper 處理事件 *@
+<ProductEditModalComponent IsVisible="@showEditModal"
+                          IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                          ProductId="@editingProductId"
+                          OnProductSaved="@modalHandler.OnEntitySavedAsync"
+                          OnCancel="@modalHandler.OnModalCancelAsync" />
 
 @code {
     // 組件參考
@@ -35,10 +45,25 @@
     private List<TableColumnDefinition> columnDefinitions = new();
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingProductId = null;
+    
+    // Modal 處理器 - 使用 ModalHelper 統一處理
+    private ModalHandler<Product, GenericIndexPageComponent<Product, IProductService>> modalHandler = default!;
+
     protected override void OnInitialized()
     {
         try
         {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<Product, GenericIndexPageComponent<Product, IProductService>>(
+                id => editingProductId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
             InitializeBreadcrumbs();
             InitializeFilters();
             InitializeTableColumns();
@@ -49,7 +74,7 @@
                 ex, 
                 nameof(OnInitialized), 
                 GetType(),
-                additionalData: "ProductIndex頁面初始化");
+                additionalData: new { PageName = "ProductIndex" });
         }
     }    
     private void InitializeBreadcrumbs()
