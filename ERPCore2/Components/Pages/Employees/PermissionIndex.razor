@@ -111,8 +111,8 @@
         {
             // 建立篩選定義
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("Code", "權限代碼", "輸入權限代碼搜尋")
-                .AddText("PermissionName", "權限名稱", "輸入權限名稱搜尋")                
+                .AddText(nameof(Permission.Code), "權限代碼", "輸入權限代碼搜尋")
+                .AddText(nameof(Permission.Name), "權限名稱", "輸入權限名稱搜尋")                
                 .Build();
         }
         catch (Exception ex)
