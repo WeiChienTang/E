@@ -1,7 +1,7 @@
 @page "/customer-types"
-
 @inject ICustomerTypeService CustomerTypeService
 @rendermode InteractiveServer
+@inject INotificationService NotificationService
 
 <GenericIndexPageComponent TEntity="CustomerType" 
                         TService="ICustomerTypeService"
@@ -32,19 +32,22 @@
     // 組件參考
     private GenericIndexPageComponent<CustomerType, ICustomerTypeService> indexComponent = default!;
     
-    // 配置相關
-    private List<SearchFilterDefinition> filterDefinitions = new();
-    private List<TableColumnDefinition> columnDefinitions = new();
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
-
     // Modal 相關狀態
     private bool showEditModal = false;
     private int? editingCustomerTypeId = null;
     
     // Modal 處理器
     private ModalHandler<CustomerType, GenericIndexPageComponent<CustomerType, ICustomerTypeService>> modalHandler = default!;
+    
+    // 欄位配置
+    private CustomerTypeFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         try
         {
@@ -56,22 +59,23 @@
                 StateHasChanged,
                 GetType());
             
-            InitializeBreadcrumbs();
-            InitializeFilters();
-            InitializeTableColumns();
+            await InitializeBreadcrumbsAsync();
+            
+            // 建立欄位配置（傳遞 NotificationService）
+            fieldConfiguration = new CustomerTypeFieldConfiguration(NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(OnInitialized),
-                GetType(),
-                additionalData: "初始化客戶類型頁面失敗"
-            );
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化客戶類型頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化客戶類型頁面失敗");
         }
     }
 
-    private void InitializeBreadcrumbs()
+    private async Task InitializeBreadcrumbsAsync()
     {
         try
         {
@@ -84,12 +88,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeBreadcrumbs),
-                GetType(),
-                additionalData: "初始化麵包屑導航失敗"
-            );
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
         }
     }
 
@@ -102,79 +104,28 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(LoadCustomerTypesAsync),
-                GetType(),
-                additionalData: "載入客戶類型資料失敗"
-            );
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomerTypesAsync), GetType(), additionalData: "載入客戶類型資料失敗");
+            await NotificationService.ShowErrorAsync("載入客戶類型資料失敗");
+            // 設定安全的預設值
             return new List<CustomerType>();
-        }
-    }
-
-    private void InitializeFilters()
-    {
-        try
-        {
-            // 建立篩選定義
-            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("Code", "類型代碼", "輸入類型代碼搜尋")
-                .AddText("TypeName", "類型名稱", "輸入類型名稱搜尋")
-                .Build();
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeFilters),
-                GetType(),
-                additionalData: "初始化篩選器失敗"
-            );
-        }
-    }
-
-    private void InitializeTableColumns()
-    {
-        try
-        {
-            columnDefinitions = new List<TableColumnDefinition>
-            {
-                TableColumnDefinition.Text("類型代碼", nameof(CustomerType.Code)),
-                TableColumnDefinition.Text("類型名稱", nameof(CustomerType.TypeName)),
-            };
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeTableColumns),
-                GetType(),
-                additionalData: "初始化表格欄位失敗"
-            );
         }
     }
 
     private IQueryable<CustomerType> ApplyCustomerTypeFilters(SearchFilterModel searchModel, IQueryable<CustomerType> query)
     {
-        var filterActions = new List<Func<SearchFilterModel, IQueryable<CustomerType>, IQueryable<CustomerType>>>
+        try
         {
-            // 應用基礎實體篩選（狀態、備註）
-            (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
+            return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyCustomerTypeFilters), GetType());
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤並回傳安全的預設查詢
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyCustomerTypeFilters), GetType(), additionalData: "客戶類型篩選器應用失敗");
+            _ = NotificationService.ShowErrorAsync("篩選條件應用失敗，已顯示全部資料");
             
-            // 類型代碼篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Code", ct => ct.Code),
-            
-            // 類型名稱篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "TypeName", ct => ct.TypeName),
-        };
-
-        return FilterHelper.ApplyFiltersWithErrorHandling(
-            searchModel,
-            query,
-            filterActions,
-            q => q.OrderBy(ct => ct.TypeName), // 預設排序
-            nameof(ApplyCustomerTypeFilters),
-            GetType()
-        );
+            // 回傳基本排序的查詢，確保頁面仍能正常運作
+            return query.OrderBy(ct => ct.Code);
+        }
     }
 }

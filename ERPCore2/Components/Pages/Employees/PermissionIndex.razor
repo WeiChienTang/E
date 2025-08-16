@@ -33,19 +33,22 @@
     // 組件參考
     private GenericIndexPageComponent<Permission, IPermissionManagementService> indexComponent = default!;
     
-    // 配置相關
-    private List<SearchFilterDefinition> filterDefinitions = new();
-    private List<TableColumnDefinition> columnDefinitions = new();
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
-
     // Modal 相關狀態
     private bool showEditModal = false;
     private int? editingPermissionId = null;
     
     // Modal 處理器
     private ModalHandler<Permission, GenericIndexPageComponent<Permission, IPermissionManagementService>> modalHandler = default!;
+    
+    // 欄位配置
+    private PermissionFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         try
         {
@@ -57,19 +60,23 @@
                 StateHasChanged,
                 GetType());
             
-            InitializeBreadcrumbs();
-            InitializeFilters();
-            InitializeTableColumns();
+            await InitializeBreadcrumbsAsync();
+            
+            // 建立欄位配置（傳遞 NotificationService）
+            fieldConfiguration = new PermissionFieldConfiguration(NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitialized), GetType(),
-                additionalData: "權限頁面初始化失敗"
-            );
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化權限頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化權限頁面失敗");
         }
     }
 
-    private void InitializeBreadcrumbs()
+    private async Task InitializeBreadcrumbsAsync()
     {
         try
         {
@@ -82,9 +89,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType(),
-                additionalData: "初始化麵包屑導航失敗"
-            );
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
         }
     }
 
@@ -97,75 +105,28 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPermissionsAsync), GetType(),
-                additionalData: "載入權限資料失敗"
-            );
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPermissionsAsync), GetType(), additionalData: "載入權限資料失敗");
             await NotificationService.ShowErrorAsync("載入權限資料失敗");
+            // 設定安全的預設值
             return new List<Permission>();
         }
     }
 
-    private void InitializeFilters()
-    {
-        try
-        {
-            // 建立篩選定義
-            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText(nameof(Permission.Code), "權限代碼", "輸入權限代碼搜尋")
-                .AddText(nameof(Permission.Name), "權限名稱", "輸入權限名稱搜尋")                
-                .Build();
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFilters), GetType(),
-                additionalData: "初始化篩選條件失敗"
-            );
-        }
-    }
-
-    private void InitializeTableColumns()
-    {
-        try
-        {
-            columnDefinitions = new List<TableColumnDefinition>
-            {
-                TableColumnDefinition.Text("權限代碼", nameof(Permission.Code)),
-                TableColumnDefinition.Text("權限名稱", nameof(Permission.Name)),
-            };
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeTableColumns), GetType(),
-                additionalData: "初始化表格欄位失敗"
-            );
-        }
-    }
-
-    // 自定義篩選邏輯
     private IQueryable<Permission> ApplyPermissionFilters(SearchFilterModel searchModel, IQueryable<Permission> query)
     {
-        var filterActions = new List<Func<SearchFilterModel, IQueryable<Permission>, IQueryable<Permission>>>
+        try
         {
-            // 應用基礎實體篩選（狀態、備註）
-            (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
-
-            // 權限代碼篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Code", p => p.Code),
-
-            // 權限名稱篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "PermissionName", p => p.Name),
+            return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyPermissionFilters), GetType());
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤並回傳安全的預設查詢
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyPermissionFilters), GetType(), additionalData: "權限篩選器應用失敗");
+            _ = NotificationService.ShowErrorAsync("篩選條件應用失敗，已顯示全部資料");
             
-            // 權限代碼篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "PermissionCode", p => p.Code),
-        };
-
-        return FilterHelper.ApplyFiltersWithErrorHandling(
-            searchModel,
-            query,
-            filterActions,
-            q => q.OrderBy(p => p.Code).ThenBy(p => p.Name), // 預設排序
-            nameof(ApplyPermissionFilters),
-            GetType()
-        );
+            // 回傳基本排序的查詢，確保頁面仍能正常運作
+            return query.OrderBy(p => p.Code);
+        }
     }
 }

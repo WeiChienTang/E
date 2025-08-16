@@ -30,6 +30,7 @@
                              OnCancel="@modalHandler.OnModalCancelAsync" />
 
 @code {
+    // 組件參考
     private GenericIndexPageComponent<Department, IDepartmentService> indexComponent = default!;
     
     // Modal 相關狀態
@@ -39,7 +40,10 @@
     // Modal 處理器
     private ModalHandler<Department, GenericIndexPageComponent<Department, IDepartmentService>> modalHandler = default!;
     
-    // 設定選項
+    // 欄位配置
+    private DepartmentFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
@@ -56,24 +60,25 @@
                 StateHasChanged,
                 GetType());
             
-            await InitializeBreadcrumbs();
-            await InitializeFilters();
-            await InitializeTableColumns();
+            await InitializeBreadcrumbsAsync();
+            
+            // 建立欄位配置（傳遞 NotificationService）
+            fieldConfiguration = new DepartmentFieldConfiguration(NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(OnInitializedAsync),
-                GetType(),
-                additionalData: "初始化部門頁面失敗"
-            );
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化部門頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化部門頁面失敗");
         }
     }
 
     // ===== 原有的初始化方法 =====
 
-    private async Task InitializeBreadcrumbs()
+    private async Task InitializeBreadcrumbsAsync()
     {
         try
         {
@@ -86,85 +91,14 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeBreadcrumbs),
-                GetType()
-            );
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
         }
     }
 
-    private async Task InitializeFilters()
-    {
-        try
-        {
-            // 建立篩選定義
-            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("Code", "部門代碼", "輸入部門代碼搜尋")
-                .AddText("Name", "部門名稱", "輸入部門名稱搜尋")
-                .Build();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeFilters),
-                GetType(),
-                additionalData: "初始化篩選器失敗"
-            );
-        }
-    }
-
-    private async Task InitializeTableColumns()
-    {
-        try
-        {
-            columnDefinitions = new List<TableColumnDefinition>
-            {
-                TableColumnDefinition.Text("部門代碼", nameof(Department.Code)),
-                TableColumnDefinition.Text("部門名稱", nameof(Department.Name)),
-                new TableColumnDefinition
-                {
-                    Title = "部門主管",
-                    PropertyName = "Manager.FirstName",
-                    DataType = ColumnDataType.Html,
-                    HeaderStyle = "width: 120px;",
-                    NullDisplayText = "未指派",
-                    CustomTemplate = item => builder =>
-                    {
-                        var department = (Department)item;
-                        if (department.Manager != null)
-                        {
-                            var managerName = $"{department.Manager.FirstName}{department.Manager.LastName}".Trim();
-                            if (string.IsNullOrWhiteSpace(managerName))
-                            {
-                                managerName = department.Manager.Code;
-                            }
-                            builder.AddContent(0, managerName);
-                        }
-                        else
-                        {
-                            builder.OpenElement(0, "span");
-                            builder.AddAttribute(1, "class", "text-muted");
-                            builder.AddContent(2, "未指派");
-                            builder.CloseElement();
-                        }
-                    }
-                },
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeTableColumns),
-                GetType(),
-                additionalData: "初始化表格欄位失敗"
-            );
-        }
-    }
-
-    // 資料載入委派
+    // 載入部門資料
     private async Task<List<Department>> LoadDataAsync()
     {
         try
@@ -173,37 +107,28 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(LoadDataAsync),
-                GetType(),
-                additionalData: "載入部門資料失敗"
-            );
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), additionalData: "載入部門資料失敗");
+            await NotificationService.ShowErrorAsync("載入部門資料失敗");
+            // 設定安全的預設值
             return new List<Department>();
         }
     }
 
     private IQueryable<Department> ApplyDepartmentFilters(SearchFilterModel searchModel, IQueryable<Department> query)
     {
-        var filterActions = new List<Func<SearchFilterModel, IQueryable<Department>, IQueryable<Department>>>
+        try
         {
-            // 應用基礎實體篩選（狀態、備註）
-            (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
+            return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyDepartmentFilters), GetType());
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤並回傳安全的預設查詢
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyDepartmentFilters), GetType(), additionalData: "部門篩選器應用失敗");
+            _ = NotificationService.ShowErrorAsync("篩選條件應用失敗，已顯示全部資料");
             
-            // 部門名稱篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Name", d => d.Name),
-            
-            // 部門代碼篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Code", d => d.Code),
-        };
-
-        return FilterHelper.ApplyFiltersWithErrorHandling(
-            searchModel,
-            query,
-            filterActions,
-            q => q.OrderBy(d => d.Name), // 預設排序
-            nameof(ApplyDepartmentFilters),
-            GetType()
-        );
+            // 回傳基本排序的查詢，確保頁面仍能正常運作
+            return query.OrderBy(d => d.Code);
+        }
     }
 }

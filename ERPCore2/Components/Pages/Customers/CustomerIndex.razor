@@ -93,7 +93,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
             // 設定安全的預設值
             breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
         }

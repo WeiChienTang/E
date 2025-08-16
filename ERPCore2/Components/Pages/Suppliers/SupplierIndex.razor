@@ -14,7 +14,6 @@
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
                           DataLoader="@LoadSuppliersAsync"
-                          InitializeBasicData="@LoadBasicDataAsync"
                           FilterApplier="@ApplySupplierFilters"
                           GetEntityDisplayName="@(supplier => supplier.CompanyName)"
                           RequiredPermission="Supplier.Read"
@@ -43,12 +42,15 @@
     // 選項清單
     private List<SupplierType> supplierTypes = new();
     
+    // 欄位配置
+    private SupplierFieldConfiguration fieldConfiguration = default!;
+    
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         try
         {
@@ -60,37 +62,26 @@
                 StateHasChanged,
                 GetType());
             
-            InitializeBreadcrumbs();
-            InitializeFilters();
-            InitializeTableColumns();
+            await InitializeBreadcrumbsAsync();
+            
+            // 載入廠商類型資料
+            await LoadSupplierTypesAsync();
+            
+            // 建立欄位配置（在載入廠商類型後，並傳遞 NotificationService）
+            fieldConfiguration = new SupplierFieldConfiguration(supplierTypes, NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitialized), GetType(),
-                additionalData: new { PageName = "SupplierIndex", Action = "OnInitialized" });
-                
-            // 確保基本初始化完成，避免程式崩潰
-            try
-            {
-                breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
-                {
-                    new("首頁", "/"),
-                    new("廠商管理")
-                };
-                filterDefinitions = new List<SearchFilterDefinition>();
-                columnDefinitions = new List<TableColumnDefinition>();
-            }
-            catch
-            {
-                // 如果連預設值都設定失敗，至少確保不是 null
-                breadcrumbItems ??= new List<GenericHeaderComponent.BreadcrumbItem>();
-                filterDefinitions ??= new List<SearchFilterDefinition>();
-                columnDefinitions ??= new List<TableColumnDefinition>();
-            }
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化廠商頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化廠商頁面失敗");
         }
     }
 
-    private void InitializeBreadcrumbs()
+    private async Task InitializeBreadcrumbsAsync()
     {
         try
         {
@@ -102,64 +93,25 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType(),
-                additionalData: new { PageName = "SupplierIndex", Action = "InitializeBreadcrumbs" });
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
         }
     }    
-    // 載入基礎資料（選項清單等）
-    private async Task LoadBasicDataAsync()
+    // 載入廠商類型資料
+    private async Task LoadSupplierTypesAsync()
     {
         try
         {
             supplierTypes = await SupplierService.GetSupplierTypesAsync();
-            
-            // 重新初始化篩選器（因為需要選項資料）
-            InitializeFilters();
-            
-            // 重要：通知組件狀態已改變，確保參數更新
-            StateHasChanged();
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadBasicDataAsync), GetType(),
-                additionalData: new { PageName = "SupplierIndex", Action = "LoadBasicDataAsync" });
-                
-            // 設定安全的預設值，確保程式不會崩潰
-            supplierTypes = new List<SupplierType>();
-            
-            // 即使失敗也要重新初始化篩選器
-            InitializeFilters();
-            StateHasChanged();
-        }
-    }
-
-    private void InitializeFilters()
-    {
-        try
-        {
-            // 準備廠商類型選項
-            var supplierTypeOptions = supplierTypes.Select(st => new SelectOption
-            {
-                Text = st.TypeName,
-                Value = st.Id.ToString()
-            }).ToList();
-
-            // 建立篩選定義
-            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("Code", "廠商代碼", "輸入廠商代碼搜尋")
-                .AddText("CompanyName", "公司名稱", "輸入公司名稱搜尋")
-                .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
-                .AddSelect("SupplierTypeId", "廠商類型", supplierTypeOptions)
-                .AddText("TaxNumber", "統一編號", "輸入統一編號搜尋")
-                .Build();
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFilters), GetType(),
-                additionalData: new { PageName = "SupplierIndex", Action = "InitializeFilters" });
-                
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSupplierTypesAsync), GetType(), additionalData: "載入廠商類型資料失敗");
+            await NotificationService.ShowErrorAsync("載入廠商類型資料失敗");
             // 設定安全的預設值
-            filterDefinitions = new List<SearchFilterDefinition>();
+            supplierTypes = new List<SupplierType>();
         }
     }
 
@@ -172,65 +124,28 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSuppliersAsync), GetType(),
-                additionalData: new { PageName = "SupplierIndex", Action = "LoadSuppliersAsync" });
-            
-            StateHasChanged();
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSuppliersAsync), GetType(), additionalData: "載入廠商資料失敗");
+            await NotificationService.ShowErrorAsync("載入廠商資料失敗");
+            // 設定安全的預設值
             return new List<Supplier>();
         }
     }
 
-    private void InitializeTableColumns()
+    private IQueryable<Supplier> ApplySupplierFilters(SearchFilterModel searchModel, IQueryable<Supplier> query)
     {
         try
         {
-            columnDefinitions = new List<TableColumnDefinition>
-            {
-                TableColumnDefinition.Text("廠商代碼", nameof(Supplier.Code)),
-                TableColumnDefinition.Text("公司名稱", nameof(Supplier.CompanyName)),
-                TableColumnDefinition.Text("聯絡人", nameof(Supplier.ContactPerson)),
-                TableColumnDefinition.Text("廠商類型", "SupplierType.TypeName"),
-                TableColumnDefinition.Text("統一編號", nameof(Supplier.TaxNumber)),
-            };
+            return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySupplierFilters), GetType());
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeTableColumns), GetType(),
-                additionalData: new { PageName = "SupplierIndex", Action = "InitializeTableColumns" });
+            // 記錄錯誤並回傳安全的預設查詢
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplySupplierFilters), GetType(), additionalData: "廠商篩選器應用失敗");
+            _ = NotificationService.ShowErrorAsync("篩選條件應用失敗，已顯示全部資料");
+            
+            // 回傳基本排序的查詢，確保頁面仍能正常運作
+            return query.OrderBy(s => s.Code);
         }
-    }
-
-    // 自定義篩選邏輯
-    private IQueryable<Supplier> ApplySupplierFilters(SearchFilterModel searchModel, IQueryable<Supplier> query)
-    {
-        var filterActions = new List<Func<SearchFilterModel, IQueryable<Supplier>, IQueryable<Supplier>>>
-        {
-            // 應用基礎實體篩選（狀態、備註等）
-            (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
-
-            // 廠商代碼篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Code", s => s.Code),
-            
-            // 公司名稱篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "CompanyName", s => s.CompanyName),
-            
-            // 聯絡人篩選 - 允許 null 值
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "ContactPerson", s => s.ContactPerson, allowNull: true),
-            
-            // 廠商類型篩選 - 使用 NullableIntIdFilter 因為 SupplierTypeId 是 int?
-            (model, q) => FilterHelper.ApplyNullableIntIdFilter(model, q, "SupplierTypeId", s => s.SupplierTypeId),
-            
-            // 統一編號篩選 - 允許 null 值
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "TaxNumber", s => s.TaxNumber, allowNull: true),
-        };
-
-        return FilterHelper.ApplyFiltersWithErrorHandling(
-            searchModel,
-            query,
-            filterActions,
-            q => q.OrderBy(s => s.Code), // 預設排序
-            nameof(ApplySupplierFilters),
-            GetType()
-        );
     }
 }
