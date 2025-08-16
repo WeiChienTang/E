@@ -37,7 +37,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Size
                 {
                     Code = "CUSTOM",
-                    SizeName = "客製",
+                    Name = "客製",
                     Remarks = "客製化尺寸",
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt1,

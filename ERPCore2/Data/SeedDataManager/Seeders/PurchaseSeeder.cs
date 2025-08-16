@@ -89,7 +89,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                         OrderQuantity = quantity,
                         ReceivedQuantity = orderIndex <= 2 ? quantity : orderIndex <= 4 ? quantity / 2 : 0, // 簡化邏輯
                         UnitPrice = unitPrice,
-                        DetailRemarks = $"採購 {product.ProductName}",
+                        DetailRemarks = $"採購 {product.Name}",
                         ExpectedDeliveryDate = order.ExpectedDeliveryDate,
                         Status = EntityStatus.Active,
                         CreatedAt = order.CreatedAt,

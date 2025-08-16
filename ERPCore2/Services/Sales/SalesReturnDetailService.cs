@@ -90,7 +90,7 @@ namespace ERPCore2.Services
                     .Include(srd => srd.Product)
                     .Where(srd => !srd.IsDeleted &&
                         ((srd.Product != null && srd.Product.Code != null && srd.Product.Code.ToLower().Contains(lowerSearchTerm)) ||
-                         (srd.Product != null && srd.Product.ProductName != null && srd.Product.ProductName.ToLower().Contains(lowerSearchTerm)) ||
+                         (srd.Product != null && srd.Product.Name != null && srd.Product.Name.ToLower().Contains(lowerSearchTerm)) ||
                          (srd.SalesReturn != null && srd.SalesReturn.SalesReturnNumber != null && srd.SalesReturn.SalesReturnNumber.ToLower().Contains(lowerSearchTerm)) ||
                          (srd.SalesReturn != null && srd.SalesReturn.Customer != null && srd.SalesReturn.Customer.CompanyName != null && srd.SalesReturn.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)) ||
                          (srd.DetailRemarks != null && srd.DetailRemarks.ToLower().Contains(lowerSearchTerm))))

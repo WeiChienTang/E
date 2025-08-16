@@ -50,23 +50,23 @@ namespace ERPCore2.Helpers
                         }
                     },
                     {
-                        nameof(Product.ProductName),
+                        nameof(Product.Name),
                         new FieldDefinition<Product>
                         {
-                            PropertyName = nameof(Product.ProductName),
+                            PropertyName = nameof(Product.Name),
                             DisplayName = "產品名稱",
                             FilterPlaceholder = "輸入產品名稱搜尋",
                             TableOrder = 2,
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(Product.ProductName), p => p.ProductName)
+                                model, query, nameof(Product.Name), p => p.Name)
                         }
                     },
                     {
                         nameof(Product.SizeId),
                         new FieldDefinition<Product>
                         {
-                            PropertyName = "Size.SizeName", // 表格顯示用
+                            PropertyName = "Size.Name", // 表格顯示用
                             FilterPropertyName = nameof(Product.SizeId), // 篩選器用
                             DisplayName = "尺寸",
                             FilterType = SearchFilterType.Select,
@@ -74,7 +74,7 @@ namespace ERPCore2.Helpers
                             FilterOrder = 3,
                             Options = _sizes.Select(s => new SelectOption 
                             { 
-                                Text = s.SizeName, 
+                                Text = s.Name, 
                                 Value = s.Id.ToString() 
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
@@ -93,7 +93,7 @@ namespace ERPCore2.Helpers
                             FilterOrder = 4,
                             Options = _productCategories.Select(pc => new SelectOption 
                             { 
-                                Text = pc.CategoryName, 
+                                Text = pc.Name, 
                                 Value = pc.Id.ToString() 
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
@@ -101,35 +101,15 @@ namespace ERPCore2.Helpers
                         }
                     },
                     {
-                        nameof(Product.PrimarySupplierId),
-                        new FieldDefinition<Product>
-                        {
-                            PropertyName = "PrimarySupplier.CompanyName", // 表格顯示用
-                            FilterPropertyName = nameof(Product.PrimarySupplierId), // 篩選器用
-                            DisplayName = "主要供應商",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 5,
-                            FilterOrder = 5,
-                            ShowInTable = false, // 不在表格中顯示，但保留篩選功能
-                            Options = _suppliers.Select(s => new SelectOption 
-                            { 
-                                Text = s.CompanyName, 
-                                Value = s.Id.ToString() 
-                            }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(Product.PrimarySupplierId), p => p.PrimarySupplierId)
-                        }
-                    },
-                    {
                         nameof(Product.UnitId),
                         new FieldDefinition<Product>
                         {
-                            PropertyName = "Unit.UnitName", // 表格顯示用
+                            PropertyName = "Unit.Name", // 表格顯示用
                             FilterPropertyName = nameof(Product.UnitId), // 篩選器用
                             DisplayName = "單位",
                             FilterType = SearchFilterType.Select,
-                            TableOrder = 6,
-                            FilterOrder = 6,
+                            TableOrder = 5,
+                            FilterOrder = 5,
                             Options = _units.Select(u => new SelectOption 
                             { 
                                 Text = u.Name, 
@@ -140,19 +120,25 @@ namespace ERPCore2.Helpers
                         }
                     },
                     {
-                        nameof(Product.Remarks),
+                        nameof(Product.PrimarySupplierId),
                         new FieldDefinition<Product>
                         {
-                            PropertyName = nameof(Product.Remarks),
-                            DisplayName = "備註",
-                            FilterPlaceholder = "輸入備註搜尋",
-                            TableOrder = 7,
-                            FilterOrder = 7,
-                            ShowInFilter = false, // 不在篩選器中顯示
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(Product.Remarks), p => p.Remarks)
+                            PropertyName = "PrimarySupplier.CompanyName", // 表格顯示用
+                            FilterPropertyName = nameof(Product.PrimarySupplierId), // 篩選器用
+                            DisplayName = "主要供應商",
+                            FilterType = SearchFilterType.Select,
+                            TableOrder = 6,
+                            FilterOrder = 6,
+                            Options = _suppliers.Select(s => new SelectOption 
+                            { 
+                                Text = s.CompanyName, 
+                                Value = s.Id.ToString() 
+                            }).ToList(),
+                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
+                                model, query, nameof(Product.PrimarySupplierId), p => p.PrimarySupplierId)
                         }
-                    }
+                    },
+
                 };
             }
             catch (Exception ex)

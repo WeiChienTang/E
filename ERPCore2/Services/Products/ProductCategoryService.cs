@@ -38,7 +38,7 @@ namespace ERPCore2.Services
                 return await context.ProductCategories
                     .Include(pc => pc.Products.Where(p => !p.IsDeleted))
                     .Where(pc => !pc.IsDeleted)
-                    .OrderBy(pc => pc.CategoryName)
+                    .OrderBy(pc => pc.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -74,9 +74,9 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductCategories
                     .Where(pc => !pc.IsDeleted &&
-                               (pc.CategoryName.Contains(searchTerm) ||
+                               (pc.Name.Contains(searchTerm) ||
                                 (pc.Code != null && pc.Code.Contains(searchTerm))))
-                    .OrderBy(pc => pc.CategoryName)
+                    .OrderBy(pc => pc.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -93,14 +93,14 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
 
                 // 驗證必填欄位
-                if (string.IsNullOrWhiteSpace(entity.CategoryName))
+                if (string.IsNullOrWhiteSpace(entity.Name))
                 {
                     errors.Add("分類名稱為必填欄位");
                 }
                 else
                 {
                     // 檢查名稱是否重複
-                    var isDuplicate = await IsCategoryNameExistsAsync(entity.CategoryName, entity.Id);
+                    var isDuplicate = await IsCategoryNameExistsAsync(entity.Name, entity.Id);
                     if (isDuplicate)
                     {
                         errors.Add("分類名稱已存在");
@@ -125,7 +125,7 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { 
                     EntityId = entity.Id,
-                    CategoryName = entity.CategoryName
+                    CategoryName = entity.Name
                 });
                 return ServiceResult.Failure("驗證過程中發生錯誤");
             }
@@ -174,7 +174,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.ProductCategories.Where(pc => pc.CategoryName == categoryName && !pc.IsDeleted);
+                var query = context.ProductCategories.Where(pc => pc.Name == categoryName && !pc.IsDeleted);
                 
                 if (excludeId.HasValue)
                     query = query.Where(pc => pc.Id != excludeId.Value);
@@ -219,7 +219,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductCategories
-                    .FirstOrDefaultAsync(pc => pc.CategoryName == categoryName && !pc.IsDeleted);
+                    .FirstOrDefaultAsync(pc => pc.Name == categoryName && !pc.IsDeleted);
             }
             catch (Exception ex)
             {

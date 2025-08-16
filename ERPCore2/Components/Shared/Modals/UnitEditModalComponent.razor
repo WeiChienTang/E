@@ -32,6 +32,7 @@
     [Parameter] public int? UnitId { get; set; }
     [Parameter] public EventCallback<Unit> OnUnitSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
 
     // ===== 內部狀態 =====
     private GenericEditModalComponent<Unit, IUnitService>? editModalComponent;
@@ -55,10 +56,36 @@
             if (!UnitId.HasValue)
             {
                 // 新增模式 - 返回預設值
-                return new Unit
+                var newUnit = new Unit
                 {
+                    Name = string.Empty,
+                    Code = string.Empty,
                     Status = EntityStatus.Active
                 };
+                
+                // 應用預填值
+                if (PrefilledValues != null)
+                {
+                    foreach (var kvp in PrefilledValues)
+                    {
+                        var property = typeof(Unit).GetProperty(kvp.Key);
+                        if (property != null && property.CanWrite && kvp.Value != null)
+                        {
+                            try
+                            {
+                                // 轉換值的類型
+                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
+                                property.SetValue(newUnit, convertedValue);
+                            }
+                            catch (Exception)
+                            {
+                                // 忽略轉換失敗的值
+                            }
+                        }
+                    }
+                }
+                
+                return newUnit;
             }
             
             // 編輯模式 - 載入現有資料
@@ -116,7 +143,7 @@
                 Placeholder = "請輸入備註",
                 IsRequired = false,
                 MaxLength = 500,
-                Rows = 3,
+                Rows = 2,
                 HelpText = "單位的額外說明或注意事項",
                 ContainerCssClass = "col-12"
             }

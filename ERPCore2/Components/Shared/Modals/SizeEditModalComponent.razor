@@ -32,6 +32,7 @@
     [Parameter] public int? SizeId { get; set; }
     [Parameter] public EventCallback<Size> OnSizeSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
 
     // ===== 內部狀態 =====
     private GenericEditModalComponent<Size, ISizeService>? editModalComponent;
@@ -55,11 +56,36 @@
             if (!SizeId.HasValue)
             {
                 // 新增模式 - 返回預設值
-                return new Size
+                var newSize = new Size
                 {
+                    Name = string.Empty,
                     Code = await GenerateSizeCodeAsync(),
                     Status = EntityStatus.Active
                 };
+                
+                // 應用預填值
+                if (PrefilledValues != null)
+                {
+                    foreach (var kvp in PrefilledValues)
+                    {
+                        var property = typeof(Size).GetProperty(kvp.Key);
+                        if (property != null && property.CanWrite && kvp.Value != null)
+                        {
+                            try
+                            {
+                                // 轉換值的類型
+                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
+                                property.SetValue(newSize, convertedValue);
+                            }
+                            catch (Exception)
+                            {
+                                // 忽略轉換失敗的值
+                            }
+                        }
+                    }
+                }
+                
+                return newSize;
             }
             
             // 編輯模式 - 載入現有資料
@@ -101,7 +127,7 @@
             },
             new()
             {
-                PropertyName = nameof(Size.SizeName),
+                PropertyName = nameof(Size.Name),
                 Label = "尺寸名稱",
                 FieldType = FormFieldType.Text,
                 Placeholder = "請輸入尺寸名稱",
@@ -117,7 +143,7 @@
                 Placeholder = "請輸入備註",
                 IsRequired = false,
                 MaxLength = 500,
-                Rows = 3,
+                Rows = 2,
                 HelpText = "尺寸的額外說明或注意事項",
                 ContainerCssClass = "col-12"
             }
@@ -126,7 +152,7 @@
         formSections = new Dictionary<string, string>
         {
             { nameof(Size.Code), "基本資訊" },
-            { nameof(Size.SizeName), "基本資訊" },
+            { nameof(Size.Name), "基本資訊" },
             { nameof(Size.Remarks), "額外資訊" }
         };
     }

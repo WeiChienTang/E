@@ -17,7 +17,7 @@
                       DataLoader="@LoadInventoryStocksAsync"
                       InitializeBasicData="@LoadBasicDataAsync"
                       FilterApplier="@ApplyInventoryStockFilters"
-                      GetEntityDisplayName="@(stock => $"{stock.Product?.ProductName} - {stock.Warehouse?.WarehouseName}")"
+                      GetEntityDisplayName="@(stock => $"{stock.Product?.Name} - {stock.Warehouse?.WarehouseName}")"
                       RequiredPermission="InventoryStock.Read"
                       @ref="indexComponent" />
 
@@ -255,7 +255,7 @@
             {
                 query = query.Where(s => 
                     s.Product != null && 
-                    s.Product.ProductName.Contains(productNameFilter, StringComparison.OrdinalIgnoreCase));
+                    s.Product.Name.Contains(productNameFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             // 倉庫篩選
@@ -331,7 +331,7 @@
             var products = await ProductService.GetAllAsync();
             var productOptions = products.Select(p => new SelectOption
             {
-                Text = p.ProductName,
+                Text = p.Name,
                 Value = p.Id.ToString()
             }).ToList();
 

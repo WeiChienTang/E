@@ -37,30 +37,16 @@ namespace ERPCore2.Helpers
                         }
                     },
                     {
-                        nameof(ProductCategory.CategoryName),
+                        nameof(ProductCategory.Name),
                         new FieldDefinition<ProductCategory>
                         {
-                            PropertyName = nameof(ProductCategory.CategoryName),
+                            PropertyName = nameof(ProductCategory.Name),
                             DisplayName = "分類名稱",
                             FilterPlaceholder = "輸入分類名稱搜尋",
                             TableOrder = 2,
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(ProductCategory.CategoryName), pc => pc.CategoryName)
-                        }
-                    },
-                    {
-                        nameof(ProductCategory.Remarks),
-                        new FieldDefinition<ProductCategory>
-                        {
-                            PropertyName = nameof(ProductCategory.Remarks),
-                            DisplayName = "備註",
-                            FilterPlaceholder = "輸入備註搜尋",
-                            TableOrder = 3,
-                            FilterOrder = 3,
-                            ShowInFilter = false, // 不在篩選器中顯示
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(ProductCategory.Remarks), pc => pc.Remarks, allowNull: true)
+                                model, query, nameof(ProductCategory.Name), pc => pc.Name)
                         }
                     }
                 };

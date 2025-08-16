@@ -82,7 +82,7 @@ namespace ERPCore2.Services
                     .Include(i => i.WarehouseLocation)
                     .Where(i => !i.IsDeleted && 
                         ((i.Product.Code != null && i.Product.Code.ToLower().Contains(term)) ||
-                         (i.Product.ProductName != null && i.Product.ProductName.ToLower().Contains(term)) ||
+                         (i.Product.Name != null && i.Product.Name.ToLower().Contains(term)) ||
                          (i.Warehouse.Code != null && i.Warehouse.Code.ToLower().Contains(term)) ||
                          (i.Warehouse.WarehouseName != null && i.Warehouse.WarehouseName.ToLower().Contains(term))))
                     .OrderBy(i => i.Product.Code)

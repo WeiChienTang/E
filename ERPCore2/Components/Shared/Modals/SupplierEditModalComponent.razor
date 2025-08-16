@@ -49,6 +49,7 @@
     [Parameter] public int? SupplierId { get; set; }
     [Parameter] public EventCallback<Supplier> OnSupplierSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
 
     private GenericEditModalComponent<Supplier, ISupplierService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
@@ -317,6 +318,28 @@
                     TaxNumber = "",
                     Status = EntityStatus.Active
                 };
+                
+                // 應用預填值
+                if (PrefilledValues != null)
+                {
+                    foreach (var kvp in PrefilledValues)
+                    {
+                        var property = typeof(Supplier).GetProperty(kvp.Key);
+                        if (property != null && property.CanWrite && kvp.Value != null)
+                        {
+                            try
+                            {
+                                // 轉換值的類型
+                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
+                                property.SetValue(newSupplier, convertedValue);
+                            }
+                            catch (Exception)
+                            {
+                                // 忽略轉換失敗的值
+                            }
+                        }
+                    }
+                }
                 
                 supplierContacts = new List<Contact>();
                 supplierAddresses = new List<Address>();

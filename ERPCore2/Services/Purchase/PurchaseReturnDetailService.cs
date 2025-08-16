@@ -34,7 +34,7 @@ namespace ERPCore2.Services
                     .Include(prd => prd.WarehouseLocation)
                     .Where(prd => !prd.IsDeleted)
                     .OrderBy(prd => prd.PurchaseReturnId)
-                    .ThenBy(prd => prd.Product.ProductName)
+                    .ThenBy(prd => prd.Product.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -111,7 +111,7 @@ namespace ERPCore2.Services
                     .Include(prd => prd.PurchaseOrderDetail)
                     .Include(prd => prd.PurchaseReceivingDetail)
                     .Where(prd => prd.PurchaseReturnId == purchaseReturnId && !prd.IsDeleted)
-                    .OrderBy(prd => prd.Product.ProductName)
+                    .OrderBy(prd => prd.Product.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -213,7 +213,7 @@ namespace ERPCore2.Services
                     .Include(prd => prd.Product)
                     .Include(prd => prd.Unit)
                     .Where(prd => !prd.IsDeleted && (
-                        (prd.Product.ProductName != null && prd.Product.ProductName.ToLower().Contains(lowerSearchTerm)) ||
+                        (prd.Product.Name != null && prd.Product.Name.ToLower().Contains(lowerSearchTerm)) ||
                         (prd.Product.Code != null && prd.Product.Code.ToLower().Contains(lowerSearchTerm)) ||
                         (prd.PurchaseReturn.PurchaseReturnNumber != null && prd.PurchaseReturn.PurchaseReturnNumber.ToLower().Contains(lowerSearchTerm)) ||
                         (prd.BatchNumber != null && prd.BatchNumber.ToLower().Contains(lowerSearchTerm)) ||

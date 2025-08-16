@@ -222,7 +222,7 @@
             var products = await ProductService.GetAllAsync();
             productOptions = products.Select(p => new SelectOption
             {
-                Text = p.ProductName,
+                Text = p.Name,
                 Value = p.Id.ToString()
             }).ToList();
 

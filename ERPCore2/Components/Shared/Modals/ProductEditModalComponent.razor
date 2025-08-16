@@ -1,6 +1,9 @@
 @* 可重用的產品編輯組件 - 可在任何頁面中嵌入 *@
 @inject IProductService ProductService
 @inject ISizeService SizeService
+@inject IProductCategoryService ProductCategoryService
+@inject IUnitService UnitService
+@inject ISupplierService SupplierService
 @inject INotificationService NotificationService
 
 <GenericEditModalComponent TEntity="Product" 
@@ -17,6 +20,11 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
+                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
+                          AutoCompleteCollections="@GetAutoCompleteCollections()"
+                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
+                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadProductData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
@@ -24,7 +32,44 @@
                           SaveFailureMessage="產品儲存失敗"
                           RequiredPermission="Product.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel" />
+                          OnCancel="@HandleCancel"
+                          OnFieldChanged="@OnFieldValueChanged" />
+
+@* 產品分類編輯 Modal *@
+<ProductCategoryEditModalComponent @ref="productCategoryEditModal"
+                                  IsVisible="@productCategoryModalManager.IsModalVisible"
+                                  IsVisibleChanged="@productCategoryModalManager.HandleModalVisibilityChangedAsync"
+                                  ProductCategoryId="@productCategoryModalManager.SelectedEntityId"
+                                  PrefilledValues="@productCategoryModalManager.PrefilledValues"
+                                  OnProductCategorySaved="@OnProductCategorySavedWrapper"
+                                  OnCancel="@productCategoryModalManager.HandleModalCancelAsync" />
+
+@* 供應商編輯 Modal *@
+<SupplierEditModalComponent @ref="supplierEditModal"
+                           IsVisible="@supplierModalManager.IsModalVisible"
+                           IsVisibleChanged="@supplierModalManager.HandleModalVisibilityChangedAsync"
+                           SupplierId="@supplierModalManager.SelectedEntityId"
+                           PrefilledValues="@supplierModalManager.PrefilledValues"
+                           OnSupplierSaved="@OnSupplierSavedWrapper"
+                           OnCancel="@supplierModalManager.HandleModalCancelAsync" />
+
+@* 單位編輯 Modal *@
+<UnitEditModalComponent @ref="unitEditModal"
+                       IsVisible="@unitModalManager.IsModalVisible"
+                       IsVisibleChanged="@unitModalManager.HandleModalVisibilityChangedAsync"
+                       UnitId="@unitModalManager.SelectedEntityId"
+                       PrefilledValues="@unitModalManager.PrefilledValues"
+                       OnUnitSaved="@OnUnitSavedWrapper"
+                       OnCancel="@unitModalManager.HandleModalCancelAsync" />
+
+@* 尺寸編輯 Modal *@
+<SizeEditModalComponent @ref="sizeEditModal"
+                       IsVisible="@sizeModalManager.IsModalVisible"
+                       IsVisibleChanged="@sizeModalManager.HandleModalVisibilityChangedAsync"
+                       SizeId="@sizeModalManager.SelectedEntityId"
+                       PrefilledValues="@sizeModalManager.PrefilledValues"
+                       OnSizeSaved="@OnSizeSavedWrapper"
+                       OnCancel="@sizeModalManager.HandleModalCancelAsync" />
 
 @code {
     // ===== 必要參數 =====
@@ -39,13 +84,48 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     
-    // 選項清單
+    // 原始資料集合（用於 AutoComplete）
+    private List<ProductCategory> availableProductCategories = new();
+    private List<Supplier> availableSuppliers = new();
+    private List<Unit> availableUnits = new();
+    private List<Size> availableSizes = new();
+    
+    // Modal 管理器
+    private ProductCategoryEditModalComponent? productCategoryEditModal;
+    private RelatedEntityModalManager<ProductCategory> productCategoryModalManager = default!;
+    
+    private SupplierEditModalComponent? supplierEditModal;
+    private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
+    
+    private UnitEditModalComponent? unitEditModal;
+    private RelatedEntityModalManager<Unit> unitModalManager = default!;
+    
+    private SizeEditModalComponent? sizeEditModal;
+    private RelatedEntityModalManager<Size> sizeModalManager = default!;
+    
+    // 選項清單（向下相容）
     private List<SelectOption> productCategoryOptions = new();
     private List<SelectOption> supplierOptions = new();
     private List<SelectOption> unitOptions = new();
     private List<SelectOption> sizeOptions = new();
 
     // ===== 必要方法 =====
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 管理器
+            InitializeProductCategoryModalManager();
+            InitializeSupplierModalManager();
+            InitializeUnitModalManager();
+            InitializeSizeModalManager();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化產品編輯組件時發生錯誤");
+        }
+    }
+    
     protected override async Task OnParametersSetAsync()
     {
         if (IsVisible)
@@ -129,35 +209,39 @@
     {
         try
         {
-            // 載入產品分類選項
+            // 載入產品分類
             var productCategories = await ProductService.GetProductCategoriesAsync();
+            availableProductCategories = productCategories;
             productCategoryOptions = productCategories.Select(pc => new SelectOption
             {
-                Text = pc.CategoryName,
+                Text = pc.Name,
                 Value = pc.Id.ToString()
             }).ToList();
 
-            // 載入供應商選項
+            // 載入供應商
             var suppliers = await ProductService.GetSuppliersAsync();
+            availableSuppliers = suppliers;
             supplierOptions = suppliers.Select(s => new SelectOption
             {
                 Text = s.CompanyName,
                 Value = s.Id.ToString()
             }).ToList();
 
-            // 載入單位選項
+            // 載入單位
             var units = await ProductService.GetUnitsAsync();
+            availableUnits = units;
             unitOptions = units.Select(u => new SelectOption
             {
                 Text = u.Name,
                 Value = u.Id.ToString()
             }).ToList();
 
-            // 載入尺寸選項
+            // 載入尺寸
             var sizes = await SizeService.GetActiveSizesAsync();
+            availableSizes = sizes;
             sizeOptions = sizes.Select(s => new SelectOption
             {
-                Text = s.SizeName,
+                Text = s.Name,
                 Value = s.Id.ToString()
             }).ToList();
         }
@@ -173,7 +257,17 @@
         {
             new()
             {
-                PropertyName = nameof(Product.ProductName),
+                PropertyName = nameof(Product.Code),
+                Label = "產品代碼",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入產品代碼",
+                IsRequired = true,
+                MaxLength = 50,
+                HelpText = "產品的唯一識別碼"
+            },
+            new()
+            {
+                PropertyName = nameof(Product.Name),
                 Label = "產品名稱",
                 FieldType = FormFieldType.Text,
                 Placeholder = "請輸入產品名稱",
@@ -185,37 +279,45 @@
             {
                 PropertyName = nameof(Product.ProductCategoryId),
                 Label = "產品分類",
-                FieldType = FormFieldType.Select,
-                Options = productCategoryOptions,
+                FieldType = FormFieldType.AutoComplete,
+                Placeholder = "請輸入或選擇產品分類",
                 IsRequired = false,
-                HelpText = "請選擇產品所屬分類"
+                MinSearchLength = 0,
+                HelpText = "輸入分類名稱進行搜尋，或直接選擇",
+                ActionButtons = GetProductCategoryActionButtons()
             },
             new()
             {
                 PropertyName = nameof(Product.SizeId),
                 Label = "尺寸",
-                FieldType = FormFieldType.Select,
-                Options = sizeOptions,
+                FieldType = FormFieldType.AutoComplete,
+                Placeholder = "請輸入或選擇尺寸",
                 IsRequired = false,
-                HelpText = "請選擇產品尺寸"
+                MinSearchLength = 0,
+                HelpText = "輸入尺寸名稱進行搜尋，或直接選擇",
+                ActionButtons = GetSizeActionButtons()
             },
             new()
             {
                 PropertyName = nameof(Product.UnitId),
                 Label = "單位",
-                FieldType = FormFieldType.Select,
-                Options = unitOptions,
+                FieldType = FormFieldType.AutoComplete,
+                Placeholder = "請輸入或選擇計量單位",
                 IsRequired = false,
-                HelpText = "請選擇產品計量單位"
+                MinSearchLength = 0,
+                HelpText = "輸入單位名稱進行搜尋，或直接選擇",
+                ActionButtons = GetUnitActionButtons()
             },
             new()
             {
                 PropertyName = nameof(Product.PrimarySupplierId),
                 Label = "主要供應商",
-                FieldType = FormFieldType.Select,
-                Options = supplierOptions,
+                FieldType = FormFieldType.AutoComplete,
+                Placeholder = "請輸入或選擇主要供應商",
                 IsRequired = false,
-                HelpText = "請選擇主要供應商"
+                MinSearchLength = 0,
+                HelpText = "輸入供應商名稱進行搜尋，或直接選擇",
+                ActionButtons = GetSupplierActionButtons()
             },
             new()
             {
@@ -233,7 +335,8 @@
 
         formSections = new Dictionary<string, string>
         {
-            { nameof(Product.ProductName), "基本資訊" },
+            { nameof(Product.Code), "基本資訊" },
+            { nameof(Product.Name), "基本資訊" },
             { nameof(Product.ProductCategoryId), "基本資訊" },
             { nameof(Product.SizeId), "基本資訊" },
             { nameof(Product.UnitId), "基本資訊" },
@@ -245,5 +348,310 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 預填器
+    /// </summary>
+    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
+    {
+        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
+        {
+            {
+                nameof(Product.ProductCategoryId),
+                searchTerm => new Dictionary<string, object?>
+                {
+                    ["Name"] = searchTerm,
+                    ["Code"] = searchTerm.ToUpper().Replace(" ", "")
+                }
+            },
+            {
+                nameof(Product.PrimarySupplierId),
+                searchTerm => new Dictionary<string, object?>
+                {
+                    ["CompanyName"] = searchTerm,
+                    ["ContactPerson"] = searchTerm
+                }
+            },
+            {
+                nameof(Product.UnitId),
+                searchTerm => new Dictionary<string, object?>
+                {
+                    ["Name"] = searchTerm,
+                    ["Code"] = searchTerm.ToUpper().Replace(" ", "")
+                }
+            },
+            {
+                nameof(Product.SizeId),
+                searchTerm => new Dictionary<string, object?>
+                {
+                    ["Name"] = searchTerm,
+                    ["Code"] = searchTerm.ToUpper().Replace(" ", "")
+                }
+            }
+        };
+    }
+
+    /// <summary>
+    /// 配置 Modal 管理器
+    /// </summary>
+    private Dictionary<string, object> GetModalManagers()
+    {
+        return new Dictionary<string, object>
+        {
+            { nameof(Product.ProductCategoryId), productCategoryModalManager },
+            { nameof(Product.PrimarySupplierId), supplierModalManager },
+            { nameof(Product.UnitId), unitModalManager },
+            { nameof(Product.SizeId), sizeModalManager }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 資料集合
+    /// </summary>
+    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
+    {
+        return new Dictionary<string, IEnumerable<object>>
+        {
+            { nameof(Product.ProductCategoryId), availableProductCategories.Cast<object>() },
+            { nameof(Product.SizeId), availableSizes.Cast<object>() },
+            { nameof(Product.UnitId), availableUnits.Cast<object>() },
+            { nameof(Product.PrimarySupplierId), availableSuppliers.Cast<object>() }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 顯示屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(Product.ProductCategoryId), "Name" },
+            { nameof(Product.SizeId), "Name" },
+            { nameof(Product.UnitId), "Name" },
+            { nameof(Product.PrimarySupplierId), "CompanyName" }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 值屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteValueProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(Product.ProductCategoryId), "Id" },
+            { nameof(Product.SizeId), "Id" },
+            { nameof(Product.UnitId), "Id" },
+            { nameof(Product.PrimarySupplierId), "Id" }
+        };
+    }
+
+    // ===== Modal 管理器初始化方法 =====
+    
+    /// <summary>
+    /// 初始化產品分類 Modal 管理器
+    /// </summary>
+    private void InitializeProductCategoryModalManager()
+    {
+        productCategoryModalManager = new RelatedEntityManagerBuilder<ProductCategory>(NotificationService, "產品分類")
+            .WithPropertyName(nameof(Product.ProductCategoryId))
+            .WithReloadCallback(LoadAdditionalDataAsync)
+            .WithStateChangedCallback(StateHasChanged)
+            .WithAutoSelectCallback(categoryId => 
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    editModalComponent.Entity.ProductCategoryId = categoryId;
+                }
+            })
+            .WithCustomPostProcess(async category => 
+            {
+                await Task.Run(() => InitializeFormFields());
+            })
+            .Build();
+    }
+
+    /// <summary>
+    /// 初始化供應商 Modal 管理器
+    /// </summary>
+    private void InitializeSupplierModalManager()
+    {
+        supplierModalManager = new RelatedEntityManagerBuilder<Supplier>(NotificationService, "供應商")
+            .WithPropertyName(nameof(Product.PrimarySupplierId))
+            .WithReloadCallback(LoadAdditionalDataAsync)
+            .WithStateChangedCallback(StateHasChanged)
+            .WithAutoSelectCallback(supplierId => 
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    editModalComponent.Entity.PrimarySupplierId = supplierId;
+                }
+            })
+            .WithCustomPostProcess(async supplier => 
+            {
+                await Task.Run(() => InitializeFormFields());
+            })
+            .Build();
+    }
+
+    /// <summary>
+    /// 初始化單位 Modal 管理器
+    /// </summary>
+    private void InitializeUnitModalManager()
+    {
+        unitModalManager = new RelatedEntityManagerBuilder<Unit>(NotificationService, "單位")
+            .WithPropertyName(nameof(Product.UnitId))
+            .WithReloadCallback(LoadAdditionalDataAsync)
+            .WithStateChangedCallback(StateHasChanged)
+            .WithAutoSelectCallback(unitId => 
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    editModalComponent.Entity.UnitId = unitId;
+                }
+            })
+            .WithCustomPostProcess(async unit => 
+            {
+                await Task.Run(() => InitializeFormFields());
+            })
+            .Build();
+    }
+
+    /// <summary>
+    /// 初始化尺寸 Modal 管理器
+    /// </summary>
+    private void InitializeSizeModalManager()
+    {
+        sizeModalManager = new RelatedEntityManagerBuilder<Size>(NotificationService, "尺寸")
+            .WithPropertyName(nameof(Product.SizeId))
+            .WithReloadCallback(LoadAdditionalDataAsync)
+            .WithStateChangedCallback(StateHasChanged)
+            .WithAutoSelectCallback(sizeId => 
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    editModalComponent.Entity.SizeId = sizeId;
+                }
+            })
+            .WithCustomPostProcess(async size => 
+            {
+                await Task.Run(() => InitializeFormFields());
+            })
+            .Build();
+    }
+
+    // ===== ActionButton 產生方法 =====
+    
+    /// <summary>
+    /// 產生產品分類操作按鈕
+    /// </summary>
+    private List<FieldActionButton> GetProductCategoryActionButtons()
+    {
+        var currentId = editModalComponent?.Entity?.ProductCategoryId;
+        return productCategoryModalManager.GenerateActionButtons(currentId);
+    }
+
+    /// <summary>
+    /// 產生供應商操作按鈕
+    /// </summary>
+    private List<FieldActionButton> GetSupplierActionButtons()
+    {
+        var currentId = editModalComponent?.Entity?.PrimarySupplierId;
+        return supplierModalManager.GenerateActionButtons(currentId);
+    }
+
+    /// <summary>
+    /// 產生單位操作按鈕
+    /// </summary>
+    private List<FieldActionButton> GetUnitActionButtons()
+    {
+        var currentId = editModalComponent?.Entity?.UnitId;
+        return unitModalManager.GenerateActionButtons(currentId);
+    }
+
+    /// <summary>
+    /// 產生尺寸操作按鈕
+    /// </summary>
+    private List<FieldActionButton> GetSizeActionButtons()
+    {
+        var currentId = editModalComponent?.Entity?.SizeId;
+        return sizeModalManager.GenerateActionButtons(currentId);
+    }
+
+    // ===== Modal 事件包裝器方法 =====
+    
+    /// <summary>
+    /// 包裝產品分類儲存事件
+    /// </summary>
+    private async Task OnProductCategorySavedWrapper(ProductCategory savedCategory)
+    {
+        await productCategoryModalManager.HandleEntitySavedAsync(savedCategory, shouldAutoSelect: true);
+    }
+
+    /// <summary>
+    /// 包裝供應商儲存事件
+    /// </summary>
+    private async Task OnSupplierSavedWrapper(Supplier savedSupplier)
+    {
+        await supplierModalManager.HandleEntitySavedAsync(savedSupplier, shouldAutoSelect: true);
+    }
+
+    /// <summary>
+    /// 包裝單位儲存事件
+    /// </summary>
+    private async Task OnUnitSavedWrapper(Unit savedUnit)
+    {
+        await unitModalManager.HandleEntitySavedAsync(savedUnit, shouldAutoSelect: true);
+    }
+
+    /// <summary>
+    /// 包裝尺寸儲存事件
+    /// </summary>
+    private async Task OnSizeSavedWrapper(Size savedSize)
+    {
+        await sizeModalManager.HandleEntitySavedAsync(savedSize, shouldAutoSelect: true);
+    }
+
+    /// <summary>
+    /// 處理欄位值變更事件
+    /// </summary>
+    private Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    {
+        try
+        {
+            // 使用泛型管理器自動處理產品分類欄位變更
+            if (fieldChange.PropertyName == nameof(Product.ProductCategoryId))
+            {
+                productCategoryModalManager.UpdateFieldActionButtons(formFields, fieldChange.PropertyName, 
+                    fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int categoryId) ? categoryId : null);
+            }
+            // 使用泛型管理器自動處理供應商欄位變更
+            else if (fieldChange.PropertyName == nameof(Product.PrimarySupplierId))
+            {
+                supplierModalManager.UpdateFieldActionButtons(formFields, fieldChange.PropertyName, 
+                    fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int supplierId) ? supplierId : null);
+            }
+            // 使用泛型管理器自動處理單位欄位變更
+            else if (fieldChange.PropertyName == nameof(Product.UnitId))
+            {
+                unitModalManager.UpdateFieldActionButtons(formFields, fieldChange.PropertyName, 
+                    fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int unitId) ? unitId : null);
+            }
+            // 使用泛型管理器自動處理尺寸欄位變更
+            else if (fieldChange.PropertyName == nameof(Product.SizeId))
+            {
+                sizeModalManager.UpdateFieldActionButtons(formFields, fieldChange.PropertyName, 
+                    fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int sizeId) ? sizeId : null);
+            }
+            
+            return Task.CompletedTask;
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
+            return Task.CompletedTask;
+        }
     }
 }

@@ -42,7 +42,7 @@ namespace ERPCore2.Services
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
                     .Where(p => !p.IsDeleted)
-                    .OrderBy(p => p.ProductName)
+                    .OrderBy(p => p.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -89,9 +89,9 @@ namespace ERPCore2.Services
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
                     .Where(p => !p.IsDeleted &&
-                               ((p.ProductName != null && p.ProductName.Contains(searchTerm)) ||
+                               ((p.Name != null && p.Name.Contains(searchTerm)) ||
                                 (p.Code != null && p.Code.Contains(searchTerm))))
-                    .OrderBy(p => p.ProductName)
+                    .OrderBy(p => p.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -122,7 +122,7 @@ namespace ERPCore2.Services
                     }
                 }
 
-                if (string.IsNullOrWhiteSpace(entity.ProductName))
+                if (string.IsNullOrWhiteSpace(entity.Name))
                 {
                     errors.Add("商品名稱為必填欄位");
                 }
@@ -194,7 +194,7 @@ namespace ERPCore2.Services
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
                     .Where(p => p.ProductCategoryId == productCategoryId && !p.IsDeleted)
-                    .OrderBy(p => p.ProductName)
+                    .OrderBy(p => p.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -216,7 +216,7 @@ namespace ERPCore2.Services
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
                     .Where(p => p.PrimarySupplierId == supplierId && !p.IsDeleted)
-                    .OrderBy(p => p.ProductName)
+                    .OrderBy(p => p.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -238,7 +238,7 @@ namespace ERPCore2.Services
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
                     .Where(p => p.Status == EntityStatus.Active && !p.IsDeleted)
-                    .OrderBy(p => p.ProductName)
+                    .OrderBy(p => p.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -260,7 +260,7 @@ namespace ERPCore2.Services
             {
                 return await context.ProductCategories
                     .Where(pc => pc.Status == EntityStatus.Active && !pc.IsDeleted)
-                    .OrderBy(pc => pc.CategoryName)
+                    .OrderBy(pc => pc.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -433,7 +433,7 @@ namespace ERPCore2.Services
             try
             {
                 product.Code = string.Empty;
-                product.ProductName = string.Empty;
+                product.Name = string.Empty;
                 product.UnitId = null;
                 product.SizeId = null;
                 product.ProductCategoryId = null;
@@ -469,7 +469,7 @@ namespace ERPCore2.Services
                 if (!string.IsNullOrWhiteSpace(product.Code))
                     count++;
 
-                if (!string.IsNullOrWhiteSpace(product.ProductName))
+                if (!string.IsNullOrWhiteSpace(product.Name))
                     count++;
 
                 return count;

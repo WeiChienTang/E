@@ -35,7 +35,7 @@ namespace ERPCore2.Services
                     .Include(ps => ps.Product)
                     .Include(ps => ps.Supplier)
                     .Where(ps => !ps.IsDeleted)
-                    .OrderBy(ps => ps.Product.ProductName)
+                    .OrderBy(ps => ps.Product.Name)
                     .ThenBy(ps => ps.Supplier.CompanyName)
                     .ToListAsync();
             }
@@ -58,12 +58,12 @@ namespace ERPCore2.Services
                     .Include(ps => ps.Product)
                     .Include(ps => ps.Supplier)
                     .Where(ps => !ps.IsDeleted &&
-                               ((ps.Product.ProductName != null && ps.Product.ProductName.Contains(searchTerm)) ||
+                               ((ps.Product.Name != null && ps.Product.Name.Contains(searchTerm)) ||
                                 (ps.Product.Code != null && ps.Product.Code.Contains(searchTerm)) ||
                                 (ps.Supplier.CompanyName != null && ps.Supplier.CompanyName.Contains(searchTerm)) ||
                                 (ps.Supplier.Code != null && ps.Supplier.Code.Contains(searchTerm)) ||
                                 (ps.SupplierProductCode != null && ps.SupplierProductCode.Contains(searchTerm))))
-                    .OrderBy(ps => ps.Product.ProductName)
+                    .OrderBy(ps => ps.Product.Name)
                     .ThenBy(ps => ps.Supplier.CompanyName)
                     .ToListAsync();
             }
@@ -166,7 +166,7 @@ namespace ERPCore2.Services
                 return await context.ProductSuppliers
                     .Include(ps => ps.Product)
                     .Where(ps => ps.SupplierId == supplierId && !ps.IsDeleted)
-                    .OrderBy(ps => ps.Product.ProductName)
+                    .OrderBy(ps => ps.Product.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -220,7 +220,7 @@ namespace ERPCore2.Services
                     .Include(ps => ps.Product)
                     .Include(ps => ps.Supplier)
                     .Where(ps => ps.IsPrimarySupplier && !ps.IsDeleted)
-                    .OrderBy(ps => ps.Product.ProductName)
+                    .OrderBy(ps => ps.Product.Name)
                     .ToListAsync();
             }
             catch (Exception ex)

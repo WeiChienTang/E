@@ -57,7 +57,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Product
                 {
                     Code = "P003",
-                    ProductName = "安全帽",
+                    Name = "安全帽",
                     UnitId = unitTop?.Id,
                     ProductCategoryId = industrialCategory?.Id,
                     PrimarySupplierId = supplier4?.Id,
@@ -69,7 +69,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Product
                 {
                     Code = "P005",
-                    ProductName = "不鏽鋼板材",
+                    Name = "不鏽鋼板材",
                     UnitId = unitSht?.Id,
                     ProductCategoryId = materialCategory?.Id,
                     PrimarySupplierId = supplier4?.Id,

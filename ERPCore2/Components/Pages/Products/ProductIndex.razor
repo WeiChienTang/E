@@ -16,7 +16,7 @@
                           ColumnDefinitions="@columnDefinitions"
                           DataLoader="@LoadProductsAsync"
                           FilterApplier="@ApplyProductFilters"
-                          GetEntityDisplayName="@(product => product.ProductName)"
+                          GetEntityDisplayName="@(product => product.Name)"
                           RequiredPermission="Product.Read"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"

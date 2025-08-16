@@ -34,7 +34,7 @@ namespace ERPCore2.Services
                 return await context.Sizes
                     .Include(s => s.Products)
                     .Where(s => !s.IsDeleted)
-                    .OrderBy(s => s.SizeName)
+                    .OrderBy(s => s.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -74,8 +74,8 @@ namespace ERPCore2.Services
                     .Include(s => s.Products)
                     .Where(s => !s.IsDeleted && 
                         ((s.Code != null && s.Code.ToLower().Contains(lowerSearchTerm)) ||
-                         (s.SizeName != null && s.SizeName.ToLower().Contains(lowerSearchTerm))))
-                    .OrderBy(s => s.SizeName)
+                         (s.Name != null && s.Name.ToLower().Contains(lowerSearchTerm))))
+                    .OrderBy(s => s.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -106,7 +106,7 @@ namespace ERPCore2.Services
                     }
                 }
 
-                if (string.IsNullOrWhiteSpace(entity.SizeName))
+                if (string.IsNullOrWhiteSpace(entity.Name))
                 {
                     errors.Add("尺寸名稱為必填欄位");
                 }
@@ -176,7 +176,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Sizes
                     .Where(s => !s.IsDeleted && s.Status == EntityStatus.Active)
-                    .OrderBy(s => s.SizeName)
+                    .OrderBy(s => s.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -196,8 +196,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Sizes
                     .Include(s => s.Products)
-                    .Where(s => !s.IsDeleted && s.SizeName.Contains(sizeName))
-                    .OrderBy(s => s.SizeName)
+                    .Where(s => !s.IsDeleted && s.Name.Contains(sizeName))
+                    .OrderBy(s => s.Name)
                     .ToListAsync();
             }
             catch (Exception ex)

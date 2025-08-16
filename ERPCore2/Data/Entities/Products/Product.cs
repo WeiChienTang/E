@@ -14,7 +14,7 @@ namespace ERPCore2.Data.Entities
         [Required(ErrorMessage = "商品名稱為必填")]
         [MaxLength(100, ErrorMessage = "商品名稱不可超過100個字元")]
         [Display(Name = "商品名稱")]
-        public string ProductName { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
 
         // Foreign Keys
         [Display(Name = "單位")]

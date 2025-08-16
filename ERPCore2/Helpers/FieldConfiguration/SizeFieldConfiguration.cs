@@ -37,16 +37,16 @@ namespace ERPCore2.Helpers
                         }
                     },
                     {
-                        nameof(Size.SizeName),
+                        nameof(Size.Name),
                         new FieldDefinition<Size>
                         {
-                            PropertyName = nameof(Size.SizeName),
+                            PropertyName = nameof(Size.Name),
                             DisplayName = "尺寸名稱",
                             FilterPlaceholder = "輸入尺寸名稱搜尋",
                             TableOrder = 2,
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(Size.SizeName), s => s.SizeName)
+                                model, query, nameof(Size.Name), s => s.Name)
                         }
                     }
                 };

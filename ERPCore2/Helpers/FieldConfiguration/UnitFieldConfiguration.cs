@@ -48,20 +48,6 @@ namespace ERPCore2.Helpers
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Name", u => u.Name)
                         }
-                    },
-                    {
-                        nameof(Unit.Remarks),
-                        new FieldDefinition<Unit>
-                        {
-                            PropertyName = nameof(Unit.Remarks),
-                            DisplayName = "備註",
-                            FilterPlaceholder = "輸入備註搜尋",
-                            TableOrder = 3,
-                            FilterOrder = 3,
-                            ShowInFilter = false, // 不在篩選器中顯示
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(Unit.Remarks), u => u.Remarks, allowNull: true)
-                        }
                     }
                 };
             }

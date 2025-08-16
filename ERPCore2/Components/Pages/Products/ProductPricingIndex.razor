@@ -17,7 +17,7 @@
                           DataLoader="@LoadProductPricingAsync"
                           InitializeBasicData="@LoadBasicDataAsync"
                           FilterApplier="@ApplyProductPricingFilters"
-                          GetEntityDisplayName="@(pricing => $"{pricing.Product?.ProductName} - {GetPricingTypeDisplayName(pricing.PricingType)}")"
+                          GetEntityDisplayName="@(pricing => $"{pricing.Product?.Name} - {GetPricingTypeDisplayName(pricing.PricingType)}")"
                           RequiredPermission="ProductPricing.Read"
                           @ref="indexComponent" />
 
@@ -195,7 +195,7 @@
             var productNameFilter = searchModel.GetFilterValue("ProductName")?.ToString();
             if (!string.IsNullOrWhiteSpace(productNameFilter))
             {
-                query = query.Where(pp => pp.Product.ProductName.Contains(productNameFilter));
+                query = query.Where(pp => pp.Product.Name.Contains(productNameFilter));
             }
 
             // 產品代碼篩選
@@ -265,7 +265,7 @@
 
             return query.OrderByDescending(pp => pp.Priority)
                        .ThenByDescending(pp => pp.EffectiveDate)
-                       .ThenBy(pp => pp.Product.ProductName);
+                       .ThenBy(pp => pp.Product.Name);
         }
         catch (Exception ex)
         {
@@ -290,7 +290,7 @@
             var productOptions = products.Select(p => new SelectOption
             {
                 Value = p.Id.ToString(),
-                Text = $"{p.Code} - {p.ProductName}"
+                Text = $"{p.Code} - {p.Name}"
             }).ToList();
 
             // 載入客戶選項

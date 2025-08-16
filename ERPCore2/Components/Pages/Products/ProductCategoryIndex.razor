@@ -15,7 +15,7 @@
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
                         EntityName="商品類型"
-                        GetEntityDisplayName="@(category => category.CategoryName)"
+                        GetEntityDisplayName="@(category => category.Name)"
                         RequiredPermission="ProductCategory.Read"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
@@ -119,7 +119,7 @@
             if (fieldConfiguration == null)
             {
                 // 如果配置尚未初始化，回傳基本排序的查詢
-                return query.OrderBy(pc => pc.CategoryName);
+                return query.OrderBy(pc => pc.Name);
             }
             
             return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyProductCategoryFilters), GetType());
@@ -131,7 +131,7 @@
             _ = NotificationService.ShowErrorAsync("篩選條件應用失敗，已顯示全部資料");
             
             // 回傳基本排序的查詢，確保頁面仍能正常運作
-            return query.OrderBy(pc => pc.CategoryName);
+            return query.OrderBy(pc => pc.Name);
         }
     }
 }

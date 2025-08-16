@@ -322,7 +322,7 @@
             return products?.Select(p => new SelectOption
             {
                 Value = p.Id.ToString(),
-                Text = $"{p.Code} - {p.ProductName}"
+                Text = $"{p.Code} - {p.Name}"
             }).ToList() ?? new List<SelectOption>();
         }
         catch (Exception ex)
@@ -411,7 +411,7 @@
     private string GetDisplayName(ProductPricing? pricing)
     {
         return pricing != null 
-            ? $"{pricing.Product?.ProductName} - {GetPricingTypeDisplayName(pricing.PricingType)}"
+            ? $"{pricing.Product?.Name} - {GetPricingTypeDisplayName(pricing.PricingType)}"
             : "";
     }
 }

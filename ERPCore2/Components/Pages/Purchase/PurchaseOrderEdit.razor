@@ -572,7 +572,7 @@
     {
         if (productId <= 0 || allProducts == null) return "";
         var product = allProducts.FirstOrDefault(p => p.Id == productId);
-        return product?.ProductName ?? "";
+        return product?.Name ?? "";
     }
     
     // 更新明細小計（因為SubtotalAmount是計算屬性，實際上不需要設定）
@@ -614,7 +614,7 @@
                         GetRemarks="@((ERPCore2.Data.Entities.PurchaseOrderDetail d) => d.DetailRemarks ?? "")"
                         
                         GetProductCodeFromProduct="@((ERPCore2.Data.Entities.Product p) => p.Code)"
-                        GetProductNameFromProduct="@((ERPCore2.Data.Entities.Product p) => p.ProductName)"
+                        GetProductNameFromProduct="@((ERPCore2.Data.Entities.Product p) => p.Name)"
                         GetProductPrice="@((ERPCore2.Data.Entities.Product p) => 0)"
                         
                         SetQuantity="@((ERPCore2.Data.Entities.PurchaseOrderDetail d, decimal q) => d.OrderQuantity = (int)q)"
