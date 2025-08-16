@@ -29,8 +29,8 @@ namespace ERPCore2.Services
                     .Include(uc => uc.FromUnit)
                     .Include(uc => uc.ToUnit)
                     .Where(uc => !uc.IsDeleted)
-                    .OrderBy(uc => uc.FromUnit.UnitName)
-                    .ThenBy(uc => uc.ToUnit.UnitName)
+                    .OrderBy(uc => uc.FromUnit.Name)
+                    .ThenBy(uc => uc.ToUnit.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -71,8 +71,8 @@ namespace ERPCore2.Services
                     .Include(uc => uc.FromUnit)
                     .Include(uc => uc.ToUnit)
                     .Where(uc => (uc.FromUnitId == unitId || uc.ToUnitId == unitId) && !uc.IsDeleted)
-                    .OrderBy(uc => uc.FromUnit.UnitName)
-                    .ThenBy(uc => uc.ToUnit.UnitName)
+                    .OrderBy(uc => uc.FromUnit.Name)
+                    .ThenBy(uc => uc.ToUnit.Name)
                     .ToListAsync();
 
                 return ServiceResult<IEnumerable<UnitConversion>>.Success(entities);
@@ -172,12 +172,12 @@ namespace ERPCore2.Services
                     .Include(uc => uc.FromUnit)
                     .Include(uc => uc.ToUnit)
                     .Where(uc => !uc.IsDeleted && 
-                                ((uc.FromUnit.UnitName != null && uc.FromUnit.UnitName.Contains(searchTerm)) || 
-                                 (uc.ToUnit.UnitName != null && uc.ToUnit.UnitName.Contains(searchTerm)) ||
+                                ((uc.FromUnit.Name != null && uc.FromUnit.Name.Contains(searchTerm)) || 
+                                 (uc.ToUnit.Name != null && uc.ToUnit.Name.Contains(searchTerm)) ||
                                  (uc.FromUnit.Code != null && uc.FromUnit.Code.Contains(searchTerm)) ||
                                  (uc.ToUnit.Code != null && uc.ToUnit.Code.Contains(searchTerm))))
-                    .OrderBy(uc => uc.FromUnit.UnitName)
-                    .ThenBy(uc => uc.ToUnit.UnitName)
+                    .OrderBy(uc => uc.FromUnit.Name)
+                    .ThenBy(uc => uc.ToUnit.Name)
                     .ToListAsync();
             }
             catch (Exception ex)

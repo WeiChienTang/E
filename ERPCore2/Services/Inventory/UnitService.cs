@@ -64,7 +64,7 @@ namespace ERPCore2.Services
                     .Include(u => u.FromUnitConversions)
                     .Include(u => u.ToUnitConversions)
                     .Where(u => !u.IsDeleted &&
-                               ((u.UnitName != null && u.UnitName.Contains(searchTerm)) ||
+                               ((u.Name != null && u.Name.Contains(searchTerm)) ||
                                 (u.Code != null && u.Code.Contains(searchTerm))))
                     .OrderBy(u => u.Code)
                     .ToListAsync();
@@ -225,7 +225,7 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     return ServiceResult.Failure("單位代碼為必填");
                 
-                if (string.IsNullOrWhiteSpace(entity.UnitName))
+                if (string.IsNullOrWhiteSpace(entity.Name))
                     return ServiceResult.Failure("單位名稱為必填");
 
                 // 檢查單位代碼是否重複
@@ -250,7 +250,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Units.Where(u => u.UnitName == name && !u.IsDeleted);
+                var query = context.Units.Where(u => u.Name == name && !u.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(u => u.Id != excludeId.Value);

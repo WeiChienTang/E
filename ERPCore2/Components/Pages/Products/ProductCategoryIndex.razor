@@ -1,7 +1,7 @@
 @page "/product-categories"
 @inject IProductCategoryService ProductCategoryService
-
 @rendermode InteractiveServer
+@inject INotificationService NotificationService
 
 <GenericIndexPageComponent TEntity="ProductCategory" 
                         TService="IProductCategoryService"
@@ -17,48 +17,64 @@
                         EntityName="商品類型"
                         GetEntityDisplayName="@(category => category.CategoryName)"
                         RequiredPermission="ProductCategory.Read"
-                        OnAddClick="@ShowAddModal"
-                        OnRowClick="@ShowEditModal"
+                        OnAddClick="@modalHandler.ShowAddModalAsync"
+                        OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent">
 </GenericIndexPageComponent>
 
 <ProductCategoryEditModalComponent IsVisible="@showEditModal"
                                   IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                                   ProductCategoryId="@editingProductCategoryId"
-                                  OnProductCategorySaved="@OnProductCategorySaved"
-                                  OnCancel="@OnModalCancel" />
+                                  OnProductCategorySaved="@modalHandler.OnEntitySavedAsync"
+                                  OnCancel="@modalHandler.OnModalCancelAsync" />
 @code {
+    // 組件參考
     private GenericIndexPageComponent<ProductCategory, IProductCategoryService> indexComponent = default!;
     
-    // 設定選項
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
-    private List<SearchFilterDefinition> filterDefinitions = new();
-    private List<TableColumnDefinition> columnDefinitions = new();
-
     // Modal 相關狀態
     private bool showEditModal = false;
     private int? editingProductCategoryId = null;
+    
+    // Modal 處理器
+    private ModalHandler<ProductCategory, GenericIndexPageComponent<ProductCategory, IProductCategoryService>> modalHandler = default!;
+    
+    // 欄位配置
+    private ProductCategoryFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            await InitializeBreadcrumbs();
-            await InitializeFilters();
-            await InitializeTableColumns();
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<ProductCategory, GenericIndexPageComponent<ProductCategory, IProductCategoryService>>(
+                id => editingProductCategoryId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
+            await InitializeBreadcrumbsAsync();
+            
+            // 建立欄位配置（傳遞 NotificationService）
+            fieldConfiguration = new ProductCategoryFieldConfiguration(NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(OnInitializedAsync),
-                GetType(),
-                additionalData: "初始化商品類型頁面失敗"
-            );
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化產品分類頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化產品分類頁面失敗");
         }
     }
 
-    private async Task InitializeBreadcrumbs()
+    private async Task InitializeBreadcrumbsAsync()
     {
         try
         {
@@ -71,56 +87,14 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeBreadcrumbs),
-                GetType()
-            );
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
         }
     }
 
-    private async Task InitializeFilters()
-    {
-        try
-        {
-            // 建立篩選定義（狀態篩選器會由 GenericIndexPageComponent 自動添加）
-            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("Code", "分類代碼", "輸入分類代碼搜尋")
-                .AddText("CategoryName", "分類名稱", "輸入分類名稱搜尋")                
-                .Build();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeFilters),
-                GetType(),
-                additionalData: "初始化篩選器失敗"
-            );
-        }
-    }
-
-    private async Task InitializeTableColumns()
-    {
-        try
-        {
-            columnDefinitions = new List<TableColumnDefinition>
-            {
-                TableColumnDefinition.Text("分類代碼", nameof(ProductCategory.Code)),
-                TableColumnDefinition.Text("分類名稱", nameof(ProductCategory.CategoryName)),
-                TableColumnDefinition.Text("備註", nameof(ProductCategory.Remarks))
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeTableColumns),
-                GetType(),
-                additionalData: "初始化表格欄位失敗"
-            );
-        }
-    }    // 資料載入委派
+    // 載入產品分類資料
     private async Task<List<ProductCategory>> LoadDataAsync()
     {
         try
@@ -129,107 +103,35 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(LoadDataAsync),
-                GetType(),
-                additionalData: "載入商品類型資料失敗"
-            );
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), additionalData: "載入產品分類資料失敗");
+            await NotificationService.ShowErrorAsync("載入產品分類資料失敗");
+            // 設定安全的預設值
             return new List<ProductCategory>();
         }
     }
 
-    // 篩選邏輯委派
     private IQueryable<ProductCategory> ApplyProductCategoryFilters(SearchFilterModel searchModel, IQueryable<ProductCategory> query)
     {
-        var filterActions = new List<Func<SearchFilterModel, IQueryable<ProductCategory>, IQueryable<ProductCategory>>>
-        {
-            // 應用基礎實體篩選（狀態、備註）
-            (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
-            
-            // 分類名稱篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "CategoryName", c => c.CategoryName),
-            
-            // 分類代碼篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Code", c => c.Code, allowNull: true),
-        };
-
-        return FilterHelper.ApplyFiltersWithErrorHandling(
-            searchModel,
-            query,
-            filterActions,
-            q => q.OrderBy(c => c.CategoryName), // 預設排序
-            nameof(ApplyProductCategoryFilters),
-            GetType()
-        );
-    }
-
-    // ===== Modal 相關方法 =====
-
-    private async Task ShowAddModal()
-    {
         try
         {
-            editingProductCategoryId = null;
-            showEditModal = true;
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModal), GetType());
-        }
-    }
-
-    private async Task ShowEditModal(ProductCategory productCategory)
-    {
-        try
-        {
-            if (productCategory?.Id != null)
+            // 檢查 fieldConfiguration 是否已初始化
+            if (fieldConfiguration == null)
             {
-                editingProductCategoryId = productCategory.Id;
-                showEditModal = true;
-                StateHasChanged();
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowEditModal), GetType());
-        }
-    }
-
-    private async Task OnProductCategorySaved(ProductCategory savedProductCategory)
-    {
-        try
-        {
-            // 關閉 Modal
-            showEditModal = false;
-            editingProductCategoryId = null;
-            
-            // 重新載入資料
-            if (indexComponent != null)
-            {
-                await indexComponent.Refresh();
+                // 如果配置尚未初始化，回傳基本排序的查詢
+                return query.OrderBy(pc => pc.CategoryName);
             }
             
-            StateHasChanged();
+            return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyProductCategoryFilters), GetType());
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnProductCategorySaved), GetType());
-        }
-    }
-
-    private async Task OnModalCancel()
-    {
-        try
-        {
-            showEditModal = false;
-            editingProductCategoryId = null;
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnModalCancel), GetType());
+            // 記錄錯誤並回傳安全的預設查詢
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyProductCategoryFilters), GetType(), additionalData: "產品分類篩選器應用失敗");
+            _ = NotificationService.ShowErrorAsync("篩選條件應用失敗，已顯示全部資料");
+            
+            // 回傳基本排序的查詢，確保頁面仍能正常運作
+            return query.OrderBy(pc => pc.CategoryName);
         }
     }
 }

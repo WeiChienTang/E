@@ -1,8 +1,6 @@
 @page "/sizes"
-
 @inject ISizeService SizeService
 @inject INotificationService NotificationService
-
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="Size" 
@@ -16,7 +14,6 @@
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
                           DataLoader="@LoadSizesAsync"
-                          InitializeBasicData="@LoadBasicDataAsync"
                           FilterApplier="@ApplySizeFilters"
                           GetEntityDisplayName="@(size => size.SizeName)"
                           RequiredPermission="Size.Read"
@@ -35,19 +32,22 @@
     // 組件參考
     private GenericIndexPageComponent<Size, ISizeService> indexComponent = default!;
     
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingSizeId = null;
+    
+    // Modal 處理器
+    private ModalHandler<Size, GenericIndexPageComponent<Size, ISizeService>> modalHandler = default!;
+    
+    // 欄位配置
+    private SizeFieldConfiguration fieldConfiguration = default!;
+    
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
-    // Modal 相關狀態
-    private bool showEditModal = false;
-    private int? editingSizeId = null;
-    
-    // Modal 處理器 - 使用 ModalHelper 統一處理
-    private ModalHandler<Size, GenericIndexPageComponent<Size, ISizeService>> modalHandler = default!;
-
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         try
         {
@@ -59,21 +59,23 @@
                 StateHasChanged,
                 GetType());
             
-            InitializeBreadcrumbs();
-            InitializeFilters();
-            InitializeTableColumns();
+            await InitializeBreadcrumbsAsync();
+            
+            // 建立欄位配置（傳遞 NotificationService）
+            fieldConfiguration = new SizeFieldConfiguration(NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex, 
-                nameof(OnInitialized), 
-                GetType(),
-                additionalData: new { PageName = "SizeIndex" });
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化尺寸頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化尺寸頁面失敗");
         }
     }
 
-    private void InitializeBreadcrumbs()
+    private async Task InitializeBreadcrumbsAsync()
     {
         try
         {
@@ -86,30 +88,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex, 
-                nameof(InitializeBreadcrumbs), 
-                GetType(),
-                additionalData: new { PageName = "SizeIndex" });
-        }
-    }
-
-    // 載入基礎資料（此頁面不需要選項清單）
-    private async Task LoadBasicDataAsync()
-    {
-        try
-        {
-            // 這裡不需要載入額外的選項資料，因為Size實體比較簡單
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            _ = await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex, 
-                nameof(LoadBasicDataAsync), 
-                GetType(),
-                additionalData: new { PageName = "SizeIndex" });
-            StateHasChanged();
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
         }
     }
 
@@ -122,88 +104,35 @@
         }
         catch (Exception ex)
         {
-            _ = await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex, 
-                nameof(LoadSizesAsync), 
-                GetType(),
-                additionalData: new { PageName = "SizeIndex" });
-            
-            StateHasChanged();
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSizesAsync), GetType(), additionalData: "載入尺寸資料失敗");
+            await NotificationService.ShowErrorAsync("載入尺寸資料失敗");
+            // 設定安全的預設值
             return new List<Size>();
         }
     }
 
-    private void InitializeFilters()
-    {
-        try
-        {
-            // 建立篩選定義
-            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("Code", "尺寸代碼", "輸入尺寸代碼搜尋")
-                .AddText("SizeName", "尺寸名稱", "輸入尺寸名稱搜尋")
-                .Build();
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex, 
-                nameof(InitializeFilters), 
-                GetType(),
-                additionalData: new { PageName = "SizeIndex" });
-        }
-    }
-
-    private void InitializeTableColumns()
-    {
-        try
-        {
-            columnDefinitions = new List<TableColumnDefinition>
-            {
-                TableColumnDefinition.Text("尺寸代碼", nameof(Size.Code)),
-                TableColumnDefinition.Text("尺寸名稱", nameof(Size.SizeName)),
-            };
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex, 
-                nameof(InitializeTableColumns), 
-                GetType(),
-                additionalData: new { PageName = "SizeIndex" });
-        }
-    }
-
-    // 自定義篩選邏輯
     private IQueryable<Size> ApplySizeFilters(SearchFilterModel searchModel, IQueryable<Size> query)
     {
         try
         {
-            // 尺寸代碼篩選
-            var CodeFilter = searchModel.GetFilterValue("Code")?.ToString();
-            if (!string.IsNullOrWhiteSpace(CodeFilter))
+            // 檢查 fieldConfiguration 是否已初始化
+            if (fieldConfiguration == null)
             {
-                query = query.Where(s => 
-                    s.Code != null && s.Code.Contains(CodeFilter, StringComparison.OrdinalIgnoreCase));
+                // 如果配置尚未初始化，回傳基本排序的查詢
+                return query.OrderBy(s => s.SizeName);
             }
-
-            // 尺寸名稱篩選
-            var sizeNameFilter = searchModel.GetFilterValue("SizeName")?.ToString();
-            if (!string.IsNullOrWhiteSpace(sizeNameFilter))
-            {
-                query = query.Where(s => 
-                    s.SizeName.Contains(sizeNameFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            return query.OrderBy(s => s.SizeName);
+            
+            return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySizeFilters), GetType());
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex, 
-                nameof(ApplySizeFilters), 
-                GetType(),
-                additionalData: new { PageName = "SizeIndex" });
-            return query; // 發生錯誤時返回原始查詢
+            // 記錄錯誤並回傳安全的預設查詢
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplySizeFilters), GetType(), additionalData: "尺寸篩選器應用失敗");
+            _ = NotificationService.ShowErrorAsync("篩選條件應用失敗，已顯示全部資料");
+            
+            // 回傳基本排序的查詢，確保頁面仍能正常運作
+            return query.OrderBy(s => s.SizeName);
         }
     }
 }

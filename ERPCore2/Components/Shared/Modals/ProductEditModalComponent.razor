@@ -149,7 +149,7 @@
             var units = await ProductService.GetUnitsAsync();
             unitOptions = units.Select(u => new SelectOption
             {
-                Text = u.UnitName,
+                Text = u.Name,
                 Value = u.Id.ToString()
             }).ToList();
 

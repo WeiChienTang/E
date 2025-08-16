@@ -15,7 +15,7 @@
                           ColumnDefinitions="@columnDefinitions"
                           DataLoader="@LoadUnitsAsync"
                           FilterApplier="@ApplyUnitFilters"
-                          GetEntityDisplayName="@(unit => unit.UnitName)"
+                          GetEntityDisplayName="@(unit => unit.Name)"
                           RequiredPermission="Unit.Read"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
@@ -32,19 +32,22 @@
     // 組件參考
     private GenericIndexPageComponent<Unit, IUnitService> indexComponent = default!;
     
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingUnitId = null;
+    
+    // Modal 處理器
+    private ModalHandler<Unit, GenericIndexPageComponent<Unit, IUnitService>> modalHandler = default!;
+    
+    // 欄位配置
+    private UnitFieldConfiguration fieldConfiguration = default!;
+    
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
-    // Modal 相關狀態
-    private bool showEditModal = false;
-    private int? editingUnitId = null;
-    
-    // Modal 處理器 - 使用 ModalHelper 統一處理
-    private ModalHandler<Unit, GenericIndexPageComponent<Unit, IUnitService>> modalHandler = default!;
-
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         try
         {
@@ -56,19 +59,23 @@
                 StateHasChanged,
                 GetType());
             
-            InitializeBreadcrumbs();
-            InitializeFilters();
-            InitializeTableColumns();
+            await InitializeBreadcrumbsAsync();
+            
+            // 建立欄位配置（傳遞 NotificationService）
+            fieldConfiguration = new UnitFieldConfiguration(NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitialized), GetType(),
-                additionalData: new { PageName = "UnitIndex" }
-            );
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化單位頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化單位頁面失敗");
         }
     }
 
-    private void InitializeBreadcrumbs()
+    private async Task InitializeBreadcrumbsAsync()
     {
         try
         {
@@ -81,9 +88,10 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType(),
-                additionalData: new { PageName = "UnitIndex" }
-            );
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
         }
     }
 
@@ -96,84 +104,34 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(LoadUnitsAsync),
-                GetType(),
-                additionalData: new { PageName = "UnitIndex" }
-            );
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadUnitsAsync), GetType(), additionalData: "載入單位資料失敗");
             await NotificationService.ShowErrorAsync("載入單位資料失敗");
+            // 設定安全的預設值
             return new List<Unit>();
         }
     }
 
-    private void InitializeFilters()
-    {
-        try
-        {
-            // 建立篩選定義
-            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("UnitCode", "單位代碼", "輸入單位代碼搜尋")
-                .AddText("UnitName", "單位名稱", "輸入單位名稱搜尋")
-                .Build();
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFilters), GetType(),
-                additionalData: new { PageName = "UnitIndex" }
-            );
-        }
-    }
-
-    private void InitializeTableColumns()
-    {
-        try
-        {
-            columnDefinitions = new List<TableColumnDefinition>
-            {
-                TableColumnDefinition.Text("單位代碼", nameof(Unit.Code)),
-                TableColumnDefinition.Text("單位名稱", nameof(Unit.UnitName)),
-                TableColumnDefinition.Text("備註", nameof(Unit.Remarks))
-            };
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeTableColumns), GetType(),
-                additionalData: new { PageName = "UnitIndex" }
-            );
-        }
-    }
-
-    // 自定義篩選邏輯
     private IQueryable<Unit> ApplyUnitFilters(SearchFilterModel searchModel, IQueryable<Unit> query)
     {
         try
         {
-            // 單位代碼篩選
-            var unitCodeFilter = searchModel.GetFilterValue("UnitCode")?.ToString();
-            if (!string.IsNullOrWhiteSpace(unitCodeFilter))
+            // 檢查 fieldConfiguration 是否已初始化
+            if (fieldConfiguration == null)
             {
-                query = query.Where(u => 
-                    u.Code != null && u.Code.Contains(unitCodeFilter, StringComparison.OrdinalIgnoreCase));
+                // 如果配置尚未初始化，回傳基本排序的查詢
+                return query.OrderBy(u => u.Code);
             }
-
-            // 單位名稱篩選
-            var unitNameFilter = searchModel.GetFilterValue("UnitName")?.ToString();
-            if (!string.IsNullOrWhiteSpace(unitNameFilter))
-            {
-                query = query.Where(u => 
-                    u.UnitName.Contains(unitNameFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            return query.OrderBy(u => u.Code);
+            
+            return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyUnitFilters), GetType());
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyUnitFilters), GetType(),
-                additionalData: new { SearchModel = searchModel, PageName = "UnitIndex" }
-            );
+            // 記錄錯誤並回傳安全的預設查詢
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyUnitFilters), GetType(), additionalData: "單位篩選器應用失敗");
+            _ = NotificationService.ShowErrorAsync("篩選條件應用失敗，已顯示全部資料");
             
-            // 發生錯誤時返回原始查詢
+            // 回傳基本排序的查詢，確保頁面仍能正常運作
             return query.OrderBy(u => u.Code);
         }
     }

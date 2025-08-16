@@ -100,7 +100,7 @@
             },
             new()
             {
-                PropertyName = nameof(Unit.UnitName),
+                PropertyName = nameof(Unit.Name),
                 Label = "單位名稱",
                 FieldType = FormFieldType.Text,
                 Placeholder = "請輸入單位名稱",
@@ -125,7 +125,7 @@
         formSections = new Dictionary<string, string>
         {
             { nameof(Unit.Code), "基本資訊" },
-            { nameof(Unit.UnitName), "基本資訊" },
+            { nameof(Unit.Name), "基本資訊" },
             { nameof(Unit.Remarks), "額外資訊" }
         };
     }
