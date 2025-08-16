@@ -41,6 +41,9 @@
     // 選項清單
     private List<CustomerType> customerTypes = new();
     
+    // 欄位配置
+    private CustomerFieldConfiguration fieldConfiguration = default!;
+    
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
@@ -59,13 +62,16 @@
                 GetType());
             
             await InitializeBreadcrumbsAsync();
-            await InitializeTableColumnsAsync();
             
             // 載入客戶類型資料
             await LoadCustomerTypesAsync();
             
-            // 在載入客戶類型資料後初始化篩選器
-            await InitializeFiltersAsync();
+            // 建立欄位配置（在載入客戶類型後，並傳遞 NotificationService）
+            fieldConfiguration = new CustomerFieldConfiguration(customerTypes, NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
         }
         catch (Exception ex)
         {
@@ -126,59 +132,11 @@
         }
     }
 
-    private async Task InitializeFiltersAsync()
-    {
-        try
-        {
-            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText(nameof(Customer.Code), "客戶代碼", "輸入客戶代碼搜尋")
-                .AddText(nameof(Customer.CompanyName), "公司名稱", "輸入公司名稱搜尋")
-                .AddText(nameof(Customer.ContactPerson), "聯絡人", "輸入聯絡人姓名搜尋")
-                .AddSelect(nameof(Customer.CustomerTypeId), "客戶類型", customerTypes.Select(ct => new SelectOption{Text = ct.TypeName, Value = ct.Id.ToString()}).ToList())
-                .AddText(nameof(Customer.TaxNumber), "統一編號", "輸入統一編號搜尋")
-                .Build();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFiltersAsync), GetType(), additionalData: "初始化篩選器失敗");
-            await NotificationService.ShowErrorAsync("初始化篩選器失敗");
-            // 設定安全的預設值
-            filterDefinitions = new List<SearchFilterDefinition>();
-        }
-    }
     private IQueryable<Customer> ApplyCustomerFilters(SearchFilterModel searchModel, IQueryable<Customer> query)
     {
         try
         {
-            var filterActions = new List<Func<SearchFilterModel, IQueryable<Customer>, IQueryable<Customer>>>
-            {
-                // 應用基礎實體篩選（狀態、備註）
-                (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
-                
-                // 客戶代碼篩選
-                (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, nameof(Customer.Code), c => c.Code),
-
-                // 公司名稱篩選
-                (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, nameof(Customer.CompanyName), c => c.CompanyName),
-
-                // 聯絡人篩選
-                (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, nameof(Customer.ContactPerson), c => c.ContactPerson),
-
-                // 客戶類型篩選
-                (model, q) => FilterHelper.ApplyNullableIntIdFilter(model, q, nameof(Customer.CustomerTypeId), c => c.CustomerTypeId),
-
-                // 統一編號篩選 - 允許 null 值
-                (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, nameof(Customer.TaxNumber), c => c.TaxNumber, allowNull: true),
-            };
-
-            return FilterHelper.ApplyFiltersWithErrorHandling(
-                searchModel,
-                query,
-                filterActions,
-                q => q.OrderBy(c => c.Code), // 預設排序
-                nameof(ApplyCustomerFilters),
-                GetType()
-            );
+            return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyCustomerFilters), GetType());
         }
         catch (Exception ex)
         {
@@ -188,27 +146,6 @@
             
             // 回傳基本排序的查詢，確保頁面仍能正常運作
             return query.OrderBy(c => c.Code);
-        }
-    }
-    private async Task InitializeTableColumnsAsync()
-    {
-        try
-        {
-            columnDefinitions = new List<TableColumnDefinition>
-            {
-                TableColumnDefinition.Text("客戶代碼", nameof(Customer.Code)),
-                TableColumnDefinition.Text("公司名稱", nameof(Customer.CompanyName)),
-                TableColumnDefinition.Text("聯絡人", nameof(Customer.ContactPerson)),
-                TableColumnDefinition.Text("客戶類型", "CustomerType.TypeName"),
-                TableColumnDefinition.Text("統一編號", nameof(Customer.TaxNumber)),
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeTableColumnsAsync), GetType(), additionalData: "初始化表格欄位失敗");
-            await NotificationService.ShowErrorAsync("初始化表格欄位失敗");
-            // 設定安全的預設值
-            columnDefinitions = new List<TableColumnDefinition>();
         }
     }
 }
