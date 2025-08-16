@@ -55,11 +55,11 @@
         {
             if (!UnitId.HasValue)
             {
-                // 新增模式 - 返回預設值
+                // 新增模式：建立新的單位實體並生成代碼
                 var newUnit = new Unit
                 {
                     Name = string.Empty,
-                    Code = string.Empty,
+                    Code = await GenerateUnitCodeAsync(),
                     Status = EntityStatus.Active
                 };
                 
@@ -123,7 +123,7 @@
                 Placeholder = "請輸入單位代碼",
                 IsRequired = true,
                 MaxLength = 50,
-                HelpText = "唯一識別此單位的代碼，最多50個字元"
+                HelpText = "單位的唯一識別代碼，新增時系統會自動產生，也可手動修改"
             },
             new()
             {
@@ -207,6 +207,42 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"關閉對話框時發生錯誤：{ex.Message}");
+        }
+    }
+
+    // ===== 輔助方法 =====
+    private async Task<string> GenerateUnitCodeAsync()
+    {
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            UnitService,
+            "UNIT",
+            (service, code, excludeId) => service.IsUnitCodeExistsAsync(code, excludeId)
+        );
+    }
+
+    // ===== 公開方法 (供父組件調用) =====
+
+    /// <summary>
+    /// 開啟新增單位 Modal
+    /// </summary>
+    public async Task ShowAddModal()
+    {
+        UnitId = null;
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(true);
+        }
+    }
+
+    /// <summary>
+    /// 開啟編輯單位 Modal
+    /// </summary>
+    public async Task ShowEditModal(int unitId)
+    {
+        UnitId = unitId;
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(true);
         }
     }
 }
