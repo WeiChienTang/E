@@ -148,7 +148,7 @@
             employeeOptions = employees
                 .Select(e => new SelectOption 
                 { 
-                    Text = $"{e.LastName}{e.FirstName}".Trim(), 
+                    Text = e.Name?.Trim() ?? "", 
                     Value = e.Id.ToString() 
                 })
                 .ToList();
@@ -382,7 +382,7 @@
                 new TableColumnDefinition
                 {
                     Title = "確認人員",
-                    PropertyName = "ConfirmedByUser.LastName",
+                    PropertyName = "ConfirmedByUser.Name",
                     DataType = ColumnDataType.Text,
                     HeaderStyle = "width: 120px;",
                     NullDisplayText = "-",
@@ -391,7 +391,7 @@
                         var entity = (PurchaseReceiving)item;
                         if (entity.ConfirmedByUser != null)
                         {
-                            var name = $"{entity.ConfirmedByUser.LastName}{entity.ConfirmedByUser.FirstName}".Trim();
+                            var name = entity.ConfirmedByUser.Name?.Trim() ?? "";
                             builder.AddContent(0, name);
                         }
                         else

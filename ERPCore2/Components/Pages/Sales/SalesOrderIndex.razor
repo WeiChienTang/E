@@ -123,11 +123,10 @@
             var employees = await EmployeeService.GetAllAsync();
             employeeOptions = employees
                 .Where(e => !e.IsDeleted && e.Status == EntityStatus.Active)
-                .OrderBy(e => e.FirstName)
-                .ThenBy(e => e.LastName)
+                .OrderBy(e => e.Name)
                 .Select(e => new SelectOption 
                 { 
-                    Text = $"{e.FirstName} {e.LastName} ({e.Code})", 
+                    Text = $"{e.Name} ({e.Code})", 
                     Value = e.Id.ToString() 
                 })
                 .ToList();
@@ -310,7 +309,7 @@
                         var order = entity as SalesOrder;
                         if (order?.Employee != null)
                         {
-                            return @<span>@($"{order.Employee.FirstName} {order.Employee.LastName}")</span>;
+                            return @<span>@(order.Employee.Name ?? "")</span>;
                         }
                         return @<span>@(order?.SalesPersonnel ?? "-")</span>;
                     }

@@ -301,11 +301,10 @@
             {
                 employeeField.Options = employees
                     .Where(e => !e.IsDeleted && e.Status == EntityStatus.Active)
-                    .OrderBy(e => e.FirstName)
-                    .ThenBy(e => e.LastName)
+                    .OrderBy(e => e.Name)
                     .Select(e => new SelectOption 
                     { 
-                        Text = $"{e.FirstName} {e.LastName}", 
+                        Text = e.Name ?? "", 
                         Value = e.Id.ToString() 
                     }).ToList();
             }

@@ -334,20 +334,10 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(Employee.LastName),
-                    Label = "姓氏",
+                    PropertyName = nameof(Employee.Name),
+                    Label = "姓名",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入姓氏",
-                    IsRequired = true,
-                    MaxLength = 25,
-                    HelpText = "員工的姓氏"
-                },
-                new()
-                {
-                    PropertyName = nameof(Employee.FirstName),
-                    Label = "名字",
-                    FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入名字",
+                    Placeholder = "請輸入姓名",
                     IsRequired = true,
                     MaxLength = 25,
                     HelpText = "員工的名字"
@@ -448,8 +438,7 @@
             formSections = new Dictionary<string, string>
             {
                 { nameof(Employee.Code), "基本資訊" },
-                { nameof(Employee.LastName), "基本資訊" },
-                { nameof(Employee.FirstName), "基本資訊" },                
+                { nameof(Employee.Name), "基本資訊" },                
                 { nameof(Employee.DepartmentId), "基本資訊" },
                 { nameof(Employee.EmployeePositionId), "基本資訊" },
                 { nameof(Employee.Remarks), "額外資料" }
@@ -633,8 +622,7 @@
                 var newEmployee = new Employee
                 {
                     Code = await GenerateEmployeeCodeAsync(),
-                    FirstName = string.Empty,
-                    LastName = string.Empty,
+                    Name = string.Empty,
                     IsSystemUser = false,
                     RoleId = defaultRole?.Id,
                     Status = EntityStatus.Active
@@ -654,8 +642,7 @@
                 employee = new Employee
                 {
                     Code = "ERROR",
-                    FirstName = "ERROR",
-                    LastName = "ERROR",
+                    Name = "ERROR",
                     Status = EntityStatus.Active
                 };
                 employeeContacts = new List<Contact>();
@@ -681,8 +668,7 @@
             return new Employee
             {
                 Code = "ERROR",
-                FirstName = "ERROR",
-                LastName = "ERROR",
+                Name = "ERROR",
                 Status = EntityStatus.Active
             };
         }
@@ -716,15 +702,9 @@
                 return false;
             }
 
-            if (string.IsNullOrWhiteSpace(entity.FirstName))
+            if (string.IsNullOrWhiteSpace(entity.Name))
             {
                 await NotificationService.ShowErrorAsync("員工姓名為必填");
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(entity.LastName))
-            {
-                await NotificationService.ShowErrorAsync("員工姓氏為必填");
                 return false;
             }
 

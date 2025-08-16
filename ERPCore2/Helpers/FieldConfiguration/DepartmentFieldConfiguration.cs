@@ -63,7 +63,7 @@ namespace ERPCore2.Helpers
                                 var department = (Department)item;
                                 if (department.Manager != null)
                                 {
-                                    var managerName = $"{department.Manager.FirstName}{department.Manager.LastName}".Trim();
+                                    var managerName = department.Manager.Name?.Trim() ?? "";
                                     if (string.IsNullOrWhiteSpace(managerName))
                                     {
                                         managerName = department.Manager.Code;

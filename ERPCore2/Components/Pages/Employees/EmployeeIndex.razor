@@ -1,39 +1,35 @@
 @page "/employees"
-@using ERPCore2.Helpers
 @inject IEmployeeService EmployeeService
-@inject IRoleService RoleService
 @inject IDepartmentService DepartmentService
+@inject IRoleService RoleService
 @inject IEmployeePositionService EmployeePositionService
-@inject INotificationService NotificationService
-@inject AuthenticationStateProvider AuthenticationStateProvider
-
 @rendermode InteractiveServer
+@inject INotificationService NotificationService
 
 <GenericIndexPageComponent TEntity="Employee" 
                         TService="IEmployeeService"
                         Service="@EmployeeService"
                         EntityBasePath="/employees"                          
-                        PageTitle="員工維護"
+                        PageTitle="員工管理"
                         PageSubtitle="管理員工資料與權限設定"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
                         DataLoader="@LoadEmployeesAsync"
-                        InitializeBasicData="@LoadBasicDataAsync"
                         FilterApplier="@ApplyEmployeeFilters"
                         EntityName="員工"
-                        GetEntityDisplayName="@(employee => $"{employee.FirstName} {employee.LastName}".Trim())"
+                        GetEntityDisplayName="@(employee => employee.Name?.Trim() ?? "")"
                         RequiredPermission="Employee.Read"
-                        OnAddClick="@ShowAddModal"
-                        OnRowClick="@ShowEditModal"
+                        OnAddClick="@modalHandler.ShowAddModalAsync"
+                        OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent" />
 
 @* 員工編輯 Modal *@
 <EmployeeEditModalComponent IsVisible="@showEditModal"
                            IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                            EmployeeId="@editingEmployeeId"
-                           OnEmployeeSaved="@OnEmployeeSaved"
-                           OnCancel="@OnModalCancel" />
+                           OnEmployeeSaved="@modalHandler.OnEntitySavedAsync"
+                           OnCancel="@modalHandler.OnModalCancelAsync" />
 
 @code {
     // 組件參考
@@ -43,151 +39,56 @@
     private bool showEditModal = false;
     private int? editingEmployeeId = null;
     
+    // Modal 處理器
+    private ModalHandler<Employee, GenericIndexPageComponent<Employee, IEmployeeService>> modalHandler = default!;
+    
     // 選項清單
-    private List<Role> roles = new();
     private List<Department> departments = new();
+    private List<Role> roles = new();
     private List<EmployeePosition> employeePositions = new();
+    
+    // 欄位配置
+    private EmployeeFieldConfiguration fieldConfiguration = default!;
     
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         try
         {
-            InitializeBreadcrumbs();
-            InitializeFilters();
-            InitializeTableColumns();
-        }
-        catch (Exception ex)
-        {
-            // 記錄初始化錯誤（使用 Fire-and-Forget 因為這裡不能用 async）
-            _ = Task.Run(async () =>
-            {
-                await ErrorHandlingHelper.HandlePageErrorAsync(
-                    ex, 
-                    nameof(OnInitialized), 
-                    GetType(),
-                    additionalData: new { 
-                        PageName = "EmployeeIndex",
-                        Action = "Initialize",
-                        Phase = "ComponentInitialization"
-                    });
-            });
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<Employee, GenericIndexPageComponent<Employee, IEmployeeService>>(
+                id => editingEmployeeId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
             
-            // 確保基本初始化完成，避免程式崩潰
-            try
-            {
-                breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
-                {
-                    new("首頁", "/"),
-                    new("員工管理")
-                };
-                filterDefinitions = new List<SearchFilterDefinition>();
-                columnDefinitions = new List<TableColumnDefinition>();
-            }
-            catch
-            {
-                // 如果連預設值都設定失敗，至少確保不是 null
-                breadcrumbItems ??= new List<GenericHeaderComponent.BreadcrumbItem>();
-                filterDefinitions ??= new List<SearchFilterDefinition>();
-                columnDefinitions ??= new List<TableColumnDefinition>();
-            }
-        }
-    }
-
-    // ===== Modal 相關方法 =====
-
-    private async Task ShowAddModal()
-    {
-        try
-        {
-            editingEmployeeId = null;
-            showEditModal = true;
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModal), GetType());
-        }
-    }
-
-    private async Task ShowEditModal(Employee employee)
-    {
-        try
-        {
-            if (employee?.Id != null)
-            {
-                // 檢查當前使用者是否為管理員
-                var isCurrentUserAdmin = await CurrentUserHelper.IsCurrentUserAdminAsync(AuthenticationStateProvider);
-                
-                // 檢查要編輯的員工是否具有管理員角色
-                if (employee.Role != null)
-                {
-                    var targetRoleLower = employee.Role.Name?.Trim().ToLower() ?? "";
-                    bool isTargetEmployeeAdmin = targetRoleLower == "管理員" || targetRoleLower == "admin" || 
-                                               targetRoleLower.Contains("管理員") || targetRoleLower.Contains("admin");
-                    
-                    // 如果目標員工是管理員，但當前使用者不是管理員，則拒絕編輯
-                    if (isTargetEmployeeAdmin && !isCurrentUserAdmin)
-                    {
-                        await NotificationService.ShowErrorAsync("權限不足", "無法編輯管理員帳號");
-                        return;
-                    }
-                }
-                
-                editingEmployeeId = employee.Id;
-                showEditModal = true;
-                StateHasChanged();
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowEditModal), GetType());
-        }
-    }
-
-    private async Task OnEmployeeSaved(Employee savedEmployee)
-    {
-        try
-        {
-            // 關閉 Modal
-            showEditModal = false;
-            editingEmployeeId = null;
+            await InitializeBreadcrumbsAsync();
             
-            // 重新載入資料
-            if (indexComponent != null)
-            {
-                await indexComponent.Refresh();
-            }
+            // 載入相關資料
+            await LoadDepartmentsAsync();
+            await LoadRolesAsync();
+            await LoadEmployeePositionsAsync();
             
-            StateHasChanged();
+            // 建立欄位配置（在載入相關資料後，並傳遞 NotificationService）
+            fieldConfiguration = new EmployeeFieldConfiguration(departments, roles, employeePositions, NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnEmployeeSaved), GetType());
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化員工頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化員工頁面失敗");
         }
     }
 
-    private async Task OnModalCancel()
-    {
-        try
-        {
-            showEditModal = false;
-            editingEmployeeId = null;
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnModalCancel), GetType());
-        }
-    }
-
-    // ===== 原有的初始化方法 =====
-
-    private void InitializeBreadcrumbs()
+    private async Task InitializeBreadcrumbsAsync()
     {
         try
         {
@@ -199,60 +100,10 @@
         }
         catch (Exception ex)
         {
-            // 記錄麵包屑初始化錯誤
-            _ = Task.Run(async () =>
-            {
-                await ErrorHandlingHelper.HandlePageErrorAsync(
-                    ex, 
-                    nameof(InitializeBreadcrumbs), 
-                    GetType(),
-                    additionalData: new { 
-                        PageName = "EmployeeIndex",
-                        Action = "InitializeBreadcrumbs"
-                    });
-            });
-            
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
             // 設定安全的預設值
             breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
-        }
-    }
-
-    // 載入基礎資料（選項清單等）
-    private async Task LoadBasicDataAsync()
-    {
-        try
-        {
-            roles = await RoleService.GetAllAsync();
-            departments = await DepartmentService.GetAllAsync();
-            employeePositions = await EmployeePositionService.GetAllAsync();
-            
-            // 重新初始化篩選器（因為需要選項資料）
-            InitializeFilters();
-            
-            // 重要：通知組件狀態已改變，確保參數更新
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex, 
-                nameof(LoadBasicDataAsync), 
-                GetType(),
-                additionalData: new { 
-                    PageName = "EmployeeIndex",
-                    Action = "LoadBasicData",
-                    ExpectedData = "Roles, Departments, EmployeePositions"
-                });
-            
-            // 設定安全的預設值，確保程式不會崩潰
-            roles = new List<Role>();
-            departments = new List<Department>();
-            employeePositions = new List<EmployeePosition>();
-            
-            // 即使失敗也要重新初始化篩選器
-            InitializeFilters();
-            StateHasChanged();
         }
     }
 
@@ -266,188 +117,82 @@
         catch (Exception ex)
         {
             // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(
-                ex, 
-                nameof(LoadEmployeesAsync), 
-                GetType(),
-                additionalData: new { 
-                    PageName = "EmployeeIndex",
-                    Action = "LoadEmployees",
-                    ExpectedDataType = "List<Employee>"
-                });
-            
-            // 確保 UI 狀態更新，並回傳安全的預設值
-            StateHasChanged();
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadEmployeesAsync), GetType(), additionalData: "載入員工資料失敗");
+            await NotificationService.ShowErrorAsync("載入員工資料失敗");
+            // 設定安全的預設值
             return new List<Employee>();
         }
     }
 
-    private void InitializeFilters()
+    // 載入部門資料
+    private async Task LoadDepartmentsAsync()
     {
         try
         {
-            // 準備角色選項
-            var roleOptions = roles.Select(r => new SelectOption
-            {
-                Text = r.Name,
-                Value = r.Id.ToString()
-            }).ToList();
-
-            // 準備部門選項
-            var departmentOptions = departments.Select(d => new SelectOption
-            {
-                Text = d.Name,
-                Value = d.Id.ToString()
-            }).ToList();
-
-            // 準備職位選項
-            var positionOptions = employeePositions.Select(p => new SelectOption
-            {
-                Text = p.Name,
-                Value = p.Id.ToString()
-            }).ToList();
-
-
-            // 建立篩選定義
-            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("Code", "員工代碼", "輸入員工代碼搜尋")
-                .AddText("FullName", "姓名", "輸入姓名搜尋")
-                .AddSelect("DepartmentId", "部門", departmentOptions)
-                .AddSelect("EmployeePositionId", "職位", positionOptions)
-                .AddSelect("RoleId", "角色", roleOptions)
-                .AddSelect("IsSystemUser", "系統使用者", new List<SelectOption>
-                {
-                    new SelectOption { Text = "有權限", Value = "true" },
-                    new SelectOption { Text = "無權限", Value = "false" }
-                })
-                .Build();
+            departments = await DepartmentService.GetAllAsync();
         }
         catch (Exception ex)
         {
-            // 記錄篩選器初始化錯誤
-            _ = Task.Run(async () =>
-            {
-                await ErrorHandlingHelper.HandlePageErrorAsync(
-                    ex, 
-                    nameof(InitializeFilters), 
-                    GetType(),
-                    additionalData: new { 
-                        PageName = "EmployeeIndex",
-                        Action = "InitializeFilters"
-                    });
-            });
-            
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDepartmentsAsync), GetType(), additionalData: "載入部門資料失敗");
+            await NotificationService.ShowErrorAsync("載入部門資料失敗");
             // 設定安全的預設值
-            filterDefinitions = new List<SearchFilterDefinition>();
+            departments = new List<Department>();
         }
     }
 
-    private void InitializeTableColumns()
+    // 載入角色資料
+    private async Task LoadRolesAsync()
     {
         try
         {
-            columnDefinitions = new List<TableColumnDefinition>
-            {
-                TableColumnDefinition.Text("員工代碼", nameof(Employee.Code)),
-                TableColumnDefinition.Template("姓名", item => 
-                {
-                    var employee = (Employee)item;
-                    var firstName = employee.FirstName ?? "";
-                    var lastName = employee.LastName ?? "";
-                    return @<span>@($"{lastName}{firstName}".Trim())</span>;
-                }),
-                TableColumnDefinition.Text("部門", "Department.Name"),
-                TableColumnDefinition.Text("職位", "EmployeePosition.Name"),
-                TableColumnDefinition.Text("角色", "Role.RoleName"),
-                new TableColumnDefinition
-                {
-                    Title = "系統操控",
-                    PropertyName = nameof(Employee.IsSystemUser),
-                    CustomTemplate = item => builder =>
-                    {
-                        var employee = (Employee)item;
-                        builder.OpenElement(0, "span");
-                        builder.AddAttribute(1, "class", "badge text-white");
-                        builder.AddAttribute(2, "style", employee.IsSystemUser ? "background-color: #28a745;" : "background-color: #dc3545;");
-                        builder.AddContent(3, employee.IsSystemUser ? "有權限" : "無權限");
-                        builder.CloseElement();
-                    }
-                },
-                TableColumnDefinition.Date("最後登入", nameof(Employee.LastLoginAt), "yyyy/MM/dd HH:mm"),
-            };
+            roles = await RoleService.GetAllAsync();
         }
         catch (Exception ex)
         {
-            // 記錄表格欄位初始化錯誤
-            _ = Task.Run(async () =>
-            {
-                await ErrorHandlingHelper.HandlePageErrorAsync(
-                    ex, 
-                    nameof(InitializeTableColumns), 
-                    GetType(),
-                    additionalData: new { 
-                        PageName = "EmployeeIndex",
-                        Action = "InitializeTableColumns"
-                    });
-            });
-            
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadRolesAsync), GetType(), additionalData: "載入角色資料失敗");
+            await NotificationService.ShowErrorAsync("載入角色資料失敗");
             // 設定安全的預設值
-            columnDefinitions = new List<TableColumnDefinition>();
+            roles = new List<Role>();
         }
     }
 
-    // 自定義篩選邏輯
+    // 載入員工職位資料
+    private async Task LoadEmployeePositionsAsync()
+    {
+        try
+        {
+            employeePositions = await EmployeePositionService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadEmployeePositionsAsync), GetType(), additionalData: "載入員工職位資料失敗");
+            await NotificationService.ShowErrorAsync("載入員工職位資料失敗");
+            // 設定安全的預設值
+            employeePositions = new List<EmployeePosition>();
+        }
+    }
+
     private IQueryable<Employee> ApplyEmployeeFilters(SearchFilterModel searchModel, IQueryable<Employee> query)
     {
-        var filterActions = new List<Func<SearchFilterModel, IQueryable<Employee>, IQueryable<Employee>>>
+        try
         {
-            // 應用基礎實體篩選（狀態、備註）
-            (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
+            // 確保 fieldConfiguration 已初始化
+            if (fieldConfiguration == null)
+            {
+                // 如果配置未初始化，回傳基本排序的查詢
+                return query.OrderBy(e => e.Code);
+            }
             
-            // 員工代碼篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "EmployeeCode", e => e.Code),
+            return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyEmployeeFilters), GetType());
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤並回傳安全的預設查詢
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyEmployeeFilters), GetType(), additionalData: "員工篩選器應用失敗");
+            _ = NotificationService.ShowErrorAsync("篩選條件應用失敗，已顯示全部資料");
             
-            // 姓名篩選（合併姓氏和名字）
-            (model, q) => {
-                var fullNameFilter = model.GetFilterValue("FullName")?.ToString();
-                if (!string.IsNullOrWhiteSpace(fullNameFilter))
-                {
-                    q = q.Where(e => (e.FirstName != null && e.FirstName.Contains(fullNameFilter)) ||
-                                   (e.LastName != null && e.LastName.Contains(fullNameFilter)) ||
-                                   (!string.IsNullOrEmpty(e.FirstName) && !string.IsNullOrEmpty(e.LastName) && 
-                                    (e.LastName + e.FirstName).Contains(fullNameFilter)));
-                }
-                return q;
-            },
-            
-            // 部門篩選
-            (model, q) => FilterHelper.ApplyNullableIntIdFilter(model, q, "DepartmentId", e => e.DepartmentId),
-            
-            // 職位篩選
-            (model, q) => FilterHelper.ApplyNullableIntIdFilter(model, q, "EmployeePositionId", e => e.EmployeePositionId),
-            
-            // 角色篩選  
-            (model, q) => FilterHelper.ApplyNullableIntIdFilter(model, q, "RoleId", e => e.RoleId),
-            
-            // 系統使用者篩選
-            (model, q) => {
-                var isSystemUserFilter = model.GetFilterValue("IsSystemUser")?.ToString();
-                if (!string.IsNullOrWhiteSpace(isSystemUserFilter))
-                {
-                    var isSystemUser = bool.Parse(isSystemUserFilter);
-                    q = q.Where(e => e.IsSystemUser == isSystemUser);
-                }
-                return q;
-            },
-        };
-
-        return FilterHelper.ApplyFiltersWithErrorHandling(
-            searchModel,
-            query,
-            filterActions,
-            q => q.OrderBy(e => e.Code), // 預設排序
-            nameof(ApplyEmployeeFilters),
-            GetType()
-        );
+            // 回傳基本排序的查詢，確保頁面仍能正常運作
+            return query.OrderBy(e => e.Code);
+        }
     }
 }

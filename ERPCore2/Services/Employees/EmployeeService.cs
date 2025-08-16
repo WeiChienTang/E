@@ -223,8 +223,7 @@ namespace ERPCore2.Services
                     .Include(e => e.Department)
                     .Include(e => e.EmployeePosition)
                     .Where(e => !e.IsDeleted && 
-                               ((e.FirstName != null && e.FirstName.Contains(searchTerm)) ||
-                                (e.LastName != null && e.LastName.Contains(searchTerm)) ||
+                               ((e.Name != null && e.Name.Contains(searchTerm)) ||
                                 (e.Code != null && e.Code.Contains(searchTerm)) ||
                                 (e.Account != null && e.Account.Contains(searchTerm)) ||
                                 (e.Department != null && e.Department.Name != null && e.Department.Name.Contains(searchTerm))))
@@ -402,11 +401,8 @@ namespace ERPCore2.Services
                     return ServiceResult<bool>.Failure("員工資料不能為空");
 
                 // 驗證必要欄位
-                if (string.IsNullOrWhiteSpace(employee.FirstName))
+                if (string.IsNullOrWhiteSpace(employee.Name))
                     return ServiceResult<bool>.Failure("名字不能為空");
-
-                if (string.IsNullOrWhiteSpace(employee.LastName))
-                    return ServiceResult<bool>.Failure("姓氏不能為空");
 
                 if (string.IsNullOrWhiteSpace(employee.Code))
                     return ServiceResult<bool>.Failure("員工編號不能為空");
@@ -495,11 +491,8 @@ namespace ERPCore2.Services
                         errors.Add("系統使用者必須設定密碼");
                 }
 
-                if (string.IsNullOrWhiteSpace(entity.FirstName))
+                if (string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("名字為必填");
-
-                if (string.IsNullOrWhiteSpace(entity.LastName))
-                    errors.Add("姓氏為必填");
 
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("員工代碼為必填");
@@ -508,11 +501,8 @@ namespace ERPCore2.Services
                 if (entity.Account?.Length > 50)
                     errors.Add("使用者名稱不可超過50個字元");
 
-                if (entity.FirstName?.Length > 50)
+                if (entity.Name?.Length > 50)
                     errors.Add("名字不可超過50個字元");
-
-                if (entity.LastName?.Length > 50)
-                    errors.Add("姓氏不可超過50個字元");
 
                 if (!string.IsNullOrEmpty(entity.Code) && entity.Code.Length > 20)
                     errors.Add("員工代碼不可超過20個字元");
@@ -824,8 +814,7 @@ namespace ERPCore2.Services
                 // 更新業務資料
                 employee.Code = updateData.Code;
                 employee.Account = updateData.Account;
-                employee.FirstName = updateData.FirstName;
-                employee.LastName = updateData.LastName;
+                employee.Name = updateData.Name;
                 employee.RoleId = updateData.RoleId;
                 employee.DepartmentId = updateData.DepartmentId;
                 employee.EmployeePositionId = updateData.EmployeePositionId;

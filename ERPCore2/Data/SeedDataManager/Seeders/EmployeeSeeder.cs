@@ -37,8 +37,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             var adminEmployee = new Employee
             {
                 Code = "ADMIN001",
-                FirstName = "系統",
-                LastName = "管理員",
+                Name = "系統管理員",
                 Account = "admin",
                 Password = SeedDataHelper.HashPassword("1234"),
                 IsSystemUser = true, // 設置為系統使用者
@@ -63,8 +62,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             // 定義要建立的員工資料
             var defaultEmployees = new[]
             {
-                new { Code = "EMP001", FirstName = "測試01", LastName = "測試用員工", Account = "tt", RoleName = "辦公室員工" },
-                new { Code = "EMP002", FirstName = "測試02", LastName = "一般員工", Account = "tt2", RoleName = "員工" },
+                new { Code = "EMP001", Name = "測試01 測試用員工", Account = "tt", RoleName = "辦公室員工" },
+                new { Code = "EMP002", Name = "測試02 一般員工", Account = "tt2", RoleName = "員工" },
             };
 
             foreach (var emp in defaultEmployees)
@@ -80,8 +79,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 var employee = new Employee
                 {
                     Code = emp.Code,
-                    FirstName = emp.FirstName,
-                    LastName = emp.LastName,
+                    Name = emp.Name,
                     Account = emp.Account,
                     Password = SeedDataHelper.HashPassword("1234"), // 預設密碼
                     IsSystemUser = true,

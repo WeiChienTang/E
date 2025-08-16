@@ -55,8 +55,8 @@ namespace ERPCore2.Controllers
                 {
                     new Claim(ClaimTypes.NameIdentifier, employee.Id.ToString()),
                     new Claim(ClaimTypes.Name, employee.Account ?? ""),
-                    new Claim(ClaimTypes.GivenName, employee.FirstName ?? ""),
-                    new Claim(ClaimTypes.Surname, employee.LastName ?? ""),
+                    new Claim(ClaimTypes.GivenName, employee.Name ?? ""),
+                    new Claim(ClaimTypes.Surname, ""),
                     new Claim(ClaimTypes.Role, employee.Role?.Name ?? "User"),
                     new Claim("EmployeeCode", employee.Code ?? ""),
                     new Claim("Department", employee.Department?.Name ?? ""),

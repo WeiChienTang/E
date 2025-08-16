@@ -156,12 +156,11 @@
             var employees = await EmployeeService.GetAllAsync();
             employeeOptions = employees
                 .Where(e => !e.IsDeleted && e.Status == EntityStatus.Active)
-                .OrderBy(e => e.FirstName)
-                .ThenBy(e => e.LastName)
+                .OrderBy(e => e.Name)
                 .Select(e => new SelectOption 
                 { 
                     Value = e.Id.ToString(),
-                    Text = $"{e.FirstName} {e.LastName}"
+                    Text = e.Name ?? ""
                 })
                 .ToList();
 

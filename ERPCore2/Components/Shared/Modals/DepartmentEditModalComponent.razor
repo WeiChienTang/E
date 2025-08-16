@@ -183,7 +183,7 @@
             // 準備主管選項
             var managerOptions = availableManagers.Select(e => new SelectOption
             {
-                Text = $"{e.Code} - {e.FirstName}{e.LastName}".Trim(),
+                Text = $"{e.Code} - {e.Name}".Trim(),
                 Value = e.Id.ToString()
             }).ToList();
 

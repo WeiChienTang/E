@@ -17,14 +17,7 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         [Display(Name = "名字")]
         [MaxLength(25, ErrorMessage = "名字不可超過25個字元")]
-        public string? FirstName { get; set; }
-
-        /// <summary>
-        /// 姓氏
-        /// </summary>
-        [Display(Name = "姓氏")]
-        [MaxLength(25, ErrorMessage = "姓氏不可超過25個字元")]
-        public string? LastName { get; set; }
+        public string? Name { get; set; }
 
         /// <summary>
         /// 是否為系統使用者
