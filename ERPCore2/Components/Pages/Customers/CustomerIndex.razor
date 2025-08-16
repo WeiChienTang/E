@@ -58,24 +58,23 @@
                 StateHasChanged,
                 GetType());
             
-            InitializeBreadcrumbs();
-            InitializeTableColumns();
+            await InitializeBreadcrumbsAsync();
+            await InitializeTableColumnsAsync();
             
             // 載入客戶類型資料
             await LoadCustomerTypesAsync();
             
             // 在載入客戶類型資料後初始化篩選器
-            InitializeFilters();
+            await InitializeFiltersAsync();
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(),
-                additionalData: "初始化客戶頁面失敗"
-            );
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化客戶頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化客戶頁面失敗");
         }
     }
 
-    private void InitializeBreadcrumbs()
+    private async Task InitializeBreadcrumbsAsync()
     {
         try
         {
@@ -87,7 +86,7 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
 
             // 設定安全的預設值
             breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
@@ -106,6 +105,7 @@
             // 記錄錯誤到資料庫並通知使用者
             await ErrorHandlingHelper.HandlePageErrorAsync(ex,nameof(LoadCustomersAsync),GetType(),additionalData:"載入客戶資料失敗");
             await NotificationService.ShowErrorAsync("載入客戶資料失敗");
+            // 設定安全的預設值
             return new List<Customer>();
         }
     }
@@ -121,11 +121,12 @@
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomerTypesAsync), GetType(), additionalData: "載入客戶類型資料失敗");
             await NotificationService.ShowErrorAsync("載入客戶類型資料失敗");
+            // 設定安全的預設值
             customerTypes = new List<CustomerType>();
         }
     }
 
-    private void InitializeFilters()
+    private async Task InitializeFiltersAsync()
     {
         try
         {
@@ -139,45 +140,57 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFilters), GetType(), additionalData: "初始化篩選器失敗");
-            
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFiltersAsync), GetType(), additionalData: "初始化篩選器失敗");
+            await NotificationService.ShowErrorAsync("初始化篩選器失敗");
             // 設定安全的預設值
             filterDefinitions = new List<SearchFilterDefinition>();
         }
     }
     private IQueryable<Customer> ApplyCustomerFilters(SearchFilterModel searchModel, IQueryable<Customer> query)
     {
-        var filterActions = new List<Func<SearchFilterModel, IQueryable<Customer>, IQueryable<Customer>>>
+        try
         {
-            // 應用基礎實體篩選（狀態、備註）
-            (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
-            
-            // 客戶代碼篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "Code", c => c.Code),
-            
-            // 公司名稱篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "CompanyName", c => c.CompanyName),
-            
-            // 聯絡人篩選
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "ContactPerson", c => c.ContactPerson),
-            
-            // 客戶類型篩選
-            (model, q) => FilterHelper.ApplyNullableIntIdFilter(model, q, "CustomerTypeId", c => c.CustomerTypeId),
-            
-            // 統一編號篩選 - 允許 null 值
-            (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, "TaxNumber", c => c.TaxNumber, allowNull: true),
-        };
+            var filterActions = new List<Func<SearchFilterModel, IQueryable<Customer>, IQueryable<Customer>>>
+            {
+                // 應用基礎實體篩選（狀態、備註）
+                (model, q) => FilterHelper.ApplyBaseEntityFilters(model, q),
+                
+                // 客戶代碼篩選
+                (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, nameof(Customer.Code), c => c.Code),
 
-        return FilterHelper.ApplyFiltersWithErrorHandling(
-            searchModel,
-            query,
-            filterActions,
-            q => q.OrderBy(c => c.Code), // 預設排序
-            nameof(ApplyCustomerFilters),
-            GetType()
-        );
+                // 公司名稱篩選
+                (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, nameof(Customer.CompanyName), c => c.CompanyName),
+
+                // 聯絡人篩選
+                (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, nameof(Customer.ContactPerson), c => c.ContactPerson),
+
+                // 客戶類型篩選
+                (model, q) => FilterHelper.ApplyNullableIntIdFilter(model, q, nameof(Customer.CustomerTypeId), c => c.CustomerTypeId),
+
+                // 統一編號篩選 - 允許 null 值
+                (model, q) => FilterHelper.ApplyTextContainsFilter(model, q, nameof(Customer.TaxNumber), c => c.TaxNumber, allowNull: true),
+            };
+
+            return FilterHelper.ApplyFiltersWithErrorHandling(
+                searchModel,
+                query,
+                filterActions,
+                q => q.OrderBy(c => c.Code), // 預設排序
+                nameof(ApplyCustomerFilters),
+                GetType()
+            );
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤並回傳安全的預設查詢
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyCustomerFilters), GetType(), additionalData: "客戶篩選器應用失敗");
+            _ = NotificationService.ShowErrorAsync("篩選條件應用失敗，已顯示全部資料");
+            
+            // 回傳基本排序的查詢，確保頁面仍能正常運作
+            return query.OrderBy(c => c.Code);
+        }
     }
-    private void InitializeTableColumns()
+    private async Task InitializeTableColumnsAsync()
     {
         try
         {
@@ -192,8 +205,8 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeTableColumns), GetType(), additionalData: "初始化表格欄位失敗");
-
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeTableColumnsAsync), GetType(), additionalData: "初始化表格欄位失敗");
+            await NotificationService.ShowErrorAsync("初始化表格欄位失敗");
             // 設定安全的預設值
             columnDefinitions = new List<TableColumnDefinition>();
         }
