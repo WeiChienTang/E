@@ -1,0 +1,205 @@
+@* 可重用的尺寸編輯組件 - 可在任何頁面中嵌入 *@
+@inject ISizeService SizeService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="Size" 
+                          TService="ISizeService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@SizeId"
+                          Service="@SizeService"
+                          EntityName="尺寸"
+                          EntityNamePlural="尺寸"
+                          ModalTitle="@(SizeId.HasValue ? "編輯尺寸" : "新增尺寸")"
+                          Size="GenericEditModalComponent<Size, ISizeService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadSizeData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(SizeId.HasValue ? "尺寸更新成功" : "尺寸新增成功")"
+                          SaveFailureMessage="尺寸儲存失敗"
+                          RequiredPermission="Size.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? SizeId { get; set; }
+    [Parameter] public EventCallback<Size> OnSizeSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<Size, ISizeService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    // ===== 必要方法 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadAdditionalDataAsync();
+            InitializeFormFields();
+        }
+    }
+
+    private async Task<Size?> LoadSizeData()
+    {
+        try
+        {
+            if (!SizeId.HasValue)
+            {
+                // 新增模式 - 返回預設值
+                return new Size
+                {
+                    Code = await GenerateSizeCodeAsync(),
+                    Status = EntityStatus.Active
+                };
+            }
+            
+            // 編輯模式 - 載入現有資料
+            return await SizeService.GetByIdAsync(SizeId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入尺寸資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            // 如果需要載入額外資料（例如下拉選單選項），可在此處加載
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private void InitializeFormFields()
+    {
+        formFields = new List<FormFieldDefinition>
+        {
+            new()
+            {
+                PropertyName = nameof(Size.Code),
+                Label = "尺寸代碼",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入尺寸代碼",
+                IsRequired = true,
+                MaxLength = 50,
+                HelpText = "唯一識別此尺寸的代碼，最多50個字元"
+            },
+            new()
+            {
+                PropertyName = nameof(Size.SizeName),
+                Label = "尺寸名稱",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入尺寸名稱",
+                IsRequired = true,
+                MaxLength = 50,
+                HelpText = "顯示用的尺寸名稱，最多50個字元"
+            },
+            new()
+            {
+                PropertyName = nameof(Size.Remarks),
+                Label = "備註",
+                FieldType = FormFieldType.TextArea,
+                Placeholder = "請輸入備註",
+                IsRequired = false,
+                MaxLength = 500,
+                Rows = 3,
+                HelpText = "尺寸的額外說明或注意事項",
+                ContainerCssClass = "col-12"
+            }
+        };
+
+        formSections = new Dictionary<string, string>
+        {
+            { nameof(Size.Code), "基本資訊" },
+            { nameof(Size.SizeName), "基本資訊" },
+            { nameof(Size.Remarks), "額外資訊" }
+        };
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            if (OnSizeSaved.HasDelegate)
+            {
+                // 如果需要傳遞儲存的實體，可在此處取得
+                await OnSizeSaved.InvokeAsync(new Size());
+            }
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        try
+        {
+            if (IsVisibleChanged.HasDelegate)
+            {
+                await IsVisibleChanged.InvokeAsync(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"關閉對話框時發生錯誤：{ex.Message}");
+        }
+    }
+
+    // ===== 輔助方法 =====
+    private async Task<string> GenerateSizeCodeAsync()
+    {
+        try
+        {
+            return await CodeGenerationHelper.GenerateEntityCodeAsync(
+                SizeService,
+                "SIZE",
+                (service, code, excludeId) => service.IsSizeCodeExistsAsync(code, excludeId)
+            );
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"產生尺寸代碼時發生錯誤：{ex.Message}");
+            // 如果生成失敗，返回預設格式
+            return $"SIZE{DateTime.Now:yyyyMMddHHmmss}";
+        }
+    }
+}

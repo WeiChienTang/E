@@ -7,7 +7,6 @@
                           TService="IUnitService"
                           Service="@UnitService"
                           EntityBasePath="/units"
-                          CreateUrl="/units/edit"
                           PageTitle="單位維護"
                           PageSubtitle="管理所有計量單位資料與轉換關係"
                           EntityName="單位"
@@ -18,7 +17,16 @@
                           FilterApplier="@ApplyUnitFilters"
                           GetEntityDisplayName="@(unit => unit.UnitName)"
                           RequiredPermission="Unit.Read"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />
+
+@* 使用 ModalHelper 處理事件 *@
+<UnitEditModalComponent IsVisible="@showEditModal"
+                        IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                        UnitId="@editingUnitId"
+                        OnUnitSaved="@modalHandler.OnEntitySavedAsync"
+                        OnCancel="@modalHandler.OnModalCancelAsync" />
 
 @code {
     // 組件參考
@@ -29,10 +37,25 @@
     private List<TableColumnDefinition> columnDefinitions = new();
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingUnitId = null;
+    
+    // Modal 處理器 - 使用 ModalHelper 統一處理
+    private ModalHandler<Unit, GenericIndexPageComponent<Unit, IUnitService>> modalHandler = default!;
+
     protected override void OnInitialized()
     {
         try
         {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<Unit, GenericIndexPageComponent<Unit, IUnitService>>(
+                id => editingUnitId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
             InitializeBreadcrumbs();
             InitializeFilters();
             InitializeTableColumns();
@@ -40,7 +63,7 @@
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitialized), GetType(),
-                additionalData: null
+                additionalData: new { PageName = "UnitIndex" }
             );
         }
     }
@@ -59,7 +82,7 @@
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbs), GetType(),
-                additionalData: null
+                additionalData: new { PageName = "UnitIndex" }
             );
         }
     }
@@ -76,7 +99,8 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
                 nameof(LoadUnitsAsync),
-                GetType()
+                GetType(),
+                additionalData: new { PageName = "UnitIndex" }
             );
             await NotificationService.ShowErrorAsync("載入單位資料失敗");
             return new List<Unit>();
@@ -96,7 +120,7 @@
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFilters), GetType(),
-                additionalData: null
+                additionalData: new { PageName = "UnitIndex" }
             );
         }
     }
@@ -115,7 +139,7 @@
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeTableColumns), GetType(),
-                additionalData: null
+                additionalData: new { PageName = "UnitIndex" }
             );
         }
     }
@@ -146,7 +170,7 @@
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyUnitFilters), GetType(),
-                additionalData: new { SearchModel = searchModel }
+                additionalData: new { SearchModel = searchModel, PageName = "UnitIndex" }
             );
             
             // 發生錯誤時返回原始查詢

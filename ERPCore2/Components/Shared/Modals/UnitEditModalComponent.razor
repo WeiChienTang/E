@@ -1,0 +1,185 @@
+@* 可重用的單位編輯組件 - 可在任何頁面中嵌入 *@
+@inject IUnitService UnitService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="Unit" 
+                          TService="IUnitService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@UnitId"
+                          Service="@UnitService"
+                          EntityName="單位"
+                          EntityNamePlural="單位"
+                          ModalTitle="@(UnitId.HasValue ? "編輯單位" : "新增單位")"
+                          Size="GenericEditModalComponent<Unit, IUnitService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadUnitData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(UnitId.HasValue ? "單位更新成功" : "單位新增成功")"
+                          SaveFailureMessage="單位儲存失敗"
+                          RequiredPermission="Unit.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? UnitId { get; set; }
+    [Parameter] public EventCallback<Unit> OnUnitSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<Unit, IUnitService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    // ===== 必要方法 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadAdditionalDataAsync();
+            InitializeFormFields();
+        }
+    }
+
+    private async Task<Unit?> LoadUnitData()
+    {
+        try
+        {
+            if (!UnitId.HasValue)
+            {
+                // 新增模式 - 返回預設值
+                return new Unit
+                {
+                    Status = EntityStatus.Active
+                };
+            }
+            
+            // 編輯模式 - 載入現有資料
+            return await UnitService.GetByIdAsync(UnitId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入單位資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            // 如果需要載入額外資料（例如下拉選單選項），可在此處加載
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private void InitializeFormFields()
+    {
+        formFields = new List<FormFieldDefinition>
+        {
+            new()
+            {
+                PropertyName = nameof(Unit.Code),
+                Label = "單位代碼",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入單位代碼",
+                IsRequired = true,
+                MaxLength = 50,
+                HelpText = "唯一識別此單位的代碼，最多50個字元"
+            },
+            new()
+            {
+                PropertyName = nameof(Unit.UnitName),
+                Label = "單位名稱",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入單位名稱",
+                IsRequired = true,
+                MaxLength = 20,
+                HelpText = "單位的顯示名稱"
+            },
+            new()
+            {
+                PropertyName = nameof(Unit.Remarks),
+                Label = "備註",
+                FieldType = FormFieldType.TextArea,
+                Placeholder = "請輸入備註",
+                IsRequired = false,
+                MaxLength = 500,
+                Rows = 3,
+                HelpText = "單位的額外說明或注意事項",
+                ContainerCssClass = "col-12"
+            }
+        };
+
+        formSections = new Dictionary<string, string>
+        {
+            { nameof(Unit.Code), "基本資訊" },
+            { nameof(Unit.UnitName), "基本資訊" },
+            { nameof(Unit.Remarks), "額外資訊" }
+        };
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            if (OnUnitSaved.HasDelegate)
+            {
+                // 如果需要傳遞儲存的實體，可在此處取得
+                await OnUnitSaved.InvokeAsync(new Unit());
+            }
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        try
+        {
+            if (IsVisibleChanged.HasDelegate)
+            {
+                await IsVisibleChanged.InvokeAsync(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"關閉對話框時發生錯誤：{ex.Message}");
+        }
+    }
+}
