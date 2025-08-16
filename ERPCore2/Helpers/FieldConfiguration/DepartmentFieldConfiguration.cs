@@ -31,6 +31,7 @@ namespace ERPCore2.Helpers
                             FilterPlaceholder = "輸入部門代碼搜尋",
                             TableOrder = 1,
                             FilterOrder = 1,
+                            HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Department.Code), d => d.Code)
                         }

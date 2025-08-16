@@ -33,6 +33,7 @@ namespace ERPCore2.Helpers
                             FilterPlaceholder = "輸入客戶代碼搜尋",
                             TableOrder = 1,
                             FilterOrder = 1,
+                            HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Customer.Code), c => c.Code)
                         }

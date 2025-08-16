@@ -40,6 +40,7 @@ namespace ERPCore2.Helpers
                             FilterPlaceholder = "輸入員工代碼搜尋",
                             TableOrder = 1,
                             FilterOrder = 1,
+                            HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Employee.Code), e => e.Code)
                         }
@@ -52,7 +53,7 @@ namespace ERPCore2.Helpers
                             DisplayName = "姓名",
                             FilterPlaceholder = "輸入姓名搜尋",
                             TableOrder = 2,
-                            FilterOrder = 2,
+                            FilterOrder = 2,                            
                             FilterFunction = (model, query) => {
                                 var fullNameFilter = model.GetFilterValue("FullName")?.ToString();
                                 if (!string.IsNullOrWhiteSpace(fullNameFilter))
