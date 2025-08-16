@@ -15,15 +15,6 @@ namespace ERPCore2.Data.Entities
         [MaxLength(100, ErrorMessage = "商品名稱不可超過100個字元")]
         [Display(Name = "商品名稱")]
         public string ProductName { get; set; } = string.Empty;
-        
-        // Optional Properties
-        [MaxLength(500, ErrorMessage = "商品描述不可超過500個字元")]
-        [Display(Name = "商品描述")]
-        public string? Description { get; set; }
-        
-        [MaxLength(200, ErrorMessage = "規格說明不可超過200個字元")]
-        [Display(Name = "規格說明")]
-        public string? Specification { get; set; }
 
         // Foreign Keys
         [Display(Name = "單位")]

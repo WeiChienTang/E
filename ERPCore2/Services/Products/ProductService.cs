@@ -90,9 +90,7 @@ namespace ERPCore2.Services
                     .Include(p => p.Size)
                     .Where(p => !p.IsDeleted &&
                                ((p.ProductName != null && p.ProductName.Contains(searchTerm)) ||
-                                (p.Code != null && p.Code.Contains(searchTerm)) ||
-                                (p.Description != null && p.Description.Contains(searchTerm)) ||
-                                (p.Specification != null && p.Specification.Contains(searchTerm))))
+                                (p.Code != null && p.Code.Contains(searchTerm))))
                     .OrderBy(p => p.ProductName)
                     .ToListAsync();
             }
@@ -436,8 +434,6 @@ namespace ERPCore2.Services
             {
                 product.Code = string.Empty;
                 product.ProductName = string.Empty;
-                product.Description = string.Empty;
-                product.Specification = string.Empty;
                 product.UnitId = null;
                 product.SizeId = null;
                 product.ProductCategoryId = null;

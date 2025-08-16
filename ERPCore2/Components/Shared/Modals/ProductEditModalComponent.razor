@@ -219,30 +219,6 @@
             },
             new()
             {
-                PropertyName = nameof(Product.Description),
-                Label = "產品描述",
-                FieldType = FormFieldType.TextArea,
-                Placeholder = "請輸入產品描述",
-                IsRequired = false,
-                MaxLength = 500,
-                Rows = 3,
-                HelpText = "產品的詳細描述",
-                ContainerCssClass = "col-12"
-            },
-            new()
-            {
-                PropertyName = nameof(Product.Specification),
-                Label = "規格說明",
-                FieldType = FormFieldType.TextArea,
-                Placeholder = "請輸入產品規格說明",
-                IsRequired = false,
-                MaxLength = 200,
-                Rows = 3,
-                HelpText = "產品的詳細規格說明",
-                ContainerCssClass = "col-12"
-            },
-            new()
-            {
                 PropertyName = nameof(Product.Remarks),
                 Label = "備註",
                 FieldType = FormFieldType.TextArea,
@@ -262,8 +238,6 @@
             { nameof(Product.SizeId), "基本資訊" },
             { nameof(Product.UnitId), "基本資訊" },
             { nameof(Product.PrimarySupplierId), "基本資訊" },
-            { nameof(Product.Description), "額外資訊" },
-            { nameof(Product.Specification), "額外資訊" },
             { nameof(Product.Remarks), "額外資訊" }
         };
     }
