@@ -22,6 +22,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             var customerTypes = new[]
             {
                 new CustomerType { 
+                    Code = "GEN",
                     TypeName = "一般客戶", 
                     Remarks = "一般合作客戶",
                     CreatedAt = DateTime.Now,
@@ -29,40 +30,13 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Status = EntityStatus.Active
                 },
                 new CustomerType { 
-                    TypeName = "潛在客戶", 
-                    Remarks = "有合作意向的客戶",
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System",
-                    Status = EntityStatus.Active
-                },
-                new CustomerType { 
-                    TypeName = "合作夥伴", 
-                    Remarks = "策略合作夥伴",
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System",
-                    Status = EntityStatus.Active
-                },
-                new CustomerType { 
-                    TypeName = "企業客戶", 
-                    Remarks = "企業法人客戶",
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System",
-                    Status = EntityStatus.Active
-                },
-                new CustomerType { 
+                    Code = "PER",
                     TypeName = "個人客戶", 
                     Remarks = "個人消費者客戶",
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System",
                     Status = EntityStatus.Active
                 },
-                new CustomerType { 
-                    TypeName = "政府客戶", 
-                    Remarks = "政府機關客戶",
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System",
-                    Status = EntityStatus.Active
-                }
             };
 
             await context.CustomerTypes.AddRangeAsync(customerTypes);

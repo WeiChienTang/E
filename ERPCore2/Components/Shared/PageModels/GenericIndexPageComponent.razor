@@ -808,20 +808,9 @@
     
     private async Task RefreshData()
     {
-        // 重新初始化基礎資料 (包括下拉選項等)
-        if (InitializeBasicData != null)
-        {
-            await InitializeBasicData();
-        }
-        
-        // 重新載入統計資料
-        if (ShowStatisticsCards && StatisticsDataLoader != null)
-        {
-            StatisticsData = await StatisticsDataLoader();
-        }
-        
-        await LoadDataAsync();
-        StateHasChanged();
+        // 模擬 F5 刷新頁面效果
+        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+        await Task.CompletedTask;
     }
     
     // ===== 公開方法 (供外部調用) =====

@@ -22,6 +22,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             var supplierTypes = new[]
             {
                 new SupplierType { 
+                    Code = "GEN",
                     TypeName = "製造商", 
                     Remarks = "產品製造廠商",
                     Status = EntityStatus.Active,
@@ -29,6 +30,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CreatedBy = "System"
                 },
                 new SupplierType { 
+                    Code = "RAW",
                     TypeName = "原料供應商", 
                     Remarks = "原材料供應商",
                     Status = EntityStatus.Active,
