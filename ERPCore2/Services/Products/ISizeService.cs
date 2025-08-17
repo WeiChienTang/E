@@ -20,6 +20,11 @@ namespace ERPCore2.Services
         Task<bool> IsSizeCodeExistsAsync(string sizeCode, int? excludeId = null);
         
         /// <summary>
+        /// 檢查尺寸名稱是否存在
+        /// </summary>
+        Task<bool> IsSizeNameExistsAsync(string sizeName, int? excludeId = null);
+        
+        /// <summary>
         /// 取得啟用的尺寸列表
         /// </summary>
         Task<List<Size>> GetActiveSizesAsync();

@@ -168,8 +168,8 @@
         {
             if (OnSizeSaved.HasDelegate)
             {
-                // 如果需要傳遞儲存的實體，可在此處取得
-                await OnSizeSaved.InvokeAsync(new Size());
+                // 傳遞實際儲存的實體資料
+                await OnSizeSaved.InvokeAsync(editModalComponent?.Entity ?? new Size());
             }
             await CloseModal();
         }

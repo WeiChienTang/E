@@ -232,6 +232,10 @@ namespace ERPCore2.Services
                 if (await IsUnitCodeExistsAsync(entity.Code, entity.Id))
                     return ServiceResult.Failure("單位代碼已存在");
 
+                // 檢查單位名稱是否重複
+                if (await IsNameExistsAsync(entity.Name, entity.Id))
+                    return ServiceResult.Failure("單位名稱已存在");
+
                 return ServiceResult.Success();
             }
             catch (Exception ex)

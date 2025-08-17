@@ -363,8 +363,7 @@
                 nameof(Product.ProductCategoryId),
                 searchTerm => new Dictionary<string, object?>
                 {
-                    ["Name"] = searchTerm,
-                    ["Code"] = searchTerm.ToUpper().Replace(" ", "")
+                    ["Name"] = searchTerm
                 }
             },
             {
@@ -372,23 +371,20 @@
                 searchTerm => new Dictionary<string, object?>
                 {
                     ["CompanyName"] = searchTerm,
-                    ["ContactPerson"] = searchTerm
                 }
             },
             {
                 nameof(Product.UnitId),
                 searchTerm => new Dictionary<string, object?>
                 {
-                    ["Name"] = searchTerm,
-                    ["Code"] = searchTerm.ToUpper().Replace(" ", "")
+                    ["Name"] = searchTerm
                 }
             },
             {
                 nameof(Product.SizeId),
                 searchTerm => new Dictionary<string, object?>
                 {
-                    ["Name"] = searchTerm,
-                    ["Code"] = searchTerm.ToUpper().Replace(" ", "")
+                    ["Name"] = searchTerm
                 }
             }
         };

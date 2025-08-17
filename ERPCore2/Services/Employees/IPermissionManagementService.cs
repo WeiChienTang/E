@@ -31,6 +31,14 @@ namespace ERPCore2.Services
         Task<ServiceResult<bool>> IsPermissionCodeExistsAsync(string permissionCode, int? excludePermissionId = null);
 
         /// <summary>
+        /// 檢查權限名稱是否已存在
+        /// </summary>
+        /// <param name="permissionName">權限名稱</param>
+        /// <param name="excludePermissionId">排除的權限ID</param>
+        /// <returns>檢查結果</returns>
+        Task<ServiceResult<bool>> IsPermissionNameExistsAsync(string permissionName, int? excludePermissionId = null);
+
+        /// <summary>
         /// 取得所有模組清單
         /// </summary>
         /// <returns>模組前綴清單</returns>

@@ -24,6 +24,11 @@ namespace ERPCore2.Services
         /// </summary>
         Task<bool> IsCustomerCodeExistsAsync(string customerCode, int? excludeId = null);
         
+        /// <summary>
+        /// 檢查公司名稱是否已存在
+        /// </summary>
+        Task<bool> IsCompanyNameExistsAsync(string companyName, int? excludeId = null);
+        
         #endregion
 
         #region 關聯資料查詢

@@ -109,6 +109,15 @@ namespace ERPCore2.Services
                 {
                     errors.Add("公司名稱為必填欄位");
                 }
+                else
+                {
+                    // 檢查公司名稱唯一性
+                    var isCompanyNameDuplicate = await IsCompanyNameExistsAsync(entity.CompanyName, entity.Id);
+                    if (isCompanyNameDuplicate)
+                    {
+                        errors.Add("公司名稱已存在");
+                    }
+                }
 
                 // 驗證廠商代碼唯一性
                 if (!string.IsNullOrWhiteSpace(entity.Code))
@@ -179,6 +188,30 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsSupplierCodeExistsAsync), GetType(), _logger, 
                     new { SupplierCode = supplierCode, ExcludeId = excludeId });
+                throw;
+            }
+        }
+
+        public async Task<bool> IsCompanyNameExistsAsync(string companyName, int? excludeId = null)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            try
+            {
+                if (string.IsNullOrWhiteSpace(companyName))
+                    return false;
+
+                var query = context.Suppliers.Where(s => s.CompanyName == companyName && !s.IsDeleted);
+                
+                if (excludeId.HasValue)
+                    query = query.Where(s => s.Id != excludeId.Value);
+                    
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCompanyNameExistsAsync), GetType(), _logger, 
+                    new { CompanyName = companyName, ExcludeId = excludeId });
                 throw;
             }
         }

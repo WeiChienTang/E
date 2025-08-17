@@ -129,6 +129,33 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
+        /// 檢查權限名稱是否已存在
+        /// </summary>
+        public async Task<ServiceResult<bool>> IsPermissionNameExistsAsync(string permissionName, int? excludePermissionId = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(permissionName))
+                    return ServiceResult<bool>.Failure("權限名稱不能為空");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Permissions.Where(p => p.Name == permissionName && !p.IsDeleted);
+
+                if (excludePermissionId.HasValue)
+                    query = query.Where(p => p.Id != excludePermissionId.Value);
+
+                var exists = await query.AnyAsync();
+                return ServiceResult<bool>.Success(exists);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsPermissionNameExistsAsync), GetType(), _logger, 
+                    new { PermissionName = permissionName, ExcludePermissionId = excludePermissionId });
+                return ServiceResult<bool>.Failure($"檢查權限名稱時發生錯誤：{ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// 取得所有模組清單
         /// </summary>
         public async Task<ServiceResult<List<string>>> GetAllModulesAsync()

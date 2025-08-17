@@ -129,6 +129,18 @@ namespace ERPCore2.Services
                         errors.Add("客戶代碼已存在");
                 }
 
+                // 檢查公司名稱是否重複
+                if (!string.IsNullOrWhiteSpace(entity.CompanyName))
+                {
+                    var isCompanyNameDuplicate = await context.Customers
+                        .Where(c => c.CompanyName == entity.CompanyName && !c.IsDeleted)
+                        .Where(c => c.Id != entity.Id) // 排除自己
+                        .AnyAsync();
+
+                    if (isCompanyNameDuplicate)
+                        errors.Add("公司名稱已存在");
+                }
+
                 // 檢查客戶類型是否存在
                 if (entity.CustomerTypeId.HasValue)
                 {
@@ -217,6 +229,31 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCustomerCodeExistsAsync), GetType(), _logger, new { 
                     CustomerCode = customerCode,
+                    ExcludeId = excludeId 
+                });
+                return false; // 安全預設值
+            }
+        }
+
+        public async Task<bool> IsCompanyNameExistsAsync(string companyName, int? excludeId = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(companyName))
+                    return false;
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Customers.Where(c => c.CompanyName == companyName && !c.IsDeleted);
+
+                if (excludeId.HasValue)
+                    query = query.Where(c => c.Id != excludeId.Value);
+
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCompanyNameExistsAsync), GetType(), _logger, new { 
+                    CompanyName = companyName,
                     ExcludeId = excludeId 
                 });
                 return false; // 安全預設值

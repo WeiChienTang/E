@@ -273,6 +273,24 @@
                 return false;
             }
 
+            // 檢查權限名稱是否重複
+            var nameCheckResult = await PermissionService.IsPermissionNameExistsAsync(entity.Name, entity.Id);
+            if (!nameCheckResult.IsSuccess)
+            {
+                // 如果驗證失敗，恢復原本的權限主要名稱
+                entity.Code = permissionMainNameValue;
+                await NotificationService.ShowErrorAsync($"驗證失敗：{nameCheckResult.ErrorMessage}", "驗證失敗");
+                return false;
+            }
+
+            if (nameCheckResult.Data)
+            {
+                // 如果權限名稱重複，恢復原本的權限主要名稱
+                entity.Code = permissionMainNameValue;
+                await NotificationService.ShowErrorAsync("權限名稱已存在，請使用不同的權限名稱", "驗證失敗");
+                return false;
+            }
+
             // 儲存權限基本資料
             ServiceResult result;
             if (entity.Id == 0)

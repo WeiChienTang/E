@@ -21,6 +21,11 @@ namespace ERPCore2.Services
         Task<bool> IsSupplierCodeExistsAsync(string supplierCode, int? excludeId = null);
         
         /// <summary>
+        /// 檢查公司名稱是否存在
+        /// </summary>
+        Task<bool> IsCompanyNameExistsAsync(string companyName, int? excludeId = null);
+        
+        /// <summary>
         /// 根據廠商類型取得廠商列表
         /// </summary>
         Task<List<Supplier>> GetBySupplierTypeAsync(int supplierTypeId);

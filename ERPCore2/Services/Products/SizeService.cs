@@ -110,6 +110,15 @@ namespace ERPCore2.Services
                 {
                     errors.Add("尺寸名稱為必填欄位");
                 }
+                else
+                {
+                    // 檢查尺寸名稱唯一性
+                    var isNameDuplicate = await IsSizeNameExistsAsync(entity.Name, entity.Id);
+                    if (isNameDuplicate)
+                    {
+                        errors.Add("尺寸名稱已存在");
+                    }
+                }
 
                 return errors.Any() 
                     ? ServiceResult.Failure(string.Join("; ", errors))
@@ -165,6 +174,30 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsSizeCodeExistsAsync), GetType(), _logger, new { SizeCode = sizeCode, ExcludeId = excludeId });
+                return false; // 安全預設值
+            }
+        }
+
+        public async Task<bool> IsSizeNameExistsAsync(string sizeName, int? excludeId = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(sizeName))
+                    return false;
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Sizes.Where(s => s.Name == sizeName && !s.IsDeleted);
+                
+                if (excludeId.HasValue)
+                {
+                    query = query.Where(s => s.Id != excludeId.Value);
+                }
+
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsSizeNameExistsAsync), GetType(), _logger, new { SizeName = sizeName, ExcludeId = excludeId });
                 return false; // 安全預設值
             }
         }

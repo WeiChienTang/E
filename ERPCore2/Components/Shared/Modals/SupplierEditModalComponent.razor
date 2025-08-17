@@ -391,16 +391,11 @@
     {
         try
         {
-            // 基本驗證 - 使用通知服務
-            if (string.IsNullOrWhiteSpace(entity.Code))
+            // 使用服務的完整驗證邏輯（包含重複檢查）
+            var validationResult = await SupplierService.ValidateAsync(entity);
+            if (!validationResult.IsSuccess)
             {
-                _ = NotificationService.ShowErrorAsync("廠商代碼為必填");
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(entity.CompanyName))
-            {
-                _ = NotificationService.ShowErrorAsync("公司名稱為必填");
+                _ = NotificationService.ShowErrorAsync(validationResult.ErrorMessage);
                 return false;
             }
 
