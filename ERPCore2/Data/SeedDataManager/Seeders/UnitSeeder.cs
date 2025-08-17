@@ -107,30 +107,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CreatedAt = DateTime.Now.AddDays(-31),
                     CreatedBy = "System"
                 },
-                new Unit
-                {
-                    Code = "TOP",
-                    Name = "頂",
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-31),
-                    CreatedBy = "System"
-                },
-                new Unit
-                {
-                    Code = "LIC",
-                    Name = "授權",
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-31),
-                    CreatedBy = "System"
-                },
-                new Unit
-                {
-                    Code = "SHT",
-                    Name = "張",
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-31),
-                    CreatedBy = "System"
-                }
             };
 
             await context.Units.AddRangeAsync(units);

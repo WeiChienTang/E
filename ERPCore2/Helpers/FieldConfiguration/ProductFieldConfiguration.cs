@@ -85,7 +85,7 @@ namespace ERPCore2.Helpers
                         nameof(Product.ProductCategoryId),
                         new FieldDefinition<Product>
                         {
-                            PropertyName = "ProductCategory.CategoryName", // 表格顯示用
+                            PropertyName = "ProductCategory.Name", // 表格顯示用
                             FilterPropertyName = nameof(Product.ProductCategoryId), // 篩選器用
                             DisplayName = "產品分類",
                             FilterType = SearchFilterType.Select,

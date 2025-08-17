@@ -808,6 +808,12 @@
     
     private async Task RefreshData()
     {
+        // 重新初始化基礎資料 (包括下拉選項等)
+        if (InitializeBasicData != null)
+        {
+            await InitializeBasicData();
+        }
+        
         // 重新載入統計資料
         if (ShowStatisticsCards && StatisticsDataLoader != null)
         {
