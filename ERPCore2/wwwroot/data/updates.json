@@ -1,5 +1,210 @@
 [
   {
+    "releaseDate": "2025-08-18",
+    "items": [
+      {
+        "category": "新增",
+        "description": "實作地址服務(AddressService)和介面(IAddressService)，用於管理各實體的地址資訊",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修正",
+        "description": "修正發佈腳本，明確指定專案檔以避免潛在錯誤",
+        "icon": "fas fa-bug"
+      },
+      {
+        "category": "重構",
+        "description": "整合聯絡人資料表並實作統一的聯絡人服務",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "新增",
+        "description": "實作廠商和廠商類型編輯模態功能",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修改",
+        "description": "移除廠商類型、角色、產品分類等資料表中的Description欄位",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "更新廠商和客戶資料表中的統一編號最大長度",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "強化",
+        "description": "增強員工編輯模態組件，新增自動完成功能和智能預填功能",
+        "icon": "fas fa-cog"
+      },
+      {
+        "category": "新增",
+        "description": "新增Tab鍵導航功能，改善模態框按鈕的焦點管理",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "新增角色編輯功能，支持預填值並改善角色新增邏輯",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "強化",
+        "description": "增強廠商編輯功能，新增AutoComplete支援及相關配置",
+        "icon": "fas fa-cog"
+      },
+      {
+        "category": "修改",
+        "description": "移除地址資料表中的城市、區域、主要地址和郵遞區號欄位",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "新增",
+        "description": "在GenericEditModalComponent中新增審計資訊顯示功能",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "強化",
+        "description": "增強客戶和員工編輯模態，新增子集合儲存邏輯",
+        "icon": "fas fa-cog"
+      },
+      {
+        "category": "新增",
+        "description": "新增聯絡類型、地址類型、客戶類型及廠商類型的種子器",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "重構",
+        "description": "精簡聯絡和地址顯示，移除不必要的HTML結構，改善代碼可讀性",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "修改",
+        "description": "更新導航菜單以支持員工管理，調整客戶管理和員工管理的下拉選單結構",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "更新按鈕和導航菜單的懸停樣式，統一使用條紋背景色",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "重構",
+        "description": "重構資料庫架構：重新命名多個資料表的代碼欄位以標準化命名慣例",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "修改",
+        "description": "將多個資料表的'Code'欄位長度增加到50個字元",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修正",
+        "description": "增加對代碼為null的檢查以避免潛在的NullReferenceException",
+        "icon": "fas fa-bug"
+      },
+      {
+        "category": "新增",
+        "description": "為角色和廠商類型新增代碼屬性，並實現代碼生成邏輯",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "重構",
+        "description": "重構篩選邏輯，統一使用基礎實體篩選",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "新增",
+        "description": "新增更新所有ActionButtons的邏輯，確保按鈕狀態與實體資料同步",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "重構",
+        "description": "重構產品分類編輯以使用模態組件和集中式代碼生成輔助器",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "修改",
+        "description": "重新命名角色和權限資料表中的欄位以保持一致性",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "移除單位和尺寸資料表中的SizeDescription欄位",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "重構",
+        "description": "簡化錯誤處理邏輯，移除冗餘的Task.Run包裝",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "重構",
+        "description": "重構多個組件的模態處理，使用ModalHelper統一模態操作",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "重構",
+        "description": "重構欄位配置系統，簡化篩選器和表格欄位的初始化邏輯",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "修改",
+        "description": "移除員工姓氏和名字欄位",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "重構",
+        "description": "移除舊的產品、尺寸和單位編輯頁面，新增可重用的模態組件",
+        "icon": "fas fa-code"
+      },
+      {
+        "category": "修改",
+        "description": "移除產品資料表中的Description和Specification欄位",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "修改",
+        "description": "將單位資料表中的'UnitName'欄位重新命名為'Name'",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "強化",
+        "description": "增加自動完成欄位的失去焦點處理與智能匹配功能",
+        "icon": "fas fa-cog"
+      },
+      {
+        "category": "新增",
+        "description": "引入ActionButtonHelper統一管理編輯模態中的操作按鈕",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "新增檢查權限名稱、公司名稱及尺寸名稱唯一性的功能",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "新增",
+        "description": "為客戶類型和廠商類型新增代碼屬性",
+        "icon": "fas fa-plus-circle"
+      },
+      {
+        "category": "修改",
+        "description": "移除倉庫和倉庫位置資料表中的不必要欄位",
+        "icon": "fas fa-edit"
+      },
+      {
+        "category": "強化",
+        "description": "增強採購訂單管理，新增模態和欄位配置功能",
+        "icon": "fas fa-cog"
+      },
+      {
+        "category": "修改",
+        "description": "更新頁面標題與顯示名稱，新增日期篩選功能以支援新格式",
+        "icon": "fas fa-edit"
+      }
+    ]
+  },
+  {
     "releaseDate": "2025-08-12",
     "items": [
       {
