@@ -85,13 +85,13 @@
         </NavMenuItem>    
 
         <!-- 採購管理下拉選單 -->
-        @* <NavMenuItem Text="採購管理" IconClass="bi bi-truck" MenuKey="purchase_management">
+        <NavMenuItem Text="採購管理" IconClass="bi bi-truck" MenuKey="purchase_management">
             <DropdownItems>
-                <NavDropdownItem Text="採購訂單" Url="/purchase/orders" RequiredPermission="Purchase.Read" ParentMenuKey="purchase_management" />
-                <NavDropdownItem Text="採購入庫" Url="/purchase-receivings" RequiredPermission="PurchaseReceiving.Read" ParentMenuKey="purchase_management" />
-                <NavDropdownItem Text="採購退回" Url="/purchase-returns" RequiredPermission="PurchaseReturn.Read" ParentMenuKey="purchase_management" />
+                <NavDropdownItem Text="訂單" Url="/purchase/orders" RequiredPermission="Purchase.Read" ParentMenuKey="purchase_management" />
+                @* <NavDropdownItem Text="入庫" Url="/purchase-receivings" RequiredPermission="PurchaseReceiving.Read" ParentMenuKey="purchase_management" />
+                <NavDropdownItem Text="退回" Url="/purchase-returns" RequiredPermission="PurchaseReturn.Read" ParentMenuKey="purchase_management" /> *@
             </DropdownItems>
-        </NavMenuItem>      *@
+        </NavMenuItem>     
         
         <!-- 銷貨管理下拉選單 -->
         @* <NavMenuItem Text="銷貨管理" IconClass="bi bi-cart-fill" MenuKey="sales_management">

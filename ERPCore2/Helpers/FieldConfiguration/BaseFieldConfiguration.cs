@@ -40,11 +40,20 @@ namespace ERPCore2.Helpers
                     case SearchFilterType.Select:
                         builder.AddSelect(filterPropertyName, field.DisplayName, field.Options ?? new List<SelectOption>());
                         break;
+                    case SearchFilterType.MultiSelect:
+                        builder.AddMultiSelect(filterPropertyName, field.DisplayName, field.Options ?? new List<SelectOption>());
+                        break;
                     case SearchFilterType.Number:
                         builder.AddNumber(filterPropertyName, field.DisplayName, field.FilterPlaceholder);
                         break;
+                    case SearchFilterType.NumberRange:
+                        builder.AddNumberRange(filterPropertyName, field.DisplayName);
+                        break;
                     case SearchFilterType.Date:
                         builder.AddDate(filterPropertyName, field.DisplayName);
+                        break;
+                    case SearchFilterType.DateRange:
+                        builder.AddDateRange(filterPropertyName, field.DisplayName);
                         break;
                     case SearchFilterType.Boolean:
                         builder.AddBoolean(filterPropertyName, field.DisplayName);

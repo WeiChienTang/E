@@ -1,0 +1,429 @@
+@* 可重用的採購單編輯組件 - 可在任何頁面中嵌入 *@
+@inject IPurchaseOrderService PurchaseOrderService
+@inject ISupplierService SupplierService
+@inject INotificationService NotificationService
+@inject ActionButtonHelper ActionButtonHelper
+@using ERPCore2.Helpers
+
+<GenericEditModalComponent TEntity="PurchaseOrder" 
+                          TService="IPurchaseOrderService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@PurchaseOrderId"
+                          Service="@PurchaseOrderService"
+                          EntityName="採購單"
+                          EntityNamePlural="採購單"
+                          ModalTitle="@(PurchaseOrderId.HasValue ? "編輯採購單" : "新增採購單")"
+                          Size="GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.ModalSize.ExtraLarge"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          AutoCompleteCollections="@GetAutoCompleteCollections()"
+                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
+                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          ModalManagers="@GetModalManagers()"
+                          DataLoader="@LoadPurchaseOrderData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(PurchaseOrderId.HasValue ? "採購單更新成功" : "採購單新增成功")"
+                          SaveFailureMessage="採購單儲存失敗"
+                          RequiredPermission="PurchaseOrder.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel"
+                          OnFieldChanged="@OnFieldValueChanged" />
+
+@* 供應商編輯 Modal *@
+<SupplierEditModalComponent @ref="supplierEditModal"
+                           IsVisible="@supplierModalManager.IsModalVisible"
+                           IsVisibleChanged="@supplierModalManager.HandleModalVisibilityChangedAsync"
+                           SupplierId="@supplierModalManager.SelectedEntityId"
+                           PrefilledValues="@supplierModalManager.PrefilledValues"
+                           OnSupplierSaved="@OnSupplierSavedWrapper"
+                           OnCancel="@supplierModalManager.HandleModalCancelAsync" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? PurchaseOrderId { get; set; }
+    [Parameter] public EventCallback<PurchaseOrder> OnPurchaseOrderSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    
+    // 原始資料集合（用於 AutoComplete）
+    private List<Supplier> availableSuppliers = new();
+    
+    // Modal 管理器
+    private SupplierEditModalComponent? supplierEditModal;
+    private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
+    
+    // 下拉選單選項（向下相容）
+    private List<Supplier> suppliers = new();
+    private List<SelectOption> supplierOptions = new();
+    private List<SelectOption> statusOptions = new();
+
+    // ===== 必要方法 =====
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 管理器
+            InitializeSupplierModalManager();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化採購單編輯組件時發生錯誤");
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+        }
+    }
+
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            if (OnPurchaseOrderSaved.HasDelegate && editModalComponent?.Entity != null)
+            {
+                await OnPurchaseOrderSaved.InvokeAsync(editModalComponent.Entity);
+            }
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(), 
+                additionalData: "採購單編輯Modal儲存成功處理失敗");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(), 
+                additionalData: "採購單編輯Modal取消處理失敗");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        try
+        {
+            if (IsVisibleChanged.HasDelegate)
+            {
+                await IsVisibleChanged.InvokeAsync(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(CloseModal), GetType(), 
+                additionalData: "採購單編輯Modal關閉失敗");
+        }
+    }
+
+    private async Task<PurchaseOrder?> LoadPurchaseOrderData()
+    {
+        try
+        {
+            if (!PurchaseOrderId.HasValue)
+            {
+                // 新增模式 - 自動產生採購單號
+                var generatedCode = await GeneratePurchaseOrderNumberAsync();
+                return new PurchaseOrder
+                {
+                    OrderDate = DateTime.Today,
+                    ExpectedDeliveryDate = DateTime.Today.AddDays(7),
+                    Status = EntityStatus.Active,
+                    TotalAmount = 0,
+                    PurchaseOrderNumber = generatedCode
+                };
+            }
+
+            // 編輯模式
+            return await PurchaseOrderService.GetByIdAsync(PurchaseOrderId.Value);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPurchaseOrderData), GetType(), 
+                additionalData: $"載入採購單資料失敗 - ID: {PurchaseOrderId}");
+            await NotificationService.ShowErrorAsync($"載入採購單資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            // 載入供應商選項
+            suppliers = await SupplierService.GetAllAsync();
+            availableSuppliers = suppliers; // 用於 AutoComplete
+            supplierOptions = suppliers.Where(s => s.Status == EntityStatus.Active)
+                .Select(s => new SelectOption
+                {
+                    Text = s.CompanyName,
+                    Value = s.Id.ToString()
+                }).ToList();
+
+            // 初始化狀態選項
+            statusOptions = new List<SelectOption>
+            {
+                new SelectOption { Text = "啟用", Value = "Active" },
+                new SelectOption { Text = "停用", Value = "Inactive" }
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType(), 
+                additionalData: "採購單編輯Modal載入額外資料失敗");
+            
+            // 設定安全的預設值
+            supplierOptions = new List<SelectOption>();
+            statusOptions = new List<SelectOption>();
+        }
+    }
+
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(PurchaseOrder.PurchaseOrderNumber),
+                    Label = "採購單號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入採購單號",
+                    IsRequired = true,
+                    MaxLength = 30,
+                    HelpText = "採購單的唯一編號，新增時系統會自動產生，也可手動修改",
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseOrder.SupplierId),
+                    Label = "供應商",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇供應商",
+                    IsRequired = true,
+                    MinSearchLength = 0,
+                    HelpText = "輸入供應商名稱進行搜尋，或直接選擇",
+                    ActionButtons = await GetSupplierActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseOrder.OrderDate),
+                    Label = "採購日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "採購單建立日期",
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseOrder.ExpectedDeliveryDate),
+                    Label = "預定交貨日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "預計供應商交貨的日期",
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseOrder.TotalAmount),
+                    Label = "總金額",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "0.00",
+                    IsRequired = true,
+                    HelpText = "採購單的總金額",
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseOrder.OrderRemarks),
+                    Label = "備註",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入備註",
+                    IsRequired = false,
+                    MaxLength = 500,
+                    Rows = 2,
+                    HelpText = "採購單的額外說明或注意事項",
+                    ContainerCssClass = "col-12"
+                }
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(PurchaseOrder.PurchaseOrderNumber), "基本資訊" },
+                { nameof(PurchaseOrder.SupplierId), "基本資訊" },
+                { nameof(PurchaseOrder.OrderDate), "基本資訊" },
+                { nameof(PurchaseOrder.ExpectedDeliveryDate), "基本資訊" },
+                { nameof(PurchaseOrder.TotalAmount), "金額資訊" },
+                { nameof(PurchaseOrder.OrderRemarks), "額外資訊" }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFormFieldsAsync), GetType(), 
+                additionalData: "採購單編輯Modal表單欄位初始化失敗");
+            
+            // 設定安全的預設值
+            formFields = new List<FormFieldDefinition>();
+            formSections = new Dictionary<string, string>();
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    /// <summary>
+    /// 生成採購單號
+    /// </summary>
+    private async Task<string> GeneratePurchaseOrderNumberAsync()
+    {
+        try
+        {
+            return await PurchaseOrderService.GenerateOrderNumberAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GeneratePurchaseOrderNumberAsync), GetType(), 
+                additionalData: "生成採購單號失敗");
+            
+            // 如果服務方法失敗，使用 CodeGenerationHelper 作為後備
+            return CodeGenerationHelper.GenerateSimpleEntityCode("PO", usePreciseTimestamp: true);
+        }
+    }
+    
+    // ===== AutoComplete 配置方法 =====
+    
+    /// <summary>
+    /// 配置 AutoComplete 資料集合
+    /// </summary>
+    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
+    {
+        return new Dictionary<string, IEnumerable<object>>
+        {
+            { nameof(PurchaseOrder.SupplierId), availableSuppliers.Cast<object>() }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 顯示屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(PurchaseOrder.SupplierId), "CompanyName" }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 值屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteValueProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(PurchaseOrder.SupplierId), "Id" }
+        };
+    }
+    
+    /// <summary>
+    /// 配置 Modal 管理器
+    /// </summary>
+    private Dictionary<string, object> GetModalManagers()
+    {
+        return new Dictionary<string, object>
+        {
+            { nameof(PurchaseOrder.SupplierId), supplierModalManager }
+        };
+    }
+    
+    // ===== Modal 管理器初始化方法 =====
+    
+    /// <summary>
+    /// 初始化供應商 Modal 管理器
+    /// </summary>
+    private void InitializeSupplierModalManager()
+    {
+        supplierModalManager = new RelatedEntityManagerBuilder<Supplier>(NotificationService, "供應商")
+            .WithPropertyName(nameof(PurchaseOrder.SupplierId))
+            .WithReloadCallback(LoadAdditionalDataAsync)
+            .WithStateChangedCallback(StateHasChanged)
+            .WithAutoSelectCallback(supplierId => 
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    editModalComponent.Entity.SupplierId = supplierId;
+                }
+            })
+            .WithCustomPostProcess(async supplier => 
+            {
+                await InitializeFormFieldsAsync();
+            })
+            .Build();
+    }
+    
+    // ===== ActionButton 產生方法 =====
+    
+    /// <summary>
+    /// 產生供應商操作按鈕 - 使用統一 Helper
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetSupplierActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            supplierModalManager, 
+            nameof(PurchaseOrder.SupplierId)
+        );
+    }
+    
+    // ===== Modal 事件包裝器方法 =====
+    
+    /// <summary>
+    /// 包裝供應商儲存事件
+    /// </summary>
+    private async Task OnSupplierSavedWrapper(Supplier savedSupplier)
+    {
+        await supplierModalManager.HandleEntitySavedAsync(savedSupplier, shouldAutoSelect: true);
+    }
+    
+    /// <summary>
+    /// 處理欄位值變更事件 - 使用統一 Helper
+    /// </summary>
+    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    {
+        try
+        {
+            // 使用泛型管理器自動處理供應商欄位變更
+            if (fieldChange.PropertyName == nameof(PurchaseOrder.SupplierId))
+            {
+                supplierModalManager.UpdateFieldActionButtons(formFields, nameof(PurchaseOrder.SupplierId), fieldChange.Value as int?);
+            }
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
+        }
+    }
+}
