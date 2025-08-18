@@ -281,6 +281,29 @@ namespace ERPCore2.Helpers
         {
             try
             {
+                // 防護性檢查
+                if (query == null)
+                {
+                    return defaultOrderBy(Enumerable.Empty<T>().AsQueryable());
+                }
+
+                // 檢查是否為空集合，如果是則直接返回排序後的空查詢，避免不必要的篩選處理
+                bool isEmpty = false;
+                try
+                {
+                    isEmpty = !query.Any();
+                }
+                catch
+                {
+                    // 如果無法檢查 Any()，假設為空以確保安全
+                    isEmpty = true;
+                }
+
+                if (isEmpty)
+                {
+                    return defaultOrderBy(query);
+                }
+
                 foreach (var filterAction in filterActions)
                 {
                     query = filterAction(searchModel, query);
@@ -295,7 +318,7 @@ namespace ERPCore2.Helpers
                     methodName,
                     sourceType
                 );
-                return defaultOrderBy(query);
+                return defaultOrderBy(query ?? Enumerable.Empty<T>().AsQueryable());
             }
         }
 

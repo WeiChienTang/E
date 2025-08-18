@@ -45,19 +45,14 @@ namespace ERPCore2.Helpers.FieldConfiguration
                         new FieldDefinition<PurchaseOrder>
                         {
                             PropertyName = "Supplier.CompanyName", // 表格顯示用
-                            FilterPropertyName = nameof(PurchaseOrder.SupplierId), // 篩選器用
+                            FilterPropertyName = "Supplier.CompanyName", // 篩選器也使用公司名稱
                             DisplayName = "供應商",
-                            FilterType = SearchFilterType.Select,
+                            FilterType = SearchFilterType.Text,
+                            FilterPlaceholder = "輸入供應商名稱搜尋",
                             TableOrder = 2,
                             FilterOrder = 2,
-                            Options = _suppliers.Where(s => s.Status == EntityStatus.Active)
-                                .Select(s => new SelectOption 
-                                { 
-                                    Text = s.CompanyName, 
-                                    Value = s.Id.ToString() 
-                                }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(PurchaseOrder.SupplierId), po => po.SupplierId)
+                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
+                                model, query, "Supplier.CompanyName", po => po.Supplier != null ? po.Supplier.CompanyName : null, allowNull: true)
                         }
                     },
                     {

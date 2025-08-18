@@ -112,6 +112,12 @@ namespace ERPCore2.Helpers
         /// </summary>
         public virtual IQueryable<TEntity> ApplyFilters(SearchFilterModel searchModel, IQueryable<TEntity> query, string methodName, Type pageType)
         {
+            // 先檢查查詢是否為空或 null
+            if (query == null)
+            {
+                return GetDefaultSort()(Enumerable.Empty<TEntity>().AsQueryable());
+            }
+
             return FilterHelper.ApplyFiltersWithErrorHandling(
                 searchModel,
                 query,
