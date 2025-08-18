@@ -34,7 +34,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Address = "台中市北屯區文心路四段123號",
                     ContactPerson = "王倉管",
                     Phone = "04-2234-5678",
-                    WarehouseType = WarehouseTypeEnum.Main,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
                 },
@@ -45,7 +44,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Address = "台中市西屯區台灣大道三段456號",
                     ContactPerson = "李倉管",
                     Phone = "04-2345-6789",
-                    WarehouseType = WarehouseTypeEnum.Branch,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
                 },

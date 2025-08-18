@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
-using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Data.Entities
 {
@@ -26,10 +25,6 @@ namespace ERPCore2.Data.Entities
         [MaxLength(20, ErrorMessage = "聯絡電話不可超過20個字元")]
         [Display(Name = "聯絡電話")]
         public string? Phone { get; set; }
-        
-        [Required(ErrorMessage = "倉庫類型為必填")]
-        [Display(Name = "倉庫類型")]
-        public WarehouseTypeEnum WarehouseType { get; set; } = WarehouseTypeEnum.Main;
         
         // Navigation Properties
         public ICollection<WarehouseLocation> WarehouseLocations { get; set; } = new List<WarehouseLocation>();

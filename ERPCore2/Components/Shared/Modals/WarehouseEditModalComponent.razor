@@ -1,0 +1,233 @@
+@* 可重用的倉庫編輯組件 - 可在任何頁面中嵌入 *@
+@inject IWarehouseService WarehouseService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="Warehouse" 
+                          TService="IWarehouseService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@WarehouseId"
+                          Service="@WarehouseService"
+                          EntityName="倉庫"
+                          EntityNamePlural="倉庫"
+                          ModalTitle="@(WarehouseId.HasValue ? "編輯倉庫" : "新增倉庫")"
+                          Size="GenericEditModalComponent<Warehouse, IWarehouseService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadWarehouseData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(WarehouseId.HasValue ? "倉庫更新成功" : "倉庫新增成功")"
+                          SaveFailureMessage="倉庫儲存失敗"
+                          RequiredPermission="Warehouse.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? WarehouseId { get; set; }
+    [Parameter] public EventCallback<Warehouse> OnWarehouseSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<Warehouse, IWarehouseService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    // ===== 必要方法 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadAdditionalDataAsync();
+            InitializeFormFields();
+        }
+    }
+
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            if (OnWarehouseSaved.HasDelegate)
+            {
+                // 如果有指定儲存成功回調，則執行
+                await OnWarehouseSaved.InvokeAsync();
+            }
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        try
+        {
+            if (IsVisibleChanged.HasDelegate)
+            {
+                await IsVisibleChanged.InvokeAsync(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"關閉視窗時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task<Warehouse?> LoadWarehouseData()
+    {
+        try
+        {
+            if (!WarehouseId.HasValue)
+            {
+                // 新增模式 - 自動產生倉庫代碼
+                var generatedCode = await GenerateWarehouseCodeAsync();
+                return new Warehouse
+                {
+                    Code = generatedCode,
+                    Status = EntityStatus.Active
+                };
+            }
+
+            // 編輯模式
+            return await WarehouseService.GetByIdAsync(WarehouseId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入倉庫資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            // 目前沒有需要載入的額外資料
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private void InitializeFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(Warehouse.Code),
+                    Label = "倉庫代碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入倉庫代碼",
+                    IsRequired = true,
+                    MaxLength = 20,
+                    HelpText = "倉庫的唯一識別代碼，新增時系統會自動產生，也可手動修改"
+                },
+                new()
+                {
+                    PropertyName = nameof(Warehouse.Name),
+                    Label = "倉庫名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入倉庫名稱",
+                    IsRequired = true,
+                    MaxLength = 50,
+                    HelpText = "倉庫的唯一名稱，用於識別不同倉庫"
+                },
+                new()
+                {
+                    PropertyName = nameof(Warehouse.ContactPerson),
+                    Label = "聯絡人",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入聯絡人姓名",
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "倉庫的聯絡人姓名"
+                },
+                new()
+                {
+                    PropertyName = nameof(Warehouse.Phone),
+                    Label = "聯絡電話",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入聯絡電話",
+                    IsRequired = false,
+                    MaxLength = 20,
+                    HelpText = "倉庫的聯絡電話"
+                },
+                new()
+                {
+                    PropertyName = nameof(Warehouse.Address),
+                    Label = "地址",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入倉庫地址",
+                    IsRequired = false,
+                    MaxLength = 200,
+                    Rows = 3,
+                    HelpText = "倉庫的詳細地址",
+                    ContainerCssClass = "col-12"
+                }
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(Warehouse.Code), "基本資訊" },
+                { nameof(Warehouse.Name), "基本資訊" },
+                { nameof(Warehouse.ContactPerson), "聯絡資訊" },
+                { nameof(Warehouse.Phone), "聯絡資訊" },
+                { nameof(Warehouse.Address), "聯絡資訊" }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeFormFields),
+                GetType(),
+                additionalData: new { WarehouseId }
+            );
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    /// <summary>
+    /// 生成倉庫代碼
+    /// </summary>
+    private async Task<string> GenerateWarehouseCodeAsync()
+    {
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            WarehouseService,
+            "WH",
+            (service, code, excludeId) => service.IsWarehouseCodeExistsAsync(code, excludeId)
+        );
+    }
+}

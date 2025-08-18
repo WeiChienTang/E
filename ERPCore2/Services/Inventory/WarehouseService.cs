@@ -98,23 +98,24 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 根據倉庫類型取得倉庫
+        /// 檢查倉庫名稱是否存在
         /// </summary>
-        public async Task<List<Warehouse>> GetByWarehouseTypeAsync(WarehouseTypeEnum warehouseType)
+        public async Task<bool> IsWarehouseNameExistsAsync(string warehouseName, int? excludeId = null)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Warehouses
-                    .Include(w => w.WarehouseLocations)
-                    .Where(w => !w.IsDeleted && w.WarehouseType == warehouseType)
-                    .OrderBy(w => w.Code)
-                    .ToListAsync();
+                var query = context.Warehouses.Where(w => w.Name == warehouseName && !w.IsDeleted);
+
+                if (excludeId.HasValue)
+                    query = query.Where(w => w.Id != excludeId.Value);
+
+                return await query.AnyAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByWarehouseTypeAsync), GetType(), _logger, new { WarehouseType = warehouseType });
-                return new List<Warehouse>();
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsWarehouseNameExistsAsync), GetType(), _logger, new { WarehouseName = warehouseName, ExcludeId = excludeId });
+                return false;
             }
         }
 
@@ -154,6 +155,10 @@ namespace ERPCore2.Services
                 // 檢查倉庫代碼是否重複
                 if (await IsWarehouseCodeExistsAsync(entity.Code, entity.Id))
                     return ServiceResult.Failure("倉庫代碼已存在");
+
+                // 檢查倉庫名稱是否重複
+                if (await IsWarehouseNameExistsAsync(entity.Name, entity.Id))
+                    return ServiceResult.Failure("倉庫名稱已存在");
 
                 return ServiceResult.Success();
             }

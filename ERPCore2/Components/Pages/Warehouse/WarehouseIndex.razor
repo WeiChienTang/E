@@ -1,6 +1,7 @@
 @page "/warehouses"
 @inject IWarehouseService WarehouseService
 @rendermode InteractiveServer
+@inject INotificationService NotificationService
 
 <GenericIndexPageComponent TEntity="Warehouse" 
                         TService="IWarehouseService"
@@ -16,53 +17,79 @@
                         FilterApplier="@ApplyWarehouseFilters"
                         GetEntityDisplayName="@(warehouse => warehouse.Name)"
                         RequiredPermission="Warehouse.Read"
+                        OnAddClick="@modalHandler.ShowAddModalAsync"
+                        OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent" />
+
+<WarehouseEditModalComponent IsVisible="@showEditModal"
+                           IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                           WarehouseId="@editingWarehouseId"
+                           OnWarehouseSaved="@modalHandler.OnEntitySavedAsync"
+                           OnCancel="@modalHandler.OnModalCancelAsync" />
 @code {
     // 組件參考
     private GenericIndexPageComponent<Warehouse, IWarehouseService> indexComponent = default!;
+    
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingWarehouseId = null;
+    
+    // Modal 處理器
+    private ModalHandler<Warehouse, GenericIndexPageComponent<Warehouse, IWarehouseService>> modalHandler = default!;
+    
+    // 欄位配置
+    private WarehouseFieldConfiguration fieldConfiguration = default!;
     
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         try
         {
-            InitializeBreadcrumbs();
-            InitializeFilters();
-            InitializeTableColumns();
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<Warehouse, GenericIndexPageComponent<Warehouse, IWarehouseService>>(
+                id => editingWarehouseId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
+            await InitializeBreadcrumbsAsync();
+            
+            // 建立欄位配置（傳遞 NotificationService）
+            fieldConfiguration = new WarehouseFieldConfiguration(NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(OnInitialized),
-                GetType(),
-                additionalData: "初始化頁面失敗"
-            );
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: new { PageName = "WarehouseIndex" });
+            await NotificationService.ShowErrorAsync("初始化倉庫頁面失敗");
         }
     }
 
-    private void InitializeBreadcrumbs()
+    private async Task InitializeBreadcrumbsAsync()
     {
         try
         {
             breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
             {
                 new("首頁", "/"),
-                new("倉庫管理")
+                new("庫存管理"),
+                new("倉庫維護")
             };
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeBreadcrumbs),
-                GetType(),
-                additionalData: "初始化導覽失敗"
-            );
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
         }
     }
 
@@ -75,91 +102,11 @@
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(LoadWarehousesAsync),
-                GetType(),
-                additionalData: "載入倉庫資料失敗"
-            );
-            
-            StateHasChanged();
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehousesAsync), GetType(), additionalData: "載入倉庫資料失敗");
+            await NotificationService.ShowErrorAsync("載入倉庫資料失敗");
+            // 設定安全的預設值
             return new List<Warehouse>();
-        }
-    }
-
-    private void InitializeFilters()
-    {
-        try
-        {
-            // 準備狀態選項
-            var statusOptions = new List<SelectOption>
-            {
-                new() { Text = "啟用", Value = "True" },
-                new() { Text = "停用", Value = "False" }
-            };
-
-            // 準備倉庫類型選項
-            var warehouseTypeOptions = new List<SelectOption>
-            {
-                new() { Text = "主倉庫", Value = WarehouseTypeEnum.Main.ToString() },
-                new() { Text = "分倉庫", Value = WarehouseTypeEnum.Branch.ToString() },
-                new() { Text = "虛擬倉庫", Value = WarehouseTypeEnum.Virtual.ToString() },
-                new() { Text = "退貨倉庫", Value = WarehouseTypeEnum.Return.ToString() }
-            };
-
-            // 建立篩選定義 - 使用模糊搜尋
-            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("WarehouseCode", "倉庫代碼", "輸入倉庫代碼搜尋")
-                .AddText("WarehouseName", "倉庫名稱", "輸入倉庫名稱搜尋")
-                .AddText("ContactPerson", "聯絡人", "輸入聯絡人姓名搜尋")
-                .AddText("Address", "地址", "輸入地址搜尋")
-                .AddSelect("WarehouseType", "倉庫類型", warehouseTypeOptions)
-                .AddSelect("IsActive", "狀態", statusOptions)
-                .AddSelect("IsDefault", "預設倉庫", new List<SelectOption>
-                {
-                    new() { Text = "是", Value = "True" },
-                    new() { Text = "否", Value = "False" }
-                })
-                .Build();
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeFilters),
-                GetType(),
-                additionalData: "初始化篩選器失敗"
-            );
-        }
-    }
-
-    private void InitializeTableColumns()
-    {
-        try
-        {
-            columnDefinitions = new List<TableColumnDefinition>
-            {
-                TableColumnDefinition.Text("倉庫代碼", nameof(Warehouse.Code)),
-                TableColumnDefinition.Text("倉庫名稱", nameof(Warehouse.Name)),
-                TableColumnDefinition.Text("聯絡人", nameof(Warehouse.ContactPerson)),
-                TableColumnDefinition.Text("聯絡電話", nameof(Warehouse.Phone)),
-                TableColumnDefinition.Status("倉庫類型", nameof(Warehouse.WarehouseType), new Dictionary<object, string>
-                {
-                    { WarehouseTypeEnum.Main, "badge bg-primary" },
-                    { WarehouseTypeEnum.Branch, "badge bg-info" },
-                    { WarehouseTypeEnum.Virtual, "badge bg-warning" },
-                    { WarehouseTypeEnum.Return, "badge bg-secondary" }
-                }),
-            };
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeTableColumns),
-                GetType(),
-                additionalData: "初始化表格欄位失敗"
-            );
         }
     }
 
@@ -168,59 +115,15 @@
     {
         try
         {
-            // 倉庫代碼篩選
-            var warehouseCodeFilter = searchModel.GetFilterValue("WarehouseCode")?.ToString();
-            if (!string.IsNullOrWhiteSpace(warehouseCodeFilter))
-            {
-                query = query.Where(w => 
-                    w.Code != null && w.Code.Contains(warehouseCodeFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 倉庫名稱篩選
-            var warehouseNameFilter = searchModel.GetFilterValue("WarehouseName")?.ToString();
-            if (!string.IsNullOrWhiteSpace(warehouseNameFilter))
-            {
-                query = query.Where(w => 
-                    w.Name.Contains(warehouseNameFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 聯絡人篩選
-            var contactPersonFilter = searchModel.GetFilterValue("ContactPerson")?.ToString();
-            if (!string.IsNullOrWhiteSpace(contactPersonFilter))
-            {
-                query = query.Where(w => 
-                    !string.IsNullOrEmpty(w.ContactPerson) && 
-                    w.ContactPerson.Contains(contactPersonFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 地址篩選
-            var addressFilter = searchModel.GetFilterValue("Address")?.ToString();
-            if (!string.IsNullOrWhiteSpace(addressFilter))
-            {
-                query = query.Where(w => 
-                    !string.IsNullOrEmpty(w.Address) && 
-                    w.Address.Contains(addressFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 倉庫類型篩選
-            var warehouseTypeFilter = searchModel.GetFilterValue("WarehouseType")?.ToString();
-            if (!string.IsNullOrWhiteSpace(warehouseTypeFilter) && Enum.TryParse<WarehouseTypeEnum>(warehouseTypeFilter, out var warehouseType))
-            {
-                query = query.Where(w => w.WarehouseType == warehouseType);
-            }
-
-            return query.OrderBy(w => w.Code);
+            return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyWarehouseFilters), GetType());
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(ApplyWarehouseFilters),
-                GetType(),
-                additionalData: "篩選倉庫資料失敗"
-            );
+            // 記錄錯誤並回傳安全的預設查詢
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyWarehouseFilters), GetType(), additionalData: "倉庫篩選器應用失敗");
+            _ = NotificationService.ShowErrorAsync("篩選條件應用失敗，已顯示全部資料");
             
-            // 發生錯誤時返回原始查詢
+            // 回傳基本排序的查詢，確保頁面仍能正常運作
             return query.OrderBy(w => w.Code);
         }
     }

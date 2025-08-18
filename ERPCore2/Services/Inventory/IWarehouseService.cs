@@ -13,9 +13,9 @@ namespace ERPCore2.Services
         Task<bool> IsWarehouseCodeExistsAsync(string warehouseCode, int? excludeId = null);
         
         /// <summary>
-        /// 根據倉庫類型取得倉庫
+        /// 檢查倉庫名稱是否存在
         /// </summary>
-        Task<List<Warehouse>> GetByWarehouseTypeAsync(Data.Enums.WarehouseTypeEnum warehouseType);
+        Task<bool> IsWarehouseNameExistsAsync(string warehouseName, int? excludeId = null);
         
         /// <summary>
         /// 取得倉庫及其庫位
