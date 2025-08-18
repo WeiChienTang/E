@@ -31,7 +31,7 @@ namespace ERPCore2.Helpers.FieldConfiguration
                         new FieldDefinition<PurchaseOrder>
                         {
                             PropertyName = nameof(PurchaseOrder.PurchaseOrderNumber),
-                            DisplayName = "採購單號",
+                            DisplayName = "單號",
                             FilterPlaceholder = "輸入採購單號搜尋",
                             TableOrder = 1,
                             FilterOrder = 1,
@@ -65,14 +65,14 @@ namespace ERPCore2.Helpers.FieldConfiguration
                         new FieldDefinition<PurchaseOrder>
                         {
                             PropertyName = nameof(PurchaseOrder.OrderDate),
-                            DisplayName = "採購日期",
+                            DisplayName = "採購日",
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 3,
                             FilterOrder = 3,
-                            HeaderStyle = "width: 140px;",
+                            HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
-                                model, query, "PurchaseOrderDate", po => po.OrderDate)
+                                model, query, nameof(PurchaseOrder.OrderDate), po => po.OrderDate)
                         }
                     },
                     {
@@ -80,14 +80,14 @@ namespace ERPCore2.Helpers.FieldConfiguration
                         new FieldDefinition<PurchaseOrder>
                         {
                             PropertyName = nameof(PurchaseOrder.ExpectedDeliveryDate),
-                            DisplayName = "預定交貨日期",
+                            DisplayName = "預交日",
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 4,
                             FilterOrder = 5,
-                            HeaderStyle = "width: 140px;",
+                            HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableDateRangeFilter(
-                                model, query, "ExpectedDeliveryDate", po => po.ExpectedDeliveryDate)
+                                model, query, nameof(PurchaseOrder.ExpectedDeliveryDate), po => po.ExpectedDeliveryDate)
                         }
                     },
                     {
@@ -99,7 +99,6 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             ColumnType = ColumnDataType.Currency,
                             TableOrder = 5,
                             ShowInFilter = false, // 通常不會用金額篩選
-                            HeaderStyle = "width: 120px; text-align: right;"
                         }
                     }
                 };

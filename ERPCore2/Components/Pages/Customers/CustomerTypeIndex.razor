@@ -7,21 +7,21 @@
                         TService="ICustomerTypeService"
                         Service="@CustomerTypeService"
                         EntityBasePath="/customer-types"                          
-                        PageTitle="客戶類型"
+                        PageTitle="客戶類型管理"
                         PageSubtitle="管理客戶分類類型設定"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
                         DataLoader="@LoadCustomerTypesAsync"
                         FilterApplier="@ApplyCustomerTypeFilters"
-                        EntityName="客戶類型"
+                        EntityName="客戶類型管理"
                         GetEntityDisplayName="@(customerType => customerType.TypeName)"
                         RequiredPermission="CustomerType.Read"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent" />
 
-@* 客戶類型編輯 Modal *@
+@* 客戶類型管理編輯 Modal *@
 <CustomerTypeEditModalComponent IsVisible="@showEditModal"
                                IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                                CustomerTypeId="@editingCustomerTypeId"
@@ -70,8 +70,8 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化客戶類型頁面失敗");
-            await NotificationService.ShowErrorAsync("初始化客戶類型頁面失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化客戶類型管理頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化客戶類型管理頁面失敗");
         }
     }
 
@@ -83,7 +83,7 @@
             {
                 new("首頁", "/"),
                 new("客戶管理", "/customers"),
-                new("客戶類型管理")
+                new("客戶類型管理管理")
             };
         }
         catch (Exception ex)
@@ -95,7 +95,7 @@
         }
     }
 
-    // 載入客戶類型資料
+    // 載入客戶類型管理資料
     private async Task<List<CustomerType>> LoadCustomerTypesAsync()
     {
         try
@@ -105,8 +105,8 @@
         catch (Exception ex)
         {
             // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomerTypesAsync), GetType(), additionalData: "載入客戶類型資料失敗");
-            await NotificationService.ShowErrorAsync("載入客戶類型資料失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomerTypesAsync), GetType(), additionalData: "載入客戶類型管理資料失敗");
+            await NotificationService.ShowErrorAsync("載入客戶類型管理資料失敗");
             // 設定安全的預設值
             return new List<CustomerType>();
         }
@@ -121,7 +121,7 @@
         catch (Exception ex)
         {
             // 記錄錯誤並回傳安全的預設查詢
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyCustomerTypeFilters), GetType(), additionalData: "客戶類型篩選器應用失敗");
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyCustomerTypeFilters), GetType(), additionalData: "客戶類型管理篩選器應用失敗");
             _ = NotificationService.ShowErrorAsync("篩選條件應用失敗，已顯示全部資料");
             
             // 回傳基本排序的查詢，確保頁面仍能正常運作

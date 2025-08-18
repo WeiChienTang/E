@@ -167,6 +167,27 @@ namespace ERPCore2.Helpers
             string filterName, 
             Expression<Func<T, DateTime>> propertySelector)
         {
+            // 首先嘗試獲取 DateRange 物件（新的前端格式）
+            var dateRangeFilter = searchModel.GetFilterValue(filterName) as DateRange;
+            if (dateRangeFilter != null && dateRangeFilter.IsValid())
+            {
+                // 開始日期篩選
+                if (dateRangeFilter.StartDate.HasValue)
+                {
+                    query = query.Where(BuildGreaterThanOrEqualsExpression(propertySelector, dateRangeFilter.StartDate.Value.Date));
+                }
+
+                // 結束日期篩選
+                if (dateRangeFilter.EndDate.HasValue)
+                {
+                    var endDate = dateRangeFilter.EndDate.Value.Date.AddDays(1); // 包含整天
+                    query = query.Where(BuildLessThanExpression(propertySelector, endDate));
+                }
+
+                return query;
+            }
+
+            // 如果沒有找到 DateRange 物件，則嘗試舊的格式（向下相容）
             // 開始日期篩選
             var dateFromFilter = searchModel.GetFilterValue($"{filterName}_From")?.ToString();
             if (!string.IsNullOrWhiteSpace(dateFromFilter) && DateTime.TryParse(dateFromFilter, out var dateFrom))
@@ -200,13 +221,32 @@ namespace ERPCore2.Helpers
             string filterName, 
             Expression<Func<T, DateTime?>> propertySelector)
         {
+            // 首先嘗試獲取 DateRange 物件（新的前端格式）
+            var dateRangeFilter = searchModel.GetFilterValue(filterName) as DateRange;
+            if (dateRangeFilter != null && dateRangeFilter.IsValid())
+            {
+                // 開始日期篩選
+                if (dateRangeFilter.StartDate.HasValue)
+                {
+                    query = query.Where(BuildNullableDateGreaterThanOrEqualsExpression(propertySelector, dateRangeFilter.StartDate.Value.Date));
+                }
+
+                // 結束日期篩選
+                if (dateRangeFilter.EndDate.HasValue)
+                {
+                    var endDate = dateRangeFilter.EndDate.Value.Date.AddDays(1); // 包含整天
+                    query = query.Where(BuildNullableDateLessThanExpression(propertySelector, endDate));
+                }
+
+                return query;
+            }
+
+            // 如果沒有找到 DateRange 物件，則嘗試舊的格式（向下相容）
             // 開始日期篩選
             var dateFromFilter = searchModel.GetFilterValue($"{filterName}_From")?.ToString();
             if (!string.IsNullOrWhiteSpace(dateFromFilter) && DateTime.TryParse(dateFromFilter, out var dateFrom))
             {
-                query = query.Where(entity => 
-                    propertySelector.Compile()(entity).HasValue && 
-                    propertySelector.Compile()(entity)!.Value >= dateFrom.Date);
+                query = query.Where(BuildNullableDateGreaterThanOrEqualsExpression(propertySelector, dateFrom.Date));
             }
 
             // 結束日期篩選
@@ -214,9 +254,7 @@ namespace ERPCore2.Helpers
             if (!string.IsNullOrWhiteSpace(dateToFilter) && DateTime.TryParse(dateToFilter, out var dateTo))
             {
                 var endDate = dateTo.Date.AddDays(1); // 包含整天
-                query = query.Where(entity => 
-                    propertySelector.Compile()(entity).HasValue && 
-                    propertySelector.Compile()(entity)!.Value < endDate);
+                query = query.Where(BuildNullableDateLessThanExpression(propertySelector, endDate));
             }
 
             return query;
@@ -353,6 +391,54 @@ namespace ERPCore2.Helpers
             var lessThan = Expression.LessThan(property, constant);
             
             return Expression.Lambda<Func<T, bool>>(lessThan, parameter);
+        }
+
+        /// <summary>
+        /// 建立可為空日期大於等於表示式
+        /// </summary>
+        /// <typeparam name="T">實體類型</typeparam>
+        /// <param name="propertySelector">屬性選擇器</param>
+        /// <param name="value">要比較的值</param>
+        /// <returns>大於等於表示式</returns>
+        private static Expression<Func<T, bool>> BuildNullableDateGreaterThanOrEqualsExpression<T>(
+            Expression<Func<T, DateTime?>> propertySelector, 
+            DateTime value)
+        {
+            var parameter = propertySelector.Parameters[0];
+            var property = propertySelector.Body;
+            
+            // property.HasValue && property.Value >= value
+            var hasValue = Expression.Property(property, "HasValue");
+            var propertyValue = Expression.Property(property, "Value");
+            var constant = Expression.Constant(value);
+            var greaterThanOrEquals = Expression.GreaterThanOrEqual(propertyValue, constant);
+            var andExpression = Expression.AndAlso(hasValue, greaterThanOrEquals);
+            
+            return Expression.Lambda<Func<T, bool>>(andExpression, parameter);
+        }
+
+        /// <summary>
+        /// 建立可為空日期小於表示式
+        /// </summary>
+        /// <typeparam name="T">實體類型</typeparam>
+        /// <param name="propertySelector">屬性選擇器</param>
+        /// <param name="value">要比較的值</param>
+        /// <returns>小於表示式</returns>
+        private static Expression<Func<T, bool>> BuildNullableDateLessThanExpression<T>(
+            Expression<Func<T, DateTime?>> propertySelector, 
+            DateTime value)
+        {
+            var parameter = propertySelector.Parameters[0];
+            var property = propertySelector.Body;
+            
+            // property.HasValue && property.Value < value
+            var hasValue = Expression.Property(property, "HasValue");
+            var propertyValue = Expression.Property(property, "Value");
+            var constant = Expression.Constant(value);
+            var lessThan = Expression.LessThan(propertyValue, constant);
+            var andExpression = Expression.AndAlso(hasValue, lessThan);
+            
+            return Expression.Lambda<Func<T, bool>>(andExpression, parameter);
         }
 
         #endregion

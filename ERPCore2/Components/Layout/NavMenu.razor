@@ -48,7 +48,7 @@
         <NavMenuItem Text="廠商管理" IconClass="bi bi-building-gear" MenuKey="supplier_management">
             <DropdownItems>
                 <NavDropdownItem Text="廠商維護" Url="/suppliers" RequiredPermission="Supplier.Read" ParentMenuKey="supplier_management" IconClass="bi bi-caret-right-fill" />
-                <NavDropdownItem Text="廠商類型" Url="/supplier-types" RequiredPermission="SupplierType.Read" ParentMenuKey="supplier_management"/>
+                <NavDropdownItem Text="類型" Url="/supplier-types" RequiredPermission="SupplierType.Read" ParentMenuKey="supplier_management"/>
             </DropdownItems>
         </NavMenuItem>
 
@@ -56,7 +56,7 @@
         <NavMenuItem Text="客戶管理" IconClass="bi bi-people-fill" MenuKey="customer_management">
             <DropdownItems>
                 <NavDropdownItem Text="客戶維護" Url="/customers" RequiredPermission="Customer.Read" ParentMenuKey="customer_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="客戶類型" Url="/customer-types" RequiredPermission="CustomerType.Read" ParentMenuKey="customer_management"/>               
+                <NavDropdownItem Text="類型" Url="/customer-types" RequiredPermission="CustomerType.Read" ParentMenuKey="customer_management"/>               
             </DropdownItems>
         </NavMenuItem>
 
@@ -87,7 +87,7 @@
         <!-- 採購管理下拉選單 -->
         <NavMenuItem Text="採購管理" IconClass="bi bi-truck" MenuKey="purchase_management">
             <DropdownItems>
-                <NavDropdownItem Text="訂單" Url="/purchase/orders" RequiredPermission="Purchase.Read" ParentMenuKey="purchase_management" />
+                <NavDropdownItem Text="採購單維護" Url="/purchase/orders" RequiredPermission="Purchase.Read" ParentMenuKey="purchase_management" IconClass="bi bi-caret-right-fill"/>
                 @* <NavDropdownItem Text="入庫" Url="/purchase-receivings" RequiredPermission="PurchaseReceiving.Read" ParentMenuKey="purchase_management" />
                 <NavDropdownItem Text="退回" Url="/purchase-returns" RequiredPermission="PurchaseReturn.Read" ParentMenuKey="purchase_management" /> *@
             </DropdownItems>

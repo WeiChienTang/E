@@ -8,21 +8,21 @@
                           TService="ISupplierTypeService"
                           Service="@SupplierTypeService"
                           EntityBasePath="/supplier-types"                          
-                          PageTitle="廠商類型"
+                          PageTitle="廠商類型管理"
                           PageSubtitle="管理廠商分類類型設定"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
                           DataLoader="@LoadSupplierTypesAsync"
                           FilterApplier="@ApplySupplierTypeFilters"
-                          EntityName="廠商類型"
+                          EntityName="廠商類型管理"
                           GetEntityDisplayName="@(supplierType => supplierType.TypeName)"
                           RequiredPermission="SupplierType.Read"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />
 
-@* 廠商類型編輯 Modal *@
+@* 廠商類型管理編輯 Modal *@
 <SupplierTypeEditModalComponent IsVisible="@showEditModal"
                                IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                                SupplierTypeId="@editingSupplierTypeId"
@@ -71,8 +71,8 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化廠商類型頁面失敗");
-            await NotificationService.ShowErrorAsync("初始化廠商類型頁面失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化廠商類型管理頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化廠商類型管理頁面失敗");
         }
     }
 
@@ -84,7 +84,7 @@
             {
                 new("首頁", "/"),
                 new("基礎資料", "/"),
-                new("廠商類型管理")
+                new("廠商類型管理管理")
             };
         }
         catch (Exception ex)
@@ -97,7 +97,7 @@
         }
     }
 
-    // 載入廠商類型資料
+    // 載入廠商類型管理資料
     private async Task<List<SupplierType>> LoadSupplierTypesAsync()
     {
         try
@@ -107,8 +107,8 @@
         catch (Exception ex)
         {
             // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSupplierTypesAsync), GetType(), additionalData: "載入廠商類型資料失敗");
-            await NotificationService.ShowErrorAsync("載入廠商類型資料失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSupplierTypesAsync), GetType(), additionalData: "載入廠商類型管理資料失敗");
+            await NotificationService.ShowErrorAsync("載入廠商類型管理資料失敗");
             // 設定安全的預設值
             return new List<SupplierType>();
         }
@@ -123,7 +123,7 @@
         catch (Exception ex)
         {
             // 記錄錯誤並回傳安全的預設查詢
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplySupplierTypeFilters), GetType(), additionalData: "廠商類型篩選器應用失敗");
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplySupplierTypeFilters), GetType(), additionalData: "廠商類型管理篩選器應用失敗");
             _ = NotificationService.ShowErrorAsync("篩選條件應用失敗，已顯示全部資料");
             
             // 回傳基本排序的查詢，確保頁面仍能正常運作

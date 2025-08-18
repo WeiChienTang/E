@@ -109,7 +109,17 @@ namespace ERPCore2.Helpers
                 };
             }
             
-            var column = TableColumnDefinition.Text(DisplayName, PropertyName);
+            // 根據 ColumnType 建立適當的欄位定義
+            var column = ColumnType switch
+            {
+                ColumnDataType.Date => TableColumnDefinition.Date(DisplayName, PropertyName),
+                ColumnDataType.DateTime => TableColumnDefinition.DateTime(DisplayName, PropertyName),
+                ColumnDataType.Number => TableColumnDefinition.Number(DisplayName, PropertyName),
+                ColumnDataType.Currency => TableColumnDefinition.Currency(DisplayName, PropertyName),
+                ColumnDataType.Boolean => TableColumnDefinition.Boolean(DisplayName, PropertyName),
+                _ => TableColumnDefinition.Text(DisplayName, PropertyName)
+            };
+            
             if (!string.IsNullOrEmpty(HeaderStyle))
                 column.HeaderStyle = HeaderStyle;
             if (!string.IsNullOrEmpty(NullDisplayText))
