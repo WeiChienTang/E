@@ -20,13 +20,6 @@ namespace ERPCore2.Helpers
         {
             try
             {
-                // 準備狀態選項
-                var statusOptions = new List<SelectOption>
-                {
-                    new() { Text = "啟用", Value = "True" },
-                    new() { Text = "停用", Value = "False" }
-                };
-
                 return new Dictionary<string, FieldDefinition<Warehouse>>
                 {
                     {
@@ -93,29 +86,6 @@ namespace ERPCore2.Helpers
                                 model, query, "Address", w => w.Address, allowNull: true)
                         }
                     },
-                    {
-                        "IsActive",
-                        new FieldDefinition<Warehouse>
-                        {
-                            PropertyName = "IsActive",
-                            DisplayName = "狀態",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 0, // 不在表格中顯示
-                            FilterOrder = 6,
-                            ShowInTable = false,
-                            Options = statusOptions,
-                            FilterFunction = (model, query) =>
-                            {
-                                var isActiveFilter = model.GetFilterValue("IsActive")?.ToString();
-                                if (!string.IsNullOrWhiteSpace(isActiveFilter) && bool.TryParse(isActiveFilter, out var isActive))
-                                {
-                                    var status = isActive ? Data.Enums.EntityStatus.Active : Data.Enums.EntityStatus.Inactive;
-                                    query = query.Where(w => w.Status == status);
-                                }
-                                return query;
-                            }
-                        }
-                    }
                 };
             }
             catch (Exception ex)
