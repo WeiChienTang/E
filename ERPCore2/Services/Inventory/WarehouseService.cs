@@ -63,7 +63,7 @@ namespace ERPCore2.Services
                 return await context.Warehouses
                     .Include(w => w.WarehouseLocations)
                     .Where(w => !w.IsDeleted &&
-                               ((w.WarehouseName != null && w.WarehouseName.Contains(searchTerm)) ||
+                               ((w.Name != null && w.Name.Contains(searchTerm)) ||
                                 (w.Code != null && w.Code.Contains(searchTerm))))
                     .OrderBy(w => w.Code)
                     .ToListAsync();
@@ -119,51 +119,6 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得預設倉庫
-        /// </summary>
-        public async Task<Warehouse?> GetDefaultWarehouseAsync()
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Warehouses
-                    .Include(w => w.WarehouseLocations)
-                    .FirstOrDefaultAsync(w => !w.IsDeleted && w.IsDefault);
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetDefaultWarehouseAsync), GetType(), _logger);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// 設定預設倉庫
-        /// </summary>
-        public async Task<ServiceResult> SetDefaultWarehouseAsync(int warehouseId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                // 先取消所有倉庫的預設設定
-                var allWarehouses = await context.Warehouses.Where(w => !w.IsDeleted).ToListAsync();
-                foreach (var warehouse in allWarehouses)
-                {
-                    warehouse.IsDefault = warehouse.Id == warehouseId;
-                    warehouse.UpdatedAt = DateTime.Now;
-                }
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetDefaultWarehouseAsync), GetType(), _logger, new { WarehouseId = warehouseId });
-                return ServiceResult.Failure($"設定預設倉庫失敗：{ex.Message}");
-            }
-        }
-
-        /// <summary>
         /// 取得倉庫及其庫位
         /// </summary>
         public async Task<Warehouse?> GetWarehouseWithLocationsAsync(int warehouseId)
@@ -193,7 +148,7 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     return ServiceResult.Failure("倉庫代碼為必填");
                 
-                if (string.IsNullOrWhiteSpace(entity.WarehouseName))
+                if (string.IsNullOrWhiteSpace(entity.Name))
                     return ServiceResult.Failure("倉庫名稱為必填");
 
                 // 檢查倉庫代碼是否重複
@@ -217,7 +172,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Warehouses.Where(w => w.WarehouseName == name && !w.IsDeleted);
+                var query = context.Warehouses.Where(w => w.Name == name && !w.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(w => w.Id != excludeId.Value);

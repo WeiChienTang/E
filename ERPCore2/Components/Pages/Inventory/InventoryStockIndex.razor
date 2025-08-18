@@ -17,7 +17,7 @@
                       DataLoader="@LoadInventoryStocksAsync"
                       InitializeBasicData="@LoadBasicDataAsync"
                       FilterApplier="@ApplyInventoryStockFilters"
-                      GetEntityDisplayName="@(stock => $"{stock.Product?.Name} - {stock.Warehouse?.WarehouseName}")"
+                      GetEntityDisplayName="@(stock => $"{stock.Product?.Name} - {stock.Warehouse?.Name}")"
                       RequiredPermission="InventoryStock.Read"
                       @ref="indexComponent" />
 
@@ -323,7 +323,7 @@
             var warehouses = await WarehouseService.GetAllAsync();
             var warehouseOptions = warehouses.Select(w => new SelectOption
             {
-                Text = w.WarehouseName,
+                Text = w.Name,
                 Value = w.Id.ToString()
             }).ToList();
 

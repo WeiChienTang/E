@@ -380,7 +380,7 @@
             var warehouseOptions = warehouses.Select(w => new SelectOption 
             { 
                 Value = w.Id.ToString(), 
-                Text = w.WarehouseName 
+                Text = w.Name 
             }).ToList();
 
             // 尋找並更新對應的表單欄位

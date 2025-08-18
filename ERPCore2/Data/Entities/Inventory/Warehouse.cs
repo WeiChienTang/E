@@ -13,7 +13,7 @@ namespace ERPCore2.Data.Entities
         [Required(ErrorMessage = "倉庫名稱為必填")]
         [MaxLength(50, ErrorMessage = "倉庫名稱不可超過50個字元")]
         [Display(Name = "倉庫名稱")]
-        public string WarehouseName { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
         
         [MaxLength(200, ErrorMessage = "地址不可超過200個字元")]
         [Display(Name = "地址")]
@@ -30,12 +30,6 @@ namespace ERPCore2.Data.Entities
         [Required(ErrorMessage = "倉庫類型為必填")]
         [Display(Name = "倉庫類型")]
         public WarehouseTypeEnum WarehouseType { get; set; } = WarehouseTypeEnum.Main;
-        
-        [Display(Name = "是否為預設倉庫")]
-        public bool IsDefault { get; set; } = false;
-        
-        [Display(Name = "是否啟用")]
-        public bool IsActive { get; set; } = true;
         
         // Navigation Properties
         public ICollection<WarehouseLocation> WarehouseLocations { get; set; } = new List<WarehouseLocation>();

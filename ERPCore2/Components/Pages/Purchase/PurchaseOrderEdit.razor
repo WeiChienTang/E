@@ -297,7 +297,7 @@
             // 倉庫選項
             var warehouseOptions = warehouses.Select(w => new SelectOption
             {
-                Text = $"{w.Code} - {w.WarehouseName}",
+                Text = $"{w.Code} - {w.Name}",
                 Value = w.Id.ToString()
             }).ToList();
             

@@ -17,7 +17,7 @@
                         DataLoader="@LoadStockTakingsAsync"
                         InitializeBasicData="@LoadBasicDataAsync"
                         FilterApplier="@ApplyStockTakingFilters"
-                        GetEntityDisplayName="@(st => $"{st.TakingNumber} - {st.Warehouse?.WarehouseName}")"
+                        GetEntityDisplayName="@(st => $"{st.TakingNumber} - {st.Warehouse?.Name}")"
                         RequiredPermission="StockTaking.Read"
                         @ref="indexComponent" />
 @code {
@@ -311,7 +311,7 @@
             warehouseOptions = warehouses.Select(w => new SelectOption
             {
                 Value = w.Id.ToString(),
-                Text = w.WarehouseName
+                Text = w.Name
             }).ToList();
 
             // 更新篩選器中的倉庫選項

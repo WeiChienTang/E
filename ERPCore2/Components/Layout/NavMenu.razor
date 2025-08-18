@@ -63,7 +63,7 @@
         <!-- 產品管理下拉選單 -->
         <NavMenuItem Text="產品管理" IconClass="bi bi-box-seam-fill" MenuKey="product_management">
             <DropdownItems>
-                <NavDropdownItem Text="產品主檔" Url="/products" RequiredPermission="Product.Read" ParentMenuKey="product_management" IconClass="bi bi-caret-right-fill"/>
+                <NavDropdownItem Text="產品維護" Url="/products" RequiredPermission="Product.Read" ParentMenuKey="product_management" IconClass="bi bi-caret-right-fill"/>
                 @* <NavDropdownItem Text="產品定價" Url="/product-pricing" RequiredPermission="ProductPricing.Read" ParentMenuKey="product_management" IconClass="bi bi-caret-right-fill"/> *@
                 <NavDropdownItem Text="類型" Url="/product-categories" RequiredPermission="ProductCategory.Read" ParentMenuKey="product_management"/> 
                 <NavDropdownItem Text="單位" Url="/units" RequiredPermission="Unit.Read" ParentMenuKey="product_management"/>
@@ -92,11 +92,13 @@
         <!-- 庫存管理下拉選單 -->
         <NavMenuItem Text="庫存管理" IconClass="bi-boxes nav-menu-bi" MenuKey="inventory_management">
             <DropdownItems>
-                <NavDropdownItem Text="庫存查詢" Url="/inventory/stock" RequiredPermission="InventoryStock.Read" ParentMenuKey="inventory_management" />
+                <NavDropdownItem Text="倉庫維護" Url="/inventory/reservations" RequiredPermission="InventoryReservation.Read" ParentMenuKey="inventory_management" />  
+
+                @* <NavDropdownItem Text="庫存查詢" Url="/inventory/stock" RequiredPermission="InventoryStock.Read" ParentMenuKey="inventory_management" />
                 <NavDropdownItem Text="庫存預留" Url="/inventory/reservations" RequiredPermission="InventoryReservation.Read" ParentMenuKey="inventory_management" />                
                 <NavDropdownItem Text="庫存盤點" Url="/inventory/stock-taking" RequiredPermission="StockTaking.Read" ParentMenuKey="inventory_management" />
                 <NavDropdownItem Text="庫存異動記錄" Url="/inventory/transactions" RequiredPermission="InventoryTransaction.Read" ParentMenuKey="inventory_management" />
-                <NavDropdownItem Text="庫存異動類型" Url="/inventory-transaction-types" RequiredPermission="InventoryTransactionType.Read" ParentMenuKey="inventory_management" />
+                <NavDropdownItem Text="庫存異動類型" Url="/inventory-transaction-types" RequiredPermission="InventoryTransactionType.Read" ParentMenuKey="inventory_management" /> *@
             </DropdownItems>
         </NavMenuItem>    
 

@@ -313,7 +313,7 @@
             warehouseOptions = warehouses.Select(w => new SelectOption
             {
                 Value = w.Id.ToString(),
-                Text = w.WarehouseName
+                Text = w.Name
             }).ToList();
 
             // 載入員工選項（用於審核人員）

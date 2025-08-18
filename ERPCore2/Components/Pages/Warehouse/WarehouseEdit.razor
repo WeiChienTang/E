@@ -110,7 +110,7 @@
                 },
                 new FormFieldDefinition
                 {
-                    PropertyName = nameof(Warehouse.WarehouseName),
+                    PropertyName = nameof(Warehouse.Name),
                     Label = "倉庫名稱",
                     FieldType = FormFieldType.Text,
                     IsRequired = true,
@@ -153,33 +153,17 @@
                     Placeholder = "請輸入聯絡電話",
                     MaxLength = 20,
                     HelpText = "聯絡人的電話號碼"
-                },
-                new FormFieldDefinition
-                {
-                    PropertyName = nameof(Warehouse.IsDefault),
-                    Label = "設為預設倉庫",
-                    FieldType = FormFieldType.Checkbox,
-                    HelpText = "是否將此倉庫設為系統預設倉庫"
-                },
-                new FormFieldDefinition
-                {
-                    PropertyName = nameof(Warehouse.IsActive),
-                    Label = "啟用狀態",
-                    FieldType = FormFieldType.Checkbox,
-                    HelpText = "是否啟用此倉庫"
                 }
             };
 
             formSections = new Dictionary<string, string>
             {
                 { nameof(Warehouse.Code), "基本資訊" },
-                { nameof(Warehouse.WarehouseName), "基本資訊" },
+                { nameof(Warehouse.Name), "基本資訊" },
                 { nameof(Warehouse.WarehouseType), "基本資訊" },
                 { nameof(Warehouse.Address), "聯絡資訊" },
                 { nameof(Warehouse.ContactPerson), "聯絡資訊" },
-                { nameof(Warehouse.Phone), "聯絡資訊" },
-                { nameof(Warehouse.IsDefault), "設定" },
-                { nameof(Warehouse.IsActive), "設定" }
+                { nameof(Warehouse.Phone), "聯絡資訊" }
             };
         }
         catch (Exception ex)
@@ -201,9 +185,7 @@
                 warehouse = new Warehouse
                 {
                     Code = await GenerateWarehouseCodeAsync(),
-                    WarehouseType = WarehouseTypeEnum.Main,
-                    IsActive = true,
-                    IsDefault = false
+                    WarehouseType = WarehouseTypeEnum.Main
                 };
                 return warehouse;
             }
@@ -274,13 +256,6 @@
             if (result.IsSuccess)
             {
                 await NotificationService.ShowSuccessAsync($"倉庫{(entity.Id == 0 ? "新增" : "更新")}成功");
-                
-                // 如果設為預設倉庫，更新預設設定
-                if (entity.IsDefault && entity.Id > 0)
-                {
-                    await WarehouseService.SetDefaultWarehouseAsync(entity.Id);
-                }
-                
                 return true;
             }
             else
@@ -289,7 +264,7 @@
                     new Exception($"Service operation failed: {result.ErrorMessage}"),
                     nameof(SaveWarehouse),
                     GetType(),
-                    additionalData: new { WarehouseId = entity.Id, WarehouseName = entity.WarehouseName, ErrorMessage = result.ErrorMessage });
+                    additionalData: new { WarehouseId = entity.Id, WarehouseName = entity.Name, ErrorMessage = result.ErrorMessage });
                 return false;
             }
         }
@@ -299,7 +274,7 @@
                 ex,
                 nameof(SaveWarehouse),
                 GetType(),
-                additionalData: new { WarehouseId = entity.Id, WarehouseName = entity.WarehouseName });
+                additionalData: new { WarehouseId = entity.Id, WarehouseName = entity.Name });
             
             StateHasChanged();
             return false;

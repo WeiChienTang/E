@@ -14,9 +14,7 @@ namespace ERPCore2.Data.Entities
         [Required(ErrorMessage = "庫位名稱為必填")]
         [MaxLength(50, ErrorMessage = "庫位名稱不可超過50個字元")]
         [Display(Name = "庫位名稱")]
-        public string LocationName { get; set; } = string.Empty;
-    
-        public string? Description { get; set; }
+        public string Name { get; set; } = string.Empty;
         
         [MaxLength(10, ErrorMessage = "區域不可超過10個字元")]
         [Display(Name = "區域")]
@@ -36,9 +34,6 @@ namespace ERPCore2.Data.Entities
         
         [Display(Name = "最大容量")]
         public int? MaxCapacity { get; set; }
-        
-        [Display(Name = "是否啟用")]
-        public bool IsActive { get; set; } = true;
         
         // Foreign Keys
         [Required(ErrorMessage = "倉庫為必填")]

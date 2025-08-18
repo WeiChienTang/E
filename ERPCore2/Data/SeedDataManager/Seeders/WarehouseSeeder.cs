@@ -30,84 +30,29 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Warehouse
                 {
                     Code = "WH001",
-                    WarehouseName = "主倉庫",
+                    Name = "主倉庫",
                     Address = "台中市北屯區文心路四段123號",
                     ContactPerson = "王倉管",
                     Phone = "04-2234-5678",
                     WarehouseType = WarehouseTypeEnum.Main,
-                    IsDefault = true,
-                    IsActive = true,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
                 },
                 new Warehouse
                 {
                     Code = "WH002",
-                    WarehouseName = "分倉庫A",
+                    Name = "分倉庫A",
                     Address = "台中市西屯區台灣大道三段456號",
                     ContactPerson = "李倉管",
                     Phone = "04-2345-6789",
                     WarehouseType = WarehouseTypeEnum.Branch,
-                    IsDefault = false,
-                    IsActive = true,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
                 },
-                new Warehouse
-                {
-                    Code = "WH003",
-                    WarehouseName = "分倉庫B",
-                    Address = "台中市南屯區向上路二段789號",
-                    ContactPerson = "張倉管",
-                    Phone = "04-2456-7890",
-                    WarehouseType = WarehouseTypeEnum.Branch,
-                    IsDefault = false,
-                    IsActive = true,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                },
-                new Warehouse
-                {
-                    Code = "WH004",
-                    WarehouseName = "退貨倉庫",
-                    Address = "台中市東區東英路100號",
-                    ContactPerson = "陳倉管",
-                    Phone = "04-2567-8901",
-                    WarehouseType = WarehouseTypeEnum.Return,
-                    IsDefault = false,
-                    IsActive = true,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                },
-                new Warehouse
-                {
-                    Code = "WH005",
-                    WarehouseName = "虛擬倉庫",
-                    Address = null,
-                    ContactPerson = "系統管理員",
-                    Phone = null,
-                    WarehouseType = WarehouseTypeEnum.Virtual,
-                    IsDefault = false,
-                    IsActive = true,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                },
-                new Warehouse
-                {
-                    Code = "WH999",
-                    WarehouseName = "測試倉庫(停用)",
-                    Address = "台中市測試區測試路999號",
-                    ContactPerson = "測試人員",
-                    Phone = "04-9999-9999",
-                    WarehouseType = WarehouseTypeEnum.Branch,
-                    IsDefault = false,
-                    IsActive = false,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                }
             };
 
-            await context.Warehouses.AddRangeAsync(warehouses);            await context.SaveChangesAsync();
+            await context.Warehouses.AddRangeAsync(warehouses);
+            await context.SaveChangesAsync();
 
             // 建立庫位資料
             await CreateWarehouseLocations(context, warehouses);
@@ -132,13 +77,12 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                         {
                             WarehouseId = mainWarehouse.Id,
                             Code = $"A{zone:D1}-{aisle:D2}-{level:D2}",
-                            LocationName = $"A區{zone}道{aisle}層{level}",
+                            Name = $"A區{zone}道{aisle}層{level}",
                             Zone = $"A{zone}",
                             Aisle = aisle.ToString("D2"),
                             Level = level.ToString("D2"),
                             Position = "01",
                             MaxCapacity = 100,
-                            IsActive = true,
                             CreatedAt = DateTime.Now,
                             CreatedBy = "System"
                         });
@@ -158,66 +102,16 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                         {
                             WarehouseId = branchWarehouseA.Id,
                             Code = $"B{zone:D1}-{aisle:D2}-{level:D2}",
-                            LocationName = $"B區{zone}道{aisle}層{level}",
+                            Name = $"B區{zone}道{aisle}層{level}",
                             Zone = $"B{zone}",
                             Aisle = aisle.ToString("D2"),
                             Level = level.ToString("D2"),
                             Position = "01",
                             MaxCapacity = 50,
-                            IsActive = true,
                             CreatedAt = DateTime.Now,
                             CreatedBy = "System"
                         });
                     }
-                }
-            }
-
-            // 分倉庫B庫位 (WH003)
-            var branchWarehouseB = warehouses.First(w => w.Code == "WH003");
-            for (int zone = 1; zone <= 2; zone++)
-            {
-                for (int aisle = 1; aisle <= 4; aisle++)
-                {
-                    for (int level = 1; level <= 2; level++)
-                    {
-                        warehouseLocations.Add(new WarehouseLocation
-                        {
-                            WarehouseId = branchWarehouseB.Id,
-                            Code = $"C{zone:D1}-{aisle:D2}-{level:D2}",
-                            LocationName = $"C區{zone}道{aisle}層{level}",
-                            Zone = $"C{zone}",
-                            Aisle = aisle.ToString("D2"),
-                            Level = level.ToString("D2"),
-                            Position = "01",
-                            MaxCapacity = 30,
-                            IsActive = true,
-                            CreatedAt = DateTime.Now,
-                            CreatedBy = "System"
-                        });
-                    }
-                }
-            }
-
-            // 退貨倉庫庫位 (WH004)
-            var returnWarehouse = warehouses.First(w => w.Code == "WH004");
-            for (int aisle = 1; aisle <= 2; aisle++)
-            {
-                for (int level = 1; level <= 2; level++)
-                {
-                    warehouseLocations.Add(new WarehouseLocation
-                    {
-                        WarehouseId = returnWarehouse.Id,
-                        Code = $"R-{aisle:D2}-{level:D2}",
-                        LocationName = $"退貨區道{aisle}層{level}",
-                        Zone = "R",
-                        Aisle = aisle.ToString("D2"),
-                        Level = level.ToString("D2"),
-                        Position = "01",
-                        MaxCapacity = 20,
-                        IsActive = true,
-                        CreatedAt = DateTime.Now,
-                        CreatedBy = "System"
-                    });
                 }
             }
 

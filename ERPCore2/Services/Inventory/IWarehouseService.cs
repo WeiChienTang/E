@@ -18,16 +18,6 @@ namespace ERPCore2.Services
         Task<List<Warehouse>> GetByWarehouseTypeAsync(Data.Enums.WarehouseTypeEnum warehouseType);
         
         /// <summary>
-        /// 取得預設倉庫
-        /// </summary>
-        Task<Warehouse?> GetDefaultWarehouseAsync();
-        
-        /// <summary>
-        /// 設定預設倉庫
-        /// </summary>
-        Task<ServiceResult> SetDefaultWarehouseAsync(int warehouseId);
-        
-        /// <summary>
         /// 取得倉庫及其庫位
         /// </summary>
         Task<Warehouse?> GetWarehouseWithLocationsAsync(int warehouseId);

@@ -138,7 +138,7 @@
             warehouseOptions = warehouses
                 .Select(w => new SelectOption 
                 { 
-                    Text = w.WarehouseName, 
+                    Text = w.Name, 
                     Value = w.Id.ToString() 
                 })
                 .ToList();

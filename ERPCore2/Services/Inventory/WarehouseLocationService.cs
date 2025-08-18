@@ -35,7 +35,7 @@ namespace ERPCore2.Services
                 return await context.WarehouseLocations
                     .Include(wl => wl.Warehouse)
                     .Where(wl => !wl.IsDeleted)
-                    .OrderBy(wl => wl.Warehouse.WarehouseName)
+                    .OrderBy(wl => wl.Warehouse.Name)
                     .ThenBy(wl => wl.Code)
                     .ToListAsync();
             }
@@ -149,9 +149,9 @@ namespace ERPCore2.Services
                     .Include(wl => wl.Warehouse)
                     .Where(wl => !wl.IsDeleted && 
                                 ((wl.Code != null && wl.Code.Contains(searchTerm)) || 
-                                 (wl.LocationName != null && wl.LocationName.Contains(searchTerm)) ||
-                                 (wl.Warehouse.WarehouseName != null && wl.Warehouse.WarehouseName.Contains(searchTerm))))
-                    .OrderBy(wl => wl.Warehouse.WarehouseName)
+                                 (wl.Name != null && wl.Name.Contains(searchTerm)) ||
+                                 (wl.Warehouse.Name != null && wl.Warehouse.Name.Contains(searchTerm))))
+                    .OrderBy(wl => wl.Warehouse.Name)
                     .ThenBy(wl => wl.Code)
                     .ToListAsync();
             }

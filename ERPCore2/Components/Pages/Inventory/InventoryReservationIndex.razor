@@ -136,7 +136,7 @@
             warehouseOptions = warehouses.Select(w => new SelectOption
             {
                 Value = w.Id.ToString(),
-                Text = $"{w.Code} - {w.WarehouseName}"
+                Text = $"{w.Code} - {w.Name}"
             }).ToList();
         }
         catch (Exception ex)

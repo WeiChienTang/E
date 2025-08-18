@@ -781,7 +781,7 @@ namespace ERPCore2.Services
                     .Include(st => st.ApprovedByUser)
                     .Where(st => !st.IsDeleted && 
                                 (st.TakingNumber.Contains(searchTerm) ||
-                                 st.Warehouse.WarehouseName.Contains(searchTerm) ||
+                                 st.Warehouse.Name.Contains(searchTerm) ||
                                  (st.TakingPersonnel != null && st.TakingPersonnel.Contains(searchTerm))))
                     .OrderByDescending(st => st.TakingDate)
                     .ToListAsync();

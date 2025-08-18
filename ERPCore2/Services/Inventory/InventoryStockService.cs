@@ -84,7 +84,7 @@ namespace ERPCore2.Services
                         ((i.Product.Code != null && i.Product.Code.ToLower().Contains(term)) ||
                          (i.Product.Name != null && i.Product.Name.ToLower().Contains(term)) ||
                          (i.Warehouse.Code != null && i.Warehouse.Code.ToLower().Contains(term)) ||
-                         (i.Warehouse.WarehouseName != null && i.Warehouse.WarehouseName.ToLower().Contains(term))))
+                         (i.Warehouse.Name != null && i.Warehouse.Name.ToLower().Contains(term))))
                     .OrderBy(i => i.Product.Code)
                     .ToListAsync();
             }
@@ -528,7 +528,7 @@ namespace ERPCore2.Services
                 }
 
                 return await query
-                    .OrderBy(i => i.Warehouse.WarehouseName)
+                    .OrderBy(i => i.Warehouse.Name)
                     .ThenBy(i => i.Product.Code)
                     .ToListAsync();
             }
@@ -609,7 +609,7 @@ namespace ERPCore2.Services
 
                 // 倉庫數量
                 var warehouseCount = await context.Warehouses
-                    .Where(w => !w.IsDeleted && w.IsActive)
+                    .Where(w => !w.IsDeleted)
                     .CountAsync();
 
                 // 確保數據類型一致性

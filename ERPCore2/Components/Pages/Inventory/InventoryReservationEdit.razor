@@ -364,7 +364,7 @@
             warehouseOptions = warehouses.Select(w => new SelectOption
             {
                 Value = w.Id.ToString(),
-                Text = $"{w.Code} - {w.WarehouseName}"
+                Text = $"{w.Code} - {w.Name}"
             }).ToList();
         }
         catch (Exception ex)
@@ -391,7 +391,7 @@
                 warehouseLocationOptions = locationsResult.Data.Select(l => new SelectOption
                 {
                     Value = l.Id.ToString(),
-                    Text = l.LocationName
+                    Text = l.Name
                 }).ToList();
             }
             else
