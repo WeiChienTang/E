@@ -19,6 +19,7 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
+                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
                           AutoCompleteCollections="@GetAutoCompleteCollections()"
                           AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
                           AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
@@ -316,6 +317,22 @@
     // ===== AutoComplete 配置方法 =====
     
     /// <summary>
+    /// 配置 AutoComplete 預填器
+    /// </summary>
+    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
+    {
+        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
+        {
+            {
+                nameof(PurchaseOrder.SupplierId), searchTerm => new Dictionary<string, object?>
+                {
+                    { "CompanyName", searchTerm }
+                }
+            }
+        };
+    }
+    
+    /// <summary>
     /// 配置 AutoComplete 資料集合
     /// </summary>
     private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
@@ -415,10 +432,15 @@
     {
         try
         {
-            // 使用泛型管理器自動處理供應商欄位變更
+            // 使用統一 Helper 處理供應商欄位變更
             if (fieldChange.PropertyName == nameof(PurchaseOrder.SupplierId))
             {
-                supplierModalManager.UpdateFieldActionButtons(formFields, nameof(PurchaseOrder.SupplierId), fieldChange.Value as int?);
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    supplierModalManager, 
+                    formFields, 
+                    nameof(PurchaseOrder.SupplierId), 
+                    fieldChange.Value
+                );
             }
         }
         catch (Exception)

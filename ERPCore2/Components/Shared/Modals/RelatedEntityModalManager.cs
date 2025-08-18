@@ -254,8 +254,8 @@ public class RelatedEntityModalManager<TRelatedEntity> where TRelatedEntity : Ba
             OnClick = () => OpenModalAsync(null)
         });
         
-        // 編輯按鈕 - 只有在有選擇值時才顯示
-        if (currentSelectedId.HasValue)
+        // 編輯按鈕 - 只有在有有效選擇值時才顯示 (排除 0 或負數等無效 ID)
+        if (currentSelectedId.HasValue && currentSelectedId.Value > 0)
         {
             buttons.Add(new FieldActionButton
             {
