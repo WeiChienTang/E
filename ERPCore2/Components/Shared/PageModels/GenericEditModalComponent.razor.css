@@ -124,7 +124,7 @@
 /* 表單控制項放大 */
 ::deep .form-control,
 ::deep .form-select {
-    font-size: 1.1rem !important; /* 增大字體 */
+    font-size: 1rem !important; /* 改回預設大小 */
     padding: 1rem 1.25rem !important; /* 增大內邊距 */
     border-radius: 8px !important;
     border: 2px solid #e5e7eb !important;
@@ -247,7 +247,7 @@
 .alert {
     border-radius: 8px !important;
     border: none !important;
-    font-size: 0.95rem !important;
+    font-size: 1rem !important;
 }
 
 .alert-danger {

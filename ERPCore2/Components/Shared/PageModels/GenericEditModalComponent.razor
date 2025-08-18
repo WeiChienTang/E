@@ -5,10 +5,6 @@
 @typeparam TEntity where TEntity : BaseEntity, new()
 @typeparam TService
 
-@using Microsoft.AspNetCore.Components.Forms
-@using ERPCore2.Components.Shared.Forms
-@using ERPCore2.Components.Shared.Buttons
-
 @{
     // 權限檢查 - 如果沒有設定權限，預設拒絕存取
     string requiredPermission = RequiredPermission;
