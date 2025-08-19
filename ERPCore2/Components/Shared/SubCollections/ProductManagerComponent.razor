@@ -1,0 +1,173 @@
+@using ERPCore2.Data.Entities
+@using Microsoft.EntityFrameworkCore
+
+<div class="product-manager">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5>商品管理</h5>
+        <button type="button" class="btn btn-primary btn-sm" @onclick="AddNewRow">
+            <i class="fas fa-plus"></i> 新增商品
+        </button>
+    </div>
+
+    @if (ProductItems != null && ProductItems.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th width="25%">商品</th>
+                        <th width="15%">數量</th>
+                        <th width="15%">價格</th>
+                        <th width="30%">備註</th>
+                        <th width="15%">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in ProductItems)
+                    {
+                        <tr>
+                            <td>
+                                <div class="position-relative">
+                                    <input type="text" class="form-control form-control-sm" 
+                                           @bind="item.ProductSearch" 
+                                           @oninput="(e) => OnProductSearchInput(item, e.Value?.ToString())"
+                                           @onfocus="() => ShowProductDropdown(item)"
+                                           placeholder="輸入商品編號或名稱..." />
+                                    
+                                    @if (item.ShowDropdown && FilteredProducts != null && FilteredProducts.Any())
+                                    {
+                                        <div class="dropdown-menu show position-absolute w-100" style="z-index: 1000; max-height: 200px; overflow-y: auto;">
+                                            @foreach (var product in FilteredProducts)
+                                            {
+                                                <a class="dropdown-item" href="#" @onclick="() => SelectProduct(item, product)" @onclick:preventDefault="true">
+                                                    <strong>@product.Code</strong> - @product.Name
+                                                </a>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                <input type="number" class="form-control form-control-sm" 
+                                       @bind="item.Quantity" 
+                                       placeholder="數量" 
+                                       min="0" 
+                                       step="1" />
+                            </td>
+                            <td>
+                                <input type="number" class="form-control form-control-sm" 
+                                       @bind="item.Price" 
+                                       placeholder="價格" 
+                                       min="0" 
+                                       step="0.01" />
+                            </td>
+                            <td>
+                                <input type="text" class="form-control form-control-sm" 
+                                       @bind="item.Remarks" 
+                                       placeholder="備註..." />
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => RemoveItem(item)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="text-center text-muted py-4">
+            <i class="fas fa-box-open fa-3x mb-3"></i>
+            <p>尚無商品資料，點擊上方按鈕新增商品</p>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<Product> Products { get; set; } = new List<Product>();
+    [Parameter] public EventCallback<List<ProductItem>> OnProductItemsChanged { get; set; }
+
+    private List<ProductItem> ProductItems { get; set; } = new List<ProductItem>();
+    private List<Product> FilteredProducts { get; set; } = new List<Product>();
+
+    protected override void OnInitialized()
+    {
+        // 初始化時至少有一行
+        if (!ProductItems.Any())
+        {
+            AddNewRow();
+        }
+    }
+
+    private void AddNewRow()
+    {
+        ProductItems.Add(new ProductItem());
+        StateHasChanged();
+    }
+
+    private async Task RemoveItem(ProductItem item)
+    {
+        ProductItems.Remove(item);
+        StateHasChanged();
+        await NotifyItemsChanged();
+    }
+
+    private void OnProductSearchInput(ProductItem item, string? searchValue)
+    {
+        item.ProductSearch = searchValue ?? string.Empty;
+        
+        if (string.IsNullOrWhiteSpace(searchValue))
+        {
+            item.ShowDropdown = false;
+            FilteredProducts.Clear();
+        }
+        else
+        {
+            FilteredProducts = Products
+                .Where(p => p.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true ||
+                           p.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true)
+                .Take(10)
+                .ToList();
+            
+            item.ShowDropdown = FilteredProducts.Any();
+        }
+        
+        StateHasChanged();
+    }
+
+    private void ShowProductDropdown(ProductItem item)
+    {
+        if (!string.IsNullOrWhiteSpace(item.ProductSearch))
+        {
+            OnProductSearchInput(item, item.ProductSearch);
+        }
+    }
+
+    private async Task SelectProduct(ProductItem item, Product product)
+    {
+        item.ProductSearch = $"{product.Code} - {product.Name}";
+        item.SelectedProduct = product;
+        item.ShowDropdown = false;
+        
+        StateHasChanged();
+        await NotifyItemsChanged();
+    }
+
+    private async Task NotifyItemsChanged()
+    {
+        await OnProductItemsChanged.InvokeAsync(ProductItems);
+    }
+
+    public class ProductItem
+    {
+        public string ProductSearch { get; set; } = string.Empty;
+        public Product? SelectedProduct { get; set; }
+        public int Quantity { get; set; } = 1;
+        public decimal Price { get; set; } = 0;
+        public string Remarks { get; set; } = string.Empty;
+        public bool ShowDropdown { get; set; } = false;
+    }
+}

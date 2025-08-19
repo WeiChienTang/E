@@ -1,0 +1,39 @@
+@page "/test/product-manager"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Data.Context
+@using ERPCore2.Components.Shared.SubCollections
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext DbContext
+
+<PageTitle>商品管理測試頁面</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+                <div class="card-body">
+                    <ProductManagerComponent Products="@products" 
+                                           OnProductItemsChanged="@HandleProductItemsChanged" />
+                </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Product> products = new List<Product>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // 從資料庫取得商品資料
+        products = await DbContext.Products
+            .Where(p => p.Status == EntityStatus.Active)
+            .OrderBy(p => p.Code)
+            .ToListAsync();
+    }
+
+    private void HandleProductItemsChanged(List<ProductManagerComponent.ProductItem> items)
+    {
+        // 如果需要處理商品項目變更，可以在這裡加入邏輯
+        // 例如：儲存到資料庫、觸發其他事件等
+    }
+}
