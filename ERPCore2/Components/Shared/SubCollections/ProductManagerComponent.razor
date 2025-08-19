@@ -4,9 +4,6 @@
 <div class="product-manager">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5>商品管理</h5>
-        <button type="button" class="btn btn-primary btn-sm" @onclick="AddNewRow">
-            <i class="fas fa-plus"></i> 新增商品
-        </button>
     </div>
 
     @if (ProductItems != null && ProductItems.Any())
@@ -25,14 +22,15 @@
                 <tbody>
                     @foreach (var item in ProductItems)
                     {
-                        <tr>
+                        var isEmptyRow = IsEmptyRow(item);
+                        <tr class="@(isEmptyRow ? "table-light" : "")">
                             <td>
                                 <div class="position-relative">
-                                    <input type="text" class="form-control form-control-sm" 
-                                           @bind="item.ProductSearch" 
+                                    <input type="text" class="form-control form-control-sm @(isEmptyRow ? "empty-row-input" : "")" 
+                                           value="@item.ProductSearch"
                                            @oninput="(e) => OnProductSearchInput(item, e.Value?.ToString())"
-                                           @onfocus="() => ShowProductDropdown(item)"
-                                           placeholder="輸入商品編號或名稱..." />
+                                           @onfocus="() => OnInputFocus(item)"
+                                           placeholder="@(isEmptyRow ? "點擊開始輸入商品..." : "輸入商品編號或名稱...")" />
                                     
                                     @if (item.ShowDropdown && FilteredProducts != null && FilteredProducts.Any())
                                     {
@@ -49,22 +47,28 @@
                             </td>
                             <td>
                                 <input type="number" class="form-control form-control-sm" 
-                                       @bind="item.Quantity" 
-                                       placeholder="數量" 
+                                       value="@item.Quantity"
+                                       @onfocus="() => OnInputFocus(item)"
+                                       @oninput="(e) => OnQuantityInput(item, e.Value?.ToString())"
+                                       placeholder="@(isEmptyRow ? "0" : "數量")" 
                                        min="0" 
                                        step="1" />
                             </td>
                             <td>
                                 <input type="number" class="form-control form-control-sm" 
-                                       @bind="item.Price" 
-                                       placeholder="價格" 
+                                       value="@item.Price"
+                                       @onfocus="() => OnInputFocus(item)"
+                                       @oninput="(e) => OnPriceInput(item, e.Value?.ToString())"
+                                       placeholder="@(isEmptyRow ? "0.00" : "價格")" 
                                        min="0" 
                                        step="0.01" />
                             </td>
                             <td>
                                 <input type="text" class="form-control form-control-sm" 
-                                       @bind="item.Remarks" 
-                                       placeholder="備註..." />
+                                       value="@item.Remarks"
+                                       @onfocus="() => OnInputFocus(item)"
+                                       @oninput="(e) => OnRemarksInput(item, e.Value?.ToString())"
+                                       placeholder="@(isEmptyRow ? "選填..." : "備註...")" />
                             </td>
                             <td>
                                 <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => RemoveItem(item)">
@@ -102,11 +106,8 @@
 
     protected override void OnInitialized()
     {
-        // 初始化時至少有一行
-        if (!ProductItems.Any())
-        {
-            AddNewRow();
-        }
+        // 初始化時確保有1行空白
+        EnsureOneEmptyRow();
     }
 
     private void AddNewRow()
@@ -115,15 +116,47 @@
         StateHasChanged();
     }
 
+    private void OnInputFocus(ProductItem item)
+    {
+        // 只負責顯示下拉選單，新增行的邏輯放在實際輸入時處理
+        ShowProductDropdown(item);
+    }
+
+    private bool IsEmptyRow(ProductItem item)
+    {
+        var isEmpty = item.SelectedProduct == null && 
+               item.Quantity <= 0 && 
+               item.Price <= 0 && 
+               string.IsNullOrWhiteSpace(item.Remarks) &&
+               string.IsNullOrWhiteSpace(item.ProductSearch);
+        
+        return isEmpty;
+    }
+
+    private void EnsureOneEmptyRow()
+    {
+        var emptyCount = ProductItems.Count(IsEmptyRow);
+        
+        while (emptyCount < 1)
+        {
+            ProductItems.Add(new ProductItem());
+            emptyCount++;
+        }
+        StateHasChanged();
+    }
+
     private async Task RemoveItem(ProductItem item)
     {
         ProductItems.Remove(item);
-        StateHasChanged();
+        EnsureOneEmptyRow(); // 刪除後確保還有1行空白
         await NotifyItemsChanged();
     }
 
     private void OnProductSearchInput(ProductItem item, string? searchValue)
     {
+        // 檢查是否在空行輸入，如果是則新增行
+        var wasEmpty = IsEmptyRow(item);
+        
         item.ProductSearch = searchValue ?? string.Empty;
         
         if (string.IsNullOrWhiteSpace(searchValue))
@@ -140,6 +173,66 @@
                 .ToList();
             
             item.ShowDropdown = FilteredProducts.Any();
+        }
+        
+        // 如果原本是空行，現在有輸入了，確保有足夠的空行
+        if (wasEmpty && !string.IsNullOrWhiteSpace(searchValue))
+        {
+            EnsureOneEmptyRow();
+        }
+        
+        StateHasChanged();
+    }
+
+    private void OnQuantityInput(ProductItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        if (int.TryParse(value, out int quantity) && quantity > 0)
+        {
+            item.Quantity = quantity;
+        }
+        else
+        {
+            item.Quantity = 0;  // 空字串或無效值都設為0
+        }
+        
+        if (wasEmpty && !string.IsNullOrWhiteSpace(value) && int.TryParse(value, out var parsedValue) && parsedValue > 0)
+        {
+            EnsureOneEmptyRow();
+        }
+        
+        StateHasChanged();
+    }
+
+    private void OnPriceInput(ProductItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        if (decimal.TryParse(value, out decimal price) && price > 0)
+        {
+            item.Price = price;
+        }
+        else
+        {
+            item.Price = 0;  // 空字串或無效值都設為0
+        }
+        
+        if (wasEmpty && !string.IsNullOrWhiteSpace(value) && decimal.TryParse(value, out var parsedValue) && parsedValue > 0)
+        {
+            EnsureOneEmptyRow();
+        }
+        
+        StateHasChanged();
+    }
+
+    private void OnRemarksInput(ProductItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        item.Remarks = value ?? string.Empty;
+        
+        if (wasEmpty && !string.IsNullOrWhiteSpace(value))
+        {
+            EnsureOneEmptyRow();
         }
         
         StateHasChanged();
@@ -171,7 +264,7 @@
     private decimal GetTotalAmount()
     {
         return ProductItems
-            .Where(item => item.SelectedProduct != null && item.Quantity > 0)
+            .Where(item => !IsEmptyRow(item) && item.SelectedProduct != null && item.Quantity > 0)
             .Sum(item => item.Quantity * item.Price);
     }
 
@@ -179,7 +272,7 @@
     {
         public string ProductSearch { get; set; } = string.Empty;
         public Product? SelectedProduct { get; set; }
-        public int Quantity { get; set; } = 1;
+        public int Quantity { get; set; } = 0;  // 改為0，不是1
         public decimal Price { get; set; } = 0;
         public string Remarks { get; set; } = string.Empty;
         public bool ShowDropdown { get; set; } = false;

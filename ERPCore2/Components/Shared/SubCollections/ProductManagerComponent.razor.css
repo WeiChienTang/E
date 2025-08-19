@@ -1,0 +1,40 @@
+/* 空行輸入框的紅色placeholder樣式 */
+.empty-row-input::placeholder {
+    color: #dc3545 !important; /* Bootstrap的danger紅色 */
+    font-weight: 500;
+    opacity: 0.8;
+}
+
+/* 空行輸入框的邊框樣式 */
+.empty-row-input {
+    border-color: rgba(220, 53, 69, 0.3);
+    transition: border-color 0.15s ease-in-out;
+}
+
+/* 空行輸入框獲得焦點時的樣式 */
+.empty-row-input:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/* 空行的整體視覺提示 */
+.table-light {
+    background-color: rgba(248, 249, 250, 0.8) !important;
+}
+
+/* 商品下拉選單的樣式優化 */
+.dropdown-menu {
+    border: 1px solid #dee2e6;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+    color: #212529;
+}
+
+/* 刪除按鈕的樣式優化 */
+.btn-outline-danger:hover {
+    transform: scale(1.05);
+    transition: transform 0.1s ease-in-out;
+}
