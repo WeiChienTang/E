@@ -1,18 +1,20 @@
-@using ERPCore2.Data.Entities
-@using Microsoft.EntityFrameworkCore
 
-<div class="product-manager">
+@using Microsoft.EntityFrameworkCore
+@using System.Linq.Expressions
+@using System.Reflection
+@typeparam TMainEntity where TMainEntity : BaseEntity
+@typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
+
     @if (ProductItems != null && ProductItems.Any())
     {
-        <div class="table-responsive">
             <table class="table table-striped table-hover">
                 <thead class="table-dark">
                     <tr>
-                        <th width="25%">商品</th>
+                        <th width="35%">商品</th>
                         <th width="15%">數量</th>
                         <th width="15%">價格</th>
                         <th width="30%">備註</th>
-                        <th width="15%">操作</th>
+                        <th width="5%">操作</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -88,7 +90,6 @@
                     </tr>
                 </tfoot>
             </table>
-        </div>
     }
     else
     {
@@ -97,19 +98,181 @@
             <p>尚無商品資料，點擊上方按鈕新增商品</p>
         </div>
     }
-</div>
 
 @code {
+    // === 基本參數 ===
     [Parameter] public List<Product> Products { get; set; } = new List<Product>();
     [Parameter] public EventCallback<List<ProductItem>> OnProductItemsChanged { get; set; }
+    
+    // === 泛型參數 ===
+    [Parameter] public TMainEntity? MainEntity { get; set; }
+    [Parameter] public List<TDetailEntity> ExistingDetails { get; set; } = new List<TDetailEntity>();
+    [Parameter] public EventCallback<List<TDetailEntity>> OnDetailsChanged { get; set; }
+    
+    // === 欄位映射參數 ===
+    [Parameter] public string MainEntityIdPropertyName { get; set; } = string.Empty; // 主檔ID欄位名稱，例如 "PurchaseOrderId"
+    [Parameter] public string QuantityPropertyName { get; set; } = "Quantity"; // 數量欄位名稱
+    [Parameter] public string UnitPricePropertyName { get; set; } = "UnitPrice"; // 單價欄位名稱
+    [Parameter] public string RemarksPropertyName { get; set; } = "Remarks"; // 備註欄位名稱
+    [Parameter] public string? UnitIdPropertyName { get; set; } // 單位ID欄位名稱（可選）
+    
+    // === 顯示標籤參數 ===
+    [Parameter] public string QuantityLabel { get; set; } = "數量";
+    [Parameter] public string PriceLabel { get; set; } = "單價";
+    [Parameter] public string RemarksLabel { get; set; } = "備註";
 
     private List<ProductItem> ProductItems { get; set; } = new List<ProductItem>();
     private List<Product> FilteredProducts { get; set; } = new List<Product>();
 
     protected override void OnInitialized()
     {
+        // 從現有明細載入資料
+        LoadExistingDetails();
         // 初始化時確保有1行空白
         EnsureOneEmptyRow();
+    }
+
+    protected override void OnParametersSet()
+    {
+        // 當參數變更時重新載入
+        if (ExistingDetails?.Any() == true)
+        {
+            LoadExistingDetails(); // 這裡面已經會呼叫 EnsureOneEmptyRow()
+        }
+        else
+        {
+            // 如果沒有現有明細，也要確保有空白行
+            EnsureOneEmptyRow();
+        }
+    }
+
+    /// <summary>
+    /// 從現有明細資料載入到 ProductItems
+    /// </summary>
+    private void LoadExistingDetails()
+    {
+        if (ExistingDetails?.Any() != true) return;
+
+        ProductItems.Clear();
+        
+        foreach (var detail in ExistingDetails)
+        {
+            var productId = GetPropertyValue<int>(detail, "ProductId");
+            var product = Products.FirstOrDefault(p => p.Id == productId);
+            
+            if (product != null)
+            {
+                var item = new ProductItem
+                {
+                    SelectedProduct = product,
+                    ProductSearch = $"{product.Code} - {product.Name}",
+                    Quantity = Convert.ToInt32(GetPropertyValue<object>(detail, QuantityPropertyName) ?? 0),
+                    Price = Convert.ToDecimal(GetPropertyValue<object>(detail, UnitPricePropertyName) ?? 0m),
+                    Remarks = GetPropertyValue<string>(detail, RemarksPropertyName) ?? string.Empty,
+                    ExistingDetailEntity = detail
+                };
+                
+                ProductItems.Add(item);
+            }
+        }
+        
+        // 載入完成後確保有空白行
+        EnsureOneEmptyRow();
+    }
+
+    /// <summary>
+    /// 轉換 ProductItems 為明細實體列表
+    /// </summary>
+    private List<TDetailEntity> ConvertToDetailEntities()
+    {
+        var details = new List<TDetailEntity>();
+        
+        foreach (var item in ProductItems.Where(x => !IsEmptyRow(x) && x.SelectedProduct != null))
+        {
+            TDetailEntity detail;
+            
+            // 如果有現有的明細實體，則更新它
+            if (item.ExistingDetailEntity != null)
+            {
+                detail = item.ExistingDetailEntity;
+            }
+            else
+            {
+                detail = new TDetailEntity();
+                
+                // 設定主檔ID
+                if (MainEntity != null && !string.IsNullOrEmpty(MainEntityIdPropertyName))
+                {
+                    SetPropertyValue(detail, MainEntityIdPropertyName, MainEntity.Id);
+                }
+                
+                // 設定商品ID
+                if (item.SelectedProduct != null)
+                {
+                    SetPropertyValue(detail, "ProductId", item.SelectedProduct.Id);
+                }
+            }
+            
+            // 更新數量、單價、備註
+            SetPropertyValue(detail, QuantityPropertyName, item.Quantity);
+            SetPropertyValue(detail, UnitPricePropertyName, item.Price);
+            SetPropertyValue(detail, RemarksPropertyName, item.Remarks);
+            
+            details.Add(detail);
+        }
+        
+        return details;
+    }
+
+    /// <summary>
+    /// 通知明細變更
+    /// </summary>
+    private async Task NotifyDetailsChanged()
+    {
+        var details = ConvertToDetailEntities();
+        await OnDetailsChanged.InvokeAsync(details);
+        await NotifyItemsChanged(); // 向下相容
+    }
+
+    /// <summary>
+    /// 使用反射取得屬性值
+    /// </summary>
+    private T? GetPropertyValue<T>(object obj, string propertyName)
+    {
+        var property = obj.GetType().GetProperty(propertyName);
+        if (property == null) return default(T);
+        
+        var value = property.GetValue(obj);
+        if (value == null) return default(T);
+        
+        if (typeof(T) == typeof(object)) return (T)value;
+        
+        return (T)Convert.ChangeType(value, typeof(T));
+    }
+
+    /// <summary>
+    /// 使用反射設定屬性值
+    /// </summary>
+    private void SetPropertyValue(object obj, string propertyName, object? value)
+    {
+        var property = obj.GetType().GetProperty(propertyName);
+        if (property != null && property.CanWrite)
+        {
+            if (value != null && property.PropertyType != value.GetType())
+            {
+                // 處理型別轉換
+                if (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                {
+                    var underlyingType = Nullable.GetUnderlyingType(property.PropertyType);
+                    value = Convert.ChangeType(value, underlyingType!);
+                }
+                else
+                {
+                    value = Convert.ChangeType(value, property.PropertyType);
+                }
+            }
+            property.SetValue(obj, value);
+        }
     }
 
     private void AddNewRow()
@@ -139,11 +302,11 @@
     {
         var emptyCount = ProductItems.Count(IsEmptyRow);
         
-        while (emptyCount < 1)
+        if (emptyCount < 1)
         {
             ProductItems.Add(new ProductItem());
-            emptyCount++;
         }
+        
         StateHasChanged();
     }
 
@@ -151,7 +314,7 @@
     {
         ProductItems.Remove(item);
         EnsureOneEmptyRow(); // 刪除後確保還有1行空白
-        await NotifyItemsChanged();
+        await NotifyDetailsChanged();
     }
 
     private void OnProductSearchInput(ProductItem item, string? searchValue)
@@ -188,7 +351,7 @@
         StateHasChanged();
     }
 
-    private void OnQuantityInput(ProductItem item, string? value)
+    private async Task OnQuantityInput(ProductItem item, string? value)
     {
         var wasEmpty = IsEmptyRow(item);
         if (int.TryParse(value, out int quantity) && quantity > 0)
@@ -206,9 +369,10 @@
         }
         
         StateHasChanged();
+        await NotifyDetailsChanged(); // 通知明細變更
     }
 
-    private void OnPriceInput(ProductItem item, string? value)
+    private async Task OnPriceInput(ProductItem item, string? value)
     {
         var wasEmpty = IsEmptyRow(item);
         
@@ -227,9 +391,10 @@
         }
         
         StateHasChanged();
+        await NotifyDetailsChanged(); // 通知明細變更
     }
 
-    private void OnRemarksInput(ProductItem item, string? value)
+    private async Task OnRemarksInput(ProductItem item, string? value)
     {
         var wasEmpty = IsEmptyRow(item);
         item.Remarks = value ?? string.Empty;
@@ -240,6 +405,7 @@
         }
         
         StateHasChanged();
+        await NotifyDetailsChanged(); // 通知明細變更
     }
 
     private void ShowProductDropdown(ProductItem item)
@@ -262,7 +428,7 @@
         item.SelectedIndex = -1; // 重置選中索引
         
         StateHasChanged();
-        await NotifyItemsChanged();
+        await NotifyDetailsChanged();
     }
 
     private async Task OnKeyDown(ProductItem item, KeyboardEventArgs e)
@@ -318,5 +484,6 @@
         public string Remarks { get; set; } = string.Empty;
         public bool ShowDropdown { get; set; } = false;
         public int SelectedIndex { get; set; } = -1; // 新增：記錄當前選中的索引
+        public TDetailEntity? ExistingDetailEntity { get; set; } // 新增：關聯的現有明細實體
     }
 }

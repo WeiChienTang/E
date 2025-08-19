@@ -1,9 +1,11 @@
 @* 可重用的採購單編輯組件 - 可在任何頁面中嵌入 *@
 @inject IPurchaseOrderService PurchaseOrderService
 @inject ISupplierService SupplierService
+@inject IProductService ProductService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 @using ERPCore2.Helpers
+@using ERPCore2.Components.Shared.SubCollections
 
 <GenericEditModalComponent TEntity="PurchaseOrder" 
                           TService="IPurchaseOrderService"
@@ -26,13 +28,16 @@
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadPurchaseOrderData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
-                          UseGenericSave="true"
+                          SaveHandler="@SavePurchaseOrderWithDetails"
                           SaveSuccessMessage="@(PurchaseOrderId.HasValue ? "採購單更新成功" : "採購單新增成功")"
                           SaveFailureMessage="採購單儲存失敗"
                           RequiredPermission="PurchaseOrder.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
-                          OnFieldChanged="@OnFieldValueChanged" />
+                          OnFieldChanged="@OnFieldValueChanged"
+                          CustomModules="@GetCustomModules()">
+
+</GenericEditModalComponent>
 
 @* 供應商編輯 Modal *@
 <SupplierEditModalComponent @ref="supplierEditModal"
@@ -58,6 +63,10 @@
     
     // 原始資料集合（用於 AutoComplete）
     private List<Supplier> availableSuppliers = new();
+    private List<Product> availableProducts = new();
+    
+    // 採購訂單明細
+    private List<PurchaseOrderDetail> purchaseOrderDetails = new();
     
     // Modal 管理器
     private SupplierEditModalComponent? supplierEditModal;
@@ -149,7 +158,7 @@
             {
                 // 新增模式 - 自動產生採購單號
                 var generatedCode = await GeneratePurchaseOrderNumberAsync();
-                return new PurchaseOrder
+                var newOrder = new PurchaseOrder
                 {
                     OrderDate = DateTime.Today,
                     ExpectedDeliveryDate = DateTime.Today.AddDays(7),
@@ -157,10 +166,26 @@
                     TotalAmount = 0,
                     PurchaseOrderNumber = generatedCode
                 };
+                
+                // 清空明細
+                purchaseOrderDetails.Clear();
+                
+                return newOrder;
             }
 
-            // 編輯模式
-            return await PurchaseOrderService.GetByIdAsync(PurchaseOrderId.Value);
+            // 編輯模式 - 載入採購單和明細
+            var purchaseOrder = await PurchaseOrderService.GetByIdAsync(PurchaseOrderId.Value);
+            
+            if (purchaseOrder != null)
+            {
+                // 載入採購單明細
+                await LoadPurchaseOrderDetails(PurchaseOrderId.Value);
+                
+                // 觸發重新渲染以更新 ProductManagerComponent
+                StateHasChanged();
+            }
+            
+            return purchaseOrder;
         }
         catch (Exception ex)
         {
@@ -185,6 +210,9 @@
                     Value = s.Id.ToString()
                 }).ToList();
 
+            // 載入商品資料
+            availableProducts = await ProductService.GetAllAsync();
+
             // 初始化狀態選項
             statusOptions = new List<SelectOption>
             {
@@ -200,6 +228,7 @@
             // 設定安全的預設值
             supplierOptions = new List<SelectOption>();
             statusOptions = new List<SelectOption>();
+            availableProducts = new List<Product>();
         }
     }
 
@@ -376,6 +405,70 @@
         };
     }
     
+    /// <summary>
+    /// 配置自訂模組
+    /// </summary>
+    private List<GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.CustomModule> GetCustomModules()
+    {
+        // 確保只在需要時才返回模組，並且檢查所有必要的條件
+        if (editModalComponent == null)
+        {
+            return new List<GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.CustomModule>();
+        }
+
+        return new List<GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.CustomModule>
+        {
+            new GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.CustomModule
+            {
+                @* Title = "採購明細", *@
+                Order = 1,
+                @* CssClass = "mt-4", *@
+                IsVisible = true,
+                Content = CreateProductManagerContent()
+            }
+        };
+    }
+
+    /// <summary>
+    /// 創建商品管理器內容的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateProductManagerContent() => __builder =>
+    {
+        try
+        {
+                    @if (editModalComponent?.Entity != null && availableProducts != null)
+                    {
+                        <ProductManagerComponent TMainEntity="PurchaseOrder" 
+                                               TDetailEntity="PurchaseOrderDetail"
+                                               Products="@availableProducts"
+                                               MainEntity="@editModalComponent.Entity"
+                                               ExistingDetails="@purchaseOrderDetails"
+                                               OnDetailsChanged="@HandleDetailsChanged"
+                                               MainEntityIdPropertyName="PurchaseOrderId"
+                                               QuantityPropertyName="OrderQuantity"
+                                               UnitPricePropertyName="UnitPrice"
+                                               RemarksPropertyName="DetailRemarks"
+                                               QuantityLabel="採購數量"
+                                               PriceLabel="採購單價"
+                                               RemarksLabel="採購備註" />
+                    }
+                    else
+                    {
+                        <div class="text-center py-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">載入中...</span>
+                            </div>
+                        </div>
+                    }
+        }
+        catch
+        {
+            <div class="alert alert-warning" role="alert">
+                載入明細管理器時發生錯誤，請重新整理頁面。
+            </div>
+        }
+    };
+    
     // ===== Modal 管理器初始化方法 =====
     
     /// <summary>
@@ -446,6 +539,170 @@
         catch (Exception)
         {
             await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
+        }
+    }
+
+    // ===== 採購明細管理方法 =====
+    
+    /// <summary>
+    /// 載入採購單明細
+    /// </summary>
+    private async Task LoadPurchaseOrderDetails(int purchaseOrderId)
+    {
+        try
+        {
+            // 從服務載入採購單明細
+            purchaseOrderDetails = await PurchaseOrderService.GetOrderDetailsAsync(purchaseOrderId);
+            
+            // 確保不是 null
+            if (purchaseOrderDetails == null)
+            {
+                purchaseOrderDetails = new List<PurchaseOrderDetail>();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPurchaseOrderDetails), GetType(), 
+                additionalData: $"載入採購單明細失敗 - OrderId: {purchaseOrderId}");
+            purchaseOrderDetails = new List<PurchaseOrderDetail>();
+        }
+    }
+
+    /// <summary>
+    /// 處理採購明細變更
+    /// </summary>
+    private async Task HandleDetailsChanged(List<PurchaseOrderDetail> details)
+    {
+        try
+        {
+            purchaseOrderDetails = details ?? new List<PurchaseOrderDetail>();
+            
+            // 除錯：檢查明細資料
+            Console.WriteLine($"HandleDetailsChanged: 收到 {purchaseOrderDetails.Count} 筆明細");
+            foreach (var detail in purchaseOrderDetails)
+            {
+                Console.WriteLine($"明細 - ProductId: {detail.ProductId}, OrderQuantity: {detail.OrderQuantity}, UnitPrice: {detail.UnitPrice}, SubtotalAmount: {detail.SubtotalAmount}");
+            }
+            
+            // 更新主檔的總金額
+            if (editModalComponent?.Entity != null)
+            {
+                editModalComponent.Entity.TotalAmount = purchaseOrderDetails.Sum(d => d.SubtotalAmount);
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDetailsChanged), GetType(), 
+                additionalData: "處理採購明細變更失敗");
+        }
+    }
+
+    /// <summary>
+    /// 自訂儲存邏輯 - 同時儲存主檔和明細
+    /// </summary>
+    private async Task<bool> SavePurchaseOrderWithDetails(PurchaseOrder purchaseOrder)
+    {
+        try
+        {
+            if (purchaseOrder == null)
+            {
+                await NotificationService.ShowErrorAsync("沒有要儲存的採購單資料");
+                return false;
+            }
+
+            // 更新總金額
+            purchaseOrder.TotalAmount = purchaseOrderDetails.Sum(d => d.SubtotalAmount);
+
+            // 儲存主檔
+            ServiceResult<PurchaseOrder> result;
+            if (PurchaseOrderId.HasValue)
+            {
+                result = await PurchaseOrderService.UpdateAsync(purchaseOrder);
+            }
+            else
+            {
+                result = await PurchaseOrderService.CreateAsync(purchaseOrder);
+            }
+
+            if (!result.IsSuccess || result.Data == null)
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "儲存採購單失敗");
+                return false;
+            }
+
+            // 儲存明細
+            await SavePurchaseOrderDetails(result.Data.Id);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SavePurchaseOrderWithDetails), GetType(), 
+                additionalData: "儲存採購單和明細失敗");
+            await NotificationService.ShowErrorAsync($"儲存時發生錯誤：{ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 儲存採購單明細
+    /// </summary>
+    private async Task SavePurchaseOrderDetails(int purchaseOrderId)
+    {
+        try
+        {
+            Console.WriteLine($"SavePurchaseOrderDetails: 準備儲存 {purchaseOrderDetails.Count} 筆明細");
+            
+            // 設定主檔ID
+            foreach (var detail in purchaseOrderDetails)
+            {
+                detail.PurchaseOrderId = purchaseOrderId;
+                if (detail.Id == 0)
+                {
+                    detail.Status = EntityStatus.Active;
+                    detail.CreatedAt = DateTime.Now;
+                }
+                else
+                {
+                    detail.UpdatedAt = DateTime.Now;
+                }
+                
+                Console.WriteLine($"儲存前明細 - Id: {detail.Id}, ProductId: {detail.ProductId}, OrderQuantity: {detail.OrderQuantity}, UnitPrice: {detail.UnitPrice}");
+            }
+
+            // 先獲取現有的明細
+            var existingDetails = await PurchaseOrderService.GetOrderDetailsAsync(purchaseOrderId);
+            
+            // 處理新增和更新的明細
+            foreach (var detail in purchaseOrderDetails.Where(d => d.ProductId > 0))
+            {
+                if (detail.Id == 0)
+                {
+                    // 新增明細
+                    await PurchaseOrderService.AddOrderDetailAsync(detail);
+                }
+                else
+                {
+                    // 更新明細
+                    await PurchaseOrderService.UpdateOrderDetailAsync(detail);
+                }
+            }
+
+            // 處理刪除的明細（現有的但不在當前列表中的）
+            var currentDetailIds = purchaseOrderDetails.Where(d => d.Id > 0).Select(d => d.Id).ToList();
+            var detailsToDelete = existingDetails.Where(e => !currentDetailIds.Contains(e.Id)).ToList();
+            
+            foreach (var detailToDelete in detailsToDelete)
+            {
+                await PurchaseOrderService.DeleteOrderDetailAsync(detailToDelete.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SavePurchaseOrderDetails), GetType(), 
+                additionalData: $"儲存採購單明細失敗 - OrderId: {purchaseOrderId}");
+            throw; // 重新拋出例外，讓上層處理
         }
     }
 }

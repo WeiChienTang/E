@@ -1,4 +1,4 @@
-@page "/test/product-manager"
+@page "/test/sales-product-manager"
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
 @using ERPCore2.Data.Context
@@ -6,35 +6,35 @@
 @using Microsoft.EntityFrameworkCore
 @inject AppDbContext DbContext
 
-<PageTitle>商品管理測試頁面</PageTitle>
+<PageTitle>銷貨訂單商品管理測試頁面</PageTitle>
 
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">採購訂單商品管理測試</h5>
+                    <h5 class="card-title mb-0">銷貨訂單商品管理測試</h5>
                 </div>
                 <div class="card-body">
                     <!-- 測試資訊顯示 -->
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <strong>測試主檔：</strong> @(testPurchaseOrder?.PurchaseOrderNumber ?? "尚未建立")
+                            <strong>測試銷貨單：</strong> @(testSalesOrder?.SalesOrderNumber ?? "尚未建立")
                         </div>
                         <div class="col-md-6">
-                            <strong>明細數量：</strong> @purchaseOrderDetails.Count 筆
+                            <strong>明細數量：</strong> @salesOrderDetails.Count 筆
                         </div>
                     </div>
 
                     <!-- 操作按鈕 -->
                     <div class="mb-3">
-                        <button class="btn btn-primary me-2" @onclick="CreateTestPurchaseOrder">
-                            建立測試採購訂單
+                        <button class="btn btn-primary me-2" @onclick="CreateTestSalesOrder">
+                            建立測試銷貨訂單
                         </button>
-                        <button class="btn btn-success me-2" @onclick="SaveDetails" disabled="@(testPurchaseOrder == null)">
+                        <button class="btn btn-success me-2" @onclick="SaveDetails" disabled="@(testSalesOrder == null)">
                             儲存明細
                         </button>
-                        <button class="btn btn-warning me-2" @onclick="LoadExistingDetails" disabled="@(testPurchaseOrder == null)">
+                        <button class="btn btn-warning me-2" @onclick="LoadExistingDetails" disabled="@(testSalesOrder == null)">
                             載入現有明細
                         </button>
                         <button class="btn btn-danger" @onclick="ClearTest">
@@ -42,23 +42,23 @@
                         </button>
                     </div>
 
-                    <!-- 商品管理組件 - 泛型版本 -->
-                    <ProductManagerComponent TMainEntity="PurchaseOrder" 
-                                           TDetailEntity="PurchaseOrderDetail"
+                    <!-- 商品管理組件 - 泛型版本 (銷貨訂單) -->
+                    <ProductManagerComponent TMainEntity="SalesOrder" 
+                                           TDetailEntity="SalesOrderDetail"
                                            Products="@products"
-                                           MainEntity="@testPurchaseOrder"
-                                           ExistingDetails="@purchaseOrderDetails"
+                                           MainEntity="@testSalesOrder"
+                                           ExistingDetails="@salesOrderDetails"
                                            OnDetailsChanged="@HandleDetailsChanged"
-                                           MainEntityIdPropertyName="PurchaseOrderId"
+                                           MainEntityIdPropertyName="SalesOrderId"
                                            QuantityPropertyName="OrderQuantity"
                                            UnitPricePropertyName="UnitPrice"
                                            RemarksPropertyName="DetailRemarks"
-                                           QuantityLabel="採購數量"
-                                           PriceLabel="採購單價"
-                                           RemarksLabel="採購備註" />
+                                           QuantityLabel="銷售數量"
+                                           PriceLabel="銷售單價"
+                                           RemarksLabel="銷售備註" />
                                            
                     <!-- 測試結果顯示 -->
-                    @if (purchaseOrderDetails.Any())
+                    @if (salesOrderDetails.Any())
                     {
                         <div class="mt-4">
                             <h6>目前明細資料：</h6>
@@ -68,14 +68,14 @@
                                         <tr>
                                             <th>商品編號</th>
                                             <th>商品名稱</th>
-                                            <th>採購數量</th>
-                                            <th>採購單價</th>
+                                            <th>銷售數量</th>
+                                            <th>銷售單價</th>
                                             <th>小計</th>
                                             <th>備註</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach (var detail in purchaseOrderDetails)
+                                        @foreach (var detail in salesOrderDetails)
                                         {
                                             var product = products.FirstOrDefault(p => p.Id == detail.ProductId);
                                             <tr>
@@ -83,7 +83,7 @@
                                                 <td>@product?.Name</td>
                                                 <td>@detail.OrderQuantity</td>
                                                 <td>@detail.UnitPrice.ToString("C")</td>
-                                                <td>@detail.SubtotalAmount.ToString("C")</td>
+                                                <td>@detail.Subtotal.ToString("C")</td>
                                                 <td>@detail.DetailRemarks</td>
                                             </tr>
                                         }
@@ -91,7 +91,7 @@
                                     <tfoot>
                                         <tr class="table-secondary">
                                             <th colspan="4">總計</th>
-                                            <th>@purchaseOrderDetails.Sum(d => d.SubtotalAmount).ToString("C")</th>
+                                            <th>@salesOrderDetails.Sum(d => d.Subtotal).ToString("C")</th>
                                             <th></th>
                                         </tr>
                                     </tfoot>
@@ -107,8 +107,8 @@
 
 @code {
     private List<Product> products = new List<Product>();
-    private PurchaseOrder? testPurchaseOrder = null;
-    private List<PurchaseOrderDetail> purchaseOrderDetails = new List<PurchaseOrderDetail>();
+    private SalesOrder? testSalesOrder = null;
+    private List<SalesOrderDetail> salesOrderDetails = new List<SalesOrderDetail>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -120,57 +120,57 @@
     }
 
     /// <summary>
-    /// 建立測試用的採購訂單
+    /// 建立測試用的銷貨訂單
     /// </summary>
-    private async Task CreateTestPurchaseOrder()
+    private async Task CreateTestSalesOrder()
     {
         try
         {
-            // 檢查是否已有供應商，如果沒有就建立一個測試供應商
-            var supplier = await DbContext.Suppliers.FirstOrDefaultAsync();
-            if (supplier == null)
+            // 檢查是否已有客戶，如果沒有就建立一個測試客戶
+            var customer = await DbContext.Customers.FirstOrDefaultAsync();
+            if (customer == null)
             {
-                supplier = new Supplier
+                customer = new Customer
                 {
-                    Code = "TEST001",
-                    CompanyName = "測試供應商",
+                    Code = "CUST001",
+                    CompanyName = "測試客戶",
                     Status = EntityStatus.Active
                 };
-                DbContext.Suppliers.Add(supplier);
+                DbContext.Customers.Add(customer);
                 await DbContext.SaveChangesAsync();
             }
 
-            // 建立測試採購訂單
-            testPurchaseOrder = new PurchaseOrder
+            // 建立測試銷貨訂單
+            testSalesOrder = new SalesOrder
             {
-                PurchaseOrderNumber = $"PO{DateTime.Now:yyyyMMddHHmmss}",
+                SalesOrderNumber = $"SO{DateTime.Now:yyyyMMddHHmmss}",
                 OrderDate = DateTime.Today,
-                SupplierId = supplier.Id,
+                CustomerId = customer.Id,
                 Status = EntityStatus.Active,
-                PurchasePersonnel = "測試採購員",
-                OrderRemarks = "測試用採購訂單"
+                SalesPersonnel = "測試銷售員",
+                OrderRemarks = "測試用銷貨訂單"
             };
 
-            DbContext.PurchaseOrders.Add(testPurchaseOrder);
+            DbContext.SalesOrders.Add(testSalesOrder);
             await DbContext.SaveChangesAsync();
 
             // 清空現有明細
-            purchaseOrderDetails.Clear();
+            salesOrderDetails.Clear();
             
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"建立測試採購訂單時發生錯誤：{ex.Message}");
+            Console.WriteLine($"建立測試銷貨訂單時發生錯誤：{ex.Message}");
         }
     }
 
     /// <summary>
     /// 處理明細變更事件
     /// </summary>
-    private void HandleDetailsChanged(List<PurchaseOrderDetail> details)
+    private void HandleDetailsChanged(List<SalesOrderDetail> details)
     {
-        purchaseOrderDetails = details ?? new List<PurchaseOrderDetail>();
+        salesOrderDetails = details ?? new List<SalesOrderDetail>();
         StateHasChanged();
     }
 
@@ -179,25 +179,25 @@
     /// </summary>
     private async Task SaveDetails()
     {
-        if (testPurchaseOrder == null) return;
+        if (testSalesOrder == null) return;
 
         try
         {
             // 取得資料庫中現有的明細
-            var existingDetails = await DbContext.PurchaseOrderDetails
-                .Where(d => d.PurchaseOrderId == testPurchaseOrder.Id)
+            var existingDetails = await DbContext.SalesOrderDetails
+                .Where(d => d.SalesOrderId == testSalesOrder.Id)
                 .ToListAsync();
 
             // 刪除不在新清單中的明細
             var detailsToRemove = existingDetails
-                .Where(existing => !purchaseOrderDetails.Any(newDetail => 
+                .Where(existing => !salesOrderDetails.Any(newDetail => 
                     newDetail.Id > 0 && newDetail.Id == existing.Id))
                 .ToList();
 
-            DbContext.PurchaseOrderDetails.RemoveRange(detailsToRemove);
+            DbContext.SalesOrderDetails.RemoveRange(detailsToRemove);
 
             // 更新或新增明細
-            foreach (var detail in purchaseOrderDetails)
+            foreach (var detail in salesOrderDetails)
             {
                 if (detail.Id > 0)
                 {
@@ -208,26 +208,28 @@
                         existingDetail.OrderQuantity = detail.OrderQuantity;
                         existingDetail.UnitPrice = detail.UnitPrice;
                         existingDetail.DetailRemarks = detail.DetailRemarks;
+                        existingDetail.Subtotal = detail.OrderQuantity * detail.UnitPrice;
                         existingDetail.UpdatedAt = DateTime.Now;
                     }
                 }
                 else
                 {
                     // 新增明細
-                    detail.PurchaseOrderId = testPurchaseOrder.Id;
+                    detail.SalesOrderId = testSalesOrder.Id;
+                    detail.Subtotal = detail.OrderQuantity * detail.UnitPrice;
                     detail.CreatedAt = DateTime.Now;
                     detail.Status = EntityStatus.Active;
-                    DbContext.PurchaseOrderDetails.Add(detail);
+                    DbContext.SalesOrderDetails.Add(detail);
                 }
             }
 
-            // 更新採購訂單總金額
-            testPurchaseOrder.TotalAmount = purchaseOrderDetails.Sum(d => d.SubtotalAmount);
-            testPurchaseOrder.UpdatedAt = DateTime.Now;
+            // 更新銷貨訂單總金額
+            testSalesOrder.TotalAmount = salesOrderDetails.Sum(d => d.Subtotal);
+            testSalesOrder.UpdatedAt = DateTime.Now;
 
             await DbContext.SaveChangesAsync();
 
-            Console.WriteLine($"成功儲存 {purchaseOrderDetails.Count} 筆明細");
+            Console.WriteLine($"成功儲存 {salesOrderDetails.Count} 筆明細");
         }
         catch (Exception ex)
         {
@@ -240,12 +242,12 @@
     /// </summary>
     private async Task LoadExistingDetails()
     {
-        if (testPurchaseOrder == null) return;
+        if (testSalesOrder == null) return;
 
         try
         {
-            purchaseOrderDetails = await DbContext.PurchaseOrderDetails
-                .Where(d => d.PurchaseOrderId == testPurchaseOrder.Id)
+            salesOrderDetails = await DbContext.SalesOrderDetails
+                .Where(d => d.SalesOrderId == testSalesOrder.Id)
                 .Include(d => d.Product)
                 .ToListAsync();
 
@@ -264,23 +266,23 @@
     {
         try
         {
-            if (testPurchaseOrder != null)
+            if (testSalesOrder != null)
             {
                 // 刪除明細
-                var details = await DbContext.PurchaseOrderDetails
-                    .Where(d => d.PurchaseOrderId == testPurchaseOrder.Id)
+                var details = await DbContext.SalesOrderDetails
+                    .Where(d => d.SalesOrderId == testSalesOrder.Id)
                     .ToListAsync();
-                DbContext.PurchaseOrderDetails.RemoveRange(details);
+                DbContext.SalesOrderDetails.RemoveRange(details);
 
-                // 刪除採購訂單
-                DbContext.PurchaseOrders.Remove(testPurchaseOrder);
+                // 刪除銷貨訂單
+                DbContext.SalesOrders.Remove(testSalesOrder);
 
                 await DbContext.SaveChangesAsync();
             }
 
             // 重置狀態
-            testPurchaseOrder = null;
-            purchaseOrderDetails.Clear();
+            testSalesOrder = null;
+            salesOrderDetails.Clear();
             
             StateHasChanged();
         }
@@ -288,13 +290,5 @@
         {
             Console.WriteLine($"清除測試資料時發生錯誤：{ex.Message}");
         }
-    }
-
-    /// <summary>
-    /// 向下相容的方法（保留原有介面）
-    /// </summary>
-    private void HandleProductItemsChanged(List<ProductManagerComponent<PurchaseOrder, PurchaseOrderDetail>.ProductItem> items)
-    {
-        // 這個方法保留用於向下相容，實際使用 HandleDetailsChanged
     }
 }
