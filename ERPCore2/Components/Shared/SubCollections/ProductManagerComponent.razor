@@ -74,6 +74,13 @@
                         </tr>
                     }
                 </tbody>
+                <tfoot class="table-secondary">
+                    <tr>
+                        <th colspan="2">總計</th>
+                        <th class="text-end">@GetTotalAmount().ToString("C")</th>
+                        <th colspan="2"></th>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     }
@@ -159,6 +166,13 @@
     private async Task NotifyItemsChanged()
     {
         await OnProductItemsChanged.InvokeAsync(ProductItems);
+    }
+
+    private decimal GetTotalAmount()
+    {
+        return ProductItems
+            .Where(item => item.SelectedProduct != null && item.Quantity > 0)
+            .Sum(item => item.Quantity * item.Price);
     }
 
     public class ProductItem
