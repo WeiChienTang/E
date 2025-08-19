@@ -30,14 +30,20 @@
                                            value="@item.ProductSearch"
                                            @oninput="(e) => OnProductSearchInput(item, e.Value?.ToString())"
                                            @onfocus="() => OnInputFocus(item)"
+                                           @onkeydown="(e) => OnKeyDown(item, e)"
                                            placeholder="@(isEmptyRow ? "點擊開始輸入商品..." : "輸入商品編號或名稱...")" />
                                     
                                     @if (item.ShowDropdown && FilteredProducts != null && FilteredProducts.Any())
                                     {
                                         <div class="dropdown-menu show position-absolute w-100" style="z-index: 1000; max-height: 200px; overflow-y: auto;">
-                                            @foreach (var product in FilteredProducts)
+                                            @for (int i = 0; i < FilteredProducts.Count; i++)
                                             {
-                                                <a class="dropdown-item" href="#" @onclick="() => SelectProduct(item, product)" @onclick:preventDefault="true">
+                                                var product = FilteredProducts[i];
+                                                var index = i;
+                                                <a class="dropdown-item @(item.SelectedIndex == index ? "active" : "")" 
+                                                   href="#" 
+                                                   @onclick="() => SelectProduct(item, product)" 
+                                                   @onclick:preventDefault="true">
                                                     <strong>@product.Code</strong> - @product.Name
                                                 </a>
                                             }
@@ -162,6 +168,7 @@
         if (string.IsNullOrWhiteSpace(searchValue))
         {
             item.ShowDropdown = false;
+            item.SelectedIndex = -1;
             FilteredProducts.Clear();
         }
         else
@@ -173,6 +180,7 @@
                 .ToList();
             
             item.ShowDropdown = FilteredProducts.Any();
+            item.SelectedIndex = FilteredProducts.Any() ? 0 : -1; // 預設選中第一項
         }
         
         // 如果原本是空行，現在有輸入了，確保有足夠的空行
@@ -244,6 +252,10 @@
         {
             OnProductSearchInput(item, item.ProductSearch);
         }
+        else
+        {
+            item.SelectedIndex = -1;
+        }
     }
 
     private async Task SelectProduct(ProductItem item, Product product)
@@ -251,9 +263,42 @@
         item.ProductSearch = $"{product.Code} - {product.Name}";
         item.SelectedProduct = product;
         item.ShowDropdown = false;
+        item.SelectedIndex = -1; // 重置選中索引
         
         StateHasChanged();
         await NotifyItemsChanged();
+    }
+
+    private async Task OnKeyDown(ProductItem item, KeyboardEventArgs e)
+    {
+        if (!item.ShowDropdown || FilteredProducts == null || !FilteredProducts.Any())
+            return;
+
+        switch (e.Key)
+        {
+            case "ArrowDown":
+                item.SelectedIndex = Math.Min(item.SelectedIndex + 1, FilteredProducts.Count - 1);
+                StateHasChanged();
+                break;
+                
+            case "ArrowUp":
+                item.SelectedIndex = Math.Max(item.SelectedIndex - 1, 0);
+                StateHasChanged();
+                break;
+                
+            case "Enter":
+                if (item.SelectedIndex >= 0 && item.SelectedIndex < FilteredProducts.Count)
+                {
+                    await SelectProduct(item, FilteredProducts[item.SelectedIndex]);
+                }
+                break;
+                
+            case "Escape":
+                item.ShowDropdown = false;
+                item.SelectedIndex = -1;
+                StateHasChanged();
+                break;
+        }
     }
 
     private async Task NotifyItemsChanged()
@@ -276,5 +321,6 @@
         public decimal Price { get; set; } = 0;
         public string Remarks { get; set; } = string.Empty;
         public bool ShowDropdown { get; set; } = false;
+        public int SelectedIndex { get; set; } = -1; // 新增：記錄當前選中的索引
     }
 }
