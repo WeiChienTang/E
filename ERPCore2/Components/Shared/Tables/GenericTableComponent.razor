@@ -88,86 +88,96 @@
 @* 分頁控制區塊 *@
 @if (EnablePagination && TotalItems > 0)
 {
-    <div class="d-flex justify-content-between align-items-center mt-3">
-        <!-- 資料統計資訊 -->
-        <div class="text-muted">
-            <small>
-                顯示第 @StartItem - @EndItem 筆，共 @TotalItems 筆資料 (第 @CurrentPage 頁，共 @TotalPages 頁)
-            </small>
+    <!-- 響應式分頁容器 - 大螢幕水平排列，小螢幕垂直堆疊 -->
+    <div class="mt-3">
+        <!-- 第一行：資料統計資訊與每頁筆數選擇器 -->
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center mb-2 gap-2">
+            <!-- 資料統計資訊 -->
+            <div class="text-muted text-center text-sm-start">
+                <small>
+                    顯示第 @StartItem - @EndItem 筆，共 @TotalItems 筆資料 (第 @CurrentPage 頁，共 @TotalPages 頁)
+                </small>
+            </div>
+            
+            <!-- 每頁筆數選擇器 -->
+            @if (ShowPageSizeSelector)
+            {
+                <div class="d-flex align-items-center flex-shrink-0">
+                    <label class="form-label me-2 mb-0 text-muted">
+                        <small>每頁顯示:</small>
+                    </label>
+                    <select class="form-select form-select-sm" style="width: auto;" 
+                            value="@PageSize" 
+                            @onchange="HandlePageSizeChanged">
+                        @foreach (var size in PageSizeOptions)
+                        {
+                            <option value="@size">@size</option>
+                        }
+                    </select>
+                    <small class="text-muted ms-1">筆</small>
+                </div>
+            }
         </div>
         
-        <!-- 分頁按鈕群 -->
-        <nav aria-label="資料表分頁">
-            <div class="btn-group" role="group" aria-label="分頁控制">
-                <!-- 第一頁按鈕 -->
-                <GenericButtonComponent Text="第一頁"
-                                      IconClass="fas fa-angle-double-left"
-                                      Variant="ButtonVariant.OutlinePrimary"
-                                      Size="ButtonSize.Small"
-                                      IsDisabled="@(!HasPreviousPage)"
-                                      OnClick="@(() => HandlePageChanged(1))"
-                                      Title="前往第一頁" />
-                
-                <!-- 上一頁按鈕 -->
-                <GenericButtonComponent Text="上一頁"
-                                      IconClass="fas fa-angle-left"
-                                      Variant="ButtonVariant.OutlinePrimary"
-                                      Size="ButtonSize.Small"
-                                      IsDisabled="@(!HasPreviousPage)"
-                                      OnClick="@(() => HandlePageChanged(CurrentPage - 1))"
-                                      Title="上一頁" />
-                
-                <!-- 頁碼按鈕群 -->
-                @foreach (var pageNumber in GetPageNumbers())
-                {
-                    var currentPageNumber = pageNumber;
-                    var isCurrentPage = currentPageNumber == CurrentPage;
+        <!-- 第二行：分頁按鈕群 - 置中顯示 -->
+        <div class="d-flex justify-content-center">
+            <nav aria-label="資料表分頁">
+                <div class="btn-group flex-wrap" role="group" aria-label="分頁控制">
+                    <!-- 第一頁按鈕 - 只在中大螢幕顯示 -->
+                    <div class="d-none d-md-block">
+                        <GenericButtonComponent Text="第一頁"
+                                              IconClass="fas fa-angle-double-left"
+                                              Variant="ButtonVariant.OutlinePrimary"
+                                              Size="ButtonSize.Small"
+                                              IsDisabled="@(!HasPreviousPage)"
+                                              OnClick="@(() => HandlePageChanged(1))"
+                                              Title="前往第一頁" />
+                    </div>
                     
-                    <GenericButtonComponent Text="@currentPageNumber.ToString()"
-                                          Variant="@(isCurrentPage ? ButtonVariant.Primary : ButtonVariant.OutlinePrimary)"
+                    <!-- 上一頁按鈕 -->
+                    <GenericButtonComponent Text="@GetPreviousButtonText()"
+                                          IconClass="fas fa-angle-left"
+                                          Variant="ButtonVariant.OutlinePrimary"
                                           Size="ButtonSize.Small"
-                                          OnClick="@(() => HandlePageChanged(currentPageNumber))"
-                                          Title="@($"前往第 {currentPageNumber} 頁")" />
-                }
-                
-                <!-- 下一頁按鈕 -->
-                <GenericButtonComponent Text="下一頁"
-                                      IconClass="fas fa-angle-right"
-                                      Variant="ButtonVariant.OutlinePrimary"
-                                      Size="ButtonSize.Small"
-                                      IsDisabled="@(!HasNextPage)"
-                                      OnClick="@(() => HandlePageChanged(CurrentPage + 1))"
-                                      Title="下一頁" />
-                
-                <!-- 最後一頁按鈕 -->
-                <GenericButtonComponent Text="最後一頁"
-                                      IconClass="fas fa-angle-double-right"
-                                      Variant="ButtonVariant.OutlinePrimary"
-                                      Size="ButtonSize.Small"
-                                      IsDisabled="@(!HasNextPage)"
-                                      OnClick="@(() => HandlePageChanged(TotalPages))"
-                                      Title="前往最後一頁" />
-            </div>
-        </nav>
-        
-        <!-- 每頁筆數選擇器 -->
-        @if (ShowPageSizeSelector)
-        {
-            <div class="d-flex align-items-center">
-                <label class="form-label me-2 mb-0 text-muted">
-                    <small>每頁顯示:</small>
-                </label>
-                <select class="form-select form-select-sm" style="width: auto;" 
-                        value="@PageSize" 
-                        @onchange="HandlePageSizeChanged">
-                    @foreach (var size in PageSizeOptions)
+                                          IsDisabled="@(!HasPreviousPage)"
+                                          OnClick="@(() => HandlePageChanged(CurrentPage - 1))"
+                                          Title="上一頁" />
+                    
+                    <!-- 頁碼按鈕群 - 響應式數量控制 -->
+                    @foreach (var pageNumber in GetPageNumbers())
                     {
-                        <option value="@size">@size</option>
+                        var currentPageNumber = pageNumber;
+                        var isCurrentPage = currentPageNumber == CurrentPage;
+                        
+                        <GenericButtonComponent Text="@currentPageNumber.ToString()"
+                                              Variant="@(isCurrentPage ? ButtonVariant.Primary : ButtonVariant.OutlinePrimary)"
+                                              Size="ButtonSize.Small"
+                                              OnClick="@(() => HandlePageChanged(currentPageNumber))"
+                                              Title="@($"前往第 {currentPageNumber} 頁")" />
                     }
-                </select>
-                <small class="text-muted ms-1">筆</small>
-            </div>
-        }
+                    
+                    <!-- 下一頁按鈕 -->
+                    <GenericButtonComponent Text="@GetNextButtonText()"
+                                          IconClass="fas fa-angle-right"
+                                          Variant="ButtonVariant.OutlinePrimary"
+                                          Size="ButtonSize.Small"
+                                          IsDisabled="@(!HasNextPage)"
+                                          OnClick="@(() => HandlePageChanged(CurrentPage + 1))"
+                                          Title="下一頁" />
+                    
+                    <!-- 最後一頁按鈕 - 只在中大螢幕顯示 -->
+                    <div class="d-none d-md-block">
+                        <GenericButtonComponent Text="最後一頁"
+                                              IconClass="fas fa-angle-double-right"
+                                              Variant="ButtonVariant.OutlinePrimary"
+                                              Size="ButtonSize.Small"
+                                              IsDisabled="@(!HasNextPage)"
+                                              OnClick="@(() => HandlePageChanged(TotalPages))"
+                                              Title="前往最後一頁" />
+                    </div>
+                </div>
+            </nav>
+        </div>
     </div>
 }
 
@@ -202,6 +212,7 @@
     [Parameter] public bool ShowPageSizeSelector { get; set; } = true;
     [Parameter] public List<int> PageSizeOptions { get; set; } = new() { 10, 20, 50, 100 };
     [Parameter] public int MaxDisplayedPages { get; set; } = 5;
+    [Parameter] public int MaxDisplayedPagesMobile { get; set; } = 3;
 
     // 分頁計算屬性
     private int TotalPages => TotalItems > 0 ? (int)Math.Ceiling((double)TotalItems / PageSize) : 0;
@@ -436,13 +447,29 @@
 
     private IEnumerable<int> GetPageNumbers()
     {
-        var startPage = Math.Max(1, CurrentPage - MaxDisplayedPages / 2);
-        var endPage = Math.Min(TotalPages, startPage + MaxDisplayedPages - 1);
+        // 使用較少的頁碼數量以適應手機螢幕
+        var maxPages = Math.Min(MaxDisplayedPages, 3); // 限制最多3個頁碼按鈕
+        
+        var startPage = Math.Max(1, CurrentPage - maxPages / 2);
+        var endPage = Math.Min(TotalPages, startPage + maxPages - 1);
         
         // 調整起始頁面，確保顯示正確數量的頁碼
-        if (endPage - startPage + 1 < MaxDisplayedPages)
+        if (endPage - startPage + 1 < maxPages)
         {
-            startPage = Math.Max(1, endPage - MaxDisplayedPages + 1);
-        }        return Enumerable.Range(startPage, endPage - startPage + 1);
+            startPage = Math.Max(1, endPage - maxPages + 1);
+        }
+        
+        return Enumerable.Range(startPage, endPage - startPage + 1);
+    }
+
+    // 響應式按鈕文字方法
+    private string GetPreviousButtonText()
+    {
+        return "上一頁"; // 在所有螢幕大小都顯示文字
+    }
+
+    private string GetNextButtonText()
+    {
+        return "下一頁"; // 在所有螢幕大小都顯示文字
     }
 }

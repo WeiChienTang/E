@@ -131,6 +131,28 @@
   margin-right: 0;
 }
 
+/* 響應式分頁按鈕組樣式 */
+.btn-group.flex-wrap {
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+/* 手機版分頁控制項改善 */
+@media (max-width: 575.98px) {
+  /* 小螢幕時調整按鈕間距 */
+  .btn-group .btn {
+    margin-right: 1px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+  }
+  
+  /* 確保分頁按鈕在小螢幕上有足夠的觸摸目標大小 */
+  .btn-group .btn {
+    min-width: 38px;
+    min-height: 32px;
+  }
+}
+
 /* ========================================= */
 /* 工具類別 */
 /* ========================================= */
