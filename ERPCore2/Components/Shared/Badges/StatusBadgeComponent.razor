@@ -26,7 +26,7 @@
             EntityStatus.Active => "bg-success",
             EntityStatus.Inactive => "bg-danger",
             EntityStatus.Deleted => "bg-danger",
-            _ => "bg-secondary"
+            _ => "bg-danger" // 預設為危險色（停用狀態）
         });
         
         // 大小設定
@@ -46,7 +46,7 @@
             EntityStatus.Active => "啟用",
             EntityStatus.Inactive => "停用",
             EntityStatus.Deleted => "已刪除",
-            _ => "未知"
+            _ => "停用" // 預設為停用而非未知
         };
     }
 

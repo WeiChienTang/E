@@ -95,6 +95,29 @@ namespace ERPCore2.Helpers
                                 model, query, nameof(Company.Phone), c => c.Phone)
                         }
                     },
+                    {
+                        nameof(Company.Status),
+                        new FieldDefinition<Company>
+                        {
+                            PropertyName = nameof(Company.Status),
+                            DisplayName = "狀態",
+                            FilterPlaceholder = "選擇狀態",
+                            TableOrder = 6,
+                            FilterOrder = 6,
+                            HeaderStyle = "width: 60px;",
+                            // 使用自訂模板來顯示 StatusBadge
+                            CustomTemplate = (data) => (RenderFragment)((builder) =>
+                            {
+                                if (data is Company company)
+                                {
+                                    builder.OpenComponent<ERPCore2.Components.Shared.Badges.StatusBadgeComponent>(0);
+                                    builder.AddAttribute(1, "Status", company.Status);
+                                    builder.CloseComponent();
+                                }
+                            }),
+                            FilterFunction = (model, query) => FilterHelper.ApplyStatusFilter(model, query)
+                        }
+                    }
                 };
             }
             catch (Exception ex)
