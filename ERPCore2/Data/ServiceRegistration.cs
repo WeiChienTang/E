@@ -119,6 +119,9 @@ namespace ERPCore2.Data
             // 刪除記錄服務
             services.AddScoped<IDeletedRecordService, DeletedRecordService>();
             
+            // 公司設定服務
+            services.AddScoped<ICompanyService, CompanyService>();
+            
             // 報表服務
             services.AddScoped<IReportService, ReportService>();
             services.AddScoped<IPurchaseOrderReportService, PurchaseOrderReportService>();
