@@ -220,14 +220,6 @@
                     Placeholder = "請輸入公司網站",
                     HelpText = "公司的官方網站網址"
                 },
-                // 設定選項區段
-                new()
-                {
-                    PropertyName = nameof(Company.IsPrimary),
-                    Label = "設為主要公司",
-                    FieldType = FormFieldType.Checkbox,
-                    HelpText = "主要公司會作為系統預設公司顯示在報表中"
-                },
                 new()
                 {
                     PropertyName = nameof(Company.Description),
@@ -261,7 +253,6 @@
                 { nameof(Company.Fax), "聯絡資訊" },
                 { nameof(Company.Email), "聯絡資訊" },
                 { nameof(Company.Website), "聯絡資訊" },
-                { nameof(Company.IsPrimary), "設定選項" },
                 { nameof(Company.Description), "額外資料" },
                 { nameof(Company.Status), "設定選項" }
             };

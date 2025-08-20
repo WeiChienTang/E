@@ -95,36 +95,6 @@ namespace ERPCore2.Helpers
                                 model, query, nameof(Company.Phone), c => c.Phone)
                         }
                     },
-                    {
-                        nameof(Company.IsPrimary),
-                        new FieldDefinition<Company>
-                        {
-                            PropertyName = nameof(Company.IsPrimary),
-                            DisplayName = "主要公司",
-                            FilterType = SearchFilterType.Boolean,
-                            ColumnType = Components.Shared.Tables.ColumnDataType.Boolean,
-                            TableOrder = 6,
-                            FilterOrder = 6,
-                            HeaderStyle = "width: 100px;",
-                            CustomTemplate = item => builder =>
-                            {
-                                var company = (Company)item;
-                                builder.OpenElement(0, "span");
-                                builder.AddAttribute(1, "class", company.IsPrimary ? "badge bg-primary" : "badge bg-secondary");
-                                builder.AddContent(2, company.IsPrimary ? "主要" : "一般");
-                                builder.CloseElement();
-                            },
-                            FilterFunction = (model, query) => 
-                            {
-                                var filterValue = model.GetFilterValue(nameof(Company.IsPrimary))?.ToString();
-                                if (!string.IsNullOrWhiteSpace(filterValue) && bool.TryParse(filterValue, out var isPrimary))
-                                {
-                                    return query.Where(c => c.IsPrimary == isPrimary);
-                                }
-                                return query;
-                            }
-                        }
-                    },
                 };
             }
             catch (Exception ex)

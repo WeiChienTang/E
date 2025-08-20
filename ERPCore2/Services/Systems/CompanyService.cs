@@ -55,15 +55,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                // 先找設定為主要公司的
-                var primaryCompany = await context.Companies
-                    .Where(c => !c.IsDeleted && c.Status == EntityStatus.Active && c.IsPrimary)
-                    .FirstOrDefaultAsync();
-
-                if (primaryCompany != null)
-                    return primaryCompany;
-
-                // 若無主要公司設定，返回第一個啟用的公司
+                // 返回第一個啟用的公司
                 return await context.Companies
                     .Where(c => !c.IsDeleted && c.Status == EntityStatus.Active)
                     .OrderBy(c => c.Code)
@@ -77,47 +69,6 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name
                 });
                 return null;
-            }
-        }
-
-        public async Task<ServiceResult> SetPrimaryCompanyAsync(int companyId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-
-                // 檢查公司是否存在且啟用
-                var company = await context.Companies
-                    .Where(c => c.Id == companyId && !c.IsDeleted && c.Status == EntityStatus.Active)
-                    .FirstOrDefaultAsync();
-
-                if (company == null)
-                {
-                    return ServiceResult.Failure("找不到指定的公司或公司未啟用");
-                }
-
-                // 先將所有公司的主要標記設為 false
-                await context.Companies
-                    .Where(c => !c.IsDeleted && c.IsPrimary)
-                    .ExecuteUpdateAsync(c => c.SetProperty(x => x.IsPrimary, false));
-
-                // 設定指定公司為主要公司
-                company.IsPrimary = true;
-                company.UpdatedAt = DateTime.Now;
-
-                await context.SaveChangesAsync();
-
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetPrimaryCompanyAsync), GetType(), _logger, new
-                {
-                    Method = nameof(SetPrimaryCompanyAsync),
-                    ServiceType = GetType().Name,
-                    CompanyId = companyId
-                });
-                return ServiceResult.Failure("設定主要公司時發生錯誤");
             }
         }
 
@@ -273,17 +224,6 @@ namespace ERPCore2.Services
         {
             try
             {
-                // 檢查是否為第一家公司，如果是則自動設為主要公司
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var existingCompanyCount = await context.Companies
-                    .Where(c => !c.IsDeleted)
-                    .CountAsync();
-
-                if (existingCompanyCount == 0)
-                {
-                    entity.IsPrimary = true;
-                }
-
                 return await base.CreateAsync(entity);
             }
             catch (Exception ex)

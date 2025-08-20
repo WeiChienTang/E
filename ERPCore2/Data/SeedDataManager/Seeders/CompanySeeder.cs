@@ -39,7 +39,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Email = "service@meijuang.com",
                     Phone = "(05)697-1210",
                     Fax = "(05)697-3210",
-                    IsPrimary = true, // 設為主要公司
                     Status = EntityStatus.Active,
                     CreatedAt = currentTime,
                     CreatedBy = createdBy,

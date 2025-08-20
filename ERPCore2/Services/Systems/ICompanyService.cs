@@ -14,13 +14,6 @@ namespace ERPCore2.Services
         Task<Company?> GetPrimaryCompanyAsync();
 
         /// <summary>
-        /// 設定主要公司
-        /// </summary>
-        /// <param name="companyId">公司ID</param>
-        /// <returns>執行結果</returns>
-        Task<ServiceResult> SetPrimaryCompanyAsync(int companyId);
-
-        /// <summary>
         /// 根據代碼取得公司
         /// </summary>
         /// <param name="code">公司代碼</param>

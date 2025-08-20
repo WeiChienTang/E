@@ -83,12 +83,6 @@ namespace ERPCore2.Data.Entities
         public string? LogoPath { get; set; }
 
         /// <summary>
-        /// 是否為主要公司（系統預設顯示）
-        /// </summary>
-        [Display(Name = "主要公司")]
-        public bool IsPrimary { get; set; } = false;
-
-        /// <summary>
         /// 公司簡介
         /// </summary>
         [MaxLength(1000, ErrorMessage = "公司簡介不可超過1000個字元")]
