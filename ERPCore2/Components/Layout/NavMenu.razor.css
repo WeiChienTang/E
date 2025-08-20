@@ -1,4 +1,4 @@
-/* Navigation Menu Layout Styles - 只保留佈局和基本結構 */
+ㄅ/* Navigation Menu Layout Styles - 只保留佈局和基本結構 */
 .navbar-toggler {
     appearance: none;
     cursor: pointer;
@@ -120,6 +120,27 @@
         display: block;
         height: calc(100vh - 3.5rem);
         overflow-y: auto;
+    }
+}
+
+/* 手機模式下的互動改善 */
+@media (max-width: 640px) {
+    /* 確保導航選單在手機模式下有較高的 z-index */
+    .nav-scrollable {
+        z-index: 1050;
+        position: relative;
+    }
+    
+    /* 為選單項目添加更好的觸控體驗 */
+    .nav-scrollable .nav-item {
+        min-height: 48px; /* 符合無障礙設計的最小觸控目標 */
+    }
+    
+    /* 確保下拉選單項目有足夠的觸控區域 */
+    .nav-scrollable ::deep .dropdown-item {
+        min-height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
     }
 }
 

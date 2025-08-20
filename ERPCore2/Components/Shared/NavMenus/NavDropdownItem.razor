@@ -7,14 +7,14 @@
 @if (!string.IsNullOrEmpty(RequiredPermission))
 {
     <NavigationPermissionCheck Permission="@RequiredPermission">
-        <a class="nav-dropdown-item" href="@Url">
+        <a class="nav-dropdown-item dropdown-item" href="@Url" @onclick="OnDropdownItemClick">
             <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span> @Text
         </a>
     </NavigationPermissionCheck>
 }
 else
 {
-    <a class="nav-dropdown-item" href="@Url">
+    <a class="nav-dropdown-item dropdown-item" href="@Url" @onclick="OnDropdownItemClick">
         <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span> @Text
     </a>
 }
@@ -70,5 +70,14 @@ else
             Logger.LogWarning("無法註冊權限: Text={Text}, RequiredPermission={RequiredPermission}, ParentMenuKey={ParentMenuKey}", 
                 Text, RequiredPermission, ParentMenuKey);
         }
+    }
+
+    /// <summary>
+    /// 處理下拉選單項目點擊事件
+    /// </summary>
+    private void OnDropdownItemClick()
+    {
+        // 這裡可以添加任何需要的邏輯
+        // JavaScript 會自動處理手機模式下的選單隱藏
     }
 }

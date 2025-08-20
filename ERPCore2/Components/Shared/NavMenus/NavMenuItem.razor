@@ -46,7 +46,7 @@
     else
     {
         <!-- 簡單連結 -->
-        <a class="nav-menu-nav-link" href="@Url">
+        <a class="nav-menu-nav-link" href="@Url" @onclick="OnNavLinkClick">
             <span class="@IconClass nav-menu-bi" aria-hidden="true"></span> @Text
         </a>
     }
@@ -116,6 +116,15 @@
     {
         isDropdownOpen = !isDropdownOpen;
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// 處理導航連結點擊事件
+    /// </summary>
+    private void OnNavLinkClick()
+    {
+        // 這裡可以添加任何需要的邏輯
+        // JavaScript 會自動處理手機模式下的選單隱藏
     }
 
     /// <summary>
