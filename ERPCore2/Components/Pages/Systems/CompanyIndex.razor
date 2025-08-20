@@ -1,4 +1,4 @@
-@page "/systems/companies"
+@page "/companies"
 @inject ICompanyService CompanyService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
@@ -6,7 +6,7 @@
 <GenericIndexPageComponent TEntity="Company" 
                       TService="ICompanyService"
                       Service="@CompanyService"
-                      EntityBasePath="/systems/companies"
+                      EntityBasePath="/companies"
                       PageTitle="公司設定"
                       PageSubtitle="管理公司基本資料與設定"
                       EntityName="公司"

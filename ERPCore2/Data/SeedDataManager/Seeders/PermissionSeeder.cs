@@ -31,7 +31,9 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             {
                 // 系統管理權限 (請勿刪除，此為最高權限)
                 new Permission { Code = "System.Admin", Name = "系統管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "系統最高管理權限，擁有所有功能存取權限" },
-                
+
+                new Permission {Code ="Company.Read", Name = "檢視公司", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視公司基本資料與相關資訊"},
+
                 // 系統控制權限
                 new Permission { Code = "SystemControl.Read", Name = "檢視系統控制", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視系統設定與控制功能" },
                 

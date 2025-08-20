@@ -1,38 +1,268 @@
 @inject ICompanyService CompanyService
 @inject INotificationService NotificationService
 
-<GenericEditModalComponent TEntity="Company"
+<GenericEditModalComponent TEntity="Company" 
                           TService="ICompanyService"
                           @ref="editModalComponent"
-                          Service="@CompanyService"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
                           Id="@CompanyId"
-                          ModalTitle="@(CompanyId.HasValue ? "編輯公司" : "新增公司")"
+                          Service="@CompanyService"
                           EntityName="公司"
-                          OnSaveSuccess="@OnSaveSuccess"
-                          OnCancel="@OnCancel"
-                          ValidationRules="@validationRules"
-                          CustomFormFields="@customFormFields" />
+                          EntityNamePlural="公司"
+                          ModalTitle="@(CompanyId.HasValue ? "編輯公司" : "新增公司")"
+                          Size="GenericEditModalComponent<Company, ICompanyService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadCompanyDataAsync"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(CompanyId.HasValue ? "公司更新成功" : "公司新增成功")"
+                          SaveFailureMessage="公司儲存失敗"
+                          RequiredPermission="Company.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel" />
 
 @code {
-    [Parameter] public bool IsVisible { get; set; }
+    // ===== 參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
     [Parameter] public int? CompanyId { get; set; }
     [Parameter] public EventCallback<Company> OnCompanySaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
 
+    // ===== 內部狀態 =====
     private GenericEditModalComponent<Company, ICompanyService>? editModalComponent;
-    private List<FormFieldDefinition> customFormFields = new();
-    private Dictionary<string, Func<object?, string?>> validationRules = new();
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
 
-    protected override void OnInitialized()
+    // ===== 生命週期 =====
+    protected override async Task OnParametersSetAsync()
     {
-        SetupCustomFormFields();
-        SetupValidationRules();
+        if (IsVisible)
+        {
+            await LoadAdditionalDataAsync();
+            InitializeFormFields();
+        }
     }
 
-    private async Task OnSaveSuccess()
+    // ===== 資料載入方法 =====
+    private async Task<Company?> LoadCompanyDataAsync()
+    {
+        try
+        {
+            if (CompanyId.HasValue)
+            {
+                return await CompanyService.GetByIdAsync(CompanyId.Value);
+            }
+            return new Company();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCompanyDataAsync), GetType(), additionalData: $"載入公司資料失敗: ID={CompanyId}");
+            await NotificationService.ShowErrorAsync("載入公司資料失敗");
+            return null;
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            // 如果需要載入其他相關資料，可以在這裡實作
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType(), additionalData: "載入額外資料失敗");
+            await NotificationService.ShowErrorAsync("載入相關資料失敗");
+        }
+    }
+
+    // ===== 表單欄位定義 =====
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    private void InitializeFormFields()
+    {
+        try
+        {
+            // 定義表單分段
+            formSections = new Dictionary<string, string>
+            {
+                { "basic", "基本資訊" },
+                { "contact", "聯絡資訊" },
+                { "settings", "設定選項" }
+            };
+
+            formFields = new List<FormFieldDefinition>
+            {
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Company.Code),
+                    Label = "公司代碼",
+                    FieldType = FormFieldType.Text,
+                    IsRequired = true,
+                    MaxLength = 10,
+                    Order = 1,
+                    GroupName = "basic",
+                    HelpText = "公司的唯一識別代碼",
+                    ValidationRules = new List<ValidationRule>
+                    {
+                        new ValidationRule { Type = ValidationType.Required, ErrorMessage = "公司代碼為必填" },
+                        new ValidationRule { Type = ValidationType.MaxLength, Value = 10, ErrorMessage = "公司代碼不可超過10個字元" }
+                    }
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Company.CompanyName),
+                    Label = "公司名稱",
+                    FieldType = FormFieldType.Text,
+                    IsRequired = true,
+                    MaxLength = 100,
+                    Order = 2,
+                    GroupName = "basic",
+                    ValidationRules = new List<ValidationRule>
+                    {
+                        new ValidationRule { Type = ValidationType.Required, ErrorMessage = "公司名稱為必填" },
+                        new ValidationRule { Type = ValidationType.MaxLength, Value = 100, ErrorMessage = "公司名稱不可超過100個字元" }
+                    }
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Company.CompanyNameEn),
+                    Label = "公司英文名稱",
+                    FieldType = FormFieldType.Text,
+                    MaxLength = 100,
+                    Order = 3,
+                    GroupName = "basic"
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Company.TaxId),
+                    Label = "統一編號",
+                    FieldType = FormFieldType.Text,
+                    MaxLength = 8,
+                    Order = 4,
+                    GroupName = "basic",
+                    HelpText = "8位數字的統一編號",
+                    ValidationRules = new List<ValidationRule>
+                    {
+                        new ValidationRule { Type = ValidationType.Pattern, Value = @"^\d{8}$", ErrorMessage = "統一編號格式不正確，請輸入8位數字" }
+                    }
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Company.Representative),
+                    Label = "負責人",
+                    FieldType = FormFieldType.Text,
+                    MaxLength = 50,
+                    Order = 5,
+                    GroupName = "basic"
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Company.Address),
+                    Label = "公司地址",
+                    FieldType = FormFieldType.TextArea,
+                    MaxLength = 200,
+                    Order = 6,
+                    GroupName = "contact",
+                    Rows = 2
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Company.Phone),
+                    Label = "公司電話",
+                    FieldType = FormFieldType.Text,
+                    MaxLength = 20,
+                    Order = 7,
+                    GroupName = "contact"
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Company.Fax),
+                    Label = "公司傳真",
+                    FieldType = FormFieldType.Text,
+                    MaxLength = 20,
+                    Order = 8,
+                    GroupName = "contact"
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Company.Email),
+                    Label = "公司Email",
+                    FieldType = FormFieldType.Email,
+                    MaxLength = 100,
+                    Order = 9,
+                    GroupName = "contact",
+                    ValidationRules = new List<ValidationRule>
+                    {
+                        new ValidationRule { Type = ValidationType.Email, ErrorMessage = "請輸入正確的Email格式" }
+                    }
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Company.Website),
+                    Label = "公司網站",
+                    FieldType = FormFieldType.Text,
+                    MaxLength = 100,
+                    Order = 10,
+                    GroupName = "contact",
+                    HelpText = "請輸入完整的網址，例如：https://www.example.com",
+                    ValidationRules = new List<ValidationRule>
+                    {
+                        new ValidationRule { Type = ValidationType.Pattern, Value = @"^https?://.*", ErrorMessage = "網站URL應以 http:// 或 https:// 開頭" }
+                    }
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Company.IsPrimary),
+                    Label = "設為主要公司",
+                    FieldType = FormFieldType.Checkbox,
+                    Order = 11,
+                    GroupName = "settings",
+                    HelpText = "主要公司會作為系統預設公司顯示在報表中"
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Company.Description),
+                    Label = "公司簡介",
+                    FieldType = FormFieldType.TextArea,
+                    MaxLength = 1000,
+                    Order = 12,
+                    GroupName = "settings",
+                    Rows = 4
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(Company.Status),
+                    Label = "狀態",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Order = 13,
+                    GroupName = "settings",
+                    Options = EntityStatusHelper.GetEntityStatusOptions()
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFormFields), GetType(), additionalData: "初始化公司表單欄位失敗");
+            _ = NotificationService.ShowErrorAsync("初始化表單欄位失敗");
+            
+            // 設定安全的預設值
+            formFields = new List<FormFieldDefinition>();
+            formSections = new Dictionary<string, string>();
+        }
+    }
+
+    // ===== 事件處理 =====
+    private async Task HandleSaveSuccess()
     {
         try
         {
@@ -41,204 +271,24 @@
                 await OnCompanySaved.InvokeAsync(editModalComponent.Entity);
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // 錯誤處理可以在這裡添加
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(), additionalData: "公司儲存成功後處理失敗");
+            await NotificationService.ShowErrorAsync("儲存成功，但後續處理時發生錯誤");
         }
     }
 
-    private void SetupCustomFormFields()
+    private async Task HandleCancel()
     {
-        customFormFields = new List<FormFieldDefinition>
+        try
         {
-            new FormFieldDefinition
-            {
-                PropertyName = nameof(Company.Code),
-                Label = "公司代碼",
-                FieldType = FormFieldType.Text,
-                IsRequired = true,
-                MaxLength = 10,
-                Order = 1,
-                HelpText = "公司的唯一識別代碼"
-            },
-            new FormFieldDefinition
-            {
-                PropertyName = nameof(Company.CompanyName),
-                Label = "公司名稱",
-                FieldType = FormFieldType.Text,
-                IsRequired = true,
-                MaxLength = 100,
-                Order = 2
-            },
-            new FormFieldDefinition
-            {
-                PropertyName = nameof(Company.CompanyNameEn),
-                Label = "公司英文名稱",
-                FieldType = FormFieldType.Text,
-                MaxLength = 100,
-                Order = 3
-            },
-            new FormFieldDefinition
-            {
-                PropertyName = nameof(Company.TaxId),
-                Label = "統一編號",
-                FieldType = FormFieldType.Text,
-                MaxLength = 8,
-                Order = 4,
-                HelpText = "8位數字的統一編號"
-            },
-            new FormFieldDefinition
-            {
-                PropertyName = nameof(Company.Representative),
-                Label = "負責人",
-                FieldType = FormFieldType.Text,
-                MaxLength = 50,
-                Order = 5
-            },
-            new FormFieldDefinition
-            {
-                PropertyName = nameof(Company.Address),
-                Label = "公司地址",
-                FieldType = FormFieldType.TextArea,
-                MaxLength = 200,
-                Order = 6,
-                Rows = 2
-            },
-            new FormFieldDefinition
-            {
-                PropertyName = nameof(Company.Phone),
-                Label = "公司電話",
-                FieldType = FormFieldType.Text,
-                MaxLength = 20,
-                Order = 7
-            },
-            new FormFieldDefinition
-            {
-                PropertyName = nameof(Company.Fax),
-                Label = "公司傳真",
-                FieldType = FormFieldType.Text,
-                MaxLength = 20,
-                Order = 8
-            },
-            new FormFieldDefinition
-            {
-                PropertyName = nameof(Company.Email),
-                Label = "公司Email",
-                FieldType = FormFieldType.Email,
-                MaxLength = 100,
-                Order = 9
-            },
-            new FormFieldDefinition
-            {
-                PropertyName = nameof(Company.Website),
-                Label = "公司網站",
-                FieldType = FormFieldType.Text,
-                MaxLength = 100,
-                Order = 10,
-                HelpText = "請輸入完整的網址，例如：https://www.example.com"
-            },
-            new FormFieldDefinition
-            {
-                PropertyName = nameof(Company.IsPrimary),
-                Label = "設為主要公司",
-                FieldType = FormFieldType.Checkbox,
-                Order = 11,
-                HelpText = "主要公司會作為系統預設公司顯示在報表中"
-            },
-            new FormFieldDefinition
-            {
-                PropertyName = nameof(Company.Description),
-                Label = "公司簡介",
-                FieldType = FormFieldType.TextArea,
-                MaxLength = 1000,
-                Order = 12,
-                Rows = 4
-            },
-            new FormFieldDefinition
-            {
-                PropertyName = nameof(Company.Status),
-                Label = "狀態",
-                FieldType = FormFieldType.Select,
-                IsRequired = true,
-                Order = 13,
-                Options = EntityStatusHelper.GetEntityStatusOptions()
-            }
-        };
-    }
-
-    private void SetupValidationRules()
-    {
-        validationRules = new Dictionary<string, Func<object?, string?>>
+            await OnCancel.InvokeAsync();
+        }
+        catch (Exception ex)
         {
-            {
-                nameof(Company.Code),
-                value =>
-                {
-                    var code = value?.ToString();
-                    if (string.IsNullOrWhiteSpace(code))
-                        return "公司代碼為必填";
-                    
-                    if (code.Length > 10)
-                        return "公司代碼不可超過10個字元";
-                    
-                    return null;
-                }
-            },
-            {
-                nameof(Company.CompanyName),
-                value =>
-                {
-                    var name = value?.ToString();
-                    if (string.IsNullOrWhiteSpace(name))
-                        return "公司名稱為必填";
-                    
-                    if (name.Length > 100)
-                        return "公司名稱不可超過100個字元";
-                    
-                    return null;
-                }
-            },
-            {
-                nameof(Company.TaxId),
-                value =>
-                {
-                    var taxId = value?.ToString();
-                    if (!string.IsNullOrWhiteSpace(taxId))
-                    {
-                        if (!CompanyService.ValidateTaxId(taxId))
-                            return "統一編號格式不正確，請輸入8位數字";
-                    }
-                    return null;
-                }
-            },
-            {
-                nameof(Company.Email),
-                value =>
-                {
-                    var email = value?.ToString();
-                    if (!string.IsNullOrWhiteSpace(email))
-                    {
-                        // 簡單的Email格式驗證
-                        if (!email.Contains("@") || !email.Contains("."))
-                            return "請輸入正確的Email格式";
-                    }
-                    return null;
-                }
-            },
-            {
-                nameof(Company.Website),
-                value =>
-                {
-                    var website = value?.ToString();
-                    if (!string.IsNullOrWhiteSpace(website))
-                    {
-                        // 簡單的URL格式驗證
-                        if (!website.StartsWith("http://") && !website.StartsWith("https://"))
-                            return "網站URL應以 http:// 或 https:// 開頭";
-                    }
-                    return null;
-                }
-            }
-        };
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(), additionalData: "取消操作處理失敗");
+            // 即使發生錯誤也要執行取消操作
+            await OnCancel.InvokeAsync();
+        }
     }
 }
