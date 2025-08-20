@@ -1,0 +1,130 @@
+@page "/systems/companies"
+@inject ICompanyService CompanyService
+@rendermode InteractiveServer
+@inject INotificationService NotificationService
+
+<GenericIndexPageComponent TEntity="Company" 
+                      TService="ICompanyService"
+                      Service="@CompanyService"
+                      EntityBasePath="/systems/companies"
+                      PageTitle="公司設定"
+                      PageSubtitle="管理公司基本資料與設定"
+                      EntityName="公司"
+                      BreadcrumbItems="@breadcrumbItems"
+                      FilterDefinitions="@filterDefinitions"
+                      ColumnDefinitions="@columnDefinitions"
+                      DataLoader="@LoadCompaniesAsync"
+                      FilterApplier="@ApplyCompanyFilters"
+                      GetEntityDisplayName="@(company => company.CompanyName)"
+                      RequiredPermission="Company.Read"
+                      OnAddClick="@modalHandler.ShowAddModalAsync"
+                      OnRowClick="@modalHandler.ShowEditModalAsync"
+                      @ref="indexComponent" />
+
+<CompanyEditModalComponent IsVisible="@showEditModal"
+                          IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                          CompanyId="@editingCompanyId"
+                          OnCompanySaved="@modalHandler.OnEntitySavedAsync"
+                          OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<Company, ICompanyService> indexComponent = default!;
+    
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingCompanyId = null;
+    
+    // Modal 處理器
+    private ModalHandler<Company, GenericIndexPageComponent<Company, ICompanyService>> modalHandler = default!;
+    
+    // 欄位配置
+    private CompanyFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<Company, GenericIndexPageComponent<Company, ICompanyService>>(
+                id => editingCompanyId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
+            await InitializeBreadcrumbsAsync();
+            
+            // 建立欄位配置（傳遞 NotificationService）
+            fieldConfiguration = new CompanyFieldConfiguration(NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化公司頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化公司頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("系統管理", "/systems"),
+                new("公司設定")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    // 載入公司資料
+    private async Task<List<Company>> LoadCompaniesAsync()
+    {
+        try
+        {
+            return await CompanyService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCompaniesAsync), GetType(), additionalData: "載入公司資料失敗");
+            await NotificationService.ShowErrorAsync("載入公司資料失敗");
+            // 設定安全的預設值
+            return new List<Company>();
+        }
+    }
+
+    private IQueryable<Company> ApplyCompanyFilters(SearchFilterModel searchModel, IQueryable<Company> query)
+    {
+        try
+        {
+            return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyCompanyFilters), GetType());
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤並回傳安全的預設查詢
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyCompanyFilters), GetType(), additionalData: "公司篩選器應用失敗");
+            _ = NotificationService.ShowErrorAsync("篩選條件應用失敗，已顯示全部資料");
+            
+            // 回傳基本排序的查詢，確保頁面仍能正常運作
+            return query.OrderBy(c => c.Code);
+        }
+    }
+}

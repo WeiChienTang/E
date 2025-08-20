@@ -116,6 +116,7 @@
         <!-- 系統管理下拉選單 -->
         <NavMenuItem Text="系統管理" IconClass="bi bi-gear-fill" MenuKey="system_management">
             <DropdownItems>
+                <NavDropdownItem Text="公司維護" Url="/systems/companies" RequiredPermission="Company.Read" ParentMenuKey="system_management" IconClass="bi bi-caret-right-fill"/>
                 <NavDropdownItem Text="更新紀錄" Url="/updates" RequiredPermission="SystemControl.Read" ParentMenuKey="system_management" IconClass="bi bi-caret-right-fill"/>
                 <NavDropdownItem Text="錯誤記錄" Url="/error-logs" RequiredPermission="SystemControl.Read" ParentMenuKey="system_management" IconClass="bi bi-caret-right-fill"/>
                 <NavDropdownItem Text="刪除記錄" Url="/deleted-records" RequiredPermission="SystemControl.Read" ParentMenuKey="system_management" IconClass="bi bi-caret-right-fill"/>
