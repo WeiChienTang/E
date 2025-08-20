@@ -51,3 +51,16 @@
     transform: scale(1.05);
     transition: transform 0.1s ease-in-out;
 }
+
+/* 總計行的樣式 */
+.table tfoot .total-row th {
+    font-size: 1.2em !important;
+    font-weight: 600 !important;
+}
+
+/* 總計金額數字的樣式 */
+.table tfoot .total-row .total-amount {
+    color: #28a745 !important;
+    font-size: 1.2em !important;
+    font-weight: 700 !important;
+}

@@ -277,15 +277,6 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(PurchaseOrder.TotalAmount),
-                    Label = "總金額",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "0.00",
-                    IsRequired = true,
-                    HelpText = "採購單的總金額",
-                },
-                new()
-                {
                     PropertyName = nameof(PurchaseOrder.OrderRemarks),
                     Label = "備註",
                     FieldType = FormFieldType.TextArea,
@@ -304,7 +295,6 @@
                 { nameof(PurchaseOrder.SupplierId), "基本資訊" },
                 { nameof(PurchaseOrder.OrderDate), "基本資訊" },
                 { nameof(PurchaseOrder.ExpectedDeliveryDate), "基本資訊" },
-                { nameof(PurchaseOrder.TotalAmount), "金額資訊" },
                 { nameof(PurchaseOrder.OrderRemarks), "額外資訊" }
             };
         }
