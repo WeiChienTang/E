@@ -127,6 +127,12 @@ namespace ERPCore2.Services
                     errors.Add("商品名稱為必填欄位");
                 }
 
+                // 驗證供應商為必填
+                if (!entity.PrimarySupplierId.HasValue || entity.PrimarySupplierId.Value <= 0)
+                {
+                    errors.Add("供應商為必填欄位");
+                }
+
                 return errors.Any() 
                     ? ServiceResult.Failure(string.Join("; ", errors))
                     : ServiceResult.Success();
