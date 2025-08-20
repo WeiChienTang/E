@@ -1,5 +1,6 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Services;
+using ERPCore2.Services.Reports;
 using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 
@@ -117,6 +118,10 @@ namespace ERPCore2.Data
             
             // 刪除記錄服務
             services.AddScoped<IDeletedRecordService, DeletedRecordService>();
+            
+            // 報表服務
+            services.AddScoped<IReportService, ReportService>();
+            services.AddScoped<IPurchaseOrderReportService, PurchaseOrderReportService>();
         }
 
         /// <summary>

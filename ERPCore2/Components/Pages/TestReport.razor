@@ -1,0 +1,191 @@
+@page "/test-report"
+@using ERPCore2.Services.Reports
+@using ERPCore2.Models
+@inject IPurchaseOrderReportService PurchaseOrderReportService
+@inject IJSRuntime JSRuntime
+
+<h3>報表系統測試</h3>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>採購單報表測試</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="purchaseOrderId" class="form-label">採購單 ID</label>
+                        <input type="number" class="form-control" id="purchaseOrderId" @bind="testPurchaseOrderId" />
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="reportFormat" class="form-label">報表格式</label>
+                        <select class="form-select" id="reportFormat" @bind="selectedFormat">
+                            <option value="html">HTML</option>
+                            <option value="pdf">PDF (尚未實作)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" @onclick="GenerateReport" disabled="@isGenerating">
+                            @if (isGenerating)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            }
+                            生成報表
+                        </button>
+                        
+                        <button class="btn btn-info" @onclick="PreviewReport" disabled="@isGenerating">
+                            預覽報表
+                        </button>
+                        
+                        <button class="btn btn-success" @onclick="PrintReport" disabled="@isGenerating">
+                            列印報表
+                        </button>
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-3" role="alert">
+                            @errorMessage
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>報表配置資訊</h5>
+                </div>
+                <div class="card-body">
+                    @if (reportConfiguration != null)
+                    {
+                        <dl class="row">
+                            <dt class="col-sm-4">報表標題：</dt>
+                            <dd class="col-sm-8">@reportConfiguration.Title</dd>
+                            
+                            <dt class="col-sm-4">公司名稱：</dt>
+                            <dd class="col-sm-8">@reportConfiguration.CompanyName</dd>
+                            
+                            <dt class="col-sm-4">頁面方向：</dt>
+                            <dd class="col-sm-8">@reportConfiguration.Orientation</dd>
+                            
+                            <dt class="col-sm-4">頁面大小：</dt>
+                            <dd class="col-sm-8">@reportConfiguration.PageSize</dd>
+                            
+                            <dt class="col-sm-4">頁首區段數：</dt>
+                            <dd class="col-sm-8">@reportConfiguration.HeaderSections.Count</dd>
+                            
+                            <dt class="col-sm-4">表格欄位數：</dt>
+                            <dd class="col-sm-8">@reportConfiguration.Columns.Count</dd>
+                            
+                            <dt class="col-sm-4">頁尾區段數：</dt>
+                            <dd class="col-sm-8">@reportConfiguration.FooterSections.Count</dd>
+                        </dl>
+                    }
+                    else
+                    {
+                        <button class="btn btn-outline-secondary" @onclick="LoadConfiguration">
+                            載入採購單報表配置
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int testPurchaseOrderId = 1;
+    private string selectedFormat = "html";
+    private bool isGenerating = false;
+    private string errorMessage = string.Empty;
+    private ReportConfiguration? reportConfiguration;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadConfiguration();
+    }
+
+    private async Task LoadConfiguration()
+    {
+        try
+        {
+            reportConfiguration = PurchaseOrderReportService.GetPurchaseOrderReportConfiguration();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"載入報表配置失敗：{ex.Message}";
+        }
+    }
+
+    private async Task GenerateReport()
+    {
+        await ExecuteReportAction(async () =>
+        {
+            var format = selectedFormat.ToLower() switch
+            {
+                "pdf" => ReportFormat.Pdf,
+                _ => ReportFormat.Html
+            };
+
+            var reportContent = await PurchaseOrderReportService.GeneratePurchaseOrderReportAsync(testPurchaseOrderId, format);
+            
+            if (format == ReportFormat.Html)
+            {
+                // 在新視窗中顯示 HTML 報表
+                var encodedContent = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(reportContent));
+                var dataUrl = $"data:text/html;base64,{encodedContent}";
+                await JSRuntime.InvokeVoidAsync("window.open", dataUrl, "_blank");
+            }
+        });
+    }
+
+    private async Task PreviewReport()
+    {
+        await ExecuteReportAction(async () =>
+        {
+            var url = $"/api/report/purchase-order/{testPurchaseOrderId}/preview";
+            await JSRuntime.InvokeVoidAsync("window.open", url, "_blank", "width=1200,height=800,scrollbars=yes,resizable=yes");
+        });
+    }
+
+    private async Task PrintReport()
+    {
+        await ExecuteReportAction(async () =>
+        {
+            var url = $"/api/report/purchase-order/{testPurchaseOrderId}/print";
+            await JSRuntime.InvokeVoidAsync("window.open", url, "_blank", "width=1200,height=800,scrollbars=yes,resizable=yes");
+        });
+    }
+
+    private async Task ExecuteReportAction(Func<Task> action)
+    {
+        if (testPurchaseOrderId <= 0)
+        {
+            errorMessage = "請輸入有效的採購單 ID";
+            return;
+        }
+
+        try
+        {
+            isGenerating = true;
+            errorMessage = string.Empty;
+            StateHasChanged();
+
+            await action();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"操作失敗：{ex.Message}";
+        }
+        finally
+        {
+            isGenerating = false;
+            StateHasChanged();
+        }
+    }
+}

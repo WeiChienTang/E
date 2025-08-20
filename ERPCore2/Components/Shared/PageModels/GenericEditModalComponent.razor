@@ -131,6 +131,14 @@
                                           Variant="ButtonVariant.Secondary" 
                                           OnClick="HandleCancel" 
                                           IsDisabled="@IsSubmitting" />
+                    @if (ShowPrintButton)
+                    {
+                        <GenericButtonComponent Text="@PrintButtonText" 
+                                              Variant="ButtonVariant.Info" 
+                                              IconClass="fas fa-print"
+                                              OnClick="HandlePrint" 
+                                              IsDisabled="@(IsSubmitting || IsLoading)" />
+                    }
                     <GenericButtonComponent Text="@SaveButtonText" 
                                           Variant="ButtonVariant.Primary" 
                                           OnClick="HandleSave" 
@@ -207,6 +215,8 @@
     // 按鈕設定
     [Parameter] public string SaveButtonText { get; set; } = "儲存";
     [Parameter] public string CancelButtonText { get; set; } = "取消";
+    [Parameter] public string PrintButtonText { get; set; } = "列印";
+    [Parameter] public bool ShowPrintButton { get; set; } = false;
     
     // 表單設定
     [Parameter] public bool UseGenericForm { get; set; } = true;
@@ -247,6 +257,7 @@
     [Parameter] public EventCallback OnSaveSuccess { get; set; }
     [Parameter] public EventCallback OnSaveFailure { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback OnPrint { get; set; }
     [Parameter] public Func<(string PropertyName, object? Value), Task>? OnFieldChanged { get; set; }
     
     // 訊息設定
@@ -465,6 +476,14 @@
         }
         
         await CloseModal();
+    }
+    
+    private async Task HandlePrint()
+    {
+        if (OnPrint.HasDelegate)
+        {
+            await OnPrint.InvokeAsync();
+        }
     }
     
     private async Task CloseModal()

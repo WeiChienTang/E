@@ -4,6 +4,7 @@
 @inject IProductService ProductService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
+@inject IJSRuntime JSRuntime
 @using ERPCore2.Helpers
 @using ERPCore2.Components.Shared.SubCollections
 
@@ -35,7 +36,10 @@
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
-                          CustomModules="@GetCustomModules()">
+                          CustomModules="@GetCustomModules()"
+                          ShowPrintButton = "true"
+                          OnPrint="@HandlePrint"
+                          >
 
 </GenericEditModalComponent>
 
@@ -131,6 +135,38 @@
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(), 
                 additionalData: "採購單編輯Modal取消處理失敗");
+        }
+    }
+
+    private async Task HandlePrint()
+    {
+        try
+        {
+            if (editModalComponent?.Entity == null)
+            {
+                await NotificationService.ShowWarningAsync("請先儲存採購單資料後再進行列印");
+                return;
+            }
+            
+            if (!PurchaseOrderId.HasValue || PurchaseOrderId <= 0)
+            {
+                await NotificationService.ShowWarningAsync("請先儲存採購單後再進行列印");
+                return;
+            }
+            
+            // 使用報表服務生成採購單報表
+            var reportUrl = $"/api/report/purchase-order/{PurchaseOrderId.Value}/preview";
+            
+            // 開啟新視窗顯示報表
+            await JSRuntime.InvokeVoidAsync("window.open", reportUrl, "_blank", "width=1200,height=800,scrollbars=yes,resizable=yes");
+            
+            await NotificationService.ShowSuccessAsync("報表已在新視窗中開啟");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePrint), GetType(), 
+                additionalData: $"採購單列印處理失敗 - ID: {PurchaseOrderId}");
+            await NotificationService.ShowErrorAsync("列印處理時發生錯誤");
         }
     }
 

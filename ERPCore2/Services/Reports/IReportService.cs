@@ -1,0 +1,59 @@
+using ERPCore2.Models;
+
+namespace ERPCore2.Services.Reports
+{
+    /// <summary>
+    /// 泛型報表服務介面
+    /// </summary>
+    public interface IReportService
+    {
+        /// <summary>
+        /// 生成 HTML 報表
+        /// </summary>
+        /// <typeparam name="TMainEntity">主要實體類型</typeparam>
+        /// <typeparam name="TDetailEntity">明細實體類型</typeparam>
+        /// <param name="configuration">報表配置</param>
+        /// <param name="reportData">報表資料</param>
+        /// <returns>HTML 字串</returns>
+        Task<string> GenerateHtmlReportAsync<TMainEntity, TDetailEntity>(
+            ReportConfiguration configuration,
+            ReportData<TMainEntity, TDetailEntity> reportData)
+            where TMainEntity : class;
+        
+        /// <summary>
+        /// 生成 PDF 報表（未來實作）
+        /// </summary>
+        Task<byte[]> GeneratePdfReportAsync<TMainEntity, TDetailEntity>(
+            ReportConfiguration configuration,
+            ReportData<TMainEntity, TDetailEntity> reportData)
+            where TMainEntity : class;
+        
+        /// <summary>
+        /// 列印報表（開啟瀏覽器列印對話框）
+        /// </summary>
+        Task<string> GeneratePrintableReportAsync<TMainEntity, TDetailEntity>(
+            ReportConfiguration configuration,
+            ReportData<TMainEntity, TDetailEntity> reportData)
+            where TMainEntity : class;
+    }
+    
+    /// <summary>
+    /// 採購單報表服務介面
+    /// </summary>
+    public interface IPurchaseOrderReportService
+    {
+        /// <summary>
+        /// 生成採購單報表
+        /// </summary>
+        /// <param name="purchaseOrderId">採購單 ID</param>
+        /// <param name="format">輸出格式</param>
+        /// <returns>報表內容</returns>
+        Task<string> GeneratePurchaseOrderReportAsync(int purchaseOrderId, ReportFormat format = ReportFormat.Html);
+        
+        /// <summary>
+        /// 取得採購單報表配置
+        /// </summary>
+        /// <returns>採購單報表配置</returns>
+        ReportConfiguration GetPurchaseOrderReportConfiguration();
+    }
+}
