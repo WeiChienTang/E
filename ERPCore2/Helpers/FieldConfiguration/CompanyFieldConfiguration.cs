@@ -48,7 +48,6 @@ namespace ERPCore2.Helpers
                             FilterPlaceholder = "輸入公司名稱搜尋",
                             TableOrder = 2,
                             FilterOrder = 2,
-                            HeaderStyle = "width: 200px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Company.CompanyName), c => c.CompanyName)
                         }
@@ -126,21 +125,6 @@ namespace ERPCore2.Helpers
                             }
                         }
                     },
-                    {
-                        nameof(Company.Status),
-                        new FieldDefinition<Company>
-                        {
-                            PropertyName = nameof(Company.Status),
-                            DisplayName = "狀態",
-                            FilterType = SearchFilterType.Select,
-                            ColumnType = Components.Shared.Tables.ColumnDataType.Status,
-                            TableOrder = 7,
-                            FilterOrder = 7,
-                            HeaderStyle = "width: 100px;",
-                            Options = EntityStatusHelper.GetEntityStatusOptions(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyStatusFilter(model, query)
-                        }
-                    }
                 };
             }
             catch (Exception ex)
