@@ -10,14 +10,14 @@
         <a class="navbar-brand" href="">美莊磚業</a>
         <AuthorizeView>
             <Authorized>
-                <div class="d-flex align-items-center">
-                    <span class="text-white me-3">歡迎，@(context.User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? context.User.Identity?.Name)</span>
-                    <a href="/auth/signout" class="btn btn-sm btn-outline-light">登出</a>
+                <div class="d-flex align-items-center auth-section">
+                    <span class="text-white me-2 user-welcome d-none d-sm-inline">歡迎，@(context.User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? context.User.Identity?.Name)</span>
+                    <a href="/auth/signout" class="btn btn-sm btn-outline-light logout-btn">登出</a>
                 </div>
             </Authorized>
             <NotAuthorized>
-                <div class="d-flex align-items-center">
-                    <a href="/auth/login" class="btn btn-sm btn-outline-light">登入</a>
+                <div class="d-flex align-items-center auth-section">
+                    <a href="/auth/login" class="btn btn-sm btn-outline-light login-btn">登入</a>
                 </div>
             </NotAuthorized>
         </AuthorizeView>
