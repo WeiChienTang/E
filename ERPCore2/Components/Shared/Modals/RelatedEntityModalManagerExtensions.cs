@@ -2,6 +2,7 @@ using ERPCore2.Data;
 using ERPCore2.Data.Entities;
 using ERPCore2.Components.Shared.Forms;
 using ERPCore2.Components.Shared.Modals;
+using ERPCore2.Components.Pages.Employees;
 using ERPCore2.Services;
 using Microsoft.AspNetCore.Components;
 
