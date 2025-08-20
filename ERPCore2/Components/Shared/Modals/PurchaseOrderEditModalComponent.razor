@@ -68,6 +68,7 @@
     // 原始資料集合（用於 AutoComplete）
     private List<Supplier> availableSuppliers = new();
     private List<Product> availableProducts = new();
+    private List<Product> filteredProductsBySupplier = new(); // 根據供應商過濾的商品
     
     // 採購訂單明細
     private List<PurchaseOrderDetail> purchaseOrderDetails = new();
@@ -467,6 +468,7 @@
                         <ProductManagerComponent TMainEntity="PurchaseOrder" 
                                                TDetailEntity="PurchaseOrderDetail"
                                                Products="@availableProducts"
+                                               SelectedSupplierId="@editModalComponent.Entity.SupplierId"
                                                MainEntity="@editModalComponent.Entity"
                                                ExistingDetails="@purchaseOrderDetails"
                                                OnDetailsChanged="@HandleDetailsChanged"
@@ -560,6 +562,9 @@
                     nameof(PurchaseOrder.SupplierId), 
                     fieldChange.Value
                 );
+                
+                // 供應商變更時，觸發商品管理器重新渲染
+                StateHasChanged();
             }
         }
         catch (Exception)

@@ -226,6 +226,30 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<List<Product>> GetBySupplierAsync(int supplierId)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            try
+            {
+                return await context.Products
+                    .Include(p => p.ProductCategory)
+                    .Include(p => p.PrimarySupplier)
+                    .Include(p => p.Unit)
+                    .Include(p => p.Size)
+                    .Where(p => (p.PrimarySupplierId == supplierId || 
+                                p.ProductSuppliers.Any(ps => ps.SupplierId == supplierId && ps.Status == EntityStatus.Active)) 
+                                && !p.IsDeleted)
+                    .OrderBy(p => p.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySupplierAsync), GetType(), _logger, new { SupplierId = supplierId });
+                throw;
+            }
+        }
+
         public async Task<List<Product>> GetActiveProductsAsync()
         {
             using var context = await _contextFactory.CreateDbContextAsync();

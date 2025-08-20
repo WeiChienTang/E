@@ -2,6 +2,7 @@
 @using Microsoft.EntityFrameworkCore
 @using System.Linq.Expressions
 @using System.Reflection
+@using ERPCore2.Data.Enums
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
 
@@ -103,6 +104,9 @@
     // === 基本參數 ===
     [Parameter] public List<Product> Products { get; set; } = new List<Product>();
     [Parameter] public EventCallback<List<ProductItem>> OnProductItemsChanged { get; set; }
+    
+    // === 新增供應商過濾參數 ===
+    [Parameter] public int? SelectedSupplierId { get; set; }
     
     // === 泛型參數 ===
     [Parameter] public TMainEntity? MainEntity { get; set; }
@@ -332,7 +336,10 @@
         }
         else
         {
-            FilteredProducts = Products
+            // 取得可用商品列表（根據供應商過濾）
+            var availableProducts = GetAvailableProducts();
+            
+            FilteredProducts = availableProducts
                 .Where(p => p.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true ||
                            p.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true)
                 .Take(10)
@@ -349,6 +356,24 @@
         }
         
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// 取得可用商品列表（根據供應商過濾）
+    /// </summary>
+    private List<Product> GetAvailableProducts()
+    {
+        // 如果沒有選擇供應商，返回所有商品
+        if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
+        {
+            return Products;
+        }
+        
+        // 根據供應商過濾商品
+        return Products.Where(p => 
+            p.PrimarySupplierId == SelectedSupplierId.Value ||
+            p.ProductSuppliers?.Any(ps => ps.SupplierId == SelectedSupplierId.Value && ps.Status == EntityStatus.Active) == true)
+            .ToList();
     }
 
     private async Task OnQuantityInput(ProductItem item, string? value)
@@ -417,6 +442,10 @@
         else
         {
             item.SelectedIndex = -1;
+            // 如果沒有搜尋文字，顯示所有可用商品的前10項
+            var availableProducts = GetAvailableProducts();
+            FilteredProducts = availableProducts.Take(10).ToList();
+            item.ShowDropdown = FilteredProducts.Any();
         }
     }
 
