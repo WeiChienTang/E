@@ -279,13 +279,14 @@
 /* 小螢幕調整 */
 @media (max-width: 768px) {
     .modal-dialog {
-        margin: 0.5rem !important;
+        margin: 0.25rem !important; /* 縮小邊距確保不被切掉 */
     }
     
     .modal-xl,
-    .modal-lg {
-        max-width: 100% !important;
-        width: 100% !important;
+    .modal-lg,
+    .modal-desktop {
+        max-width: calc(100vw - 0.5rem) !important; /* 確保不超出螢幕寬度 */
+        width: calc(100vw - 0.5rem) !important;
     }
     
     .modal-body {
@@ -298,9 +299,17 @@
         padding: 1rem !important;
     }
     
+    /* 手機模式下按鈕調整 - 防止被切掉 */
+    .modal-footer {
+        flex-direction: column !important; /* 垂直排列按鈕 */
+        gap: 0.5rem !important;
+    }
+    
     .modal-footer .btn {
-        padding: 0.6rem 1.5rem !important;
+        padding: 0.75rem 1rem !important;
         font-size: 0.9rem !important;
+        width: 100% !important; /* 按鈕填滿寬度 */
+        margin: 0 !important;
     }
     
     /* 表單欄位在小螢幕上調整 */
@@ -313,8 +322,41 @@
 
 /* 極小螢幕調整 */
 @media (max-width: 576px) {
+    .modal-dialog {
+        margin: 0.125rem !important; /* 極小邊距確保完全貼合螢幕 */
+    }
+    
+    /* 確保所有modal尺寸在極小螢幕上都完全適合 */
+    .modal-xl,
+    .modal-lg,
+    .modal-desktop,
+    .modal-dialog {
+        max-width: calc(100vw - 0.25rem) !important; /* 極小邊距 */
+        width: calc(100vw - 0.25rem) !important;
+    }
+    
     .modal-body {
         padding: 1rem 0.75rem !important;
+    }
+    
+    .modal-header,
+    .modal-footer {
+        padding: 0.75rem !important; /* 縮小 header 和 footer 的內邊距 */
+    }
+    
+    /* 確保按鈕在極小螢幕上完全垂直排列 */
+    .modal-footer {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        align-items: stretch !important; /* 確保按鈕拉伸填滿 */
+    }
+    
+    .modal-footer .btn {
+        padding: 0.65rem 0.75rem !important;
+        font-size: 0.85rem !important;
+        width: 100% !important;
+        min-width: unset !important; /* 移除最小寬度限制 */
+        white-space: nowrap !important; /* 防止文字換行 */
     }
     
     /* 強制表單欄位堆疊 */
