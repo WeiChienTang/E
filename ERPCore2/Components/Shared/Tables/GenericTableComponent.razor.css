@@ -23,6 +23,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     vertical-align: middle;
+    padding: 0.25rem 0.5rem; /* 縮小上下內邊距從預設的 0.5rem 減少到 0.25rem */
 }
 
 /* 允許換行的表格儲存格（特殊情況使用） */

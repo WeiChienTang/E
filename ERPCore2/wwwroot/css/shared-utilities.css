@@ -122,6 +122,54 @@
   position: relative;
 }
 
+/* 自動完成組件樣式 - 多個表單組件使用 */
+.autocomplete-dropdown {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  background-color: var(--bg-primary);
+  padding: 0.5rem 0;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  display: block;
+}
+
+.autocomplete-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  clear: both;
+  font-weight: 400;
+  color: var(--text-primary);
+  text-align: inherit;
+  white-space: nowrap;
+  background-color: transparent;
+  border: 0;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+.autocomplete-item:hover {
+  background-color: var(--table-hover-bg-striped);
+  color: var(--table-hover-text);
+}
+
+.autocomplete-item.highlighted {
+  background-color: var(--table-hover-bg-striped);
+  color: var(--table-hover-text);
+}
+
+.autocomplete-item.highlighted:hover {
+  background-color: var(--table-hover-bg-striped);
+  color: var(--table-hover-text);
+}
+
+.autocomplete-container {
+  position: relative;
+}
+
 /* 按鈕組基礎樣式 - 多個組件使用 */
 .btn-group .btn {
   margin-right: 2px;
