@@ -40,7 +40,6 @@ namespace ERPCore2.Helpers
                             FilterPlaceholder = "輸入員工代碼搜尋",
                             TableOrder = 1,
                             FilterOrder = 1,
-                            HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Employee.Code), e => e.Code)
                         }
@@ -84,7 +83,6 @@ namespace ERPCore2.Helpers
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
                             FilterOrder = 3,
-                            HeaderStyle = "width: 120px;",
                             NullDisplayText = "未指派",
                             Options = _departments.Select(d => new SelectOption 
                             { 
@@ -105,7 +103,6 @@ namespace ERPCore2.Helpers
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
                             FilterOrder = 4,
-                            HeaderStyle = "width: 120px;",
                             NullDisplayText = "未指派",
                             Options = _employeePositions.Select(p => new SelectOption 
                             { 
@@ -126,7 +123,6 @@ namespace ERPCore2.Helpers
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
                             FilterOrder = 5,
-                            HeaderStyle = "width: 100px;",
                             NullDisplayText = "未指派",
                             Options = _roles.Select(r => new SelectOption 
                             { 
@@ -145,7 +141,7 @@ namespace ERPCore2.Helpers
                             DisplayName = "系統操控",
                             ShowInFilter = false,
                             TableOrder = 6,
-                            HeaderStyle = "width: 100px;",
+                            HeaderStyle = "width: 90px;",
                             CustomTemplate = item => builder =>
                             {
                                 var employee = (Employee)item;
@@ -165,7 +161,6 @@ namespace ERPCore2.Helpers
                             DisplayName = "最後登入",
                             ShowInFilter = false,
                             TableOrder = 7,
-                            HeaderStyle = "width: 150px;",
                             NullDisplayText = "從未登入"
                         }
                     }

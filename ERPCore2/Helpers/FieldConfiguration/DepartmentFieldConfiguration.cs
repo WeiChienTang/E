@@ -57,7 +57,6 @@ namespace ERPCore2.Helpers
                             DisplayName = "部門主管",
                             ShowInFilter = false, // 不顯示在篩選器中
                             TableOrder = 3,
-                            HeaderStyle = "width: 120px;",
                             NullDisplayText = "未指派",
                             CustomTemplate = item => builder =>
                             {
