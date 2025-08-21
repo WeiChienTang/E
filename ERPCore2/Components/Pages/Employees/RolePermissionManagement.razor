@@ -61,70 +61,66 @@
                 @if (selectedRole != null)
                 {
                     <div class="border-top pt-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="mb-0">
-                                <i class="fas fa-shield-alt me-2"></i>權限設定
-                            </h6>
-                            @if (!IsAdminRole(selectedRole))
-                            {
-                                <div class="d-flex gap-2">
-                                    <div class="dropdown">
-                                        <GenericButtonComponent Text="複製權限"
-                                                            IconClass="fas fa-copy"
-                                                            Variant="ButtonVariant.OutlineInfo"
-                                                            Size="ButtonSize.Small"
-                                                            IsDisabled="@isSaving"
-                                                            AdditionalAttributes="@(new Dictionary<string, object> 
-                                                            { 
-                                                                { "data-bs-toggle", "dropdown" },
-                                                                { "aria-expanded", "false" }
-                                                            })" />
-                                        <ul class="dropdown-menu">
-                                            <li><h6 class="dropdown-header">從其他角色複製權限</h6></li>
-                                            @foreach (var role in roles.Where(r => r.Id != selectedRole.Id && !IsAdminRole(r)))
-                                            {
-                                                <li>
-                                                    <a class="dropdown-item" href="#" @onclick="() => CopyPermissionsFromRole(role.Id)" @onclick:preventDefault="true">
-                                                        <i class="fas fa-user me-2"></i>@role.Name
-                                                    </a>
-                                                </li>
-                                            }
-                                            @if (!roles.Any(r => r.Id != selectedRole.Id && !IsAdminRole(r)))
-                                            {
-                                                <li><span class="dropdown-item-text text-muted">沒有可複製的角色</span></li>
-                                            }
-                                        </ul>
-                                    </div>
-                                    <GenericButtonComponent Text="全選"
-                                                        IconClass="fas fa-check-square"
-                                                        Variant="ButtonVariant.OutlineSecondary"
-                                                        Size="ButtonSize.Small"
-                                                        OnClick="SelectAllPermissions"
-                                                        IsDisabled="@isSaving"
-                                                        AdditionalAttributes="@(new Dictionary<string, object> 
-                                                        { 
-                                                            { "title", "僅選擇一般權限，系統權限需手動選擇" }
-                                                        })" />
-                                    <GenericButtonComponent Text="全清"
-                                                        IconClass="fas fa-square"
-                                                        Variant="ButtonVariant.OutlineSecondary"
-                                                        Size="ButtonSize.Small"
-                                                        OnClick="ClearAllPermissions"
-                                                        IsDisabled="@isSaving"
-                                                        AdditionalAttributes="@(new Dictionary<string, object> 
-                                                        { 
-                                                            { "title", "僅清除一般權限，系統權限需手動取消" }
-                                                        })" />
-                                    <GenericButtonComponent Text="儲存權限"
-                                                        IconClass="fas fa-save"
-                                                        Variant="ButtonVariant.Primary"
-                                                        Size="ButtonSize.Small"
-                                                        OnClick="SaveRolePermissions"
-                                                        IsDisabled="@isSaving"
-                                                        IsLoading="@isSaving" />
-                                </div>
-                            }
-                        </div>
+                        <h6 class="mb-3">
+                            <i class="fas fa-shield-alt me-2"></i>權限設定
+                        </h6>
+                        @if (!IsAdminRole(selectedRole))
+                        {
+                            <div class="d-flex flex-column flex-md-row gap-2 mb-3">
+                                <GenericButtonComponent Text="複製權限"
+                                                    IconClass="fas fa-copy"
+                                                    Variant="ButtonVariant.Secondary"
+                                                    Size="ButtonSize.Small"
+                                                    IsDisabled="@isSaving"
+                                                    AdditionalAttributes="@(new Dictionary<string, object> 
+                                                    { 
+                                                        { "data-bs-toggle", "dropdown" },
+                                                        { "aria-expanded", "false" }
+                                                    })" />
+                                <ul class="dropdown-menu">
+                                    <li><h6 class="dropdown-header">從其他角色複製權限</h6></li>
+                                    @foreach (var role in roles.Where(r => r.Id != selectedRole.Id && !IsAdminRole(r)))
+                                    {
+                                        <li>
+                                            <a class="dropdown-item" href="#" @onclick="() => CopyPermissionsFromRole(role.Id)" @onclick:preventDefault="true">
+                                                <i class="fas fa-user me-2"></i>@role.Name
+                                            </a>
+                                        </li>
+                                    }
+                                    @if (!roles.Any(r => r.Id != selectedRole.Id && !IsAdminRole(r)))
+                                    {
+                                        <li><span class="dropdown-item-text text-muted">沒有可複製的角色</span></li>
+                                    }
+                                </ul>
+                                <GenericButtonComponent Text="全選"
+                                                    IconClass="fas fa-check-square"
+                                                    Variant="ButtonVariant.Success"
+                                                    Size="ButtonSize.Small"
+                                                    OnClick="SelectAllPermissions"
+                                                    IsDisabled="@isSaving"
+                                                    AdditionalAttributes="@(new Dictionary<string, object> 
+                                                    { 
+                                                        { "title", "僅選擇一般權限，系統權限需手動選擇" }
+                                                    })" />
+                                <GenericButtonComponent Text="全清"
+                                                    IconClass="fas fa-square"
+                                                    Variant="ButtonVariant.Warning"
+                                                    Size="ButtonSize.Small"
+                                                    OnClick="ClearAllPermissions"
+                                                    IsDisabled="@isSaving"
+                                                    AdditionalAttributes="@(new Dictionary<string, object> 
+                                                    { 
+                                                        { "title", "僅清除一般權限，系統權限需手動取消" }
+                                                    })" />
+                                <GenericButtonComponent Text="儲存"
+                                                    IconClass="fas fa-save"
+                                                    Variant="ButtonVariant.Primary"
+                                                    Size="ButtonSize.Small"
+                                                    OnClick="SaveRolePermissions"
+                                                    IsDisabled="@isSaving"
+                                                    IsLoading="@isSaving" />
+                            </div>
+                        }
 
                         @if (IsAdminRole(selectedRole))
                         {
