@@ -78,7 +78,7 @@ namespace ERPCore2.Helpers
         /// <summary>
         /// 欄位寬度樣式
         /// </summary>
-        public string? HeaderStyle { get; set; }
+        public string? HeaderStyle { get; set; } = "width: 120px;";
         
         /// <summary>
         /// 空值顯示文字

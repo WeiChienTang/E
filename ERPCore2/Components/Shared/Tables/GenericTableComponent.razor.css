@@ -1,10 +1,41 @@
 /* GenericTableComponent.razor.css - 表格組件專用樣式 */
 
-/* 表格基礎樣式覆寫 - 僅適用於此組件 */
+/* ========================================= */
+/* 表格佈局與寬度控制 */
+/* ========================================= */
+
+/* 表格佈局固定 - 防止內容擠壓其他欄位 */
 .table {
-  --bs-table-bg: var(--bg-primary);
-  --bs-table-border-color: var(--border-color);
+    table-layout: fixed;
+    width: 100%;
+    --bs-table-bg: var(--bg-primary);
+    --bs-table-border-color: var(--border-color);
 }
+
+/* 表格容器響應式處理 */
+.table-responsive {
+    overflow-x: auto;
+}
+
+/* 表格儲存格內容處理 */
+.table td, .table th {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+/* 允許換行的表格儲存格（特殊情況使用） */
+.table td.text-wrap, .table th.text-wrap {
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+/* ========================================= */
+/* 表格樣式覆寫 */
+/* ========================================= */
+
+/* 表格基礎樣式覆寫 - 僅適用於此組件 */
 
 .table-striped > tbody > tr:nth-of-type(odd) > td {
   background-color: var(--bg-secondary);
