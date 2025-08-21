@@ -56,6 +56,9 @@
     background: white;
     padding: 0;
     border: 1px solid #dee2e6;
+    width: 100%; /* 確保容器寬度不超過父元素 */
+    max-width: 100%; /* 防止溢出 */
+    overflow-x: auto; /* 內容超出時顯示水平滾動條 */
 }
 
 .table-container-hover:hover {
@@ -114,5 +117,20 @@
     .table-container-hover:hover {
         transform: none;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+}
+
+/* 桌面模式下的額外保護 - 確保表格不會溢出並影響左側選單 */
+@media (min-width: 641px) {
+    .table-container-hover {
+        /* 確保表格容器不會超出主內容區域 */
+        max-width: calc(100vw - 270px); /* 視窗寬度減去側邊欄寬度和邊距 */
+    }
+}
+
+@media (min-width: 769px) {
+    .table-container-hover {
+        /* 在更大的螢幕上給予更多空間 */
+        max-width: calc(100vw - 280px);
     }
 }
