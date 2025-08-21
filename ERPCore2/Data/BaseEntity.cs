@@ -66,7 +66,7 @@ namespace ERPCore2.Data
         /// 備註
         /// </summary>
         [Display(Name = "備註")]
-        [MaxLength(500)]
+        [MaxLength(500, ErrorMessage = "備註不可超過120個字元")]
         public string? Remarks { get; set; }
     }
 }

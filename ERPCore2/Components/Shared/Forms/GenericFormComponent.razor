@@ -318,6 +318,9 @@
             case FormFieldType.TextArea:
                 RenderTextArea(builder, field, 9);
                 break;
+            case FormFieldType.TextAreaWithCharacterCount:
+                RenderTextAreaWithCharacterCount(builder, field, 9);
+                break;
             case FormFieldType.Select:
                 RenderSelect(builder, field, 9);
                 break;
@@ -334,8 +337,8 @@
                 break;
         }
         
-        // 說明文字
-        if (!string.IsNullOrEmpty(field.HelpText))
+        // 說明文字 - TextAreaWithCharacterCount 會自己處理 helpText 顯示
+        if (!string.IsNullOrEmpty(field.HelpText) && field.FieldType != FormFieldType.TextAreaWithCharacterCount)
         {
             builder.OpenElement(20, "div");
             builder.AddAttribute(21, "class", "form-text");
@@ -470,7 +473,27 @@
             value => SetPropertyValue(Model, field.PropertyName, value), 
             GetPropertyValue(Model, field.PropertyName)?.ToString() ?? ""));
         builder.CloseElement();
-    }    private void RenderSelect(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
+    }
+
+    private void RenderTextAreaWithCharacterCount(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
+    {
+        builder.OpenComponent<ERPCore2.Components.Shared.Forms.CharacterCountTextAreaComponent>(sequence);
+        builder.AddAttribute(sequence + 1, "Value", GetPropertyValue(Model, field.PropertyName)?.ToString());
+        builder.AddAttribute(sequence + 2, "ValueChanged", EventCallback.Factory.Create<string>(this, 
+            value => SetPropertyValue(Model, field.PropertyName, value)));
+        builder.AddAttribute(sequence + 3, "Id", field.PropertyName);
+        builder.AddAttribute(sequence + 4, "CssClass", GetInputCssClass(field));
+        builder.AddAttribute(sequence + 5, "Placeholder", field.Placeholder);
+        builder.AddAttribute(sequence + 6, "HelpText", field.HelpText);
+        builder.AddAttribute(sequence + 7, "IsReadOnly", field.IsReadOnly);
+        builder.AddAttribute(sequence + 8, "IsDisabled", field.IsDisabled);
+        builder.AddAttribute(sequence + 9, "Rows", field.Rows ?? 3);
+        builder.AddAttribute(sequence + 10, "MaxCharacters", field.MaxLength ?? 500);
+        builder.AddAttribute(sequence + 11, "MaxBytes", field.MaxBytes ?? 500);
+        builder.CloseComponent();
+    }
+
+    private void RenderSelect(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
     {
         builder.OpenElement(sequence, "select");
         builder.AddAttribute(sequence + 1, "class", GetInputCssClass(field));

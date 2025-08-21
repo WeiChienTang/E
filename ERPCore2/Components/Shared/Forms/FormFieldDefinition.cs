@@ -86,7 +86,18 @@ public class FormFieldDefinition
     /// 文字區域列數
     /// </summary>
     public int? Rows { get; set; }
-      /// <summary>
+    
+    /// <summary>
+    /// 最大位元組數限制 (用於資料庫欄位限制，特別是中文字處理)
+    /// </summary>
+    public int? MaxBytes { get; set; }
+    
+    /// <summary>
+    /// 是否顯示字數統計 (TextArea 欄位)
+    /// </summary>
+    public bool ShowCharacterCount { get; set; } = false;
+    
+    /// <summary>
     /// 選項清單 (選擇欄位)
     /// </summary>
     public List<SelectOption>? Options { get; set; }
@@ -176,6 +187,11 @@ public enum FormFieldType
     /// 多行文字
     /// </summary>
     TextArea,
+    
+    /// <summary>
+    /// 帶字數統計的多行文字
+    /// </summary>
+    TextAreaWithCharacterCount,
     
     /// <summary>
     /// 下拉選擇
