@@ -680,26 +680,30 @@
                 builder.OpenElement(7, "th");
                 builder.AddAttribute(8, "scope", "col");
                 builder.AddAttribute(9, "class", "text-center");
-                builder.AddAttribute(10, "style", "width: 50px;");
+                builder.AddAttribute(10, "style", "width: 60px; min-width: 60px;");
                 builder.AddContent(11, "選擇");
                 builder.CloseElement();
             }
             
             builder.OpenElement(12, "th");
             builder.AddAttribute(13, "scope", "col");
-            builder.AddAttribute(14, "style", "width: 200px;");
-            builder.AddContent(15, "權限名稱");
+            builder.AddAttribute(14, "class", "");
+            builder.AddAttribute(15, "style", "min-width: 150px;");
+            builder.AddContent(16, "權限名稱");
             builder.CloseElement();
             
-            builder.OpenElement(16, "th");
-            builder.AddAttribute(17, "scope", "col");
-            builder.AddAttribute(18, "style", "width: 300px;");
-            builder.AddContent(19, "權限代碼");
+            builder.OpenElement(17, "th");
+            builder.AddAttribute(18, "scope", "col");
+            builder.AddAttribute(19, "class", "d-none d-md-table-cell");
+            builder.AddAttribute(20, "style", "min-width: 200px;");
+            builder.AddContent(21, "權限代碼");
             builder.CloseElement();
             
-            builder.OpenElement(20, "th");
-            builder.AddAttribute(21, "scope", "col");
-            builder.AddContent(22, "備註");
+            builder.OpenElement(22, "th");
+            builder.AddAttribute(23, "scope", "col");
+            builder.AddAttribute(24, "class", "");
+            builder.AddAttribute(25, "style", "min-width: 200px;");
+            builder.AddContent(26, "備註");
             builder.CloseElement();
             
             builder.CloseElement(); // tr
@@ -749,15 +753,20 @@
                     
                     builder.OpenElement(rowIndex++, "td");
                     builder.AddContent(rowIndex++, permission.Name);
+                    // 在手機版本中，在權限名稱下方顯示權限代碼
+                    builder.OpenElement(rowIndex++, "div");
+                    builder.AddAttribute(rowIndex++, "class", "d-md-none text-muted small font-monospace mt-1");
+                    builder.AddContent(rowIndex++, permission.Code);
+                    builder.CloseElement();
                     builder.CloseElement();
                     
                     builder.OpenElement(rowIndex++, "td");
-                    builder.AddAttribute(rowIndex++, "class", "font-monospace");
+                    builder.AddAttribute(rowIndex++, "class", "font-monospace d-none d-md-table-cell");
                     builder.AddContent(rowIndex++, permission.Code);
                     builder.CloseElement();
                     
                     builder.OpenElement(rowIndex++, "td");
-                    builder.AddAttribute(rowIndex++, "class", "text-muted");
+                    builder.AddAttribute(rowIndex++, "class", "");
                     builder.AddContent(rowIndex++, permission.Remarks ?? "");
                     builder.CloseElement();
                     
