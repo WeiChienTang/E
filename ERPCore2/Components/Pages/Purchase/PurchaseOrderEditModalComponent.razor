@@ -854,7 +854,7 @@
             
             var purchaseOrder = editModalComponent.Entity;
             
-            if (purchaseOrder.ApprovedAt.HasValue)
+            if (purchaseOrder.IsApproved && purchaseOrder.ApprovedAt.HasValue)
             {
                 return $"已於 {purchaseOrder.ApprovedAt.Value:yyyy/MM/dd HH:mm} 審核通過";
             }

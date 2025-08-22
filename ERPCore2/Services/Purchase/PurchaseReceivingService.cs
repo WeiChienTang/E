@@ -147,13 +147,18 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("進貨單號已存在");
                 }
 
-                // 檢查採購訂單是否存在
-                var purchaseOrderExists = await context.PurchaseOrders
-                    .AnyAsync(po => po.Id == entity.PurchaseOrderId && !po.IsDeleted);
+                // 檢查採購訂單是否存在且已核准
+                var purchaseOrder = await context.PurchaseOrders
+                    .FirstOrDefaultAsync(po => po.Id == entity.PurchaseOrderId && !po.IsDeleted);
                 
-                if (!purchaseOrderExists)
+                if (purchaseOrder == null)
                 {
                     return ServiceResult.Failure("指定的採購訂單不存在");
+                }
+                
+                if (!purchaseOrder.IsApproved)
+                {
+                    return ServiceResult.Failure("只有已核准的採購訂單才能進行進貨作業");
                 }
 
                 // 檢查倉庫是否存在

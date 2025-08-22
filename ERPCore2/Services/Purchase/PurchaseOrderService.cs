@@ -275,6 +275,7 @@ namespace ERPCore2.Services
                 
                 order.ApprovedBy = approvedBy;
                 order.ApprovedAt = DateTime.Now;
+                order.IsApproved = true;
                 order.UpdatedAt = DateTime.Now;
                 
                 await context.SaveChangesAsync();
@@ -444,6 +445,7 @@ namespace ERPCore2.Services
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
                     .Where(po => !po.IsDeleted && 
+                               po.IsApproved && // 只包含已核准的訂單
                                po.ReceivedAmount < po.TotalAmount) // 改為用進貨金額判斷
                     .OrderBy(po => po.ExpectedDeliveryDate ?? po.OrderDate.AddDays(7))
                     .ToListAsync();
@@ -468,6 +470,7 @@ namespace ERPCore2.Services
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
                     .Where(po => !po.IsDeleted && 
+                               po.IsApproved && // 只包含已核准的訂單
                                po.ReceivedAmount < po.TotalAmount && // 改為用進貨金額判斷
                                po.ExpectedDeliveryDate.HasValue && 
                                po.ExpectedDeliveryDate.Value < today)

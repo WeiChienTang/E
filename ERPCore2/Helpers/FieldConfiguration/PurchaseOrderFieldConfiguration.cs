@@ -102,9 +102,18 @@ namespace ERPCore2.Helpers.FieldConfiguration
                         {
                             PropertyName = nameof(PurchaseOrder.IsApproved),
                             DisplayName = "是否核准",
-                            ColumnType = ColumnDataType.Boolean,
-                            TableOrder = 6,
                             ShowInFilter = false,
+                            TableOrder = 6,
+                            HeaderStyle = "width: 90px;",
+                            CustomTemplate = item => builder =>
+                            {
+                                var purchaseOrder = (PurchaseOrder)item;
+                                builder.OpenElement(0, "span");
+                                builder.AddAttribute(1, "class", "badge text-white");
+                                builder.AddAttribute(2, "style", purchaseOrder.IsApproved ? "background-color: #28a745;" : "background-color: #dc3545;");
+                                builder.AddContent(3, purchaseOrder.IsApproved ? "已核准" : "未核准");
+                                builder.CloseElement();
+                            }
                         }
                     },
                     {
