@@ -35,7 +35,6 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             FilterPlaceholder = "輸入採購單號搜尋",
                             TableOrder = 1,
                             FilterOrder = 1,
-                            HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PurchaseOrder.PurchaseOrderNumber), po => po.PurchaseOrderNumber)
                         }
@@ -65,7 +64,6 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 3,
                             FilterOrder = 3,
-                            HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(PurchaseOrder.OrderDate), po => po.OrderDate)
                         }
@@ -80,7 +78,6 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 4,
                             FilterOrder = 5,
-                            HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableDateRangeFilter(
                                 model, query, nameof(PurchaseOrder.ExpectedDeliveryDate), po => po.ExpectedDeliveryDate)
                         }
@@ -117,13 +114,24 @@ namespace ERPCore2.Helpers.FieldConfiguration
                         }
                     },
                     {
+                        nameof(PurchaseOrder.RejectReason),
+                        new FieldDefinition<PurchaseOrder>
+                        {
+                            PropertyName = nameof(PurchaseOrder.RejectReason),
+                            DisplayName = "駁回原因",
+                            ColumnType = ColumnDataType.Text,
+                            TableOrder = 7,
+                            ShowInFilter = false,
+                        }
+                    },
+                    {
                         nameof(PurchaseOrder.ApprovedBy),
                         new FieldDefinition<PurchaseOrder>
                         {
-                            PropertyName = nameof(PurchaseOrder.ApprovedBy),
+                            PropertyName = "ApprovedByUser.Name", // 顯示審核人員的名稱
                             DisplayName = "審核人",
                             ColumnType = ColumnDataType.Text,
-                            TableOrder = 7,
+                            TableOrder = 8,
                             ShowInFilter = false,
                         }
                     }

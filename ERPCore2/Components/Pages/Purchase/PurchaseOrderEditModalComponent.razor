@@ -893,11 +893,12 @@
             
             if (purchaseOrder.IsApproved && purchaseOrder.ApprovedAt.HasValue)
             {
-                return $"已於 {purchaseOrder.ApprovedAt.Value:yyyy/MM/dd HH:mm} 審核通過";
+                var approverName = purchaseOrder.ApprovedByUser?.Name ?? "審核人員";
+                return $"已於 {purchaseOrder.ApprovedAt.Value:yyyy/MM/dd HH:mm} 由 {approverName} 審核通過";
             }
             else if (!string.IsNullOrWhiteSpace(purchaseOrder.RejectReason))
             {
-                return $"已駁回 - {purchaseOrder.RejectReason}";
+                return $"已駁回";
             }
             else
             {
@@ -940,15 +941,16 @@
             // 審核記錄
             if (purchaseOrder.ApprovedAt.HasValue)
             {
-                // 假設有審核人員資訊，需要根據實際實體結構調整
-                var approverName = "審核人員"; // 可以從 purchaseOrder.ApprovedByUser?.Name 取得
+                // 如果有審核人員資訊，則顯示審核人員姓名，否則顯示預設文字
+                var approverName = purchaseOrder.ApprovedByUser?.Name ?? "審核人員";
                 history.Add($"{purchaseOrder.ApprovedAt.Value:yyyy/MM/dd HH:mm} - {approverName} 審核通過");
             }
             else if (!string.IsNullOrWhiteSpace(purchaseOrder.RejectReason))
             {
                 // 駁回記錄 - 使用 UpdatedAt 作為駁回時間
                 var rejectTime = purchaseOrder.UpdatedAt ?? DateTime.Now;
-                var rejectorName = purchaseOrder.UpdatedBy ?? "審核人員";
+                // 駁回人員通常記錄在 UpdatedBy 中，或可以從審核人員取得
+                var rejectorName = purchaseOrder.UpdatedBy ?? purchaseOrder.ApprovedByUser?.Name ?? "審核人員";
                 history.Add($"{rejectTime:yyyy/MM/dd HH:mm} - {rejectorName} 駁回採購單：{purchaseOrder.RejectReason}");
             }
             
