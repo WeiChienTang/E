@@ -125,6 +125,63 @@
                     </div>
                 }
 
+                @* 審核區段 - 在元數據和Footer之間 *@
+                @if (ShowApprovalSection && !IsLoading && Entity != null && Entity.Id > 0)
+                {
+                    <PermissionCheck Permission="@ApprovalPermission">
+                        <div class="modal-approval-section border-top bg-warning-subtle px-3 py-3">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h6 class="mb-2">
+                                        <i class="fas fa-check-circle me-2"></i>審核作業
+                                    </h6>
+                                    @if (!string.IsNullOrEmpty(ApprovalStatusText))
+                                    {
+                                        <div class="approval-status mb-2">
+                                            <span class="badge bg-info">@ApprovalStatusText</span>
+                                        </div>
+                                    }
+                                    @if (ApprovalHistoryList.Any())
+                                    {
+                                        <div class="approval-history">
+                                            <small class="text-muted">
+                                                <strong>審核記錄：</strong>
+                                                @foreach (var history in ApprovalHistoryList.Take(3))
+                                                {
+                                                    <div>@history</div>
+                                                }
+                                                @if (ApprovalHistoryList.Count > 3)
+                                                {
+                                                    <div class="text-primary">...等 @ApprovalHistoryList.Count 筆記錄</div>
+                                                }
+                                            </small>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <div class="approval-actions">
+                                        <GenericButtonComponent Text="@ApproveButtonText" 
+                                                              Variant="ButtonVariant.Success" 
+                                                              IconClass="fas fa-check"
+                                                              Size="ButtonSize.Small"
+                                                              OnClick="HandleApprove" 
+                                                              IsDisabled="@(IsSubmitting || IsApproving || IsRejecting)"
+                                                              IsLoading="@IsApproving" />
+                                        <GenericButtonComponent Text="@RejectButtonText" 
+                                                              Variant="ButtonVariant.Danger" 
+                                                              IconClass="fas fa-times"
+                                                              Size="ButtonSize.Small"
+                                                              OnClick="HandleReject" 
+                                                              IsDisabled="@(IsSubmitting || IsApproving || IsRejecting)"
+                                                              IsLoading="@IsRejecting"
+                                                              CssClass="ms-2" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </PermissionCheck>
+                }
+
                 @* Modal Footer *@
                 <div class="modal-footer">
                     <GenericButtonComponent Text="@CancelButtonText" 
@@ -263,6 +320,16 @@
     // 訊息設定
     [Parameter] public string LoadingMessage { get; set; } = "載入資料中...";
     
+    // 審核功能參數
+    [Parameter] public bool ShowApprovalSection { get; set; } = false;
+    [Parameter] public string ApprovalPermission { get; set; } = string.Empty;
+    [Parameter] public Func<Task<bool>>? OnApprove { get; set; }
+    [Parameter] public Func<Task<bool>>? OnReject { get; set; }
+    [Parameter] public Func<Task<string?>>? GetApprovalStatus { get; set; }
+    [Parameter] public Func<Task<List<string>>>? GetApprovalHistory { get; set; }
+    [Parameter] public string ApproveButtonText { get; set; } = "審核通過";
+    [Parameter] public string RejectButtonText { get; set; } = "審核駁回";
+    
     // ===== 內部狀態 =====
     
     private bool IsLoading { get; set; } = false;
@@ -272,6 +339,12 @@
     private bool _lastVisible = false;
     private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
     private EditContext? editContext;
+    
+    // 審核狀態
+    private bool IsApproving { get; set; } = false;
+    private bool IsRejecting { get; set; } = false;
+    private string? ApprovalStatusText { get; set; }
+    private List<string> ApprovalHistoryList { get; set; } = new();
     
     // AutoComplete 搜尋關鍵字追蹤
     private readonly Dictionary<string, string> _lastSearchTerms = new();
@@ -391,6 +464,9 @@
                     UpdateAllActionButtons();
                 }
             }
+            
+            // 載入審核資料
+            await LoadApprovalData();
         }
         catch (Exception ex)
         {
@@ -402,6 +478,35 @@
             IsLoading = false;
             StateHasChanged();
             _loadingSemaphore.Release();
+        }
+    }
+    
+    /// <summary>
+    /// 載入審核相關資料
+    /// </summary>
+    private async Task LoadApprovalData()
+    {
+        try
+        {
+            if (!ShowApprovalSection || Entity == null || Entity.Id <= 0)
+                return;
+
+            // 載入審核狀態
+            if (GetApprovalStatus != null)
+            {
+                ApprovalStatusText = await GetApprovalStatus();
+            }
+
+            // 載入審核歷史
+            if (GetApprovalHistory != null)
+            {
+                ApprovalHistoryList = await GetApprovalHistory();
+            }
+        }
+        catch (Exception ex)
+        {
+            await LogError("LoadApprovalData", ex);
+            // 不拋出例外，避免影響主要資料載入
         }
     }
     
@@ -486,6 +591,72 @@
         }
     }
     
+    private async Task HandleApprove()
+    {
+        if (OnApprove == null || IsApproving || IsRejecting) return;
+        
+        try
+        {
+            IsApproving = true;
+            StateHasChanged();
+            
+            var success = await OnApprove();
+            
+            if (success)
+            {
+                await ShowSuccessMessage("審核通過");
+                await LoadApprovalData(); // 重新載入審核狀態
+            }
+            else
+            {
+                await ShowErrorMessage("審核通過失敗");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorMessage($"審核通過時發生錯誤：{ex.Message}");
+            await LogError("HandleApprove", ex);
+        }
+        finally
+        {
+            IsApproving = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task HandleReject()
+    {
+        if (OnReject == null || IsApproving || IsRejecting) return;
+        
+        try
+        {
+            IsRejecting = true;
+            StateHasChanged();
+            
+            var success = await OnReject();
+            
+            if (success)
+            {
+                await ShowSuccessMessage("審核駁回");
+                await LoadApprovalData(); // 重新載入審核狀態
+            }
+            else
+            {
+                await ShowErrorMessage("審核駁回失敗");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorMessage($"審核駁回時發生錯誤：{ex.Message}");
+            await LogError("HandleReject", ex);
+        }
+        finally
+        {
+            IsRejecting = false;
+            StateHasChanged();
+        }
+    }
+    
     private async Task CloseModal()
     {
         await CleanupTabNavigationAsync();
@@ -561,6 +732,12 @@
         ErrorMessage = string.Empty;
         Entity = new();
         editContext = new EditContext(Entity);
+        
+        // 重置審核狀態
+        IsApproving = false;
+        IsRejecting = false;
+        ApprovalStatusText = null;
+        ApprovalHistoryList.Clear();
     }
     
     // ===== 通知方法 =====

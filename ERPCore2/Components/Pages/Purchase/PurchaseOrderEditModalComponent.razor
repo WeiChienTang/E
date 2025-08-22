@@ -5,8 +5,11 @@
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 @inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @using ERPCore2.Helpers
 @using ERPCore2.Components.Shared.SubCollections
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
 
 <GenericEditModalComponent TEntity="PurchaseOrder" 
                           TService="IPurchaseOrderService"
@@ -39,6 +42,12 @@
                           CustomModules="@GetCustomModules()"
                           ShowPrintButton = "true"
                           OnPrint="@HandlePrint"
+                          ShowApprovalSection="@ShouldShowApprovalSection()"
+                          ApprovalPermission="PurchaseOrder.Approve"
+                          OnApprove="@HandlePurchaseOrderApprove"
+                          OnReject="@HandlePurchaseOrderReject"
+                          GetApprovalStatus="@GetPurchaseOrderApprovalStatus"
+                          GetApprovalHistory="@GetPurchaseOrderApprovalHistory"
                           >
 
 </GenericEditModalComponent>
@@ -734,6 +743,202 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SavePurchaseOrderDetails), GetType(), 
                 additionalData: $"儲存採購單明細失敗 - OrderId: {purchaseOrderId}");
             throw; // 重新拋出例外，讓上層處理
+        }
+    }
+    
+    // ===== 審核相關方法 =====
+    
+    /// <summary>
+    /// 判斷是否應該顯示審核區域
+    /// </summary>
+    private bool ShouldShowApprovalSection()
+    {
+        // 只有編輯現有採購單時才顯示審核區域
+        return PurchaseOrderId.HasValue && PurchaseOrderId.Value > 0;
+    }
+    
+    /// <summary>
+    /// 處理採購單審核通過
+    /// </summary>
+    private async Task<bool> HandlePurchaseOrderApprove()
+    {
+        try
+        {
+            if (!PurchaseOrderId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法審核：採購單ID不存在");
+                return false;
+            }
+            
+            // 確認對話框
+            var confirmed = await NotificationService.ShowConfirmAsync(
+                "確定要審核通過此採購單嗎？審核通過後將無法再修改。", 
+                "審核確認");
+            
+            if (!confirmed)
+                return false;
+            
+            // 呼叫服務進行審核
+            var currentUserId = await GetCurrentUserIdAsync();
+            if (!currentUserId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法取得當前使用者資訊");
+                return false;
+            }
+            
+            var result = await PurchaseOrderService.ApproveOrderAsync(PurchaseOrderId.Value, currentUserId.Value);
+            
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("採購單審核通過");
+                return true;
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "審核通過失敗");
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePurchaseOrderApprove), GetType(), 
+                additionalData: $"採購單審核通過失敗 - OrderId: {PurchaseOrderId}");
+            await NotificationService.ShowErrorAsync($"審核通過時發生錯誤：{ex.Message}");
+            return false;
+        }
+    }
+    
+    /// <summary>
+    /// 處理採購單審核駁回
+    /// </summary>
+    private async Task<bool> HandlePurchaseOrderReject()
+    {
+        try
+        {
+            if (!PurchaseOrderId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法審核：採購單ID不存在");
+                return false;
+            }
+            
+            // 確認對話框
+            var confirmed = await NotificationService.ShowConfirmAsync(
+                "確定要駁回此採購單嗎？駁回後採購單將退回修改。", 
+                "審核確認");
+            
+            if (!confirmed)
+                return false;
+            
+            // TODO: 實作駁回邏輯，可能需要新增駁回服務方法
+            await NotificationService.ShowInfoAsync("駁回功能開發中...");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePurchaseOrderReject), GetType(), 
+                additionalData: $"採購單審核駁回失敗 - OrderId: {PurchaseOrderId}");
+            await NotificationService.ShowErrorAsync($"審核駁回時發生錯誤：{ex.Message}");
+            return false;
+        }
+    }
+    
+    /// <summary>
+    /// 取得採購單審核狀態
+    /// </summary>
+    private async Task<string?> GetPurchaseOrderApprovalStatus()
+    {
+        try
+        {
+            if (editModalComponent?.Entity == null)
+                return null;
+            
+            var purchaseOrder = editModalComponent.Entity;
+            
+            if (purchaseOrder.ApprovedAt.HasValue)
+            {
+                return $"已於 {purchaseOrder.ApprovedAt.Value:yyyy/MM/dd HH:mm} 審核通過";
+            }
+            else
+            {
+                return "待審核";
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetPurchaseOrderApprovalStatus), GetType(), 
+                additionalData: $"取得採購單審核狀態失敗 - OrderId: {PurchaseOrderId}");
+            return "無法取得審核狀態";
+        }
+    }
+    
+    /// <summary>
+    /// 取得採購單審核歷史
+    /// </summary>
+    private async Task<List<string>> GetPurchaseOrderApprovalHistory()
+    {
+        try
+        {
+            if (editModalComponent?.Entity == null)
+                return new List<string>();
+            
+            var purchaseOrder = editModalComponent.Entity;
+            var history = new List<string>();
+            
+            // 建立記錄
+            if (purchaseOrder.CreatedAt != default)
+            {
+                history.Add($"{purchaseOrder.CreatedAt:yyyy/MM/dd HH:mm} - {purchaseOrder.CreatedBy ?? "系統"} 建立採購單");
+            }
+            
+            // 最後修改記錄
+            if (purchaseOrder.UpdatedAt.HasValue)
+            {
+                history.Add($"{purchaseOrder.UpdatedAt.Value:yyyy/MM/dd HH:mm} - {purchaseOrder.UpdatedBy ?? "系統"} 修改採購單");
+            }
+            
+            // 審核記錄
+            if (purchaseOrder.ApprovedAt.HasValue)
+            {
+                // 假設有審核人員資訊，需要根據實際實體結構調整
+                var approverName = "審核人員"; // 可以從 purchaseOrder.ApprovedByUser?.Name 取得
+                history.Add($"{purchaseOrder.ApprovedAt.Value:yyyy/MM/dd HH:mm} - {approverName} 審核通過");
+            }
+            
+            return history;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetPurchaseOrderApprovalHistory), GetType(), 
+                additionalData: $"取得採購單審核歷史失敗 - OrderId: {PurchaseOrderId}");
+            return new List<string> { "無法取得審核歷史" };
+        }
+    }
+    
+    /// <summary>
+    /// 取得當前使用者ID
+    /// </summary>
+    private async Task<int?> GetCurrentUserIdAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (!user.Identity?.IsAuthenticated ?? true)
+                return null;
+
+            // 從Claims中取得使用者ID (通常存在NameIdentifier中)
+            var employeeIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(employeeIdClaim, out int employeeId))
+                return employeeId;
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetCurrentUserIdAsync), GetType(), 
+                additionalData: "取得當前使用者ID失敗");
+            return null;
         }
     }
 }

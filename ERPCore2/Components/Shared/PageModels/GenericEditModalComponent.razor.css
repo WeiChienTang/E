@@ -432,3 +432,79 @@
     background-color: rgba(0, 0, 0, 0.6) !important;
     backdrop-filter: blur(3px) !important;
 }
+
+/* ===== 審核區域樣式 ===== */
+
+.modal-approval-section {
+    background-color: #fff3cd !important;
+    border-top: 2px solid #ffc107 !important;
+    border-radius: 0 !important;
+}
+
+.modal-approval-section h6 {
+    color: #856404 !important;
+    font-weight: 600 !important;
+    margin-bottom: 0.75rem !important;
+}
+
+.modal-approval-section .approval-status .badge {
+    font-size: 0.85rem !important;
+    padding: 0.5rem 0.75rem !important;
+}
+
+.modal-approval-section .approval-history {
+    font-size: 0.875rem !important;
+    color: #6c757d !important;
+    margin-top: 0.5rem !important;
+}
+
+.modal-approval-section .approval-history > div {
+    margin-bottom: 0.25rem !important;
+}
+
+.modal-approval-section .approval-actions {
+    gap: 0.5rem !important;
+}
+
+.modal-approval-section .approval-actions .btn {
+    min-width: 80px !important;
+    font-size: 0.875rem !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+}
+
+.modal-approval-section .approval-actions .btn:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.modal-approval-section .approval-actions .btn:disabled {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* 響應式設計 - 小螢幕時審核按鈕垂直排列 */
+@media (max-width: 768px) {
+    .modal-approval-section .row {
+        text-align: center !important;
+    }
+    
+    .modal-approval-section .col-md-4 {
+        text-align: center !important;
+        margin-top: 1rem !important;
+    }
+    
+    .modal-approval-section .approval-actions {
+        justify-content: center !important;
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+    }
+    
+    .modal-approval-section .approval-actions .btn {
+        width: 100% !important;
+        max-width: 200px !important;
+        margin: 0 auto !important;
+    }
+}
