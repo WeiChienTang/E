@@ -116,18 +116,6 @@
 
     private IQueryable<SupplierType> ApplySupplierTypeFilters(SearchFilterModel searchModel, IQueryable<SupplierType> query)
     {
-        try
-        {
-            return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySupplierTypeFilters), GetType());
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤並回傳安全的預設查詢
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplySupplierTypeFilters), GetType(), additionalData: "廠商類型管理篩選器應用失敗");
-            _ = NotificationService.ShowErrorAsync("篩選條件應用失敗，已顯示全部資料");
-            
-            // 回傳基本排序的查詢，確保頁面仍能正常運作
-            return query.OrderBy(st => st.Code);
-        }
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySupplierTypeFilters), GetType());
     }
 }

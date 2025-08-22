@@ -113,18 +113,6 @@
     // 自定義篩選邏輯
     private IQueryable<Warehouse> ApplyWarehouseFilters(SearchFilterModel searchModel, IQueryable<Warehouse> query)
     {
-        try
-        {
-            return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyWarehouseFilters), GetType());
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤並回傳安全的預設查詢
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyWarehouseFilters), GetType(), additionalData: "倉庫篩選器應用失敗");
-            _ = NotificationService.ShowErrorAsync("篩選條件應用失敗，已顯示全部資料");
-            
-            // 回傳基本排序的查詢，確保頁面仍能正常運作
-            return query.OrderBy(w => w.Code);
-        }
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyWarehouseFilters), GetType());
     }
 }

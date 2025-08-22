@@ -292,18 +292,21 @@ namespace ERPCore2.Helpers
                 try
                 {
                     isEmpty = !query.Any();
+                    // 如果資料為空，這是正常情況，直接返回不需要記錄錯誤
+                    if (isEmpty)
+                    {
+                        return defaultOrderBy(query);
+                    }
                 }
-                catch
+                catch (Exception anyEx)
                 {
-                    // 如果無法檢查 Any()，假設為空以確保安全
-                    isEmpty = true;
+                    // 如果無法檢查 Any()（例如資料庫連接問題），記錄具體錯誤但不顯示給用戶
+                    Console.WriteLine($"資料檢查時發生錯誤: {anyEx.Message}");
+                    // 嘗試返回空查詢，避免進一步的錯誤
+                    return defaultOrderBy(Enumerable.Empty<T>().AsQueryable());
                 }
 
-                if (isEmpty)
-                {
-                    return defaultOrderBy(query);
-                }
-
+                // 如果有資料，應用篩選條件
                 foreach (var filterAction in filterActions)
                 {
                     query = filterAction(searchModel, query);
@@ -312,14 +315,37 @@ namespace ERPCore2.Helpers
             }
             catch (Exception ex)
             {
-                // 記錄錯誤但不阻擋執行
-                _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                    ex,
-                    methodName,
-                    sourceType
-                );
+                // 記錄錯誤但只有在真正的業務邏輯錯誤時才通知用戶
+                Console.WriteLine($"篩選處理時發生錯誤: {ex.Message}");
+                
+                // 只有在確實是業務邏輯錯誤時才通知用戶
+                // 避免因為空資料或資料庫連接暫時問題而顯示錯誤
+                bool shouldNotifyUser = !IsEmptyDataRelatedError(ex);
+                
+                if (shouldNotifyUser)
+                {
+                    _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                        ex,
+                        methodName,
+                        sourceType
+                    );
+                }
+                
                 return defaultOrderBy(query ?? Enumerable.Empty<T>().AsQueryable());
             }
+        }
+
+        /// <summary>
+        /// 判斷是否為空資料相關的錯誤
+        /// </summary>
+        private static bool IsEmptyDataRelatedError(Exception ex)
+        {
+            var message = ex.Message.ToLower();
+            return message.Contains("sequence contains no elements") ||
+                   message.Contains("empty") ||
+                   message.Contains("no data") ||
+                   message.Contains("not found") ||
+                   ex is InvalidOperationException && message.Contains("sequence");
         }
 
         #region 私有輔助方法

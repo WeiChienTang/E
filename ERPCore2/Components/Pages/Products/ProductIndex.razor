@@ -47,7 +47,7 @@
     private List<Size> sizes = new();
     
     // 欄位配置
-    private ProductFieldConfiguration? fieldConfiguration = null;
+    private ProductFieldConfiguration fieldConfiguration = default!;
     
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
@@ -213,25 +213,13 @@
     }    
     private IQueryable<Product> ApplyProductFilters(SearchFilterModel searchModel, IQueryable<Product> query)
     {
-        try
+        // 確保 fieldConfiguration 已初始化
+        if (fieldConfiguration == null)
         {
-            // 確保 fieldConfiguration 已初始化
-            if (fieldConfiguration == null)
-            {
-                // 如果配置未初始化，回傳基本排序的查詢
-                return query.OrderBy(p => p.Code);
-            }
-            
-            return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyProductFilters), GetType());
+            // 如果配置未初始化，回傳基本排序的查詢
+            return query.OrderBy(p => p.Name);
         }
-        catch (Exception ex)
-        {
-            // 記錄錯誤並回傳安全的預設查詢
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyProductFilters), GetType(), additionalData: "產品篩選器應用失敗");
-            _ = NotificationService.ShowErrorAsync("篩選條件應用失敗，已顯示全部資料");
-            
-            // 回傳基本排序的查詢，確保頁面仍能正常運作
-            return query.OrderBy(p => p.Code);
-        }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyProductFilters), GetType());
     }
 }
