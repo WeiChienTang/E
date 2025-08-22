@@ -649,7 +649,9 @@
                code.StartsWith("EmployeeEdit_Account_Password.") ||
                code.StartsWith("SystemControl.") || 
                code.StartsWith("Permission.") || 
-               code.StartsWith("Role."));
+               code.StartsWith("Role.") || 
+               code.StartsWith("Company.") ||
+               code.StartsWith("PurchaseOrder_Approve."));
     }
 
     private RenderFragment RenderPermissionTable(bool isReadOnly, bool showSystemPermissions = false)

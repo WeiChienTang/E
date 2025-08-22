@@ -8,13 +8,6 @@
 {
     @ChildContent
 }
-else if (!string.IsNullOrEmpty(UnauthorizedContent))
-{
-    <div class="alert alert-warning">
-        <i class="fas fa-exclamation-triangle me-2"></i>
-        @UnauthorizedContent
-    </div>
-}
 
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }
