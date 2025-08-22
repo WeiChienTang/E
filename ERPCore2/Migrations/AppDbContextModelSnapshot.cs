@@ -1667,6 +1667,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -1735,6 +1738,8 @@ namespace ERPCore2.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ApprovedBy");
+
+                    b.HasIndex("CompanyId");
 
                     b.HasIndex("PurchaseOrderNumber")
                         .IsUnique();
@@ -3887,6 +3892,12 @@ namespace ERPCore2.Migrations
                         .HasForeignKey("ApprovedBy")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("ERPCore2.Data.Entities.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("ERPCore2.Data.Entities.Supplier", "Supplier")
                         .WithMany()
                         .HasForeignKey("SupplierId")
@@ -3899,6 +3910,8 @@ namespace ERPCore2.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("ApprovedByUser");
+
+                    b.Navigation("Company");
 
                     b.Navigation("Supplier");
 

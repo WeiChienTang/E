@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ERPCore2.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialCreateWithCompany : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -53,6 +53,37 @@ namespace ERPCore2.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Colors", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Companies",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CompanyName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    CompanyNameEn = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    TaxId = table.Column<string>(type: "nvarchar(8)", maxLength: 8, nullable: true),
+                    Representative = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Address = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    Phone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    Fax = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Website = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    LogoPath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Companies", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -364,13 +395,10 @@ namespace ERPCore2.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    WarehouseName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Address = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     ContactPerson = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Phone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    WarehouseType = table.Column<int>(type: "int", nullable: false),
-                    IsDefault = table.Column<bool>(type: "bit", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
@@ -603,14 +631,12 @@ namespace ERPCore2.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    LocationName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Zone = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
                     Aisle = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
                     Level = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
                     Position = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
                     MaxCapacity = table.Column<int>(type: "int", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
                     WarehouseId = table.Column<int>(type: "int", nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
@@ -1094,7 +1120,10 @@ namespace ERPCore2.Migrations
                     ReceivedAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ApprovedBy = table.Column<int>(type: "int", nullable: true),
                     ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsApproved = table.Column<bool>(type: "bit", nullable: false),
+                    RejectReason = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     SupplierId = table.Column<int>(type: "int", nullable: false),
+                    CompanyId = table.Column<int>(type: "int", nullable: false),
                     WarehouseId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
@@ -1108,6 +1137,12 @@ namespace ERPCore2.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PurchaseOrders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrders_Companies_CompanyId",
+                        column: x => x.CompanyId,
+                        principalTable: "Companies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_PurchaseOrders_Employees_ApprovedBy",
                         column: x => x.ApprovedBy,
@@ -1860,6 +1895,13 @@ namespace ERPCore2.Migrations
                 column: "AddressTypeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Companies_Code",
+                table: "Companies",
+                column: "Code",
+                unique: true,
+                filter: "[Code] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Contacts_ContactTypeId",
                 table: "Contacts",
                 column: "ContactTypeId");
@@ -2099,6 +2141,11 @@ namespace ERPCore2.Migrations
                 name: "IX_PurchaseOrders_ApprovedBy",
                 table: "PurchaseOrders",
                 column: "ApprovedBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrders_CompanyId",
+                table: "PurchaseOrders",
+                column: "CompanyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PurchaseOrders_PurchaseOrderNumber",
@@ -2597,6 +2644,9 @@ namespace ERPCore2.Migrations
 
             migrationBuilder.DropTable(
                 name: "SalesOrders");
+
+            migrationBuilder.DropTable(
+                name: "Companies");
 
             migrationBuilder.DropTable(
                 name: "Warehouses");

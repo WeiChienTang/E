@@ -30,6 +30,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseOrders
+                    .Include(po => po.Company)
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
                     .Include(po => po.ApprovedByUser)
@@ -56,6 +57,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseOrders
+                    .Include(po => po.Company)
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
                     .Include(po => po.ApprovedByUser)
@@ -83,11 +85,13 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseOrders
+                    .Include(po => po.Company)
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
                     .Where(po => !po.IsDeleted && 
                                (po.PurchaseOrderNumber.Contains(searchTerm) ||
                                 po.Supplier.CompanyName.Contains(searchTerm) ||
+                                po.Company != null && po.Company.CompanyName.Contains(searchTerm) ||
                                 po.PurchasePersonnel != null && po.PurchasePersonnel.Contains(searchTerm) ||
                                 po.OrderRemarks != null && po.OrderRemarks.Contains(searchTerm)))
                     .OrderByDescending(po => po.OrderDate)
@@ -115,6 +119,9 @@ namespace ERPCore2.Services
                 
                 if (entity.SupplierId <= 0)
                     errors.Add("必須選擇供應商");
+                
+                if (entity.CompanyId <= 0)
+                    errors.Add("必須選擇採購公司");
                 
                 if (entity.OrderDate > DateTime.Today.AddDays(1))
                     errors.Add("訂單日期不能超過明天");

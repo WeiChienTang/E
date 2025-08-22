@@ -1,6 +1,7 @@
 @page "/purchase/orders"
 @inject IPurchaseOrderService PurchaseOrderService
 @inject ISupplierService SupplierService
+@inject ICompanyService CompanyService
 @inject INotificationService NotificationService
 @rendermode InteractiveServer
 
@@ -35,6 +36,7 @@
     
     // 選項清單
     private List<Supplier> suppliers = new();
+    private List<Company> companies = new();
     
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
@@ -67,9 +69,10 @@
             
             // 載入相關資料
             await LoadSuppliersAsync();
+            await LoadCompaniesAsync();
             
             // 👇 使用欄位配置替代原本的方法調用
-            fieldConfiguration = new PurchaseOrderFieldConfiguration(suppliers, NotificationService);
+            fieldConfiguration = new PurchaseOrderFieldConfiguration(suppliers, companies, NotificationService);
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();
         }
@@ -112,6 +115,21 @@
             await NotificationService.ShowErrorAsync("載入供應商資料失敗");
             // 設定安全的預設值
             suppliers = new List<Supplier>();
+        }
+    }
+
+    private async Task LoadCompaniesAsync()
+    {
+        try
+        {
+            companies = await CompanyService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCompaniesAsync), GetType(), additionalData: "載入公司資料失敗");
+            await NotificationService.ShowErrorAsync("載入公司資料失敗");
+            // 設定安全的預設值
+            companies = new List<Company>();
         }
     }
 

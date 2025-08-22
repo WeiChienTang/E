@@ -12,11 +12,13 @@ namespace ERPCore2.Helpers.FieldConfiguration
     public class PurchaseOrderFieldConfiguration : BaseFieldConfiguration<PurchaseOrder>
     {
         private readonly List<Supplier> _suppliers;
+        private readonly List<Company> _companies;
         private readonly INotificationService? _notificationService;
 
-        public PurchaseOrderFieldConfiguration(List<Supplier> suppliers, INotificationService? notificationService = null)
+        public PurchaseOrderFieldConfiguration(List<Supplier> suppliers, List<Company> companies, INotificationService? notificationService = null)
         {
             _suppliers = suppliers;
+            _companies = companies;
             _notificationService = notificationService;
         }
 
@@ -40,6 +42,21 @@ namespace ERPCore2.Helpers.FieldConfiguration
                         }
                     },
                     {
+                        nameof(PurchaseOrder.CompanyId),
+                        new FieldDefinition<PurchaseOrder>
+                        {
+                            PropertyName = "Company.CompanyName", // 表格顯示用
+                            FilterPropertyName = "Company.CompanyName", // 篩選器使用公司名稱
+                            DisplayName = "採購公司",
+                            FilterType = SearchFilterType.Text,
+                            FilterPlaceholder = "輸入公司名稱搜尋",
+                            TableOrder = 2,
+                            FilterOrder = 2,
+                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
+                                model, query, "Company.CompanyName", po => po.Company.CompanyName)
+                        }
+                    },
+                    {
                         nameof(PurchaseOrder.SupplierId),
                         new FieldDefinition<PurchaseOrder>
                         {
@@ -48,8 +65,8 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             DisplayName = "供應商",
                             FilterType = SearchFilterType.Text,
                             FilterPlaceholder = "輸入供應商名稱搜尋",
-                            TableOrder = 2,
-                            FilterOrder = 2,
+                            TableOrder = 3,
+                            FilterOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Supplier.CompanyName", po => po.Supplier != null ? po.Supplier.CompanyName : null, allowNull: true)
                         }
@@ -62,8 +79,8 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             DisplayName = "採購日",
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
-                            TableOrder = 3,
-                            FilterOrder = 3,
+                            TableOrder = 4,
+                            FilterOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(PurchaseOrder.OrderDate), po => po.OrderDate)
                         }
@@ -76,7 +93,7 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             DisplayName = "預交日",
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
-                            TableOrder = 4,
+                            TableOrder = 5,
                             FilterOrder = 5,
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableDateRangeFilter(
                                 model, query, nameof(PurchaseOrder.ExpectedDeliveryDate), po => po.ExpectedDeliveryDate)
@@ -89,7 +106,7 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             PropertyName = nameof(PurchaseOrder.TotalAmount),
                             DisplayName = "總金額",
                             ColumnType = ColumnDataType.Currency,
-                            TableOrder = 5,
+                            TableOrder = 6,
                             ShowInFilter = false, // 通常不會用金額篩選
                         }
                     },
@@ -100,7 +117,7 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             PropertyName = nameof(PurchaseOrder.IsApproved),
                             DisplayName = "是否核准",
                             ShowInFilter = false,
-                            TableOrder = 6,
+                            TableOrder = 7,
                             HeaderStyle = "width: 90px;",
                             CustomTemplate = item => builder =>
                             {
@@ -120,7 +137,7 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             PropertyName = nameof(PurchaseOrder.RejectReason),
                             DisplayName = "駁回原因",
                             ColumnType = ColumnDataType.Text,
-                            TableOrder = 7,
+                            TableOrder = 8,
                             ShowInFilter = false,
                         }
                     },
@@ -131,7 +148,7 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             PropertyName = "ApprovedByUser.Name", // 顯示審核人員的名稱
                             DisplayName = "審核人",
                             ColumnType = ColumnDataType.Text,
-                            TableOrder = 8,
+                            TableOrder = 9,
                             ShowInFilter = false,
                         }
                     }

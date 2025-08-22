@@ -1,6 +1,7 @@
 @* 可重用的採購單編輯組件 - 可在任何頁面中嵌入 *@
 @inject IPurchaseOrderService PurchaseOrderService
 @inject ISupplierService SupplierService
+@inject ICompanyService CompanyService
 @inject IProductService ProductService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
@@ -76,6 +77,7 @@
     
     // 原始資料集合（用於 AutoComplete）
     private List<Supplier> availableSuppliers = new();
+    private List<Company> availableCompanies = new();
     private List<Product> availableProducts = new();
     private List<Product> filteredProductsBySupplier = new(); // 根據供應商過濾的商品
     
@@ -88,7 +90,9 @@
     
     // 下拉選單選項（向下相容）
     private List<Supplier> suppliers = new();
+    private List<Company> companies = new();
     private List<SelectOption> supplierOptions = new();
+    private List<SelectOption> companyOptions = new();
     private List<SelectOption> statusOptions = new();
 
     // ===== 必要方法 =====
@@ -164,6 +168,13 @@
                 return;
             }
             
+            // 檢查採購單是否已核准
+            if (!editModalComponent.Entity.IsApproved)
+            {
+                await NotificationService.ShowWarningAsync("請先核准採購單後再進行列印");
+                return;
+            }
+            
             // 使用報表服務生成採購單報表
             var reportUrl = $"/api/report/purchase-order/{PurchaseOrderId.Value}/preview";
             
@@ -202,15 +213,20 @@
         {
             if (!PurchaseOrderId.HasValue)
             {
-                // 新增模式 - 自動產生採購單號
+                // 新增模式 - 自動產生採購單號並設定預設公司
                 var generatedCode = await GeneratePurchaseOrderNumberAsync();
+                
+                // 取得預設公司
+                var primaryCompany = await CompanyService.GetPrimaryCompanyAsync();
+                
                 var newOrder = new PurchaseOrder
                 {
                     OrderDate = DateTime.Today,
                     ExpectedDeliveryDate = DateTime.Today.AddDays(7),
                     Status = EntityStatus.Active,
                     TotalAmount = 0,
-                    PurchaseOrderNumber = generatedCode
+                    PurchaseOrderNumber = generatedCode,
+                    CompanyId = primaryCompany?.Id ?? 1 // 設定預設公司，如果沒有主要公司則為1
                 };
                 
                 // 清空明細
@@ -256,6 +272,16 @@
                     Value = s.Id.ToString()
                 }).ToList();
 
+            // 載入公司選項
+            companies = await CompanyService.GetAllAsync();
+            availableCompanies = companies; // 用於 AutoComplete
+            companyOptions = companies.Where(c => c.Status == EntityStatus.Active)
+                .Select(c => new SelectOption
+                {
+                    Text = c.CompanyName,
+                    Value = c.Id.ToString()
+                }).ToList();
+
             // 載入商品資料
             availableProducts = await ProductService.GetAllAsync();
 
@@ -273,6 +299,7 @@
             
             // 設定安全的預設值
             supplierOptions = new List<SelectOption>();
+            companyOptions = new List<SelectOption>();
             statusOptions = new List<SelectOption>();
             availableProducts = new List<Product>();
         }
@@ -293,6 +320,16 @@
                     IsRequired = true,
                     MaxLength = 30,
                     HelpText = "採購單的唯一編號，新增時系統會自動產生，也可手動修改",
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseOrder.CompanyId),
+                    Label = "採購公司",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請選擇採購公司",
+                    IsRequired = true,
+                    MinSearchLength = 0,
+                    HelpText = "選擇進行此次採購的公司",
                 },
                 new()
                 {
@@ -321,6 +358,7 @@
                     IsRequired = true,
                     HelpText = "預計供應商交貨的日期",
                 },
+
                 new()
                 {
                     PropertyName = nameof(PurchaseOrder.OrderRemarks),
@@ -338,6 +376,7 @@
             formSections = new Dictionary<string, string>
             {
                 { nameof(PurchaseOrder.PurchaseOrderNumber), "基本資訊" },
+                { nameof(PurchaseOrder.CompanyId), "基本資訊" },
                 { nameof(PurchaseOrder.SupplierId), "基本資訊" },
                 { nameof(PurchaseOrder.OrderDate), "基本資訊" },
                 { nameof(PurchaseOrder.ExpectedDeliveryDate), "基本資訊" },
@@ -389,6 +428,12 @@
         return new Dictionary<string, Func<string, Dictionary<string, object?>>>
         {
             {
+                nameof(PurchaseOrder.CompanyId), searchTerm => new Dictionary<string, object?>
+                {
+                    { "CompanyName", searchTerm }
+                }
+            },
+            {
                 nameof(PurchaseOrder.SupplierId), searchTerm => new Dictionary<string, object?>
                 {
                     { "CompanyName", searchTerm }
@@ -404,6 +449,7 @@
     {
         return new Dictionary<string, IEnumerable<object>>
         {
+            { nameof(PurchaseOrder.CompanyId), availableCompanies.Cast<object>() },
             { nameof(PurchaseOrder.SupplierId), availableSuppliers.Cast<object>() }
         };
     }
@@ -415,6 +461,7 @@
     {
         return new Dictionary<string, string>
         {
+            { nameof(PurchaseOrder.CompanyId), "CompanyName" },
             { nameof(PurchaseOrder.SupplierId), "CompanyName" }
         };
     }
@@ -426,6 +473,7 @@
     {
         return new Dictionary<string, string>
         {
+            { nameof(PurchaseOrder.CompanyId), "Id" },
             { nameof(PurchaseOrder.SupplierId), "Id" }
         };
     }
@@ -853,14 +901,9 @@
             {
                 await NotificationService.ShowSuccessAsync("採購單已駁回");
                 // 重新載入資料以更新界面
-                if (editModalComponent != null && editModalComponent.DataLoader != null)
+                if (editModalComponent != null)
                 {
-                    var reloadedEntity = await editModalComponent.DataLoader();
-                    if (reloadedEntity != null)
-                    {
-                        editModalComponent.Entity = reloadedEntity;
-                        StateHasChanged();
-                    }
+                    await editModalComponent.RefreshEntityAsync();
                 }
                 return true;
             }

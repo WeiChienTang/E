@@ -63,12 +63,18 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Supplier))]
         public int SupplierId { get; set; }
 
+        [Required(ErrorMessage = "採購公司為必填")]
+        [Display(Name = "採購公司")]
+        [ForeignKey(nameof(Company))]
+        public int CompanyId { get; set; }
+
         [Display(Name = "倉庫")]
         [ForeignKey(nameof(Warehouse))]
         public int? WarehouseId { get; set; }
 
         // Navigation Properties
         public Supplier Supplier { get; set; } = null!;
+        public Company Company { get; set; } = null!;
         public Warehouse? Warehouse { get; set; }
         public Employee? ApprovedByUser { get; set; }
         public ICollection<PurchaseOrderDetail> PurchaseOrderDetails { get; set; } = new List<PurchaseOrderDetail>();
