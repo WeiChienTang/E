@@ -101,6 +101,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 
                 // 採購管理權限
                 new Permission { Code = "Purchase.Read", Name = "檢視採購訂單", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視採購訂單與供應商交易" },
+                new Permission { Code = "PurchaseOrder.Approve", Name = "採購訂單審核", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "審核與核准採購訂單權限" },
                 new Permission { Code = "PurchaseReceiving.Read", Name = "檢視採購收貨", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視採購收貨單與驗收記錄" },
                 new Permission { Code = "PurchaseReturn.Read", Name = "檢視採購退貨", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視採購退貨與退回處理" }
             };

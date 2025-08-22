@@ -95,6 +95,28 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             TableOrder = 5,
                             ShowInFilter = false, // 通常不會用金額篩選
                         }
+                    },
+                    {
+                        nameof(PurchaseOrder.IsApproved),
+                        new FieldDefinition<PurchaseOrder>
+                        {
+                            PropertyName = nameof(PurchaseOrder.IsApproved),
+                            DisplayName = "是否核准",
+                            ColumnType = ColumnDataType.Boolean,
+                            TableOrder = 6,
+                            ShowInFilter = false,
+                        }
+                    },
+                    {
+                        nameof(PurchaseOrder.ApprovedBy),
+                        new FieldDefinition<PurchaseOrder>
+                        {
+                            PropertyName = nameof(PurchaseOrder.ApprovedBy),
+                            DisplayName = "審核人",
+                            ColumnType = ColumnDataType.Text,
+                            TableOrder = 7,
+                            ShowInFilter = false,
+                        }
                     }
                 };
             }

@@ -50,6 +50,9 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "核准時間")]
         public DateTime? ApprovedAt { get; set; }
 
+        [Display(Name = "是否核准")]
+        public bool IsApproved { get; set; } = false;
+
         // Foreign Keys
         [Required(ErrorMessage = "供應商為必填")]
         [Display(Name = "供應商")]

@@ -56,7 +56,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                                !p.Code.StartsWith("Role") && 
                                !p.Code.StartsWith("EmployeeEdit_Account_Password") &&
                                !p.Code.StartsWith("Permission") &&
-                               !p.Code.StartsWith("Company"))
+                               !p.Code.StartsWith("Company") &&
+                               !p.Code.StartsWith("PurchaseOrder.Approve"))
                     .ToList();
 
                 rolePermissions.AddRange(officeEmployeePermissions.Select(p => new RolePermission
