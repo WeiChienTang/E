@@ -122,24 +122,23 @@ private async Task LoadCustomerTypesAsync()
 ```
 
 #### ApplyXXXFilters() - 篩選方法 (唯一非 Async)
+
+**方式一：簡化處理（推薦）**
 ```csharp
-private IQueryable<Customer> ApplyCustomerFilters(SearchFilterModel searchModel, IQueryable<Customer> query)
+private IQueryable<Employee> ApplyEmployeeFilters(SearchFilterModel searchModel, IQueryable<Employee> query)
 {
-    try
+    // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
+    if (fieldConfiguration == null)
     {
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyCustomerFilters), GetType());
+        // 如果配置未初始化，回傳基本排序的查詢
+        return query.OrderBy(e => e.Name);
     }
-    catch (Exception ex)
-    {
-        // 記錄錯誤並回傳安全的預設查詢
-        _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyCustomerFilters), GetType(), additionalData: "客戶篩選器應用失敗");
-        _ = NotificationService.ShowErrorAsync("篩選條件應用失敗，已顯示全部資料");
-        
-        // 回傳基本排序的查詢，確保頁面仍能正常運作
-        return query.OrderBy(c => c.Code);
-    }
+
+    return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyEmployeeFilters), GetType());
 }
 ```
+
+**注意**: 由於 `fieldConfiguration.ApplyFilters()` 內部已包含完整的錯誤處理機制，因此**方式一**的簡化處理已足夠。只需要處理配置物件可能為 null 的情況即可。
 
 ### 錯誤處理最佳實踐
 
@@ -305,15 +304,13 @@ public class CustomerFieldConfiguration : BaseFieldConfiguration<Customer>
     // 👇 大幅簡化篩選方法
     private IQueryable<Customer> ApplyCustomerFilters(SearchFilterModel searchModel, IQueryable<Customer> query)
     {
-        try
+        // 確保 fieldConfiguration 已初始化
+        if (fieldConfiguration == null)
         {
-            return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyCustomerFilters), GetType());
-        }
-        catch (Exception ex)
-        {
-            // 錯誤處理
             return query.OrderBy(c => c.Code);
         }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyCustomerFilters), GetType());
     }
 
     // ❌ 刪除這些方法

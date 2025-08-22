@@ -134,6 +134,13 @@
 
     private IQueryable<Supplier> ApplySupplierFilters(SearchFilterModel searchModel, IQueryable<Supplier> query)
     {
+        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
+        if (fieldConfiguration == null)
+        {
+            // 如果配置未初始化，回傳基本排序的查詢
+            return query.OrderBy(s => s.CompanyName);
+        }
+
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySupplierFilters), GetType());
     }
 }

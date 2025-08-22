@@ -175,11 +175,11 @@
     // 篩選方法 - 現在已由 FilterHelper 處理所有錯誤情況
     private IQueryable<Employee> ApplyEmployeeFilters(SearchFilterModel searchModel, IQueryable<Employee> query)
     {
-        // 確保 fieldConfiguration 已初始化
+        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
         if (fieldConfiguration == null)
         {
             // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderBy(p => p.Name);
+            return query.OrderBy(e => e.Name);
         }
 
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyEmployeeFilters), GetType());
