@@ -821,17 +821,54 @@
                 return false;
             }
             
+            // 使用 JavaScript prompt 來取得駁回原因
+            var rejectReason = await JSRuntime.InvokeAsync<string>("prompt", "請輸入駁回原因：", "");
+            
+            if (string.IsNullOrWhiteSpace(rejectReason))
+            {
+                await NotificationService.ShowWarningAsync("駁回原因不能為空");
+                return false;
+            }
+            
             // 確認對話框
             var confirmed = await NotificationService.ShowConfirmAsync(
-                "確定要駁回此採購單嗎？駁回後採購單將退回修改。", 
+                $"確定要駁回此採購單嗎？\n駁回原因：{rejectReason}\n\n駁回後採購單將退回修改。", 
                 "審核確認");
             
             if (!confirmed)
                 return false;
             
-            // TODO: 實作駁回邏輯，可能需要新增駁回服務方法
-            await NotificationService.ShowInfoAsync("駁回功能開發中...");
-            return true;
+            // 取得當前使用者ID
+            var currentUserId = await GetCurrentUserIdAsync();
+            if (!currentUserId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法取得當前使用者資訊");
+                return false;
+            }
+            
+            // 呼叫服務進行駁回
+            var result = await PurchaseOrderService.RejectOrderAsync(PurchaseOrderId.Value, currentUserId.Value, rejectReason);
+            
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("採購單已駁回");
+                // 重新載入資料以更新界面
+                if (editModalComponent != null && editModalComponent.DataLoader != null)
+                {
+                    var reloadedEntity = await editModalComponent.DataLoader();
+                    if (reloadedEntity != null)
+                    {
+                        editModalComponent.Entity = reloadedEntity;
+                        StateHasChanged();
+                    }
+                }
+                return true;
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "駁回失敗");
+                return false;
+            }
         }
         catch (Exception ex)
         {
@@ -857,6 +894,10 @@
             if (purchaseOrder.IsApproved && purchaseOrder.ApprovedAt.HasValue)
             {
                 return $"已於 {purchaseOrder.ApprovedAt.Value:yyyy/MM/dd HH:mm} 審核通過";
+            }
+            else if (!string.IsNullOrWhiteSpace(purchaseOrder.RejectReason))
+            {
+                return $"已駁回 - {purchaseOrder.RejectReason}";
             }
             else
             {
@@ -902,6 +943,13 @@
                 // 假設有審核人員資訊，需要根據實際實體結構調整
                 var approverName = "審核人員"; // 可以從 purchaseOrder.ApprovedByUser?.Name 取得
                 history.Add($"{purchaseOrder.ApprovedAt.Value:yyyy/MM/dd HH:mm} - {approverName} 審核通過");
+            }
+            else if (!string.IsNullOrWhiteSpace(purchaseOrder.RejectReason))
+            {
+                // 駁回記錄 - 使用 UpdatedAt 作為駁回時間
+                var rejectTime = purchaseOrder.UpdatedAt ?? DateTime.Now;
+                var rejectorName = purchaseOrder.UpdatedBy ?? "審核人員";
+                history.Add($"{rejectTime:yyyy/MM/dd HH:mm} - {rejectorName} 駁回採購單：{purchaseOrder.RejectReason}");
             }
             
             return history;

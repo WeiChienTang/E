@@ -53,6 +53,10 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "是否核准")]
         public bool IsApproved { get; set; } = false;
 
+        [MaxLength(100, ErrorMessage = "駁回原因不可超過100個字元")]
+        [Display(Name = "駁回原因")]
+        public string? RejectReason { get; set; }
+
         // Foreign Keys
         [Required(ErrorMessage = "供應商為必填")]
         [Display(Name = "供應商")]

@@ -306,6 +306,59 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<ServiceResult> RejectOrderAsync(int orderId, int rejectedBy, string reason)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var order = await context.PurchaseOrders
+                    .FirstOrDefaultAsync(po => po.Id == orderId && !po.IsDeleted);
+                
+                if (order == null)
+                    return ServiceResult.Failure("找不到採購訂單");
+                
+                if (order.IsApproved)
+                    return ServiceResult.Failure("已審核通過的採購訂單無法駁回");
+                
+                if (order.ReceivedAmount > 0)
+                    return ServiceResult.Failure("已有進貨記錄的訂單無法駁回");
+                
+                // 重置審核狀態
+                order.IsApproved = false;
+                order.ApprovedBy = null;
+                order.ApprovedAt = null;
+                
+                // 設定駁回原因
+                order.RejectReason = reason;
+                
+                order.UpdatedAt = DateTime.Now;
+                // TODO: 根據當前登入使用者設置 UpdatedBy
+                // order.UpdatedBy = currentUser.Name;
+                
+                var saveResult = await context.SaveChangesAsync();
+                
+                if (saveResult > 0)
+                {
+                    return ServiceResult.Success();
+                }
+                else
+                {
+                    return ServiceResult.Failure("駁回訂單失敗：資料庫儲存失敗");
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(RejectOrderAsync), GetType(), _logger, new { 
+                    Method = nameof(RejectOrderAsync),
+                    ServiceType = GetType().Name,
+                    OrderId = orderId,
+                    RejectedBy = rejectedBy,
+                    Reason = reason 
+                });
+                return ServiceResult.Failure("駁回訂單時發生錯誤");
+            }
+        }
+
         public async Task<ServiceResult> CancelOrderAsync(int orderId, string reason)
         {
             try

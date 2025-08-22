@@ -16,6 +16,7 @@ namespace ERPCore2.Services
         // 訂單操作
         Task<ServiceResult> SubmitOrderAsync(int orderId);
         Task<ServiceResult> ApproveOrderAsync(int orderId, int approvedBy);
+        Task<ServiceResult> RejectOrderAsync(int orderId, int rejectedBy, string reason);
         Task<ServiceResult> CancelOrderAsync(int orderId, string reason);
         Task<ServiceResult> CloseOrderAsync(int orderId);
         
