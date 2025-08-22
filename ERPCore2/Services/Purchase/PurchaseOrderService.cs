@@ -549,13 +549,8 @@ namespace ERPCore2.Services
                 
                 try
                 {
-                    // 檢查是否已存在相同商品
-                    var existing = await context.PurchaseOrderDetails
-                        .FirstOrDefaultAsync(pod => pod.PurchaseOrderId == detail.PurchaseOrderId && 
-                                                   pod.ProductId == detail.ProductId && !pod.IsDeleted);
-                    
-                    if (existing != null)
-                        return ServiceResult.Failure("此商品已在訂單中，請更新數量而非重複新增");
+                    // 移除重複商品檢查 - 允許同一商品在同一訂單中出現多次
+                    // 這樣可以支援不同價格、不同備註或不同交期的相同商品採購
                     
                     detail.Status = EntityStatus.Active;
                     detail.CreatedAt = DateTime.Now;
