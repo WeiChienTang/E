@@ -273,13 +273,26 @@ namespace ERPCore2.Services
                 if (order == null)
                     return ServiceResult.Failure("找不到採購訂單");
                 
+                if (order.IsApproved)
+                    return ServiceResult.Failure("採購訂單已經核准，無需重複核准");
+                
                 order.ApprovedBy = approvedBy;
                 order.ApprovedAt = DateTime.Now;
                 order.IsApproved = true;
                 order.UpdatedAt = DateTime.Now;
+                // TODO: 根據當前登入使用者設置 UpdatedBy
+                // order.UpdatedBy = currentUser.Name;
                 
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
+                var saveResult = await context.SaveChangesAsync();
+                
+                if (saveResult > 0)
+                {
+                    return ServiceResult.Success();
+                }
+                else
+                {
+                    return ServiceResult.Failure("核准訂單失敗：資料庫儲存失敗");
+                }
             }
             catch (Exception ex)
             {

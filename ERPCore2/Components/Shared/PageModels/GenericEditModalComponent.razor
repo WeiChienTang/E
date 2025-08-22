@@ -605,6 +605,18 @@
             if (success)
             {
                 await ShowSuccessMessage("審核通過");
+                
+                // 重新載入實體資料以確保狀態同步
+                if (DataLoader != null && Entity != null && Entity.Id > 0)
+                {
+                    var reloadedEntity = await DataLoader();
+                    if (reloadedEntity != null)
+                    {
+                        Entity = reloadedEntity;
+                        editContext = new EditContext(Entity);
+                    }
+                }
+                
                 await LoadApprovalData(); // 重新載入審核狀態
             }
             else
@@ -638,6 +650,18 @@
             if (success)
             {
                 await ShowSuccessMessage("審核駁回");
+                
+                // 重新載入實體資料以確保狀態同步
+                if (DataLoader != null && Entity != null && Entity.Id > 0)
+                {
+                    var reloadedEntity = await DataLoader();
+                    if (reloadedEntity != null)
+                    {
+                        Entity = reloadedEntity;
+                        editContext = new EditContext(Entity);
+                    }
+                }
+                
                 await LoadApprovalData(); // 重新載入審核狀態
             }
             else
