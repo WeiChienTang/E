@@ -6,13 +6,7 @@
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
 
-<style>
-    .supplier-warning:hover {
-        background-color: #f8f9fa;
-        border-radius: 4px;
-        padding: 8px;
-    }
-</style>
+
 
     @if (ProductItems != null && ProductItems.Any())
     {
@@ -41,7 +35,7 @@
                             @if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
                             {
                                 <td class="text-center py-4">
-                                    <div class="supplier-warning" style="cursor: pointer;">
+                                    <div class="supplier-warning">
                                         <i class="fas fa-exclamation-triangle text-warning me-2"></i>
                                         <span class="text-muted">請先選擇供應商...</span>
                                     </div>
