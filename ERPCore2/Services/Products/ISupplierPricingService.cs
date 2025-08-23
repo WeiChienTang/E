@@ -28,11 +28,6 @@ namespace ERPCore2.Services
         Task<List<SupplierPricing>> GetEffectivePricingAsync(int productId, DateTime? asOfDate = null);
 
         /// <summary>
-        /// 根據商品ID取得主要供應商的定價
-        /// </summary>
-        Task<SupplierPricing?> GetPrimarySupplierPricingAsync(int productId, DateTime? asOfDate = null);
-
-        /// <summary>
         /// 檢查供應商商品代碼是否已存在
         /// </summary>
         Task<bool> IsSupplierProductCodeExistsAsync(int supplierId, string supplierProductCode, int? excludeId = null);

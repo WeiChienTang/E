@@ -60,7 +60,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "安全帽",
                     UnitId = unitTop?.Id,
                     ProductCategoryId = industrialCategory?.Id,
-                    PrimarySupplierId = supplier4?.Id,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-23),
                     CreatedBy = "System"
@@ -72,7 +71,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "不鏽鋼板材",
                     UnitId = unitSht?.Id,
                     ProductCategoryId = materialCategory?.Id,
-                    PrimarySupplierId = supplier4?.Id,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-21),
                     CreatedBy = "System"

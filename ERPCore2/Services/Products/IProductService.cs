@@ -25,11 +25,6 @@ namespace ERPCore2.Services
         Task<List<Product>> GetByProductCategoryAsync(int productCategoryId);
         
         /// <summary>
-        /// 根據主要供應商取得商品列表
-        /// </summary>
-        Task<List<Product>> GetByPrimarySupplierAsync(int supplierId);
-        
-        /// <summary>
         /// 根據供應商取得商品列表（包括主要供應商和關聯供應商）
         /// </summary>
         Task<List<Product>> GetBySupplierAsync(int supplierId);
@@ -71,11 +66,6 @@ namespace ERPCore2.Services
         /// 更新商品供應商關聯
         /// </summary>
         Task<ServiceResult> UpdateProductSuppliersAsync(int productId, List<ProductSupplier> productSuppliers);
-        
-        /// <summary>
-        /// 設定主要供應商
-        /// </summary>
-        Task<ServiceResult> SetPrimarySupplierAsync(int productId, int supplierId);
         
         #endregion
 

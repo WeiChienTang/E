@@ -1,0 +1,442 @@
+@page "/purchase/receivings"
+@inject IPurchaseReceivingService PurchaseReceivingService
+@inject IPurchaseOrderService PurchaseOrderService
+@inject ISupplierService SupplierService
+@inject IProductService ProductService
+@inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@rendermode InteractiveServer
+
+<PageTitle>採購進貨維護</PageTitle>
+
+@* 頁面標題 *@
+<GenericHeaderComponent Title="採購進貨維護"
+                       Subtitle="管理採購進貨作業與庫存入庫"
+                       HeadingLevel="h1"
+                       BreadcrumbItems="@breadcrumbItems"
+                       IsLoading="@IsLoading"
+                       LoadingText="載入中..."
+                       ShowDivider="true">
+    <ActionButtons>
+        <button type="button" class="btn btn-primary" @onclick="ShowAddModal" disabled="@IsLoading">
+            <i class="bi bi-plus-circle"></i> 新增進貨單
+        </button>
+        <button type="button" class="btn btn-outline-secondary" @onclick="RefreshData" disabled="@IsLoading">
+            <i class="bi bi-arrow-clockwise"></i> 重新整理
+        </button>
+    </ActionButtons>
+</GenericHeaderComponent>
+
+@* 權限檢查 *@
+<PagePermissionCheck RequiredPermission="PurchaseReceiving.Read">
+
+@* 查詢區域 *@
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-search"></i> 查詢條件
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <label for="searchMode" class="form-label">查詢模式</label>
+                <select id="searchMode" class="form-select" @bind="selectedSearchMode" @bind:after="OnSearchModeChanged">
+                    <option value="All">全部顯示</option>
+                    <option value="PurchaseOrder">採購單號</option>
+                    <option value="Supplier">供應商</option>
+                    <option value="Product">商品</option>
+                </select>
+            </div>
+            
+            @if (selectedSearchMode == "PurchaseOrder")
+            {
+                <div class="col-md-3">
+                    <label for="purchaseOrderSelect" class="form-label">採購單號</label>
+                    <select id="purchaseOrderSelect" class="form-select" @bind="selectedPurchaseOrderId" @bind:after="LoadDataAsync">
+                        <option value="">請選擇採購單</option>
+                        @foreach (var order in purchaseOrders)
+                        {
+                            <option value="@order.Id">@order.PurchaseOrderNumber - @order.Supplier?.CompanyName</option>
+                        }
+                    </select>
+                </div>
+            }
+            else if (selectedSearchMode == "Supplier")
+            {
+                <div class="col-md-3">
+                    <label for="supplierSelect" class="form-label">供應商</label>
+                    <select id="supplierSelect" class="form-select" @bind="selectedSupplierId" @bind:after="LoadDataAsync">
+                        <option value="">請選擇供應商</option>
+                        @foreach (var supplier in suppliers)
+                        {
+                            <option value="@supplier.Id">@supplier.CompanyName</option>
+                        }
+                    </select>
+                </div>
+            }
+            else if (selectedSearchMode == "Product")
+            {
+                <div class="col-md-3">
+                    <label for="productSelect" class="form-label">商品</label>
+                    <select id="productSelect" class="form-select" @bind="selectedProductId" @bind:after="LoadDataAsync">
+                        <option value="">請選擇商品</option>
+                        @foreach (var product in products)
+                        {
+                            <option value="@product.Id">@product.Code - @product.Name</option>
+                        }
+                    </select>
+                </div>
+            }
+            
+            <div class="col-md-3">
+                <label for="statusFilter" class="form-label">進貨狀態</label>
+                <select id="statusFilter" class="form-select" @bind="selectedStatus" @bind:after="LoadDataAsync">
+                    <option value="">全部狀態</option>
+                    <option value="Draft">草稿</option>
+                    <option value="Confirmed">已確認</option>
+                    <option value="Received">已收貨</option>
+                    <option value="Cancelled">已取消</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-secondary" @onclick="ClearFilters">
+                    <i class="bi bi-x-circle"></i> 清除條件
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* 進貨單列表 *@
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-list-ul"></i> 進貨單列表 
+            <span class="badge bg-secondary">@purchaseReceivings.Count</span>
+        </h5>
+    </div>
+    <div class="card-body">
+        @if (IsLoading)
+        {
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">載入中...</span>
+                </div>
+                <p class="mt-2">載入資料中...</p>
+            </div>
+        }
+        else if (!purchaseReceivings.Any())
+        {
+            <div class="text-center py-4">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+                <p class="mt-2 text-muted">沒有找到符合條件的進貨單</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>進貨單號</th>
+                            <th>進貨日期</th>
+                            <th>採購單號</th>
+                            <th>供應商</th>
+                            <th>進貨狀態</th>
+                            <th>進貨總金額</th>
+                            <th>確認人員</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var receiving in purchaseReceivings)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@receiving.ReceiptNumber</strong>
+                                </td>
+                                <td>@receiving.ReceiptDate.ToString("yyyy-MM-dd")</td>
+                                <td>
+                                    <span class="badge bg-info">@receiving.PurchaseOrder?.PurchaseOrderNumber</span>
+                                </td>
+                                <td>@receiving.PurchaseOrder?.Supplier?.CompanyName</td>
+                                <td>
+                                    @{
+                                        var statusClass = receiving.ReceiptStatus switch
+                                        {
+                                            PurchaseReceivingStatus.Draft => "bg-secondary",
+                                            PurchaseReceivingStatus.Confirmed => "bg-warning",
+                                            PurchaseReceivingStatus.Received => "bg-success",
+                                            PurchaseReceivingStatus.Cancelled => "bg-danger",
+                                            _ => "bg-secondary"
+                                        };
+                                        var statusText = receiving.ReceiptStatus switch
+                                        {
+                                            PurchaseReceivingStatus.Draft => "草稿",
+                                            PurchaseReceivingStatus.Confirmed => "已確認",
+                                            PurchaseReceivingStatus.Received => "已收貨",
+                                            PurchaseReceivingStatus.Cancelled => "已取消",
+                                            _ => "未知"
+                                        };
+                                    }
+                                    <span class="badge @statusClass">@statusText</span>
+                                </td>
+                                <td class="text-end">
+                                    <strong>@receiving.TotalAmount.ToString("N0")</strong>
+                                </td>
+                                <td>@receiving.ConfirmedByUser?.Name</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-primary" @onclick="() => EditReceiving(receiving.Id)" title="編輯">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        @if (receiving.ReceiptStatus == PurchaseReceivingStatus.Draft)
+                                        {
+                                            <button type="button" class="btn btn-outline-success" @onclick="() => ConfirmReceiving(receiving.Id)" title="確認">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                        }
+                                        @if (receiving.ReceiptStatus != PurchaseReceivingStatus.Received && receiving.ReceiptStatus != PurchaseReceivingStatus.Cancelled)
+                                        {
+                                            <button type="button" class="btn btn-outline-danger" @onclick="() => CancelReceiving(receiving.Id)" title="取消">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        }
+                                        <button type="button" class="btn btn-outline-info" @onclick="() => ViewDetails(receiving.Id)" title="檢視明細">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+</PagePermissionCheck>
+
+@code {
+    // 狀態變數
+    private bool IsLoading = true;
+    private List<PurchaseReceiving> purchaseReceivings = new();
+    private List<PurchaseOrder> purchaseOrders = new();
+    private List<Supplier> suppliers = new();
+    private List<Product> products = new();
+    
+    // 查詢條件
+    private string selectedSearchMode = "All";
+    private int? selectedPurchaseOrderId = null;
+    private int? selectedSupplierId = null;
+    private int? selectedProductId = null;
+    private string selectedStatus = "";
+    
+    // 麵包屑導航
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
+    {
+        new() { Text = "首頁", Href = "/" },
+        new() { Text = "採購管理", Href = "/purchase" },
+        new() { Text = "進貨維護" } // 沒有 Href 自動為 IsActive = true
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInitialDataAsync();
+        await LoadDataAsync();
+        IsLoading = false;
+    }
+
+    private async Task LoadInitialDataAsync()
+    {
+        try
+        {
+            // 載入採購單（已核准的）
+            var allOrders = await PurchaseOrderService.GetAllAsync();
+            purchaseOrders = allOrders.Where(o => o.IsApproved).ToList();
+            
+            // 載入供應商
+            suppliers = await SupplierService.GetAllAsync();
+            
+            // 載入商品
+            products = await ProductService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入基礎資料失敗：{ex.Message}");
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            StateHasChanged();
+
+            purchaseReceivings = selectedSearchMode switch
+            {
+                "PurchaseOrder" when selectedPurchaseOrderId.HasValue => 
+                    await PurchaseReceivingService.GetByPurchaseOrderAsync(selectedPurchaseOrderId.Value),
+                "Supplier" when selectedSupplierId.HasValue => 
+                    await GetBySupplierAsync(selectedSupplierId.Value),
+                "Product" when selectedProductId.HasValue => 
+                    await GetByProductAsync(selectedProductId.Value),
+                _ => await PurchaseReceivingService.GetAllAsync()
+            };
+
+            // 狀態過濾
+            if (!string.IsNullOrEmpty(selectedStatus) && Enum.TryParse<PurchaseReceivingStatus>(selectedStatus, out var status))
+            {
+                purchaseReceivings = purchaseReceivings.Where(r => r.ReceiptStatus == status).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入資料失敗：{ex.Message}");
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<List<PurchaseReceiving>> GetBySupplierAsync(int supplierId)
+    {
+        var allReceivings = await PurchaseReceivingService.GetAllAsync();
+        return allReceivings.Where(r => r.PurchaseOrder?.SupplierId == supplierId).ToList();
+    }
+
+    private async Task<List<PurchaseReceiving>> GetByProductAsync(int productId)
+    {
+        var allReceivings = await PurchaseReceivingService.GetAllAsync();
+        return allReceivings.Where(r => 
+            r.PurchaseReceivingDetails.Any(d => d.ProductId == productId)
+        ).ToList();
+    }
+
+    private async Task OnSearchModeChanged()
+    {
+        // 清除相關的選擇
+        selectedPurchaseOrderId = null;
+        selectedSupplierId = null;
+        selectedProductId = null;
+        
+        await LoadDataAsync();
+    }
+
+    private async Task ClearFilters()
+    {
+        selectedSearchMode = "All";
+        selectedPurchaseOrderId = null;
+        selectedSupplierId = null;
+        selectedProductId = null;
+        selectedStatus = "";
+        
+        await LoadDataAsync();
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadInitialDataAsync();
+        await LoadDataAsync();
+    }
+
+    private void ShowAddModal()
+    {
+        // TODO: 實作新增進貨單 Modal
+        NotificationService.ShowInfoAsync("新增進貨單功能開發中...");
+    }
+
+    private void EditReceiving(int id)
+    {
+        // TODO: 實作編輯進貨單功能
+        NotificationService.ShowInfoAsync($"編輯進貨單 ID: {id} 功能開發中...");
+    }
+
+    private async Task ConfirmReceiving(int id)
+    {
+        try
+        {
+            var currentUserId = await GetCurrentUserIdAsync();
+            if (!currentUserId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法獲取當前使用者資訊");
+                return;
+            }
+
+            var result = await PurchaseReceivingService.ConfirmReceiptAsync(id, currentUserId.Value);
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("進貨單確認成功");
+                await LoadDataAsync();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"確認失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"確認進貨單失敗：{ex.Message}");
+        }
+    }
+
+    private async Task CancelReceiving(int id)
+    {
+        try
+        {
+            var result = await PurchaseReceivingService.CancelReceiptAsync(id);
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("進貨單已取消");
+                await LoadDataAsync();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"取消失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"取消進貨單失敗：{ex.Message}");
+        }
+    }
+
+    private void ViewDetails(int id)
+    {
+        // TODO: 實作檢視明細功能
+        NotificationService.ShowInfoAsync($"檢視明細 ID: {id} 功能開發中...");
+    }
+
+    /// <summary>
+    /// 取得當前使用者ID
+    /// </summary>
+    private async Task<int?> GetCurrentUserIdAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (!user.Identity?.IsAuthenticated ?? true)
+                return null;
+
+            // 從Claims中取得使用者ID (通常存在NameIdentifier中)
+            var employeeIdClaim = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(employeeIdClaim, out int employeeId))
+                return employeeId;
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"取得當前使用者ID失敗：{ex.Message}");
+            return null;
+        }
+    }
+}

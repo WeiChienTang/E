@@ -30,15 +30,10 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(ProductCategory))]
         public int? ProductCategoryId { get; set; }
         
-        [Display(Name = "主要供應商")]
-        [ForeignKey(nameof(PrimarySupplier))]
-        public int? PrimarySupplierId { get; set; }
-        
         // Navigation Properties
         public Unit? Unit { get; set; }
         public Size? Size { get; set; }
         public ProductCategory? ProductCategory { get; set; }
-        public Supplier? PrimarySupplier { get; set; }
         public ICollection<ProductSupplier> ProductSuppliers { get; set; } = new List<ProductSupplier>();
         public ICollection<InventoryStock> InventoryStocks { get; set; } = new List<InventoryStock>();
     }

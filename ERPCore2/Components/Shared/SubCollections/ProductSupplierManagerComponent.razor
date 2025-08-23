@@ -52,6 +52,18 @@
                                 }
                             </tr>
                         }
+                        @* 新增按鈕行 *@
+                        @if (!IsReadOnly)
+                        {
+                            <tr>
+                                <td colspan="@(IsReadOnly ? 6 : 7)" class="text-center py-3 border-top">
+                                    <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" 
+                                                           Text="@($"新增{ItemDisplayName}")" 
+                                                           IconClass="bi-plus me-1" 
+                                                           OnClick="ShowAddModal" />
+                                </td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>

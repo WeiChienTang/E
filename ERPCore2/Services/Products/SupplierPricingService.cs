@@ -215,8 +215,7 @@ namespace ERPCore2.Services
                     .Include(sp => sp.Product)
                     .Include(sp => sp.Supplier)
                     .Where(sp => sp.ProductId == productId && !sp.IsDeleted)
-                    .OrderBy(sp => sp.Product.PrimarySupplierId == sp.SupplierId ? 0 : 1)
-                    .ThenByDescending(sp => sp.EffectiveDate)
+                    .OrderByDescending(sp => sp.EffectiveDate)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -300,8 +299,7 @@ namespace ERPCore2.Services
                                 !sp.IsDeleted &&
                                 sp.EffectiveDate <= checkDate &&
                                 (sp.ExpiryDate == null || sp.ExpiryDate > checkDate))
-                    .OrderBy(sp => sp.Product.PrimarySupplierId == sp.SupplierId ? 0 : 1)
-                    .ThenBy(sp => sp.PurchasePrice)
+                    .OrderBy(sp => sp.PurchasePrice)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -313,39 +311,6 @@ namespace ERPCore2.Services
                     AsOfDate = asOfDate 
                 });
                 return new List<SupplierPricing>();
-            }
-        }
-
-        /// <summary>
-        /// 根據商品ID取得主要供應商的定價
-        /// </summary>
-        public async Task<SupplierPricing?> GetPrimarySupplierPricingAsync(int productId, DateTime? asOfDate = null)
-        {
-            try
-            {
-                var checkDate = asOfDate ?? DateTime.Today;
-                
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.SupplierPricings
-                    .Include(sp => sp.Product)
-                    .Include(sp => sp.Supplier)
-                    .Where(sp => sp.ProductId == productId && 
-                                sp.Product.PrimarySupplierId == sp.SupplierId &&
-                                !sp.IsDeleted &&
-                                sp.EffectiveDate <= checkDate &&
-                                (sp.ExpiryDate == null || sp.ExpiryDate > checkDate))
-                    .OrderByDescending(sp => sp.EffectiveDate)
-                    .FirstOrDefaultAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPrimarySupplierPricingAsync), GetType(), _logger, new { 
-                    Method = nameof(GetPrimarySupplierPricingAsync),
-                    ServiceType = GetType().Name,
-                    ProductId = productId,
-                    AsOfDate = asOfDate 
-                });
-                return null;
             }
         }
 

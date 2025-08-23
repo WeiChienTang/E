@@ -38,7 +38,6 @@ namespace ERPCore2.Services
             {
                 return await context.Products
                     .Include(p => p.ProductCategory)
-                    .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
                     .Where(p => !p.IsDeleted)
@@ -60,7 +59,6 @@ namespace ERPCore2.Services
             {
                 return await context.Products
                     .Include(p => p.ProductCategory)
-                    .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
                     .Include(p => p.ProductSuppliers)
@@ -87,7 +85,6 @@ namespace ERPCore2.Services
 
                 return await context.Products
                     .Include(p => p.ProductCategory)
-                    .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
                     .Where(p => !p.IsDeleted &&
@@ -129,12 +126,6 @@ namespace ERPCore2.Services
                     errors.Add("商品名稱為必填欄位");
                 }
 
-                // 驗證供應商為必填
-                if (!entity.PrimarySupplierId.HasValue || entity.PrimarySupplierId.Value <= 0)
-                {
-                    errors.Add("供應商為必填欄位");
-                }
-
                 return errors.Any() 
                     ? ServiceResult.Failure(string.Join("; ", errors))
                     : ServiceResult.Success();
@@ -158,7 +149,6 @@ namespace ERPCore2.Services
             {
                 return await context.Products
                     .Include(p => p.ProductCategory)
-                    .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
                     .FirstOrDefaultAsync(p => p.Code == productCode && !p.IsDeleted);
@@ -198,7 +188,6 @@ namespace ERPCore2.Services
             {
                 return await context.Products
                     .Include(p => p.ProductCategory)
-                    .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
                     .Where(p => p.ProductCategoryId == productCategoryId && !p.IsDeleted)
@@ -212,28 +201,6 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<Product>> GetByPrimarySupplierAsync(int supplierId)
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
-
-            try
-            {
-                return await context.Products
-                    .Include(p => p.ProductCategory)
-                    .Include(p => p.PrimarySupplier)
-                    .Include(p => p.Unit)
-                    .Include(p => p.Size)
-                    .Where(p => p.PrimarySupplierId == supplierId && !p.IsDeleted)
-                    .OrderBy(p => p.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByPrimarySupplierAsync), GetType(), _logger, new { SupplierId = supplierId });
-                throw;
-            }
-        }
-
         public async Task<List<Product>> GetBySupplierAsync(int supplierId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
@@ -242,11 +209,9 @@ namespace ERPCore2.Services
             {
                 return await context.Products
                     .Include(p => p.ProductCategory)
-                    .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
-                    .Where(p => (p.PrimarySupplierId == supplierId || 
-                                p.ProductSuppliers.Any(ps => ps.SupplierId == supplierId && ps.Status == EntityStatus.Active)) 
+                    .Where(p => p.ProductSuppliers.Any(ps => ps.SupplierId == supplierId && ps.Status == EntityStatus.Active) 
                                 && !p.IsDeleted)
                     .OrderBy(p => p.Name)
                     .ToListAsync();
@@ -266,7 +231,6 @@ namespace ERPCore2.Services
             {
                 return await context.Products
                     .Include(p => p.ProductCategory)
-                    .Include(p => p.PrimarySupplier)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
                     .Where(p => p.Status == EntityStatus.Active && !p.IsDeleted)
@@ -433,30 +397,6 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<ServiceResult> SetPrimarySupplierAsync(int productId, int supplierId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var product = await GetByIdAsync(productId);
-                if (product == null)
-                {
-                    return ServiceResult.Failure("找不到指定的商品");
-                }
-
-                product.PrimarySupplierId = supplierId;
-                product.UpdatedAt = DateTime.UtcNow;
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetPrimarySupplierAsync), GetType(), _logger, new { ProductId = productId, SupplierId = supplierId });
-                return ServiceResult.Failure($"設定主要供應商時發生錯誤: {ex.Message}");
-            }
-        }
-
         #endregion
 
         #region 輔助方法
@@ -470,7 +410,6 @@ namespace ERPCore2.Services
                 product.UnitId = null;
                 product.SizeId = null;
                 product.ProductCategoryId = null;
-                product.PrimarySupplierId = null;
                 product.Status = EntityStatus.Active;
             }
             catch (Exception ex)

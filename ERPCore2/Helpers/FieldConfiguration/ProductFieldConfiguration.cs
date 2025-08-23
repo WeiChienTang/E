@@ -119,25 +119,6 @@ namespace ERPCore2.Helpers
                                 model, query, nameof(Product.UnitId), p => p.UnitId)
                         }
                     },
-                    {
-                        nameof(Product.PrimarySupplierId),
-                        new FieldDefinition<Product>
-                        {
-                            PropertyName = "PrimarySupplier.CompanyName", // 表格顯示用
-                            FilterPropertyName = nameof(Product.PrimarySupplierId), // 篩選器用
-                            DisplayName = "主要供應商",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 6,
-                            FilterOrder = 6,
-                            Options = _suppliers.Select(s => new SelectOption 
-                            { 
-                                Text = s.CompanyName, 
-                                Value = s.Id.ToString() 
-                            }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(Product.PrimarySupplierId), p => p.PrimarySupplierId)
-                        }
-                    },
 
                 };
             }

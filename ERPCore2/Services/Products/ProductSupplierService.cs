@@ -176,32 +176,6 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<ProductSupplier?> GetPrimarySupplierAsync(int productId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                
-                // 先取得商品的主要供應商ID
-                var product = await context.Products
-                    .FirstOrDefaultAsync(p => p.Id == productId && !p.IsDeleted);
-                
-                if (product?.PrimarySupplierId == null)
-                    return null;
-                
-                return await context.ProductSuppliers
-                    .Include(ps => ps.Supplier)
-                    .FirstOrDefaultAsync(ps => ps.ProductId == productId && 
-                                              ps.SupplierId == product.PrimarySupplierId && 
-                                              !ps.IsDeleted);
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPrimarySupplierAsync), GetType(), _logger);
-                throw;
-            }
-        }
-
         public async Task<ProductSupplier?> GetByProductAndSupplierAsync(int productId, int supplierId)
         {
             try
@@ -221,57 +195,9 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<ProductSupplier>> GetPrimarySuppliersAsync()
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductSuppliers
-                    .Include(ps => ps.Product)
-                    .Include(ps => ps.Supplier)
-                    .Where(ps => ps.Product.PrimarySupplierId == ps.SupplierId && !ps.IsDeleted)
-                    .OrderBy(ps => ps.Product.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPrimarySuppliersAsync), GetType(), _logger);
-                throw;
-            }
-        }
-
         #endregion
 
         #region 業務邏輯操作
-
-        public async Task<ServiceResult> SetPrimarySupplierAsync(int productSupplierId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var productSupplier = await GetByIdAsync(productSupplierId);
-                if (productSupplier == null)
-                {
-                    return ServiceResult.Failure("找不到指定的商品供應商關聯");
-                }
-
-                // 更新商品的主要供應商ID
-                var product = await context.Products.FindAsync(productSupplier.ProductId);
-                if (product != null)
-                {
-                    product.PrimarySupplierId = productSupplier.SupplierId;
-                    product.UpdatedAt = DateTime.UtcNow;
-                }
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetPrimarySupplierAsync), GetType(), _logger);
-                return ServiceResult.Failure($"設定主要供應商時發生錯誤: {ex.Message}");
-            }
-        }
 
         public async Task<ServiceResult> BatchSetProductSuppliersAsync(int productId, List<int> supplierIds)
         {

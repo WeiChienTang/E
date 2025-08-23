@@ -459,8 +459,7 @@
                                            SetParentId="@SetParentIdDelegate"
                                            ItemsChanged="@OnProductSuppliersChanged"
                                            ItemAdded="@OnProductSupplierAdded"
-                                           ItemRemoved="@OnProductSupplierRemoved"
-                                           PrimaryChanged="@OnPrimarySupplierChanged" />
+                                           ItemRemoved="@OnProductSupplierRemoved" />
         </div>;
     }
 
@@ -535,28 +534,6 @@
         catch (Exception)
         {
             _ = NotificationService.ShowErrorAsync("移除供應商時發生錯誤");
-            return Task.CompletedTask;
-        }
-    }
-
-    /// <summary>
-    /// 處理主要供應商變更事件
-    /// </summary>
-    private Task OnPrimarySupplierChanged(ProductSupplier primarySupplier)
-    {
-        try
-        {
-            // 可以在這裡添加額外的邏輯，例如更新產品的主要供應商ID
-            if (editModalComponent?.Entity != null)
-            {
-                editModalComponent.Entity.PrimarySupplierId = primarySupplier.SupplierId;
-            }
-            StateHasChanged();
-            return Task.CompletedTask;
-        }
-        catch (Exception)
-        {
-            _ = NotificationService.ShowErrorAsync("設定主要供應商時發生錯誤");
             return Task.CompletedTask;
         }
     }

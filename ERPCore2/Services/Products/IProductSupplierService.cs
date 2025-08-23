@@ -20,28 +20,13 @@ namespace ERPCore2.Services
         Task<List<ProductSupplier>> GetBySupplierId(int supplierId);
         
         /// <summary>
-        /// 取得商品的主要供應商關聯
-        /// </summary>
-        Task<ProductSupplier?> GetPrimarySupplierAsync(int productId);
-        
-        /// <summary>
         /// 取得指定商品和供應商的關聯
         /// </summary>
         Task<ProductSupplier?> GetByProductAndSupplierAsync(int productId, int supplierId);
         
-        /// <summary>
-        /// 取得所有主要供應商關聯
-        /// </summary>
-        Task<List<ProductSupplier>> GetPrimarySuppliersAsync();
-        
         #endregion
 
         #region 業務邏輯操作
-        
-        /// <summary>
-        /// 設定主要供應商
-        /// </summary>
-        Task<ServiceResult> SetPrimarySupplierAsync(int productSupplierId);
         
         /// <summary>
         /// 批次設定商品的供應商

@@ -401,7 +401,6 @@
         
         // 根據供應商過濾商品
         return Products.Where(p => 
-            p.PrimarySupplierId == SelectedSupplierId.Value ||
             p.ProductSuppliers?.Any(ps => ps.SupplierId == SelectedSupplierId.Value && ps.Status == EntityStatus.Active) == true)
             .ToList();
     }
