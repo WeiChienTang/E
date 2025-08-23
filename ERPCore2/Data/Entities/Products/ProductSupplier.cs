@@ -35,10 +35,12 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "最小訂購量")]
         public int? MinOrderQuantity { get; set; }
         
-        [Display(Name = "是否為主要供應商")]
-        public bool IsPrimarySupplier { get; set; } = false;
+        [Display(Name = "訂購單位")]
+        [ForeignKey(nameof(Unit))]
+        public int? UnitId { get; set; }
         
         // Navigation Properties
+        public Unit? Unit { get; set; }
         public Product Product { get; set; } = null!;
         public Supplier Supplier { get; set; } = null!;
     }

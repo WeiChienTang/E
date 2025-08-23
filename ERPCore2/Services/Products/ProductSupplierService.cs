@@ -181,9 +181,19 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 先取得商品的主要供應商ID
+                var product = await context.Products
+                    .FirstOrDefaultAsync(p => p.Id == productId && !p.IsDeleted);
+                
+                if (product?.PrimarySupplierId == null)
+                    return null;
+                
                 return await context.ProductSuppliers
                     .Include(ps => ps.Supplier)
-                    .FirstOrDefaultAsync(ps => ps.ProductId == productId && ps.IsPrimarySupplier && !ps.IsDeleted);
+                    .FirstOrDefaultAsync(ps => ps.ProductId == productId && 
+                                              ps.SupplierId == product.PrimarySupplierId && 
+                                              !ps.IsDeleted);
             }
             catch (Exception ex)
             {
@@ -219,7 +229,7 @@ namespace ERPCore2.Services
                 return await context.ProductSuppliers
                     .Include(ps => ps.Product)
                     .Include(ps => ps.Supplier)
-                    .Where(ps => ps.IsPrimarySupplier && !ps.IsDeleted)
+                    .Where(ps => ps.Product.PrimarySupplierId == ps.SupplierId && !ps.IsDeleted)
                     .OrderBy(ps => ps.Product.Name)
                     .ToListAsync();
             }
@@ -245,25 +255,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("找不到指定的商品供應商關聯");
                 }
 
-                // 將同一商品的其他供應商設為非主要
-                var otherSuppliers = await context.ProductSuppliers
-                    .Where(ps => ps.ProductId == productSupplier.ProductId && 
-                                ps.Id != productSupplierId && 
-                                ps.IsPrimarySupplier && 
-                                !ps.IsDeleted)
-                    .ToListAsync();
-
-                foreach (var otherSupplier in otherSuppliers)
-                {
-                    otherSupplier.IsPrimarySupplier = false;
-                    otherSupplier.UpdatedAt = DateTime.UtcNow;
-                }
-
-                // 設定指定供應商為主要
-                productSupplier.IsPrimarySupplier = true;
-                productSupplier.UpdatedAt = DateTime.UtcNow;
-
-                // 同時更新商品的主要供應商ID
+                // 更新商品的主要供應商ID
                 var product = await context.Products.FindAsync(productSupplier.ProductId);
                 if (product != null)
                 {
@@ -312,7 +304,6 @@ namespace ERPCore2.Services
                     {
                         ProductId = productId,
                         SupplierId = supplierId,
-                        IsPrimarySupplier = false,
                         Status = EntityStatus.Active,
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
@@ -361,7 +352,6 @@ namespace ERPCore2.Services
                     {
                         ProductId = productId,
                         SupplierId = supplierId,
-                        IsPrimarySupplier = false,
                         Status = EntityStatus.Active,
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow

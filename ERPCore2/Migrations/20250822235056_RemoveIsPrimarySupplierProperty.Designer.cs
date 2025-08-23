@@ -4,6 +4,7 @@ using ERPCore2.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250822235056_RemoveIsPrimarySupplierProperty")]
+    partial class RemoveIsPrimarySupplierProperty
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1630,9 +1633,6 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int?>("UnitId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -1645,8 +1645,6 @@ namespace ERPCore2.Migrations
                     b.HasIndex("ProductId");
 
                     b.HasIndex("SupplierId");
-
-                    b.HasIndex("UnitId");
 
                     b.ToTable("ProductSuppliers");
                 });
@@ -3879,16 +3877,9 @@ namespace ERPCore2.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ERPCore2.Data.Entities.Unit", "Unit")
-                        .WithMany()
-                        .HasForeignKey("UnitId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("Product");
 
                     b.Navigation("Supplier");
-
-                    b.Navigation("Unit");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseOrder", b =>

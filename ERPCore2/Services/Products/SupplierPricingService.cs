@@ -215,7 +215,7 @@ namespace ERPCore2.Services
                     .Include(sp => sp.Product)
                     .Include(sp => sp.Supplier)
                     .Where(sp => sp.ProductId == productId && !sp.IsDeleted)
-                    .OrderBy(sp => sp.IsPrimarySupplier ? 0 : 1)
+                    .OrderBy(sp => sp.Product.PrimarySupplierId == sp.SupplierId ? 0 : 1)
                     .ThenByDescending(sp => sp.EffectiveDate)
                     .ToListAsync();
             }
@@ -300,7 +300,7 @@ namespace ERPCore2.Services
                                 !sp.IsDeleted &&
                                 sp.EffectiveDate <= checkDate &&
                                 (sp.ExpiryDate == null || sp.ExpiryDate > checkDate))
-                    .OrderBy(sp => sp.IsPrimarySupplier ? 0 : 1)
+                    .OrderBy(sp => sp.Product.PrimarySupplierId == sp.SupplierId ? 0 : 1)
                     .ThenBy(sp => sp.PurchasePrice)
                     .ToListAsync();
             }
@@ -330,7 +330,7 @@ namespace ERPCore2.Services
                     .Include(sp => sp.Product)
                     .Include(sp => sp.Supplier)
                     .Where(sp => sp.ProductId == productId && 
-                                sp.IsPrimarySupplier &&
+                                sp.Product.PrimarySupplierId == sp.SupplierId &&
                                 !sp.IsDeleted &&
                                 sp.EffectiveDate <= checkDate &&
                                 (sp.ExpiryDate == null || sp.ExpiryDate > checkDate))

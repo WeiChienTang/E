@@ -206,6 +206,10 @@ namespace ERPCore2.Data.Context
                         entity.HasOne(ps => ps.Supplier)
                         .WithMany(s => s.ProductSuppliers)
                         .OnDelete(DeleteBehavior.Cascade);
+
+                        entity.HasOne(ps => ps.Unit)
+                        .WithMany()
+                        .OnDelete(DeleteBehavior.SetNull);
                   });
                   
                   // 共用參考資料

@@ -1,0 +1,458 @@
+@* 產品供應商管理組件 - 管理產品的多個供應商資訊 *@
+@inject INotificationService NotificationService
+@typeparam TProductSupplierEntity where TProductSupplierEntity : BaseEntity, new()
+@typeparam TProductEntity where TProductEntity : BaseEntity
+@typeparam TSupplierEntity where TSupplierEntity : BaseEntity
+
+<div class="card border-0 shadow-sm">    
+    <div class="card-body p-0">
+        @if (Items.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>供應商</th>
+                            <th>供應商商品代碼</th>
+                            <th>報價</th>
+                            <th>交期</th>
+                            <th>最小訂購量</th>
+                            <th>單位</th>
+                            @if (!IsReadOnly)
+                            {
+                                <th width="120">操作</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int index = 0; index < Items.Count; index++)
+                        {
+                            var item = Items[index];
+                            var currentIndex = index; // 避免閉包問題
+                            <tr @onclick="() => { if (!IsReadOnly) ShowEditModal(currentIndex); }" 
+                                style="@(IsReadOnly ? "cursor: default;" : "cursor: pointer;")" 
+                                title="@(IsReadOnly ? "" : "點擊編輯")">
+                                <td>
+                                    <span>@GetSupplierDisplayText(item)</span>
+                                </td>
+                                <td>@(GetSupplierProductCode(item) ?? "-")</td>
+                                <td>@(GetSupplierPrice(item)?.ToString("N2") ?? "-")</td>
+                                <td>@(GetLeadTime(item)?.ToString() ?? "-") 天</td>
+                                <td>@(GetMinOrderQuantity(item)?.ToString() ?? "-")</td>
+                                <td>@(GetUnitDisplayText(item))</td>
+                                @if (!IsReadOnly)
+                                {
+                                    <td @onclick:stopPropagation="true">
+                                        <div class="btn-group btn-group-sm">
+                                            <GenericButtonComponent Variant="ButtonVariant.OutlineDanger" Size="ButtonSize.Small"
+                                                                   IconClass="bi bi-trash" OnClick="() => RemoveItemAsync(currentIndex)" 
+                                                                   Title="移除" />
+                                        </div>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                @if (!IsReadOnly)
+                {
+                    <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" Size="ButtonSize.Small"
+                                           Text="新增第一個供應商" IconClass="bi-plus me-1" 
+                                           OnClick="ShowAddModal" CssClass="mt-2" />
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@* 新增/編輯供應商 Modal *@
+@if (showAddModal || showEditModal)
+{
+    <div class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(showEditModal ? "編輯" : "新增")供應商資訊</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">供應商 <span class="text-danger">*</span></label>
+                            @if (Options.Any())
+                            {
+                                <select class="form-select" @bind="currentSupplierId">
+                                    <option value="">請選擇供應商</option>
+                                    @foreach (var option in Options)
+                                    {
+                                        <option value="@GetOptionId(option)">@GetOptionDisplayText(option)</option>
+                                    }
+                                </select>
+                            }
+                            else
+                            {
+                                <div class="form-control bg-light text-muted">
+                                    沒有資料，請新增供應商
+                                </div>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">供應商商品代碼</label>
+                            <input type="text" class="form-control" @bind="currentSupplierProductCode" 
+                                   placeholder="請輸入供應商的商品代碼" maxlength="50">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">報價</label>
+                            <input type="number" class="form-control" @bind="currentSupplierPrice" 
+                                   placeholder="請輸入報價" step="0.01" min="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">交期天數</label>
+                            <input type="number" class="form-control" @bind="currentLeadTime" 
+                                   placeholder="請輸入交期天數" min="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">最小訂購量</label>
+                            <input type="number" class="form-control" @bind="currentMinOrderQuantity" 
+                                   placeholder="請輸入最小訂購量" min="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">訂購單位</label>
+                            @if (UnitOptions.Any())
+                            {
+                                <select class="form-select" @bind="currentUnitId">
+                                    <option value="">請選擇單位</option>
+                                    @foreach (var unit in UnitOptions)
+                                    {
+                                        <option value="@GetUnitOptionId(unit)">@GetUnitOptionDisplayText(unit)</option>
+                                    }
+                                </select>
+                            }
+                            else
+                            {
+                                <div class="form-control bg-light text-muted">
+                                    沒有單位資料
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                @* 元數據區段 - 顯示審計資訊 *@
+                @if (showEditModal && editingIndex >= 0 && editingIndex < Items.Count && Items[editingIndex].Id > 0)
+                {
+                    var editingItem = Items[editingIndex];
+                    <div class="modal-metadata border-top bg-light px-3 py-2">
+                        <div class="text-muted small d-flex flex-wrap gap-3">
+                            <span><strong>建立時間：</strong>@editingItem.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")</span>
+                            <span><strong>創建者：</strong>@(editingItem.CreatedBy ?? "系統")</span>
+                            @if (editingItem.UpdatedAt.HasValue)
+                            {
+                                <span><strong>最後更新時間：</strong>@editingItem.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</span>
+                                <span><strong>最後修改者：</strong>@(editingItem.UpdatedBy ?? "系統")</span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="modal-footer">
+                    <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="取消" OnClick="CloseModal" />
+                    <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@(showEditModal ? "更新" : "新增")" 
+                                           OnClick="@(showEditModal ? () => UpdateItemAsync() : () => AddItemAsync())" 
+                                           IsDisabled="@(!Options.Any())" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    // ===== 基本參數 =====
+    [Parameter] public List<TProductSupplierEntity> Items { get; set; } = new();
+    [Parameter] public List<TSupplierEntity> Options { get; set; } = new(); // 供應商選項
+    [Parameter] public List<Unit> UnitOptions { get; set; } = new(); // 單位選項
+    [Parameter] public int ParentEntityId { get; set; }
+    [Parameter] public bool IsReadOnly { get; set; } = false;
+    
+    // ===== 顯示設定 =====
+    [Parameter] public string Title { get; set; } = "供應商資訊";
+    [Parameter] public string Subtitle { get; set; } = "";
+    [Parameter] public string Icon { get; set; } = "building";
+    [Parameter] public string ItemDisplayName { get; set; } = "供應商";
+    [Parameter] public string EmptyIcon { get; set; } = "building-x";
+    [Parameter] public string EmptyMessage { get; set; } = "尚未新增供應商";
+    
+    // ===== 委派參數 - Getter =====
+    [Parameter] public Func<TProductSupplierEntity, int?> GetSupplierId { get; set; } = item => null;
+    [Parameter] public Func<TProductSupplierEntity, string?> GetSupplierProductCode { get; set; } = item => null;
+    [Parameter] public Func<TProductSupplierEntity, decimal?> GetSupplierPrice { get; set; } = item => null;
+    [Parameter] public Func<TProductSupplierEntity, int?> GetLeadTime { get; set; } = item => null;
+    [Parameter] public Func<TProductSupplierEntity, int?> GetMinOrderQuantity { get; set; } = item => null;
+    [Parameter] public Func<TProductSupplierEntity, int?> GetUnitId { get; set; } = item => null;
+    [Parameter] public Func<TSupplierEntity, int> GetOptionId { get; set; } = option => option.Id;
+    [Parameter] public Func<TSupplierEntity, string> GetOptionDisplayText { get; set; } = option => 
+    {
+        // 檢查是否有 CompanyName 屬性並取得其值
+        var companyNameProperty = option.GetType().GetProperty("CompanyName");
+        if (companyNameProperty != null)
+        {
+            var companyName = companyNameProperty.GetValue(option) as string;
+            return companyName ?? option.ToString() ?? "";
+        }
+        return option.ToString() ?? "";
+    };
+    [Parameter] public Func<Unit, int> GetUnitOptionId { get; set; } = unit => unit.Id;
+    [Parameter] public Func<Unit, string> GetUnitOptionDisplayText { get; set; } = unit => unit.Name;
+    
+    // ===== 委派參數 - Setter =====
+    [Parameter] public Action<TProductSupplierEntity, int?> SetSupplierId { get; set; } = (item, supplierId) => { };
+    [Parameter] public Action<TProductSupplierEntity, string?> SetSupplierProductCode { get; set; } = (item, value) => { };
+    [Parameter] public Action<TProductSupplierEntity, decimal?> SetSupplierPrice { get; set; } = (item, value) => { };
+    [Parameter] public Action<TProductSupplierEntity, int?> SetLeadTime { get; set; } = (item, value) => { };
+    [Parameter] public Action<TProductSupplierEntity, int?> SetMinOrderQuantity { get; set; } = (item, value) => { };
+    [Parameter] public Action<TProductSupplierEntity, int?> SetUnitId { get; set; } = (item, value) => { };
+    [Parameter] public Action<TProductSupplierEntity, int> SetParentId { get; set; } = (item, parentId) => { };
+    
+    // ===== 事件參數 =====
+    [Parameter] public EventCallback<List<TProductSupplierEntity>> ItemsChanged { get; set; }
+    [Parameter] public EventCallback<TProductSupplierEntity> ItemAdded { get; set; }
+    [Parameter] public EventCallback<TProductSupplierEntity> ItemRemoved { get; set; }
+    [Parameter] public EventCallback<TProductSupplierEntity> PrimaryChanged { get; set; }
+    
+    // ===== Modal 狀態 =====
+    private bool showAddModal = false;
+    private bool showEditModal = false;
+    private int editingIndex = -1;
+    private string currentSupplierId = string.Empty;
+    private string currentSupplierProductCode = string.Empty;
+    private decimal? currentSupplierPrice = null;
+    private int? currentLeadTime = null;
+    private int? currentMinOrderQuantity = null;
+    private string currentUnitId = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+    }
+    
+    // ===== 內部方法 =====
+
+    private string GetSupplierDisplayText(TProductSupplierEntity item)
+    {
+        var supplierId = GetSupplierId(item);
+        if (supplierId.HasValue)
+        {
+            var supplier = Options.FirstOrDefault(o => GetOptionId(o) == supplierId.Value);
+            if (supplier != null)
+            {
+                return GetOptionDisplayText(supplier);
+            }
+        }
+        return "未知供應商";
+    }
+
+    private string GetUnitDisplayText(TProductSupplierEntity item)
+    {
+        var unitId = GetUnitId(item);
+        if (unitId.HasValue)
+        {
+            var unit = UnitOptions.FirstOrDefault(u => GetUnitOptionId(u) == unitId.Value);
+            if (unit != null)
+            {
+                return GetUnitOptionDisplayText(unit);
+            }
+        }
+        return "-";
+    }
+    
+    private void ShowAddModal()
+    {
+        if (IsReadOnly) return;
+        
+        ClearModalData();
+        showAddModal = true;
+    }
+    
+    private void ShowEditModal(int index)
+    {
+        if (IsReadOnly || index < 0 || index >= Items.Count) return;
+        
+        editingIndex = index;
+        var item = Items[index];
+        
+        var supplierId = GetSupplierId(item);
+        currentSupplierId = supplierId?.ToString() ?? string.Empty;
+        currentSupplierProductCode = GetSupplierProductCode(item) ?? string.Empty;
+        currentSupplierPrice = GetSupplierPrice(item);
+        currentLeadTime = GetLeadTime(item);
+        currentMinOrderQuantity = GetMinOrderQuantity(item);
+        
+        var unitId = GetUnitId(item);
+        currentUnitId = unitId?.ToString() ?? string.Empty;
+        
+        showEditModal = true;
+    }
+    
+    private void CloseModal()
+    {
+        showAddModal = false;
+        showEditModal = false;
+        editingIndex = -1;
+        ClearModalData();
+    }
+    
+    private void ClearModalData()
+    {
+        currentSupplierId = string.Empty;
+        currentSupplierProductCode = string.Empty;
+        currentSupplierPrice = null;
+        currentLeadTime = null;
+        currentMinOrderQuantity = null;
+        currentUnitId = string.Empty;
+    }
+    
+    public async Task AddItemAsync()
+    {
+        if (IsReadOnly || !Options.Any()) return;
+        
+        // 檢查必要欄位
+        if (string.IsNullOrEmpty(currentSupplierId))
+        {
+            await NotificationService.ShowErrorAsync("請選擇供應商");
+            return;
+        }
+        
+        if (!int.TryParse(currentSupplierId, out var supplierId)) 
+        {
+            await NotificationService.ShowErrorAsync("供應商選擇錯誤");
+            return;
+        }
+        
+        // 檢查是否已存在相同供應商
+        if (Items.Any(item => GetSupplierId(item) == supplierId))
+        {
+            await NotificationService.ShowErrorAsync("此供應商已存在，請選擇其他供應商");
+            return;
+        }
+        
+        var newItem = new TProductSupplierEntity();
+        SetParentId(newItem, ParentEntityId);
+        SetSupplierId(newItem, supplierId);
+        SetSupplierProductCode(newItem, currentSupplierProductCode);
+        SetSupplierPrice(newItem, currentSupplierPrice);
+        SetLeadTime(newItem, currentLeadTime);
+        SetMinOrderQuantity(newItem, currentMinOrderQuantity);
+        
+        // 設定單位
+        if (!string.IsNullOrEmpty(currentUnitId) && int.TryParse(currentUnitId, out var unitId))
+        {
+            SetUnitId(newItem, unitId);
+        }
+        
+        Items.Add(newItem);
+        
+        await ItemAdded.InvokeAsync(newItem);
+        await ItemsChanged.InvokeAsync(Items);
+        
+        CloseModal();
+        StateHasChanged();
+    }
+    
+    public async Task UpdateItemAsync()
+    {
+        if (IsReadOnly || editingIndex < 0 || editingIndex >= Items.Count) return;
+        if (!Options.Any()) return;
+        
+        // 檢查必要欄位
+        if (string.IsNullOrEmpty(currentSupplierId))
+        {
+            await NotificationService.ShowErrorAsync("請選擇供應商");
+            return;
+        }
+        
+        if (!int.TryParse(currentSupplierId, out var supplierId))
+        {
+            await NotificationService.ShowErrorAsync("供應商選擇錯誤");
+            return;
+        }
+        
+        var item = Items[editingIndex];
+        var originalSupplierId = GetSupplierId(item);
+        
+        // 如果更改了供應商，檢查是否已存在
+        if (originalSupplierId != supplierId && Items.Any(i => GetSupplierId(i) == supplierId))
+        {
+            await NotificationService.ShowErrorAsync("此供應商已存在，請選擇其他供應商");
+            return;
+        }
+        
+        SetSupplierId(item, supplierId);
+        SetSupplierProductCode(item, currentSupplierProductCode);
+        SetSupplierPrice(item, currentSupplierPrice);
+        SetLeadTime(item, currentLeadTime);
+        SetMinOrderQuantity(item, currentMinOrderQuantity);
+        
+        // 設定單位
+        if (!string.IsNullOrEmpty(currentUnitId) && int.TryParse(currentUnitId, out var unitId))
+        {
+            SetUnitId(item, unitId);
+        }
+        else
+        {
+            SetUnitId(item, null);
+        }
+        
+        await ItemsChanged.InvokeAsync(Items);
+        
+        CloseModal();
+        StateHasChanged();
+    }
+    
+    public async Task RemoveItemAsync(int index)
+    {
+        if (IsReadOnly || index < 0 || index >= Items.Count) return;
+        
+        var removedItem = Items[index];
+        
+        Items.RemoveAt(index);
+        
+        await ItemRemoved.InvokeAsync(removedItem);
+        await ItemsChanged.InvokeAsync(Items);
+        StateHasChanged();
+    }
+    
+    
+    public async Task<bool> ValidateAsync()
+    {
+        var errors = new List<string>();
+        
+        if (!Items.Any())
+        {
+            errors.Add("至少需要一個供應商");
+        }
+        else
+        {
+            // 檢查供應商重複
+            var supplierIds = Items.Select(item => GetSupplierId(item)).Where(id => id.HasValue).ToList();
+            if (supplierIds.Count != supplierIds.Distinct().Count())
+            {
+                errors.Add("存在重複的供應商");
+            }
+        }
+          
+        if (errors.Any())
+        {
+            var errorMessage = string.Join("\n", errors);
+            await NotificationService.ShowErrorAsync(errorMessage);
+            return false;
+        }
+        
+        return true;
+    }
+}

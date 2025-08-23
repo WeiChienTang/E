@@ -44,9 +44,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "交期天數")]
         public int? LeadTimeDays { get; set; }
 
-        [Display(Name = "是否為主要供應商")]
-        public bool IsPrimarySupplier { get; set; } = false;
-
         // 時效性
         [Required(ErrorMessage = "生效日期為必填")]
         [Display(Name = "生效日期")]
