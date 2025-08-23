@@ -3,6 +3,7 @@
 @using System.Linq.Expressions
 @using System.Reflection
 @using ERPCore2.Data.Enums
+@inject IProductService ProductService
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
 
@@ -151,17 +152,29 @@
 
     private List<ProductItem> ProductItems { get; set; } = new List<ProductItem>();
     private List<Product> FilteredProducts { get; set; } = new List<Product>();
+    private List<Product> AvailableProducts { get; set; } = new List<Product>(); // 新增：儲存可用商品列表
+    private int? _previousSelectedSupplierId = null; // 新增：追蹤前一個選擇的供應商ID
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        // 載入可用商品
+        await LoadAvailableProductsAsync();
+        
         // 從現有明細載入資料
         LoadExistingDetails();
         // 初始化時確保有1行空白
         EnsureOneEmptyRow();
     }
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
+        // 檢查供應商是否變更
+        if (_previousSelectedSupplierId != SelectedSupplierId)
+        {
+            _previousSelectedSupplierId = SelectedSupplierId;
+            await LoadAvailableProductsAsync();
+        }
+        
         // 當參數變更時重新載入
         if (ExistingDetails?.Any() == true)
         {
@@ -171,6 +184,32 @@
         {
             // 如果沒有現有明細，也要確保有空白行
             EnsureOneEmptyRow();
+        }
+    }
+
+    /// <summary>
+    /// 根據選擇的供應商載入可用商品
+    /// </summary>
+    private async Task LoadAvailableProductsAsync()
+    {
+        try
+        {
+            if (SelectedSupplierId.HasValue && SelectedSupplierId.Value > 0)
+            {
+                // 使用 ProductService 的 GetBySupplierAsync 方法載入該供應商的商品
+                AvailableProducts = await ProductService.GetBySupplierAsync(SelectedSupplierId.Value);
+            }
+            else
+            {
+                // 如果沒有選擇供應商，清空可用商品列表
+                AvailableProducts = new List<Product>();
+            }
+        }
+        catch (Exception)
+        {
+            // 處理錯誤，使用空列表作為備用
+            AvailableProducts = new List<Product>();
+            // 可以考慮記錄錯誤或顯示通知
         }
     }
 
@@ -393,10 +432,8 @@
             return new List<Product>();
         }
         
-        // 根據供應商過濾商品
-        return Products.Where(p => 
-            p.ProductSuppliers?.Any(ps => ps.SupplierId == SelectedSupplierId.Value && ps.Status == EntityStatus.Active) == true)
-            .ToList();
+        // 直接使用已載入的可用商品列表
+        return AvailableProducts;
     }
 
     private async Task OnQuantityInput(ProductItem item, string? value)
