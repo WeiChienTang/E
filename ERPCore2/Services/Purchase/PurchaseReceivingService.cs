@@ -95,8 +95,7 @@ namespace ERPCore2.Services
                         pr.ReceiptNumber.Contains(searchTerm) ||
                         pr.PurchaseOrder.PurchaseOrderNumber.Contains(searchTerm) ||
                         pr.PurchaseOrder.Supplier.CompanyName.Contains(searchTerm) ||
-                        (pr.ReceiptRemarks != null && pr.ReceiptRemarks.Contains(searchTerm)) ||
-                        (pr.InspectionPersonnel != null && pr.InspectionPersonnel.Contains(searchTerm))
+                        (pr.ReceiptRemarks != null && pr.ReceiptRemarks.Contains(searchTerm))
                     ))
                     .OrderByDescending(pr => pr.ReceiptDate)
                     .ThenBy(pr => pr.ReceiptNumber)
@@ -219,6 +218,38 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name 
                 });
                 return $"RCV{DateTime.Today:yyyyMMdd}001";
+            }
+        }
+
+        public async Task<bool> IsReceiptNumberExistsAsync(string receiptNumber, int? excludeId = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(receiptNumber))
+                    return false;
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                if (excludeId.HasValue)
+                {
+                    return await context.PurchaseReceivings
+                        .AnyAsync(pr => pr.ReceiptNumber == receiptNumber && pr.Id != excludeId.Value && !pr.IsDeleted);
+                }
+                else
+                {
+                    return await context.PurchaseReceivings
+                        .AnyAsync(pr => pr.ReceiptNumber == receiptNumber && !pr.IsDeleted);
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsReceiptNumberExistsAsync), GetType(), _logger, new { 
+                    Method = nameof(IsReceiptNumberExistsAsync),
+                    ServiceType = GetType().Name,
+                    ReceiptNumber = receiptNumber,
+                    ExcludeId = excludeId
+                });
+                return false;
             }
         }
 

@@ -5,7 +5,6 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
-@inject IDeletedRecordService DeletedRecordService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 @using ERPCore2.Data.Enums
@@ -283,7 +282,7 @@
     
     // ===== 通用刪除操作 =====
     /// <summary>
-    /// 通用刪除方法（支援軟刪除和刪除記錄）
+    /// 通用刪除方法（永久刪除）
     /// </summary>
     public async Task DeleteEntityAsync(TEntity entity)
     {
@@ -296,12 +295,8 @@
         {
             try
             {
-                // 獲取當前用戶資訊
-                var currentUser = await CurrentUserHelper.GetCurrentUserNameAsync(AuthenticationStateProvider);
-                var tableName = typeof(TEntity).Name;
-
-                // 使用反射調用服務的 DeleteAsync 方法（執行軟刪除）
-                var deleteMethod = Service?.GetType().GetMethod("DeleteAsync", new[] { typeof(int) });
+                // 使用反射調用服務的 PermanentDeleteAsync 方法（執行永久刪除）
+                var deleteMethod = Service?.GetType().GetMethod("PermanentDeleteAsync", new[] { typeof(int) });
                 if (deleteMethod != null)
                 {
                     var task = (Task)deleteMethod.Invoke(Service, new object[] { entity.Id })!;
@@ -320,17 +315,11 @@
                             var isSuccess = (bool)isSuccessProperty.GetValue(result)!;                            
                             if (isSuccess)
                             {
-                                // 軟刪除成功，記錄到 DeletedRecord
-                                await DeletedRecordService.RecordDeletionAsync(
-                                    tableName: tableName,
-                                    recordId: entity.Id,
-                                    recordDisplayName: displayName,
-                                    deleteReason: $"透過{EntityName}管理頁面刪除",
-                                    deletedBy: currentUser
-                                );
-
                                 var successMessage = GetDeleteSuccessMessage();
                                 await NotificationService.ShowSuccessAsync(successMessage);
+                                
+                                // 延遲1秒後再刷新，讓用戶看到成功訊息
+                                await Task.Delay(1000);
                                 await Refresh();
                             }
                             else
@@ -343,7 +332,7 @@
                 }               
                 else
                 {
-                    await NotificationService.ShowErrorAsync("找不到刪除方法");
+                    await NotificationService.ShowErrorAsync("找不到永久刪除方法");
                 }
             }            
             catch (Exception ex)

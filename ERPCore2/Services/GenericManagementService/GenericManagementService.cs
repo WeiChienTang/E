@@ -211,6 +211,42 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 永久刪除資料（硬刪除）
+        /// </summary>
+        public virtual async Task<ServiceResult> PermanentDeleteAsync(int id)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<T>();
+                
+                var entity = await dbSet
+                    .FirstOrDefaultAsync(x => x.Id == id);
+                    
+                if (entity == null)
+                {
+                    return ServiceResult.Failure("找不到要刪除的資料");
+                }
+
+                // 檢查是否可以刪除
+                var canDeleteResult = await CanDeleteAsync(entity);
+                if (!canDeleteResult.IsSuccess)
+                {
+                    return canDeleteResult;
+                }
+
+                dbSet.Remove(entity);
+                await context.SaveChangesAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(PermanentDeleteAsync), GetType(), _logger);
+                return ServiceResult.Failure($"永久刪除資料時發生錯誤: {ex.Message}");
+            }
+        }
+
         #endregion
 
         #region 批次操作

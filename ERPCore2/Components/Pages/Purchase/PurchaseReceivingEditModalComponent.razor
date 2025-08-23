@@ -1,0 +1,372 @@
+@* 採購入庫編輯模態組件 *@
+@inject IPurchaseReceivingService PurchaseReceivingService
+@inject IPurchaseOrderService PurchaseOrderService
+@inject IWarehouseService WarehouseService
+@inject INotificationService NotificationService
+@inject ISupplierService SupplierService
+@inject IEmployeeService EmployeeService
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@using ERPCore2.Data.Enums
+@using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Helpers
+
+<GenericEditModalComponent TEntity="PurchaseReceiving" 
+                          TService="IPurchaseReceivingService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@PurchaseReceivingId"
+                          Service="@PurchaseReceivingService"
+                          EntityName="採購入庫"
+                          EntityNamePlural="採購入庫"
+                          ModalTitle="@(PurchaseReceivingId.HasValue ? "編輯採購入庫" : "新增採購入庫")"
+                          Size="GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.ModalSize.Large"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadPurchaseReceivingData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(PurchaseReceivingId.HasValue ? "採購入庫更新成功" : "採購入庫新增成功")"
+                          SaveFailureMessage="採購入庫儲存失敗"
+                          RequiredPermission="PurchaseReceiving.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? PurchaseReceivingId { get; set; }
+    [Parameter] public EventCallback<PurchaseReceiving> OnPurchaseReceivingSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<PurchaseOrder> purchaseOrders = new();
+    private List<Warehouse> warehouses = new();
+    private List<Supplier> suppliers = new();
+    private List<Employee> employees = new();
+
+    // ===== 必要方法 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+        }
+    }
+
+    /// <summary>
+    /// 處理儲存成功事件
+    /// </summary>
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            // 如果父組件需要知道採購入庫已儲存
+            if (OnPurchaseReceivingSaved.HasDelegate && editModalComponent?.Entity != null)
+            {
+                await OnPurchaseReceivingSaved.InvokeAsync(editModalComponent.Entity);
+            }
+
+            // 關閉 Modal
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理成功事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 處理取消事件
+    /// </summary>
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"關閉視窗時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 關閉模態視窗
+    /// </summary>
+    private async Task CloseModal()
+    {
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+
+    /// <summary>
+    /// 載入採購入庫資料
+    /// </summary>
+    private async Task<PurchaseReceiving?> LoadPurchaseReceivingData()
+    {
+        try
+        {
+            if (!PurchaseReceivingId.HasValue)
+            {
+                // 新增模式
+                var newReceiving = new PurchaseReceiving
+                {
+                    ReceiptNumber = await GenerateReceiptNumberAsync(),
+                    ReceiptDate = DateTime.Now,
+                    ReceiptStatus = PurchaseReceivingStatus.Draft,
+                    ConfirmedAt = DateTime.Now
+                };
+                
+                return newReceiving;
+            }
+
+            // 編輯模式
+            return await PurchaseReceivingService.GetByIdAsync(PurchaseReceivingId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入採購入庫資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 載入額外資料
+    /// </summary>
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            var tasks = new List<Task>
+            {
+                LoadPurchaseOrdersAsync(),
+                LoadWarehousesAsync(),
+                LoadSuppliersAsync(),
+                LoadEmployeesAsync()
+            };
+            
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task LoadPurchaseOrdersAsync()
+    {
+        try
+        {
+            purchaseOrders = await PurchaseOrderService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入採購單資料時發生錯誤：{ex.Message}");
+            purchaseOrders = new List<PurchaseOrder>();
+        }
+    }
+
+    private async Task LoadWarehousesAsync()
+    {
+        try
+        {
+            warehouses = await WarehouseService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入倉庫資料時發生錯誤：{ex.Message}");
+            warehouses = new List<Warehouse>();
+        }
+    }
+
+    private async Task LoadSuppliersAsync()
+    {
+        try
+        {
+            suppliers = await SupplierService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入供應商資料時發生錯誤：{ex.Message}");
+            suppliers = new List<Supplier>();
+        }
+    }
+
+    private async Task LoadEmployeesAsync()
+    {
+        try
+        {
+            var result = await EmployeeService.GetActiveEmployeesAsync();
+            if (result.IsSuccess && result.Data != null)
+            {
+                employees = result.Data;
+            }
+            else
+            {
+                employees = new List<Employee>();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入員工資料時發生錯誤：{ex.Message}");
+            employees = new List<Employee>();
+        }
+    }
+
+    /// <summary>
+    /// 初始化表單欄位
+    /// </summary>
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(PurchaseReceiving.ReceiptNumber),
+                    Label = "入庫單號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "系統自動產生",
+                    IsRequired = true,
+                    IsReadOnly = true,
+                    MaxLength = 50,
+                    HelpText = "系統自動產生的入庫單號"
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReceiving.PurchaseOrderId),
+                    Label = "採購單",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = purchaseOrders.Select(po => new SelectOption
+                    {
+                        Value = po.Id.ToString(),
+                        Text = $"{po.PurchaseOrderNumber} - {po.Supplier?.CompanyName ?? "未知供應商"}"
+                    }).ToList(),
+                    HelpText = "請選擇相關的採購單"
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReceiving.ReceiptDate),
+                    Label = "入庫日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "貨品實際入庫日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReceiving.WarehouseId),
+                    Label = "入庫倉庫",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = warehouses.Select(w => new SelectOption
+                    {
+                        Value = w.Id.ToString(),
+                        Text = $"{w.Code} - {w.Name}"
+                    }).ToList(),
+                    HelpText = "請選擇入庫倉庫"
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReceiving.ReceiptStatus),
+                    Label = "入庫狀態",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = Enum.GetValues<PurchaseReceivingStatus>()
+                        .Select(status => new SelectOption
+                        {
+                            Value = ((int)status).ToString(),
+                            Text = status.ToString()
+                        }).ToList(),
+                    HelpText = "請選擇入庫狀態"
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReceiving.TotalAmount),
+                    Label = "總金額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    Min = 0,
+                    Step = 0.01m,
+                    HelpText = "入庫商品的總金額"
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReceiving.ConfirmedAt),
+                    Label = "確認時間",
+                    FieldType = FormFieldType.DateTime,
+                    IsRequired = false,
+                    IsReadOnly = false,
+                    HelpText = "入庫確認的時間"
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReceiving.ConfirmedBy),
+                    Label = "確認人員",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    Options = employees.Select(u => new SelectOption
+                    {
+                        Value = u.Id.ToString(),
+                        Text = u.Name ?? "未知員工"
+                    }).ToList(),
+                    HelpText = "負責確認入庫的人員"
+                },
+                FormFieldConfigurationHelper.CreateRemarksField<PurchaseReceiving>()
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(PurchaseReceiving.ReceiptNumber), "基本資訊" },
+                { nameof(PurchaseReceiving.PurchaseOrderId), "基本資訊" },
+                { nameof(PurchaseReceiving.ReceiptDate), "基本資訊" },
+                { nameof(PurchaseReceiving.WarehouseId), "基本資訊" },
+                { nameof(PurchaseReceiving.ReceiptStatus), "基本資訊" },
+                { nameof(PurchaseReceiving.TotalAmount), "金額資訊" },
+                { nameof(PurchaseReceiving.ConfirmedAt), "確認資訊" },
+                { nameof(PurchaseReceiving.ConfirmedBy), "確認資訊" },
+                { nameof(BaseEntity.Remarks), "其他資訊" }
+            };
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"初始化表單欄位時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 取得表單欄位清單
+    /// </summary>
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    /// <summary>
+    /// 生成採購入庫單號
+    /// </summary>
+    private async Task<string> GenerateReceiptNumberAsync()
+    {
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            PurchaseReceivingService,
+            "RCV",
+            (service, code, excludeId) => service.IsReceiptNumberExistsAsync(code, excludeId)
+        );
+    }
+}

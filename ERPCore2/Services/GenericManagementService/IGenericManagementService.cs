@@ -40,6 +40,11 @@ namespace ERPCore2.Services
         /// </summary>
         Task<ServiceResult> DeleteAsync(int id);
         
+        /// <summary>
+        /// 永久刪除資料（硬刪除）
+        /// </summary>
+        Task<ServiceResult> PermanentDeleteAsync(int id);
+        
         #endregion
 
         #region 批次操作

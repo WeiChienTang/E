@@ -26,10 +26,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "進貨狀態")]
         public PurchaseReceivingStatus ReceiptStatus { get; set; } = PurchaseReceivingStatus.Draft;
 
-        [MaxLength(100, ErrorMessage = "驗收人員不可超過100個字元")]
-        [Display(Name = "驗收人員")]
-        public string? InspectionPersonnel { get; set; }
-
         [MaxLength(500, ErrorMessage = "進貨備註不可超過500個字元")]
         [Display(Name = "進貨備註")]
         public string? ReceiptRemarks { get; set; }

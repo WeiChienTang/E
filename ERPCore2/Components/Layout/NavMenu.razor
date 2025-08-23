@@ -88,7 +88,7 @@
         <NavMenuItem Text="採購管理" IconClass="bi bi-truck" MenuKey="purchase_management">
             <DropdownItems>
                 <NavDropdownItem Text="採購單維護" Url="/purchase/orders" RequiredPermission="PurchaseOrder.Read" ParentMenuKey="purchase_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="入庫" Url="/purchase/receivings" RequiredPermission="PurchaseReceiving.Read" ParentMenuKey="purchase_management" IconClass="bi bi-caret-right-fill"/>
+                <NavDropdownItem Text="入庫維護" Url="/purchase/receiving" RequiredPermission="PurchaseReceiving.Read" ParentMenuKey="purchase_management" IconClass="bi bi-caret-right-fill"/>
                 @* <NavDropdownItem Text="退回" Url="/purchase-returns" RequiredPermission="PurchaseReturn.Read" ParentMenuKey="purchase_management" /> *@
             </DropdownItems>
         </NavMenuItem>     
@@ -119,7 +119,7 @@
                 <NavDropdownItem Text="公司維護" Url="/companies" RequiredPermission="Company.Read" ParentMenuKey="system_management" IconClass="bi bi-caret-right-fill"/>
                 <NavDropdownItem Text="更新紀錄" Url="/updates" RequiredPermission="SystemControl.Read" ParentMenuKey="system_management" IconClass="bi bi-caret-right-fill"/>
                 <NavDropdownItem Text="錯誤記錄" Url="/error-logs" RequiredPermission="SystemControl.Read" ParentMenuKey="system_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="刪除記錄" Url="/deleted-records" RequiredPermission="SystemControl.Read" ParentMenuKey="system_management" IconClass="bi bi-caret-right-fill"/>
+
             </DropdownItems>
         </NavMenuItem>
     </nav>
