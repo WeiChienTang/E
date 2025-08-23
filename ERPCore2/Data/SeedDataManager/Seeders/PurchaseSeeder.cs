@@ -48,7 +48,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ExpectedDeliveryDate = orderDate.AddDays(random.Next(7, 21)),
                     // 移除 OrderStatus 和 PurchaseType 欄位
                     PurchasePersonnel = "採購人員" + i,
-                    OrderRemarks = $"測試採購訂單 {i}",
+                    Remarks = $"測試採購訂單 {i}",
                     SupplierId = supplier.Id,
                     WarehouseId = warehouse.Id,
                     Status = EntityStatus.Active,

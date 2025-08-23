@@ -262,7 +262,7 @@ namespace ERPCore2.Services.Reports
                             new ReportField
                             {
                                 Label = "採購備註",
-                                PropertyName = nameof(PurchaseOrder.OrderRemarks)
+                                PropertyName = nameof(PurchaseOrder.Remarks)
                             }
                         }
                     }

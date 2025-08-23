@@ -27,10 +27,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "採購人員")]
         public string? PurchasePersonnel { get; set; }
 
-        [MaxLength(500, ErrorMessage = "訂單備註不可超過500個字元")]
-        [Display(Name = "訂單備註")]
-        public string? OrderRemarks { get; set; }
-
         [Display(Name = "訂單總金額")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; } = 0;

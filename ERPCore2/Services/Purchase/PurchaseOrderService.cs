@@ -93,7 +93,7 @@ namespace ERPCore2.Services
                                 po.Supplier.CompanyName.Contains(searchTerm) ||
                                 po.Company != null && po.Company.CompanyName.Contains(searchTerm) ||
                                 po.PurchasePersonnel != null && po.PurchasePersonnel.Contains(searchTerm) ||
-                                po.OrderRemarks != null && po.OrderRemarks.Contains(searchTerm)))
+                                po.Remarks != null && po.Remarks.Contains(searchTerm)))
                     .OrderByDescending(po => po.OrderDate)
                     .ToListAsync();
             }
@@ -380,9 +380,9 @@ namespace ERPCore2.Services
                 if (order.ReceivedAmount > 0)
                     return ServiceResult.Failure("已有進貨記錄的訂單無法取消");
                 
-                order.OrderRemarks = string.IsNullOrWhiteSpace(order.OrderRemarks) 
+                order.Remarks = string.IsNullOrWhiteSpace(order.Remarks) 
                     ? $"取消原因：{reason}" 
-                    : $"{order.OrderRemarks}\n取消原因：{reason}";
+                    : $"{order.Remarks}\n取消原因：{reason}";
                 order.UpdatedAt = DateTime.Now;
                 
                 await context.SaveChangesAsync();
