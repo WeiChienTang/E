@@ -89,17 +89,6 @@
                 </div>
             }
             
-            <div class="col-md-3">
-                <label for="statusFilter" class="form-label">進貨狀態</label>
-                <select id="statusFilter" class="form-select" @bind="selectedStatus" @bind:after="LoadDataAsync">
-                    <option value="">全部狀態</option>
-                    <option value="Draft">草稿</option>
-                    <option value="Confirmed">已確認</option>
-                    <option value="Received">已收貨</option>
-                    <option value="Cancelled">已取消</option>
-                </select>
-            </div>
-            
             <div class="col-md-3 d-flex align-items-end">
                 <button type="button" class="btn btn-outline-secondary" @onclick="ClearFilters">
                     <i class="bi bi-x-circle"></i> 清除條件
@@ -144,7 +133,6 @@
                             <th>進貨日期</th>
                             <th>採購單號</th>
                             <th>供應商</th>
-                            <th>進貨狀態</th>
                             <th>進貨總金額</th>
                             <th>確認人員</th>
                             <th>操作</th>
@@ -162,27 +150,6 @@
                                     <span class="badge bg-info">@receiving.PurchaseOrder?.PurchaseOrderNumber</span>
                                 </td>
                                 <td>@receiving.PurchaseOrder?.Supplier?.CompanyName</td>
-                                <td>
-                                    @{
-                                        var statusClass = receiving.ReceiptStatus switch
-                                        {
-                                            PurchaseReceivingStatus.Draft => "bg-secondary",
-                                            PurchaseReceivingStatus.Confirmed => "bg-warning",
-                                            PurchaseReceivingStatus.Received => "bg-success",
-                                            PurchaseReceivingStatus.Cancelled => "bg-danger",
-                                            _ => "bg-secondary"
-                                        };
-                                        var statusText = receiving.ReceiptStatus switch
-                                        {
-                                            PurchaseReceivingStatus.Draft => "草稿",
-                                            PurchaseReceivingStatus.Confirmed => "已確認",
-                                            PurchaseReceivingStatus.Received => "已收貨",
-                                            PurchaseReceivingStatus.Cancelled => "已取消",
-                                            _ => "未知"
-                                        };
-                                    }
-                                    <span class="badge @statusClass">@statusText</span>
-                                </td>
                                 <td class="text-end">
                                     <strong>@receiving.TotalAmount.ToString("N0")</strong>
                                 </td>
@@ -192,18 +159,12 @@
                                         <button type="button" class="btn btn-outline-primary" @onclick="() => EditReceiving(receiving.Id)" title="編輯">
                                             <i class="bi bi-pencil"></i>
                                         </button>
-                                        @if (receiving.ReceiptStatus == PurchaseReceivingStatus.Draft)
-                                        {
-                                            <button type="button" class="btn btn-outline-success" @onclick="() => ConfirmReceiving(receiving.Id)" title="確認">
-                                                <i class="bi bi-check-circle"></i>
-                                            </button>
-                                        }
-                                        @if (receiving.ReceiptStatus != PurchaseReceivingStatus.Received && receiving.ReceiptStatus != PurchaseReceivingStatus.Cancelled)
-                                        {
-                                            <button type="button" class="btn btn-outline-danger" @onclick="() => CancelReceiving(receiving.Id)" title="取消">
-                                                <i class="bi bi-x-circle"></i>
-                                            </button>
-                                        }
+                                        <button type="button" class="btn btn-outline-success" @onclick="() => ConfirmReceiving(receiving.Id)" title="確認">
+                                            <i class="bi bi-check-circle"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger" @onclick="() => CancelReceiving(receiving.Id)" title="取消">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
                                         <button type="button" class="btn btn-outline-info" @onclick="() => ViewDetails(receiving.Id)" title="檢視明細">
                                             <i class="bi bi-eye"></i>
                                         </button>
@@ -233,7 +194,6 @@
     private int? selectedPurchaseOrderId = null;
     private int? selectedSupplierId = null;
     private int? selectedProductId = null;
-    private string selectedStatus = "";
     
     // 麵包屑導航
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new()
@@ -287,12 +247,6 @@
                     await GetByProductAsync(selectedProductId.Value),
                 _ => await PurchaseReceivingService.GetAllAsync()
             };
-
-            // 狀態過濾
-            if (!string.IsNullOrEmpty(selectedStatus) && Enum.TryParse<PurchaseReceivingStatus>(selectedStatus, out var status))
-            {
-                purchaseReceivings = purchaseReceivings.Where(r => r.ReceiptStatus == status).ToList();
-            }
         }
         catch (Exception ex)
         {
@@ -335,7 +289,6 @@
         selectedPurchaseOrderId = null;
         selectedSupplierId = null;
         selectedProductId = null;
-        selectedStatus = "";
         
         await LoadDataAsync();
     }
