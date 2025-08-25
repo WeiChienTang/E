@@ -1,0 +1,933 @@
+@* 採購入庫明細管理元件 *@
+@inject IPurchaseOrderService PurchaseOrderService
+@inject IWarehouseLocationService WarehouseLocationService
+@inject INotificationService NotificationService
+
+@if (OrderDetails != null && OrderDetails.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead class="table-dark">
+                <tr>
+                    @if (!PurchaseOrderId.HasValue || PurchaseOrderId.Value <= 0)
+                    {
+                        <th width="100%">請先選擇採購單後再處理入庫商品</th>
+                    }
+                    else
+                    {
+                        <th width="3%">
+                            <input type="checkbox" class="form-check-input" 
+                                   @onchange="OnSelectAllChanged" 
+                                   checked="@IsAllSelected" />
+                        </th>
+                        <th width="20%">商品資訊</th>
+                        <th width="10%">訂購數量</th>
+                        <th width="10%">已入庫</th>
+                        <th width="10%">待入庫</th>
+                        <th width="12%">本次入庫數量</th>
+                        <th width="10%">單價</th>
+                        <th width="12%">倉庫位置</th>
+                        <th width="8%">品檢</th>
+                        <th width="10%">操作</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in ReceivingItems)
+                {
+                    var orderDetail = item.PurchaseOrderDetail;
+                    var isSelected = item.IsSelected;
+                    var hasPendingQty = orderDetail.PendingQuantity > 0;
+                    var rowClass = hasPendingQty ? (isSelected ? "table-info" : "") : "table-light text-muted";
+                    
+                    <tr class="@rowClass">
+                        @if (!PurchaseOrderId.HasValue || PurchaseOrderId.Value <= 0)
+                        {
+                            <td class="text-center py-4" colspan="9">
+                                <div class="order-warning">
+                                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                    <span class="text-muted">請先選擇採購單...</span>
+                                </div>
+                            </td>
+                        }
+                        else
+                        {
+                            <td>
+                                <input type="checkbox" class="form-check-input" 
+                                       checked="@item.IsSelected"
+                                       @onchange="(e) => OnItemSelectionChanged(item, (bool)(e.Value ?? false))"
+                                       disabled="@(!hasPendingQty)" />
+                            </td>
+                            <td>
+                                <div class="product-info">
+                                    <strong>@orderDetail.Product.Code</strong>
+                                    <br />
+                                    <small class="text-muted">@orderDetail.Product.Name</small>
+                                    @if (!string.IsNullOrEmpty(orderDetail.DetailRemarks))
+                                    {
+                                        <br />
+                                        <small class="text-info">
+                                            <i class="fas fa-comment"></i> @orderDetail.DetailRemarks
+                                        </small>
+                                    }
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <span class="badge bg-primary">@orderDetail.OrderQuantity</span>
+                            </td>
+                            <td class="text-end">
+                                <span class="badge bg-success">@orderDetail.ReceivedQuantity</span>
+                            </td>
+                            <td class="text-end">
+                                <span class="badge @(hasPendingQty ? "bg-warning" : "bg-secondary")">
+                                    @orderDetail.PendingQuantity
+                                </span>
+                            </td>
+                            <td>
+                                <input type="number" class="form-control form-control-sm text-end" 
+                                       @bind="item.ReceivedQuantity"
+                                       @oninput="(e) => OnReceivedQuantityChanged(item, e.Value?.ToString())"
+                                       placeholder="0" 
+                                       min="0" 
+                                       max="@orderDetail.PendingQuantity"
+                                       step="1"
+                                       disabled="@(!isSelected || !hasPendingQty)" />
+                                @if (item.ValidationError != null)
+                                {
+                                    <small class="text-danger">@item.ValidationError</small>
+                                }
+                            </td>
+                            <td>
+                                <input type="number" class="form-control form-control-sm text-end" 
+                                       @bind="item.UnitPrice"
+                                       @oninput="(e) => OnUnitPriceChanged(item, e.Value?.ToString())"
+                                       placeholder="0.00" 
+                                       min="0" 
+                                       step="0.01"
+                                       disabled="@(!isSelected || !hasPendingQty)" />
+                            </td>
+                            <td>
+                                <select class="form-select form-select-sm" 
+                                        @bind="item.WarehouseLocationId"
+                                        disabled="@(!isSelected || !hasPendingQty)">
+                                    <option value="">請選擇位置</option>
+                                    @if (WarehouseLocations != null)
+                                    {
+                                        @foreach (var location in GetFilteredWarehouseLocations())
+                                        {
+                                            <option value="@location.Id">@location.Code - @location.Name</option>
+                                        }
+                                    }
+                                </select>
+                            </td>
+                            <td class="text-center">
+                                @if (isSelected && hasPendingQty)
+                                {
+                                    @if (item.QualityInspectionPassed == true)
+                                    {
+                                        <span class="badge bg-success" title="品質檢驗通過">
+                                            <i class="fas fa-check"></i>
+                                        </span>
+                                    }
+                                    else if (item.QualityInspectionPassed == false)
+                                    {
+                                        <span class="badge bg-danger" title="品質檢驗不通過">
+                                            <i class="fas fa-times"></i>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary" title="待檢驗">
+                                            <i class="fas fa-question"></i>
+                                        </span>
+                                    }
+                                }
+                            </td>
+                            <td>
+                                @if (hasPendingQty)
+                                {
+                                    <button type="button" 
+                                            class="btn btn-outline-primary btn-sm me-1" 
+                                            @onclick="() => SetMaxQuantity(item)"
+                                            title="設為最大數量">
+                                        <i class="fas fa-arrow-up"></i>
+                                    </button>
+                                    <button type="button" 
+                                            class="btn btn-outline-info btn-sm" 
+                                            @onclick="() => ShowDetailModal(item)"
+                                            title="詳細設定">
+                                        <i class="fas fa-cog"></i>
+                                    </button>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check"></i> 已完成
+                                    </span>
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+            @if (PurchaseOrderId.HasValue && PurchaseOrderId.Value > 0)
+            {
+                <tfoot>
+                    <tr class="table-secondary">
+                        <th colspan="6">總計</th>
+                        <th class="text-end">@GetTotalAmount().ToString("C")</th>
+                        <th colspan="2">
+                            <div class="d-flex gap-2 justify-content-between">
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-outline-success btn-sm" 
+                                            @onclick="BatchSetMaxQuantity"
+                                            disabled="@(!HasSelectedPendingItems())"
+                                            title="將所選項目設為最大入庫數量">
+                                        <i class="fas fa-check-double"></i> 全部入庫
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                            @onclick="ClearAllQuantities"
+                                            disabled="@(!HasSelectedItems())"
+                                            title="清除所選項目的入庫數量">
+                                        <i class="fas fa-eraser"></i> 清除數量
+                                    </button>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-outline-info btn-sm" 
+                                            @onclick="SelectAllPending"
+                                            disabled="@(!HasPendingItems())"
+                                            title="選擇所有待入庫項目">
+                                        <i class="fas fa-check-square"></i> 選擇待入庫
+                                    </button>
+                                    <button type="button" class="btn btn-outline-warning btn-sm" 
+                                            @onclick="BatchInspection"
+                                            disabled="@(!HasSelectedItems())"
+                                            title="批次設定檢驗資訊">
+                                        <i class="fas fa-clipboard-check"></i> 批次檢驗
+                                    </button>
+                                </div>
+                            </div>
+                        </th>
+                    </tr>
+                </tfoot>
+            }
+        </table>
+    </div>
+    
+    @* 額外功能區域 *@
+    @if (PurchaseOrderId.HasValue && PurchaseOrderId.Value > 0)
+    {
+        <div class="mt-3">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-clipboard-check"></i> 批次品質檢驗
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="batchQuality" id="batchPass" 
+                                               @onchange="() => SetBatchQualityResult(true)"
+                                               disabled="@(!HasSelectedItems())">
+                                        <label class="form-check-label text-success" for="batchPass">
+                                            <i class="fas fa-check"></i> 檢驗通過
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="batchQuality" id="batchFail" 
+                                               @onchange="() => SetBatchQualityResult(false)"
+                                               disabled="@(!HasSelectedItems())">
+                                        <label class="form-check-label text-danger" for="batchFail">
+                                            <i class="fas fa-times"></i> 檢驗不通過
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-info-circle"></i> 統計資訊
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="border-end">
+                                        <div class="fs-5 fw-bold text-primary">@GetSelectedItemsCount()</div>
+                                        <small class="text-muted">已選項目</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border-end">
+                                        <div class="fs-5 fw-bold text-warning">@GetPendingItemsCount()</div>
+                                        <small class="text-muted">待入庫項目</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="fs-5 fw-bold text-success">@GetCompletedItemsCount()</div>
+                                    <small class="text-muted">已完成項目</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="text-center text-muted py-5">
+        <i class="fas fa-clipboard-list fa-3x mb-3"></i>
+        <p class="fs-5">尚無採購單明細資料</p>
+        <p>請先選擇有效的採購單</p>
+    </div>
+}
+
+@* 詳細設定模態視窗 *@
+@if (ShowDetailModalVisible && CurrentDetailItem != null)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-cog"></i> 商品入庫詳細設定
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseDetailModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="text-primary">
+                                <i class="fas fa-box"></i> 
+                                @CurrentDetailItem.PurchaseOrderDetail.Product.Code - @CurrentDetailItem.PurchaseOrderDetail.Product.Name
+                            </h6>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">批號</label>
+                                <input type="text" class="form-control" 
+                                       @bind="CurrentDetailItem.BatchNumber"
+                                       placeholder="輸入批號..." />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">到期日期</label>
+                                <input type="date" class="form-control" 
+                                       @bind="CurrentDetailItem.ExpiryDate" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">品質檢驗結果</label>
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="quality_@CurrentDetailItem.PurchaseOrderDetail.Id" id="pass_@CurrentDetailItem.PurchaseOrderDetail.Id" 
+                                           checked="@(CurrentDetailItem.QualityInspectionPassed == true)"
+                                           @onchange="() => CurrentDetailItem.QualityInspectionPassed = true">
+                                    <label class="btn btn-outline-success" for="pass_@CurrentDetailItem.PurchaseOrderDetail.Id">
+                                        <i class="fas fa-check"></i> 通過
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="quality_@CurrentDetailItem.PurchaseOrderDetail.Id" id="fail_@CurrentDetailItem.PurchaseOrderDetail.Id" 
+                                           checked="@(CurrentDetailItem.QualityInspectionPassed == false)"
+                                           @onchange="() => CurrentDetailItem.QualityInspectionPassed = false">
+                                    <label class="btn btn-outline-danger" for="fail_@CurrentDetailItem.PurchaseOrderDetail.Id">
+                                        <i class="fas fa-times"></i> 不通過
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="quality_@CurrentDetailItem.PurchaseOrderDetail.Id" id="pending_@CurrentDetailItem.PurchaseOrderDetail.Id" 
+                                           checked="@(CurrentDetailItem.QualityInspectionPassed == null)"
+                                           @onchange="() => CurrentDetailItem.QualityInspectionPassed = null">
+                                    <label class="btn btn-outline-secondary" for="pending_@CurrentDetailItem.PurchaseOrderDetail.Id">
+                                        <i class="fas fa-question"></i> 待檢驗
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">倉庫位置</label>
+                                <select class="form-select" @bind="CurrentDetailItem.WarehouseLocationId">
+                                    <option value="">請選擇位置</option>
+                                    @if (WarehouseLocations != null)
+                                    {
+                                        @foreach (var location in WarehouseLocations)
+                                        {
+                                            <option value="@location.Id">@location.Code - @location.Name</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label class="form-label">品質檢驗備註</label>
+                                <textarea class="form-control" rows="2" 
+                                          @bind="CurrentDetailItem.QualityRemarks"
+                                          placeholder="輸入品質檢驗相關備註..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label class="form-label">驗收備註</label>
+                                <textarea class="form-control" rows="2" 
+                                          @bind="CurrentDetailItem.InspectionRemarks"
+                                          placeholder="輸入驗收相關備註..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseDetailModal">
+                        <i class="fas fa-times"></i> 取消
+                    </button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveDetailChanges">
+                        <i class="fas fa-save"></i> 儲存
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<style>
+    .product-info {
+        line-height: 1.3;
+    }
+    
+    .product-info strong {
+        font-size: 0.9rem;
+    }
+    
+    .product-info small {
+        font-size: 0.75rem;
+    }
+    
+    .order-warning {
+        padding: 2rem;
+        border: 2px dashed #ffc107;
+        border-radius: 0.5rem;
+        background-color: #fff3cd;
+    }
+    
+    .table-responsive .table td {
+        vertical-align: middle;
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+    }
+    
+    .card-header h6 {
+        color: #495057;
+        font-weight: 600;
+    }
+    
+    .modal-backdrop {
+        z-index: 1040;
+    }
+    
+    .modal {
+        z-index: 1050;
+    }
+    
+    .btn-check:checked + .btn {
+        background-color: var(--bs-primary);
+        border-color: var(--bs-primary);
+        color: white;
+    }
+    
+    .btn-check:checked + .btn-outline-success {
+        background-color: var(--bs-success);
+        border-color: var(--bs-success);
+    }
+    
+    .btn-check:checked + .btn-outline-danger {
+        background-color: var(--bs-danger);
+        border-color: var(--bs-danger);
+    }
+    
+    .text-end input[type="number"] {
+        text-align: right;
+    }
+    
+    .form-control-sm, .form-select-sm {
+        font-size: 0.875rem;
+    }
+</style>
+
+@code {
+    // ===== 基本參數 =====
+    [Parameter] public int? PurchaseOrderId { get; set; }
+    [Parameter] public int? WarehouseId { get; set; }
+    [Parameter] public List<PurchaseReceivingDetail> ExistingDetails { get; set; } = new List<PurchaseReceivingDetail>();
+    [Parameter] public List<WarehouseLocation> WarehouseLocations { get; set; } = new List<WarehouseLocation>();
+    [Parameter] public EventCallback<List<PurchaseReceivingDetail>> OnDetailsChanged { get; set; }
+
+    // ===== 內部狀態 =====
+    private List<PurchaseOrderDetail> OrderDetails { get; set; } = new List<PurchaseOrderDetail>();
+    private List<ReceivingItem> ReceivingItems { get; set; } = new List<ReceivingItem>();
+    private int? _previousPurchaseOrderId = null;
+    private int? _previousWarehouseId = null;
+
+    // ===== 模態視窗狀態 =====
+    private bool ShowDetailModalVisible { get; set; } = false;
+    private ReceivingItem? CurrentDetailItem { get; set; } = null;
+
+    // ===== 選擇狀態 =====
+    private bool IsAllSelected => ReceivingItems.Any() && ReceivingItems.Where(x => x.PurchaseOrderDetail.PendingQuantity > 0).All(x => x.IsSelected);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // 檢查採購單是否變更
+        if (_previousPurchaseOrderId != PurchaseOrderId)
+        {
+            _previousPurchaseOrderId = PurchaseOrderId;
+            await LoadPurchaseOrderDetailsAsync();
+            LoadExistingDetails();
+        }
+
+        // 當倉庫參數變更時，不需要載入倉庫位置，因為這是從父組件傳入的
+        if (_previousWarehouseId != WarehouseId)
+        {
+            _previousWarehouseId = WarehouseId;
+            // WarehouseLocations 現在從父組件傳入，無需載入
+        }
+    }
+
+    /// <summary>
+    /// 載入所有必要資料
+    /// </summary>
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            // 只需要載入採購單明細，倉庫位置從父組件傳入
+            await LoadPurchaseOrderDetailsAsync();
+            LoadExistingDetails();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 載入採購單明細
+    /// </summary>
+    private async Task LoadPurchaseOrderDetailsAsync()
+    {
+        try
+        {
+            if (PurchaseOrderId.HasValue && PurchaseOrderId.Value > 0)
+            {
+                OrderDetails = await PurchaseOrderService.GetOrderDetailsAsync(PurchaseOrderId.Value);
+                
+                // 只保留有待入庫數量的明細，或者已有入庫記錄的明細
+                var relevantDetails = OrderDetails.Where(od => 
+                    od.PendingQuantity > 0 || 
+                    ExistingDetails.Any(ed => ed.PurchaseOrderDetailId == od.Id)
+                ).ToList();
+
+                OrderDetails = relevantDetails;
+                CreateReceivingItems();
+            }
+            else
+            {
+                OrderDetails = new List<PurchaseOrderDetail>();
+                ReceivingItems = new List<ReceivingItem>();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入採購單明細時發生錯誤：{ex.Message}");
+            OrderDetails = new List<PurchaseOrderDetail>();
+            ReceivingItems = new List<ReceivingItem>();
+        }
+    }
+
+    /// <summary>
+    /// 從採購單明細建立入庫項目
+    /// </summary>
+    private void CreateReceivingItems()
+    {
+        ReceivingItems = OrderDetails.Select(od => new ReceivingItem
+        {
+            PurchaseOrderDetail = od,
+            ReceivedQuantity = 0,
+            UnitPrice = od.UnitPrice,
+            WarehouseLocationId = null,
+            QualityInspectionPassed = null,
+            IsSelected = false
+        }).ToList();
+    }
+
+    /// <summary>
+    /// 載入現有入庫明細
+    /// </summary>
+    private void LoadExistingDetails()
+    {
+        if (ExistingDetails?.Any() != true || !ReceivingItems.Any()) return;
+
+        foreach (var existingDetail in ExistingDetails)
+        {
+            var item = ReceivingItems.FirstOrDefault(ri => ri.PurchaseOrderDetail.Id == existingDetail.PurchaseOrderDetailId);
+            if (item != null)
+            {
+                item.ReceivedQuantity = existingDetail.ReceivedQuantity;
+                item.UnitPrice = existingDetail.UnitPrice;
+                item.WarehouseLocationId = existingDetail.WarehouseLocationId;
+                item.QualityInspectionPassed = existingDetail.QualityInspectionPassed;
+                item.QualityRemarks = existingDetail.QualityRemarks;
+                item.InspectionRemarks = existingDetail.InspectionRemarks;
+                item.BatchNumber = existingDetail.BatchNumber;
+                item.ExpiryDate = existingDetail.ExpiryDate;
+                item.ExistingDetailEntity = existingDetail;
+                item.IsSelected = existingDetail.ReceivedQuantity > 0; // 如果有入庫數量，預設選中
+            }
+        }
+    }
+
+    // ===== 事件處理 =====
+
+    /// <summary>
+    /// 全選/取消全選
+    /// </summary>
+    private async Task OnSelectAllChanged(ChangeEventArgs e)
+    {
+        var isChecked = (bool)(e.Value ?? false);
+        foreach (var item in ReceivingItems.Where(x => x.PurchaseOrderDetail.PendingQuantity > 0))
+        {
+            item.IsSelected = isChecked;
+        }
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 單項選擇變更
+    /// </summary>
+    private async Task OnItemSelectionChanged(ReceivingItem item, bool isSelected)
+    {
+        item.IsSelected = isSelected;
+        if (!item.IsSelected)
+        {
+            // 取消選中時清除數量
+            item.ReceivedQuantity = 0;
+        }
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 入庫數量變更
+    /// </summary>
+    private async Task OnReceivedQuantityChanged(ReceivingItem item, string? value)
+    {
+        if (int.TryParse(value, out int quantity))
+        {
+            var maxQuantity = item.PurchaseOrderDetail.PendingQuantity;
+            if (quantity > maxQuantity)
+            {
+                item.ReceivedQuantity = maxQuantity;
+                item.ValidationError = $"數量不可超過待入庫數量 {maxQuantity}";
+            }
+            else if (quantity < 0)
+            {
+                item.ReceivedQuantity = 0;
+                item.ValidationError = "數量不可為負數";
+            }
+            else
+            {
+                item.ReceivedQuantity = quantity;
+                item.ValidationError = null;
+            }
+        }
+        else
+        {
+            item.ReceivedQuantity = 0;
+            item.ValidationError = null;
+        }
+
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 單價變更
+    /// </summary>
+    private async Task OnUnitPriceChanged(ReceivingItem item, string? value)
+    {
+        if (decimal.TryParse(value, out decimal price) && price >= 0)
+        {
+            item.UnitPrice = price;
+        }
+        else
+        {
+            item.UnitPrice = 0;
+        }
+
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    // ===== 批次操作 =====
+
+    /// <summary>
+    /// 設定最大數量
+    /// </summary>
+    private async Task SetMaxQuantity(ReceivingItem item)
+    {
+        item.ReceivedQuantity = item.PurchaseOrderDetail.PendingQuantity;
+        item.ValidationError = null;
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 批次設定最大數量
+    /// </summary>
+    private async Task BatchSetMaxQuantity()
+    {
+        foreach (var item in ReceivingItems.Where(x => x.IsSelected && x.PurchaseOrderDetail.PendingQuantity > 0))
+        {
+            item.ReceivedQuantity = item.PurchaseOrderDetail.PendingQuantity;
+            item.ValidationError = null;
+        }
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 清除所有數量
+    /// </summary>
+    private async Task ClearAllQuantities()
+    {
+        foreach (var item in ReceivingItems.Where(x => x.IsSelected))
+        {
+            item.ReceivedQuantity = 0;
+            item.ValidationError = null;
+        }
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 選擇所有待入庫項目
+    /// </summary>
+    private async Task SelectAllPending()
+    {
+        foreach (var item in ReceivingItems.Where(x => x.PurchaseOrderDetail.PendingQuantity > 0))
+        {
+            item.IsSelected = true;
+        }
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 批次檢驗設定
+    /// </summary>
+    private void BatchInspection()
+    {
+        // 這裡可以開啟一個批次檢驗的模態視窗
+        // 目前先顯示第一個選中項目的詳細設定
+        var firstSelected = ReceivingItems.FirstOrDefault(x => x.IsSelected);
+        if (firstSelected != null)
+        {
+            ShowDetailModal(firstSelected);
+        }
+    }
+
+    /// <summary>
+    /// 批次設定品質檢驗結果
+    /// </summary>
+    private async Task SetBatchQualityResult(bool passed)
+    {
+        foreach (var item in ReceivingItems.Where(x => x.IsSelected))
+        {
+            item.QualityInspectionPassed = passed;
+        }
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    // ===== 模態視窗相關方法 =====
+
+    /// <summary>
+    /// 顯示詳細設定模態視窗
+    /// </summary>
+    private void ShowDetailModal(ReceivingItem item)
+    {
+        CurrentDetailItem = item;
+        ShowDetailModalVisible = true;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 關閉詳細設定模態視窗
+    /// </summary>
+    private void CloseDetailModal()
+    {
+        ShowDetailModalVisible = false;
+        CurrentDetailItem = null;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 儲存詳細設定的變更
+    /// </summary>
+    private async Task SaveDetailChanges()
+    {
+        await NotifyDetailsChanged();
+        CloseDetailModal();
+    }
+
+    // ===== 資料轉換和通知 =====
+
+    /// <summary>
+    /// 轉換為入庫明細實體
+    /// </summary>
+    private List<PurchaseReceivingDetail> ConvertToReceivingDetails()
+    {
+        var details = new List<PurchaseReceivingDetail>();
+
+        foreach (var item in ReceivingItems.Where(x => x.IsSelected && x.ReceivedQuantity > 0))
+        {
+            PurchaseReceivingDetail detail;
+
+            if (item.ExistingDetailEntity != null)
+            {
+                // 更新現有實體
+                detail = item.ExistingDetailEntity;
+            }
+            else
+            {
+                // 建立新實體
+                detail = new PurchaseReceivingDetail();
+            }
+
+            // 設定屬性
+            detail.PurchaseOrderDetailId = item.PurchaseOrderDetail.Id;
+            detail.ProductId = item.PurchaseOrderDetail.ProductId;
+            detail.ReceivedQuantity = item.ReceivedQuantity;
+            detail.UnitPrice = item.UnitPrice;
+            detail.WarehouseLocationId = item.WarehouseLocationId;
+            detail.QualityInspectionPassed = item.QualityInspectionPassed;
+            detail.QualityRemarks = item.QualityRemarks;
+            detail.InspectionRemarks = item.InspectionRemarks;
+            detail.BatchNumber = item.BatchNumber;
+            detail.ExpiryDate = item.ExpiryDate;
+
+            details.Add(detail);
+        }
+
+        return details;
+    }
+
+    /// <summary>
+    /// 通知明細變更
+    /// </summary>
+    private async Task NotifyDetailsChanged()
+    {
+        var details = ConvertToReceivingDetails();
+        await OnDetailsChanged.InvokeAsync(details);
+    }
+
+    // ===== 統計方法 =====
+
+    private decimal GetTotalAmount()
+    {
+        return ReceivingItems
+            .Where(item => item.IsSelected && item.ReceivedQuantity > 0)
+            .Sum(item => item.ReceivedQuantity * item.UnitPrice);
+    }
+
+    private int GetSelectedItemsCount()
+    {
+        return ReceivingItems.Count(x => x.IsSelected);
+    }
+
+    private int GetPendingItemsCount()
+    {
+        return ReceivingItems.Count(x => x.PurchaseOrderDetail.PendingQuantity > 0);
+    }
+
+    private int GetCompletedItemsCount()
+    {
+        return ReceivingItems.Count(x => x.PurchaseOrderDetail.PendingQuantity == 0);
+    }
+
+    private bool HasSelectedItems()
+    {
+        return ReceivingItems.Any(x => x.IsSelected);
+    }
+
+    private bool HasSelectedPendingItems()
+    {
+        return ReceivingItems.Any(x => x.IsSelected && x.PurchaseOrderDetail.PendingQuantity > 0);
+    }
+
+    private bool HasPendingItems()
+    {
+        return ReceivingItems.Any(x => x.PurchaseOrderDetail.PendingQuantity > 0);
+    }
+
+    /// <summary>
+    /// 取得過濾後的倉庫位置列表
+    /// </summary>
+    private List<WarehouseLocation> GetFilteredWarehouseLocations()
+    {
+        // WarehouseLocations 現在從父組件傳入，已經是過濾後的結果
+        return WarehouseLocations ?? new List<WarehouseLocation>();
+    }
+
+    /// <summary>
+    /// 入庫項目類別
+    /// </summary>
+    public class ReceivingItem
+    {
+        public PurchaseOrderDetail PurchaseOrderDetail { get; set; } = null!;
+        public int ReceivedQuantity { get; set; } = 0;
+        public decimal UnitPrice { get; set; } = 0;
+        public int? WarehouseLocationId { get; set; }
+        public bool? QualityInspectionPassed { get; set; }
+        public string? QualityRemarks { get; set; }
+        public string? InspectionRemarks { get; set; }
+        public string? BatchNumber { get; set; }
+        public DateTime? ExpiryDate { get; set; }
+        public bool IsSelected { get; set; } = false;
+        public string? ValidationError { get; set; }
+        public PurchaseReceivingDetail? ExistingDetailEntity { get; set; }
+    }
+}

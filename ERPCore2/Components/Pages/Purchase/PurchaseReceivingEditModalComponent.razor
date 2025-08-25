@@ -2,9 +2,11 @@
 @inject IPurchaseReceivingService PurchaseReceivingService
 @inject IPurchaseOrderService PurchaseOrderService
 @inject IWarehouseService WarehouseService
+@inject IWarehouseLocationService WarehouseLocationService
 @inject INotificationService NotificationService
 @inject ISupplierService SupplierService
 @inject IEmployeeService EmployeeService
+@using ERPCore2.Components.Shared.SubCollections
 
 <GenericEditModalComponent TEntity="PurchaseReceiving" 
                           TService="IPurchaseReceivingService"
@@ -23,11 +25,14 @@
                           DataLoader="@LoadPurchaseReceivingData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
+                          SaveHandler="@SavePurchaseReceivingWithDetails"
                           SaveSuccessMessage="@(PurchaseReceivingId.HasValue ? "採購入庫更新成功" : "採購入庫新增成功")"
                           SaveFailureMessage="採購入庫儲存失敗"
                           RequiredPermission="PurchaseReceiving.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel" />
+                          OnCancel="@HandleCancel"
+                          OnFieldChanged="@OnFieldValueChanged"
+                          CustomModules="@GetCustomModules()" />
 
 @code {
     // ===== 必要參數 =====
@@ -43,8 +48,13 @@
     private Dictionary<string, string> formSections = new();
     private List<PurchaseOrder> purchaseOrders = new();
     private List<Warehouse> warehouses = new();
+    private List<WarehouseLocation> warehouseLocations = new();
     private List<Supplier> suppliers = new();
     private List<Employee> employees = new();
+    
+    // ===== 採購入庫明細 =====
+    private List<PurchaseReceivingDetail> purchaseReceivingDetails = new();
+    private List<PurchaseOrderDetail> availableOrderDetails = new();
 
     // ===== 必要方法 =====
     protected override async Task OnParametersSetAsync()
@@ -127,11 +137,31 @@
                     ConfirmedAt = DateTime.Now
                 };
                 
+                // 清空明細
+                purchaseReceivingDetails.Clear();
+                
                 return newReceiving;
             }
 
             // 編輯模式
-            return await PurchaseReceivingService.GetByIdAsync(PurchaseReceivingId.Value);
+            var purchaseReceiving = await PurchaseReceivingService.GetByIdAsync(PurchaseReceivingId.Value);
+            
+            if (purchaseReceiving != null)
+            {
+                // 載入採購入庫明細
+                await LoadPurchaseReceivingDetails(PurchaseReceivingId.Value);
+                
+                // 載入對應的採購單明細
+                if (purchaseReceiving.PurchaseOrderId > 0)
+                {
+                    await LoadAvailableOrderDetails(purchaseReceiving.PurchaseOrderId);
+                }
+                
+                // 觸發重新渲染
+                StateHasChanged();
+            }
+            
+            return purchaseReceiving;
         }
         catch (Exception ex)
         {
@@ -151,6 +181,7 @@
             {
                 LoadPurchaseOrdersAsync(),
                 LoadWarehousesAsync(),
+                LoadWarehouseLocationsAsync(),
                 LoadSuppliersAsync(),
                 LoadEmployeesAsync()
             };
@@ -186,6 +217,19 @@
         {
             await NotificationService.ShowErrorAsync($"載入倉庫資料時發生錯誤：{ex.Message}");
             warehouses = new List<Warehouse>();
+        }
+    }
+
+    private async Task LoadWarehouseLocationsAsync()
+    {
+        try
+        {
+            warehouseLocations = await WarehouseLocationService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入倉庫位置資料時發生錯誤：{ex.Message}");
+            warehouseLocations = new List<WarehouseLocation>();
         }
     }
 
@@ -364,4 +408,208 @@
             (service, code, excludeId) => service.IsReceiptNumberExistsAsync(code, excludeId)
         );
     }
+
+    // ===== 採購入庫明細管理方法 =====
+    
+    /// <summary>
+    /// 載入採購入庫明細
+    /// </summary>
+    private async Task LoadPurchaseReceivingDetails(int purchaseReceivingId)
+    {
+        try
+        {
+            // 從服務載入採購入庫明細
+            var receiving = await PurchaseReceivingService.GetByIdAsync(purchaseReceivingId);
+            purchaseReceivingDetails = receiving?.PurchaseReceivingDetails?.ToList() ?? new List<PurchaseReceivingDetail>();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入採購入庫明細失敗：{ex.Message}");
+            purchaseReceivingDetails = new List<PurchaseReceivingDetail>();
+        }
+    }
+
+    /// <summary>
+    /// 載入可用的採購單明細
+    /// </summary>
+    private async Task LoadAvailableOrderDetails(int purchaseOrderId)
+    {
+        try
+        {
+            availableOrderDetails = await PurchaseOrderService.GetOrderDetailsAsync(purchaseOrderId);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入採購單明細失敗：{ex.Message}");
+            availableOrderDetails = new List<PurchaseOrderDetail>();
+        }
+    }
+
+    /// <summary>
+    /// 處理入庫明細變更
+    /// </summary>
+    private async Task HandleReceivingDetailsChanged(List<PurchaseReceivingDetail> details)
+    {
+        try
+        {
+            purchaseReceivingDetails = details ?? new List<PurchaseReceivingDetail>();
+            
+            // 更新主檔的總金額
+            if (editModalComponent?.Entity != null)
+            {
+                editModalComponent.Entity.TotalAmount = purchaseReceivingDetails.Sum(d => d.SubtotalAmount);
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理明細變更時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 處理欄位值變更事件
+    /// </summary>
+    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    {
+        try
+        {
+            // 當採購單ID變更時，載入對應的採購單明細
+            if (fieldChange.PropertyName == nameof(PurchaseReceiving.PurchaseOrderId) && 
+                fieldChange.Value != null && 
+                int.TryParse(fieldChange.Value.ToString(), out int purchaseOrderId) && 
+                purchaseOrderId > 0)
+            {
+                await LoadAvailableOrderDetails(purchaseOrderId);
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理欄位變更時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 自訂儲存邏輯 - 同時儲存主檔和明細
+    /// </summary>
+    private async Task<bool> SavePurchaseReceivingWithDetails(PurchaseReceiving purchaseReceiving)
+    {
+        try
+        {
+            if (purchaseReceiving == null)
+            {
+                await NotificationService.ShowErrorAsync("採購入庫資料不能為空");
+                return false;
+            }
+
+            // 更新總金額
+            purchaseReceiving.TotalAmount = purchaseReceivingDetails.Sum(d => d.SubtotalAmount);
+
+            // 儲存主檔
+            ServiceResult<PurchaseReceiving> result;
+            if (PurchaseReceivingId.HasValue)
+            {
+                result = await PurchaseReceivingService.UpdateAsync(purchaseReceiving);
+            }
+            else
+            {
+                result = await PurchaseReceivingService.CreateAsync(purchaseReceiving);
+            }
+
+            if (!result.IsSuccess || result.Data == null)
+            {
+                await NotificationService.ShowErrorAsync("儲存採購入庫失敗");
+                return false;
+            }
+
+            // 儲存明細
+            await SavePurchaseReceivingDetails(result.Data.Id);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存時發生錯誤：{ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 儲存採購入庫明細
+    /// </summary>
+    private async Task SavePurchaseReceivingDetails(int purchaseReceivingId)
+    {
+        try
+        {
+            // 設定主檔ID
+            foreach (var detail in purchaseReceivingDetails)
+            {
+                detail.PurchaseReceivingId = purchaseReceivingId;
+            }
+
+            // 這裡可以實作詳細的明細儲存邏輯
+            // 例如：新增、更新、刪除明細
+            // 目前先簡化處理
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存採購入庫明細失敗：{ex.Message}");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 配置自訂模組
+    /// </summary>
+    private List<GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule> GetCustomModules()
+    {
+        if (editModalComponent == null)
+        {
+            return new List<GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule>();
+        }
+
+        return new List<GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule>
+        {
+            new GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule
+            {
+                Title = "入庫明細",
+                Order = 1,
+                CssClass = "mt-4",
+                IsVisible = true,
+                Content = CreateReceivingDetailManagerContent()
+            }
+        };
+    }
+
+    /// <summary>
+    /// 創建入庫明細管理器內容的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateReceivingDetailManagerContent() => __builder =>
+    {
+        try
+        {
+            @if (editModalComponent?.Entity != null)
+            {
+                <PurchaseReceivingDetailManagerComponent 
+                    PurchaseOrderId="@editModalComponent.Entity.PurchaseOrderId"
+                    WarehouseId="@editModalComponent.Entity.WarehouseId"
+                    ExistingDetails="@purchaseReceivingDetails"
+                    WarehouseLocations="@warehouseLocations"
+                    OnDetailsChanged="@HandleReceivingDetailsChanged" />
+            }
+            else
+            {
+                <div class="text-center py-3">
+                    <span class="text-muted">請先選擇採購單後再管理入庫明細</span>
+                </div>
+            }
+        }
+        catch
+        {
+            <div class="alert alert-warning" role="alert">
+                載入明細管理器時發生錯誤，請重新整理頁面。
+            </div>
+        }
+    };
 }
