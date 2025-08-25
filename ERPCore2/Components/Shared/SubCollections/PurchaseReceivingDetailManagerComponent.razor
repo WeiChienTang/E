@@ -26,8 +26,7 @@
                         <th width="10%">待入庫</th>
                         <th width="12%">本次入庫數量</th>
                         <th width="10%">單價</th>
-                        <th width="12%">倉庫位置</th>
-                        <th width="8%">品檢</th>
+                        <th width="20%">倉庫位置</th>
                         <th width="10%">操作</th>
                     }
                 </tr>
@@ -43,7 +42,7 @@
                     <tr class="@rowClass">
                         @if (!PurchaseOrderId.HasValue || PurchaseOrderId.Value <= 0)
                         {
-                            <td class="text-center py-4" colspan="9">
+                            <td class="text-center py-4" colspan="8">
                                 <div class="order-warning">
                                     <i class="fas fa-exclamation-triangle text-warning me-2"></i>
                                     <span class="text-muted">請先選擇採購單...</span>
@@ -120,29 +119,6 @@
                                     }
                                 </select>
                             </td>
-                            <td class="text-center">
-                                @if (isSelected && hasPendingQty)
-                                {
-                                    @if (item.QualityInspectionPassed == true)
-                                    {
-                                        <span class="badge bg-success" title="品質檢驗通過">
-                                            <i class="fas fa-check"></i>
-                                        </span>
-                                    }
-                                    else if (item.QualityInspectionPassed == false)
-                                    {
-                                        <span class="badge bg-danger" title="品質檢驗不通過">
-                                            <i class="fas fa-times"></i>
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-secondary" title="待檢驗">
-                                            <i class="fas fa-question"></i>
-                                        </span>
-                                    }
-                                }
-                            </td>
                             <td>
                                 @if (hasPendingQty)
                                 {
@@ -176,7 +152,7 @@
                     <tr class="table-secondary">
                         <th colspan="6">總計</th>
                         <th class="text-end">@GetTotalAmount().ToString("C")</th>
-                        <th colspan="2">
+                        <th colspan="1">
                             <div class="d-flex gap-2 justify-content-between">
                                 <div class="d-flex gap-2">
                                     <button type="button" class="btn btn-outline-success btn-sm" 
@@ -199,12 +175,6 @@
                                             title="選擇所有待入庫項目">
                                         <i class="fas fa-check-square"></i> 選擇待入庫
                                     </button>
-                                    <button type="button" class="btn btn-outline-warning btn-sm" 
-                                            @onclick="BatchInspection"
-                                            disabled="@(!HasSelectedItems())"
-                                            title="批次設定檢驗資訊">
-                                        <i class="fas fa-clipboard-check"></i> 批次檢驗
-                                    </button>
                                 </div>
                             </div>
                         </th>
@@ -219,40 +189,7 @@
     {
         <div class="mt-3">
             <div class="row">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h6 class="mb-0">
-                                <i class="fas fa-clipboard-check"></i> 批次品質檢驗
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="batchQuality" id="batchPass" 
-                                               @onchange="() => SetBatchQualityResult(true)"
-                                               disabled="@(!HasSelectedItems())">
-                                        <label class="form-check-label text-success" for="batchPass">
-                                            <i class="fas fa-check"></i> 檢驗通過
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="batchQuality" id="batchFail" 
-                                               @onchange="() => SetBatchQualityResult(false)"
-                                               disabled="@(!HasSelectedItems())">
-                                        <label class="form-check-label text-danger" for="batchFail">
-                                            <i class="fas fa-times"></i> 檢驗不通過
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <div class="card">
                         <div class="card-header">
                             <h6 class="mb-0">
@@ -335,34 +272,7 @@ else
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">品質檢驗結果</label>
-                                <div class="btn-group w-100" role="group">
-                                    <input type="radio" class="btn-check" name="quality_@CurrentDetailItem.PurchaseOrderDetail.Id" id="pass_@CurrentDetailItem.PurchaseOrderDetail.Id" 
-                                           checked="@(CurrentDetailItem.QualityInspectionPassed == true)"
-                                           @onchange="() => CurrentDetailItem.QualityInspectionPassed = true">
-                                    <label class="btn btn-outline-success" for="pass_@CurrentDetailItem.PurchaseOrderDetail.Id">
-                                        <i class="fas fa-check"></i> 通過
-                                    </label>
-                                    
-                                    <input type="radio" class="btn-check" name="quality_@CurrentDetailItem.PurchaseOrderDetail.Id" id="fail_@CurrentDetailItem.PurchaseOrderDetail.Id" 
-                                           checked="@(CurrentDetailItem.QualityInspectionPassed == false)"
-                                           @onchange="() => CurrentDetailItem.QualityInspectionPassed = false">
-                                    <label class="btn btn-outline-danger" for="fail_@CurrentDetailItem.PurchaseOrderDetail.Id">
-                                        <i class="fas fa-times"></i> 不通過
-                                    </label>
-                                    
-                                    <input type="radio" class="btn-check" name="quality_@CurrentDetailItem.PurchaseOrderDetail.Id" id="pending_@CurrentDetailItem.PurchaseOrderDetail.Id" 
-                                           checked="@(CurrentDetailItem.QualityInspectionPassed == null)"
-                                           @onchange="() => CurrentDetailItem.QualityInspectionPassed = null">
-                                    <label class="btn btn-outline-secondary" for="pending_@CurrentDetailItem.PurchaseOrderDetail.Id">
-                                        <i class="fas fa-question"></i> 待檢驗
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <div class="mb-3">
                                 <label class="form-label">倉庫位置</label>
                                 <select class="form-select" @bind="CurrentDetailItem.WarehouseLocationId">
@@ -375,17 +285,6 @@ else
                                         }
                                     }
                                 </select>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="mb-3">
-                                <label class="form-label">品質檢驗備註</label>
-                                <textarea class="form-control" rows="2" 
-                                          @bind="CurrentDetailItem.QualityRemarks"
-                                          placeholder="輸入品質檢驗相關備註..."></textarea>
                             </div>
                         </div>
                     </div>
@@ -587,7 +486,6 @@ else
             ReceivedQuantity = 0,
             UnitPrice = od.UnitPrice,
             WarehouseLocationId = null,
-            QualityInspectionPassed = null,
             IsSelected = false
         }).ToList();
     }
@@ -607,8 +505,6 @@ else
                 item.ReceivedQuantity = existingDetail.ReceivedQuantity;
                 item.UnitPrice = existingDetail.UnitPrice;
                 item.WarehouseLocationId = existingDetail.WarehouseLocationId;
-                item.QualityInspectionPassed = existingDetail.QualityInspectionPassed;
-                item.QualityRemarks = existingDetail.QualityRemarks;
                 item.InspectionRemarks = existingDetail.InspectionRemarks;
                 item.BatchNumber = existingDetail.BatchNumber;
                 item.ExpiryDate = existingDetail.ExpiryDate;
@@ -755,33 +651,6 @@ else
         StateHasChanged();
     }
 
-    /// <summary>
-    /// 批次檢驗設定
-    /// </summary>
-    private void BatchInspection()
-    {
-        // 這裡可以開啟一個批次檢驗的模態視窗
-        // 目前先顯示第一個選中項目的詳細設定
-        var firstSelected = ReceivingItems.FirstOrDefault(x => x.IsSelected);
-        if (firstSelected != null)
-        {
-            ShowDetailModal(firstSelected);
-        }
-    }
-
-    /// <summary>
-    /// 批次設定品質檢驗結果
-    /// </summary>
-    private async Task SetBatchQualityResult(bool passed)
-    {
-        foreach (var item in ReceivingItems.Where(x => x.IsSelected))
-        {
-            item.QualityInspectionPassed = passed;
-        }
-        await NotifyDetailsChanged();
-        StateHasChanged();
-    }
-
     // ===== 模態視窗相關方法 =====
 
     /// <summary>
@@ -843,8 +712,6 @@ else
             detail.ReceivedQuantity = item.ReceivedQuantity;
             detail.UnitPrice = item.UnitPrice;
             detail.WarehouseLocationId = item.WarehouseLocationId;
-            detail.QualityInspectionPassed = item.QualityInspectionPassed;
-            detail.QualityRemarks = item.QualityRemarks;
             detail.InspectionRemarks = item.InspectionRemarks;
             detail.BatchNumber = item.BatchNumber;
             detail.ExpiryDate = item.ExpiryDate;
@@ -921,8 +788,6 @@ else
         public int ReceivedQuantity { get; set; } = 0;
         public decimal UnitPrice { get; set; } = 0;
         public int? WarehouseLocationId { get; set; }
-        public bool? QualityInspectionPassed { get; set; }
-        public string? QualityRemarks { get; set; }
         public string? InspectionRemarks { get; set; }
         public string? BatchNumber { get; set; }
         public DateTime? ExpiryDate { get; set; }

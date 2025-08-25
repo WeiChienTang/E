@@ -163,8 +163,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                             ReceivedQuantity = orderDetail.ReceivedQuantity,
                             UnitPrice = orderDetail.UnitPrice,
                             InspectionRemarks = "品質良好",
-                            QualityInspectionPassed = true,
-                            QualityRemarks = "通過檢驗",
                             BatchNumber = $"BATCH{DateTime.Now:yyyyMMdd}{random.Next(100, 999)}",
                             Status = EntityStatus.Active,
                             CreatedAt = receipt.CreatedAt,

@@ -49,13 +49,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "驗收備註")]
         public string? InspectionRemarks { get; set; }
 
-        [Display(Name = "品質檢驗結果")]
-        public bool? QualityInspectionPassed { get; set; }
-
-        [MaxLength(200, ErrorMessage = "品質備註不可超過200個字元")]
-        [Display(Name = "品質備註")]
-        public string? QualityRemarks { get; set; }
-
         [Display(Name = "批號")]
         [MaxLength(50, ErrorMessage = "批號不可超過50個字元")]
         public string? BatchNumber { get; set; }
