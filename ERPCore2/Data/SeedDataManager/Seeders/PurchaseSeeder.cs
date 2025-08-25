@@ -129,7 +129,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ReceiptNumber = $"PR{receiptDate:yyyyMMdd}{order.Id:D3}",
                     ReceiptDate = receiptDate,
                     ReceiptStatus = PurchaseReceivingStatus.Received,
-                    ReceiptRemarks = $"採購訂單 {order.PurchaseOrderNumber} 進貨",
+                    Remarks = $"採購訂單 {order.PurchaseOrderNumber} 進貨",
                     PurchaseOrderId = order.Id,
                     WarehouseId = order.WarehouseId!.Value,
                     ConfirmedBy = 24, // 使用實際存在的 admin 員工 ID

@@ -95,7 +95,7 @@ namespace ERPCore2.Services
                         pr.ReceiptNumber.Contains(searchTerm) ||
                         pr.PurchaseOrder.PurchaseOrderNumber.Contains(searchTerm) ||
                         pr.PurchaseOrder.Supplier.CompanyName.Contains(searchTerm) ||
-                        (pr.ReceiptRemarks != null && pr.ReceiptRemarks.Contains(searchTerm))
+                        (pr.Remarks != null && pr.Remarks.Contains(searchTerm))
                     ))
                     .OrderByDescending(pr => pr.ReceiptDate)
                     .ThenBy(pr => pr.ReceiptNumber)

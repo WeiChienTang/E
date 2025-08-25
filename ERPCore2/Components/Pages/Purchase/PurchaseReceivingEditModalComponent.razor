@@ -337,16 +337,6 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(PurchaseReceiving.TotalAmount),
-                    Label = "總金額",
-                    FieldType = FormFieldType.Number,
-                    IsRequired = false,
-                    Min = 0,
-                    Step = 0.01m,
-                    HelpText = "入庫商品的總金額"
-                },
-                new()
-                {
                     PropertyName = nameof(PurchaseReceiving.ConfirmedAt),
                     Label = "確認時間",
                     FieldType = FormFieldType.DateTime,
@@ -377,7 +367,6 @@
                 { nameof(PurchaseReceiving.ReceiptDate), "基本資訊" },
                 { nameof(PurchaseReceiving.WarehouseId), "基本資訊" },
                 { nameof(PurchaseReceiving.ReceiptStatus), "基本資訊" },
-                { nameof(PurchaseReceiving.TotalAmount), "金額資訊" },
                 { nameof(PurchaseReceiving.ConfirmedAt), "確認資訊" },
                 { nameof(PurchaseReceiving.ConfirmedBy), "確認資訊" },
                 { nameof(BaseEntity.Remarks), "其他資訊" }

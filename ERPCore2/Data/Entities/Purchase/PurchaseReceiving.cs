@@ -26,10 +26,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "進貨狀態")]
         public PurchaseReceivingStatus ReceiptStatus { get; set; } = PurchaseReceivingStatus.Draft;
 
-        [MaxLength(500, ErrorMessage = "進貨備註不可超過500個字元")]
-        [Display(Name = "進貨備註")]
-        public string? ReceiptRemarks { get; set; }
-
         [Display(Name = "進貨總金額")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; } = 0;
