@@ -78,7 +78,10 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             FilterPlaceholder = "輸入供應商名稱搜尋",
                             HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, "SupplierName", pr => pr.PurchaseOrder.Supplier.CompanyName)
+                                model, query, "SupplierName", pr => 
+                                    pr.PurchaseOrder != null && pr.PurchaseOrder.Supplier != null 
+                                        ? pr.PurchaseOrder.Supplier.CompanyName 
+                                        : (pr.Supplier != null ? pr.Supplier.CompanyName : ""))
                         }
                     },
                     {

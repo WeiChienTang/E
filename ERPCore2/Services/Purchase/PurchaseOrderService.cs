@@ -787,6 +787,100 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 取得指定供應商尚未完成進貨的採購明細
+        /// </summary>
+        public async Task<List<PurchaseOrderDetail>> GetPendingReceivingDetailsBySupplierAsync(int supplierId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                return await context.PurchaseOrderDetails
+                    .Include(pod => pod.Product)
+                        .ThenInclude(p => p.Unit)
+                    .Include(pod => pod.PurchaseOrder)
+                        .ThenInclude(po => po.Supplier)
+                    .Where(pod => 
+                        pod.PurchaseOrder.SupplierId == supplierId &&
+                        !pod.IsDeleted &&
+                        !pod.PurchaseOrder.IsDeleted &&
+                        pod.PurchaseOrder.IsApproved &&
+                        // 檢查尚未完全進貨的明細
+                        pod.OrderQuantity > context.PurchaseReceivingDetails
+                            .Where(prd => prd.PurchaseOrderDetailId == pod.Id && !prd.IsDeleted)
+                            .Sum(prd => prd.ReceivedQuantity)
+                    )
+                    .OrderBy(pod => pod.PurchaseOrder.OrderDate)
+                    .ThenBy(pod => pod.PurchaseOrder.PurchaseOrderNumber)
+                    .ThenBy(pod => pod.Product.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPendingReceivingDetailsBySupplierAsync), GetType(), _logger, new { 
+                    Method = nameof(GetPendingReceivingDetailsBySupplierAsync),
+                    ServiceType = GetType().Name,
+                    SupplierId = supplierId 
+                });
+                return new List<PurchaseOrderDetail>();
+            }
+        }
+
+        /// <summary>
+        /// 取得指定供應商尚未完成進貨的採購明細（包含剩餘數量資訊）
+        /// </summary>
+        public async Task<List<PurchaseOrderDetail>> GetPendingReceivingDetailsBySupplierWithQuantityAsync(int supplierId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                var details = await context.PurchaseOrderDetails
+                    .Include(pod => pod.Product)
+                        .ThenInclude(p => p.Unit)
+                    .Include(pod => pod.PurchaseOrder)
+                        .ThenInclude(po => po.Supplier)
+                    .Where(pod => 
+                        pod.PurchaseOrder.SupplierId == supplierId &&
+                        !pod.IsDeleted &&
+                        !pod.PurchaseOrder.IsDeleted &&
+                        pod.PurchaseOrder.IsApproved
+                    )
+                    .Select(pod => new 
+                    {
+                        Detail = pod,
+                        ReceivedQuantity = context.PurchaseReceivingDetails
+                            .Where(prd => prd.PurchaseOrderDetailId == pod.Id && !prd.IsDeleted)
+                            .Sum(prd => prd.ReceivedQuantity)
+                    })
+                    .Where(x => x.Detail.OrderQuantity > x.ReceivedQuantity)
+                    .OrderBy(x => x.Detail.PurchaseOrder.OrderDate)
+                    .ThenBy(x => x.Detail.PurchaseOrder.PurchaseOrderNumber)
+                    .ThenBy(x => x.Detail.Product.Code)
+                    .ToListAsync();
+
+                // 設定剩餘數量資訊到明細物件的備註或額外屬性
+                var result = details.Select(x => 
+                {
+                    var detail = x.Detail;
+                    // 可以在這裡計算並設定剩餘數量等額外資訊
+                    return detail;
+                }).ToList();
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPendingReceivingDetailsBySupplierWithQuantityAsync), GetType(), _logger, new { 
+                    Method = nameof(GetPendingReceivingDetailsBySupplierWithQuantityAsync),
+                    ServiceType = GetType().Name,
+                    SupplierId = supplierId 
+                });
+                return new List<PurchaseOrderDetail>();
+            }
+        }
+
         #endregion
 
         #region 自動產生編號

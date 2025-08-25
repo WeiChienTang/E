@@ -35,6 +35,10 @@ namespace ERPCore2.Services
         Task<ServiceResult> UpdateOrderDetailAsync(PurchaseOrderDetail detail);
         Task<ServiceResult> DeleteOrderDetailAsync(int detailId);
         
+        // 供應商相關進貨明細查詢 - 新增方法
+        Task<List<PurchaseOrderDetail>> GetPendingReceivingDetailsBySupplierAsync(int supplierId);
+        Task<List<PurchaseOrderDetail>> GetPendingReceivingDetailsBySupplierWithQuantityAsync(int supplierId);
+        
         // 自動產生編號
         Task<string> GenerateOrderNumberAsync();
     }

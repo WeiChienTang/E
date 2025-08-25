@@ -629,7 +629,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var purchaseReceiving = await context.PurchaseReceivings
                     .Include(pr => pr.PurchaseOrder)
-                        .ThenInclude(po => po.Supplier)
+                        .ThenInclude(po => po!.Supplier)
+                    .Include(pr => pr.Supplier)  // 新增直接供應商關聯
                     .FirstOrDefaultAsync(pr => pr.Id == purchaseReceivingId && !pr.IsDeleted);
                 
                 if (purchaseReceiving == null)
@@ -642,7 +643,7 @@ namespace ERPCore2.Services
                 {
                     PurchaseReturnNumber = returnNumber,
                     ReturnDate = DateTime.Today,
-                    SupplierId = purchaseReceiving.PurchaseOrder.SupplierId,
+                    SupplierId = purchaseReceiving.PurchaseOrder?.SupplierId ?? purchaseReceiving.SupplierId,
                     PurchaseOrderId = purchaseReceiving.PurchaseOrderId,
                     PurchaseReceivingId = purchaseReceivingId,
                     ReturnStatus = PurchaseReturnStatus.Draft,

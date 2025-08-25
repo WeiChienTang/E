@@ -31,7 +31,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReceivings
                     .Include(pr => pr.PurchaseOrder)
-                        .ThenInclude(po => po.Supplier)
+                        .ThenInclude(po => po!.Supplier)
+                    .Include(pr => pr.Supplier)  // 新增直接供應商關聯
                     .Include(pr => pr.Warehouse)
                     .Include(pr => pr.ConfirmedByUser)
                     .Include(pr => pr.PurchaseReceivingDetails)
@@ -58,7 +59,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReceivings
                     .Include(pr => pr.PurchaseOrder)
-                        .ThenInclude(po => po.Supplier)
+                        .ThenInclude(po => po!.Supplier)
+                    .Include(pr => pr.Supplier)  // 新增直接供應商關聯
                     .Include(pr => pr.Warehouse)
                     .Include(pr => pr.ConfirmedByUser)
                     .Include(pr => pr.PurchaseReceivingDetails)
@@ -88,13 +90,15 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReceivings
                     .Include(pr => pr.PurchaseOrder)
-                        .ThenInclude(po => po.Supplier)
+                        .ThenInclude(po => po!.Supplier)
+                    .Include(pr => pr.Supplier)  // 新增直接供應商關聯
                     .Include(pr => pr.Warehouse)
                     .Include(pr => pr.ConfirmedByUser)
                     .Where(pr => !pr.IsDeleted && (
                         pr.ReceiptNumber.Contains(searchTerm) ||
-                        pr.PurchaseOrder.PurchaseOrderNumber.Contains(searchTerm) ||
-                        pr.PurchaseOrder.Supplier.CompanyName.Contains(searchTerm) ||
+                        (pr.PurchaseOrder != null && pr.PurchaseOrder.PurchaseOrderNumber.Contains(searchTerm)) ||
+                        (pr.PurchaseOrder != null && pr.PurchaseOrder.Supplier != null && pr.PurchaseOrder.Supplier.CompanyName.Contains(searchTerm)) ||
+                        (pr.Supplier != null && pr.Supplier.CompanyName.Contains(searchTerm)) ||
                         (pr.Remarks != null && pr.Remarks.Contains(searchTerm))
                     ))
                     .OrderByDescending(pr => pr.ReceiptDate)
@@ -260,7 +264,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReceivings
                     .Include(pr => pr.PurchaseOrder)
-                        .ThenInclude(po => po.Supplier)
+                        .ThenInclude(po => po!.Supplier)
+                    .Include(pr => pr.Supplier)  // 新增直接供應商關聯
                     .Include(pr => pr.Warehouse)
                     .Where(pr => pr.ReceiptStatus == status && !pr.IsDeleted)
                     .OrderByDescending(pr => pr.ReceiptDate)
@@ -285,7 +290,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReceivings
                     .Include(pr => pr.PurchaseOrder)
-                        .ThenInclude(po => po.Supplier)
+                        .ThenInclude(po => po!.Supplier)
+                    .Include(pr => pr.Supplier)  // 新增直接供應商關聯
                     .Include(pr => pr.Warehouse)
                     .Where(pr => pr.ReceiptDate >= startDate && pr.ReceiptDate <= endDate && !pr.IsDeleted)
                     .OrderByDescending(pr => pr.ReceiptDate)
@@ -311,7 +317,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReceivings
                     .Include(pr => pr.PurchaseOrder)
-                        .ThenInclude(po => po.Supplier)
+                        .ThenInclude(po => po!.Supplier)
+                    .Include(pr => pr.Supplier)  // 新增直接供應商關聯
                     .Include(pr => pr.Warehouse)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Product)

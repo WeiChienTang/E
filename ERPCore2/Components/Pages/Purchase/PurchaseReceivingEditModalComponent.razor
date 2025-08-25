@@ -152,9 +152,9 @@
                 await LoadPurchaseReceivingDetails(PurchaseReceivingId.Value);
                 
                 // 載入對應的採購單明細
-                if (purchaseReceiving.PurchaseOrderId > 0)
+                if (purchaseReceiving.PurchaseOrderId.HasValue && purchaseReceiving.PurchaseOrderId.Value > 0)
                 {
-                    await LoadAvailableOrderDetails(purchaseReceiving.PurchaseOrderId);
+                    await LoadAvailableOrderDetails(purchaseReceiving.PurchaseOrderId.Value);
                 }
                 
                 // 觸發重新渲染
@@ -289,16 +289,29 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(PurchaseReceiving.PurchaseOrderId),
-                    Label = "採購單",
+                    PropertyName = nameof(PurchaseReceiving.SupplierId),
+                    Label = "供應商",
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
+                    Options = suppliers.Select(s => new SelectOption
+                    {
+                        Value = s.Id.ToString(),
+                        Text = s.CompanyName
+                    }).ToList(),
+                    HelpText = "選擇供應商以載入該供應商的未完成進貨商品"
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReceiving.PurchaseOrderId),
+                    Label = "採購單（可選）",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,  // 改為非必填，支援多採購單模式
                     Options = purchaseOrders.Select(po => new SelectOption
                     {
                         Value = po.Id.ToString(),
                         Text = $"{po.PurchaseOrderNumber} - {po.Supplier?.CompanyName ?? "未知供應商"}"
                     }).ToList(),
-                    HelpText = "請選擇相關的採購單"
+                    HelpText = "可選擇特定採購單，或留空使用多採購單模式"
                 },
                 new()
                 {
@@ -363,6 +376,7 @@
             formSections = new Dictionary<string, string>
             {
                 { nameof(PurchaseReceiving.ReceiptNumber), "基本資訊" },
+                { nameof(PurchaseReceiving.SupplierId), "基本資訊" },
                 { nameof(PurchaseReceiving.PurchaseOrderId), "基本資訊" },
                 { nameof(PurchaseReceiving.ReceiptDate), "基本資訊" },
                 { nameof(PurchaseReceiving.WarehouseId), "基本資訊" },
@@ -463,7 +477,21 @@
     {
         try
         {
-            // 當採購單ID變更時，載入對應的採購單明細
+            // 當供應商變更時，清空採購單選擇
+            if (fieldChange.PropertyName == nameof(PurchaseReceiving.SupplierId) && 
+                fieldChange.Value != null && 
+                int.TryParse(fieldChange.Value.ToString(), out int supplierId) && 
+                supplierId > 0)
+            {
+                // 清空採購單選擇，因為要改用多採購單模式
+                if (editModalComponent?.Entity != null)
+                {
+                    editModalComponent.Entity.PurchaseOrderId = null;
+                }
+                StateHasChanged();
+            }
+            
+            // 當採購單ID變更時，載入對應的採購單明細（單一採購單模式）
             if (fieldChange.PropertyName == nameof(PurchaseReceiving.PurchaseOrderId) && 
                 fieldChange.Value != null && 
                 int.TryParse(fieldChange.Value.ToString(), out int purchaseOrderId) && 
@@ -580,12 +608,30 @@
         {
             @if (editModalComponent?.Entity != null)
             {
-                <PurchaseReceivingDetailManagerComponent 
-                    PurchaseOrderId="@editModalComponent.Entity.PurchaseOrderId"
-                    WarehouseId="@editModalComponent.Entity.WarehouseId"
-                    ExistingDetails="@purchaseReceivingDetails"
-                    WarehouseLocations="@warehouseLocations"
-                    OnDetailsChanged="@HandleReceivingDetailsChanged" />
+                // 判斷使用單一採購單模式還是多採購單模式
+                @if (editModalComponent.Entity.PurchaseOrderId.HasValue && editModalComponent.Entity.PurchaseOrderId.Value > 0)
+                {
+                    // 單一採購單模式 - 使用原有元件
+                    <PurchaseReceivingDetailManagerComponent 
+                        PurchaseOrderId="@editModalComponent.Entity.PurchaseOrderId"
+                        ExistingDetails="@purchaseReceivingDetails"
+                        OnDetailsChanged="@HandleReceivingDetailsChanged" />
+                }
+                else if (editModalComponent.Entity.SupplierId > 0)
+                {
+                    // 多採購單模式 - 使用新元件
+                    <MultiOrderPurchaseReceivingDetailManagerComponent 
+                        SupplierId="@editModalComponent.Entity.SupplierId"
+                        ExistingDetails="@purchaseReceivingDetails"
+                        OnDetailsChanged="@HandleReceivingDetailsChanged" />
+                }
+                else
+                {
+                    <div class="text-center py-3">
+                        <i class="fas fa-info-circle text-info me-2"></i>
+                        <span class="text-muted">請先選擇供應商或採購單後再管理入庫明細</span>
+                    </div>
+                }
             }
             else
             {
