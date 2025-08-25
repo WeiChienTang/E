@@ -117,14 +117,11 @@
 ::deep .form-label {
     font-weight: 600 !important;
     color: #374151 !important;
-    /* margin-bottom: 0 !important; 移除標籤與欄位間距以修正垂直對齊 */
-    font-size: 1rem !important; /* 增大標籤字體 */
 }
 
 /* 表單控制項放大 */
 ::deep .form-control,
 ::deep .form-select {
-    font-size: 0.9rem !important; /* 縮小字體 */
     padding: 0.5rem 0.75rem !important; /* 縮小內邊距 */
     border-radius: 8px !important;
     border: 2px solid #e5e7eb !important;
@@ -164,7 +161,7 @@
 /* 幫助文字樣式 */
 ::deep .form-text,
 ::deep .help-text {
-    font-size: 0.9rem !important; /* 稍微增大幫助文字 */
+    font-size: 0.9rem !important;
     color: #6b7280 !important;
     margin-top: 0.3rem !important;
     line-height: 1.4 !important;
@@ -209,7 +206,6 @@
     padding: 0.75rem 2rem !important;
     font-weight: 600 !important;
     border-radius: 8px !important;
-    font-size: 1rem !important;
     transition: all 0.2s ease !important;
 }
 
@@ -247,7 +243,6 @@
 .alert {
     border-radius: 8px !important;
     border: none !important;
-    font-size: 1rem !important;
 }
 
 .alert-danger {
@@ -353,7 +348,6 @@
     
     .modal-footer .btn {
         padding: 0.65rem 0.75rem !important;
-        font-size: 0.85rem !important;
         width: 100% !important;
         min-width: unset !important; /* 移除最小寬度限制 */
         white-space: nowrap !important; /* 防止文字換行 */
@@ -468,7 +462,6 @@
 
 .modal-approval-section .approval-actions .btn {
     min-width: 80px !important;
-    font-size: 0.875rem !important;
     padding: 0.5rem 1rem !important;
     border-radius: 6px !important;
     font-weight: 500 !important;

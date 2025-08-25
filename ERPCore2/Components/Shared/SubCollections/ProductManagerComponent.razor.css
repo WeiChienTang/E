@@ -81,25 +81,21 @@
     .table th,
     .table td {
         padding: 0.5rem 0.25rem; /* 減少padding以節省空間 */
-        font-size: 0.875rem; /* 稍微縮小字體 */
         white-space: nowrap; /* 防止文字換行 */
     }
     
     /* 優化輸入框在小螢幕的顯示 */
     .form-control-sm {
-        font-size: 0.8rem;
         padding: 0.25rem 0.5rem;
     }
     
     /* 優化按鈕在小螢幕的顯示 */
     .btn-sm {
         padding: 0.2rem 0.4rem;
-        font-size: 0.75rem;
     }
     
     /* 商品搜尋下拉選單優化 */
     .dropdown-menu {
-        font-size: 0.875rem;
         max-height: 150px; /* 限制下拉選單高度 */
     }
     
