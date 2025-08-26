@@ -1,4 +1,5 @@
 @* 多採購單採購入庫明細管理元件 *@
+@using ERPCore2.Components.Shared.Buttons
 @inject IPurchaseOrderService PurchaseOrderService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
@@ -6,20 +7,6 @@
 @if (PendingOrderDetails != null && PendingOrderDetails.Any())
 {
     <div class="card">
-        <div class="card-header">
-            <h6 class="mb-0">
-                <i class="fas fa-list"></i> 
-                @if (SupplierId.HasValue && SupplierId.Value > 0)
-                {
-                    <span>供應商未完成進貨商品清單</span>
-                }
-                else
-                {
-                    <span>請先選擇供應商</span>
-                }
-            </h6>
-        </div>
-        <div class="card-body">
             @if (!SupplierId.HasValue || SupplierId.Value <= 0)
             {
                 <div class="text-center text-muted py-5">
@@ -34,32 +21,19 @@
                     <table class="table table-striped table-hover">
                         <thead class="table-dark">
                             <tr>
-                                <th width="5%">
-                                    <input type="checkbox" 
-                                           @onchange="ToggleSelectAll"
-                                           checked="@IsAllSelected()" />
-                                </th>
-                                <th width="15%">採購單號</th>
+                                <th width="25%">採購單號</th>
                                 <th width="25%">商品資訊</th>
-                                <th width="12%">訂購量</th>
-                                <th width="12%">已進貨</th>
-                                <th width="12%">剩餘量</th>
-                                <th width="12%">入庫量</th>
-                                <th width="7%">單價</th>
+                                <th width="15%">訂購量</th>
+                                <th width="15%">入庫量</th>
+                                <th width="15%">單價</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var item in ReceivingItems)
                             {
                                 var orderDetail = item.PurchaseOrderDetail;
-                                var remainingQty = orderDetail.OrderQuantity - item.AlreadyReceivedQuantity;
                                 
-                                <tr class="@(item.IsSelected ? "table-warning" : "")">
-                                    <td>
-                                        <input type="checkbox" 
-                                               checked="@item.IsSelected"
-                                               @onchange="() => OnItemSelectionChanged(item)" />
-                                    </td>
+                                <tr>
                                     <td>
                                         <small class="text-primary">@orderDetail.PurchaseOrder.PurchaseOrderNumber</small>
                                     </td>
@@ -80,21 +54,14 @@
                                     <td class="text-end">
                                         <span class="badge bg-secondary">@orderDetail.OrderQuantity</span>
                                     </td>
-                                    <td class="text-end">
-                                        <span class="badge bg-success">@item.AlreadyReceivedQuantity</span>
-                                    </td>
-                                    <td class="text-end">
-                                        <span class="badge bg-warning">@remainingQty</span>
-                                    </td>
                                     <td>
                                         <input type="number" class="form-control form-control-sm text-end" 
                                                value="@(item.ReceivedQuantity == 0 ? "" : item.ReceivedQuantity.ToString())"
                                                @oninput="(e) => OnReceivedQuantityChanged(item, e.Value?.ToString())"
                                                placeholder="0" 
                                                min="0" 
-                                               max="@remainingQty"
-                                               step="1"
-                                               disabled="@(!item.IsSelected)" />
+                                               max="@orderDetail.OrderQuantity"
+                                               step="1" />
                                         @if (item.ValidationError != null)
                                         {
                                             <small class="text-danger">@item.ValidationError</small>
@@ -106,41 +73,32 @@
                                                @oninput="(e) => OnUnitPriceChanged(item, e.Value?.ToString())"
                                                placeholder="0.00" 
                                                min="0" 
-                                               step="0.01"
-                                               disabled="@(!item.IsSelected)" />
+                                               step="0.01" />
                                     </td>
                                 </tr>
                             }
                         </tbody>
                         <tfoot>
                             <tr class="table-info">
-                                <th colspan="6">已選擇項目總計</th>
-                                <th class="text-center">@GetSelectedTotalQuantity()</th>
-                                <th class="text-center">@GetSelectedTotalAmount().ToString("C")</th>
+                                <th colspan="4">總計</th>
+                                <th class="text-center">@GetTotalAmount().ToString("C")</th>
                             </tr>
                         </tfoot>
                     </table>
                 </div>
                 
-                <div class="mt-3">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <button type="button" class="btn btn-outline-primary me-2" @onclick="SelectAllPendingItems">
-                                <i class="fas fa-check-square"></i> 全選剩餘量
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary" @onclick="ClearAllSelections">
-                                <i class="fas fa-times"></i> 清除選擇
-                            </button>
-                        </div>
-                        <div class="col-md-6 text-end">
-                            <span class="text-muted">
-                                已選擇 @ReceivingItems.Count(x => x.IsSelected) / @ReceivingItems.Count 項商品
-                            </span>
-                        </div>
-                    </div>
+                
+                <div class="d-flex justify-content-end gap-2 p-3">
+                    <GenericButtonComponent Variant="ButtonVariant.Success" 
+                                           Text="填入所有訂購量" 
+                                           IconClass="fas fa-fill" 
+                                           OnClick="FillAllOrderQuantities" />
+                    <GenericButtonComponent Variant="ButtonVariant.Danger" 
+                                           Text="清空所有數量" 
+                                           IconClass="fas fa-times" 
+                                           OnClick="ClearAllQuantities" />
                 </div>
             }
-        </div>
     </div>
 }
 else
@@ -229,21 +187,9 @@ else
         ReceivingItems = PendingOrderDetails.Select(od => new ReceivingItem
         {
             PurchaseOrderDetail = od,
-            AlreadyReceivedQuantity = GetAlreadyReceivedQuantity(od.Id),
             ReceivedQuantity = 0,
-            UnitPrice = od.UnitPrice,
-            IsSelected = false
+            UnitPrice = od.UnitPrice
         }).ToList();
-    }
-
-    /// <summary>
-    /// 取得已進貨數量
-    /// </summary>
-    private int GetAlreadyReceivedQuantity(int purchaseOrderDetailId)
-    {
-        // 這裡應該從資料庫查詢，暫時返回 0
-        // 實際實作時需要查詢 PurchaseReceivingDetail 表
-        return 0;
     }
 
     /// <summary>
@@ -264,7 +210,6 @@ else
                 item.BatchNumber = existingDetail.BatchNumber;
                 item.ExpiryDate = existingDetail.ExpiryDate;
                 item.ExistingDetailEntity = existingDetail;
-                item.IsSelected = true; // 已有明細的項目預設選中
             }
         }
     }
@@ -272,14 +217,13 @@ else
     // ===== 事件處理 =====
 
     /// <summary>
-    /// 項目選擇變更
+    /// 填入所有訂購數量
     /// </summary>
-    private async Task OnItemSelectionChanged(ReceivingItem item)
+    private async Task FillAllOrderQuantities()
     {
-        if (!item.IsSelected)
+        foreach (var item in ReceivingItems)
         {
-            // 取消選擇時清空數量
-            item.ReceivedQuantity = 0;
+            item.ReceivedQuantity = item.PurchaseOrderDetail.OrderQuantity;
             item.ValidationError = null;
         }
         
@@ -288,61 +232,12 @@ else
     }
 
     /// <summary>
-    /// 全選/取消全選
+    /// 清空所有數量
     /// </summary>
-    private async Task ToggleSelectAll()
-    {
-        var allSelected = IsAllSelected();
-        foreach (var item in ReceivingItems)
-        {
-            item.IsSelected = !allSelected;
-            if (!item.IsSelected)
-            {
-                item.ReceivedQuantity = 0;
-                item.ValidationError = null;
-            }
-        }
-        
-        await NotifyDetailsChanged();
-        StateHasChanged();
-    }
-
-    /// <summary>
-    /// 檢查是否全選
-    /// </summary>
-    private bool IsAllSelected()
-    {
-        return ReceivingItems.Any() && ReceivingItems.All(x => x.IsSelected);
-    }
-
-    /// <summary>
-    /// 選擇所有有剩餘量的項目，並自動填入剩餘數量
-    /// </summary>
-    private async Task SelectAllPendingItems()
+    private async Task ClearAllQuantities()
     {
         foreach (var item in ReceivingItems)
         {
-            var remainingQty = item.PurchaseOrderDetail.OrderQuantity - item.AlreadyReceivedQuantity;
-            if (remainingQty > 0)
-            {
-                item.IsSelected = true;
-                item.ReceivedQuantity = remainingQty;
-                item.ValidationError = null;
-            }
-        }
-        
-        await NotifyDetailsChanged();
-        StateHasChanged();
-    }
-
-    /// <summary>
-    /// 清除所有選擇
-    /// </summary>
-    private async Task ClearAllSelections()
-    {
-        foreach (var item in ReceivingItems)
-        {
-            item.IsSelected = false;
             item.ReceivedQuantity = 0;
             item.ValidationError = null;
         }
@@ -358,17 +253,17 @@ else
     {
         if (int.TryParse(value, out int quantity))
         {
-            var remainingQty = item.PurchaseOrderDetail.OrderQuantity - item.AlreadyReceivedQuantity;
+            var orderQty = item.PurchaseOrderDetail.OrderQuantity;
             
             if (quantity < 0)
             {
                 item.ReceivedQuantity = 0;
                 item.ValidationError = "數量不可為負數";
             }
-            else if (quantity > remainingQty)
+            else if (quantity > orderQty)
             {
-                item.ReceivedQuantity = remainingQty;
-                item.ValidationError = $"超過剩餘數量 {remainingQty}";
+                item.ReceivedQuantity = orderQty;
+                item.ValidationError = $"超過訂購數量 {orderQty}";
             }
             else
             {
@@ -413,7 +308,7 @@ else
     {
         var details = new List<PurchaseReceivingDetail>();
 
-        foreach (var item in ReceivingItems.Where(x => x.IsSelected && x.ReceivedQuantity > 0))
+        foreach (var item in ReceivingItems.Where(x => x.ReceivedQuantity > 0))
         {
             PurchaseReceivingDetail detail;
 
@@ -454,17 +349,15 @@ else
 
     // ===== 統計方法 =====
 
-    private int GetSelectedTotalQuantity()
+    private int GetTotalQuantity()
     {
-        return ReceivingItems
-            .Where(item => item.IsSelected)
-            .Sum(item => item.ReceivedQuantity);
+        return ReceivingItems.Sum(item => item.ReceivedQuantity);
     }
 
-    private decimal GetSelectedTotalAmount()
+    private decimal GetTotalAmount()
     {
         return ReceivingItems
-            .Where(item => item.IsSelected && item.ReceivedQuantity > 0)
+            .Where(item => item.ReceivedQuantity > 0)
             .Sum(item => item.ReceivedQuantity * item.UnitPrice);
     }
 
@@ -474,14 +367,12 @@ else
     public class ReceivingItem
     {
         public PurchaseOrderDetail PurchaseOrderDetail { get; set; } = null!;
-        public int AlreadyReceivedQuantity { get; set; } = 0;  // 已進貨數量
         public int ReceivedQuantity { get; set; } = 0;
         public decimal UnitPrice { get; set; } = 0;
         public string? InspectionRemarks { get; set; }
         public string? BatchNumber { get; set; }
         public DateTime? ExpiryDate { get; set; }
         public string? ValidationError { get; set; }
-        public bool IsSelected { get; set; } = false;  // 是否選中
         public PurchaseReceivingDetail? ExistingDetailEntity { get; set; }
     }
 }

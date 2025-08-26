@@ -150,18 +150,44 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("進貨單號已存在");
                 }
 
-                // 檢查採購訂單是否存在且已核准
-                var purchaseOrder = await context.PurchaseOrders
-                    .FirstOrDefaultAsync(po => po.Id == entity.PurchaseOrderId && !po.IsDeleted);
-                
-                if (purchaseOrder == null)
+                // 檢查採購訂單（僅當有指定採購單時）
+                if (entity.PurchaseOrderId.HasValue)
                 {
-                    return ServiceResult.Failure("指定的採購訂單不存在");
+                    var purchaseOrder = await context.PurchaseOrders
+                        .FirstOrDefaultAsync(po => po.Id == entity.PurchaseOrderId && !po.IsDeleted);
+                    
+                    if (purchaseOrder == null)
+                    {
+                        return ServiceResult.Failure("指定的採購訂單不存在");
+                    }
+                    
+                    if (!purchaseOrder.IsApproved)
+                    {
+                        return ServiceResult.Failure("只有已核准的採購訂單才能進行進貨作業");
+                    }
+                    
+                    // 驗證供應商一致性
+                    if (entity.SupplierId != purchaseOrder.SupplierId)
+                    {
+                        return ServiceResult.Failure("採購入庫的供應商必須與採購訂單的供應商一致");
+                    }
                 }
-                
-                if (!purchaseOrder.IsApproved)
+                else
                 {
-                    return ServiceResult.Failure("只有已核准的採購訂單才能進行進貨作業");
+                    // 多採購單模式，驗證必須有供應商
+                    if (entity.SupplierId <= 0)
+                    {
+                        return ServiceResult.Failure("多採購單模式下，供應商為必填");
+                    }
+                    
+                    // 驗證供應商是否存在
+                    var supplierExists = await context.Suppliers
+                        .AnyAsync(s => s.Id == entity.SupplierId && !s.IsDeleted);
+                    
+                    if (!supplierExists)
+                    {
+                        return ServiceResult.Failure("指定的供應商不存在");
+                    }
                 }
 
                 // 檢查倉庫是否存在

@@ -151,6 +151,12 @@
                 // 載入採購入庫明細
                 await LoadPurchaseReceivingDetails(PurchaseReceivingId.Value);
                 
+                // 如果有供應商ID，更新採購單選項
+                if (purchaseReceiving.SupplierId > 0)
+                {
+                    await UpdatePurchaseOrderOptions(purchaseReceiving.SupplierId);
+                }
+                
                 // 載入對應的採購單明細
                 if (purchaseReceiving.PurchaseOrderId.HasValue && purchaseReceiving.PurchaseOrderId.Value > 0)
                 {
@@ -268,6 +274,40 @@
     }
 
     /// <summary>
+    /// 更新採購單選項 - 根據供應商ID過濾
+    /// </summary>
+    private async Task UpdatePurchaseOrderOptions(int? supplierId = null)
+    {
+        try
+        {
+            // 找到採購單欄位並更新其選項
+            var purchaseOrderField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseReceiving.PurchaseOrderId));
+            if (purchaseOrderField != null)
+            {
+                var options = new List<SelectOption> {};
+                
+                if (supplierId.HasValue && supplierId.Value > 0)
+                {
+                    // 根據供應商ID過濾採購單
+                    var filteredPurchaseOrders = purchaseOrders.Where(po => po.SupplierId == supplierId.Value).ToList();
+                    options.AddRange(filteredPurchaseOrders.Select(po => new SelectOption
+                    {
+                        Value = po.Id.ToString(),
+                        Text = $"{po.PurchaseOrderNumber} - {po.Supplier?.CompanyName ?? "未知供應商"}"
+                    }));
+                }
+                // 如果沒有選擇供應商或選擇了無效的供應商，只顯示"請選擇..."選項
+                
+                purchaseOrderField.Options = options;
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"更新採購單選項時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// 初始化表單欄位
     /// </summary>
     private async Task InitializeFormFieldsAsync()
@@ -293,24 +333,20 @@
                     Label = "供應商",
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
-                    Options = suppliers.Select(s => new SelectOption
-                    {
-                        Value = s.Id.ToString(),
-                        Text = s.CompanyName
-                    }).ToList(),
+                    Options = new List<SelectOption> { new() { Value = "", Text = "請選擇..." } }
+                        .Concat(suppliers.Select(s => new SelectOption
+                        {
+                            Value = s.Id.ToString(),
+                            Text = s.CompanyName
+                        })).ToList(),
                     HelpText = "選擇供應商以載入該供應商的未完成進貨商品"
                 },
                 new()
                 {
                     PropertyName = nameof(PurchaseReceiving.PurchaseOrderId),
-                    Label = "採購單（可選）",
+                    Label = "採購單",
                     FieldType = FormFieldType.Select,
                     IsRequired = false,  // 改為非必填，支援多採購單模式
-                    Options = purchaseOrders.Select(po => new SelectOption
-                    {
-                        Value = po.Id.ToString(),
-                        Text = $"{po.PurchaseOrderNumber} - {po.Supplier?.CompanyName ?? "未知供應商"}"
-                    }).ToList(),
                     HelpText = "可選擇特定採購單，或留空使用多採購單模式"
                 },
                 new()
@@ -327,11 +363,12 @@
                     Label = "入庫倉庫",
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
-                    Options = warehouses.Select(w => new SelectOption
-                    {
-                        Value = w.Id.ToString(),
-                        Text = $"{w.Code} - {w.Name}"
-                    }).ToList(),
+                    Options = new List<SelectOption> { new() { Value = "", Text = "請選擇..." } }
+                        .Concat(warehouses.Select(w => new SelectOption
+                        {
+                            Value = w.Id.ToString(),
+                            Text = $"{w.Code} - {w.Name}"
+                        })).ToList(),
                     HelpText = "請選擇入庫倉庫"
                 },
                 new()
@@ -477,17 +514,25 @@
     {
         try
         {
-            // 當供應商變更時，清空採購單選擇
-            if (fieldChange.PropertyName == nameof(PurchaseReceiving.SupplierId) && 
-                fieldChange.Value != null && 
-                int.TryParse(fieldChange.Value.ToString(), out int supplierId) && 
-                supplierId > 0)
+            // 當供應商變更時，更新採購單選項並清空採購單選擇
+            if (fieldChange.PropertyName == nameof(PurchaseReceiving.SupplierId))
             {
-                // 清空採購單選擇，因為要改用多採購單模式
+                // 清空採購單選擇
                 if (editModalComponent?.Entity != null)
                 {
                     editModalComponent.Entity.PurchaseOrderId = null;
                 }
+                
+                // 更新採購單選項
+                int? supplierId = null;
+                if (fieldChange.Value != null && 
+                    int.TryParse(fieldChange.Value.ToString(), out int parsedSupplierId) && 
+                    parsedSupplierId > 0)
+                {
+                    supplierId = parsedSupplierId;
+                }
+                
+                await UpdatePurchaseOrderOptions(supplierId);
                 StateHasChanged();
             }
             
@@ -590,7 +635,7 @@
         {
             new GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule
             {
-                Title = "入庫明細",
+                Title = "",
                 Order = 1,
                 CssClass = "mt-4",
                 IsVisible = true,

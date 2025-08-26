@@ -21,7 +21,7 @@
                         {
                             <th width="30%">商品</th>
                             <th width="12%">數量</th>
-                            <th width="12%">入庫數量</th>
+                            <th width="12%">入庫量</th>
                             <th width="12%">價格</th>
                             <th width="25%" class="d-none d-sm-table-cell">備註</th>
                             <th width="5%">操作</th>
@@ -152,14 +152,14 @@
     // === 欄位映射參數 ===
     [Parameter] public string MainEntityIdPropertyName { get; set; } = string.Empty; // 主檔ID欄位名稱，例如 "PurchaseOrderId"
     [Parameter] public string QuantityPropertyName { get; set; } = "Quantity"; // 數量欄位名稱
-    [Parameter] public string ReceivedQuantityPropertyName { get; set; } = "ReceivedQuantity"; // 入庫數量欄位名稱
+    [Parameter] public string ReceivedQuantityPropertyName { get; set; } = "ReceivedQuantity"; // 入庫量欄位名稱
     [Parameter] public string UnitPricePropertyName { get; set; } = "UnitPrice"; // 單價欄位名稱
     [Parameter] public string RemarksPropertyName { get; set; } = "Remarks"; // 備註欄位名稱
     [Parameter] public string? UnitIdPropertyName { get; set; } // 單位ID欄位名稱（可選）
     
     // === 顯示標籤參數 ===
     [Parameter] public string QuantityLabel { get; set; } = "數量";
-    [Parameter] public string ReceivedQuantityLabel { get; set; } = "入庫數量";
+    [Parameter] public string ReceivedQuantityLabel { get; set; } = "入庫量";
     [Parameter] public string PriceLabel { get; set; } = "單價";
     [Parameter] public string RemarksLabel { get; set; } = "備註";
 
@@ -294,7 +294,7 @@
                 }
             }
             
-            // 更新數量、入庫數量、單價、備註
+            // 更新數量、入庫量、單價、備註
             SetPropertyValue(detail, QuantityPropertyName, item.Quantity);
             SetPropertyValue(detail, ReceivedQuantityPropertyName, item.ReceivedQuantity);
             SetPropertyValue(detail, UnitPricePropertyName, item.Price);
@@ -594,11 +594,11 @@
     }
 
     /// <summary>
-    /// 取得入庫數量輸入框的提示文字
+    /// 取得入庫量輸入框的提示文字
     /// </summary>
     private string GetReceivedQuantityPlaceholder(bool isEmptyRow)
     {
-        return isEmptyRow ? "0" : "入庫數量";
+        return isEmptyRow ? "0" : "入庫量";
     }
 
     /// <summary>
@@ -629,7 +629,7 @@
         public string ProductSearch { get; set; } = string.Empty;
         public Product? SelectedProduct { get; set; }
         public int Quantity { get; set; } = 0;  // 改為0，不是1
-        public int ReceivedQuantity { get; set; } = 0; // 新增：入庫數量
+        public int ReceivedQuantity { get; set; } = 0; // 新增：入庫量
         public decimal Price { get; set; } = 0;
         public string Remarks { get; set; } = string.Empty;
         public bool ShowDropdown { get; set; } = false;
