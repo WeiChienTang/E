@@ -6,7 +6,6 @@
 @inject INotificationService NotificationService
 @inject ISupplierService SupplierService
 @inject IEmployeeService EmployeeService
-@using ERPCore2.Components.Shared.SubCollections
 
 <GenericEditModalComponent TEntity="PurchaseReceiving" 
                           TService="IPurchaseReceivingService"
@@ -24,7 +23,7 @@
                           FormSections="@formSections"
                           DataLoader="@LoadPurchaseReceivingData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
-                          UseGenericSave="true"
+                          UseGenericSave="false"
                           SaveHandler="@SavePurchaseReceivingWithDetails"
                           SaveSuccessMessage="@(PurchaseReceivingId.HasValue ? "採購入庫更新成功" : "採購入庫新增成功")"
                           SaveFailureMessage="採購入庫儲存失敗"
@@ -568,56 +567,35 @@
             // 更新總金額
             purchaseReceiving.TotalAmount = purchaseReceivingDetails.Sum(d => d.SubtotalAmount);
 
-            // 儲存主檔
-            ServiceResult<PurchaseReceiving> result;
-            if (PurchaseReceivingId.HasValue)
-            {
-                result = await PurchaseReceivingService.UpdateAsync(purchaseReceiving);
-            }
-            else
-            {
-                result = await PurchaseReceivingService.CreateAsync(purchaseReceiving);
-            }
+            // 過濾有效的明細（有進貨數量的）
+            var validDetails = purchaseReceivingDetails
+                .Where(detail => detail.ReceivedQuantity > 0)
+                .ToList();
 
-            if (!result.IsSuccess || result.Data == null)
+            if (!validDetails.Any())
             {
-                await NotificationService.ShowErrorAsync("儲存採購入庫失敗");
+                await NotificationService.ShowErrorAsync("請至少輸入一筆進貨明細");
                 return false;
             }
 
-            // 儲存明細
-            await SavePurchaseReceivingDetails(result.Data.Id);
+            // 使用服務層一次性儲存主檔和明細
+            var result = await PurchaseReceivingService.SaveWithDetailsAsync(purchaseReceiving, validDetails);
 
-            return true;
+            if (result.IsSuccess && result.Data != null)
+            {
+                await NotificationService.ShowSuccessAsync("採購入庫儲存成功");
+                return true;
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"儲存採購入庫失敗：{result.ErrorMessage}");
+                return false;
+            }
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"儲存時發生錯誤：{ex.Message}");
             return false;
-        }
-    }
-
-    /// <summary>
-    /// 儲存採購入庫明細
-    /// </summary>
-    private async Task SavePurchaseReceivingDetails(int purchaseReceivingId)
-    {
-        try
-        {
-            // 設定主檔ID
-            foreach (var detail in purchaseReceivingDetails)
-            {
-                detail.PurchaseReceivingId = purchaseReceivingId;
-            }
-
-            // 這裡可以實作詳細的明細儲存邏輯
-            // 例如：新增、更新、刪除明細
-            // 目前先簡化處理
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"儲存採購入庫明細失敗：{ex.Message}");
-            throw;
         }
     }
 

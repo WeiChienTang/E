@@ -59,5 +59,21 @@ namespace ERPCore2.Services
         /// <param name="excludeId">排除的ID（用於編輯模式）</param>
         /// <returns>是否存在</returns>
         Task<bool> IsReceiptNumberExistsAsync(string receiptNumber, int? excludeId = null);
+
+        /// <summary>
+        /// 儲存採購入庫連同明細
+        /// </summary>
+        /// <param name="purchaseReceiving">採購入庫主檔</param>
+        /// <param name="details">入庫明細清單</param>
+        /// <returns>服務結果</returns>
+        Task<ServiceResult<PurchaseReceiving>> SaveWithDetailsAsync(PurchaseReceiving purchaseReceiving, List<PurchaseReceivingDetail> details);
+
+        /// <summary>
+        /// 更新採購入庫明細
+        /// </summary>
+        /// <param name="purchaseReceivingId">採購入庫ID</param>
+        /// <param name="details">明細清單</param>
+        /// <returns>服務結果</returns>
+        Task<ServiceResult> UpdateDetailsAsync(int purchaseReceivingId, List<PurchaseReceivingDetail> details);
     }
 }

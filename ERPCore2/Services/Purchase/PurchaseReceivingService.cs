@@ -453,6 +453,361 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 儲存採購入庫連同明細
+        /// </summary>
+        public async Task<ServiceResult<PurchaseReceiving>> SaveWithDetailsAsync(PurchaseReceiving purchaseReceiving, List<PurchaseReceivingDetail> details)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+
+                try
+                {
+                    // 驗證主檔
+                    var validationResult = await ValidateAsync(purchaseReceiving);
+                    if (!validationResult.IsSuccess)
+                    {
+                        return ServiceResult<PurchaseReceiving>.Failure(validationResult.ErrorMessage);
+                    }
+
+                    // 儲存主檔 - 在同一個 context 中處理
+                    PurchaseReceiving savedEntity;
+                    var dbSet = context.Set<PurchaseReceiving>();
+
+                    if (purchaseReceiving.Id > 0)
+                    {
+                        // 更新模式
+                        var existingEntity = await dbSet
+                            .FirstOrDefaultAsync(x => x.Id == purchaseReceiving.Id && !x.IsDeleted);
+                            
+                        if (existingEntity == null)
+                        {
+                            await transaction.RollbackAsync();
+                            return ServiceResult<PurchaseReceiving>.Failure("找不到要更新的採購入庫資料");
+                        }
+
+                        // 更新主檔資訊
+                        purchaseReceiving.UpdatedAt = DateTime.UtcNow;
+                        purchaseReceiving.CreatedAt = existingEntity.CreatedAt; // 保持原建立時間
+                        purchaseReceiving.CreatedBy = existingEntity.CreatedBy; // 保持原建立者
+
+                        context.Entry(existingEntity).CurrentValues.SetValues(purchaseReceiving);
+                        savedEntity = existingEntity;
+                    }
+                    else
+                    {
+                        // 新增模式
+                        purchaseReceiving.CreatedAt = DateTime.UtcNow;
+                        purchaseReceiving.UpdatedAt = DateTime.UtcNow;
+                        purchaseReceiving.IsDeleted = false;
+                        purchaseReceiving.Status = EntityStatus.Active;
+
+                        await dbSet.AddAsync(purchaseReceiving);
+                        savedEntity = purchaseReceiving;
+                    }
+
+                    // 先儲存主檔以取得 ID
+                    await context.SaveChangesAsync();
+
+                    // 儲存明細 - 在同一個 context 和 transaction 中處理
+                    var detailResult = await UpdateDetailsInContext(context, savedEntity.Id, details);
+                    if (!detailResult.IsSuccess)
+                    {
+                        await transaction.RollbackAsync();
+                        return ServiceResult<PurchaseReceiving>.Failure($"儲存明細失敗：{detailResult.ErrorMessage}");
+                    }
+
+                    await transaction.CommitAsync();
+                    return ServiceResult<PurchaseReceiving>.Success(savedEntity);
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SaveWithDetailsAsync), GetType(), _logger, new { 
+                    Method = nameof(SaveWithDetailsAsync),
+                    ServiceType = GetType().Name,
+                    PurchaseReceivingId = purchaseReceiving.Id 
+                });
+                return ServiceResult<PurchaseReceiving>.Failure($"儲存採購入庫時發生錯誤：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 在指定的 DbContext 中更新採購入庫明細
+        /// </summary>
+        private async Task<ServiceResult> UpdateDetailsInContext(AppDbContext context, int purchaseReceivingId, List<PurchaseReceivingDetail> details)
+        {
+            try
+            {
+                // 取得現有的明細記錄
+                var existingDetails = await context.PurchaseReceivingDetails
+                    .Where(d => d.PurchaseReceivingId == purchaseReceivingId && !d.IsDeleted)
+                    .ToListAsync();
+
+                // 準備新的明細資料
+                var newDetailsToAdd = new List<PurchaseReceivingDetail>();
+                var detailsToUpdate = new List<PurchaseReceivingDetail>();
+                var detailsToDelete = new List<PurchaseReceivingDetail>();
+
+                // 處理傳入的明細
+                foreach (var detail in (details ?? new List<PurchaseReceivingDetail>()).Where(d => d.ReceivedQuantity > 0))
+                {
+                    // 驗證必要欄位
+                    if (detail.PurchaseOrderDetailId <= 0)
+                    {
+                        continue; // 跳過無效的明細
+                    }
+                    
+                    detail.PurchaseReceivingId = purchaseReceivingId;
+                    
+                    if (detail.Id <= 0)
+                    {
+                        // 新增的明細
+                        detail.CreatedAt = DateTime.UtcNow;
+                        detail.UpdatedAt = DateTime.UtcNow;
+                        detail.IsDeleted = false;
+                        detail.Status = EntityStatus.Active;
+                        newDetailsToAdd.Add(detail);
+                    }
+                    else
+                    {
+                        // 更新的明細
+                        var existingDetail = existingDetails.FirstOrDefault(ed => ed.Id == detail.Id);
+                        if (existingDetail != null)
+                        {
+                            // 更新現有明細的屬性
+                            existingDetail.ReceivedQuantity = detail.ReceivedQuantity;
+                            existingDetail.UnitPrice = detail.UnitPrice;
+                            existingDetail.InspectionRemarks = detail.InspectionRemarks;
+                            existingDetail.BatchNumber = detail.BatchNumber;
+                            existingDetail.ExpiryDate = detail.ExpiryDate;
+                            existingDetail.WarehouseLocationId = detail.WarehouseLocationId;
+                            existingDetail.UpdatedAt = DateTime.UtcNow;
+                            detailsToUpdate.Add(existingDetail);
+                        }
+                    }
+                }
+
+                // 找出要刪除的明細（在現有明細中但不在新明細中）
+                var newDetailIds = (details ?? new List<PurchaseReceivingDetail>())
+                    .Where(d => d.Id > 0)
+                    .Select(d => d.Id)
+                    .ToList();
+                
+                detailsToDelete = existingDetails
+                    .Where(ed => !newDetailIds.Contains(ed.Id))
+                    .ToList();
+
+                // 執行資料庫操作
+                // 新增明細
+                if (newDetailsToAdd.Any())
+                {
+                    await context.PurchaseReceivingDetails.AddRangeAsync(newDetailsToAdd);
+                }
+
+                // 軟刪除不需要的明細
+                foreach (var detailToDelete in detailsToDelete)
+                {
+                    detailToDelete.IsDeleted = true;
+                    detailToDelete.UpdatedAt = DateTime.UtcNow;
+                }
+
+                // 儲存變更
+                await context.SaveChangesAsync();
+
+                // 更新採購單明細的已進貨數量
+                await UpdatePurchaseOrderDetailsReceivedQuantity(context, newDetailsToAdd, detailsToUpdate, detailsToDelete);
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateDetailsInContext), GetType(), _logger, new { 
+                    Method = nameof(UpdateDetailsInContext),
+                    ServiceType = GetType().Name,
+                    PurchaseReceivingId = purchaseReceivingId 
+                });
+                return ServiceResult.Failure($"更新採購入庫明細時發生錯誤：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 更新採購入庫明細
+        /// </summary>
+        public async Task<ServiceResult> UpdateDetailsAsync(int purchaseReceivingId, List<PurchaseReceivingDetail> details)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+
+                try
+                {
+                    // 取得現有的明細記錄
+                    var existingDetails = await context.PurchaseReceivingDetails
+                        .Where(d => d.PurchaseReceivingId == purchaseReceivingId && !d.IsDeleted)
+                        .ToListAsync();
+
+                    // 準備新的明細資料
+                    var newDetailsToAdd = new List<PurchaseReceivingDetail>();
+                    var detailsToUpdate = new List<PurchaseReceivingDetail>();
+                    var detailsToDelete = new List<PurchaseReceivingDetail>();
+
+                    // 處理傳入的明細
+                    foreach (var detail in details.Where(d => d.ReceivedQuantity > 0))
+                    {
+                        // 驗證必要欄位
+                        if (detail.PurchaseOrderDetailId <= 0)
+                        {
+                            continue; // 跳過無效的明細
+                        }
+                        
+                        detail.PurchaseReceivingId = purchaseReceivingId;
+                        
+                        if (detail.Id <= 0)
+                        {
+                            // 新增的明細
+                            detail.CreatedAt = DateTime.UtcNow;
+                            detail.UpdatedAt = DateTime.UtcNow;
+                            detail.IsDeleted = false;
+                            detail.Status = EntityStatus.Active;
+                            newDetailsToAdd.Add(detail);
+                        }
+                        else
+                        {
+                            // 更新的明細
+                            var existingDetail = existingDetails.FirstOrDefault(ed => ed.Id == detail.Id);
+                            if (existingDetail != null)
+                            {
+                                // 更新現有明細的屬性
+                                existingDetail.ReceivedQuantity = detail.ReceivedQuantity;
+                                existingDetail.UnitPrice = detail.UnitPrice;
+                                existingDetail.InspectionRemarks = detail.InspectionRemarks;
+                                existingDetail.BatchNumber = detail.BatchNumber;
+                                existingDetail.ExpiryDate = detail.ExpiryDate;
+                                existingDetail.WarehouseLocationId = detail.WarehouseLocationId;
+                                existingDetail.UpdatedAt = DateTime.UtcNow;
+                                detailsToUpdate.Add(existingDetail);
+                            }
+                        }
+                    }
+
+                    // 找出要刪除的明細（在現有明細中但不在新明細中）
+                    var newDetailIds = details
+                        .Where(d => d.Id > 0)
+                        .Select(d => d.Id)
+                        .ToList();
+                    
+                    detailsToDelete = existingDetails
+                        .Where(ed => !newDetailIds.Contains(ed.Id))
+                        .ToList();
+
+                    // 執行資料庫操作
+                    // 新增明細
+                    if (newDetailsToAdd.Any())
+                    {
+                        await context.PurchaseReceivingDetails.AddRangeAsync(newDetailsToAdd);
+                    }
+
+                    // 軟刪除不需要的明細
+                    foreach (var detailToDelete in detailsToDelete)
+                    {
+                        detailToDelete.IsDeleted = true;
+                        detailToDelete.UpdatedAt = DateTime.UtcNow;
+                    }
+
+                    // 儲存變更
+                    await context.SaveChangesAsync();
+
+                    // 更新採購單明細的已進貨數量
+                    await UpdatePurchaseOrderDetailsReceivedQuantity(context, newDetailsToAdd, detailsToUpdate, detailsToDelete);
+
+                    await transaction.CommitAsync();
+                    return ServiceResult.Success();
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateDetailsAsync), GetType(), _logger, new { 
+                    Method = nameof(UpdateDetailsAsync),
+                    ServiceType = GetType().Name,
+                    PurchaseReceivingId = purchaseReceivingId 
+                });
+                return ServiceResult.Failure($"更新採購入庫明細時發生錯誤：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 更新採購單明細的已進貨數量
+        /// </summary>
+        private async Task UpdatePurchaseOrderDetailsReceivedQuantity(
+            AppDbContext context,
+            List<PurchaseReceivingDetail> newDetailsToAdd,
+            List<PurchaseReceivingDetail> detailsToUpdate,
+            List<PurchaseReceivingDetail> detailsToDelete)
+        {
+            // 收集所有受影響的採購單明細ID
+            var affectedPurchaseOrderDetailIds = new HashSet<int>();
+            
+            // 新增的明細
+            foreach (var detail in newDetailsToAdd)
+            {
+                affectedPurchaseOrderDetailIds.Add(detail.PurchaseOrderDetailId);
+            }
+            
+            // 更新的明細
+            foreach (var detail in detailsToUpdate)
+            {
+                affectedPurchaseOrderDetailIds.Add(detail.PurchaseOrderDetailId);
+            }
+            
+            // 刪除的明細
+            foreach (var detail in detailsToDelete)
+            {
+                affectedPurchaseOrderDetailIds.Add(detail.PurchaseOrderDetailId);
+            }
+
+            // 重新計算每個採購單明細的已進貨數量
+            foreach (var purchaseOrderDetailId in affectedPurchaseOrderDetailIds)
+            {
+                // 計算該採購單明細的總已進貨數量（所有有效的進貨明細）
+                var totalReceivedQuantity = await context.PurchaseReceivingDetails
+                    .Where(prd => prd.PurchaseOrderDetailId == purchaseOrderDetailId && !prd.IsDeleted)
+                    .SumAsync(prd => prd.ReceivedQuantity);
+
+                // 計算總已進貨金額
+                var totalReceivedAmount = await context.PurchaseReceivingDetails
+                    .Where(prd => prd.PurchaseOrderDetailId == purchaseOrderDetailId && !prd.IsDeleted)
+                    .SumAsync(prd => prd.ReceivedQuantity * prd.UnitPrice);
+
+                // 更新採購單明細
+                var purchaseOrderDetail = await context.PurchaseOrderDetails
+                    .FirstOrDefaultAsync(pod => pod.Id == purchaseOrderDetailId && !pod.IsDeleted);
+
+                if (purchaseOrderDetail != null)
+                {
+                    purchaseOrderDetail.ReceivedQuantity = totalReceivedQuantity;
+                    purchaseOrderDetail.ReceivedAmount = totalReceivedAmount;
+                    purchaseOrderDetail.UpdatedAt = DateTime.UtcNow;
+                }
+            }
+
+            // 儲存採購單明細的變更
+            await context.SaveChangesAsync();
+        }
+
         #endregion
     }
 }

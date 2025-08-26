@@ -15,10 +15,12 @@
                     }
                     else
                     {
-                        <th width="30%">商品資訊</th>
-                        <th width="20%">訂購量</th>
-                        <th width="20%">入庫量</th>
-                        <th width="18%">單價</th>
+                        <th width="20%">商品資訊</th>
+                        <th width="12%">訂購量</th>
+                        <th width="12%">已入庫量</th>
+                        <th width="12%">待入庫量</th>
+                        <th width="12%">本次入庫量</th>
+                        <th width="20%">單價</th>
                         <th width="12%">操作</th>
                     }
                 </tr>
@@ -31,7 +33,7 @@
                     <tr>
                         @if (!PurchaseOrderId.HasValue || PurchaseOrderId.Value <= 0)
                         {
-                            <td class="text-center py-4" colspan="5">
+                            <td class="text-center py-4" colspan="7">
                                 <div class="order-warning">
                                     <i class="fas fa-exclamation-triangle text-warning me-2"></i>
                                     <span class="text-muted">請先選擇採購單...</span>
@@ -60,16 +62,45 @@
                                        readonly 
                                        @onfocus="SimulateTabKey" />
                             </td>
+                            <td class="text-end">
+                                <div class="input-group input-group-sm">
+                                    <input type="number" class="form-control text-end @(orderDetail.ReceivedQuantity >= orderDetail.OrderQuantity ? "bg-success-subtle" : "")" 
+                                           value="@orderDetail.ReceivedQuantity"
+                                           readonly 
+                                           @onfocus="SimulateTabKey" />
+                                    <span class="input-group-text @(orderDetail.ReceivedQuantity >= orderDetail.OrderQuantity ? "bg-success text-white" : "bg-light text-muted")">
+                                        <small>已入庫</small>
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <div class="input-group input-group-sm">
+                                    <input type="number" class="form-control text-end @(GetPendingQuantity(orderDetail) <= 0 ? "bg-success-subtle" : "bg-warning-subtle")" 
+                                           value="@GetPendingQuantity(orderDetail)"
+                                           readonly 
+                                           @onfocus="SimulateTabKey" />
+                                    <span class="input-group-text @(GetPendingQuantity(orderDetail) <= 0 ? "bg-success text-white" : "bg-warning text-dark")">
+                                        <small>@(GetPendingQuantity(orderDetail) <= 0 ? "完成" : "待入庫")</small>
+                                    </span>
+                                </div>
+                            </td>
                             <td>
                                 <input type="number" class="form-control form-control-sm text-end" 
                                        value="@(item.ReceivedQuantity == 0 ? "" : item.ReceivedQuantity.ToString())"
                                        @oninput="(e) => OnReceivedQuantityChanged(item, e.Value?.ToString())"
                                        placeholder="請輸入入庫量" 
                                        min="0" 
+                                       max="@GetPendingQuantity(item.PurchaseOrderDetail)"
                                        step="1" />
                                 @if (item.ValidationError != null)
                                 {
                                     <small class="text-danger">@item.ValidationError</small>
+                                }
+                                @if (GetPendingQuantity(item.PurchaseOrderDetail) <= 0)
+                                {
+                                    <small class="text-success">
+                                        <i class="fas fa-check-circle"></i> 此商品已完成進貨
+                                    </small>
                                 }
                             </td>
                             <td>
@@ -103,7 +134,7 @@
             {
                 <tfoot>
                     <tr class="total-row">
-                        <th colspan="3">總計</th>
+                        <th colspan="5">總計</th>
                         <th class="text-center total-amount">@GetTotalAmount().ToString("C")</th>
                         <th colspan="1"></th>
                     </tr>
@@ -142,6 +173,26 @@ else
                                 <i class="fas fa-box"></i> 
                                 @CurrentDetailItem.PurchaseOrderDetail.Product.Code - @CurrentDetailItem.PurchaseOrderDetail.Product.Name
                             </h6>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <small class="text-muted">訂購量：</small>
+                                    <span class="fw-bold">@CurrentDetailItem.PurchaseOrderDetail.OrderQuantity</span>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted">已入庫量：</small>
+                                    <span class="fw-bold">@CurrentDetailItem.PurchaseOrderDetail.ReceivedQuantity</span>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted">待入庫量：</small>
+                                    <span class="fw-bold text-@(GetPendingQuantity(CurrentDetailItem.PurchaseOrderDetail) <= 0 ? "success" : "info")">
+                                        @GetPendingQuantity(CurrentDetailItem.PurchaseOrderDetail)
+                                    </span>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted">本次入庫：</small>
+                                    <span class="fw-bold text-primary">@CurrentDetailItem.ReceivedQuantity</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -343,8 +394,17 @@ else
             }
             else
             {
-                item.ReceivedQuantity = quantity;
-                item.ValidationError = null;
+                var pendingQuantity = GetPendingQuantity(item.PurchaseOrderDetail);
+                if (quantity > pendingQuantity)
+                {
+                    item.ReceivedQuantity = pendingQuantity;
+                    item.ValidationError = $"入庫量不可超過待進貨量 ({pendingQuantity})";
+                }
+                else
+                {
+                    item.ReceivedQuantity = quantity;
+                    item.ValidationError = null;
+                }
             }
         }
         else
@@ -479,6 +539,14 @@ else
         return ReceivingItems
             .Where(item => item.ReceivedQuantity > 0)
             .Sum(item => item.ReceivedQuantity * item.UnitPrice);
+    }
+
+    /// <summary>
+    /// 計算待進貨數量
+    /// </summary>
+    private int GetPendingQuantity(PurchaseOrderDetail orderDetail)
+    {
+        return orderDetail.OrderQuantity - orderDetail.ReceivedQuantity;
     }
 
     /// <summary>
