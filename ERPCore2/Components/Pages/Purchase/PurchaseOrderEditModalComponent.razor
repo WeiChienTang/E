@@ -122,14 +122,22 @@
     {
         try
         {
+            Console.WriteLine($"[PurchaseOrderEditModalComponent] HandleSaveSuccess 被調用");
             if (OnPurchaseOrderSaved.HasDelegate && editModalComponent?.Entity != null)
             {
+                Console.WriteLine($"[PurchaseOrderEditModalComponent] 準備調用 OnPurchaseOrderSaved 事件");
                 await OnPurchaseOrderSaved.InvokeAsync(editModalComponent.Entity);
+                Console.WriteLine($"[PurchaseOrderEditModalComponent] OnPurchaseOrderSaved 事件調用完成");
+            }
+            else
+            {
+                Console.WriteLine($"[PurchaseOrderEditModalComponent] OnPurchaseOrderSaved 事件沒有委派或實體為空");
             }
             await CloseModal();
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"[PurchaseOrderEditModalComponent] HandleSaveSuccess 發生錯誤: {ex.Message}");
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(), 
                 additionalData: "採購單編輯Modal儲存成功處理失敗");
         }

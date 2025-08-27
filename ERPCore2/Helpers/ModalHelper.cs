@@ -1,5 +1,6 @@
 using ERPCore2.Data;
 using Microsoft.AspNetCore.Components;
+using System.Linq;
 
 namespace ERPCore2.Helpers
 {
@@ -103,13 +104,21 @@ namespace ERPCore2.Helpers
                 if (indexComponent != null)
                 {
                     // 使用反射檢查是否有 Refresh 方法
-                    var refreshMethod = indexComponent.GetType().GetMethod("Refresh");
+                    var refreshMethod = indexComponent.GetType().GetMethod("Refresh", new Type[0]); // 明確指定無參數的 Refresh 方法
                     if (refreshMethod != null)
                     {
-                        var result = refreshMethod.Invoke(indexComponent, null);
-                        if (result is Task task)
+                        try
                         {
-                            await task;
+                            var result = refreshMethod.Invoke(indexComponent, null);
+                            if (result is Task task)
+                            {
+                                await task;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // 記錄錯誤但不中斷流程
+                            Console.Error.WriteLine($"調用 Refresh 方法時發生錯誤: {ex.Message}");
                         }
                     }
                 }
