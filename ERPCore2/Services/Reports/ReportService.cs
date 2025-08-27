@@ -54,6 +54,91 @@ namespace ERPCore2.Services.Reports
                 // 頁尾資訊
                 html.AppendLine(GeneratePageFooter(configuration));
                 
+                // 添加進階 JavaScript 來處理列印和隱藏頁首頁尾
+                html.AppendLine(@"
+    <script>
+        // 嘗試隱藏瀏覽器頁首頁尾的多種方法
+        function setupPrintOptimization() {
+            // 方法 1: 使用 @page CSS 規則動態插入
+            const style = document.createElement('style');
+            style.textContent = `
+                @media print {
+                    @page { 
+                        margin: 0; 
+                        size: auto;
+                    }
+                    html, body { 
+                        margin: 0 !important; 
+                        padding: 20px !important; 
+                    }
+                    .report-container {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // 方法 2: 監聽列印事件
+            window.addEventListener('beforeprint', function() {
+                // 在列印前調整樣式
+                document.body.style.margin = '0';
+                document.body.style.padding = '20px';
+            });
+            
+            window.addEventListener('afterprint', function() {
+                // 列印後恢復樣式
+                document.body.style.margin = '';
+                document.body.style.padding = '';
+            });
+        }
+        
+        // 自動列印功能
+        function handleAutoPrint() {
+            if (window.location.search.includes('autoprint=true')) {
+                setTimeout(function() {
+                    window.print();
+                }, 1000);
+            }
+        }
+        
+        // 自定義列印函數，嘗試最佳化設定
+        function optimizedPrint() {
+            // 創建新的列印樣式
+            const printStyle = document.createElement('style');
+            printStyle.media = 'print';
+            printStyle.textContent = `
+                @page { margin: 0 !important; }
+                body { margin: 0 !important; padding: 20px !important; }
+            `;
+            document.head.appendChild(printStyle);
+            
+            // 延遲執行列印，確保樣式已套用
+            setTimeout(function() {
+                window.print();
+                // 移除臨時樣式
+                document.head.removeChild(printStyle);
+            }, 100);
+        }
+        
+        // 頁面載入完成後初始化
+        window.addEventListener('load', function() {
+            setupPrintOptimization();
+            handleAutoPrint();
+        });
+        
+        // 監聽快捷鍵
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                optimizedPrint();
+            }
+        });
+        
+        // 提供全域函數供外部調用
+        window.optimizedPrint = optimizedPrint;
+    </script>");
+                
                 html.AppendLine("    </div>");
                 html.AppendLine("</body>");
                 html.AppendLine("</html>");
@@ -121,6 +206,12 @@ namespace ERPCore2.Services.Reports
             body {{ 
                 -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact; 
+            }}
+            
+            /* 強力隱藏瀏覽器預設頁首頁尾 */
+            html {{
+                margin: 0 !important;
+                padding: 0 !important;
             }}
         }}
         
@@ -436,12 +527,8 @@ namespace ERPCore2.Services.Reports
         {
             var html = new StringBuilder();
             
-            if (configuration.ShowPageNumbers)
-            {
-                html.AppendLine("        <div class='page-footer'>");
-                html.AppendLine($"            報表生成時間：{configuration.GeneratedAt:yyyy/MM/dd HH:mm:ss}");
-                html.AppendLine("        </div>");
-            }
+            // 移除報表生成時間的顯示
+            // 保留空的頁尾結構以備將來擴展
             
             return html.ToString();
         }

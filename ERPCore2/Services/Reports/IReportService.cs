@@ -1,3 +1,4 @@
+using ERPCore2.Data.Entities;
 using ERPCore2.Models;
 
 namespace ERPCore2.Services.Reports
@@ -53,7 +54,8 @@ namespace ERPCore2.Services.Reports
         /// <summary>
         /// 取得採購單報表配置
         /// </summary>
+        /// <param name="company">公司資訊</param>
         /// <returns>採購單報表配置</returns>
-        ReportConfiguration GetPurchaseOrderReportConfiguration();
+        ReportConfiguration GetPurchaseOrderReportConfiguration(Company? company = null);
     }
 }

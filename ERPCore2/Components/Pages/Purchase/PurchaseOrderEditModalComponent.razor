@@ -183,13 +183,31 @@
                 return;
             }
             
-            // 使用報表服務生成採購單報表
-            var reportUrl = $"/api/report/purchase-order/{PurchaseOrderId.Value}/preview";
+            // 使用 JavaScript 直接觸發列印，不開啟新視窗
+            var reportUrl = $"/api/report/purchase-order/{PurchaseOrderId.Value}?format=html";
             
-            // 開啟新視窗顯示報表
-            await JSRuntime.InvokeVoidAsync("window.open", reportUrl, "_blank", "width=1200,height=800,scrollbars=yes,resizable=yes");
-            
-            await NotificationService.ShowSuccessAsync("報表已在新視窗中開啟");
+            // 建立隱藏的 iframe 來載入報表，然後觸發列印
+            await JSRuntime.InvokeVoidAsync("eval", $@"
+                var iframe = document.createElement('iframe');
+                iframe.style.position = 'absolute';
+                iframe.style.left = '-9999px';
+                iframe.style.width = '1px';
+                iframe.style.height = '1px';
+                iframe.onload = function() {{
+                    try {{
+                        iframe.contentWindow.print();
+                        // 列印完成後移除 iframe
+                        setTimeout(function() {{
+                            document.body.removeChild(iframe);
+                        }}, 1000);
+                    }} catch(e) {{
+                        console.error('列印失敗:', e);
+                        document.body.removeChild(iframe);
+                    }}
+                }};
+                iframe.src = '{reportUrl}';
+                document.body.appendChild(iframe);
+            ");
         }
         catch (Exception ex)
         {

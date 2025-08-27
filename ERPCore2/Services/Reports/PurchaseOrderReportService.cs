@@ -13,17 +13,20 @@ namespace ERPCore2.Services.Reports
         private readonly IPurchaseOrderService _purchaseOrderService;
         private readonly ISupplierService _supplierService;
         private readonly IProductService _productService;
+        private readonly ICompanyService _companyService;
 
         public PurchaseOrderReportService(
             IReportService reportService,
             IPurchaseOrderService purchaseOrderService,
             ISupplierService supplierService,
-            IProductService productService)
+            IProductService productService,
+            ICompanyService companyService)
         {
             _reportService = reportService;
             _purchaseOrderService = purchaseOrderService;
             _supplierService = supplierService;
             _productService = productService;
+            _companyService = companyService;
         }
 
         public async Task<string> GeneratePurchaseOrderReportAsync(int purchaseOrderId, ReportFormat format = ReportFormat.Html)
@@ -47,6 +50,13 @@ namespace ERPCore2.Services.Reports
                     supplier = await _supplierService.GetByIdAsync(purchaseOrder.SupplierId);
                 }
 
+                // 載入公司資料
+                Company? company = null;
+                if (purchaseOrder.CompanyId > 0)
+                {
+                    company = await _companyService.GetByIdAsync(purchaseOrder.CompanyId);
+                }
+
                 // 載入商品資料並建立字典以便快速查詢
                 var allProducts = await _productService.GetAllAsync();
                 var productDict = allProducts.ToDictionary(p => p.Id, p => p);
@@ -60,13 +70,16 @@ namespace ERPCore2.Services.Reports
                     {
                         { "SupplierName", supplier?.CompanyName ?? "未指定" },
                         { "SupplierContactPerson", supplier?.ContactPerson ?? "" },
+                        { "CompanyName", company?.CompanyName ?? "未指定" },
+                        { "CompanyAddress", company?.Address ?? "" },
+                        { "CompanyPhone", company?.Phone ?? "" },
                         { "ProductDict", productDict },
                         { "DetailCount", orderDetails?.Count ?? 0 }
                     }
                 };
 
                 // 取得報表配置
-                var configuration = GetPurchaseOrderReportConfiguration();
+                var configuration = GetPurchaseOrderReportConfiguration(company);
                 
                 // 動態設置明細筆數
                 var detailCountField = configuration.FooterSections
@@ -91,14 +104,14 @@ namespace ERPCore2.Services.Reports
             }
         }
 
-        public ReportConfiguration GetPurchaseOrderReportConfiguration()
+        public ReportConfiguration GetPurchaseOrderReportConfiguration(Company? company = null)
         {
             return new ReportConfiguration
             {
                 Title = "採購單",
-                CompanyName = "貴公司名稱", // 這裡可以從設定檔讀取
-                CompanyAddress = "公司地址",
-                CompanyPhone = "公司電話",
+                CompanyName = company?.CompanyName ?? "貴公司名稱", // 使用實際公司名稱
+                CompanyAddress = company?.Address ?? "公司地址", // 使用實際公司地址
+                CompanyPhone = company?.Phone ?? "公司電話", // 使用實際公司電話
                 Orientation = PageOrientation.Portrait,
                 PageSize = PageSize.A4,
                 
@@ -129,11 +142,6 @@ namespace ERPCore2.Services.Reports
                                 Label = "預定交貨日期",
                                 PropertyName = nameof(PurchaseOrder.ExpectedDeliveryDate),
                                 Format = "yyyy/MM/dd"
-                            },
-                            new ReportField
-                            {
-                                Label = "狀態",
-                                PropertyName = nameof(PurchaseOrder.Status)
                             }
                         }
                     },
@@ -249,20 +257,6 @@ namespace ERPCore2.Services.Reports
                                 Label = "明細筆數",
                                 Value = "", // 需要動態計算
                                 IsBold = true
-                            }
-                        }
-                    },
-                    new ReportFooterSection
-                    {
-                        Title = "備註",
-                        Order = 2,
-                        FieldsPerRow = 1,
-                        Fields = new List<ReportField>
-                        {
-                            new ReportField
-                            {
-                                Label = "採購備註",
-                                PropertyName = nameof(PurchaseOrder.Remarks)
                             }
                         }
                     }
