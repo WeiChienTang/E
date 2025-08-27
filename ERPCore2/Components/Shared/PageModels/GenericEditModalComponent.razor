@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
+@using System.Reflection
 @typeparam TEntity where TEntity : BaseEntity, new()
 @typeparam TService
 
@@ -184,23 +185,36 @@
                 
                 @* Modal Footer *@
                 <div class="modal-footer">
-                    <GenericButtonComponent Text="@CancelButtonText" 
-                                          Variant="ButtonVariant.Secondary" 
-                                          OnClick="HandleCancel" 
-                                          IsDisabled="@IsSubmitting" />
-                    @if (ShowPrintButton)
+                    @* 根據審核狀態動態顯示按鈕 *@
+                    @if (IsEntityApproved())
                     {
-                        <GenericButtonComponent Text="@PrintButtonText" 
-                                              Variant="ButtonVariant.Info" 
-                                              IconClass="fas fa-print"
-                                              OnClick="HandlePrint" 
-                                              IsDisabled="@(IsSubmitting || IsLoading)" />
+                        @* 已審核狀態：只顯示完成按鈕，點擊時觸發成功事件以刷新Index *@
+                        <GenericButtonComponent Text="完成" 
+                                              Variant="ButtonVariant.Primary" 
+                                              OnClick="HandleApprovedEntityComplete" 
+                                              IsDisabled="@IsSubmitting" />
                     }
-                    <GenericButtonComponent Text="@SaveButtonText" 
-                                          Variant="ButtonVariant.Primary" 
-                                          OnClick="HandleSave" 
-                                          IsDisabled="@(IsSubmitting || IsLoading)" 
-                                          IsLoading="@IsSubmitting" />
+                    else
+                    {
+                        @* 未審核狀態：顯示正常的取消和儲存按鈕 *@
+                        <GenericButtonComponent Text="@CancelButtonText" 
+                                              Variant="ButtonVariant.Secondary" 
+                                              OnClick="HandleCancel" 
+                                              IsDisabled="@IsSubmitting" />
+                        @if (ShowPrintButton)
+                        {
+                            <GenericButtonComponent Text="@PrintButtonText" 
+                                                  Variant="ButtonVariant.Info" 
+                                                  IconClass="fas fa-print"
+                                                  OnClick="HandlePrint" 
+                                                  IsDisabled="@(IsSubmitting || IsLoading)" />
+                        }
+                        <GenericButtonComponent Text="@SaveButtonText" 
+                                              Variant="ButtonVariant.Primary" 
+                                              OnClick="HandleSave" 
+                                              IsDisabled="@(IsSubmitting || IsLoading)" 
+                                              IsLoading="@IsSubmitting" />
+                    }
                 </div>
             </div>
         </div>
@@ -859,6 +873,47 @@
     }
     
     // ===== 輔助方法 =====
+    
+    /// <summary>
+    /// 檢查實體是否已審核通過
+    /// </summary>
+    private bool IsEntityApproved()
+    {
+        if (Entity == null) return false;
+        
+        // 檢查實體是否有 IsApproved 屬性
+        var propertyInfo = typeof(TEntity).GetProperty("IsApproved");
+        if (propertyInfo != null && propertyInfo.PropertyType == typeof(bool))
+        {
+            var isApproved = (bool?)propertyInfo.GetValue(Entity);
+            return isApproved == true;
+        }
+        
+        return false;
+    }
+    
+    /// <summary>
+    /// 處理已審核實體的完成按鈕點擊事件
+    /// </summary>
+    private async Task HandleApprovedEntityComplete()
+    {
+        try
+        {
+            // 觸發 OnSaveSuccess 事件以通知父組件刷新資料
+            if (OnSaveSuccess.HasDelegate)
+            {
+                await OnSaveSuccess.InvokeAsync();
+            }
+            
+            // 關閉 Modal
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorMessage($"完成操作時發生錯誤：{ex.Message}");
+            LogError("HandleApprovedEntityComplete", ex);
+        }
+    }
     
     private string GetModalTitle()
     {

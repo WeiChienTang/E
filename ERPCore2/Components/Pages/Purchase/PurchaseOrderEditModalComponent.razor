@@ -33,7 +33,7 @@
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadPurchaseOrderData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
-                          SaveHandler="@SavePurchaseOrderWithDetails"
+                          SaveHandler="@SavePurchaseOrderWrapper"
                           SaveSuccessMessage="@(PurchaseOrderId.HasValue ? "採購單更新成功" : "採購單新增成功")"
                           SaveFailureMessage="採購單儲存失敗"
                           RequiredPermission="PurchaseOrder.Read"
@@ -722,9 +722,17 @@
     }
 
     /// <summary>
+    /// 包裝方法 - 提供給 GenericEditModalComponent 使用的儲存處理器
+    /// </summary>
+    private async Task<bool> SavePurchaseOrderWrapper(PurchaseOrder purchaseOrder)
+    {
+        return await SavePurchaseOrderWithDetails(purchaseOrder, isPreApprovalSave: false);
+    }
+
+    /// <summary>
     /// 自訂儲存邏輯 - 同時儲存主檔和明細
     /// </summary>
-    private async Task<bool> SavePurchaseOrderWithDetails(PurchaseOrder purchaseOrder)
+    private async Task<bool> SavePurchaseOrderWithDetails(PurchaseOrder purchaseOrder, bool isPreApprovalSave = false)
     {
         try
         {
@@ -734,8 +742,8 @@
                 return false;
             }
 
-            // 檢查採購單是否已核准，已核准則不能修改
-            if (purchaseOrder.IsApproved)
+            // 檢查採購單是否已核准，已核准則不能修改（除非是審核前儲存）
+            if (purchaseOrder.IsApproved && !isPreApprovalSave)
             {
                 await NotificationService.ShowWarningAsync("採購單已核准，無法修改");
                 return false;
@@ -862,11 +870,25 @@
             
             // 確認對話框
             var confirmed = await NotificationService.ShowConfirmAsync(
-                "確定要審核通過此採購單嗎？審核通過後將無法再修改。", 
+                "確定要審核通過此採購單嗎？系統將先儲存當前資料，然後進行審核。審核通過後將無法再修改。", 
                 "審核確認");
             
             if (!confirmed)
                 return false;
+            
+            // **方案一實施：審核前先自動儲存**
+            if (editModalComponent?.Entity != null)
+            {
+                // 暫時允許儲存（即使已核准狀態也要能儲存，因為可能有未儲存的變更）
+                var saveResult = await SavePurchaseOrderWithDetails(editModalComponent.Entity, isPreApprovalSave: true);
+                if (!saveResult)
+                {
+                    await NotificationService.ShowErrorAsync("儲存失敗，無法進行審核");
+                    return false;
+                }
+                
+                await NotificationService.ShowInfoAsync("資料已儲存，正在進行審核...");
+            }
             
             // 呼叫服務進行審核
             var currentUserId = await GetCurrentUserIdAsync();
