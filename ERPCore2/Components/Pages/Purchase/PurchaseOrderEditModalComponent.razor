@@ -243,6 +243,17 @@
                 // 載入採購單明細
                 await LoadPurchaseOrderDetails(PurchaseOrderId.Value);
                 
+                // 在實體載入後重新初始化表單欄位以反映正確的唯讀狀態
+                await Task.Delay(10); // 短暫延遲確保實體已設定
+                _ = Task.Run(async () =>
+                {
+                    await InvokeAsync(async () =>
+                    {
+                        await InitializeFormFieldsAsync();
+                        StateHasChanged();
+                    });
+                });
+                
                 // 觸發重新渲染以更新 ProductManagerComponent
                 StateHasChanged();
             }
@@ -309,6 +320,9 @@
     {
         try
         {
+            // 檢查採購單是否已核准，如果已核准則設為唯讀
+            bool isApproved = editModalComponent?.Entity?.IsApproved ?? false;
+            
             formFields = new List<FormFieldDefinition>
             {
                 new()
@@ -320,6 +334,7 @@
                     IsRequired = true,
                     MaxLength = 30,
                     HelpText = "採購單的唯一編號，新增時系統會自動產生，也可手動修改",
+                    IsReadOnly = isApproved
                 },
                 new()
                 {
@@ -330,6 +345,7 @@
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "選擇進行此次採購的公司",
+                    IsReadOnly = isApproved
                 },
                 new()
                 {
@@ -340,7 +356,8 @@
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "輸入供應商名稱進行搜尋，或直接選擇",
-                    ActionButtons = await GetSupplierActionButtonsAsync()
+                    ActionButtons = await GetSupplierActionButtonsAsync(),
+                    IsReadOnly = isApproved
                 },
                 new()
                 {
@@ -349,6 +366,7 @@
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     HelpText = "採購單建立日期",
+                    IsReadOnly = isApproved
                 },
                 new()
                 {
@@ -357,6 +375,7 @@
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     HelpText = "預計供應商交貨的日期",
+                    IsReadOnly = isApproved
                 },
 
                 new()
@@ -369,7 +388,8 @@
                     MaxLength = 500,
                     Rows = 2,
                     HelpText = "採購單的額外說明或注意事項",
-                    ContainerCssClass = "col-12"
+                    ContainerCssClass = "col-12",
+                    IsReadOnly = isApproved
                 }
             };
 
@@ -537,7 +557,8 @@
                                                QuantityLabel="採購數量"
                                                ReceivedQuantityLabel="已進貨數量"
                                                PriceLabel="採購單價"
-                                               RemarksLabel="採購備註" />
+                                               RemarksLabel="採購備註"
+                                               IsReadOnly="@(editModalComponent.Entity.IsApproved)" />
                     }
                     else
                     {
@@ -588,11 +609,23 @@
     /// </summary>
     private async Task<List<FieldActionButton>> GetSupplierActionButtonsAsync()
     {
-        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+        var buttons = await ActionButtonHelper.GenerateFieldActionButtonsAsync(
             editModalComponent, 
             supplierModalManager, 
             nameof(PurchaseOrder.SupplierId)
         );
+        
+        // 如果採購單已核准，禁用所有按鈕
+        bool isApproved = editModalComponent?.Entity?.IsApproved ?? false;
+        if (isApproved)
+        {
+            foreach (var button in buttons)
+            {
+                button.IsDisabled = true;
+            }
+        }
+        
+        return buttons;
     }
     
     // ===== Modal 事件包裝器方法 =====
@@ -698,6 +731,13 @@
             if (purchaseOrder == null)
             {
                 await NotificationService.ShowErrorAsync("沒有要儲存的採購單資料");
+                return false;
+            }
+
+            // 檢查採購單是否已核准，已核准則不能修改
+            if (purchaseOrder.IsApproved)
+            {
+                await NotificationService.ShowWarningAsync("採購單已核准，無法修改");
                 return false;
             }
 

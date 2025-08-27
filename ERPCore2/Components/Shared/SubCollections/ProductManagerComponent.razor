@@ -3,14 +3,15 @@
 @using System.Linq.Expressions
 @using System.Reflection
 @using ERPCore2.Data.Enums
+@using Microsoft.JSInterop
 @inject IProductService ProductService
+@inject IJSRuntime JSRuntime
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
 
     @if (ProductItems != null && ProductItems.Any())
     {
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
+            <table class="table table-striped table-hover rounded overflow-hidden">
                 <thead class="table-dark">
                     <tr>
                         @if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
@@ -56,22 +57,27 @@
                                     <div class="position-relative">
                                         <input type="text" class="form-control form-control-sm @(isEmptyRow ? "empty-row-input" : "")" 
                                                value="@item.ProductSearch"
-                                               @oninput="(e) => OnProductSearchInput(item, e.Value?.ToString())"
-                                               @onfocus="() => OnInputFocus(item)"
+                                               @oninput="async (e) => await OnProductSearchInput(item, e.Value?.ToString())"
+                                               @onfocus="async () => await OnInputFocus(item)"
                                                @onkeydown="(e) => OnKeyDown(item, e)"
-                                               placeholder="@GetProductInputPlaceholder(isEmptyRow)" />
+                                               placeholder="@GetProductInputPlaceholder(isEmptyRow)" 
+                                               readonly="@IsReadOnly" />
                                         
-                                        @if (item.ShowDropdown && FilteredProducts != null && FilteredProducts.Any())
+                                        @if (item.ShowDropdown && FilteredProducts != null && FilteredProducts.Any() && !IsReadOnly)
                                         {
-                                            <div class="dropdown-menu show position-absolute w-100" style="z-index: 1000; max-height: 200px; overflow-y: auto;">
+                                            <div class="dropdown-menu show position-fixed w-auto shadow" 
+                                                 style="z-index: 9999; max-height: 200px; overflow-y: auto; overflow-x: hidden; border: 1px solid #dee2e6; min-width: 300px; max-width: 500px;"
+                                                 id="dropdown-@ProductItems.IndexOf(item)">
                                                 @for (int i = 0; i < FilteredProducts.Count; i++)
                                                 {
                                                     var product = FilteredProducts[i];
                                                     var index = i;
-                                                    <a class="dropdown-item @(item.SelectedIndex == index ? "active" : "")" 
+                                                    <a class="dropdown-item @(item.SelectedIndex == index ? "active bg-primary text-white" : "")" 
                                                        href="#" 
                                                        @onclick="() => SelectProduct(item, product)" 
-                                                       @onclick:preventDefault="true">
+                                                       @onclick:preventDefault="true"
+                                                       style="cursor: pointer; padding: 8px 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+                                                       @onmouseenter="() => item.SelectedIndex = index">
                                                         <strong>@product.Code</strong> - @product.Name
                                                     </a>
                                                 }
@@ -82,11 +88,12 @@
                                 <td>
                                     <input type="number" class="form-control form-control-sm" 
                                            value="@item.Quantity"
-                                           @onfocus="() => OnInputFocus(item)"
+                                           @onfocus="async () => await OnInputFocus(item)"
                                            @oninput="(e) => OnQuantityInput(item, e.Value?.ToString())"
                                            placeholder="@GetQuantityPlaceholder(isEmptyRow)" 
                                            min="0" 
-                                           step="1" />
+                                           step="1" 
+                                           readonly="@IsReadOnly" />
                                 </td>
                                 <td>
                                     <input type="number" class="form-control form-control-sm" 
@@ -100,11 +107,12 @@
                                 <td>
                                     <input type="number" class="form-control form-control-sm" 
                                            value="@item.Price"
-                                           @onfocus="() => OnInputFocus(item)"
+                                           @onfocus="async () => await OnInputFocus(item)"
                                            @oninput="(e) => OnPriceInput(item, e.Value?.ToString())"
                                            placeholder="@GetPricePlaceholder(isEmptyRow)" 
                                            min="0" 
-                                           step="0.01" />
+                                           step="0.01" 
+                                           readonly="@IsReadOnly" />
                                 </td>
                                 @if (ShowIsReceivingCompleted)
                                 {
@@ -114,7 +122,8 @@
                                                    type="checkbox" 
                                                    checked="@item.IsReceivingCompleted"
                                                    @onclick="() => OnIsReceivingCompletedChanged(item)"
-                                                   title="手動標記為完成進貨" />
+                                                   title="手動標記為完成進貨" 
+                                                   disabled="@IsReadOnly" />
                                         </div>
                                         @if (item.IsReceivingCompleted)
                                         {
@@ -127,14 +136,18 @@
                                 <td class="d-none d-sm-table-cell">
                                     <input type="text" class="form-control form-control-sm" 
                                            value="@item.Remarks"
-                                           @onfocus="() => OnInputFocus(item)"
+                                           @onfocus="async () => await OnInputFocus(item)"
                                            @oninput="(e) => OnRemarksInput(item, e.Value?.ToString())"
-                                           placeholder="@GetRemarksPlaceholder(isEmptyRow)" />
+                                           placeholder="@GetRemarksPlaceholder(isEmptyRow)" 
+                                           readonly="@IsReadOnly" />
                                 </td>
                                 <td>
-                                    <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => RemoveItem(item)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    @if (!IsReadOnly)
+                                    {
+                                        <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => RemoveItem(item)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    }
                                 </td>
                             }
                         </tr>
@@ -159,7 +172,6 @@
                     </tfoot>
                 }
             </table>
-        </div>
     }
     else
     {
@@ -200,6 +212,9 @@
     [Parameter] public string PriceLabel { get; set; } = "單價";
     [Parameter] public string RemarksLabel { get; set; } = "備註";
     [Parameter] public string IsReceivingCompletedLabel { get; set; } = "完成進貨";
+    
+    // === 唯讀模式參數 ===
+    [Parameter] public bool IsReadOnly { get; set; } = false;
 
     private List<ProductItem> ProductItems { get; set; } = new List<ProductItem>();
     private List<Product> FilteredProducts { get; set; } = new List<Product>();
@@ -215,6 +230,22 @@
         LoadExistingDetails();
         // 初始化時確保有1行空白
         EnsureOneEmptyRow();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("eval", "if (window.setupDropdownPositioning) { window.setupDropdownPositioning(); }");
+            }
+            catch (Exception)
+            {
+                // 忽略 JavaScript 初始化錯誤
+            }
+        }
+        await base.OnAfterRenderAsync(firstRender);
     }
 
     protected override async Task OnParametersSetAsync()
@@ -409,10 +440,10 @@
         StateHasChanged();
     }
 
-    private void OnInputFocus(ProductItem item)
+    private async Task OnInputFocus(ProductItem item)
     {
         // 只負責顯示下拉選單，新增行的邏輯放在實際輸入時處理
-        ShowProductDropdown(item);
+        await ShowProductDropdown(item);
     }
 
     private bool IsEmptyRow(ProductItem item)
@@ -445,7 +476,7 @@
         await NotifyDetailsChanged();
     }
 
-    private void OnProductSearchInput(ProductItem item, string? searchValue)
+    private async Task OnProductSearchInput(ProductItem item, string? searchValue)
     {
         // 檢查是否在空行輸入，如果是則新增行
         var wasEmpty = IsEmptyRow(item);
@@ -454,9 +485,27 @@
         
         if (string.IsNullOrWhiteSpace(searchValue))
         {
-            item.ShowDropdown = false;
+            // 清空搜尋框時，清空商品選擇
+            item.SelectedProduct = null;
             item.SelectedIndex = -1;
-            FilteredProducts.Clear();
+            
+            // 顯示所有可用商品的前20項（類似 focus 時的行為）
+            var availableProducts = GetAvailableProducts();
+            FilteredProducts = availableProducts.Take(20).ToList();
+            item.ShowDropdown = FilteredProducts.Any();
+            
+            // 立即通知變更
+            await NotifyDetailsChanged();
+            
+            // 強制重新渲染
+            StateHasChanged();
+            await Task.Delay(1); // 給 DOM 時間更新
+            
+            // 重新定位下拉選單
+            if (item.ShowDropdown)
+            {
+                await PositionDropdownAsync(item);
+            }
         }
         else
         {
@@ -466,7 +515,7 @@
             FilteredProducts = availableProducts
                 .Where(p => p.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true ||
                            p.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true)
-                .Take(10)
+                .Take(20)
                 .ToList();
             
             item.ShowDropdown = FilteredProducts.Any();
@@ -480,6 +529,13 @@
         }
         
         StateHasChanged();
+        
+        // 如果顯示下拉選單，定位它
+        if (item.ShowDropdown)
+        {
+            await Task.Delay(10); // 給 DOM 時間更新
+            await PositionDropdownAsync(item);
+        }
     }
 
     /// <summary>
@@ -564,19 +620,27 @@
         StateHasChanged();
     }
 
-    private void ShowProductDropdown(ProductItem item)
+    private async Task ShowProductDropdown(ProductItem item)
     {
         if (!string.IsNullOrWhiteSpace(item.ProductSearch))
         {
-            OnProductSearchInput(item, item.ProductSearch);
+            await OnProductSearchInput(item, item.ProductSearch);
         }
         else
         {
             item.SelectedIndex = -1;
-            // 如果沒有搜尋文字，顯示所有可用商品的前10項
+            // 如果沒有搜尋文字，顯示所有可用商品的前20項
             var availableProducts = GetAvailableProducts();
-            FilteredProducts = availableProducts.Take(10).ToList();
+            FilteredProducts = availableProducts.Take(20).ToList();
             item.ShowDropdown = FilteredProducts.Any();
+        }
+        
+        // 等待 DOM 更新後定位下拉選單
+        if (item.ShowDropdown)
+        {
+            StateHasChanged();
+            await Task.Delay(10); // 給 DOM 時間更新
+            await PositionDropdownAsync(item);
         }
     }
 
@@ -600,11 +664,13 @@
         {
             case "ArrowDown":
                 item.SelectedIndex = Math.Min(item.SelectedIndex + 1, FilteredProducts.Count - 1);
+                await ScrollSelectedItemIntoView(item);
                 StateHasChanged();
                 break;
                 
             case "ArrowUp":
                 item.SelectedIndex = Math.Max(item.SelectedIndex - 1, 0);
+                await ScrollSelectedItemIntoView(item);
                 StateHasChanged();
                 break;
                 
@@ -620,6 +686,40 @@
                 item.SelectedIndex = -1;
                 StateHasChanged();
                 break;
+        }
+    }
+
+    /// <summary>
+    /// 捲動選中的項目到視野範圍內
+    /// </summary>
+    private async Task ScrollSelectedItemIntoView(ProductItem item)
+    {
+        // 這個方法可以透過 JavaScript 來實現更精確的捲動控制
+        // 目前暫時透過 StateHasChanged 來更新UI
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 使用 JavaScript 定位下拉選單
+    /// </summary>
+    private async Task PositionDropdownAsync(ProductItem item)
+    {
+        try
+        {
+            var itemIndex = ProductItems.IndexOf(item);
+            await JSRuntime.InvokeVoidAsync("eval", $@"
+                setTimeout(() => {{
+                    const input = document.querySelector('#dropdown-{itemIndex}')?.parentElement?.querySelector('input[type=""text""]');
+                    const dropdown = document.querySelector('#dropdown-{itemIndex}');
+                    if (input && dropdown && window.positionDropdown) {{
+                        window.positionDropdown(input, dropdown);
+                    }}
+                }}, 1);
+            ");
+        }
+        catch (Exception)
+        {
+            // 忽略 JavaScript 錯誤，下拉選單仍可正常運作
         }
     }
 
@@ -694,3 +794,68 @@
         public TDetailEntity? ExistingDetailEntity { get; set; } // 新增：關聯的現有明細實體
     }
 }
+
+<script>
+    window.positionDropdown = (inputElement, dropdownElement) => {
+        if (!inputElement || !dropdownElement) return;
+        
+        const inputRect = inputElement.getBoundingClientRect();
+        const dropdownRect = dropdownElement.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+        
+        // 計算可用空間
+        const spaceBelow = viewportHeight - inputRect.bottom;
+        const spaceAbove = inputRect.top;
+        const spaceRight = viewportWidth - inputRect.left;
+        
+        // 設定水平位置
+        let left = inputRect.left;
+        if (left + dropdownElement.offsetWidth > viewportWidth) {
+            left = viewportWidth - dropdownElement.offsetWidth - 10;
+        }
+        if (left < 0) left = 10;
+        
+        // 設定垂直位置
+        let top = inputRect.bottom;
+        let maxHeight = Math.min(200, spaceBelow - 20);
+        
+        // 如果下方空間不足且上方空間更大，則向上展開
+        if (spaceBelow < 150 && spaceAbove > spaceBelow) {
+            top = inputRect.top - Math.min(200, spaceAbove - 20);
+            maxHeight = Math.min(200, spaceAbove - 20);
+        }
+        
+        // 應用位置和大小
+        dropdownElement.style.left = left + 'px';
+        dropdownElement.style.top = top + 'px';
+        dropdownElement.style.maxHeight = maxHeight + 'px';
+        dropdownElement.style.minWidth = Math.max(inputRect.width, 300) + 'px';
+    };
+    
+    window.setupDropdownPositioning = () => {
+        // 監聽滾動事件，重新定位下拉選單
+        let scrollTimeout;
+        const handleScroll = () => {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                const dropdowns = document.querySelectorAll('.dropdown-menu.show.position-fixed');
+                dropdowns.forEach(dropdown => {
+                    const inputId = dropdown.id.replace('dropdown-', '');
+                    const input = dropdown.parentElement?.querySelector('input[type="text"]');
+                    if (input) {
+                        window.positionDropdown(input, dropdown);
+                    }
+                });
+            }, 10);
+        };
+        
+        window.addEventListener('scroll', handleScroll, true);
+        window.addEventListener('resize', handleScroll);
+        
+        return () => {
+            window.removeEventListener('scroll', handleScroll, true);
+            window.removeEventListener('resize', handleScroll);
+        };
+    };
+</script>
