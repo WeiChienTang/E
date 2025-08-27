@@ -10,8 +10,17 @@ window.showModal = function (modalId) {
 };
 
 window.hideModal = function (modalId) {
-    var modal = document.getElementById(modalId);
-    if (modal) {
+    var modal = document.getElementB// 設置 ESC 鍵監聽器
+window.setupEscKeyListener = function (dotNetHelper) {
+    // 清理之前的監聽器
+    cleanupEscKeyListener();
+    
+    // 存儲新的 DotNet 對象引用
+    escKeyDotNetHelper = dotNetHelper;
+    
+    // 添加鍵盤事件監聽器
+    document.addEventListener('keydown', handleEscapeKey);
+};   if (modal) {
         // 使用 Bootstrap 5 的 Modal API
         var bootstrapModal = bootstrap.Modal.getInstance(modal);
         if (bootstrapModal) {
@@ -334,4 +343,145 @@ window.addEventListener('DOMContentLoaded', function () {
         // 移除 Tab 導航事件監聽器
         document.removeEventListener('keydown', handleButtonTabNavigation);
     });
+});
+
+// ===== Tab 導航清理 =====
+
+// 清理按鈕 Tab 導航功能
+window.cleanupButtonTabNavigation = function () {
+    // 移除事件監聽器
+    document.removeEventListener('keydown', handleButtonTabNavigation);
+    document.removeEventListener('focusin', handleButtonFocus);
+    
+    // 停止 MutationObserver
+    if (buttonTabNavigationObserver) {
+        buttonTabNavigationObserver.disconnect();
+        buttonTabNavigationObserver = null;
+    }
+};
+
+// ===== ESC 鍵支援 =====
+
+// 全域變數來存儲 ESC 鍵監聽器的 DotNet 對象引用
+var escKeyDotNetHelper = null;
+var escKeyCleanupInProgress = false;
+
+// 設置 ESC 鍵監聽器
+window.setupEscKeyListener = function (dotNetHelper) {
+    // 清理之前的監聽器
+    cleanupEscKeyListener();
+    
+    // 儲存 DotNet 對象引用
+    escKeyDotNetHelper = dotNetHelper;
+    
+    // 添加 ESC 鍵事件監聽器
+    document.addEventListener('keydown', handleEscapeKey);
+};
+
+// 清理 ESC 鍵監聽器
+window.cleanupEscKeyListener = function () {
+    // 防止重複清理
+    if (escKeyCleanupInProgress) {
+        return;
+    }
+    
+    escKeyCleanupInProgress = true;
+    
+    // 移除事件監聽器
+    document.removeEventListener('keydown', handleEscapeKey);
+    
+    // 清理 DotNet 對象引用
+    if (escKeyDotNetHelper) {
+        try {
+            // 先將引用設為 null，避免在 dispose 過程中被重複調用
+            var tempRef = escKeyDotNetHelper;
+            escKeyDotNetHelper = null;
+            
+            // 延遲 dispose 以避免消息通道問題
+            setTimeout(function() {
+                try {
+                    tempRef.dispose();
+                } catch (error) {
+                    // 忽略 dispose 錯誤
+                }
+                escKeyCleanupInProgress = false;
+            }, 100);
+            
+        } catch (error) {
+            escKeyDotNetHelper = null;
+            escKeyCleanupInProgress = false;
+        }
+    } else {
+        escKeyCleanupInProgress = false;
+    }
+};
+
+// 處理 ESC 鍵按下事件
+function handleEscapeKey(event) {
+    // 只處理 ESC 鍵
+    if (event.key !== 'Escape' && event.keyCode !== 27) {
+        return;
+    }
+    
+    // 檢查是否有顯示的 modal
+    var visibleModal = document.querySelector('.modal.show');
+    if (!visibleModal) {
+        return;
+    }
+    
+    // 檢查當前焦點是否在輸入元素上
+    var activeElement = document.activeElement;
+    
+    // 檢查是否在輸入元素上且內容不為空（有實際輸入內容時才阻止 ESC）
+    var shouldBlockEsc = false;
+    if (activeElement) {
+        if (activeElement.tagName === 'TEXTAREA' && activeElement.value && activeElement.value.trim().length > 0) {
+            shouldBlockEsc = true;
+        } else if (activeElement.tagName === 'INPUT' && 
+                   (activeElement.type === 'text' || activeElement.type === 'email' || activeElement.type === 'tel' || activeElement.type === 'url') &&
+                   activeElement.value && activeElement.value.trim().length > 0) {
+            shouldBlockEsc = true;
+        } else if (activeElement.contentEditable === 'true' && activeElement.textContent && activeElement.textContent.trim().length > 0) {
+            shouldBlockEsc = true;
+        }
+    }
+    
+    if (shouldBlockEsc) {
+        return;
+    }
+    
+    // 防止預設行為
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // 調用 C# 方法處理 ESC 鍵
+    if (escKeyDotNetHelper) {
+        try {
+            escKeyDotNetHelper.invokeMethodAsync('HandleEscapeKey')
+                .then(function() {
+                    // ESC 鍵處理成功
+                })
+                .catch(function(error) {
+                    // 嘗試直接關閉模態視窗作為備用方案
+                    try {
+                        var modal = document.querySelector('.modal.show');
+                        if (modal) {
+                            var cancelButton = modal.querySelector('[data-bs-dismiss="modal"], .btn-secondary');
+                            if (cancelButton && typeof cancelButton.click === 'function') {
+                                cancelButton.click();
+                            }
+                        }
+                    } catch (fallbackError) {
+                        // 備用方案失敗，忽略錯誤
+                    }
+                });
+        } catch (error) {
+            // 調用失敗，忽略錯誤
+        }
+    }
+}
+
+// 頁面卸載時清理 ESC 鍵監聽器
+window.addEventListener('beforeunload', function () {
+    cleanupEscKeyListener();
 });

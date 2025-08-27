@@ -349,6 +349,12 @@
     // AutoComplete 搜尋關鍵字追蹤
     private readonly Dictionary<string, string> _lastSearchTerms = new();
     
+    // ESC 鍵支援
+    private DotNetObjectReference<GenericEditModalComponent<TEntity, TService>>? _escKeyDotNetRef;
+    private bool _isEscKeyListenerActive = false;
+    private bool _isDisposed = false;
+    private readonly object _escKeyLock = new object();
+    
     // ===== Modal 尺寸列舉 =====
     
     public enum ModalSize
@@ -397,7 +403,32 @@
     {
         if (IsVisible)
         {
-            await SetupTabNavigationAsync();
+            // 只在狀態真正改變時設置監聽器
+            bool shouldSetup;
+            lock (_escKeyLock)
+            {
+                shouldSetup = !_isEscKeyListenerActive;
+            }
+            
+            if (shouldSetup)
+            {
+                await SetupTabNavigationAsync();
+                await SetupEscKeyListenerAsync();
+            }
+        }
+        else
+        {
+            // 只在有監聽器時才清理
+            bool shouldCleanup;
+            lock (_escKeyLock)
+            {
+                shouldCleanup = _isEscKeyListenerActive;
+            }
+            
+            if (shouldCleanup)
+            {
+                await CleanupEscKeyListenerAsync();
+            }
         }
     }
     
@@ -414,7 +445,7 @@
         }
         catch (Exception ex)
         {
-            await LogError("SetupTabNavigation", ex);
+            LogError("SetupTabNavigation", ex);
         }
     }
     
@@ -429,7 +460,119 @@
         }
         catch (Exception ex)
         {
-            await LogError("CleanupTabNavigation", ex);
+            LogError("CleanupTabNavigation", ex);
+        }
+    }
+    
+    // ===== ESC 鍵處理 =====
+    
+    /// <summary>
+    /// 設置 ESC 鍵監聽器，當按下 ESC 鍵時自動關閉 Modal
+    /// </summary>
+    private async Task SetupEscKeyListenerAsync()
+    {
+        try
+        {
+            lock (_escKeyLock)
+            {
+                // 如果已經設置過，不重複設置
+                if (_isEscKeyListenerActive && _escKeyDotNetRef != null)
+                {
+                    return;
+                }
+                
+                _isEscKeyListenerActive = true;
+            }
+            
+            // 先清理舊的引用
+            await CleanupEscKeyListenerAsync();
+            
+            // 創建新的 DotNetObjectReference
+            lock (_escKeyLock)
+            {
+                _escKeyDotNetRef = DotNetObjectReference.Create(this);
+            }
+            
+            await JSRuntime.InvokeVoidAsync("setupEscKeyListener", _escKeyDotNetRef);
+        }
+        catch (Exception ex)
+        {
+            lock (_escKeyLock)
+            {
+                _isEscKeyListenerActive = false;
+            }
+            LogError("SetupEscKeyListener", ex);
+        }
+    }
+    
+    /// <summary>
+    /// 清理 ESC 鍵事件監聽器
+    /// </summary>
+    private async Task CleanupEscKeyListenerAsync()
+    {
+        DotNetObjectReference<GenericEditModalComponent<TEntity, TService>>? refToDispose = null;
+        
+        lock (_escKeyLock)
+        {
+            // 如果已經清理過，不重複清理
+            if (!_isEscKeyListenerActive)
+            {
+                return;
+            }
+            
+            _isEscKeyListenerActive = false;
+            refToDispose = _escKeyDotNetRef;
+            _escKeyDotNetRef = null;
+        }
+        
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("cleanupEscKeyListener");
+            
+            // 在鎖外釋放資源，避免死鎖
+            if (refToDispose != null)
+            {
+                refToDispose.Dispose();
+            }
+        }
+        catch (Exception ex)
+        {
+            LogError("CleanupEscKeyListener", ex);
+        }
+    }
+    
+    /// <summary>
+    /// 處理 ESC 鍵按下事件（由 JavaScript 調用）
+    /// </summary>
+    [JSInvokable]
+    public async Task HandleEscapeKey()
+    {
+        try
+        {
+            // 增加額外的安全檢查，特別是對於複雜的子組件
+            if (_isDisposed)
+            {
+                return;
+            }
+            
+            if (IsVisible && !IsSubmitting && !IsApproving && !IsRejecting)
+            {
+                await HandleCancel();
+            }
+        }
+        catch (ObjectDisposedException)
+        {
+            // 忽略已釋放物件的錯誤
+        }
+        catch (InvalidOperationException)
+        {
+            // 忽略無效操作錯誤（通常發生在組件已被釋放時）
+        }
+        catch (Exception ex)
+        {
+            // 簡化錯誤處理，避免複雜的 JSInterop 調用
+            System.Diagnostics.Debug.WriteLine($"ESC Error: {ex.Message}");
+            // 不重新拋出例外，避免影響使用者體驗
         }
     }
     
@@ -471,7 +614,7 @@
         catch (Exception ex)
         {
             ErrorMessage = $"載入資料時發生錯誤：{ex.Message}";
-            await LogError("LoadAllData", ex);
+            LogError("LoadAllData", ex);
         }
         finally
         {
@@ -505,7 +648,7 @@
         }
         catch (Exception ex)
         {
-            await LogError("LoadApprovalData", ex);
+            LogError("LoadApprovalData", ex);
             // 不拋出例外，避免影響主要資料載入
         }
     }
@@ -577,7 +720,7 @@
         catch (Exception ex)
         {
             await ShowErrorMessage($"儲存時發生錯誤：{ex.Message}");
-            await LogError("HandleSave", ex);
+            LogError("HandleSave", ex);
             
             if (OnSaveFailure.HasDelegate)
             {
@@ -593,12 +736,34 @@
     
     private async Task HandleCancel()
     {
-        if (OnCancel.HasDelegate)
+        try
         {
-            await OnCancel.InvokeAsync();
+            // 檢查是否已經被釋放
+            if (_isDisposed)
+            {
+                return;
+            }
+            
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+            
+            await CloseModal();
         }
-        
-        await CloseModal();
+        catch (ObjectDisposedException)
+        {
+            // 忽略已釋放物件的錯誤
+        }
+        catch (InvalidOperationException)
+        {
+            // 忽略無效操作錯誤
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Cancel Error: {ex.Message}");
+            // 不重新拋出例外，避免影響使用者體驗
+        }
     }
     
     private async Task HandlePrint()
@@ -635,7 +800,7 @@
         catch (Exception ex)
         {
             await ShowErrorMessage($"審核通過時發生錯誤：{ex.Message}");
-            await LogError("HandleApprove", ex);
+            LogError("HandleApprove", ex);
         }
         finally
         {
@@ -670,7 +835,7 @@
         catch (Exception ex)
         {
             await ShowErrorMessage($"審核駁回時發生錯誤：{ex.Message}");
-            await LogError("HandleReject", ex);
+            LogError("HandleReject", ex);
         }
         finally
         {
@@ -774,9 +939,10 @@
         await NotificationService.ShowErrorAsync(message);
     }
     
-    private async Task LogError(string method, Exception ex)
+    private void LogError(string method, Exception ex)
     {
-        await JSRuntime.InvokeVoidAsync("console.error", $"[GenericEditModalComponent.{method}] 錯誤：", ex.Message);
+        // 使用系統日誌而非 console 輸出
+        System.Diagnostics.Debug.WriteLine($"[GenericEditModalComponent.{method}] 錯誤：{ex.Message}");
     }
     
     // ===== 通用Save方法 =====
@@ -847,7 +1013,7 @@
         catch (Exception ex)
         {
             await ShowErrorMessage($"{SaveFailureMessage}：{ex.Message}");
-            await LogError("GenericSave", ex);
+            LogError("GenericSave", ex);
             return false;
         }
     }
@@ -1098,7 +1264,7 @@
             }
             catch (Exception ex)
             {
-                await LogError($"AutoSearch_{propertyName}", ex);
+                LogError($"AutoSearch_{propertyName}", ex);
                 return new List<SelectOption>();
             }
         };
@@ -1180,7 +1346,7 @@
         }
         catch (Exception ex)
         {
-            _ = Task.Run(async () => await LogError("UpdateAllActionButtons", ex));
+            _ = Task.Run(() => LogError("UpdateAllActionButtons", ex));
         }
     }
     
@@ -1206,12 +1372,28 @@
     {
         try
         {
-            // 異步清理 Tab 導航，但不等待結果以避免阻塞 Dispose
+            DotNetObjectReference<GenericEditModalComponent<TEntity, TService>>? refToDispose = null;
+            
+            lock (_escKeyLock)
+            {
+                // 標記為已釋放
+                _isDisposed = true;
+                // 標記為已清理，防止重複操作
+                _isEscKeyListenerActive = false;
+                refToDispose = _escKeyDotNetRef;
+                _escKeyDotNetRef = null;
+            }
+            
+            // 同步釋放 DotNetObjectReference（避免重複釋放）
+            refToDispose?.Dispose();
+            
+            // 異步清理事件監聽器，但不等待結果以避免阻塞 Dispose
             _ = Task.Run(async () =>
             {
                 try
                 {
                     await CleanupTabNavigationAsync();
+                    // 不需要再調用 CleanupEscKeyListenerAsync，因為已經在上面處理了
                 }
                 catch
                 {

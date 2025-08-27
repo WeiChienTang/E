@@ -143,7 +143,7 @@
             {
                 await OnCancel.InvokeAsync();
             }
-            await CloseModal();
+            // 不要直接調用 CloseModal，讓 GenericEditModalComponent 處理
         }
         catch (Exception ex)
         {

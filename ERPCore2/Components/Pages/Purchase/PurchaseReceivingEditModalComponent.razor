@@ -6,6 +6,7 @@
 @inject INotificationService NotificationService
 @inject ISupplierService SupplierService
 @inject IEmployeeService EmployeeService
+@implements IDisposable
 
 <GenericEditModalComponent TEntity="PurchaseReceiving" 
                           TService="IPurchaseReceivingService"
@@ -58,10 +59,17 @@
     // ===== 必要方法 =====
     protected override async Task OnParametersSetAsync()
     {
-        if (IsVisible)
+        try
         {
-            await LoadAdditionalDataAsync();
-            await InitializeFormFieldsAsync();
+            if (IsVisible)
+            {
+                await LoadAdditionalDataAsync();
+                await InitializeFormFieldsAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"參數設置時發生錯誤：{ex.Message}");
         }
     }
 
@@ -77,9 +85,7 @@
             {
                 await OnPurchaseReceivingSaved.InvokeAsync(editModalComponent.Entity);
             }
-
-            // 關閉 Modal
-            await CloseModal();
+            // 不需要手動關閉 Modal，GenericEditModalComponent 會處理
         }
         catch (Exception ex)
         {
@@ -98,23 +104,11 @@
             {
                 await OnCancel.InvokeAsync();
             }
-
-            await CloseModal();
+            // 不要直接調用 CloseModal，讓 GenericEditModalComponent 處理
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"關閉視窗時發生錯誤：{ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 關閉模態視窗
-    /// </summary>
-    private async Task CloseModal()
-    {
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(false);
         }
     }
 
@@ -589,22 +583,30 @@
     /// </summary>
     private List<GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule> GetCustomModules()
     {
-        if (editModalComponent == null)
+        try
         {
+            if (editModalComponent == null)
+            {
+                return new List<GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule>();
+            }
+
+            return new List<GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule>
+            {
+                new GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule
+                {
+                    Title = "",
+                    Order = 1,
+                    CssClass = "mt-4",
+                    IsVisible = true,
+                    Content = CreateReceivingDetailManagerContent()
+                }
+            };
+        }
+        catch
+        {
+            // 如果創建模組時發生錯誤，返回空列表
             return new List<GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule>();
         }
-
-        return new List<GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule>
-        {
-            new GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule
-            {
-                Title = "",
-                Order = 1,
-                CssClass = "mt-4",
-                IsVisible = true,
-                Content = CreateReceivingDetailManagerContent()
-            }
-        };
     }
 
     /// <summary>
@@ -620,18 +622,36 @@
                 @if (editModalComponent.Entity.PurchaseOrderId.HasValue && editModalComponent.Entity.PurchaseOrderId.Value > 0)
                 {
                     // 單一採購單模式 - 使用原有元件
-                    <PurchaseReceivingDetailManagerComponent 
-                        PurchaseOrderId="@editModalComponent.Entity.PurchaseOrderId"
-                        ExistingDetails="@purchaseReceivingDetails"
-                        OnDetailsChanged="@HandleReceivingDetailsChanged" />
+                    try
+                    {
+                        <PurchaseReceivingDetailManagerComponent 
+                            PurchaseOrderId="@editModalComponent.Entity.PurchaseOrderId"
+                            ExistingDetails="@purchaseReceivingDetails"
+                            OnDetailsChanged="@HandleReceivingDetailsChanged" />
+                    }
+                    catch
+                    {
+                        <div class="alert alert-warning" role="alert">
+                            載入單一採購單明細管理器時發生錯誤，請重新整理頁面。
+                        </div>
+                    }
                 }
                 else if (editModalComponent.Entity.SupplierId > 0)
                 {
                     // 多採購單模式 - 使用新元件
-                    <MultiOrderPurchaseReceivingDetailManagerComponent 
-                        SupplierId="@editModalComponent.Entity.SupplierId"
-                        ExistingDetails="@purchaseReceivingDetails"
-                        OnDetailsChanged="@HandleReceivingDetailsChanged" />
+                    try
+                    {
+                        <MultiOrderPurchaseReceivingDetailManagerComponent 
+                            SupplierId="@editModalComponent.Entity.SupplierId"
+                            ExistingDetails="@purchaseReceivingDetails"
+                            OnDetailsChanged="@HandleReceivingDetailsChanged" />
+                    }
+                    catch
+                    {
+                        <div class="alert alert-warning" role="alert">
+                            載入多採購單明細管理器時發生錯誤，請重新整理頁面。
+                        </div>
+                    }
                 }
                 else
                 {
@@ -655,4 +675,28 @@
             </div>
         }
     };
+    
+    /// <summary>
+    /// 釋放資源
+    /// </summary>
+    public void Dispose()
+    {
+        try
+        {
+            // 清理任何需要清理的資源
+            purchaseReceivingDetails?.Clear();
+            availableOrderDetails?.Clear();
+            formFields?.Clear();
+            formSections?.Clear();
+            purchaseOrders?.Clear();
+            warehouses?.Clear();
+            warehouseLocations?.Clear();
+            suppliers?.Clear();
+            employees?.Clear();
+        }
+        catch
+        {
+            // 忽略清理過程中的錯誤
+        }
+    }
 }
