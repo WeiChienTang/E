@@ -45,6 +45,16 @@ namespace ERPCore2.Services
         /// 顯示服務結果訊息（泛型版本）
         /// </summary>
         Task ShowServiceResultAsync<T>(ServiceResult<T> result, string? successMessage = null);
+        
+        /// <summary>
+        /// 清除所有通知訊息
+        /// </summary>
+        Task ClearAllNotificationsAsync();
+        
+        /// <summary>
+        /// 設定最大同時顯示的通知數量
+        /// </summary>
+        Task SetMaxNotificationsAsync(int maxCount);
     }
 }
 

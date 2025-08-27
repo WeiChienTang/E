@@ -397,17 +397,23 @@ window.cleanupEscKeyListener = function () {
             var tempRef = escKeyDotNetHelper;
             escKeyDotNetHelper = null;
             
-            // 延遲 dispose 以避免消息通道問題
+            // 延遲 dispose 以避免消息通道問題，並增加安全檢查
             setTimeout(function() {
                 try {
-                    tempRef.dispose();
+                    // 檢查對象是否仍然有效
+                    if (tempRef && typeof tempRef.dispose === 'function') {
+                        tempRef.dispose();
+                    }
                 } catch (error) {
-                    // 忽略 dispose 錯誤
+                    // 安靜地忽略 dispose 錯誤，因為可能是 Blazor 連接已關閉
+                    console.debug('ESC key listener cleanup warning (safe to ignore):', error.message);
+                } finally {
+                    escKeyCleanupInProgress = false;
                 }
-                escKeyCleanupInProgress = false;
-            }, 100);
+            }, 150); // 增加延遲時間
             
         } catch (error) {
+            console.debug('ESC key listener cleanup error (safe to ignore):', error.message);
             escKeyDotNetHelper = null;
             escKeyCleanupInProgress = false;
         }

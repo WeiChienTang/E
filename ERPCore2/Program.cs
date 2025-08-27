@@ -118,7 +118,13 @@ builder.Services.AddRazorComponents(options =>
         // 在開發模式啟用詳細錯誤
         options.DetailedErrors = builder.Environment.IsDevelopment();
     })
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents(options =>
+    {
+        // 配置 Circuit 選項來改善 JavaScript interop 錯誤處理
+        options.DetailedErrors = builder.Environment.IsDevelopment();
+        options.JSInteropDefaultCallTimeout = TimeSpan.FromMinutes(1);
+        options.MaxBufferedUnacknowledgedRenderBatches = 10;
+    });
 
 // 加入控制器支援（僅用於認證）
 builder.Services.AddControllers();

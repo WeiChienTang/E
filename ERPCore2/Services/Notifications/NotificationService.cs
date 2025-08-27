@@ -114,6 +114,22 @@ namespace ERPCore2.Services
                 await ShowErrorAsync(errorMessage);
             }
         }
+
+        /// <summary>
+        /// 清除所有通知訊息
+        /// </summary>
+        public async Task ClearAllNotificationsAsync()
+        {
+            await _jsRuntime.InvokeVoidAsync("clearAllToasts");
+        }
+
+        /// <summary>
+        /// 設定最大同時顯示的通知數量
+        /// </summary>
+        public async Task SetMaxNotificationsAsync(int maxCount)
+        {
+            await _jsRuntime.InvokeVoidAsync("setMaxToasts", maxCount);
+        }
     }
 }
 

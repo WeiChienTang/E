@@ -1,7 +1,10 @@
-// Toast 通知系統
+// Toast 通知系統 - 創新滑入式設計
 class ToastManager {
     constructor() {
         this.container = null;
+        this.maxToasts = 3; // 最多同時顯示3個toast
+        this.autoHideDelay = 3000; // 預設3秒自動關閉
+        this.collapseDelay = 2000; // 收合後2秒關閉
         this.initContainer();
     }
 
@@ -13,10 +16,16 @@ class ToastManager {
             if (!this.container) {
                 this.container = document.createElement('div');
                 this.container.id = 'toast-container';
-                this.container.className = 'toast-container position-fixed top-0 start-50 translate-middle-x p-3';
+                this.container.className = 'toast-container-slide position-fixed';
                 this.container.style.zIndex = '9999';
+                this.container.style.top = '20px';
+                this.container.style.right = '20px';
+                this.container.style.width = '320px';
+                this.container.style.maxHeight = 'calc(100vh - 40px)';
+                this.container.style.overflowY = 'visible'; // 改為 visible 避免拉桿
+                this.container.style.pointerEvents = 'none'; // 讓容器本身不阻擋事件
                 document.body.appendChild(this.container);
-                console.log('Toast container created');
+                console.log('Toast container created with slide animation');
             }
         };
 
@@ -33,20 +42,37 @@ class ToastManager {
             this.initContainer();
         }
 
+        // 檢查並移除超過數量限制的toast
+        this.limitToasts();
+
         const toast = this.createToast(type, message, title);
         this.container.appendChild(toast);
 
-        // 觸發動畫
+        // 觸發滑入動畫
         setTimeout(() => {
-            toast.classList.add('show');
-        }, 100);
+            toast.classList.add('slide-in');
+        }, 50);
 
-        // 自動隱藏
-        setTimeout(() => {
+        // 自動隱藏 (3秒後自動關閉)
+        const autoHideTimeout = setTimeout(() => {
             this.hide(toast);
-        }, 5000);
+        }, this.autoHideDelay);
+
+        // 儲存 timeout ID 以便取消
+        toast.autoHideTimeout = autoHideTimeout;
 
         return toast;
+    }
+
+    limitToasts() {
+        const existingToasts = this.container.querySelectorAll('.toast');
+        if (existingToasts.length >= this.maxToasts) {
+            // 移除最舊的toast（從最前面開始移除）
+            const toastsToRemove = existingToasts.length - this.maxToasts + 1;
+            for (let i = 0; i < toastsToRemove; i++) {
+                this.hide(existingToasts[i]);
+            }
+        }
     }
 
     createToast(type, message, title) {
@@ -60,39 +86,74 @@ class ToastManager {
         };
 
         const colorMap = {
-            success: 'text-success',
-            error: 'text-danger',
-            warning: 'text-warning',
-            info: 'text-info'
+            success: 'success',
+            error: 'danger',
+            warning: 'warning',
+            info: 'info'
         };
 
         const toast = document.createElement('div');
         toast.id = toastId;
-        toast.className = `toast align-items-center text-dark bg-light border-0 toast-${type}`;
+        toast.className = `toast-slide toast-slide-${type}`;
         toast.setAttribute('role', 'alert');
         toast.setAttribute('aria-live', 'assertive');
         toast.setAttribute('aria-atomic', 'true');
 
+        // 計算預覽文字（限制長度）
+        const previewMessage = message.length > 30 ? message.substring(0, 30) + '...' : message;
+        const previewTitle = title && title.length > 15 ? title.substring(0, 15) + '...' : title;
+
         toast.innerHTML = `
-            <div class="d-flex">
-                <div class="toast-body d-flex align-items-center">
-                    <i class="${iconMap[type]} ${colorMap[type]} me-2"></i>
-                    <div>
-                        ${title ? `<div class="fw-bold">${title}</div>` : ''}
-                        <div>${message}</div>
-                    </div>
+            <div class="toast-slide-compact" onclick="toastManager.toggleExpand('${toastId}')">
+                <div class="toast-slide-icon">
+                    <i class="${iconMap[type]}"></i>
                 </div>
-                <button type="button" class="btn-close me-2 m-auto" aria-label="Close" onclick="toastManager.hide(document.getElementById('${toastId}'))"></button>
+                <div class="toast-slide-content">
+                    ${previewTitle ? `<div class="toast-slide-title">${previewTitle}</div>` : ''}
+                    <div class="toast-slide-message">${previewMessage}</div>
+                </div>
+                <div class="toast-slide-actions" onclick="event.stopPropagation()">
+                    <button type="button" class="toast-slide-expand" aria-label="展開" onclick="toastManager.toggleExpand('${toastId}')">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button type="button" class="toast-slide-close" aria-label="關閉" onclick="toastManager.hide(document.getElementById('${toastId}'))">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="toast-slide-expanded">
+                <div class="toast-slide-expanded-content">
+                    ${title ? `<div class="toast-slide-expanded-title">${title}</div>` : ''}
+                    <div class="toast-slide-expanded-message">${message}</div>
+                </div>
+                <div class="toast-slide-expanded-actions">
+                    <button type="button" class="toast-slide-collapse" aria-label="收合" onclick="toastManager.toggleExpand('${toastId}')">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <button type="button" class="toast-slide-close" aria-label="關閉" onclick="toastManager.hide(document.getElementById('${toastId}'))">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
             </div>
         `;
+
+        // 儲存完整訊息資訊
+        toast.dataset.fullMessage = message;
+        toast.dataset.fullTitle = title || '';
+        toast.dataset.type = type;
 
         return toast;
     }
 
     hide(toast) {
         if (toast && toast.parentElement) {
-            toast.classList.remove('show');
-            toast.classList.add('hide');
+            // 取消自動隱藏 timeout
+            if (toast.autoHideTimeout) {
+                clearTimeout(toast.autoHideTimeout);
+            }
+            
+            toast.classList.remove('slide-in');
+            toast.classList.add('slide-out');
             
             setTimeout(() => {
                 if (toast.parentElement) {
@@ -100,6 +161,52 @@ class ToastManager {
                 }
             }, 300);
         }
+    }
+
+    // 切換展開/收合狀態
+    toggleExpand(toastId) {
+        const toast = document.getElementById(toastId);
+        if (!toast) return;
+
+        const isExpanded = toast.classList.contains('expanded');
+        
+        if (isExpanded) {
+            toast.classList.remove('expanded');
+            // 重新啟動自動隱藏
+            toast.autoHideTimeout = setTimeout(() => {
+                this.hide(toast);
+            }, this.collapseDelay); // 收合後2秒關閉
+        } else {
+            toast.classList.add('expanded');
+            // 取消自動隱藏，讓用戶有時間閱讀
+            if (toast.autoHideTimeout) {
+                clearTimeout(toast.autoHideTimeout);
+            }
+        }
+    }
+
+    // 清除所有toast
+    clearAll() {
+        if (this.container) {
+            const toasts = this.container.querySelectorAll('.toast');
+            toasts.forEach(toast => this.hide(toast));
+        }
+    }
+
+    // 設定最大toast數量
+    setMaxToasts(max) {
+        this.maxToasts = max;
+        this.limitToasts(); // 立即應用新的限制
+    }
+
+    // 設定自動關閉時間 (毫秒)
+    setAutoHideDelay(delay) {
+        this.autoHideDelay = delay;
+    }
+
+    // 設定收合後關閉時間 (毫秒)
+    setCollapseDelay(delay) {
+        this.collapseDelay = delay;
     }
 }
 
@@ -109,6 +216,26 @@ window.toastManager = new ToastManager();
 // 全域函數
 window.showToast = function(type, message, title) {
     return toastManager.show(type, message, title);
+};
+
+// 清除所有toast
+window.clearAllToasts = function() {
+    toastManager.clearAll();
+};
+
+// 設定最大toast數量
+window.setMaxToasts = function(max) {
+    toastManager.setMaxToasts(max);
+};
+
+// 設定自動關閉時間
+window.setToastAutoHideDelay = function(delay) {
+    toastManager.setAutoHideDelay(delay);
+};
+
+// 設定收合後關閉時間
+window.setToastCollapseDelay = function(delay) {
+    toastManager.setCollapseDelay(delay);
 };
 
 // 相容性函數，逐步替換 alert
