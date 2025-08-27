@@ -1,8 +1,9 @@
 using ERPCore2.Components.Shared.Forms;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services;
+using ERPCore2.Helpers;
 
-namespace ERPCore2.Helpers
+namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
     /// 客戶欄位配置

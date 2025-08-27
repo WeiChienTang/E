@@ -3,7 +3,7 @@ using ERPCore2.Components.Shared.Tables;
 using ERPCore2.Data;
 using Microsoft.AspNetCore.Components;
 
-namespace ERPCore2.Helpers
+namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
     /// 欄位定義類別

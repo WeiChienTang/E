@@ -3,7 +3,7 @@ using ERPCore2.Data;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
-namespace ERPCore2.Helpers
+namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
     /// 表單欄位配置輔助類別 - 提供標準欄位配置，特別是處理字數和位元組限制

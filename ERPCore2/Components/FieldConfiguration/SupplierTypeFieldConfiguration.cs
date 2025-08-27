@@ -1,52 +1,53 @@
 using ERPCore2.Components.Shared.Forms;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services;
+using ERPCore2.Helpers;
 
-namespace ERPCore2.Helpers
+namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
-    /// 客戶類型欄位配置
+    /// 廠商類型欄位配置
     /// </summary>
-    public class CustomerTypeFieldConfiguration : BaseFieldConfiguration<CustomerType>
+    public class SupplierTypeFieldConfiguration : BaseFieldConfiguration<SupplierType>
     {
         private readonly INotificationService? _notificationService;
         
-        public CustomerTypeFieldConfiguration(INotificationService? notificationService = null)
+        public SupplierTypeFieldConfiguration(INotificationService? notificationService = null)
         {
             _notificationService = notificationService;
         }
         
-        public override Dictionary<string, FieldDefinition<CustomerType>> GetFieldDefinitions()
+        public override Dictionary<string, FieldDefinition<SupplierType>> GetFieldDefinitions()
         {
             try
             {
-                return new Dictionary<string, FieldDefinition<CustomerType>>
+                return new Dictionary<string, FieldDefinition<SupplierType>>
                 {
                     {
-                        nameof(CustomerType.Code),
-                        new FieldDefinition<CustomerType>
+                        nameof(SupplierType.Code),
+                        new FieldDefinition<SupplierType>
                         {
-                            PropertyName = nameof(CustomerType.Code),
+                            PropertyName = nameof(SupplierType.Code),
                             DisplayName = "類型代碼",
                             FilterPlaceholder = "輸入類型代碼搜尋",
                             TableOrder = 1,
                             FilterOrder = 1,
                             HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(CustomerType.Code), ct => ct.Code)
+                                model, query, nameof(SupplierType.Code), st => st.Code)
                         }
                     },
                     {
-                        nameof(CustomerType.TypeName),
-                        new FieldDefinition<CustomerType>
+                        nameof(SupplierType.TypeName),
+                        new FieldDefinition<SupplierType>
                         {
-                            PropertyName = nameof(CustomerType.TypeName),
+                            PropertyName = nameof(SupplierType.TypeName),
                             DisplayName = "類型名稱",
                             FilterPlaceholder = "輸入類型名稱搜尋",
                             TableOrder = 2,
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(CustomerType.TypeName), ct => ct.TypeName)
+                                model, query, nameof(SupplierType.TypeName), st => st.TypeName)
                         }
                     }
                 };
@@ -56,7 +57,7 @@ namespace ERPCore2.Helpers
                 // 記錄錯誤
                 _ = Task.Run(async () =>
                 {
-                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "初始化客戶類型欄位配置失敗");
+                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "初始化廠商類型欄位配置失敗");
                 });
 
                 // 通知使用者
@@ -64,12 +65,12 @@ namespace ERPCore2.Helpers
                 {
                     _ = Task.Run(async () =>
                     {
-                        await _notificationService.ShowErrorAsync("初始化客戶類型欄位配置時發生錯誤，已使用預設配置");
+                        await _notificationService.ShowErrorAsync("初始化廠商類型欄位配置時發生錯誤，已使用預設配置");
                     });
                 }
 
                 // 回傳空的配置，讓頁面使用預設行為
-                return new Dictionary<string, FieldDefinition<CustomerType>>();
+                return new Dictionary<string, FieldDefinition<SupplierType>>();
             }
         }
     }

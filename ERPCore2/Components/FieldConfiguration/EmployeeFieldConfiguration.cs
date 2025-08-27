@@ -5,7 +5,7 @@ using ERPCore2.Components.Shared.Forms;
 using Microsoft.AspNetCore.Components;
 using ERPCore2.Services;
 
-namespace ERPCore2.Helpers
+namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
     /// 員工欄位配置

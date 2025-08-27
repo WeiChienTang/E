@@ -3,8 +3,9 @@ using ERPCore2.Components.Shared.Tables;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services;
+using ERPCore2.Helpers;
 
-namespace ERPCore2.Helpers.FieldConfiguration
+namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
     /// 採購單欄位配置

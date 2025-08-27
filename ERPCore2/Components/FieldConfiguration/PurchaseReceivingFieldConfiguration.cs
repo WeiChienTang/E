@@ -4,8 +4,9 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using Microsoft.AspNetCore.Components;
+using ERPCore2.Helpers;
 
-namespace ERPCore2.Helpers.FieldConfiguration
+namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
     /// 採購進貨單欄位配置

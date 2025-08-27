@@ -3,8 +3,9 @@ using ERPCore2.Components.Shared.Tables;
 using ERPCore2.Data;
 using ERPCore2.Models;
 using Microsoft.AspNetCore.Components;
+using ERPCore2.Helpers;
 
-namespace ERPCore2.Helpers
+namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
     /// 通用欄位配置基礎類別
