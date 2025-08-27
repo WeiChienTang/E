@@ -418,6 +418,32 @@ namespace ERPCore2.Services
                 return ServiceResult<Permission>.Failure($"更新權限時發生錯誤：{ex.Message}");
             }
         }
+
+        /// <summary>
+        /// 覆寫基底類別的 CanDeleteAsync 方法，實作權限特定的刪除檢查
+        /// </summary>
+        protected override async Task<ServiceResult> CanDeleteAsync(Permission entity)
+        {
+            try
+            {
+                var dependencyCheck = await DependencyCheckHelper.CheckPermissionDependenciesAsync(_contextFactory, entity.Id);
+                if (!dependencyCheck.CanDelete)
+                {
+                    return ServiceResult.Failure(dependencyCheck.GetFormattedErrorMessage("權限"));
+                }
+                
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { 
+                    Method = nameof(CanDeleteAsync),
+                    ServiceType = GetType().Name,
+                    PermissionId = entity.Id 
+                });
+                return ServiceResult.Failure("檢查權限刪除條件時發生錯誤");
+            }
+        }
     }
 }
 

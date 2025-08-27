@@ -267,6 +267,32 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
+        /// 覆寫基底類別的 CanDeleteAsync 方法，實作客戶類型特定的刪除檢查
+        /// </summary>
+        protected override async Task<ServiceResult> CanDeleteAsync(CustomerType entity)
+        {
+            try
+            {
+                var dependencyCheck = await DependencyCheckHelper.CheckCustomerTypeDependenciesAsync(_contextFactory, entity.Id);
+                if (!dependencyCheck.CanDelete)
+                {
+                    return ServiceResult.Failure(dependencyCheck.GetFormattedErrorMessage("客戶類型"));
+                }
+                
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { 
+                    Method = nameof(CanDeleteAsync),
+                    ServiceType = GetType().Name,
+                    CustomerTypeId = entity.Id 
+                });
+                return ServiceResult.Failure("檢查客戶類型刪除條件時發生錯誤");
+            }
+        }
+
+        /// <summary>
         /// 批次刪除客戶類型（檢查是否有關聯的客戶）
         /// </summary>
         public async Task<ServiceResult> DeleteBatchWithValidationAsync(List<int> ids)

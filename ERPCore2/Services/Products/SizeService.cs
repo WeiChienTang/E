@@ -219,6 +219,32 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 覆寫基底類別的 CanDeleteAsync 方法，實作尺寸特定的刪除檢查
+        /// </summary>
+        protected override async Task<ServiceResult> CanDeleteAsync(Size entity)
+        {
+            try
+            {
+                var dependencyCheck = await DependencyCheckHelper.CheckSizeDependenciesAsync(_contextFactory, entity.Id);
+                if (!dependencyCheck.CanDelete)
+                {
+                    return ServiceResult.Failure(dependencyCheck.GetFormattedErrorMessage("尺寸"));
+                }
+                
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { 
+                    Method = nameof(CanDeleteAsync),
+                    ServiceType = GetType().Name,
+                    SizeId = entity.Id 
+                });
+                return ServiceResult.Failure("檢查尺寸刪除條件時發生錯誤");
+            }
+        }
+
         public async Task<List<Size>> GetBySizeNameAsync(string sizeName)
         {
             try

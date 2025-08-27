@@ -130,18 +130,22 @@ namespace ERPCore2.Services
         {
             try
             {
-                var canDelete = await CanDeleteSupplierTypeAsync(entity.Id);
-                return canDelete 
-                    ? ServiceResult.Success() 
-                    : ServiceResult.Failure("無法刪除此廠商類型，因為有廠商正在使用此類型");
+                var dependencyCheck = await DependencyCheckHelper.CheckSupplierTypeDependenciesAsync(_contextFactory, entity.Id);
+                if (!dependencyCheck.CanDelete)
+                {
+                    return ServiceResult.Failure(dependencyCheck.GetFormattedErrorMessage("供應商類型"));
+                }
+                
+                return ServiceResult.Success();
             }
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { 
-                    EntityId = entity.Id,
-                    ServiceType = GetType().Name 
+                    Method = nameof(CanDeleteAsync),
+                    ServiceType = GetType().Name,
+                    SupplierTypeId = entity.Id 
                 });
-                return ServiceResult.Failure("檢查刪除條件時發生錯誤");
+                return ServiceResult.Failure("檢查供應商類型刪除條件時發生錯誤");
             }
         }
 

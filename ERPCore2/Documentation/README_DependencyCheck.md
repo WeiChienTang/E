@@ -19,14 +19,19 @@
 
 ### 3. 輔助工具類別 (DependencyCheckHelper)
 提供了常見實體的關聯檢查方法，包括：
-- 部門依賴檢查 (`CheckDepartmentDependenciesAsync`)
-- 角色依賴檢查 (`CheckRoleDependenciesAsync`)
-- 商品依賴檢查 (`CheckProductDependenciesAsync`)
-- 供應商依賴檢查 (`CheckSupplierDependenciesAsync`)
-- 客戶依賴檢查 (`CheckCustomerDependenciesAsync`)
-- 倉庫依賴檢查 (`CheckWarehouseDependenciesAsync`)
-- 單位依賴檢查 (`CheckUnitDependenciesAsync`)
-- 職位依賴檢查 (`CheckEmployeePositionDependenciesAsync`)
+- 部門依賴檢查 (`CheckDepartmentDependenciesAsync`) - 檢查員工關聯
+- 角色依賴檢查 (`CheckRoleDependenciesAsync`) - 檢查員工關聯
+- 職位依賴檢查 (`CheckEmployeePositionDependenciesAsync`) - 檢查員工關聯
+- 供應商依賴檢查 (`CheckSupplierDependenciesAsync`) - 檢查採購訂單、商品供應商關聯
+- 供應商類型依賴檢查 (`CheckSupplierTypeDependenciesAsync`) - 檢查供應商關聯
+- 客戶依賴檢查 (`CheckCustomerDependenciesAsync`) - 檢查銷貨訂單關聯
+- 客戶類型依賴檢查 (`CheckCustomerTypeDependenciesAsync`) - 檢查客戶關聯
+- 商品依賴檢查 (`CheckProductDependenciesAsync`) - 檢查採購/銷貨訂單明細、庫存記錄、商品供應商關聯
+- 倉庫依賴檢查 (`CheckWarehouseDependenciesAsync`) - 檢查庫存記錄、進貨記錄、採購訂單、採購退貨、庫存異動記錄、盤點記錄、倉庫位置、庫存預留
+- 單位依賴檢查 (`CheckUnitDependenciesAsync`) - 檢查商品、採購/銷貨訂單明細關聯
+- 採購單依賴檢查 (`CheckPurchaseOrderDependenciesAsync`) - 檢查進貨明細記錄關聯
+- 權限依賴檢查 (`CheckPermissionDependenciesAsync`) - 檢查角色權限關聯
+- 尺寸依賴檢查 (`CheckSizeDependenciesAsync`) - 檢查商品關聯
 
 ## 使用方法
 
@@ -150,6 +155,33 @@ public static async Task<DependencyCheckResult> CheckNewEntityDependenciesAsync(
 - 如果有自訂錯誤訊息，會使用自訂訊息
 - 否則使用預設的通用錯誤訊息
 
+## 詳細依賴檢查說明
+
+### 員工管理相關檢查
+- **部門檢查**：是否有員工隸屬於該部門
+- **角色檢查**：是否有員工使用該角色
+- **職位檢查**：是否有員工使用該職位
+- **權限檢查**：是否有角色權限關聯使用該權限
+
+### 供應商管理相關檢查
+- **供應商檢查**：採購訂單、商品供應商關聯
+- **供應商類型檢查**：是否有供應商使用該類型
+
+### 客戶管理相關檢查
+- **客戶檢查**：是否有銷貨訂單使用該客戶
+- **客戶類型檢查**：是否有客戶使用該類型
+
+### 商品管理相關檢查
+- **商品檢查**：採購訂單明細、銷貨訂單明細、庫存記錄、商品供應商關聯
+- **尺寸檢查**：是否有商品使用該尺寸
+- **單位檢查**：商品、採購訂單明細、銷貨訂單明細
+
+### 庫存管理相關檢查
+- **倉庫檢查**：庫存記錄、進貨記錄、採購訂單、採購退貨、庫存異動記錄、盤點記錄、倉庫位置、庫存預留
+
+### 採購管理相關檢查
+- **採購單檢查**：是否有進貨明細記錄使用該採購單
+
 ## 注意事項
 
 1. **效能考量**：關聯檢查可能涉及多個資料表的查詢，在大量資料的情況下需要注意效能
@@ -177,20 +209,34 @@ using ERPCore2.Helpers;
 ## 已實作的服務
 
 目前已經實作了關聯檢查的服務包括：
+
+### 員工管理相關
 - `DepartmentService` - 檢查是否有員工隸屬於該部門
 - `RoleService` - 檢查是否有員工使用該角色，以及是否為系統角色
-- `UnitService` - 檢查是否有商品或訂單明細使用該單位
 - `EmployeePositionService` - 檢查是否有員工使用該職位
-- `ProductCategoryService` - 檢查是否有商品使用該分類（已存在）
-- `SupplierTypeService` - 檢查是否有供應商使用該類型（已存在）
-- `WarehouseService` - 檢查是否有庫存記錄使用該倉庫
-- `ProductService` - 檢查是否有訂單明細、庫存記錄或供應商關聯使用該商品
+- `PermissionManagementService` - 檢查是否有角色權限關聯使用該權限
+
+### 供應商管理相關
 - `SupplierService` - 檢查是否有採購訂單或商品供應商關聯使用該供應商
+- `SupplierTypeService` - 檢查是否有供應商使用該類型
+
+### 客戶管理相關
 - `CustomerService` - 檢查是否有銷貨訂單使用該客戶
+- `CustomerTypeService` - 檢查是否有客戶使用該類型
+
+### 商品管理相關
+- `ProductService` - 檢查是否有訂單明細、庫存記錄或供應商關聯使用該商品
+- `ProductCategoryService` - 檢查是否有商品使用該分類（已存在）
+- `SizeService` - 檢查是否有商品使用該尺寸
+- `UnitService` - 檢查是否有商品或訂單明細使用該單位
+
+### 庫存管理相關
+- `WarehouseService` - 檢查是否有庫存記錄、進貨記錄、採購訂單、採購退貨、庫存異動記錄、盤點記錄、倉庫位置或庫存預留使用該倉庫
+
+### 採購管理相關
 - `PurchaseOrderService` - 檢查是否有進貨明細記錄使用該採購單
 
 ## 待實作的服務
 
 其他可考慮實作關聯檢查的服務：
-- `CustomerTypeService` - 檢查是否有客戶使用該類型（部分已實作，可以整合到新架構）
 - 其他特殊業務邏輯的實體服務

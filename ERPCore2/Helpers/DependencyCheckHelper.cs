@@ -292,6 +292,76 @@ namespace ERPCore2.Helpers
                     result.CanDelete = false;
                     result.DependentEntities.Add($"庫存記錄({inventoryCount}筆)");
                 }
+
+                // 檢查進貨記錄
+                var purchaseReceivingCount = await context.PurchaseReceivings
+                    .CountAsync(pr => pr.WarehouseId == warehouseId && !pr.IsDeleted);
+                    
+                if (purchaseReceivingCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"進貨記錄({purchaseReceivingCount}筆)");
+                }
+
+                // 檢查採購訂單
+                var purchaseOrderCount = await context.PurchaseOrders
+                    .CountAsync(po => po.WarehouseId == warehouseId && !po.IsDeleted);
+                    
+                if (purchaseOrderCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"採購訂單({purchaseOrderCount}筆)");
+                }
+
+                // 檢查採購退貨
+                var purchaseReturnCount = await context.PurchaseReturns
+                    .CountAsync(pr => pr.WarehouseId == warehouseId && !pr.IsDeleted);
+                    
+                if (purchaseReturnCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"採購退貨({purchaseReturnCount}筆)");
+                }
+
+                // 檢查庫存異動記錄
+                var inventoryTransactionCount = await context.InventoryTransactions
+                    .CountAsync(it => it.WarehouseId == warehouseId && !it.IsDeleted);
+                    
+                if (inventoryTransactionCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"庫存異動記錄({inventoryTransactionCount}筆)");
+                }
+
+                // 檢查盤點記錄
+                var stockTakingCount = await context.StockTakings
+                    .CountAsync(st => st.WarehouseId == warehouseId && !st.IsDeleted);
+                    
+                if (stockTakingCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"盤點記錄({stockTakingCount}筆)");
+                }
+
+                // 檢查倉庫位置
+                var warehouseLocationCount = await context.WarehouseLocations
+                    .CountAsync(wl => wl.WarehouseId == warehouseId && !wl.IsDeleted);
+                    
+                if (warehouseLocationCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"倉庫位置({warehouseLocationCount}筆)");
+                }
+
+                // 檢查庫存預留
+                var inventoryReservationCount = await context.InventoryReservations
+                    .CountAsync(ir => ir.WarehouseId == warehouseId && !ir.IsDeleted);
+                    
+                if (inventoryReservationCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"庫存預留({inventoryReservationCount}筆)");
+                }
                 
                 return result;
             }
@@ -393,6 +463,134 @@ namespace ERPCore2.Helpers
                 { 
                     CanDelete = false, 
                     ErrorMessage = "檢查採購單依賴關係時發生錯誤" 
+                };
+            }
+        }
+
+        /// <summary>
+        /// 檢查權限是否可以刪除
+        /// </summary>
+        public static async Task<DependencyCheckResult> CheckPermissionDependenciesAsync(IDbContextFactory<AppDbContext> contextFactory, int permissionId)
+        {
+            try
+            {
+                using var context = await contextFactory.CreateDbContextAsync();
+                var result = new DependencyCheckResult { CanDelete = true };
+
+                // 檢查角色權限關聯
+                var rolePermissionCount = await context.RolePermissions
+                    .CountAsync(rp => rp.PermissionId == permissionId && !rp.IsDeleted);
+
+                if (rolePermissionCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"角色權限關聯({rolePermissionCount}筆)");
+                }
+
+                return result;
+            }
+            catch (Exception)
+            {
+                return new DependencyCheckResult 
+                { 
+                    CanDelete = false, 
+                    ErrorMessage = "檢查權限依賴關係時發生錯誤" 
+                };
+            }
+        }
+
+        /// <summary>
+        /// 檢查供應商類型是否可以刪除
+        /// </summary>
+        public static async Task<DependencyCheckResult> CheckSupplierTypeDependenciesAsync(IDbContextFactory<AppDbContext> contextFactory, int supplierTypeId)
+        {
+            try
+            {
+                using var context = await contextFactory.CreateDbContextAsync();
+                var result = new DependencyCheckResult { CanDelete = true };
+
+                // 檢查供應商
+                var supplierCount = await context.Suppliers
+                    .CountAsync(s => s.SupplierTypeId == supplierTypeId && !s.IsDeleted);
+
+                if (supplierCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"供應商({supplierCount}筆)");
+                }
+
+                return result;
+            }
+            catch (Exception)
+            {
+                return new DependencyCheckResult 
+                { 
+                    CanDelete = false, 
+                    ErrorMessage = "檢查供應商類型依賴關係時發生錯誤" 
+                };
+            }
+        }
+
+        /// <summary>
+        /// 檢查客戶類型是否可以刪除
+        /// </summary>
+        public static async Task<DependencyCheckResult> CheckCustomerTypeDependenciesAsync(IDbContextFactory<AppDbContext> contextFactory, int customerTypeId)
+        {
+            try
+            {
+                using var context = await contextFactory.CreateDbContextAsync();
+                var result = new DependencyCheckResult { CanDelete = true };
+
+                // 檢查客戶
+                var customerCount = await context.Customers
+                    .CountAsync(c => c.CustomerTypeId == customerTypeId && !c.IsDeleted);
+
+                if (customerCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"客戶({customerCount}筆)");
+                }
+
+                return result;
+            }
+            catch (Exception)
+            {
+                return new DependencyCheckResult 
+                { 
+                    CanDelete = false, 
+                    ErrorMessage = "檢查客戶類型依賴關係時發生錯誤" 
+                };
+            }
+        }
+
+        /// <summary>
+        /// 檢查尺寸是否可以刪除
+        /// </summary>
+        public static async Task<DependencyCheckResult> CheckSizeDependenciesAsync(IDbContextFactory<AppDbContext> contextFactory, int sizeId)
+        {
+            try
+            {
+                using var context = await contextFactory.CreateDbContextAsync();
+                var result = new DependencyCheckResult { CanDelete = true };
+
+                // 檢查商品
+                var productCount = await context.Products
+                    .CountAsync(p => p.SizeId == sizeId && !p.IsDeleted);
+
+                if (productCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"商品({productCount}筆)");
+                }
+
+                return result;
+            }
+            catch (Exception)
+            {
+                return new DependencyCheckResult 
+                { 
+                    CanDelete = false, 
+                    ErrorMessage = "檢查尺寸依賴關係時發生錯誤" 
                 };
             }
         }
