@@ -191,7 +191,7 @@
                     @* 根據審核狀態動態顯示按鈕 *@
                     @if (IsEntityApproved())
                     {
-                        @* 已審核狀態：只顯示完成按鈕，點擊時觸發成功事件以刷新Index *@
+                        @* 已審核狀態：只顯示完成按鈕 *@
                         <GenericButtonComponent Text="完成" 
                                               Variant="ButtonVariant.Primary" 
                                               OnClick="HandleApprovedEntityComplete" 
@@ -199,24 +199,26 @@
                     }
                     else
                     {
-                        @* 未審核狀態：顯示正常的取消和儲存按鈕 *@
+                        @* 未審核狀態：顯示取消和儲存按鈕 *@
                         <GenericButtonComponent Text="@CancelButtonText" 
                                               Variant="ButtonVariant.Secondary" 
                                               OnClick="HandleCancel" 
                                               IsDisabled="@IsSubmitting" />
-                        @if (ShowPrintButton)
-                        {
-                            <GenericButtonComponent Text="@PrintButtonText" 
-                                                  Variant="ButtonVariant.Info" 
-                                                  IconClass="fas fa-print"
-                                                  OnClick="HandlePrint" 
-                                                  IsDisabled="@(IsSubmitting || IsLoading)" />
-                        }
                         <GenericButtonComponent Text="@SaveButtonText" 
                                               Variant="ButtonVariant.Primary" 
                                               OnClick="HandleSave" 
                                               IsDisabled="@(IsSubmitting || IsLoading)" 
                                               IsLoading="@IsSubmitting" />
+                    }
+                    
+                    @* 列印按鈕：無論審核狀態如何都顯示 *@
+                    @if (ShowPrintButton)
+                    {
+                        <GenericButtonComponent Text="@PrintButtonText" 
+                                              Variant="ButtonVariant.Info" 
+                                              IconClass="fas fa-print"
+                                              OnClick="HandlePrint" 
+                                              IsDisabled="@(IsSubmitting || IsLoading)" />
                     }
                 </div>
             </div>
