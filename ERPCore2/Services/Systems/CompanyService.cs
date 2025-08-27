@@ -237,5 +237,31 @@ namespace ERPCore2.Services
                 return ServiceResult<Company>.Failure("建立公司時發生錯誤");
             }
         }
+
+        /// <summary>
+        /// 覆寫基底類別的 CanDeleteAsync 方法，實作公司特定的刪除檢查
+        /// </summary>
+        protected override async Task<ServiceResult> CanDeleteAsync(Company entity)
+        {
+            try
+            {
+                var dependencyCheck = await DependencyCheckHelper.CheckCompanyDependenciesAsync(_contextFactory, entity.Id);
+                if (!dependencyCheck.CanDelete)
+                {
+                    return ServiceResult.Failure(dependencyCheck.GetFormattedErrorMessage("公司"));
+                }
+                
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { 
+                    Method = nameof(CanDeleteAsync),
+                    ServiceType = GetType().Name,
+                    CompanyId = entity.Id 
+                });
+                return ServiceResult.Failure("檢查公司刪除條件時發生錯誤");
+            }
+        }
     }
 }

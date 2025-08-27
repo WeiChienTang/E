@@ -594,5 +594,37 @@ namespace ERPCore2.Helpers
                 };
             }
         }
+
+        /// <summary>
+        /// 檢查公司是否可以刪除
+        /// </summary>
+        public static async Task<DependencyCheckResult> CheckCompanyDependenciesAsync(IDbContextFactory<AppDbContext> contextFactory, int companyId)
+        {
+            try
+            {
+                using var context = await contextFactory.CreateDbContextAsync();
+                var result = new DependencyCheckResult { CanDelete = true };
+
+                // 檢查採購訂單
+                var purchaseOrderCount = await context.PurchaseOrders
+                    .CountAsync(po => po.CompanyId == companyId && !po.IsDeleted);
+
+                if (purchaseOrderCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"採購訂單({purchaseOrderCount}筆)");
+                }
+
+                return result;
+            }
+            catch (Exception)
+            {
+                return new DependencyCheckResult 
+                { 
+                    CanDelete = false, 
+                    ErrorMessage = "檢查公司依賴關係時發生錯誤" 
+                };
+            }
+        }
     }
 }
