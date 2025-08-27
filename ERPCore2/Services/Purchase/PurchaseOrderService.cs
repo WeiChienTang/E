@@ -828,7 +828,10 @@ namespace ERPCore2.Services
                         !pod.IsDeleted &&
                         !pod.PurchaseOrder.IsDeleted &&
                         pod.PurchaseOrder.IsApproved &&
-                        // 檢查尚未完全進貨的明細
+                        // 檢查尚未完全進貨的明細 - 考慮手動完成標記
+                        !context.PurchaseReceivingDetails
+                            .Where(prd => prd.PurchaseOrderDetailId == pod.Id && !prd.IsDeleted)
+                            .Any(prd => prd.IsReceivingCompleted) &&
                         pod.OrderQuantity > context.PurchaseReceivingDetails
                             .Where(prd => prd.PurchaseOrderDetailId == pod.Id && !prd.IsDeleted)
                             .Sum(prd => prd.ReceivedQuantity)

@@ -20,8 +20,9 @@
                         <th width="12%">已入庫量</th>
                         <th width="12%">待入庫量</th>
                         <th width="12%">本次入庫量</th>
-                        <th width="20%">單價</th>
-                        <th width="12%">操作</th>
+                        <th width="15%">單價</th>
+                        <th width="10%">完成進貨</th>
+                        <th width="7%">操作</th>
                     }
                 </tr>
             </thead>
@@ -33,7 +34,7 @@
                     <tr>
                         @if (!PurchaseOrderId.HasValue || PurchaseOrderId.Value <= 0)
                         {
-                            <td class="text-center py-4" colspan="7">
+                            <td class="text-center py-4" colspan="8">
                                 <div class="order-warning">
                                     <i class="fas fa-exclamation-triangle text-warning me-2"></i>
                                     <span class="text-muted">請先選擇採購單...</span>
@@ -99,7 +100,7 @@
                                 @if (GetPendingQuantity(item.PurchaseOrderDetail) <= 0)
                                 {
                                     <small class="text-success">
-                                        <i class="fas fa-check-circle"></i> 此商品已完成進貨
+                                        <i class="fas fa-check-circle"></i> 已完成進貨
                                     </small>
                                 }
                             </td>
@@ -111,6 +112,14 @@
                                        placeholder="0.00" 
                                        min="0" 
                                        step="0.01" />
+                            </td>
+                            <td class="text-center">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" 
+                                           checked="@item.IsReceivingCompleted"
+                                           @onchange="(e) => OnIsReceivingCompletedChanged(item, (bool)e.Value!)"
+                                           id="completed_@item.PurchaseOrderDetail.Id" />
+                                </div>
                             </td>
                             <td>
                                 <button type="button" 
@@ -134,9 +143,9 @@
             {
                 <tfoot>
                     <tr class="total-row">
-                        <th colspan="5">總計</th>
+                        <th colspan="6">總計</th>
                         <th class="text-center total-amount">@GetTotalAmount().ToString("C")</th>
-                        <th colspan="1"></th>
+                        <th colspan="2"></th>
                     </tr>
                 </tfoot>
             }
@@ -221,6 +230,23 @@ else
                                 <textarea class="form-control" rows="2" 
                                           @bind="CurrentDetailItem.InspectionRemarks"
                                           placeholder="輸入驗收相關備註..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" 
+                                           @bind="CurrentDetailItem.IsReceivingCompleted"
+                                           id="modalCompleted" />
+                                    <label class="form-check-label" for="modalCompleted">
+                                        <strong>標記為完成進貨</strong>
+                                        <br />
+                                        <small class="text-muted">勾選此項目表示此商品已完成進貨，即使數量不一致也會被視為完成</small>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -372,6 +398,7 @@ else
                 item.InspectionRemarks = existingDetail.InspectionRemarks;
                 item.BatchNumber = existingDetail.BatchNumber;
                 item.ExpiryDate = existingDetail.ExpiryDate;
+                item.IsReceivingCompleted = existingDetail.IsReceivingCompleted;
                 item.ExistingDetailEntity = existingDetail;
             }
         }
@@ -435,6 +462,16 @@ else
         StateHasChanged();
     }
 
+    /// <summary>
+    /// 是否完成進貨變更
+    /// </summary>
+    private async Task OnIsReceivingCompletedChanged(ReceivingItem item, bool isCompleted)
+    {
+        item.IsReceivingCompleted = isCompleted;
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
     // ===== 批次操作 =====
 
     /// <summary>
@@ -447,6 +484,7 @@ else
         item.InspectionRemarks = null;
         item.BatchNumber = null;
         item.ExpiryDate = null;
+        item.IsReceivingCompleted = false;
         item.ValidationError = null;
         
         await NotifyDetailsChanged();
@@ -516,6 +554,7 @@ else
             detail.InspectionRemarks = item.InspectionRemarks;
             detail.BatchNumber = item.BatchNumber;
             detail.ExpiryDate = item.ExpiryDate;
+            detail.IsReceivingCompleted = item.IsReceivingCompleted;
 
             details.Add(detail);
         }
@@ -560,6 +599,7 @@ else
         public string? InspectionRemarks { get; set; }
         public string? BatchNumber { get; set; }
         public DateTime? ExpiryDate { get; set; }
+        public bool IsReceivingCompleted { get; set; } = false;
         public string? ValidationError { get; set; }
         public PurchaseReceivingDetail? ExistingDetailEntity { get; set; }
     }

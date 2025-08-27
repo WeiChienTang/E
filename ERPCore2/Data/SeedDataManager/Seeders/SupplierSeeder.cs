@@ -57,6 +57,40 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CreatedAt = DateTime.Now.AddDays(-85),
                     CreatedBy = "System"
                 },
+                // 新增的測試供應商
+                new Supplier
+                {
+                    Code = "S003",
+                    CompanyName = "優質原料供應股份有限公司",
+                    ContactPerson = "王經理",
+                    TaxNumber = "20345678",
+                    SupplierTypeId = materialType?.Id ?? 2,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-80),
+                    CreatedBy = "System"
+                },
+                new Supplier
+                {
+                    Code = "S004",
+                    CompanyName = "創新科技開發有限公司",
+                    ContactPerson = "陳總監",
+                    TaxNumber = "20456789",
+                    SupplierTypeId = manufacturerType?.Id ?? 1,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-75),
+                    CreatedBy = "System"
+                },
+                new Supplier
+                {
+                    Code = "S005",
+                    CompanyName = "環球貿易實業股份有限公司",
+                    ContactPerson = "林副總",
+                    TaxNumber = "20567890",
+                    SupplierTypeId = materialType?.Id ?? 2,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-70),
+                    CreatedBy = "System"
+                },
             };
 
             await context.Suppliers.AddRangeAsync(suppliers);

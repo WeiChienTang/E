@@ -20,10 +20,18 @@
                         else
                         {
                             <th width="30%">商品</th>
-                            <th width="12%">數量</th>
-                            <th width="12%">入庫量</th>
-                            <th width="12%">價格</th>
-                            <th width="25%" class="d-none d-sm-table-cell">備註</th>
+                            <th width="12%">@QuantityLabel</th>
+                            <th width="12%">@ReceivedQuantityLabel</th>
+                            <th width="12%">@PriceLabel</th>
+                            @if (ShowIsReceivingCompleted)
+                            {
+                                <th width="10%">@IsReceivingCompletedLabel</th>
+                                <th width="17%" class="d-none d-sm-table-cell">@RemarksLabel</th>
+                            }
+                            else
+                            {
+                                <th width="25%" class="d-none d-sm-table-cell">@RemarksLabel</th>
+                            }
                             <th width="5%">操作</th>
                         }
                     </tr>
@@ -98,7 +106,25 @@
                                            min="0" 
                                            step="0.01" />
                                 </td>
-                                <td>
+                                @if (ShowIsReceivingCompleted)
+                                {
+                                    <td class="text-center">
+                                        <div class="form-check form-switch d-flex justify-content-center">
+                                            <input class="form-check-input" 
+                                                   type="checkbox" 
+                                                   checked="@item.IsReceivingCompleted"
+                                                   @onclick="() => OnIsReceivingCompletedChanged(item)"
+                                                   title="手動標記為完成進貨" />
+                                        </div>
+                                        @if (item.IsReceivingCompleted)
+                                        {
+                                            <small class="text-success">
+                                                <i class="fas fa-check-circle"></i> 已完成
+                                            </small>
+                                        }
+                                    </td>
+                                }
+                                <td class="d-none d-sm-table-cell">
                                     <input type="text" class="form-control form-control-sm" 
                                            value="@item.Remarks"
                                            @onfocus="() => OnInputFocus(item)"
@@ -120,7 +146,14 @@
                         <tr class="total-row">
                             <th colspan="2">總計</th>
                             <th class="text-end total-amount">@GetTotalAmount().ToString("C")</th>
-                            <th class="d-none d-sm-table-cell" colspan="2"></th>
+                            @if (ShowIsReceivingCompleted)
+                            {
+                                <th class="d-none d-sm-table-cell" colspan="3"></th>
+                            }
+                            else
+                            {
+                                <th class="d-none d-sm-table-cell" colspan="2"></th>
+                            }
                             <th class="d-sm-none"></th>
                         </tr>
                     </tfoot>
@@ -156,12 +189,17 @@
     [Parameter] public string UnitPricePropertyName { get; set; } = "UnitPrice"; // 單價欄位名稱
     [Parameter] public string RemarksPropertyName { get; set; } = "Remarks"; // 備註欄位名稱
     [Parameter] public string? UnitIdPropertyName { get; set; } // 單位ID欄位名稱（可選）
+    [Parameter] public string? IsReceivingCompletedPropertyName { get; set; } // 是否完成進貨欄位名稱（可選）
+    
+    // === 顯示控制參數 ===
+    [Parameter] public bool ShowIsReceivingCompleted { get; set; } = false; // 是否顯示完成進貨欄位
     
     // === 顯示標籤參數 ===
     [Parameter] public string QuantityLabel { get; set; } = "數量";
     [Parameter] public string ReceivedQuantityLabel { get; set; } = "入庫量";
     [Parameter] public string PriceLabel { get; set; } = "單價";
     [Parameter] public string RemarksLabel { get; set; } = "備註";
+    [Parameter] public string IsReceivingCompletedLabel { get; set; } = "完成進貨";
 
     private List<ProductItem> ProductItems { get; set; } = new List<ProductItem>();
     private List<Product> FilteredProducts { get; set; } = new List<Product>();
@@ -250,6 +288,8 @@
                     ReceivedQuantity = Convert.ToInt32(GetPropertyValue<object>(detail, ReceivedQuantityPropertyName) ?? 0),
                     Price = Convert.ToDecimal(GetPropertyValue<object>(detail, UnitPricePropertyName) ?? 0m),
                     Remarks = GetPropertyValue<string>(detail, RemarksPropertyName) ?? string.Empty,
+                    IsReceivingCompleted = !string.IsNullOrEmpty(IsReceivingCompletedPropertyName) ? 
+                        Convert.ToBoolean(GetPropertyValue<object>(detail, IsReceivingCompletedPropertyName) ?? false) : false,
                     ExistingDetailEntity = detail
                 };
                 
@@ -294,11 +334,17 @@
                 }
             }
             
-            // 更新數量、入庫量、單價、備註
+            // 更新數量、入庫量、單價、備註、是否完成進貨
             SetPropertyValue(detail, QuantityPropertyName, item.Quantity);
             SetPropertyValue(detail, ReceivedQuantityPropertyName, item.ReceivedQuantity);
             SetPropertyValue(detail, UnitPricePropertyName, item.Price);
             SetPropertyValue(detail, RemarksPropertyName, item.Remarks);
+            
+            // 設定是否完成進貨欄位（如果有指定）
+            if (!string.IsNullOrEmpty(IsReceivingCompletedPropertyName))
+            {
+                SetPropertyValue(detail, IsReceivingCompletedPropertyName, item.IsReceivingCompleted);
+            }
             
             details.Add(detail);
         }
@@ -508,6 +554,16 @@
         await NotifyDetailsChanged(); // 通知明細變更
     }
 
+    /// <summary>
+    /// 是否完成進貨狀態變更
+    /// </summary>
+    private async Task OnIsReceivingCompletedChanged(ProductItem item)
+    {
+        item.IsReceivingCompleted = !item.IsReceivingCompleted;
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
     private void ShowProductDropdown(ProductItem item)
     {
         if (!string.IsNullOrWhiteSpace(item.ProductSearch))
@@ -632,6 +688,7 @@
         public int ReceivedQuantity { get; set; } = 0; // 新增：入庫量
         public decimal Price { get; set; } = 0;
         public string Remarks { get; set; } = string.Empty;
+        public bool IsReceivingCompleted { get; set; } = false; // 新增：是否完成進貨
         public bool ShowDropdown { get; set; } = false;
         public int SelectedIndex { get; set; } = -1; // 新增：記錄當前選中的索引
         public TDetailEntity? ExistingDetailEntity { get; set; } // 新增：關聯的現有明細實體

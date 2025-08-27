@@ -56,6 +56,10 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "到期日期")]
         public DateTime? ExpiryDate { get; set; }
 
+        [Required(ErrorMessage = "是否完成進貨為必填")]
+        [Display(Name = "是否完成進貨")]
+        public bool IsReceivingCompleted { get; set; } = false;
+
         // Navigation Properties
         public PurchaseReceiving PurchaseReceiving { get; set; } = null!;
         public PurchaseOrderDetail PurchaseOrderDetail { get; set; } = null!;

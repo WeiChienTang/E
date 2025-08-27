@@ -519,6 +519,9 @@ namespace ERPCore2.Services
                         return ServiceResult<PurchaseReceiving>.Failure($"儲存明細失敗：{detailResult.ErrorMessage}");
                     }
 
+                    // 自動計算並更新入庫狀態
+                    await UpdateReceivingStatusAsync(context, savedEntity, details);
+
                     await transaction.CommitAsync();
                     return ServiceResult<PurchaseReceiving>.Success(savedEntity);
                 }
@@ -589,6 +592,7 @@ namespace ERPCore2.Services
                             existingDetail.BatchNumber = detail.BatchNumber;
                             existingDetail.ExpiryDate = detail.ExpiryDate;
                             existingDetail.WarehouseLocationId = detail.WarehouseLocationId;
+                            existingDetail.IsReceivingCompleted = detail.IsReceivingCompleted;
                             existingDetail.UpdatedAt = DateTime.UtcNow;
                             detailsToUpdate.Add(existingDetail);
                         }
@@ -693,6 +697,7 @@ namespace ERPCore2.Services
                                 existingDetail.BatchNumber = detail.BatchNumber;
                                 existingDetail.ExpiryDate = detail.ExpiryDate;
                                 existingDetail.WarehouseLocationId = detail.WarehouseLocationId;
+                                existingDetail.IsReceivingCompleted = detail.IsReceivingCompleted;
                                 existingDetail.UpdatedAt = DateTime.UtcNow;
                                 detailsToUpdate.Add(existingDetail);
                             }
@@ -806,6 +811,135 @@ namespace ERPCore2.Services
 
             // 儲存採購單明細的變更
             await context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// 自動更新入庫狀態 - 根據進貨明細完成情況判定
+        /// </summary>
+        private async Task UpdateReceivingStatusAsync(AppDbContext context, PurchaseReceiving purchaseReceiving, List<PurchaseReceivingDetail> details)
+        {
+            try
+            {
+                // 如果沒有明細，保持草稿狀態
+                if (!details.Any(d => d.ReceivedQuantity > 0))
+                {
+                    purchaseReceiving.ReceiptStatus = PurchaseReceivingStatus.Draft;
+                    return;
+                }
+
+                // 收集所有相關的採購單明細ID
+                var purchaseOrderDetailIds = details
+                    .Where(d => d.ReceivedQuantity > 0)
+                    .Select(d => d.PurchaseOrderDetailId)
+                    .Distinct()
+                    .ToList();
+
+                if (!purchaseOrderDetailIds.Any())
+                {
+                    purchaseReceiving.ReceiptStatus = PurchaseReceivingStatus.Draft;
+                    return;
+                }
+
+                // 檢查對應的採購單明細是否全部完成進貨
+                bool allCompleted = true;
+                bool hasAnyReceived = false;
+
+                // 根據入庫模式判定完成狀態
+                if (purchaseReceiving.PurchaseOrderId.HasValue && purchaseReceiving.PurchaseOrderId.Value > 0)
+                {
+                    // 單一採購單模式 - 檢查整張採購單的所有明細
+                    var allOrderDetails = await context.PurchaseOrderDetails
+                        .Where(pod => pod.PurchaseOrderId == purchaseReceiving.PurchaseOrderId.Value && !pod.IsDeleted)
+                        .ToListAsync();
+
+                    foreach (var orderDetail in allOrderDetails)
+                    {
+                        // 計算該明細的總已進貨數量（包含其他入庫單的進貨）
+                        var totalReceivedQuantity = await context.PurchaseReceivingDetails
+                            .Where(prd => prd.PurchaseOrderDetailId == orderDetail.Id && !prd.IsDeleted)
+                            .SumAsync(prd => prd.ReceivedQuantity);
+
+                        // 檢查是否有手動標記為完成的進貨記錄
+                        var isManuallyCompleted = await context.PurchaseReceivingDetails
+                            .Where(prd => prd.PurchaseOrderDetailId == orderDetail.Id && !prd.IsDeleted)
+                            .AnyAsync(prd => prd.IsReceivingCompleted);
+
+                        if (totalReceivedQuantity > 0)
+                        {
+                            hasAnyReceived = true;
+                        }
+
+                        // 如果手動標記為完成，或數量已達到訂購量，則視為完成
+                        if (!isManuallyCompleted && totalReceivedQuantity < orderDetail.OrderQuantity)
+                        {
+                            allCompleted = false;
+                        }
+                    }
+                }
+                else
+                {
+                    // 多採購單模式 - 只檢查本次進貨涉及的明細
+                    foreach (var purchaseOrderDetailId in purchaseOrderDetailIds)
+                    {
+                        var orderDetail = await context.PurchaseOrderDetails
+                            .FirstOrDefaultAsync(pod => pod.Id == purchaseOrderDetailId && !pod.IsDeleted);
+
+                        if (orderDetail != null)
+                        {
+                            // 計算該明細的總已進貨數量（包含其他入庫單的進貨）
+                            var totalReceivedQuantity = await context.PurchaseReceivingDetails
+                                .Where(prd => prd.PurchaseOrderDetailId == purchaseOrderDetailId && !prd.IsDeleted)
+                                .SumAsync(prd => prd.ReceivedQuantity);
+
+                            // 檢查是否有手動標記為完成的進貨記錄
+                            var isManuallyCompleted = await context.PurchaseReceivingDetails
+                                .Where(prd => prd.PurchaseOrderDetailId == purchaseOrderDetailId && !prd.IsDeleted)
+                                .AnyAsync(prd => prd.IsReceivingCompleted);
+
+                            if (totalReceivedQuantity > 0)
+                            {
+                                hasAnyReceived = true;
+                            }
+
+                            // 如果手動標記為完成，或數量已達到訂購量，則視為完成
+                            if (!isManuallyCompleted && totalReceivedQuantity < orderDetail.OrderQuantity)
+                            {
+                                allCompleted = false;
+                            }
+                        }
+                    }
+                }
+
+                // 根據完成狀態設定入庫狀態
+                if (allCompleted && hasAnyReceived)
+                {
+                    purchaseReceiving.ReceiptStatus = PurchaseReceivingStatus.Executed; // 已執行（完成）
+                    purchaseReceiving.ConfirmedAt = DateTime.UtcNow;
+                }
+                else if (hasAnyReceived)
+                {
+                    purchaseReceiving.ReceiptStatus = PurchaseReceivingStatus.Approved; // 已核准（部分完成）
+                }
+                else
+                {
+                    purchaseReceiving.ReceiptStatus = PurchaseReceivingStatus.Draft; // 草稿（無進貨）
+                }
+
+                // 更新最後修改時間
+                purchaseReceiving.UpdatedAt = DateTime.UtcNow;
+            }
+            catch (Exception ex)
+            {
+                // 如果狀態計算失敗，記錄錯誤但不中斷交易
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateReceivingStatusAsync), GetType(), _logger, new { 
+                    Method = nameof(UpdateReceivingStatusAsync),
+                    ServiceType = GetType().Name,
+                    PurchaseReceivingId = purchaseReceiving.Id 
+                });
+                
+                // 預設設為已核准狀態
+                purchaseReceiving.ReceiptStatus = PurchaseReceivingStatus.Approved;
+            }
         }
 
         #endregion

@@ -372,20 +372,6 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(PurchaseReceiving.ReceiptStatus),
-                    Label = "入庫狀態",
-                    FieldType = FormFieldType.Select,
-                    IsRequired = true,
-                    Options = Enum.GetValues<PurchaseReceivingStatus>()
-                        .Select(status => new SelectOption
-                        {
-                            Value = ((int)status).ToString(),
-                            Text = status.ToString()
-                        }).ToList(),
-                    HelpText = "請選擇入庫狀態"
-                },
-                new()
-                {
                     PropertyName = nameof(PurchaseReceiving.ConfirmedAt),
                     Label = "確認時間",
                     FieldType = FormFieldType.DateTime,
@@ -416,7 +402,6 @@
                 { nameof(PurchaseReceiving.PurchaseOrderId), "基本資訊" },
                 { nameof(PurchaseReceiving.ReceiptDate), "基本資訊" },
                 { nameof(PurchaseReceiving.WarehouseId), "基本資訊" },
-                { nameof(PurchaseReceiving.ReceiptStatus), "基本資訊" },
                 { nameof(PurchaseReceiving.ConfirmedAt), "確認資訊" },
                 { nameof(PurchaseReceiving.ConfirmedBy), "確認資訊" },
                 { nameof(BaseEntity.Remarks), "其他資訊" }

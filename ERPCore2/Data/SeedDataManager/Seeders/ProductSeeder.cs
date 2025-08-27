@@ -74,6 +74,37 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-21),
                     CreatedBy = "System"
+                },
+                // 新增的測試用商品
+                new Product
+                {
+                    Code = "P006",
+                    Name = "水泥A",
+                    UnitId = unitPcs?.Id,
+                    ProductCategoryId = electronicsCategory?.Id,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-20),
+                    CreatedBy = "System"
+                },
+                new Product
+                {
+                    Code = "P007",
+                    Name = "紅色染料",
+                    UnitId = unitPen?.Id,
+                    ProductCategoryId = officeCategory?.Id,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-19),
+                    CreatedBy = "System"
+                },
+                new Product
+                {
+                    Code = "P008",
+                    Name = "馬桶水箱",
+                    UnitId = unitLic?.Id,
+                    ProductCategoryId = softwareCategory?.Id,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now.AddDays(-18),
+                    CreatedBy = "System"
                 }
             };
 
