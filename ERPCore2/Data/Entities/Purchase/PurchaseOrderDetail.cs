@@ -45,10 +45,6 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal ReceivedAmount { get; set; } = 0;
 
-        [MaxLength(200, ErrorMessage = "備註不可超過200個字元")]
-        [Display(Name = "備註")]
-        public string? DetailRemarks { get; set; }
-
         [Display(Name = "預計到貨日期")]
         public DateTime? ExpectedDeliveryDate { get; set; }
 

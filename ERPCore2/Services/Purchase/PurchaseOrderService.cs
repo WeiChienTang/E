@@ -476,23 +476,17 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 檢查採購單是否可以刪除（介面方法）
+        /// </summary>
+        /// <param name="orderId">採購單ID</param>
+        /// <returns>是否可以刪除</returns>
         public async Task<bool> CanDeleteAsync(int orderId)
         {
             try
             {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var order = await context.PurchaseOrders
-                    .Include(po => po.PurchaseReceivings)
-                    .FirstOrDefaultAsync(po => po.Id == orderId && !po.IsDeleted);
-                
-                if (order == null) return false;
-                
-                // 已有進貨記錄的訂單不能刪除
-                if (order.PurchaseReceivings.Any(pr => !pr.IsDeleted))
-                    return false;
-                
-                // 移除狀態檢查，只要沒有進貨記錄就可以刪除
-                return true;
+                var checkResult = await DependencyCheckHelper.CheckPurchaseOrderDependenciesAsync(_contextFactory, orderId);
+                return checkResult.CanDelete;
             }
             catch (Exception ex)
             {
@@ -502,6 +496,34 @@ namespace ERPCore2.Services
                     OrderId = orderId 
                 });
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// 檢查採購單是否可以刪除（基類覆寫方法）
+        /// </summary>
+        /// <param name="entity">採購單實體</param>
+        /// <returns>刪除檢查結果</returns>
+        protected override async Task<ServiceResult> CanDeleteAsync(PurchaseOrder entity)
+        {
+            try
+            {
+                var checkResult = await DependencyCheckHelper.CheckPurchaseOrderDependenciesAsync(_contextFactory, entity.Id);
+                if (!checkResult.CanDelete)
+                {
+                    return ServiceResult.Failure(checkResult.GetFormattedErrorMessage("採購單"));
+                }
+                
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { 
+                    Method = nameof(CanDeleteAsync),
+                    ServiceType = GetType().Name,
+                    PurchaseOrderId = entity.Id 
+                });
+                return ServiceResult.Failure("檢查採購單刪除條件時發生錯誤");
             }
         }
 
@@ -686,7 +708,7 @@ namespace ERPCore2.Services
                     
                     existing.OrderQuantity = detail.OrderQuantity;
                     existing.UnitPrice = detail.UnitPrice;
-                    existing.DetailRemarks = detail.DetailRemarks;
+                    existing.Remarks = detail.Remarks;
                     existing.ExpectedDeliveryDate = detail.ExpectedDeliveryDate;
                     existing.UpdatedAt = DateTime.Now;
                     

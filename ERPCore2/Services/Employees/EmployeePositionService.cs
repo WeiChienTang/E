@@ -154,5 +154,31 @@ namespace ERPCore2.Services
                 return false;
             }
         }
+        
+        /// <summary>
+        /// 覆寫基底類別的 CanDeleteAsync 方法，實作職位特定的刪除檢查
+        /// </summary>
+        protected override async Task<ServiceResult> CanDeleteAsync(EmployeePosition entity)
+        {
+            try
+            {
+                var dependencyCheck = await DependencyCheckHelper.CheckEmployeePositionDependenciesAsync(_contextFactory, entity.Id);
+                if (!dependencyCheck.CanDelete)
+                {
+                    return ServiceResult.Failure(dependencyCheck.GetFormattedErrorMessage("職位"));
+                }
+                
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { 
+                    Method = nameof(CanDeleteAsync),
+                    ServiceType = GetType().Name,
+                    PositionId = entity.Id 
+                });
+                return ServiceResult.Failure("檢查職位刪除條件時發生錯誤");
+            }
+        }
     }
 }

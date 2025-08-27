@@ -594,7 +594,43 @@ namespace ERPCore2.Services
         /// </summary>
         protected virtual async Task<ServiceResult> CanDeleteAsync(T entity)
         {
-            return await Task.FromResult(ServiceResult.Success());
+            try
+            {
+                // 預設檢查：使用反射檢查外鍵關聯
+                var hasReferences = await CheckForeignKeyReferencesAsync(entity.Id);
+                if (hasReferences.HasValue && hasReferences.Value)
+                {
+                    var entityDisplayName = GetEntityDisplayName();
+                    return ServiceResult.Failure($"無法刪除此{entityDisplayName}，因為有其他資料正在使用");
+                }
+                
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { EntityId = entity.Id });
+                return ServiceResult.Failure("檢查刪除條件時發生錯誤");
+            }
+        }
+        
+        /// <summary>
+        /// 檢查是否有外鍵關聯（自動檢測）
+        /// 子類別可以覆寫此方法來自訂關聯檢查邏輯
+        /// </summary>
+        protected virtual async Task<bool?> CheckForeignKeyReferencesAsync(int entityId)
+        {
+            try
+            {
+                // 預設實作：讓子類別覆寫具體的關聯檢查邏輯
+                // 這裡返回 null 表示使用預設行為（允許刪除）
+                await Task.CompletedTask;
+                return null;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CheckForeignKeyReferencesAsync), GetType(), _logger, new { EntityId = entityId });
+                return null; // 發生錯誤時，預設允許刪除
+            }
         }
 
         #endregion

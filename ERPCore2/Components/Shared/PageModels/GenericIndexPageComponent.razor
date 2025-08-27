@@ -209,6 +209,9 @@
     [Parameter] public bool ShowToggleStatusButton { get; set; } = false; // 預設關閉，因為狀態切換功能已停用
     [Parameter] public RenderFragment<TEntity>? CustomActionsTemplate { get; set; }
     
+    // 自訂刪除處理函數 - 如果提供此參數，將會使用自訂邏輯而非預設刪除
+    [Parameter] public Func<TEntity, Task<bool>>? CustomDeleteHandler { get; set; }
+    
     // 事件處理 - 修改為內建導航
     [Parameter] public EventCallback OnAddClick { get; set; }
     [Parameter] public EventCallback<TEntity> OnRowClick { get; set; }
@@ -287,15 +290,76 @@
     public async Task DeleteEntityAsync(TEntity entity)
     {
         var displayName = GetEntityDisplayName(entity);
-        var confirmMessage = GetDeleteConfirmMessage(displayName);
         
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", confirmMessage);
-        
-        if (confirmed)
+        try
         {
-            try
+            // 步驟1：先檢查是否可以刪除（檢查關聯）
+            bool canDelete = false;
+            string? canDeleteErrorMessage = null;
+            
+            if (CustomDeleteHandler != null)
             {
-                // 使用反射調用服務的 PermanentDeleteAsync 方法（執行永久刪除）
+                // 如果有自訂刪除處理器，直接使用
+                canDelete = true;
+            }
+            else
+            {
+                // 使用反射調用服務的 CanDeleteAsync 方法
+                var canDeleteMethod = Service?.GetType().GetMethod("CanDeleteAsync", new[] { typeof(TEntity) });
+                if (canDeleteMethod != null)
+                {
+                    var task = (Task)canDeleteMethod.Invoke(Service, new object[] { entity })!;
+                    await task;
+                    
+                    // 獲取結果
+                    var resultProperty = task.GetType().GetProperty("Result");
+                    if (resultProperty != null)
+                    {
+                        var result = resultProperty.GetValue(task);
+                        var isSuccessProperty = result?.GetType().GetProperty("IsSuccess");
+                        var errorMessageProperty = result?.GetType().GetProperty("ErrorMessage");
+                        
+                        if (isSuccessProperty != null)
+                        {
+                            canDelete = (bool)isSuccessProperty.GetValue(result)!;
+                            if (!canDelete)
+                            {
+                                canDeleteErrorMessage = errorMessageProperty?.GetValue(result)?.ToString() ?? "無法刪除此資料";
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // 如果沒有 CanDeleteAsync 方法，預設允許刪除
+                    canDelete = true;
+                }
+            }
+            
+            // 步驟2：如果不能刪除，顯示錯誤訊息
+            if (!canDelete)
+            {
+                await NotificationService.ShowWarningAsync(canDeleteErrorMessage ?? $"無法刪除{EntityName}「{displayName}」，因為有其他資料正在使用此{EntityName}");
+                return;
+            }
+            
+            // 步驟3：確認刪除
+            var confirmMessage = GetDeleteConfirmMessage(displayName);
+            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", confirmMessage);
+            
+            if (!confirmed)
+                return;
+                
+            // 步驟4：執行刪除
+            bool deleteSuccess = false;
+            
+            if (CustomDeleteHandler != null)
+            {
+                deleteSuccess = await CustomDeleteHandler(entity);
+            }
+            else
+            {
+                // 使用預設的反射調用服務的 PermanentDeleteAsync 方法
                 var deleteMethod = Service?.GetType().GetMethod("PermanentDeleteAsync", new[] { typeof(int) });
                 if (deleteMethod != null)
                 {
@@ -315,17 +379,13 @@
                             var isSuccess = (bool)isSuccessProperty.GetValue(result)!;                            
                             if (isSuccess)
                             {
-                                var successMessage = GetDeleteSuccessMessage();
-                                await NotificationService.ShowSuccessAsync(successMessage);
-                                
-                                // 延遲1秒後再刷新，讓用戶看到成功訊息
-                                await Task.Delay(1000);
-                                await Refresh();
+                                deleteSuccess = true;
                             }
                             else
                             {
                                 var errorMessage = errorMessageProperty?.GetValue(result)?.ToString() ?? "刪除失敗";
                                 await NotificationService.ShowErrorAsync($"刪除失敗：{errorMessage}");
+                                return;
                             }
                         }
                     }                
@@ -333,12 +393,24 @@
                 else
                 {
                     await NotificationService.ShowErrorAsync("找不到永久刪除方法");
+                    return;
                 }
-            }            
-            catch (Exception ex)
-            {
-                await NotificationService.ShowErrorAsync($"刪除時發生錯誤：{ex.Message}");
             }
+            
+            // 步驟5：顯示成功訊息並刷新資料
+            if (deleteSuccess)
+            {
+                var successMessage = GetDeleteSuccessMessage();
+                await NotificationService.ShowSuccessAsync(successMessage);
+                
+                // 延遲1秒後再刷新，讓用戶看到成功訊息
+                await Task.Delay(1000);
+                await Refresh();
+            }
+        }            
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"刪除時發生錯誤：{ex.Message}");
         }
     }
     

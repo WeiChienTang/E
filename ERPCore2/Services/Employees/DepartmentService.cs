@@ -190,6 +190,32 @@ namespace ERPCore2.Services
                 return false;
             }
         }
+        
+        /// <summary>
+        /// 覆寫基底類別的 CanDeleteAsync 方法，實作部門特定的刪除檢查
+        /// </summary>
+        protected override async Task<ServiceResult> CanDeleteAsync(Department entity)
+        {
+            try
+            {
+                var dependencyCheck = await DependencyCheckHelper.CheckDepartmentDependenciesAsync(_contextFactory, entity.Id);
+                if (!dependencyCheck.CanDelete)
+                {
+                    return ServiceResult.Failure(dependencyCheck.GetFormattedErrorMessage("部門"));
+                }
+                
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { 
+                    Method = nameof(CanDeleteAsync),
+                    ServiceType = GetType().Name,
+                    DepartmentId = entity.Id 
+                });
+                return ServiceResult.Failure("檢查部門刪除條件時發生錯誤");
+            }
+        }
 
         public async Task<List<Employee>> GetAvailableManagersAsync()
         {

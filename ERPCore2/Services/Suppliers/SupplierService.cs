@@ -349,6 +349,32 @@ namespace ERPCore2.Services
                 throw;
             }
         }
+        
+        /// <summary>
+        /// 覆寫基底類別的 CanDeleteAsync 方法，實作供應商特定的刪除檢查
+        /// </summary>
+        protected override async Task<ServiceResult> CanDeleteAsync(Supplier entity)
+        {
+            try
+            {
+                var dependencyCheck = await DependencyCheckHelper.CheckSupplierDependenciesAsync(_contextFactory, entity.Id);
+                if (!dependencyCheck.CanDelete)
+                {
+                    return ServiceResult.Failure(dependencyCheck.GetFormattedErrorMessage("供應商"));
+                }
+                
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { 
+                    Method = nameof(CanDeleteAsync),
+                    ServiceType = GetType().Name,
+                    SupplierId = entity.Id 
+                });
+                return ServiceResult.Failure("檢查供應商刪除條件時發生錯誤");
+            }
+        }
 
         #endregion
     }

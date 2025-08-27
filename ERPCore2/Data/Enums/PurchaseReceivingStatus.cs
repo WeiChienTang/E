@@ -10,13 +10,13 @@ namespace ERPCore2.Data.Enums
         [Description("草稿")]
         Draft = 1,
         
-        [Description("已確認")]
-        Confirmed = 2,
+        [Description("已核准")]
+        Approved = 2,
         
-        [Description("已入庫")]
-        Received = 3,
+        [Description("已執行")]
+        Executed = 3,
         
-        [Description("已取消")]
-        Cancelled = 4
+        [Description("已作廢")]
+        Voided = 4
     }
 }

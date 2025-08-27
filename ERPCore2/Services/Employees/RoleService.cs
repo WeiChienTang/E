@@ -391,6 +391,40 @@ namespace ERPCore2.Services
                 return ServiceResult<bool>.Failure($"檢查角色刪除權限時發生錯誤：{ex.Message}");
             }
         }
+        
+        /// <summary>
+        /// 覆寫基底類別的 CanDeleteAsync 方法，實作角色特定的刪除檢查
+        /// </summary>
+        protected override async Task<ServiceResult> CanDeleteAsync(Role entity)
+        {
+            try
+            {
+                // 先檢查是否為系統角色
+                var roleName = entity.Name?.Trim().ToLower();
+                if (roleName == "管理員" || roleName == "admin")
+                {
+                    return ServiceResult.Failure("系統管理員角色無法刪除");
+                }
+                
+                // 檢查依賴關係
+                var dependencyCheck = await DependencyCheckHelper.CheckRoleDependenciesAsync(_contextFactory, entity.Id);
+                if (!dependencyCheck.CanDelete)
+                {
+                    return ServiceResult.Failure(dependencyCheck.GetFormattedErrorMessage("角色"));
+                }
+                
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { 
+                    Method = nameof(CanDeleteAsync),
+                    ServiceType = GetType().Name,
+                    RoleId = entity.Id 
+                });
+                return ServiceResult.Failure("檢查角色刪除條件時發生錯誤");
+            }
+        }
 
         /// <summary>
         /// 搜尋角色

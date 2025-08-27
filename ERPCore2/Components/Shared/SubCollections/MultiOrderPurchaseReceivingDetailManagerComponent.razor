@@ -44,11 +44,11 @@
                                             <strong>@orderDetail.Product.Code</strong>
                                             <br />
                                             <small class="text-muted">@orderDetail.Product.Name</small>
-                                            @if (!string.IsNullOrEmpty(orderDetail.DetailRemarks))
+                                            @if (!string.IsNullOrEmpty(orderDetail.Remarks))
                                             {
                                                 <br />
                                                 <small class="text-info">
-                                                    <i class="fas fa-comment"></i> @orderDetail.DetailRemarks
+                                                    <i class="fas fa-comment"></i> @orderDetail.Remarks
                                                 </small>
                                             }
                                         </div>

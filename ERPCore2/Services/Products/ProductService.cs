@@ -542,6 +542,32 @@ namespace ERPCore2.Services
                 return ServiceResult<Product>.Failure($"更新商品時發生錯誤: {ex.Message}");
             }
         }
+        
+        /// <summary>
+        /// 覆寫基底類別的 CanDeleteAsync 方法，實作商品特定的刪除檢查
+        /// </summary>
+        protected override async Task<ServiceResult> CanDeleteAsync(Product entity)
+        {
+            try
+            {
+                var dependencyCheck = await DependencyCheckHelper.CheckProductDependenciesAsync(_contextFactory, entity.Id);
+                if (!dependencyCheck.CanDelete)
+                {
+                    return ServiceResult.Failure(dependencyCheck.GetFormattedErrorMessage("商品"));
+                }
+                
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { 
+                    Method = nameof(CanDeleteAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = entity.Id 
+                });
+                return ServiceResult.Failure("檢查商品刪除條件時發生錯誤");
+            }
+        }
 
         #endregion
     }

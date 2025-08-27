@@ -190,5 +190,31 @@ namespace ERPCore2.Services
                 return false;
             }
         }
+        
+        /// <summary>
+        /// 覆寫基底類別的 CanDeleteAsync 方法，實作倉庫特定的刪除檢查
+        /// </summary>
+        protected override async Task<ServiceResult> CanDeleteAsync(Warehouse entity)
+        {
+            try
+            {
+                var dependencyCheck = await DependencyCheckHelper.CheckWarehouseDependenciesAsync(_contextFactory, entity.Id);
+                if (!dependencyCheck.CanDelete)
+                {
+                    return ServiceResult.Failure(dependencyCheck.GetFormattedErrorMessage("倉庫"));
+                }
+                
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { 
+                    Method = nameof(CanDeleteAsync),
+                    ServiceType = GetType().Name,
+                    WarehouseId = entity.Id 
+                });
+                return ServiceResult.Failure("檢查倉庫刪除條件時發生錯誤");
+            }
+        }
     }
 }

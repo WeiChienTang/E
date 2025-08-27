@@ -219,7 +219,7 @@ namespace ERPCore2.Services.Reports
                     new ReportColumnDefinition
                     {
                         Header = "備註",
-                        PropertyName = nameof(PurchaseOrderDetail.DetailRemarks),
+                        PropertyName = nameof(PurchaseOrderDetail.Remarks),
                         Width = "7%",
                         Alignment = TextAlignment.Left,
                         Order = 7

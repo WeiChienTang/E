@@ -387,7 +387,7 @@ namespace ERPCore2.Services
                         return ServiceResult.Failure("只有草稿狀態的進貨單才能確認");
                     }
 
-                    receipt.ReceiptStatus = PurchaseReceivingStatus.Confirmed;
+                    receipt.ReceiptStatus = PurchaseReceivingStatus.Approved;
                     receipt.ConfirmedAt = DateTime.Now;
                     receipt.ConfirmedBy = confirmedBy;
                     receipt.UpdatedAt = DateTime.Now;
@@ -430,12 +430,12 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("找不到指定的進貨單");
                 }
 
-                if (receipt.ReceiptStatus == PurchaseReceivingStatus.Received)
+                if (receipt.ReceiptStatus == PurchaseReceivingStatus.Executed)
                 {
                     return ServiceResult.Failure("已收貨的進貨單無法取消");
                 }
 
-                receipt.ReceiptStatus = PurchaseReceivingStatus.Cancelled;
+                receipt.ReceiptStatus = PurchaseReceivingStatus.Voided;
                 receipt.UpdatedAt = DateTime.Now;
 
                 await context.SaveChangesAsync();

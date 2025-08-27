@@ -89,7 +89,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                         OrderQuantity = quantity,
                         ReceivedQuantity = orderIndex <= 2 ? quantity : orderIndex <= 4 ? quantity / 2 : 0, // 簡化邏輯
                         UnitPrice = unitPrice,
-                        DetailRemarks = $"採購 {product.Name}",
+                        Remarks = $"採購 {product.Name}",
                         ExpectedDeliveryDate = order.ExpectedDeliveryDate,
                         Status = EntityStatus.Active,
                         CreatedAt = order.CreatedAt,
@@ -128,7 +128,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     ReceiptNumber = $"PR{receiptDate:yyyyMMdd}{order.Id:D3}",
                     ReceiptDate = receiptDate,
-                    ReceiptStatus = PurchaseReceivingStatus.Received,
+                    ReceiptStatus = PurchaseReceivingStatus.Executed,
                     Remarks = $"採購訂單 {order.PurchaseOrderNumber} 進貨",
                     PurchaseOrderId = order.Id,
                     WarehouseId = order.WarehouseId!.Value,

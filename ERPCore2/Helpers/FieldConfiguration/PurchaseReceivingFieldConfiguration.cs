@@ -146,9 +146,9 @@ namespace ERPCore2.Helpers.FieldConfiguration
                                 var badgeClass = receipt.ReceiptStatus switch
                                 {
                                     PurchaseReceivingStatus.Draft => "bg-secondary",
-                                    PurchaseReceivingStatus.Confirmed => "bg-primary",
-                                    PurchaseReceivingStatus.Received => "bg-success",
-                                    PurchaseReceivingStatus.Cancelled => "bg-danger",
+                                    PurchaseReceivingStatus.Approved => "bg-primary",
+                                    PurchaseReceivingStatus.Executed => "bg-success",
+                                    PurchaseReceivingStatus.Voided => "bg-danger",
                                     _ => "bg-secondary"
                                 };
                                 
@@ -238,9 +238,9 @@ namespace ERPCore2.Helpers.FieldConfiguration
             return status switch
             {
                 PurchaseReceivingStatus.Draft => "草稿",
-                PurchaseReceivingStatus.Confirmed => "已確認",
-                PurchaseReceivingStatus.Received => "已入庫",
-                PurchaseReceivingStatus.Cancelled => "已取消",
+                PurchaseReceivingStatus.Approved => "已確認",
+                PurchaseReceivingStatus.Executed => "已入庫",
+                PurchaseReceivingStatus.Voided => "已取消",
                 _ => status.ToString()
             };
         }
