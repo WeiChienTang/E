@@ -69,7 +69,7 @@ namespace ERPCore2.Services.Reports
                     }
                     html, body { 
                         margin: 0 !important; 
-                        padding: 20px !important; 
+                        padding: 10px !important; 
                     }
                     .report-container {
                         margin: 0 !important;
@@ -83,7 +83,7 @@ namespace ERPCore2.Services.Reports
             window.addEventListener('beforeprint', function() {
                 // 在列印前調整樣式
                 document.body.style.margin = '0';
-                document.body.style.padding = '20px';
+                document.body.style.padding = '10px';
             });
             
             window.addEventListener('afterprint', function() {
@@ -109,7 +109,7 @@ namespace ERPCore2.Services.Reports
             printStyle.media = 'print';
             printStyle.textContent = `
                 @page { margin: 0 !important; }
-                body { margin: 0 !important; padding: 20px !important; }
+                body { margin: 0 !important; padding: 10px !important; }
             `;
             document.head.appendChild(printStyle);
             
@@ -218,7 +218,7 @@ namespace ERPCore2.Services.Reports
         body {{
             font-family: 'Microsoft JhengHei', Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 5px;
             font-size: 12px;
             line-height: 1.4;
             color: #333;
@@ -233,8 +233,8 @@ namespace ERPCore2.Services.Reports
         .company-header {{
             text-align: center;
             border-bottom: 2px solid #333;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
         }}
         
         .company-name {{
@@ -252,12 +252,12 @@ namespace ERPCore2.Services.Reports
             text-align: center;
             font-size: 16px;
             font-weight: bold;
-            margin: 20px 0;
+            margin: 10px 0 15px 0;
             text-decoration: underline;
         }}
         
         .report-section {{
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }}
         
         .section-title {{
@@ -367,7 +367,7 @@ namespace ERPCore2.Services.Reports
             
             if (!string.IsNullOrEmpty(configuration.Subtitle))
             {
-                html.AppendLine($"        <div class='text-center' style='margin-bottom: 20px;'>{configuration.Subtitle}</div>");
+                html.AppendLine($"        <div class='text-center' style='margin-bottom: 12px;'>{configuration.Subtitle}</div>");
             }
             
             return html.ToString();
@@ -621,15 +621,7 @@ namespace ERPCore2.Services.Reports
             {
                 return "";
             }
-        }
-        
-        /// <summary>
-        /// 取得表格欄位值（舊版本，保持向下相容）
-        /// </summary>
-        private string GetColumnValue<TDetailEntity>(ReportColumnDefinition column, TDetailEntity detail)
-        {
-            return GetColumnValue(column, detail, new Dictionary<string, object>(), 0);
-        }
+        }    
         
         /// <summary>
         /// 使用反射取得屬性值
