@@ -33,9 +33,8 @@ namespace ERPCore2.Services.Reports
                 // 報表內容
                 html.AppendLine("    <div class='report-container'>");
                 
-                // 上半部內容（存根聯）
+                // 上半部內容
                 html.AppendLine("    <div class='upper-section'>");
-                html.AppendLine("        <div class='section-header'>存根聯</div>");
                 html.AppendLine(GenerateCompanyHeader(configuration));
                 html.AppendLine(GenerateReportTitle(configuration));
                 html.AppendLine(GenerateHeaderSections(configuration, reportData));
@@ -46,9 +45,8 @@ namespace ERPCore2.Services.Reports
                 html.AppendLine("        <div class='tear-perforations'></div>");
                 html.AppendLine("    </div>");
                 
-                // 下半部內容（客戶聯）
+                // 下半部內容
                 html.AppendLine("    <div class='lower-section'>");
-                html.AppendLine("        <div class='section-header'>客戶聯</div>");
                 html.AppendLine(GenerateCompanyHeader(configuration));
                 html.AppendLine(GenerateReportTitle(configuration));
                 html.AppendLine(GenerateHeaderSections(configuration, reportData));
@@ -257,26 +255,7 @@ namespace ERPCore2.Services.Reports
         .tear-perforations {{
             width: 100%;
             height: 1px;
-            background: repeating-linear-gradient(
-                to right,
-                #333 0px,
-                #333 3mm,
-                transparent 3mm,
-                transparent 6mm
-            );
             position: relative;
-        }}
-        
-        .tear-perforations::before {{
-            content: '✂️ 撕線 ✂️';
-            position: absolute;
-            left: 50%;
-            top: -8px;
-            transform: translateX(-50%);
-            background: white;
-            padding: 0 10px;
-            font-size: 10px;
-            color: #666;
         }}
         
         .section-header {{
