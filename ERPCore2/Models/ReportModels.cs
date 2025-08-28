@@ -65,7 +65,7 @@ namespace ERPCore2.Models
         /// <summary>
         /// 紙張大小
         /// </summary>
-        public PageSize PageSize { get; set; } = PageSize.A4;
+        public PageSize PageSize { get; set; } = PageSize.ContinuousForm;
     }
     
     /// <summary>
@@ -262,14 +262,8 @@ namespace ERPCore2.Models
     /// </summary>
     public enum PageSize
     {
-        [Description("A4")]
-        A4,
-        
-        [Description("A3")]
-        A3,
-        
-        [Description("Letter")]
-        Letter
+        [Description("中一刀報表紙")]
+        ContinuousForm
     }
     
     /// <summary>
@@ -279,9 +273,6 @@ namespace ERPCore2.Models
     {
         [Description("HTML")]
         Html,
-        
-        [Description("PDF")]
-        Pdf,
         
         [Description("Excel")]
         Excel

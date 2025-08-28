@@ -94,7 +94,7 @@ namespace ERPCore2.Services.Reports
                 return format switch
                 {
                     ReportFormat.Html => await _reportService.GenerateHtmlReportAsync(configuration, reportData),
-                    ReportFormat.Pdf => throw new NotImplementedException("PDF 格式尚未實作"),
+                    ReportFormat.Excel => throw new NotImplementedException("Excel 格式尚未實作"),
                     _ => throw new ArgumentException($"不支援的報表格式: {format}")
                 };
             }
@@ -113,7 +113,7 @@ namespace ERPCore2.Services.Reports
                 CompanyAddress = company?.Address ?? "公司地址", // 使用實際公司地址
                 CompanyPhone = company?.Phone ?? "公司電話", // 使用實際公司電話
                 Orientation = PageOrientation.Portrait,
-                PageSize = PageSize.A4,
+                PageSize = PageSize.ContinuousForm,
                 
                 // 頁首區段
                 HeaderSections = new List<ReportHeaderSection>

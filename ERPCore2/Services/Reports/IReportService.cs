@@ -22,14 +22,6 @@ namespace ERPCore2.Services.Reports
             where TMainEntity : class;
         
         /// <summary>
-        /// 生成 PDF 報表（未來實作）
-        /// </summary>
-        Task<byte[]> GeneratePdfReportAsync<TMainEntity, TDetailEntity>(
-            ReportConfiguration configuration,
-            ReportData<TMainEntity, TDetailEntity> reportData)
-            where TMainEntity : class;
-        
-        /// <summary>
         /// 列印報表（開啟瀏覽器列印對話框）
         /// </summary>
         Task<string> GeneratePrintableReportAsync<TMainEntity, TDetailEntity>(

@@ -22,7 +22,7 @@ namespace ERPCore2.Controllers
         /// 生成採購單報表
         /// </summary>
         /// <param name="id">採購單 ID</param>
-        /// <param name="format">報表格式（html/pdf）</param>
+        /// <param name="format">報表格式（html/excel）</param>
         /// <returns>報表內容</returns>
         [HttpGet("purchase-order/{id}")]
         public async Task<IActionResult> GeneratePurchaseOrderReport(int id, string format = "html")
@@ -31,7 +31,6 @@ namespace ERPCore2.Controllers
             {
                 var reportFormat = format.ToLower() switch
                 {
-                    "pdf" => ReportFormat.Pdf,
                     "excel" => ReportFormat.Excel,
                     _ => ReportFormat.Html
                 };
@@ -41,7 +40,7 @@ namespace ERPCore2.Controllers
                 return reportFormat switch
                 {
                     ReportFormat.Html => Content(reportContent, "text/html", System.Text.Encoding.UTF8),
-                    ReportFormat.Pdf => File(Convert.FromBase64String(reportContent), "application/pdf", $"採購單_{id}.pdf"),
+                    ReportFormat.Excel => File(Convert.FromBase64String(reportContent), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"採購單_{id}.xlsx"),
                     _ => Content(reportContent, "text/html", System.Text.Encoding.UTF8)
                 };
             }

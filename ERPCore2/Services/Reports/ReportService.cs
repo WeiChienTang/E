@@ -33,13 +33,24 @@ namespace ERPCore2.Services.Reports
                 // 報表內容
                 html.AppendLine("    <div class='report-container'>");
                 
-                // 公司標頭
+                // 上半部內容（存根聯）
+                html.AppendLine("    <div class='upper-section'>");
+                html.AppendLine("        <div class='section-header'>存根聯</div>");
                 html.AppendLine(GenerateCompanyHeader(configuration));
-                
-                // 報表標題
                 html.AppendLine(GenerateReportTitle(configuration));
+                html.AppendLine(GenerateHeaderSections(configuration, reportData));
+                html.AppendLine("    </div>");
                 
-                // 頁首區段
+                // 中間撕裂線
+                html.AppendLine("    <div class='tear-line'>");
+                html.AppendLine("        <div class='tear-perforations'></div>");
+                html.AppendLine("    </div>");
+                
+                // 下半部內容（客戶聯）
+                html.AppendLine("    <div class='lower-section'>");
+                html.AppendLine("        <div class='section-header'>客戶聯</div>");
+                html.AppendLine(GenerateCompanyHeader(configuration));
+                html.AppendLine(GenerateReportTitle(configuration));
                 html.AppendLine(GenerateHeaderSections(configuration, reportData));
                 
                 // 明細表格（如果有）
@@ -50,6 +61,7 @@ namespace ERPCore2.Services.Reports
                 
                 // 頁尾區段
                 html.AppendLine(GenerateFooterSections(configuration, reportData));
+                html.AppendLine("    </div>");
                 
                 // 頁尾資訊
                 html.AppendLine(GeneratePageFooter(configuration));
@@ -151,17 +163,6 @@ namespace ERPCore2.Services.Reports
             }
         }
         
-        public async Task<byte[]> GeneratePdfReportAsync<TMainEntity, TDetailEntity>(
-            ReportConfiguration configuration,
-            ReportData<TMainEntity, TDetailEntity> reportData)
-            where TMainEntity : class
-        {
-            // TODO: 實作 PDF 生成功能
-            // 可以使用 iTextSharp、PuppeteerSharp 等套件
-            await Task.Delay(1);
-            throw new NotImplementedException("PDF 報表功能尚未實作");
-        }
-        
         public async Task<string> GeneratePrintableReportAsync<TMainEntity, TDetailEntity>(
             ReportConfiguration configuration,
             ReportData<TMainEntity, TDetailEntity> reportData)
@@ -194,18 +195,19 @@ namespace ERPCore2.Services.Reports
         private string GetReportStyles(ReportConfiguration configuration)
         {
             var orientation = configuration.Orientation == PageOrientation.Landscape ? "landscape" : "portrait";
-            var pageSize = configuration.PageSize.ToString().ToLower();
             
             return $@"
     <style>
         @media print {{
             @page {{
-                size: {pageSize} {orientation};
-                margin: 1cm;
+                size: 241mm 279mm {orientation};
+                margin: 0;
             }}
             body {{ 
                 -webkit-print-color-adjust: exact; 
-                print-color-adjust: exact; 
+                print-color-adjust: exact;
+                margin: 0 !important;
+                padding: 0 !important;
             }}
             
             /* 強力隱藏瀏覽器預設頁首頁尾 */
@@ -218,64 +220,119 @@ namespace ERPCore2.Services.Reports
         body {{
             font-family: 'Microsoft JhengHei', Arial, sans-serif;
             margin: 0;
-            padding: 5px;
-            font-size: 12px;
-            line-height: 1.4;
+            padding: 5mm;
+            font-size: 11px;
+            line-height: 1.3;
             color: #333;
         }}
         
         .report-container {{
-            max-width: 800px;
+            width: 231mm; /* 中一刀紙張寬度減去邊距 */
+            height: 269mm; /* 中一刀紙張高度減去邊距 */
             margin: 0 auto;
             background: white;
+            position: relative;
+        }}
+        
+        .upper-section {{
+            height: 130mm; /* 上半部高度 */
+            padding: 3mm;
+            box-sizing: border-box;
+        }}
+        
+        .lower-section {{
+            height: 130mm; /* 下半部高度 */
+            padding: 3mm;
+            box-sizing: border-box;
+        }}
+        
+        .tear-line {{
+            height: 9mm; /* 撕裂線區域 */
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+        
+        .tear-perforations {{
+            width: 100%;
+            height: 1px;
+            background: repeating-linear-gradient(
+                to right,
+                #333 0px,
+                #333 3mm,
+                transparent 3mm,
+                transparent 6mm
+            );
+            position: relative;
+        }}
+        
+        .tear-perforations::before {{
+            content: '✂️ 撕線 ✂️';
+            position: absolute;
+            left: 50%;
+            top: -8px;
+            transform: translateX(-50%);
+            background: white;
+            padding: 0 10px;
+            font-size: 10px;
+            color: #666;
+        }}
+        
+        .section-header {{
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 3mm;
+            font-weight: bold;
         }}
         
         .company-header {{
             text-align: center;
-            border-bottom: 2px solid #333;
-            padding-bottom: 8px;
-            margin-bottom: 8px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 3mm;
+            margin-bottom: 3mm;
         }}
         
         .company-name {{
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 2mm;
         }}
         
         .company-info {{
-            font-size: 10px;
+            font-size: 9px;
             color: #666;
         }}
         
         .report-title {{
             text-align: center;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
-            margin: 10px 0 15px 0;
+            margin: 3mm 0 5mm 0;
             text-decoration: underline;
         }}
         
         .report-section {{
-            margin-bottom: 10px;
+            margin-bottom: 3mm;
         }}
         
         .section-title {{
             font-weight: bold;
-            font-size: 13px;
-            margin-bottom: 10px;
-            padding-bottom: 3px;
+            font-size: 11px;
+            margin-bottom: 3mm;
+            padding-bottom: 1mm;
             border-bottom: 1px solid #ddd;
         }}
         
         .field-row {{
             display: flex;
-            margin-bottom: 8px;
+            margin-bottom: 2mm;
         }}
         
         .field-item {{
             flex: 1;
-            margin-right: 20px;
+            margin-right: 5mm;
         }}
         
         .field-item:last-child {{
@@ -285,7 +342,7 @@ namespace ERPCore2.Services.Reports
         .field-label {{
             font-weight: bold;
             display: inline-block;
-            min-width: 80px;
+            min-width: 20mm;
         }}
         
         .field-value {{
@@ -295,13 +352,14 @@ namespace ERPCore2.Services.Reports
         .detail-table {{
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
+            margin: 3mm 0;
+            font-size: 10px;
         }}
         
         .detail-table th,
         .detail-table td {{
             border: 1px solid #333;
-            padding: 6px;
+            padding: 2mm;
             text-align: left;
         }}
         
@@ -318,18 +376,22 @@ namespace ERPCore2.Services.Reports
         .font-bold {{ font-weight: bold; }}
         
         .page-footer {{
-            margin-top: 30px;
+            position: absolute;
+            bottom: 2mm;
+            left: 3mm;
+            right: 3mm;
             text-align: center;
-            font-size: 10px;
+            font-size: 9px;
             color: #666;
             border-top: 1px solid #ddd;
-            padding-top: 10px;
+            padding-top: 2mm;
         }}
         
         .statistics-section {{
             border: 1px solid #333;
-            padding: 10px;
+            padding: 3mm;
             background-color: #f9f9f9;
+            margin-top: 2mm;
         }}
     </style>";
         }
