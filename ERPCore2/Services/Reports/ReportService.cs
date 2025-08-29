@@ -219,21 +219,37 @@ namespace ERPCore2.Services.Reports
         .single-section {{
             width: {pageWidth};
             height: {pageHeight};
-            padding: 1mm 3mm 3mm 3mm;
+            padding: 4mm 3mm 3mm 3mm;
             box-sizing: border-box;
             margin: 0 auto;
+            display: flex;
+            flex-direction: column;
         }}
         
         .upper-section {{
             height: calc({pageHeight} / 2);
-            padding: 1mm 3mm 3mm 3mm;
+            padding: 4mm 3mm 3mm 3mm;
             box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
         }}
         
         .lower-section {{
             height: calc({pageHeight} / 2);
-            padding: 1mm 3mm 3mm 3mm;
+            padding: 4mm 3mm 3mm 3mm;
             box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }}
+        
+        .content-area {{
+            flex: 1;
+            overflow: hidden;
+        }}
+        
+        .footer-area {{
+            margin-top: auto;
+            padding-top: 3mm;
         }}
         
         .tear-line {{
@@ -332,14 +348,13 @@ namespace ERPCore2.Services.Reports
             width: 100%;
             border-collapse: collapse;
             margin: 3mm 0;
-            font-size: 10px;
+            font-size: 12px;
         }}
         
         .detail-table th,
         .detail-table td {{
             border: none;
             padding: 0.5mm;
-            text-align: left;
         }}
         
         .detail-table th {{
@@ -347,6 +362,14 @@ namespace ERPCore2.Services.Reports
             text-align: center;
             border-bottom: 1px solid #333;
         }}
+        
+        .detail-table td {{
+            text-align: left;
+        }}
+        
+        .detail-table td.text-center {{ text-align: center !important; }}
+        .detail-table td.text-right {{ text-align: right !important; }}
+        .detail-table td.text-left {{ text-align: left !important; }}
         
         .text-center {{ text-align: center; }}
         .text-right {{ text-align: right; }}
@@ -721,6 +744,9 @@ namespace ERPCore2.Services.Reports
         {
             var html = new StringBuilder();
             
+            // 內容區域（公司標頭、頁首區段、明細表格）
+            html.AppendLine("            <div class='content-area'>");
+            
             // 公司標頭（現在包含報表標題）
             html.AppendLine(GenerateCompanyHeader(configuration));
             
@@ -733,8 +759,12 @@ namespace ERPCore2.Services.Reports
                 html.AppendLine(GenerateDetailTable<TMainEntity, TDetailEntity>(configuration, reportData));
             }
             
-            // 頁尾區段
+            html.AppendLine("            </div>");
+            
+            // 尾段區域（固定在底部）
+            html.AppendLine("            <div class='footer-area'>");
             html.AppendLine(GenerateFooterSections(configuration, reportData));
+            html.AppendLine("            </div>");
             
             return html.ToString();
         }
@@ -811,11 +841,17 @@ namespace ERPCore2.Services.Reports
             var firstPart = new StringBuilder();
             var secondPart = new StringBuilder();
             
-            // 第一部分：標頭
+            // 第一部分：標頭（使用新的結構）
+            firstPart.AppendLine("            <div class='content-area'>");
             firstPart.AppendLine(GenerateCompanyHeader(configuration));
             firstPart.AppendLine(GenerateHeaderSections(configuration, reportData));
+            firstPart.AppendLine("            </div>");
+            firstPart.AppendLine("            <div class='footer-area'>");
+            // 第一部分的尾段可以為空或包含部分資訊
+            firstPart.AppendLine("            </div>");
             
-            // 第二部分：完整內容（暫時簡化）
+            // 第二部分：完整內容（使用新的結構）
+            secondPart.AppendLine("            <div class='content-area'>");
             secondPart.AppendLine(GenerateCompanyHeader(configuration));
             secondPart.AppendLine(GenerateHeaderSections(configuration, reportData));
             
@@ -824,7 +860,10 @@ namespace ERPCore2.Services.Reports
                 secondPart.AppendLine(GenerateDetailTable<TMainEntity, TDetailEntity>(configuration, reportData));
             }
             
+            secondPart.AppendLine("            </div>");
+            secondPart.AppendLine("            <div class='footer-area'>");
             secondPart.AppendLine(GenerateFooterSections(configuration, reportData));
+            secondPart.AppendLine("            </div>");
             
             return (firstPart.ToString(), secondPart.ToString());
         }
