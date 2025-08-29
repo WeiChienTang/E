@@ -69,80 +69,57 @@ namespace ERPCore2.Services.Reports
                 // 頁尾資訊
                 html.AppendLine(GeneratePageFooter(configuration));
                 
-                // 添加進階 JavaScript 來處理列印和隱藏頁首頁尾
-                html.AppendLine(@"
-    <script>
-        // 嘗試隱藏瀏覽器頁首頁尾的多種方法
-        function setupPrintOptimization() {
-            // 方法 1: 使用 @page CSS 規則動態插入
-            const style = document.createElement('style');
-            style.textContent = `
-                @media print {
-                    @page { 
-                        margin: 0; 
-                        size: auto;
-                    }
-                    html, body { 
-                        margin: 0 !important; 
-                        padding: 10px !important; 
-                    }
-                    .report-container {
-                        margin: 0 !important;
-                        padding: 0 !important;
-                    }
-                }
-            `;
-            document.head.appendChild(style);
-            
-            // 方法 2: 監聽列印事件
-            window.addEventListener('beforeprint', function() {
-                // 在列印前調整樣式
-                document.body.style.margin = '0';
-                document.body.style.padding = '10px';
-            });
-            
-            window.addEventListener('afterprint', function() {
-                // 列印後恢復樣式
-                document.body.style.margin = '';
-                document.body.style.padding = '';
-            });
+                // 添加列印優化的 JavaScript
+                var (jsWidth, jsHeight) = GetPageDimensions(configuration.PageSize);
+                html.AppendLine("    <script>");
+                html.AppendLine($"        var pageWidth = '{jsWidth}';");
+                html.AppendLine($"        var pageHeight = '{jsHeight}';");
+                html.AppendLine(@"        
+        function getPageDimensions() {
+            return {
+                width: pageWidth,
+                height: pageHeight
+            };
         }
         
-        // 自動列印功能
+        function setupPrintOptimization() {
+            var pageInfo = getPageDimensions();
+            var style = document.createElement('style');
+            style.textContent = 
+                '@media print {' +
+                '  @page { margin: 0; size: ' + pageInfo.width + ' ' + pageInfo.height + '; }' +
+                '  html, body { margin: 0 !important; padding: 0 !important; overflow: hidden !important; }' +
+                '  .report-container { width: ' + pageInfo.width + ' !important; height: ' + pageInfo.height + ' !important; page-break-inside: avoid !important; page-break-after: avoid !important; }' +
+                '  .single-section { page-break-inside: avoid !important; page-break-after: avoid !important; }' +
+                '}';
+            document.head.appendChild(style);
+        }
+        
         function handleAutoPrint() {
-            if (window.location.search.includes('autoprint=true')) {
+            if (window.location.search.indexOf('autoprint=true') !== -1) {
                 setTimeout(function() {
                     window.print();
                 }, 1000);
             }
         }
         
-        // 自定義列印函數，嘗試最佳化設定
         function optimizedPrint() {
-            // 創建新的列印樣式
-            const printStyle = document.createElement('style');
+            var printStyle = document.createElement('style');
             printStyle.media = 'print';
-            printStyle.textContent = `
-                @page { margin: 0 !important; }
-                body { margin: 0 !important; padding: 10px !important; }
-            `;
+            printStyle.textContent = '@page { margin: 0 !important; } body { margin: 0 !important; padding: 2mm !important; }';
             document.head.appendChild(printStyle);
             
-            // 延遲執行列印，確保樣式已套用
             setTimeout(function() {
                 window.print();
-                // 移除臨時樣式
                 document.head.removeChild(printStyle);
             }, 100);
         }
         
-        // 頁面載入完成後初始化
         window.addEventListener('load', function() {
             setupPrintOptimization();
             handleAutoPrint();
         });
         
-        // 監聽快捷鍵
         document.addEventListener('keydown', function(e) {
             if (e.ctrlKey && e.key === 'p') {
                 e.preventDefault();
@@ -150,9 +127,8 @@ namespace ERPCore2.Services.Reports
             }
         });
         
-        // 提供全域函數供外部調用
-        window.optimizedPrint = optimizedPrint;
-    </script>");
+        window.optimizedPrint = optimizedPrint;");
+                html.AppendLine("    </script>");
                 
                 html.AppendLine("    </div>");
                 html.AppendLine("</body>");
@@ -199,11 +175,14 @@ namespace ERPCore2.Services.Reports
         {
             var orientation = configuration.Orientation == PageOrientation.Landscape ? "landscape" : "portrait";
             
+            // 根據頁面大小類型設定實際尺寸
+            var (pageWidth, pageHeight) = GetPageDimensions(configuration.PageSize);
+            
             return $@"
     <style>
         @media print {{
             @page {{
-                size: 9.5in 11in {orientation};
+                size: {pageWidth} {pageHeight} {orientation};
                 margin: 0;
             }}
             body {{ 
@@ -230,29 +209,29 @@ namespace ERPCore2.Services.Reports
         }}
         
         .report-container {{
-            width: 9.5in;
-            height: 11in;
+            width: {pageWidth};
+            height: {pageHeight};
             margin: 0 auto;
             background: white;
             position: relative;
         }}
         
         .single-section {{
-            width: 9.5in;
-            height: 5.5in;
+            width: {pageWidth};
+            height: {pageHeight};
             padding: 1mm 3mm 3mm 3mm;
             box-sizing: border-box;
             margin: 0 auto;
         }}
         
         .upper-section {{
-            height: 5.5in;
+            height: calc({pageHeight} / 2);
             padding: 1mm 3mm 3mm 3mm;
             box-sizing: border-box;
         }}
         
         .lower-section {{
-            height: 5.5in;
+            height: calc({pageHeight} / 2);
             padding: 1mm 3mm 3mm 3mm;
             box-sizing: border-box;
         }}
@@ -768,6 +747,12 @@ namespace ERPCore2.Services.Reports
             ReportData<TMainEntity, TDetailEntity> reportData)
             where TMainEntity : class
         {
+            // 對於中一刀報表紙 (9.5" x 5.5")，通常不需要分割
+            if (configuration.PageSize == PageSize.ContinuousForm)
+            {
+                return false; // 強制使用單一區段，避免產生額外空白頁
+            }
+
             // 估算內容高度來判斷是否需要分割
             var estimatedHeight = EstimateContentHeight(configuration, reportData);
             
@@ -842,6 +827,20 @@ namespace ERPCore2.Services.Reports
             secondPart.AppendLine(GenerateFooterSections(configuration, reportData));
             
             return (firstPart.ToString(), secondPart.ToString());
+        }
+
+        /// <summary>
+        /// 根據頁面大小設定取得實際尺寸
+        /// </summary>
+        private (string width, string height) GetPageDimensions(PageSize pageSize)
+        {
+            return pageSize switch
+            {
+                PageSize.ContinuousForm => ("9.5in", "5.5in"), // 中一刀報表紙
+                PageSize.A4 => ("8.27in", "11.69in"), // A4 紙張
+                PageSize.Letter => ("8.5in", "11in"), // Letter 紙張
+                _ => ("9.5in", "5.5in") // 預設為中一刀報表紙
+            };
         }
     }
 }

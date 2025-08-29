@@ -262,8 +262,14 @@ namespace ERPCore2.Models
     /// </summary>
     public enum PageSize
     {
-        [Description("中一刀報表紙")]
-        ContinuousForm
+        [Description("中一刀報表紙 (9.5\" × 5.5\")")]
+        ContinuousForm,
+        
+        [Description("A4 紙張 (8.27\" × 11.69\")")]
+        A4,
+        
+        [Description("Letter 紙張 (8.5\" × 11\")")]
+        Letter
     }
     
     /// <summary>
