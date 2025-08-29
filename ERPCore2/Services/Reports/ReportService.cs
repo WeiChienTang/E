@@ -30,36 +30,41 @@ namespace ERPCore2.Services.Reports
                 html.AppendLine("</head>");
                 html.AppendLine("<body>");
                 
-                // 報表內容
+                // 生成完整報表內容
+                var reportContent = GenerateReportContent(configuration, reportData);
+                
+                // 判斷是否需要第二部分
+                var needsSecondPart = RequiresSecondPart(configuration, reportData);
+                
                 html.AppendLine("    <div class='report-container'>");
                 
-                // 上半部內容
-                html.AppendLine("    <div class='upper-section'>");
-                html.AppendLine(GenerateCompanyHeader(configuration));
-                html.AppendLine(GenerateReportTitle(configuration));
-                html.AppendLine(GenerateHeaderSections(configuration, reportData));
-                html.AppendLine("    </div>");
-                
-                // 中間撕裂線
-                html.AppendLine("    <div class='tear-line'>");
-                html.AppendLine("        <div class='tear-perforations'></div>");
-                html.AppendLine("    </div>");
-                
-                // 下半部內容
-                html.AppendLine("    <div class='lower-section'>");
-                html.AppendLine(GenerateCompanyHeader(configuration));
-                html.AppendLine(GenerateReportTitle(configuration));
-                html.AppendLine(GenerateHeaderSections(configuration, reportData));
-                
-                // 明細表格（如果有）
-                if (reportData.DetailEntities != null && reportData.DetailEntities.Any())
+                if (needsSecondPart)
                 {
-                    html.AppendLine(GenerateDetailTable<TMainEntity, TDetailEntity>(configuration, reportData));
+                    // 需要兩部分時：分割內容到上下兩部分
+                    var (firstPart, secondPart) = SplitReportContent(reportContent, configuration, reportData);
+                    
+                    // 第一部分（上半部）
+                    html.AppendLine("    <div class='upper-section'>");
+                    html.AppendLine(firstPart);
+                    html.AppendLine("    </div>");
+                    
+                    // 中間撕裂線
+                    html.AppendLine("    <div class='tear-line'>");
+                    html.AppendLine("        <div class='tear-perforations'></div>");
+                    html.AppendLine("    </div>");
+                    
+                    // 第二部分（下半部）
+                    html.AppendLine("    <div class='lower-section'>");
+                    html.AppendLine(secondPart);
+                    html.AppendLine("    </div>");
                 }
-                
-                // 頁尾區段
-                html.AppendLine(GenerateFooterSections(configuration, reportData));
-                html.AppendLine("    </div>");
+                else
+                {
+                    // 內容少時：只使用一個部分，置中顯示
+                    html.AppendLine("    <div class='single-section'>");
+                    html.AppendLine(reportContent);
+                    html.AppendLine("    </div>");
+                }
                 
                 // 頁尾資訊
                 html.AppendLine(GeneratePageFooter(configuration));
@@ -198,7 +203,7 @@ namespace ERPCore2.Services.Reports
     <style>
         @media print {{
             @page {{
-                size: 241mm 279mm {orientation};
+                size: 9.5in 11in {orientation};
                 margin: 0;
             }}
             body {{ 
@@ -218,38 +223,47 @@ namespace ERPCore2.Services.Reports
         body {{
             font-family: 'Microsoft JhengHei', Arial, sans-serif;
             margin: 0;
-            padding: 5mm;
+            padding: 2mm;
             font-size: 11px;
             line-height: 1.3;
             color: #333;
         }}
         
         .report-container {{
-            width: 231mm; /* 中一刀紙張寬度減去邊距 */
-            height: 269mm; /* 中一刀紙張高度減去邊距 */
+            width: 9.5in;
+            height: 11in;
             margin: 0 auto;
             background: white;
             position: relative;
         }}
         
+        .single-section {{
+            width: 9.5in;
+            height: 5.5in;
+            padding: 3mm;
+            box-sizing: border-box;
+            margin: 0 auto;
+        }}
+        
         .upper-section {{
-            height: 130mm; /* 上半部高度 */
+            height: 5.5in;
             padding: 3mm;
             box-sizing: border-box;
         }}
         
         .lower-section {{
-            height: 130mm; /* 下半部高度 */
+            height: 5.5in;
             padding: 3mm;
             box-sizing: border-box;
         }}
         
         .tear-line {{
-            height: 9mm; /* 撕裂線區域 */
+            height: 2mm;
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
+            border-top: 1px dashed #999;
         }}
         
         .tear-perforations {{
@@ -720,6 +734,123 @@ namespace ERPCore2.Services.Reports
                 TextAlignment.Right => "text-right",
                 _ => "text-left"
             };
+        }
+        
+        /// <summary>
+        /// 生成完整報表內容
+        /// </summary>
+        private string GenerateReportContent<TMainEntity, TDetailEntity>(
+            ReportConfiguration configuration,
+            ReportData<TMainEntity, TDetailEntity> reportData)
+            where TMainEntity : class
+        {
+            var html = new StringBuilder();
+            
+            // 公司標頭
+            html.AppendLine(GenerateCompanyHeader(configuration));
+            
+            // 報表標題
+            html.AppendLine(GenerateReportTitle(configuration));
+            
+            // 頁首區段
+            html.AppendLine(GenerateHeaderSections(configuration, reportData));
+            
+            // 明細表格（如果有）
+            if (reportData.DetailEntities != null && reportData.DetailEntities.Any())
+            {
+                html.AppendLine(GenerateDetailTable<TMainEntity, TDetailEntity>(configuration, reportData));
+            }
+            
+            // 頁尾區段
+            html.AppendLine(GenerateFooterSections(configuration, reportData));
+            
+            return html.ToString();
+        }
+        
+        /// <summary>
+        /// 判斷是否需要第二部分
+        /// </summary>
+        private bool RequiresSecondPart<TMainEntity, TDetailEntity>(
+            ReportConfiguration configuration,
+            ReportData<TMainEntity, TDetailEntity> reportData)
+            where TMainEntity : class
+        {
+            // 估算內容高度來判斷是否需要分割
+            var estimatedHeight = EstimateContentHeight(configuration, reportData);
+            
+            // 5.5英寸約等於140mm，保留一些邊距
+            var maxHeight = 130; // mm
+            
+            return estimatedHeight > maxHeight;
+        }
+        
+        /// <summary>
+        /// 估算內容高度（以mm為單位）
+        /// </summary>
+        private double EstimateContentHeight<TMainEntity, TDetailEntity>(
+            ReportConfiguration configuration,
+            ReportData<TMainEntity, TDetailEntity> reportData)
+            where TMainEntity : class
+        {
+            double height = 0;
+            
+            // 公司標頭：約15mm
+            height += 15;
+            
+            // 報表標題：約10mm
+            height += 10;
+            
+            // 頁首區段：每個區段約8mm
+            height += configuration.HeaderSections.Count * 8;
+            
+            // 明細表格：表頭5mm + 每行4mm
+            if (reportData.DetailEntities != null && reportData.DetailEntities.Any())
+            {
+                height += 5; // 表頭
+                height += reportData.DetailEntities.Count() * 4; // 每行
+            }
+            
+            // 頁尾區段：每個區段約8mm
+            height += configuration.FooterSections.Count * 8;
+            
+            // 邊距和間距：約10mm
+            height += 10;
+            
+            return height;
+        }
+        
+        /// <summary>
+        /// 分割報表內容到兩部分
+        /// </summary>
+        private (string firstPart, string secondPart) SplitReportContent<TMainEntity, TDetailEntity>(
+            string fullContent,
+            ReportConfiguration configuration,
+            ReportData<TMainEntity, TDetailEntity> reportData)
+            where TMainEntity : class
+        {
+            // 簡單實作：如果需要分割，第一部分包含標頭和部分明細，第二部分包含剩餘明細和頁尾
+            
+            var firstPart = new StringBuilder();
+            var secondPart = new StringBuilder();
+            
+            // 第一部分：標頭
+            firstPart.AppendLine(GenerateCompanyHeader(configuration));
+            firstPart.AppendLine(GenerateReportTitle(configuration));
+            firstPart.AppendLine(GenerateHeaderSections(configuration, reportData));
+            
+            // 第二部分：完整內容（暫時簡化）
+            secondPart.AppendLine(GenerateCompanyHeader(configuration));
+            secondPart.AppendLine(GenerateReportTitle(configuration));
+            secondPart.AppendLine(GenerateHeaderSections(configuration, reportData));
+            
+            if (reportData.DetailEntities != null && reportData.DetailEntities.Any())
+            {
+                secondPart.AppendLine(GenerateDetailTable<TMainEntity, TDetailEntity>(configuration, reportData));
+            }
+            
+            secondPart.AppendLine(GenerateFooterSections(configuration, reportData));
+            
+            return (firstPart.ToString(), secondPart.ToString());
         }
     }
 }
