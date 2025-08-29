@@ -279,8 +279,8 @@ namespace ERPCore2.Services.Reports
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            padding-bottom: 3mm;
-            margin-bottom: 3mm;
+            padding-bottom: 0.5mm;
+            margin-bottom: 0.5mm;
         }}
         
         .company-left-info {{
@@ -312,11 +312,11 @@ namespace ERPCore2.Services.Reports
         .company-name {{
             font-size: 18px;
             font-weight: bold;
-            margin-bottom: 2mm;
+            margin-bottom: 1mm;
         }}
         
         .report-title-inline {{
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
             text-decoration: underline;
         }}
@@ -333,11 +333,11 @@ namespace ERPCore2.Services.Reports
         }}
         
         .report-section {{
-            margin-bottom: 1.5mm;
+            margin-bottom: 0;
         }}
         
         .report-section-bordered {{
-            margin-bottom: 1.5mm;
+            margin-bottom: 0;
             border: 1px solid #333;
             padding: 3mm;
         }}
@@ -345,7 +345,7 @@ namespace ERPCore2.Services.Reports
         .section-title {{
             font-weight: bold;
             font-size: 13px;
-            margin-bottom: 3mm;
+            margin-bottom: 1mm;
             padding-bottom: 1mm;
             border-bottom: 1px solid #ddd;
         }}
@@ -378,7 +378,7 @@ namespace ERPCore2.Services.Reports
         .detail-table {{
             width: 100%;
             border-collapse: collapse;
-            margin: 3mm 0;
+            margin: 0;
             font-size: 13px;
             line-height: 1.1;
         }}
