@@ -61,6 +61,10 @@ namespace ERPCore2.Services.Reports
                 var allProducts = await _productService.GetAllAsync();
                 var productDict = allProducts.ToDictionary(p => p.Id, p => p);
 
+                // 計算稅額和總計
+                var taxAmount = purchaseOrder.TotalAmount * 0.05m;
+                var grandTotal = purchaseOrder.TotalAmount + taxAmount;
+                
                 // 建立報表資料
                 var reportData = new ReportData<PurchaseOrder, PurchaseOrderDetail>
                 {
@@ -76,21 +80,15 @@ namespace ERPCore2.Services.Reports
                         { "CompanyTaxId", company?.TaxId ?? "" },
                         { "CompanyFax", company?.Fax ?? "" },
                         { "ProductDict", productDict },
-                        { "DetailCount", orderDetails?.Count ?? 0 }
+                        { "ApprovalPerson", purchaseOrder.ApprovedByUser?.Name ?? purchaseOrder.CreatedBy ?? "" },
+                        { "PurchasingPerson", purchaseOrder.PurchasePersonnel ?? purchaseOrder.CreatedBy ?? "" },
+                        { "TaxAmount", taxAmount }, // 稅額 = 金額 * 5%
+                        { "GrandTotal", grandTotal } // 總計 = 金額 + 稅額
                     }
                 };
 
                 // 取得報表配置
                 var configuration = GetPurchaseOrderReportConfiguration(company);
-                
-                // 動態設置明細筆數
-                var detailCountField = configuration.FooterSections
-                    .FirstOrDefault(s => s.Title == "合計資訊")?.Fields
-                    .FirstOrDefault(f => f.Label == "明細筆數");
-                if (detailCountField != null)
-                {
-                    detailCountField.Value = (orderDetails?.Count ?? 0).ToString();
-                }
 
                 // 根據格式生成報表
                 return format switch
@@ -130,7 +128,6 @@ namespace ERPCore2.Services.Reports
                             {
                                 Label = "採購單號",
                                 PropertyName = nameof(PurchaseOrder.PurchaseOrderNumber),
-                                IsBold = true
                             },
                             new ReportField
                             {
@@ -148,27 +145,24 @@ namespace ERPCore2.Services.Reports
                             {
                                 Label = "廠商名稱",
                                 PropertyName = "SupplierName",
-                                IsBold = true
                             },
                             new ReportField
                             {
-                                Label = "聯 絡 人",
+                                Label = "聯　絡　人",
                                 PropertyName = "SupplierContactPerson",
-                                IsBold = true
                             },
                             new ReportField
                             {
-                                Label = "聯絡電話",
+                                Label = "連絡電話",
                                 PropertyName = "SupplierPhone"
                             },
                             new ReportField
                             {
                                 Label = "送貨地址",
                                 PropertyName = "CompanyAddress",
-                                IsBold = true
                             },
                         }
-                    }
+                    },
                 },
                 
                 // 明細表格欄位
@@ -243,24 +237,65 @@ namespace ERPCore2.Services.Reports
                 {
                     new ReportFooterSection
                     {
-                        Title = "合計資訊",
+                        Title = "",
                         Order = 1,
-                        FieldsPerRow = 2,
-                        IsStatisticsSection = true,
+                        FieldsPerRow = 6, // 所有欄位在一個區段中
+                        IsStatisticsSection = true, // 啟用統計區段樣式和特殊佈局
                         Fields = new List<ReportField>
                         {
                             new ReportField
                             {
-                                Label = "總金額",
+                                Label = "備註",
+                                PropertyName = nameof(PurchaseOrder.Remarks),
+                                Value = "" // 備註內容，會顯示在左側
+                            },
+                            new ReportField
+                            {
+                                Label = "金額",
                                 PropertyName = nameof(PurchaseOrder.TotalAmount),
                                 Format = "N2",
                                 IsBold = true
                             },
                             new ReportField
                             {
-                                Label = "明細筆數",
-                                Value = "", // 需要動態計算
+                                Label = "稅額(5%)",
+                                PropertyName = "TaxAmount",
+                                Format = "N2",
                                 IsBold = true
+                            },
+                            new ReportField
+                            {
+                                Label = "總計",
+                                PropertyName = "GrandTotal", // 金額+稅額的總和
+                                Format = "N2",
+                                IsBold = true
+                            }
+                        }
+                    },
+                    new ReportFooterSection
+                    {
+                        Title = "",
+                        Order = 2,
+                        FieldsPerRow = 3,
+                        TopMargin = 5, // 增加頂部間距
+                        Fields = new List<ReportField>
+                        {
+                            new ReportField
+                            {
+                                Label = "審核",
+                                PropertyName = "ApprovalPerson",
+                                Value = "" // 審核人員資訊
+                            },                            
+                            new ReportField
+                            {
+                                Label = "採購",
+                                PropertyName = "PurchasingPerson",
+                                Value = "" // 採購人員資訊
+                            },
+                            new ReportField
+                            {
+                                Label = "廠商簽回",
+                                Value = "" // 空白欄位給廠商填寫
                             }
                         }
                     }

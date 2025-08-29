@@ -215,6 +215,11 @@ namespace ERPCore2.Models
         /// 是否為統計區段（數字加總等）
         /// </summary>
         public bool IsStatisticsSection { get; set; } = false;
+        
+        /// <summary>
+        /// 頂部間距（以毫米為單位）
+        /// </summary>
+        public int TopMargin { get; set; } = 0;
     }
     
     /// <summary>

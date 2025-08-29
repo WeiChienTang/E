@@ -228,7 +228,7 @@ namespace ERPCore2.Services.Reports
         
         .upper-section {{
             height: calc({pageHeight} / 2);
-            padding: 4mm 3mm 3mm 3mm;
+            padding: 3mm 2mm 2mm 2mm;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
@@ -236,7 +236,7 @@ namespace ERPCore2.Services.Reports
         
         .lower-section {{
             height: calc({pageHeight} / 2);
-            padding: 4mm 3mm 3mm 3mm;
+            padding: 3mm 2mm 2mm 2mm;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
@@ -326,6 +326,24 @@ namespace ERPCore2.Services.Reports
             max-width: 100%;
         }}
         
+        .page-info {{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1mm;
+        }}
+        
+        .page-number {{
+            font-size: 12px;
+            font-weight: normal;
+            color: #333;
+        }}
+        
+        .total-pages {{
+            font-size: 12px;
+            color: #333;
+        }}
+        
         .company-info {{
             font-size: 12px;
             color: #666;
@@ -339,21 +357,21 @@ namespace ERPCore2.Services.Reports
         .report-section-bordered {{
             margin-bottom: 0;
             border: 1px solid #333;
-            padding: 3mm;
+            padding: 2mm;
         }}
         
         .section-title {{
             font-weight: bold;
             font-size: 13px;
-            margin-bottom: 1mm;
-            padding-bottom: 1mm;
+            margin-bottom: 0.5mm;
+            padding-bottom: 0.5mm;
             border-bottom: 1px solid #ddd;
         }}
         
         .field-row {{
             display: flex;
-            margin-bottom: 0.5mm;
-            line-height: 1.2;
+            margin-bottom: 1mm;
+            line-height: 1.3;
         }}
         
         .field-item {{
@@ -365,10 +383,13 @@ namespace ERPCore2.Services.Reports
             margin-right: 0;
         }}
         
+        .footer-section .field-item:last-child {{
+            text-align: left; /* 改為左對齊 */
+        }}
+        
         .field-label {{
             font-weight: bold;
             display: inline-block;
-            min-width: 20mm;
         }}
         
         .field-value {{
@@ -393,8 +414,10 @@ namespace ERPCore2.Services.Reports
         .detail-table th {{
             font-weight: bold;
             text-align: center;
+            vertical-align: middle;
             border-bottom: 1px solid #333;
-            padding-bottom: 1.5mm;
+            border-left: 1px solid #333;
+            border-right: 1px solid #333;
         }}
         
         .detail-table td {{
@@ -425,8 +448,54 @@ namespace ERPCore2.Services.Reports
         
         .statistics-section {{
             border: 1px solid #333;
-            padding: 3mm;
-            margin-top: 2mm;
+            display: flex;
+            align-items: flex-start;
+        }}
+        
+        .statistics-section .left-section {{
+            flex: 2;
+            padding-right: 10mm;
+            display: flex;
+            flex-direction: column;
+        }}
+        
+        .statistics-section .right-section {{
+            flex: 1;
+            border-left: 1px solid #666;
+            padding-left: 5mm;
+        }}
+        
+        .statistics-section .remarks-area {{
+            width: 100%;
+            margin-bottom: 3mm;
+        }}
+        
+        .statistics-section .money-column {{
+            display: flex;
+            flex-direction: column;
+            gap: 2mm;
+            width: 100%;
+        }}
+        
+        .statistics-section .money-row {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }}
+        
+        .statistics-section .field-row {{
+            margin-bottom: 1mm;
+            display: flex;
+            width: 100%;
+        }}
+        
+        .statistics-section .field-row:last-child {{
+            margin-bottom: 0;
+        }}
+        
+        .statistics-section .field-item {{
+            display: flex;
+            align-items: center;
         }}
     </style>";
         }
@@ -436,7 +505,9 @@ namespace ERPCore2.Services.Reports
         /// </summary>
         private string GenerateCompanyHeader<TMainEntity, TDetailEntity>(
             ReportConfiguration configuration,
-            ReportData<TMainEntity, TDetailEntity> reportData)
+            ReportData<TMainEntity, TDetailEntity> reportData,
+            int currentPage = 1,
+            int totalPages = 1)
             where TMainEntity : class
         {
             var html = new StringBuilder();
@@ -465,8 +536,15 @@ namespace ERPCore2.Services.Reports
             html.AppendLine($"                <div class='report-title-inline'>{configuration.Title}</div>");
             html.AppendLine("            </div>");
             
-            // 右側：預留給公司Logo（目前為空）
+            // 右側：頁次資訊
             html.AppendLine("            <div class='company-right-section'>");
+            html.AppendLine($"                <div class='page-info'>");
+            html.AppendLine($"                    <div class='page-number'>第 {currentPage} 頁</div>");
+            if (totalPages > 1)
+            {
+                html.AppendLine($"                    <div class='total-pages'>共 {totalPages} 頁</div>");
+            }
+            html.AppendLine($"                </div>");
             // 未來可以在這裡添加公司Logo
             // html.AppendLine($"                <img src='{logoUrl}' alt='Company Logo' class='company-logo'>");
             html.AppendLine("            </div>");
@@ -600,39 +678,100 @@ namespace ERPCore2.Services.Reports
             
             foreach (var section in configuration.FooterSections.OrderBy(s => s.Order))
             {
-                var sectionClass = section.IsStatisticsSection ? "report-section statistics-section" : "report-section";
+                var sectionClass = section.IsStatisticsSection ? "report-section statistics-section" : "report-section footer-section";
                 
-                html.AppendLine($"        <div class='{sectionClass}'>");
+                // 如果有設定頂部間距，添加內聯樣式
+                var topMarginStyle = section.TopMargin > 0 ? $" style='margin-top: {section.TopMargin}mm;'" : "";
+                
+                html.AppendLine($"        <div class='{sectionClass}'{topMarginStyle}>");
                 
                 if (!string.IsNullOrEmpty(section.Title))
                 {
                     html.AppendLine($"            <div class='section-title'>{section.Title}</div>");
                 }
                 
-                var fieldGroups = ChunkFields(section.Fields, section.FieldsPerRow);
-                
-                foreach (var fieldGroup in fieldGroups)
+                if (section.IsStatisticsSection)
                 {
-                    html.AppendLine("            <div class='field-row'>");
+                    // 統計區段特殊處理：左右分區佈局
+                    GenerateStatisticsSection(html, section, reportData.MainEntity, reportData.AdditionalData);
+                }
+                else
+                {
+                    // 一般區段：原有邏輯
+                    var fieldGroups = ChunkFields(section.Fields, section.FieldsPerRow);
                     
-                    foreach (var field in fieldGroup)
+                    foreach (var fieldGroup in fieldGroups)
                     {
-                        var value = GetFieldValue(field, reportData.MainEntity, reportData.AdditionalData);
-                        var boldClass = field.IsBold ? " font-bold" : "";
+                        html.AppendLine("            <div class='field-row'>");
                         
-                        html.AppendLine($"                <div class='field-item{boldClass}'>");
-                        html.AppendLine($"                    <span class='field-label'>{field.Label}：</span>");
-                        html.AppendLine($"                    <span class='field-value'>{value}</span>");
-                        html.AppendLine("                </div>");
+                        foreach (var field in fieldGroup)
+                        {
+                            var value = GetFieldValue(field, reportData.MainEntity, reportData.AdditionalData);
+                            var boldClass = field.IsBold ? " font-bold" : "";
+                            
+                            html.AppendLine($"                <div class='field-item{boldClass}'>");
+                            html.AppendLine($"                    <span class='field-label'>{field.Label}：</span>");
+                            html.AppendLine($"                    <span class='field-value'>{value}</span>");
+                            html.AppendLine("                </div>");
+                        }
+                        
+                        html.AppendLine("            </div>");
                     }
-                    
-                    html.AppendLine("            </div>");
                 }
                 
                 html.AppendLine("        </div>");
             }
             
             return html.ToString();
+        }
+        
+        /// <summary>
+        /// 生成統計區段的特殊佈局（左右分區：備註在左上，金額在右側）
+        /// </summary>
+        private void GenerateStatisticsSection(StringBuilder html, ReportFooterSection section, object mainEntity, Dictionary<string, object> additionalData)
+        {
+            // 將欄位分為備註和金錢欄位
+            var remarksField = section.Fields.FirstOrDefault(f => f.Label.Contains("備註"));
+            var moneyFields = section.Fields.Where(f => !f.Label.Contains("備註") && !string.IsNullOrEmpty(f.Label)).ToList();
+            
+            // 左側區域
+            html.AppendLine("            <div class='left-section'>");
+            
+            // 備註在左側上方
+            if (remarksField != null)
+            {
+                html.AppendLine("                <div class='remarks-area'>");
+                var remarksValue = GetFieldValue(remarksField, mainEntity, additionalData);
+                var boldClass = remarksField.IsBold ? " font-bold" : "";
+                html.AppendLine($"                    <span class='field-label{boldClass}'>{remarksField.Label}：</span>");
+                html.AppendLine($"                    <span class='field-value{boldClass}'>{remarksValue}</span>");
+                html.AppendLine("                </div>");
+            }
+            
+            // 左側下方可以預留給其他內容
+            
+            html.AppendLine("            </div>");
+            
+            // 右側區域：金錢統計
+            if (moneyFields.Any())
+            {
+                html.AppendLine("            <div class='right-section'>");
+                html.AppendLine("                <div class='money-column'>");
+                
+                foreach (var field in moneyFields)
+                {
+                    var value = GetFieldValue(field, mainEntity, additionalData);
+                    var boldClass = field.IsBold ? " font-bold" : "";
+                    
+                    html.AppendLine("                    <div class='money-row'>");
+                    html.AppendLine($"                        <span class='field-label{boldClass}'>{field.Label}：</span>");
+                    html.AppendLine($"                        <span class='field-value{boldClass}'>{value}</span>");
+                    html.AppendLine("                    </div>");
+                }
+                
+                html.AppendLine("                </div>");
+                html.AppendLine("            </div>");
+            }
         }
         
         /// <summary>
@@ -676,14 +815,14 @@ namespace ERPCore2.Services.Reports
                     return field.Value;
                 }
                 
-                // 嘗試從主實體取得屬性值
-                var value = GetPropertyValue(mainEntity, field.PropertyName);
-                
-                // 如果主實體沒有該屬性，嘗試從額外資料取得
-                if (value == null && additionalData.ContainsKey(field.PropertyName))
+                // 優先檢查額外資料是否有此欄位（用於覆蓋計算值）
+                if (additionalData.ContainsKey(field.PropertyName))
                 {
-                    value = additionalData[field.PropertyName];
+                    return FormatValue(additionalData[field.PropertyName], field.Format);
                 }
+                
+                // 如果額外資料沒有，再從主實體取得屬性值
+                var value = GetPropertyValue(mainEntity, field.PropertyName);
                 
                 return FormatValue(value, field.Format);
             }
@@ -797,6 +936,59 @@ namespace ERPCore2.Services.Reports
         }
         
         /// <summary>
+        /// 計算總頁數
+        /// </summary>
+        private int CalculateTotalPages<TMainEntity, TDetailEntity>(
+            ReportConfiguration configuration,
+            ReportData<TMainEntity, TDetailEntity> reportData)
+            where TMainEntity : class
+        {
+            // 對於連續格式紙（中一刀）通常不需要分頁，但如果明細太多仍需要分頁
+            if (configuration.PageSize == PageSize.ContinuousForm)
+            {
+                // 即使是中一刀紙，明細過多時也需要分頁
+                if (reportData.DetailEntities == null || !reportData.DetailEntities.Any())
+                {
+                    return 1;
+                }
+                
+                int continuousMaxRows = EstimateMaxRowsPerPage(configuration);
+                int continuousTotalRows = reportData.DetailEntities.Count();
+                
+                // 如果明細行數超過單頁容量，就需要分頁
+                return continuousTotalRows > continuousMaxRows ? 
+                    Math.Max(1, (int)Math.Ceiling((double)continuousTotalRows / continuousMaxRows)) : 1;
+            }
+            
+            // 其他紙張類型的頁數計算邏輯
+            if (reportData.DetailEntities == null || !reportData.DetailEntities.Any())
+            {
+                return 1;
+            }
+            
+            // 估算每頁可容納的明細行數
+            int maxRowsPerPage = EstimateMaxRowsPerPage(configuration);
+            int totalRows = reportData.DetailEntities.Count();
+            
+            return Math.Max(1, (int)Math.Ceiling((double)totalRows / maxRowsPerPage));
+        }
+        
+        /// <summary>
+        /// 估算每頁可容納的明細行數
+        /// </summary>
+        private int EstimateMaxRowsPerPage(ReportConfiguration configuration)
+        {
+            // 根據頁面大小類型返回估算的行數
+            return configuration.PageSize switch
+            {
+                PageSize.A4 => 30,           // A4 紙約可放30行明細
+                PageSize.Letter => 28,       // Letter 紙約可放28行明細
+                PageSize.ContinuousForm => 15, // 中一刀約可放15行明細
+                _ => 20                      // 預設值
+            };
+        }
+        
+        /// <summary>
         /// 生成完整報表內容
         /// </summary>
         private string GenerateReportContent<TMainEntity, TDetailEntity>(
@@ -804,13 +996,16 @@ namespace ERPCore2.Services.Reports
             ReportData<TMainEntity, TDetailEntity> reportData)
             where TMainEntity : class
         {
+            // 計算總頁數
+            var totalPages = CalculateTotalPages(configuration, reportData);
+            
             var html = new StringBuilder();
             
             // 內容區域（公司標頭、頁首區段、明細表格）
             html.AppendLine("            <div class='content-area'>");
             
-            // 公司標頭（現在包含報表標題）
-            html.AppendLine(GenerateCompanyHeader(configuration, reportData));
+            // 公司標頭（現在包含報表標題和頁次）
+            html.AppendLine(GenerateCompanyHeader(configuration, reportData, 1, totalPages));
             
             // 頁首區段
             html.AppendLine(GenerateHeaderSections(configuration, reportData));
@@ -905,7 +1100,7 @@ namespace ERPCore2.Services.Reports
             
             // 第一部分：標頭（使用新的結構）
             firstPart.AppendLine("            <div class='content-area'>");
-            firstPart.AppendLine(GenerateCompanyHeader(configuration, reportData));
+            firstPart.AppendLine(GenerateCompanyHeader(configuration, reportData, 1, 2));
             firstPart.AppendLine(GenerateHeaderSections(configuration, reportData));
             firstPart.AppendLine("            </div>");
             firstPart.AppendLine("            <div class='footer-area'>");
@@ -914,7 +1109,7 @@ namespace ERPCore2.Services.Reports
             
             // 第二部分：完整內容（使用新的結構）
             secondPart.AppendLine("            <div class='content-area'>");
-            secondPart.AppendLine(GenerateCompanyHeader(configuration, reportData));
+            secondPart.AppendLine(GenerateCompanyHeader(configuration, reportData, 2, 2));
             secondPart.AppendLine(GenerateHeaderSections(configuration, reportData));
             
             if (reportData.DetailEntities != null && reportData.DetailEntities.Any())
