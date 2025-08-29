@@ -120,9 +120,9 @@ namespace ERPCore2.Services.Reports
                 {
                     new ReportHeaderSection
                     {
-                        Title = "採購單資訊",
+                        Title = "",
                         Order = 1,
-                        FieldsPerRow = 2,
+                        FieldsPerRow = 3,
                         Fields = new List<ReportField>
                         {
                             new ReportField
@@ -147,7 +147,7 @@ namespace ERPCore2.Services.Reports
                     },
                     new ReportHeaderSection
                     {
-                        Title = "供應商資訊",
+                        Title = "",
                         Order = 2,
                         FieldsPerRow = 2,
                         Fields = new List<ReportField>
@@ -174,7 +174,7 @@ namespace ERPCore2.Services.Reports
                     {
                         Header = "序號",
                         PropertyName = "",
-                        Width = "8%",
+                        Width = "4%",
                         Alignment = TextAlignment.Center,
                         Order = 1
                         // 序號會在渲染時動態生成
@@ -183,7 +183,7 @@ namespace ERPCore2.Services.Reports
                     {
                         Header = "商品名稱",
                         PropertyName = nameof(PurchaseOrderDetail.ProductId),
-                        Width = "30%",
+                        Width = "20%",
                         Alignment = TextAlignment.Left,
                         Order = 2
                         // 商品名稱會透過 ProductDict 在渲染時解析
@@ -192,7 +192,7 @@ namespace ERPCore2.Services.Reports
                     {
                         Header = "採購數量",
                         PropertyName = nameof(PurchaseOrderDetail.OrderQuantity),
-                        Width = "15%",
+                        Width = "5%",
                         Alignment = TextAlignment.Right,
                         Format = "N0",
                         Order = 3
@@ -201,7 +201,7 @@ namespace ERPCore2.Services.Reports
                     {
                         Header = "單位",
                         PropertyName = "Unit",
-                        Width = "10%",
+                        Width = "4%",
                         Alignment = TextAlignment.Center,
                         Order = 4,
                         ValueGenerator = (detail) => "個" // 暫時固定值，未來可擴展
@@ -210,7 +210,7 @@ namespace ERPCore2.Services.Reports
                     {
                         Header = "單價",
                         PropertyName = nameof(PurchaseOrderDetail.UnitPrice),
-                        Width = "15%",
+                        Width = "10%",
                         Alignment = TextAlignment.Right,
                         Format = "N2",
                         Order = 5
@@ -219,7 +219,7 @@ namespace ERPCore2.Services.Reports
                     {
                         Header = "小計",
                         PropertyName = nameof(PurchaseOrderDetail.SubtotalAmount),
-                        Width = "15%",
+                        Width = "10%",
                         Alignment = TextAlignment.Right,
                         Format = "N2",
                         Order = 6
@@ -228,7 +228,7 @@ namespace ERPCore2.Services.Reports
                     {
                         Header = "備註",
                         PropertyName = nameof(PurchaseOrderDetail.Remarks),
-                        Width = "7%",
+                        Width = "20%",
                         Alignment = TextAlignment.Left,
                         Order = 7
                     }
