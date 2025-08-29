@@ -73,6 +73,8 @@ namespace ERPCore2.Services.Reports
                         { "CompanyName", company?.CompanyName ?? "未指定" },
                         { "CompanyAddress", company?.Address ?? "" },
                         { "CompanyPhone", company?.Phone ?? "" },
+                        { "CompanyTaxId", company?.TaxId ?? "" },
+                        { "CompanyFax", company?.Fax ?? "" },
                         { "ProductDict", productDict },
                         { "DetailCount", orderDetails?.Count ?? 0 }
                     }
@@ -110,8 +112,6 @@ namespace ERPCore2.Services.Reports
             {
                 Title = "採購單",
                 CompanyName = company?.CompanyName ?? "貴公司名稱", // 使用實際公司名稱
-                CompanyAddress = company?.Address ?? "公司地址", // 使用實際公司地址
-                CompanyPhone = company?.Phone ?? "公司電話", // 使用實際公司電話
                 Orientation = PageOrientation.Portrait,
                 PageSize = PageSize.ContinuousForm,
                 
@@ -123,6 +123,7 @@ namespace ERPCore2.Services.Reports
                         Title = "",
                         Order = 1,
                         FieldsPerRow = 3,
+                        HasBorder = true, // 添加外框
                         Fields = new List<ReportField>
                         {
                             new ReportField
@@ -139,30 +140,33 @@ namespace ERPCore2.Services.Reports
                             },
                             new ReportField
                             {
-                                Label = "預定交貨日期",
+                                Label = "交貨日期",
                                 PropertyName = nameof(PurchaseOrder.ExpectedDeliveryDate),
                                 Format = "yyyy/MM/dd"
-                            }
-                        }
-                    },
-                    new ReportHeaderSection
-                    {
-                        Title = "",
-                        Order = 2,
-                        FieldsPerRow = 2,
-                        Fields = new List<ReportField>
-                        {
+                            },
                             new ReportField
                             {
-                                Label = "供應商名稱",
+                                Label = "廠商名稱",
                                 PropertyName = "SupplierName",
                                 IsBold = true
                             },
                             new ReportField
                             {
-                                Label = "聯絡人",
-                                PropertyName = "SupplierContactPerson"
-                            }
+                                Label = "聯 絡 人",
+                                PropertyName = "SupplierContactPerson",
+                                IsBold = true
+                            },
+                            new ReportField
+                            {
+                                Label = "聯絡電話",
+                                PropertyName = "SupplierPhone"
+                            },
+                            new ReportField
+                            {
+                                Label = "送貨地址",
+                                PropertyName = "CompanyAddress",
+                                IsBold = true
+                            },
                         }
                     }
                 },
@@ -181,7 +185,7 @@ namespace ERPCore2.Services.Reports
                     },
                     new ReportColumnDefinition
                     {
-                        Header = "商品名稱",
+                        Header = "品名",
                         PropertyName = nameof(PurchaseOrderDetail.ProductId),
                         Width = "20%",
                         Alignment = TextAlignment.Left,
@@ -190,7 +194,7 @@ namespace ERPCore2.Services.Reports
                     },
                     new ReportColumnDefinition
                     {
-                        Header = "採購數量",
+                        Header = "數量",
                         PropertyName = nameof(PurchaseOrderDetail.OrderQuantity),
                         Width = "5%",
                         Alignment = TextAlignment.Right,

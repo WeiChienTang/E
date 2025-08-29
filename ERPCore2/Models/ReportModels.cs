@@ -43,6 +43,11 @@ namespace ERPCore2.Models
         public List<ReportHeaderSection> HeaderSections { get; set; } = new();
         
         /// <summary>
+        /// 標頭左側資訊（與公司名稱並排顯示）
+        /// </summary>
+        public List<ReportField> HeaderLeftFields { get; set; } = new();
+        
+        /// <summary>
         /// 表格欄位定義
         /// </summary>
         public List<ReportColumnDefinition> Columns { get; set; } = new();
@@ -92,6 +97,11 @@ namespace ERPCore2.Models
         /// 排序順序
         /// </summary>
         public int Order { get; set; } = 0;
+        
+        /// <summary>
+        /// 是否顯示外框
+        /// </summary>
+        public bool HasBorder { get; set; } = false;
     }
     
     /// <summary>
@@ -262,7 +272,7 @@ namespace ERPCore2.Models
     /// </summary>
     public enum PageSize
     {
-        [Description("中一刀報表紙 (9.5\" × 5.5\")")]
+        [Description("中一刀報表紙 (8.46\" × 5.5\")")]
         ContinuousForm,
         
         [Description("A4 紙張 (8.27\" × 11.69\")")]

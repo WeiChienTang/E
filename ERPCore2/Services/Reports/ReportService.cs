@@ -203,7 +203,7 @@ namespace ERPCore2.Services.Reports
             font-family: 'Microsoft JhengHei', Arial, sans-serif;
             margin: 0;
             padding: 2mm;
-            font-size: 11px;
+            font-size: 13px;
             line-height: 1.3;
             color: #333;
         }}
@@ -277,44 +277,74 @@ namespace ERPCore2.Services.Reports
         
         .company-header {{
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            border-bottom: 1px solid #333;
+            align-items: flex-start;
             padding-bottom: 3mm;
             margin-bottom: 3mm;
         }}
         
-        .company-name {{
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 0;
+        .company-left-info {{
+            flex: 1;
+            font-size: 12px;
         }}
         
-        .company-title-section {{
+        .company-left-info .info-row {{
+            margin-bottom: 1mm;
+        }}
+        
+        .company-center-section {{
+            flex: 1;
+            text-align: center;
             display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }}
+        
+        .company-right-section {{
+            flex: 1;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            gap: 10mm;
+        }}
+        
+        .company-name {{
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 2mm;
         }}
         
         .report-title-inline {{
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
             text-decoration: underline;
         }}
         
+        .company-logo {{
+            max-height: 30mm;
+            max-width: 100%;
+        }}
+        
         .company-info {{
-            font-size: 9px;
+            font-size: 12px;
             color: #666;
             text-align: right;
         }}
         
         .report-section {{
-            margin-bottom: 3mm;
+            margin-bottom: 1.5mm;
+        }}
+        
+        .report-section-bordered {{
+            margin-bottom: 1.5mm;
+            border: 1px solid #333;
+            padding: 3mm;
         }}
         
         .section-title {{
             font-weight: bold;
-            font-size: 11px;
+            font-size: 13px;
             margin-bottom: 3mm;
             padding-bottom: 1mm;
             border-bottom: 1px solid #ddd;
@@ -322,7 +352,8 @@ namespace ERPCore2.Services.Reports
         
         .field-row {{
             display: flex;
-            margin-bottom: 2mm;
+            margin-bottom: 0.5mm;
+            line-height: 1.2;
         }}
         
         .field-item {{
@@ -348,19 +379,22 @@ namespace ERPCore2.Services.Reports
             width: 100%;
             border-collapse: collapse;
             margin: 3mm 0;
-            font-size: 12px;
+            font-size: 13px;
+            line-height: 1.1;
         }}
         
         .detail-table th,
         .detail-table td {{
             border: none;
-            padding: 0.5mm;
+            padding: 1mm 0.5mm;
+            vertical-align: middle;
         }}
         
         .detail-table th {{
             font-weight: bold;
             text-align: center;
             border-bottom: 1px solid #333;
+            padding-bottom: 1.5mm;
         }}
         
         .detail-table td {{
@@ -400,30 +434,57 @@ namespace ERPCore2.Services.Reports
         /// <summary>
         /// 生成公司標頭
         /// </summary>
-        private string GenerateCompanyHeader(ReportConfiguration configuration)
+        private string GenerateCompanyHeader<TMainEntity, TDetailEntity>(
+            ReportConfiguration configuration,
+            ReportData<TMainEntity, TDetailEntity> reportData)
+            where TMainEntity : class
         {
             var html = new StringBuilder();
             html.AppendLine("        <div class='company-header'>");
             
-            // 左側：公司名稱 - 報表標題
-            html.AppendLine("            <div class='company-title-section'>");
+            // 左側：公司資訊（統一編號、聯絡電話、傳真）
+            html.AppendLine("            <div class='company-left-info'>");
+            
+            // 統一編號
+            var taxId = GetFieldValueFromAdditionalData("CompanyTaxId", reportData.AdditionalData);
+            html.AppendLine($"                <div class='info-row'><strong>統一編號：</strong>{taxId}</div>");
+            
+            // 聯絡電話
+            var phone = GetFieldValueFromAdditionalData("CompanyPhone", reportData.AdditionalData);
+            html.AppendLine($"                <div class='info-row'><strong>聯絡電話：</strong>{phone}</div>");
+            
+            // 傳真
+            var fax = GetFieldValueFromAdditionalData("CompanyFax", reportData.AdditionalData);
+            html.AppendLine($"                <div class='info-row'><strong>傳　　真：</strong>{fax}</div>");
+            
+            html.AppendLine("            </div>");
+            
+            // 中間：公司名稱和報表標題（置中顯示）
+            html.AppendLine("            <div class='company-center-section'>");
             html.AppendLine($"                <div class='company-name'>{configuration.CompanyName}</div>");
             html.AppendLine($"                <div class='report-title-inline'>{configuration.Title}</div>");
             html.AppendLine("            </div>");
             
-            // 右側：公司資訊
-            if (!string.IsNullOrEmpty(configuration.CompanyAddress) || !string.IsNullOrEmpty(configuration.CompanyPhone))
-            {
-                html.AppendLine("            <div class='company-info'>");
-                if (!string.IsNullOrEmpty(configuration.CompanyAddress))
-                    html.AppendLine($"                地址：{configuration.CompanyAddress}<br>");
-                if (!string.IsNullOrEmpty(configuration.CompanyPhone))
-                    html.AppendLine($"                電話：{configuration.CompanyPhone}");
-                html.AppendLine("            </div>");
-            }
+            // 右側：預留給公司Logo（目前為空）
+            html.AppendLine("            <div class='company-right-section'>");
+            // 未來可以在這裡添加公司Logo
+            // html.AppendLine($"                <img src='{logoUrl}' alt='Company Logo' class='company-logo'>");
+            html.AppendLine("            </div>");
             
             html.AppendLine("        </div>");
             return html.ToString();
+        }
+        
+        /// <summary>
+        /// 從額外資料中取得欄位值
+        /// </summary>
+        private string GetFieldValueFromAdditionalData(string key, Dictionary<string, object> additionalData)
+        {
+            if (additionalData.ContainsKey(key))
+            {
+                return additionalData[key]?.ToString() ?? "";
+            }
+            return "";
         }
         
         /// <summary>
@@ -438,7 +499,8 @@ namespace ERPCore2.Services.Reports
             
             foreach (var section in configuration.HeaderSections.OrderBy(s => s.Order))
             {
-                html.AppendLine("        <div class='report-section'>");
+                var sectionClass = section.HasBorder ? "report-section-bordered" : "report-section";
+                html.AppendLine($"        <div class='{sectionClass}'>");
                 
                 if (!string.IsNullOrEmpty(section.Title))
                 {
@@ -748,7 +810,7 @@ namespace ERPCore2.Services.Reports
             html.AppendLine("            <div class='content-area'>");
             
             // 公司標頭（現在包含報表標題）
-            html.AppendLine(GenerateCompanyHeader(configuration));
+            html.AppendLine(GenerateCompanyHeader(configuration, reportData));
             
             // 頁首區段
             html.AppendLine(GenerateHeaderSections(configuration, reportData));
@@ -843,7 +905,7 @@ namespace ERPCore2.Services.Reports
             
             // 第一部分：標頭（使用新的結構）
             firstPart.AppendLine("            <div class='content-area'>");
-            firstPart.AppendLine(GenerateCompanyHeader(configuration));
+            firstPart.AppendLine(GenerateCompanyHeader(configuration, reportData));
             firstPart.AppendLine(GenerateHeaderSections(configuration, reportData));
             firstPart.AppendLine("            </div>");
             firstPart.AppendLine("            <div class='footer-area'>");
@@ -852,7 +914,7 @@ namespace ERPCore2.Services.Reports
             
             // 第二部分：完整內容（使用新的結構）
             secondPart.AppendLine("            <div class='content-area'>");
-            secondPart.AppendLine(GenerateCompanyHeader(configuration));
+            secondPart.AppendLine(GenerateCompanyHeader(configuration, reportData));
             secondPart.AppendLine(GenerateHeaderSections(configuration, reportData));
             
             if (reportData.DetailEntities != null && reportData.DetailEntities.Any())
@@ -875,10 +937,10 @@ namespace ERPCore2.Services.Reports
         {
             return pageSize switch
             {
-                PageSize.ContinuousForm => ("9.5in", "5.5in"), // 中一刀報表紙
+                PageSize.ContinuousForm => ("8.46in", "5.5in"), // 中一刀報表紙
                 PageSize.A4 => ("8.27in", "11.69in"), // A4 紙張
                 PageSize.Letter => ("8.5in", "11in"), // Letter 紙張
-                _ => ("9.5in", "5.5in") // 預設為中一刀報表紙
+                _ => ("8.46in", "5.5in") // 預設為中一刀報表紙
             };
         }
     }
