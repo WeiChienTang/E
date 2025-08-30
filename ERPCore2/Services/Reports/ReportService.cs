@@ -1132,7 +1132,7 @@ namespace ERPCore2.Services.Reports
         {
             return pageSize switch
             {
-                PageSize.ContinuousForm => ("8.46in", "5.5in"), // 中一刀報表紙
+                PageSize.ContinuousForm => ("8.0in", "5.5in"), // 中一刀報表紙
                 PageSize.A4 => ("8.27in", "11.69in"), // A4 紙張
                 PageSize.Letter => ("8.5in", "11in"), // Letter 紙張
                 _ => ("8.46in", "5.5in") // 預設為中一刀報表紙
