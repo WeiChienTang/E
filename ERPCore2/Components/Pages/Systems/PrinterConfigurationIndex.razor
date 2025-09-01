@@ -1,0 +1,125 @@
+@page "/printerCconfigurations"
+@rendermode InteractiveServer
+@inject IPrinterConfigurationService PrinterConfigurationService
+@inject INotificationService NotificationService
+
+<GenericIndexPageComponent TEntity="PrinterConfiguration" 
+                      TService="IPrinterConfigurationService"
+                      Service="@PrinterConfigurationService"
+                      EntityBasePath="/printerCconfigurations"
+                      PageTitle="印表機設定"
+                      PageSubtitle="管理系統中的印表機連接設定"
+                      EntityName="印表機設定"
+                      BreadcrumbItems="@breadcrumbItems"
+                      FilterDefinitions="@filterDefinitions"
+                      ColumnDefinitions="@columnDefinitions"
+                      DataLoader="@LoadPrinterConfigurationsAsync"
+                      FilterApplier="@ApplyPrinterConfigurationFilters"
+                      GetEntityDisplayName="@(printer => printer.Name)"
+                      RequiredPermission="PrinterConfiguration.Read"
+                      OnAddClick="@modalHandler.ShowAddModalAsync"
+                      OnRowClick="@modalHandler.ShowEditModalAsync"
+                      @ref="indexComponent" />
+
+<PrinterConfigurationEditModalComponent IsVisible="@showEditModal"
+                          IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                          PrinterConfigurationId="@editingPrinterConfigurationId"
+                          OnPrinterConfigurationSaved="@modalHandler.OnEntitySavedAsync"
+                          OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<PrinterConfiguration, IPrinterConfigurationService> indexComponent = default!;
+    
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingPrinterConfigurationId = null;
+    
+    // Modal 處理器
+    private ModalHandler<PrinterConfiguration, GenericIndexPageComponent<PrinterConfiguration, IPrinterConfigurationService>> modalHandler = default!;
+    
+    // 欄位配置
+    private PrinterConfigurationFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<PrinterConfiguration, GenericIndexPageComponent<PrinterConfiguration, IPrinterConfigurationService>>(
+                id => editingPrinterConfigurationId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
+            await InitializeBreadcrumbsAsync();
+            
+            // 建立欄位配置（傳遞 NotificationService）
+            fieldConfiguration = new PrinterConfigurationFieldConfiguration(NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化印表機設定頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化印表機設定頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("系統管理", "/systems"),
+                new("印表機設定")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    // 載入印表機設定資料
+    private async Task<List<PrinterConfiguration>> LoadPrinterConfigurationsAsync()
+    {
+        try
+        {
+            return await PrinterConfigurationService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPrinterConfigurationsAsync), GetType(), additionalData: "載入印表機設定資料失敗");
+            await NotificationService.ShowErrorAsync("載入印表機設定資料失敗");
+            // 設定安全的預設值
+            return new List<PrinterConfiguration>();
+        }
+    }
+
+    private IQueryable<PrinterConfiguration> ApplyPrinterConfigurationFilters(SearchFilterModel searchModel, IQueryable<PrinterConfiguration> query)
+    {
+        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
+        if (fieldConfiguration == null)
+        {
+            // 如果配置未初始化，回傳基本排序的查詢
+            return query.OrderByDescending(p => p.IsDefault).ThenBy(p => p.Name);
+        }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyPrinterConfigurationFilters), GetType());
+    }
+}

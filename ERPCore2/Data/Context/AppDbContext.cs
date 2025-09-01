@@ -79,6 +79,7 @@ namespace ERPCore2.Data.Context
       // System Settings
       public DbSet<Company> Companies { get; set; }
       public DbSet<PaperSetting> PaperSettings { get; set; }
+      public DbSet<PrinterConfiguration> PrinterConfigurations { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
             {

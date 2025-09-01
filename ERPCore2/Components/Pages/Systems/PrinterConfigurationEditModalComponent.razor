@@ -1,0 +1,256 @@
+@* 可重用的印表機設定編輯組件 - 可在任何頁面中嵌入 *@
+@inject IPrinterConfigurationService PrinterConfigurationService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="PrinterConfiguration" 
+                          TService="IPrinterConfigurationService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@PrinterConfigurationId"
+                          Service="@PrinterConfigurationService"
+                          EntityName="印表機設定"
+                          EntityNamePlural="印表機設定"
+                          ModalTitle="@(PrinterConfigurationId.HasValue ? "編輯印表機設定" : "新增印表機設定")"
+                          Size="GenericEditModalComponent<PrinterConfiguration, IPrinterConfigurationService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          DataLoader="@LoadPrinterConfigurationData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(PrinterConfigurationId.HasValue ? "印表機設定更新成功" : "印表機設定新增成功")"
+                          SaveFailureMessage="印表機設定儲存失敗"
+                          RequiredPermission="PrinterConfiguration.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel" />
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? PrinterConfigurationId { get; set; }
+    [Parameter] public EventCallback<PrinterConfiguration> OnPrinterConfigurationSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<PrinterConfiguration, IPrinterConfigurationService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+
+    // ===== 生命週期 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            try
+            {
+                InitializeFormFields();
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnParametersSetAsync), GetType(),
+                    additionalData: "初始化印表機設定編輯組件時發生錯誤");
+                await NotificationService.ShowErrorAsync("初始化編輯表單時發生錯誤");
+            }
+        }
+    }
+
+    // ===== 事件處理 =====
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            if (OnPrinterConfigurationSaved.HasDelegate)
+            {
+                // 載入最新的印表機設定資料
+                if (PrinterConfigurationId.HasValue)
+                {
+                    var savedPrinterConfiguration = await PrinterConfigurationService.GetByIdAsync(PrinterConfigurationId.Value);
+                    if (savedPrinterConfiguration != null)
+                    {
+                        await OnPrinterConfigurationSaved.InvokeAsync(savedPrinterConfiguration);
+                    }
+                }
+            }
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(),
+                additionalData: "處理印表機設定儲存成功事件時發生錯誤");
+            await NotificationService.ShowErrorAsync("處理儲存結果時發生錯誤");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(),
+                additionalData: "處理印表機設定取消事件時發生錯誤");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+
+    // ===== 資料載入 =====
+    private async Task<PrinterConfiguration?> LoadPrinterConfigurationData()
+    {
+        try
+        {
+            if (!PrinterConfigurationId.HasValue)
+            {
+                var newPrinterConfiguration = new PrinterConfiguration();
+                
+                // 應用預填值
+                if (PrefilledValues != null)
+                {
+                    foreach (var kvp in PrefilledValues)
+                    {
+                        var property = typeof(PrinterConfiguration).GetProperty(kvp.Key);
+                        if (property != null && property.CanWrite && kvp.Value != null)
+                        {
+                            property.SetValue(newPrinterConfiguration, kvp.Value);
+                        }
+                    }
+                }
+                
+                return newPrinterConfiguration;
+            }
+            
+            return await PrinterConfigurationService.GetByIdAsync(PrinterConfigurationId.Value);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPrinterConfigurationData), GetType(),
+                additionalData: $"載入印表機設定資料失敗，ID: {PrinterConfigurationId}");
+            await NotificationService.ShowErrorAsync("載入印表機設定資料時發生錯誤");
+            return null;
+        }
+    }
+
+    // ===== 表單初始化 =====
+    private void InitializeFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(PrinterConfiguration.Name),
+                    Label = "印表機名稱",
+                    FieldType = FormFieldType.Text,
+                    IsRequired = true,
+                    MaxLength = 100,
+                    Order = 1,
+                    Placeholder = "請輸入印表機名稱",
+                    ValidationRules = new List<ValidationRule>
+                    {
+                        new ValidationRule { Type = ValidationType.Required, ErrorMessage = "印表機名稱為必填" },
+                        new ValidationRule { Type = ValidationType.MaxLength, Value = 100, ErrorMessage = "印表機名稱不可超過100個字元" }
+                    }
+                },
+                new()
+                {
+                    PropertyName = nameof(PrinterConfiguration.IpAddress),
+                    Label = "IP位址",
+                    FieldType = FormFieldType.Text,
+                    IsRequired = false,
+                    MaxLength = 50,
+                    Order = 2,
+                    Placeholder = "請輸入IP位址 (選填)",
+                    HelpText = "網路印表機需要填寫IP位址"
+                },
+                new()
+                {
+                    PropertyName = nameof(PrinterConfiguration.Port),
+                    Label = "連接埠",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    Order = 3,
+                    Placeholder = "請輸入連接埠 (選填)",
+                    HelpText = "網路印表機的連接埠，預設為9100",
+                    Min = 1,
+                    Max = 65535
+                },
+                new()
+                {
+                    PropertyName = nameof(PrinterConfiguration.IsDefault),
+                    Label = "設為預設印表機",
+                    FieldType = FormFieldType.Checkbox,
+                    IsRequired = false,
+                    Order = 4,
+                    HelpText = "設定後將成為系統預設印表機"
+                },
+            };
+        }
+        catch (Exception)
+        {
+            // 提供安全的後備值
+            formFields = new List<FormFieldDefinition>();
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    // ===== 公開方法 (供父組件調用) =====
+
+    /// <summary>
+    /// 開啟新增印表機設定 Modal
+    /// </summary>
+    public async Task ShowAddModal()
+    {
+        try
+        {
+            PrinterConfigurationId = null;
+            if (IsVisibleChanged.HasDelegate)
+            {
+                await IsVisibleChanged.InvokeAsync(true);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModal), GetType());
+            await NotificationService.ShowErrorAsync("開啟新增表單時發生錯誤");
+        }
+    }
+
+    /// <summary>
+    /// 開啟編輯印表機設定 Modal
+    /// </summary>
+    public async Task ShowEditModal(int printerConfigurationId)
+    {
+        try
+        {
+            PrinterConfigurationId = printerConfigurationId;
+            if (IsVisibleChanged.HasDelegate)
+            {
+                await IsVisibleChanged.InvokeAsync(true);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowEditModal), GetType(),
+                additionalData: $"印表機設定ID: {printerConfigurationId}");
+            await NotificationService.ShowErrorAsync("開啟編輯表單時發生錯誤");
+        }
+    }
+}
