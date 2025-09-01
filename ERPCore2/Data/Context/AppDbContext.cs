@@ -78,6 +78,7 @@ namespace ERPCore2.Data.Context
       
       // System Settings
       public DbSet<Company> Companies { get; set; }
+      public DbSet<PaperSetting> PaperSettings { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
             {
@@ -582,6 +583,32 @@ namespace ERPCore2.Data.Context
                         .WithMany()
                         .HasForeignKey(srd => srd.SalesDeliveryDetailId)
                         .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  // 紙張設定相關
+                  modelBuilder.Entity<PaperSetting>(entity =>
+                  {
+                        // 欄位對應
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                        // 為 decimal 屬性設定精確度和小數位數
+                        entity.Property(e => e.Width)
+                              .HasPrecision(8, 2); // 總共8位數，小數點後2位
+
+                        entity.Property(e => e.Height)
+                              .HasPrecision(8, 2); // 總共8位數，小數點後2位
+
+                        entity.Property(e => e.TopMargin)
+                              .HasPrecision(6, 2); // 總共6位數，小數點後2位
+
+                        entity.Property(e => e.BottomMargin)
+                              .HasPrecision(6, 2); // 總共6位數，小數點後2位
+
+                        entity.Property(e => e.LeftMargin)
+                              .HasPrecision(6, 2); // 總共6位數，小數點後2位
+
+                        entity.Property(e => e.RightMargin)
+                              .HasPrecision(6, 2); // 總共6位數，小數點後2位
                   });
             }
     }

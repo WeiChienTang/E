@@ -69,6 +69,7 @@ namespace ERPCore2.Data
                 new AddressTypeSeeder(),        // 地址類型  
                 new CustomerTypeSeeder(),       // 客戶類型
                 new SupplierTypeSeeder(),       // 廠商類型
+                new PaperSettingSeeder(),       // 紙張設定
                 new EmployeeSeeder(),
                 new EmployeePositionSeeder(),
                 new DepartmentSeeder(),

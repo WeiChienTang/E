@@ -1,0 +1,310 @@
+@* 可重用的紙張設定編輯組件 - 可在任何頁面中嵌入 *@
+@inject IPaperSettingService PaperSettingService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="PaperSetting" 
+                          TService="IPaperSettingService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@PaperSettingId"
+                          Service="@PaperSettingService"
+                          EntityName="紙張設定"
+                          EntityNamePlural="紙張設定"
+                          ModalTitle="@(PaperSettingId.HasValue ? "編輯紙張設定" : "新增紙張設定")"
+                          Size="GenericEditModalComponent<PaperSetting, IPaperSettingService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadPaperSettingData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(PaperSettingId.HasValue ? "紙張設定更新成功" : "紙張設定新增成功")"
+                          SaveFailureMessage="紙張設定儲存失敗"
+                          RequiredPermission="PaperSetting.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel" />
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? PaperSettingId { get; set; }
+    [Parameter] public EventCallback<PaperSetting> OnPaperSettingSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<PaperSetting, IPaperSettingService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    // ===== 生命週期 =====
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            InitializeFormFields();
+        }
+    }
+
+    // ===== 事件處理 =====
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            // 如果父組件需要知道紙張設定已儲存
+            if (OnPaperSettingSaved.HasDelegate && editModalComponent?.Entity != null)
+            {
+                await OnPaperSettingSaved.InvokeAsync(editModalComponent.Entity);
+            }
+
+            // 關閉 Modal
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+
+    // ===== 資料載入 =====
+    private async Task<PaperSetting?> LoadPaperSettingData()
+    {
+        try
+        {
+            if (!PaperSettingId.HasValue) 
+            {
+                // 新增模式：建立新的紙張設定實體（數值欄位預設為0）
+                var newPaperSetting = new PaperSetting
+                {
+                    Name = string.Empty,
+                    Code = await GeneratePaperSettingCodeAsync(),
+                    Status = EntityStatus.Active
+                };
+                
+                // 應用預填值
+                if (PrefilledValues != null)
+                {
+                    foreach (var kvp in PrefilledValues)
+                    {
+                        var property = typeof(PaperSetting).GetProperty(kvp.Key);
+                        if (property != null && property.CanWrite && kvp.Value != null)
+                        {
+                            try
+                            {
+                                // 轉換值的類型
+                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
+                                property.SetValue(newPaperSetting, convertedValue);
+                            }
+                            catch (Exception)
+                            {
+                                // 忽略轉換失敗的值
+                            }
+                        }
+                    }
+                }
+                
+                return newPaperSetting;
+            }
+
+            var paperSetting = await PaperSettingService.GetByIdAsync(PaperSettingId.Value);            
+            
+            if (paperSetting == null)
+            {
+                // 如果找不到紙張設定，建立新的預設紙張設定
+                return new PaperSetting
+                {
+                    Status = EntityStatus.Active
+                };
+            }
+            return paperSetting;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入紙張設定資料時發生錯誤：{ex.Message}");
+            
+            // 設定安全的預設值，確保程式不會崩潰
+            return new PaperSetting
+            {
+                Code = "ERROR",
+                Name = "ERROR",
+                Status = EntityStatus.Active
+            };
+        }
+    }
+
+    // ===== 表單初始化 =====
+    private void InitializeFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                // 基本資訊區段
+                new()
+                {
+                    PropertyName = nameof(PaperSetting.Code),
+                    Label = "紙張代碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入紙張代碼",
+                    IsRequired = true,
+                    HelpText = "紙張的唯一識別代碼，新增時系統會自動產生，也可手動修改"
+                },
+                new()
+                {
+                    PropertyName = nameof(PaperSetting.Name),
+                    Label = "紙張名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入紙張名稱",
+                    IsRequired = true,
+                    HelpText = "紙張的正式名稱，例如：A4、A3、Letter 等"
+                },
+                
+                new()
+                {
+                    PropertyName = nameof(PaperSetting.Width),
+                    Label = "寬度 (cm)",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入紙張寬度",
+                    IsRequired = true,
+                    HelpText = "紙張寬度，單位為厘米 (cm)，例如 A4 為 21.0cm",
+                },
+                new()
+                {
+                    PropertyName = nameof(PaperSetting.Height),
+                    Label = "高度 (cm)",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入紙張高度",
+                    IsRequired = true,
+                    HelpText = "紙張高度，單位為厘米 (cm)，例如 A4 為 29.7cm",
+                },
+                new()
+                {
+                    PropertyName = nameof(PaperSetting.TopMargin),
+                    Label = "上邊距 (cm)",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入上邊距",
+                    IsRequired = true,
+                    HelpText = "紙張上邊距，單位為厘米 (cm)，預設為 0cm",
+                },
+                new()
+                {
+                    PropertyName = nameof(PaperSetting.BottomMargin),
+                    Label = "下邊距 (cm)",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入下邊距",
+                    IsRequired = true,
+                    HelpText = "紙張下邊距，單位為厘米 (cm)，預設為 0cm",
+                },
+                new()
+                {
+                    PropertyName = nameof(PaperSetting.LeftMargin),
+                    Label = "左邊距 (cm)",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入左邊距",
+                    IsRequired = true,
+                    HelpText = "紙張左邊距，單位為厘米 (cm)，預設為 0cm",
+                },
+                new()
+                {
+                    PropertyName = nameof(PaperSetting.RightMargin),
+                    Label = "右邊距 (cm)",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入右邊距",
+                    IsRequired = true,
+                    HelpText = "紙張右邊距，單位為厘米 (cm)，預設為 0cm",
+                },
+                FormFieldConfigurationHelper.CreateRemarksField<PaperSetting>(
+                    label: "備註",
+                    placeholder: "請輸入備註",
+                    helpText: "其他需要補充的資訊",
+                    rows: 2,
+                    containerCssClass: "col-12"
+                )
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(PaperSetting.Code), "基本資訊" },
+                { nameof(PaperSetting.Name), "基本資訊" },
+                { nameof(PaperSetting.Width), "基本資訊" },
+                { nameof(PaperSetting.Height), "基本資訊" },
+                { nameof(PaperSetting.TopMargin), "基本資訊" },
+                { nameof(PaperSetting.BottomMargin), "基本資訊" },
+                { nameof(PaperSetting.LeftMargin), "基本資訊" },
+                { nameof(PaperSetting.RightMargin), "基本資訊" },
+                { nameof(PaperSetting.Remarks), "額外資料" }
+            };
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    // ===== 輔助方法 =====
+    private async Task<string> GeneratePaperSettingCodeAsync()
+    {
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            PaperSettingService,
+            "PAPER",
+            (service, code, excludeId) => service.IsPaperSettingCodeExistsAsync(code, excludeId)
+        );
+    }
+
+    // ===== 公開方法 (供父組件調用) =====
+
+    /// <summary>
+    /// 開啟新增紙張設定 Modal
+    /// </summary>
+    public async Task ShowAddModal()
+    {
+        PaperSettingId = null;
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(true);
+        }
+    }
+
+    /// <summary>
+    /// 開啟編輯紙張設定 Modal
+    /// </summary>
+    public async Task ShowEditModal(int paperSettingId)
+    {
+        PaperSettingId = paperSettingId;
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(true);
+        }
+    }
+}

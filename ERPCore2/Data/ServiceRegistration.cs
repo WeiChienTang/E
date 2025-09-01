@@ -122,6 +122,9 @@ namespace ERPCore2.Data
             // 公司設定服務
             services.AddScoped<ICompanyService, CompanyService>();
             
+            // 紙張設定服務
+            services.AddScoped<IPaperSettingService, PaperSettingService>();
+            
             // 報表服務
             services.AddScoped<IReportService, ReportService>();
             services.AddScoped<IPurchaseOrderReportService, PurchaseOrderReportService>();
