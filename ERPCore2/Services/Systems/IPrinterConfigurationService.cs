@@ -68,5 +68,12 @@ namespace ERPCore2.Services
         /// <param name="port">連接埠</param>
         /// <returns>驗證結果</returns>
         ServiceResult ValidatePort(int? port);
+
+        /// <summary>
+        /// 測試印表機連接並列印測試頁
+        /// </summary>
+        /// <param name="printerConfiguration">印表機配置</param>
+        /// <returns>測試結果</returns>
+        Task<ServiceResult> TestPrintAsync(PrinterConfiguration printerConfiguration);
     }
 }

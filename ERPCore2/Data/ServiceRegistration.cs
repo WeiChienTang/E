@@ -127,6 +127,7 @@ namespace ERPCore2.Data
             
             // 印表機設定服務
             services.AddScoped<IPrinterConfigurationService, PrinterConfigurationService>();
+            services.AddScoped<IPrinterTestService, PrinterTestService>();
             
             // 報表服務
             services.AddScoped<IReportService, ReportService>();

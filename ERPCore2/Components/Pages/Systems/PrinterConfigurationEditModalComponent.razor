@@ -1,5 +1,6 @@
 @* 可重用的印表機設定編輯組件 - 可在任何頁面中嵌入 *@
 @inject IPrinterConfigurationService PrinterConfigurationService
+@inject IPrinterTestService PrinterTestService
 @inject INotificationService NotificationService
 
 <GenericEditModalComponent TEntity="PrinterConfiguration" 
@@ -20,6 +21,9 @@
                           SaveSuccessMessage="@(PrinterConfigurationId.HasValue ? "印表機設定更新成功" : "印表機設定新增成功")"
                           SaveFailureMessage="印表機設定儲存失敗"
                           RequiredPermission="PrinterConfiguration.Read"
+                          ShowPrintButton="true"
+                          PrintButtonText="測試列印"
+                          OnPrint="@HandleTestPrint"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel" />
 
@@ -96,6 +100,70 @@
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(),
                 additionalData: "處理印表機設定取消事件時發生錯誤");
+        }
+    }
+
+    private async Task HandleTestPrint()
+    {
+        try
+        {
+            // 取得當前的印表機配置
+            var currentConfiguration = editModalComponent?.Entity;
+            if (currentConfiguration == null)
+            {
+                await NotificationService.ShowErrorAsync("請先填寫印表機配置資料");
+                return;
+            }
+
+            // 檢查必要欄位
+            if (string.IsNullOrWhiteSpace(currentConfiguration.Name))
+            {
+                await NotificationService.ShowErrorAsync("請先輸入印表機名稱");
+                return;
+            }
+
+            // 根據連接類型檢查必要的配置
+            if (currentConfiguration.ConnectionType == PrinterConnectionType.Network)
+            {
+                if (string.IsNullOrWhiteSpace(currentConfiguration.IpAddress))
+                {
+                    await NotificationService.ShowErrorAsync("網路印表機需要設定IP位址");
+                    return;
+                }
+
+                if (!currentConfiguration.Port.HasValue)
+                {
+                    await NotificationService.ShowErrorAsync("網路印表機需要設定連接埠");
+                    return;
+                }
+            }
+            else if (currentConfiguration.ConnectionType == PrinterConnectionType.USB)
+            {
+                if (string.IsNullOrWhiteSpace(currentConfiguration.UsbPort))
+                {
+                    await NotificationService.ShowWarningAsync("USB印表機未設定連接埠，將使用預設設定");
+                }
+            }
+
+            await NotificationService.ShowInfoAsync("正在測試印表機連接，請稍候...");
+
+            // 執行測試列印
+            var testResult = await PrinterTestService.TestPrintAsync(currentConfiguration);
+            
+            if (testResult.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("測試列印成功！");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"測試列印失敗：{testResult.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleTestPrint), GetType(),
+                additionalData: "執行測試列印時發生錯誤");
+            await NotificationService.ShowErrorAsync("測試列印時發生錯誤，請檢查印表機配置");
         }
     }
 

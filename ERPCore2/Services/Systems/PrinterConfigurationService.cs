@@ -14,14 +14,19 @@ namespace ERPCore2.Services
     /// </summary>
     public class PrinterConfigurationService : GenericManagementService<PrinterConfiguration>, IPrinterConfigurationService
     {
+        private readonly IPrinterTestService _printerTestService;
+
         public PrinterConfigurationService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<PrinterConfiguration>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<PrinterConfiguration>> logger,
+            IPrinterTestService? printerTestService = null) : base(contextFactory, logger)
         {
+            _printerTestService = printerTestService ?? new PrinterTestService(logger as ILogger<PrinterTestService>);
         }
 
         public PrinterConfigurationService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
+            _printerTestService = new PrinterTestService();
         }
 
         public override async Task<List<PrinterConfiguration>> GetAllAsync()
@@ -410,6 +415,34 @@ namespace ERPCore2.Services
                     Port = port 
                 });
                 return ServiceResult.Failure("連接埠驗證時發生錯誤");
+            }
+        }
+
+        public async Task<ServiceResult> TestPrintAsync(PrinterConfiguration printerConfiguration)
+        {
+            try
+            {
+                if (printerConfiguration == null)
+                    return ServiceResult.Failure("印表機配置不能為空");
+
+                // 驗證印表機配置
+                var validationResult = await ValidateAsync(printerConfiguration);
+                if (!validationResult.IsSuccess)
+                    return ServiceResult.Failure($"印表機配置無效: {validationResult.ErrorMessage}");
+
+                // 使用測試服務執行測試列印
+                var testResult = await _printerTestService.TestPrintAsync(printerConfiguration);
+                return testResult;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(TestPrintAsync), GetType(), _logger, new { 
+                    Method = nameof(TestPrintAsync),
+                    ServiceType = GetType().Name,
+                    PrinterId = printerConfiguration?.Id,
+                    PrinterName = printerConfiguration?.Name 
+                });
+                return ServiceResult.Failure("測試列印時發生錯誤");
             }
         }
     }
