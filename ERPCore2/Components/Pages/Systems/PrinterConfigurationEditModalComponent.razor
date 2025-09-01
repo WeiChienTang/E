@@ -167,12 +167,39 @@
                 },
                 new()
                 {
+                    PropertyName = nameof(PrinterConfiguration.ConnectionType),
+                    Label = "連接方式",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Order = 2,
+                    Options = Enum.GetValues(typeof(PrinterConnectionType))
+                        .Cast<PrinterConnectionType>()
+                        .Select(e => new SelectOption
+                        {
+                            Text = GetConnectionTypeDisplayName(e),
+                            Value = ((int)e).ToString()
+                        })
+                        .ToList()
+                },
+                new()
+                {
+                    PropertyName = nameof(PrinterConfiguration.UsbPort),
+                    Label = "USB連接埠",
+                    FieldType = FormFieldType.Text,
+                    IsRequired = false,
+                    MaxLength = 50,
+                    Order = 3,
+                    Placeholder = "請輸入USB連接埠 (選填)",
+                    HelpText = "網路印表機需要填寫USB連接埠"
+                },
+                new()
+                {
                     PropertyName = nameof(PrinterConfiguration.IpAddress),
                     Label = "IP位址",
                     FieldType = FormFieldType.Text,
                     IsRequired = false,
                     MaxLength = 50,
-                    Order = 2,
+                    Order = 4,
                     Placeholder = "請輸入IP位址 (選填)",
                     HelpText = "網路印表機需要填寫IP位址"
                 },
@@ -182,7 +209,7 @@
                     Label = "連接埠",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    Order = 3,
+                    Order = 5,
                     Placeholder = "請輸入連接埠 (選填)",
                     HelpText = "網路印表機的連接埠，預設為9100",
                     Min = 1,
@@ -194,7 +221,7 @@
                     Label = "設為預設印表機",
                     FieldType = FormFieldType.Checkbox,
                     IsRequired = false,
-                    Order = 4,
+                    Order = 6,
                     HelpText = "設定後將成為系統預設印表機"
                 },
             };
@@ -253,4 +280,19 @@
             await NotificationService.ShowErrorAsync("開啟編輯表單時發生錯誤");
         }
     }
+
+        /// <summary>
+        /// 取得印表機連接方式的顯示名稱
+        /// </summary>
+        /// <param name="connectionType">連接方式枚舉</param>
+        /// <returns>顯示名稱</returns>
+        private static string GetConnectionTypeDisplayName(PrinterConnectionType connectionType)
+        {
+            return connectionType switch
+            {
+                PrinterConnectionType.Network => "網路連接",
+                PrinterConnectionType.USB => "USB 連接",
+                _ => connectionType.ToString()
+            };
+        }
 }

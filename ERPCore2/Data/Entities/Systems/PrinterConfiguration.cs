@@ -30,6 +30,20 @@ namespace ERPCore2.Data.Entities
         public int? Port { get; set; }
 
         /// <summary>
+        /// 連接方式（USB、網路等）
+        /// </summary>
+        [Required(ErrorMessage = "連接方式為必填")]
+        [Display(Name = "連接方式")]
+        public PrinterConnectionType ConnectionType { get; set; } = PrinterConnectionType.Network;
+
+        /// <summary>
+        /// USB 連接埠名稱或裝置路徑（適用於USB連接）
+        /// </summary>
+        [MaxLength(100, ErrorMessage = "USB連接埠名稱不可超過100個字元")]
+        [Display(Name = "USB連接埠")]
+        public string? UsbPort { get; set; }
+
+        /// <summary>
         /// 是否為預設印表機
         /// </summary>
         [Display(Name = "預設印表機")]

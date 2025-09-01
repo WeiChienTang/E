@@ -33,10 +33,49 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "印表機名稱",
                             FilterPlaceholder = "輸入印表機名稱搜尋",
                             TableOrder = 1,
-                            FilterOrder = 1,
                             HeaderStyle = "width: 200px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PrinterConfiguration.Name), p => p.Name)
+                        }
+                    },
+                    {
+                        nameof(PrinterConfiguration.ConnectionType),
+                        new FieldDefinition<PrinterConfiguration>
+                        {
+                            PropertyName = nameof(PrinterConfiguration.ConnectionType),
+                            DisplayName = "連接方式",
+                            FilterType = SearchFilterType.Select,
+                            TableOrder = 2,
+                            HeaderStyle = "width: 120px;",
+                            Options = Enum.GetValues(typeof(PrinterConnectionType))
+                                .Cast<PrinterConnectionType>()
+                                .Select(e => new SelectOption
+                                {
+                                    Text = GetConnectionTypeDisplayName(e),
+                                    Value = ((int)e).ToString()
+                                })
+                                .ToList()
+                        }
+                    },
+                    {
+                        nameof(PrinterConfiguration.UsbPort),
+                        new FieldDefinition<PrinterConfiguration>
+                        {
+                            PropertyName = nameof(PrinterConfiguration.UsbPort),
+                            DisplayName = "USB連接埠",
+                            FilterPlaceholder = "輸入USB連接埠搜尋",
+                            TableOrder = 3,
+                            HeaderStyle = "width: 150px;",
+                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
+                                model, query, nameof(PrinterConfiguration.UsbPort), p => p.UsbPort ?? string.Empty),
+                            CustomTemplate = (data) => (RenderFragment)((builder) =>
+                            {
+                                if (data is PrinterConfiguration printer)
+                                {
+                                    var value = string.IsNullOrWhiteSpace(printer.UsbPort) ? "-" : printer.UsbPort;
+                                    builder.AddContent(0, value);
+                                }
+                            })
                         }
                     },
                     {
@@ -46,8 +85,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PrinterConfiguration.IpAddress),
                             DisplayName = "IP位址",
                             FilterPlaceholder = "輸入IP位址搜尋",
-                            TableOrder = 2,
-                            FilterOrder = 2,
+                            TableOrder = 4,
                             HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PrinterConfiguration.IpAddress), p => p.IpAddress ?? string.Empty),
@@ -61,29 +99,7 @@ namespace ERPCore2.FieldConfiguration
                             })
                         }
                     },
-                    {
-                        nameof(PrinterConfiguration.Port),
-                        new FieldDefinition<PrinterConfiguration>
-                        {
-                            PropertyName = nameof(PrinterConfiguration.Port),
-                            DisplayName = "連接埠",
-                            FilterType = SearchFilterType.Number,
-                            FilterPlaceholder = "輸入連接埠搜尋",
-                            TableOrder = 3,
-                            FilterOrder = 3,
-                            HeaderStyle = "width: 120px;",
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(PrinterConfiguration.Port), p => p.Port),
-                            CustomTemplate = (data) => (RenderFragment)((builder) =>
-                            {
-                                if (data is PrinterConfiguration printer)
-                                {
-                                    var value = printer.Port?.ToString() ?? "-";
-                                    builder.AddContent(0, value);
-                                }
-                            })
-                        }
-                    },
+
                     {
                         nameof(PrinterConfiguration.IsDefault),
                         new FieldDefinition<PrinterConfiguration>
@@ -91,8 +107,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PrinterConfiguration.IsDefault),
                             DisplayName = "預設印表機",
                             FilterType = SearchFilterType.Select,
-                            TableOrder = 4,
-                            FilterOrder = 4,
+                            TableOrder = 5,
                             HeaderStyle = "width: 120px;",
                             Options = new List<SelectOption>
                             {
@@ -145,6 +160,21 @@ namespace ERPCore2.FieldConfiguration
 
                 return new Dictionary<string, FieldDefinition<PrinterConfiguration>>();
             }
+        }
+
+        /// <summary>
+        /// 取得印表機連接方式的顯示名稱
+        /// </summary>
+        /// <param name="connectionType">連接方式枚舉</param>
+        /// <returns>顯示名稱</returns>
+        private static string GetConnectionTypeDisplayName(PrinterConnectionType connectionType)
+        {
+            return connectionType switch
+            {
+                PrinterConnectionType.Network => "網路連接",
+                PrinterConnectionType.USB => "USB 連接",
+                _ => connectionType.ToString()
+            };
         }
 
         protected override Func<IQueryable<PrinterConfiguration>, IQueryable<PrinterConfiguration>> GetDefaultSort()

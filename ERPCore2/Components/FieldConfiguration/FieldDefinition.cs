@@ -50,15 +50,26 @@ namespace ERPCore2.FieldConfiguration
         /// </summary>
         public bool ShowInFilter { get; set; } = true;
         
+        private int _tableOrder = 0;
+        private int? _filterOrder = null;
+        
         /// <summary>
         /// 表格欄位排序
         /// </summary>
-        public int TableOrder { get; set; } = 0;
+        public int TableOrder 
+        { 
+            get => _tableOrder; 
+            set => _tableOrder = value; 
+        }
         
         /// <summary>
-        /// 篩選器排序
+        /// 篩選器排序（如果未設定，則使用 TableOrder 的值）
         /// </summary>
-        public int FilterOrder { get; set; } = 0;
+        public int FilterOrder 
+        { 
+            get => _filterOrder ?? _tableOrder; 
+            set => _filterOrder = value; 
+        }
         
         /// <summary>
         /// 下拉選單選項（用於 Select 類型）
