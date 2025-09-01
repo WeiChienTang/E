@@ -63,13 +63,6 @@ namespace ERPCore2.Services
         ServiceResult ValidateIpAddress(string ipAddress);
 
         /// <summary>
-        /// 驗證連接埠是否在有效範圍內
-        /// </summary>
-        /// <param name="port">連接埠</param>
-        /// <returns>驗證結果</returns>
-        ServiceResult ValidatePort(int? port);
-
-        /// <summary>
         /// 測試印表機連接並列印測試頁
         /// </summary>
         /// <param name="printerConfiguration">印表機配置</param>

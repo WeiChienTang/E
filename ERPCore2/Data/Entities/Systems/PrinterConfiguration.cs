@@ -24,12 +24,6 @@ namespace ERPCore2.Data.Entities
         public string? IpAddress { get; set; }
 
         /// <summary>
-        /// 連接埠（適用於網路印表機）
-        /// </summary>
-        [Display(Name = "連接埠")]
-        public int? Port { get; set; }
-
-        /// <summary>
         /// 連接方式（USB、網路等）
         /// </summary>
         [Required(ErrorMessage = "連接方式為必填")]

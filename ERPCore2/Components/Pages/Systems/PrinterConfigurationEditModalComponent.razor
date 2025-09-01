@@ -130,12 +130,6 @@
                     await NotificationService.ShowErrorAsync("網路印表機需要設定IP位址");
                     return;
                 }
-
-                if (!currentConfiguration.Port.HasValue)
-                {
-                    await NotificationService.ShowErrorAsync("網路印表機需要設定連接埠");
-                    return;
-                }
             }
             else if (currentConfiguration.ConnectionType == PrinterConnectionType.USB)
             {
@@ -273,23 +267,11 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(PrinterConfiguration.Port),
-                    Label = "連接埠",
-                    FieldType = FormFieldType.Number,
-                    IsRequired = false,
-                    Order = 5,
-                    Placeholder = "請輸入連接埠 (選填)",
-                    HelpText = "網路印表機的連接埠，預設為9100",
-                    Min = 1,
-                    Max = 65535
-                },
-                new()
-                {
                     PropertyName = nameof(PrinterConfiguration.IsDefault),
                     Label = "設為預設印表機",
                     FieldType = FormFieldType.Checkbox,
                     IsRequired = false,
-                    Order = 6,
+                    Order = 5,
                     HelpText = "設定後將成為系統預設印表機"
                 },
             };

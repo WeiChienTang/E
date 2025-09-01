@@ -106,18 +106,6 @@ namespace ERPCore2.Services
                         errors.Add("IP位址已存在");
                 }
 
-                // 驗證連接埠
-                if (entity.Port.HasValue)
-                {
-                    var portValidation = ValidatePort(entity.Port);
-                    if (!portValidation.IsSuccess)
-                        errors.Add(portValidation.ErrorMessage);
-                }
-
-                // 網路印表機必須有IP位址
-                if (!string.IsNullOrWhiteSpace(entity.IpAddress) && !entity.Port.HasValue)
-                    errors.Add("網路印表機需要指定連接埠");
-
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));
 
@@ -388,33 +376,6 @@ namespace ERPCore2.Services
                     IpAddress = ipAddress 
                 });
                 return ServiceResult.Failure("IP位址驗證時發生錯誤");
-            }
-        }
-
-        public ServiceResult ValidatePort(int? port)
-        {
-            try
-            {
-                if (!port.HasValue)
-                    return ServiceResult.Success();
-
-                if (port.Value <= 0 || port.Value > 65535)
-                    return ServiceResult.Failure("連接埠必須在1-65535範圍內");
-
-                // 檢查是否為常用的系統保留埠（可選擇性警告）
-                if (port.Value < 1024)
-                    return ServiceResult.Failure("建議不要使用系統保留埠（1-1023）");
-
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(ValidatePort), GetType(), _logger, new { 
-                    Method = nameof(ValidatePort),
-                    ServiceType = GetType().Name,
-                    Port = port 
-                });
-                return ServiceResult.Failure("連接埠驗證時發生錯誤");
             }
         }
 

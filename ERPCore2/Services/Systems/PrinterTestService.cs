@@ -106,7 +106,6 @@ namespace ERPCore2.Services
             if (printerConfiguration.ConnectionType == PrinterConnectionType.Network)
             {
                 sb.AppendLine($"IP位址: {printerConfiguration.IpAddress}");
-                sb.AppendLine($"連接埠: {printerConfiguration.Port}");
             }
             else if (printerConfiguration.ConnectionType == PrinterConnectionType.USB)
             {
@@ -139,18 +138,18 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(printerConfiguration.IpAddress))
                     return ServiceResult.Failure("網路印表機必須設定IP位址");
 
-                if (!printerConfiguration.Port.HasValue)
-                    return ServiceResult.Failure("網路印表機必須設定連接埠");
-
                 var testContent = GenerateTestPageContent(printerConfiguration);
                 
                 // 將測試內容轉換為印表機可理解的格式 (簡單的文字格式)
                 var printData = Encoding.UTF8.GetBytes(testContent);
 
+                // 使用預設印表機連接埠 9100
+                int port = 9100;
+
                 using var client = new TcpClient();
                 
                 // 設定連接超時時間
-                var connectTask = client.ConnectAsync(printerConfiguration.IpAddress, printerConfiguration.Port.Value);
+                var connectTask = client.ConnectAsync(printerConfiguration.IpAddress, port);
                 var timeoutTask = Task.Delay(5000); // 5秒超時
 
                 var completedTask = await Task.WhenAny(connectTask, timeoutTask);
@@ -181,8 +180,7 @@ namespace ERPCore2.Services
                 {
                     Method = nameof(TestNetworkPrintAsync),
                     ServiceType = GetType().Name,
-                    IpAddress = printerConfiguration.IpAddress,
-                    Port = printerConfiguration.Port
+                    IpAddress = printerConfiguration.IpAddress
                 });
                 return ServiceResult.Failure("網路列印測試失敗");
             }
@@ -262,21 +260,18 @@ namespace ERPCore2.Services
                 if (reply.Status != IPStatus.Success)
                     return ServiceResult.Failure($"無法ping通印表機IP: {printerConfiguration.IpAddress}");
 
-                // 如果有設定連接埠，檢查埠是否開放
-                if (printerConfiguration.Port.HasValue)
-                {
-                    using var client = new TcpClient();
-                    var connectTask = client.ConnectAsync(printerConfiguration.IpAddress, printerConfiguration.Port.Value);
-                    var timeoutTask = Task.Delay(3000);
+                // 檢查預設印表機連接埠 9100 是否開放
+                using var client = new TcpClient();
+                var connectTask = client.ConnectAsync(printerConfiguration.IpAddress, 9100);
+                var timeoutTask = Task.Delay(3000);
 
-                    var completedTask = await Task.WhenAny(connectTask, timeoutTask);
-                    
-                    if (completedTask == timeoutTask)
-                        return ServiceResult.Failure($"連接埠 {printerConfiguration.Port} 無回應");
+                var completedTask = await Task.WhenAny(connectTask, timeoutTask);
+                
+                if (completedTask == timeoutTask)
+                    return ServiceResult.Failure("印表機連接埠 9100 無回應");
 
-                    if (!client.Connected)
-                        return ServiceResult.Failure($"無法連接到埠 {printerConfiguration.Port}");
-                }
+                if (!client.Connected)
+                    return ServiceResult.Failure("無法連接到印表機連接埠 9100");
 
                 return ServiceResult.Success();
             }
@@ -286,8 +281,7 @@ namespace ERPCore2.Services
                 {
                     Method = nameof(CheckNetworkConnectionAsync),
                     ServiceType = GetType().Name,
-                    IpAddress = printerConfiguration.IpAddress,
-                    Port = printerConfiguration.Port
+                    IpAddress = printerConfiguration.IpAddress
                 });
                 return ServiceResult.Failure("檢查網路連接時發生錯誤");
             }
