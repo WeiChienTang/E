@@ -1,11 +1,10 @@
 .nav-dropdown-item {
     display: flex;
     align-items: center;
-    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    padding: 0.5rem 1rem 0.5rem 2.25rem;
     color: var(--primary-white);
     text-decoration: none;
     transition: all 0.2s ease;
-    font-size: 0.85rem;
     background-color: transparent;
     border: none;
     border-radius: var(--radius-md);
