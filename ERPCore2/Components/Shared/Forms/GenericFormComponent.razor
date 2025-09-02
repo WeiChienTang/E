@@ -514,7 +514,15 @@
         // 選項
         if (field.Options != null)
         {
-            var currentValue = GetPropertyValue(Model, field.PropertyName)?.ToString();
+            var currentValueObj = GetPropertyValue(Model, field.PropertyName);
+            var currentValue = currentValueObj?.ToString();
+            
+            // 特別處理枚舉類型，確保比較值正確
+            if (currentValueObj != null && currentValueObj.GetType().IsEnum)
+            {
+                currentValue = ((int)currentValueObj).ToString();
+            }
+            
             var optionSequence = sequence + 20;
             
             foreach (var option in field.Options)
@@ -1131,6 +1139,24 @@
 
         try
         {
+            // 特別處理枚舉類型
+            if (underlyingType.IsEnum)
+            {
+                if (value is string stringValue)
+                {
+                    // 嘗試轉換字串為枚舉（支援數字字串和名稱字串）
+                    if (int.TryParse(stringValue, out var intValue))
+                    {
+                        return Enum.ToObject(underlyingType, intValue);
+                    }
+                    return Enum.Parse(underlyingType, stringValue, true);
+                }
+                else if (value is int intValue)
+                {
+                    return Enum.ToObject(underlyingType, intValue);
+                }
+            }
+            
             return Convert.ChangeType(value, underlyingType);
         }
         catch

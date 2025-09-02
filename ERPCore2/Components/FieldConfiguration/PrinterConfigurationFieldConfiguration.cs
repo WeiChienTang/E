@@ -54,7 +54,14 @@ namespace ERPCore2.FieldConfiguration
                                     Text = GetConnectionTypeDisplayName(e),
                                     Value = ((int)e).ToString()
                                 })
-                                .ToList()
+                                .ToList(),
+                            CustomTemplate = (data) => (RenderFragment)((builder) =>
+                            {
+                                if (data is PrinterConfiguration printer)
+                                {
+                                    builder.AddContent(0, GetConnectionTypeDisplayName(printer.ConnectionType));
+                                }
+                            })
                         }
                     },
                     {

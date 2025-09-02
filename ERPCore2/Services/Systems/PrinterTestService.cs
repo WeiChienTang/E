@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
+using System.Management;
+using System.Runtime.InteropServices;
 
 namespace ERPCore2.Services
 {
@@ -14,6 +16,39 @@ namespace ERPCore2.Services
     public class PrinterTestService : IPrinterTestService
     {
         private readonly ILogger<PrinterTestService>? _logger;
+
+        // Windows API 宣告
+        [DllImport("winspool.drv", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool OpenPrinter(string printerName, out IntPtr phPrinter, IntPtr pDefault);
+
+        [DllImport("winspool.drv", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool ClosePrinter(IntPtr hPrinter);
+
+        [DllImport("winspool.drv", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool StartDocPrinter(IntPtr hPrinter, int level, ref DOC_INFO_1 docInfo);
+
+        [DllImport("winspool.drv", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool EndDocPrinter(IntPtr hPrinter);
+
+        [DllImport("winspool.drv", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool StartPagePrinter(IntPtr hPrinter);
+
+        [DllImport("winspool.drv", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool EndPagePrinter(IntPtr hPrinter);
+
+        [DllImport("winspool.drv", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool WritePrinter(IntPtr hPrinter, byte[] pBytes, int dwCount, out int dwWritten);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct DOC_INFO_1
+        {
+            [MarshalAs(UnmanagedType.LPTStr)]
+            public string DocName;
+            [MarshalAs(UnmanagedType.LPTStr)]
+            public string OutputFile;
+            [MarshalAs(UnmanagedType.LPTStr)]
+            public string DataType;
+        }
 
         public PrinterTestService(ILogger<PrinterTestService>? logger = null)
         {
@@ -140,35 +175,76 @@ namespace ERPCore2.Services
 
                 var testContent = GenerateTestPageContent(printerConfiguration);
                 
-                // 將測試內容轉換為印表機可理解的格式 (簡單的文字格式)
-                var printData = Encoding.UTF8.GetBytes(testContent);
+                // 嘗試不同的印表機格式，針對常見印表機優化順序
+                var printDataFormats = new Dictionary<string, byte[]>
+                {
+                    { "PCL", GeneratePclData(testContent) },
+                    { "Plain Text with FF", GeneratePlainTextData(testContent) },
+                    { "ESC/POS", GenerateEscPosData(testContent) }
+                };
 
                 // 使用預設印表機連接埠 9100
                 int port = 9100;
+                bool printSuccess = false;
+                string lastError = "";
 
-                using var client = new TcpClient();
-                
-                // 設定連接超時時間
-                var connectTask = client.ConnectAsync(printerConfiguration.IpAddress, port);
-                var timeoutTask = Task.Delay(5000); // 5秒超時
+                foreach (var format in printDataFormats)
+                {
+                    try
+                    {
+                        using var client = new TcpClient();
+                        
+                        // 設定連接超時時間
+                        var connectTask = client.ConnectAsync(printerConfiguration.IpAddress, port);
+                        var timeoutTask = Task.Delay(5000); // 5秒超時
 
-                var completedTask = await Task.WhenAny(connectTask, timeoutTask);
-                
-                if (completedTask == timeoutTask)
-                    return ServiceResult.Failure("連接印表機超時，請檢查網路連接");
+                        var completedTask = await Task.WhenAny(connectTask, timeoutTask);
+                        
+                        if (completedTask == timeoutTask)
+                        {
+                            lastError = "連接印表機超時，請檢查網路連接";
+                            continue;
+                        }
 
-                if (!client.Connected)
-                    return ServiceResult.Failure("無法連接到印表機");
+                        if (!client.Connected)
+                        {
+                            lastError = "無法連接到印表機";
+                            continue;
+                        }
 
-                // 發送測試資料
-                using var stream = client.GetStream();
-                await stream.WriteAsync(printData, 0, printData.Length);
-                await stream.FlushAsync();
+                        // 發送測試資料
+                        using var stream = client.GetStream();
+                        await stream.WriteAsync(format.Value, 0, format.Value.Length);
+                        await stream.FlushAsync();
 
-                // 給印表機一些時間處理資料
-                await Task.Delay(1000);
+                        // 給印表機一些時間處理資料
+                        await Task.Delay(2000);
 
-                return ServiceResult.Success();
+                        _logger?.LogInformation($"已使用 {format.Key} 格式發送 {format.Value.Length} 位元組的列印資料到 {printerConfiguration.IpAddress}:9100");
+                        
+                        printSuccess = true;
+                        break; // 成功發送，跳出迴圈
+                    }
+                    catch (SocketException ex)
+                    {
+                        lastError = $"網路連接錯誤: {ex.Message}";
+                        _logger?.LogWarning($"使用 {format.Key} 格式列印失敗: {ex.Message}");
+                    }
+                    catch (Exception ex)
+                    {
+                        lastError = $"發送 {format.Key} 格式時發生錯誤: {ex.Message}";
+                        _logger?.LogWarning($"使用 {format.Key} 格式列印失敗: {ex.Message}");
+                    }
+                }
+
+                if (printSuccess)
+                {
+                    return ServiceResult.Success();
+                }
+                else
+                {
+                    return ServiceResult.Failure($"所有格式都嘗試失敗。最後錯誤: {lastError}");
+                }
             }
             catch (SocketException ex)
             {
@@ -187,48 +263,107 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 測試USB印表機列印
+        /// 測試USB印表機列印 (改進版本)
         /// </summary>
         private async Task<ServiceResult> TestUsbPrintAsync(PrinterConfiguration printerConfiguration)
         {
             try
             {
-                // USB印表機的實作會依賴於作業系統和印表機驅動程式
-                // 在Windows環境下，通常需要使用Windows Print Spooler API
-                // 這裡提供一個基本的實作框架
-
                 var testContent = GenerateTestPageContent(printerConfiguration);
-
-                // 在實際環境中，這裡會使用Windows Print API或第三方印表機程式庫
-                // 例如: System.Drawing.Printing.PrintDocument
-                
-                // 模擬USB列印過程
-                await Task.Delay(1000); // 模擬列印時間
-
-                // 檢查USB連接埠是否存在（簡化版本）
                 var usbPort = printerConfiguration.UsbPort ?? "LPT1";
                 
-                try
-                {
-                    // 嘗試寫入到USB埠（這是一個簡化的範例）
-                    // 實際實作中需要使用適當的印表機API
-                    
-                    // 在Windows中，您可能需要使用:
-                    // - System.Drawing.Printing.PrintDocument
-                    // - Win32 API (CreateFile, WriteFile)
-                    // - 第三方程式庫如 RawPrinterHelper
+                _logger?.LogInformation($"嘗試使用 USB 埠 '{usbPort}' 進行列印測試");
 
-                    _logger?.LogInformation($"模擬向USB埠 {usbPort} 發送測試頁");
+                // 首先嘗試找到使用指定埠的印表機
+                var printer = FindPrinterByPort(usbPort);
+                
+                if (printer != null)
+                {
+                    _logger?.LogInformation($"找到印表機 '{printer.Name}' 使用埠 '{printer.PortName}'");
                     
-                    return ServiceResult.Success();
+                    // 方法 1: 優先使用 System.Drawing.Printing (更可靠)
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    {
+                        var systemDrawingResult = await PrintUsingSystemDrawing(printer.Name, testContent);
+                        if (systemDrawingResult.IsSuccess)
+                        {
+                            _logger?.LogInformation("使用 System.Drawing.Printing 列印成功");
+                            return ServiceResult.Success();
+                        }
+                        else
+                        {
+                            _logger?.LogWarning($"System.Drawing.Printing 失敗: {systemDrawingResult.ErrorMessage}");
+                        }
+                    }
+                    
+                    // 方法 2: 如果方法 1 失敗，使用改進的 Windows API
+                    // 使用純文字格式，讓驅動程式處理
+                    var textData = Encoding.UTF8.GetBytes(testContent);
+                    var apiResult = await PrintUsingWindowsApi(printer.Name, textData, "ERP 測試頁");
+                    
+                    if (apiResult.IsSuccess)
+                    {
+                        _logger?.LogInformation("使用改進的 Windows API 列印成功");
+                        return ServiceResult.Success();
+                    }
+                    else
+                    {
+                        _logger?.LogWarning($"Windows API 失敗: {apiResult.ErrorMessage}");
+                    }
+                    
+                    return ServiceResult.Failure($"所有列印方法都失敗。最後錯誤: {apiResult.ErrorMessage}");
                 }
-                catch (UnauthorizedAccessException)
+                else
                 {
-                    return ServiceResult.Failure($"無法存取USB埠 {usbPort}，請檢查權限設定");
-                }
-                catch (DirectoryNotFoundException)
-                {
-                    return ServiceResult.Failure($"找不到USB埠 {usbPort}，請檢查印表機連接");
+                    // 如果找不到指定埠的印表機，列出所有可用印表機供參考
+                    var availablePrinters = GetAvailablePrinters();
+                    var usbPrinters = availablePrinters.Where(p => 
+                        p.PortName.StartsWith("USB", StringComparison.OrdinalIgnoreCase) ||
+                        p.PortName.StartsWith("LPT", StringComparison.OrdinalIgnoreCase) ||
+                        p.PortName.StartsWith("COM", StringComparison.OrdinalIgnoreCase)).ToList();
+
+                    if (usbPrinters.Any())
+                    {
+                        var suggestedPorts = string.Join(", ", usbPrinters.Select(p => $"'{p.PortName}' ({p.Name})"));
+                        _logger?.LogWarning($"找不到使用埠 '{usbPort}' 的印表機。可用的本機印表機埠: {suggestedPorts}");
+                        return ServiceResult.Failure($"找不到使用埠 '{usbPort}' 的印表機。可用埠: {suggestedPorts}");
+                    }
+                    else
+                    {
+                        // 嘗試直接列印到預設印表機
+                        var defaultPrinter = availablePrinters.FirstOrDefault(p => p.IsDefault);
+                        if (defaultPrinter != null)
+                        {
+                            _logger?.LogInformation($"找不到指定埠的印表機，嘗試使用預設印表機: {defaultPrinter.Name}");
+                            
+                            // 優先使用 System.Drawing.Printing
+                            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                            {
+                                var result = await PrintUsingSystemDrawing(defaultPrinter.Name, testContent);
+                                if (result.IsSuccess)
+                                {
+                                    return ServiceResult.Success();
+                                }
+                            }
+                            
+                            // 備用方案：使用 Windows API
+                            var textData = Encoding.UTF8.GetBytes(testContent);
+                            var result2 = await PrintUsingWindowsApi(defaultPrinter.Name, textData, "ERP 測試頁");
+                            
+                            if (result2.IsSuccess)
+                            {
+                                return ServiceResult.Success();
+                            }
+                            else
+                            {
+                                return ServiceResult.Failure($"預設印表機列印失敗: {result2.ErrorMessage}");
+                            }
+                        }
+                        else
+                        {
+                            return ServiceResult.Failure($"找不到使用埠 '{usbPort}' 的印表機，且系統中沒有可用的印表機");
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -296,22 +431,38 @@ namespace ERPCore2.Services
             {
                 var usbPort = printerConfiguration.UsbPort ?? "LPT1";
                 
-                // 在實際環境中，這裡會檢查USB設備是否存在
-                // 可以使用Windows Management Instrumentation (WMI)
-                // 或檢查系統的印表機列表
+                _logger?.LogInformation($"檢查 USB 埠 '{usbPort}' 的印表機連接");
 
-                // 簡化版本：檢查常見的印表機埠
-                var commonPorts = new[] { "LPT1", "LPT2", "USB001", "USB002" };
+                // 檢查是否有印表機使用指定的埠
+                var printer = FindPrinterByPort(usbPort);
                 
-                if (!commonPorts.Contains(usbPort.ToUpper()) && !usbPort.ToUpper().StartsWith("USB"))
+                if (printer != null)
                 {
-                    return ServiceResult.Failure($"不認識的USB埠格式: {usbPort}");
+                    _logger?.LogInformation($"找到印表機 '{printer.Name}' 使用埠 '{printer.PortName}'");
+                    _logger?.LogInformation($"印表機詳細資訊: 驅動程式={printer.DriverName}, 狀態={printer.Status}, 預設={printer.IsDefault}");
+                    return ServiceResult.Success();
                 }
+                else
+                {
+                    // 列出所有可用的 USB/LPT/COM 印表機供參考
+                    var availablePrinters = GetAvailablePrinters();
+                    var localPrinters = availablePrinters.Where(p => 
+                        p.PortName.StartsWith("USB", StringComparison.OrdinalIgnoreCase) ||
+                        p.PortName.StartsWith("LPT", StringComparison.OrdinalIgnoreCase) ||
+                        p.PortName.StartsWith("COM", StringComparison.OrdinalIgnoreCase)).ToList();
 
-                // 模擬USB連接檢查
-                _logger?.LogInformation($"檢查USB埠: {usbPort}");
-                
-                return ServiceResult.Success();
+                    if (localPrinters.Any())
+                    {
+                        var availablePorts = string.Join(", ", localPrinters.Select(p => $"'{p.PortName}' ({p.Name})"));
+                        _logger?.LogWarning($"找不到使用埠 '{usbPort}' 的印表機。可用的本機印表機: {availablePorts}");
+                        return ServiceResult.Failure($"找不到使用埠 '{usbPort}' 的印表機。可用埠: {availablePorts}");
+                    }
+                    else
+                    {
+                        _logger?.LogWarning($"系統中沒有找到任何本機印表機");
+                        return ServiceResult.Failure($"找不到使用埠 '{usbPort}' 的印表機，且系統中沒有其他本機印表機");
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -336,6 +487,387 @@ namespace ERPCore2.Services
                 PrinterConnectionType.USB => "USB 連接",
                 _ => connectionType.ToString()
             };
+        }
+
+        /// <summary>
+        /// 產生 PCL (Printer Control Language) 格式的列印資料
+        /// 針對 HP LaserJet 系列印表機優化
+        /// </summary>
+        private static byte[] GeneratePclData(string textContent)
+        {
+            var data = new List<byte>();
+            
+            // 1. PCL 重置命令
+            data.AddRange(Encoding.ASCII.GetBytes("\x1B" + "E")); // ESC E - Reset
+            
+            // 2. 設定單位解析度 (300 DPI)
+            data.AddRange(Encoding.ASCII.GetBytes("\x1B" + "&u300D")); // ESC &u300D
+            
+            // 3. 設定頁面方向為直向
+            data.AddRange(Encoding.ASCII.GetBytes("\x1B" + "&l0O")); // ESC &l0O
+            
+            // 4. 設定頁面大小為 A4
+            data.AddRange(Encoding.ASCII.GetBytes("\x1B" + "&l26A")); // ESC &l26A
+            
+            // 5. 設定上邊界 (0.5 英吋)
+            data.AddRange(Encoding.ASCII.GetBytes("\x1B" + "&l150E")); // ESC &l150E
+            
+            // 6. 設定左邊界 (0.5 英吋)
+            data.AddRange(Encoding.ASCII.GetBytes("\x1B" + "&a150L")); // ESC &a150L
+            
+            // 7. 選擇字型 - Courier 10 point
+            data.AddRange(Encoding.ASCII.GetBytes("\x1B" + "(s0P")); // ESC (s0P - spacing (fixed)
+            data.AddRange(Encoding.ASCII.GetBytes("\x1B" + "(s10H")); // ESC (s10H - pitch (10 cpi)
+            data.AddRange(Encoding.ASCII.GetBytes("\x1B" + "(s0S")); // ESC (s0S - style (upright)
+            data.AddRange(Encoding.ASCII.GetBytes("\x1B" + "(s0B")); // ESC (s0B - stroke weight (medium)
+            data.AddRange(Encoding.ASCII.GetBytes("\x1B" + "(s3T")); // ESC (s3T - typeface (Courier)
+            
+            // 8. 設定游標位置到頁面開始
+            data.AddRange(Encoding.ASCII.GetBytes("\x1B" + "&a0R")); // ESC &a0R - row 0
+            data.AddRange(Encoding.ASCII.GetBytes("\x1B" + "&a0C")); // ESC &a0C - column 0
+            
+            // 9. 添加文字內容
+            var lines = textContent.Split('\n');
+            for (int i = 0; i < lines.Length; i++)
+            {
+                var line = lines[i].TrimEnd('\r');
+                data.AddRange(Encoding.UTF8.GetBytes(line));
+                
+                // 除了最後一行外，每行後面加換行
+                if (i < lines.Length - 1)
+                {
+                    data.AddRange(Encoding.ASCII.GetBytes("\r\n")); // CR+LF
+                }
+            }
+            
+            // 10. 換行並確保內容輸出
+            data.AddRange(Encoding.ASCII.GetBytes("\r\n\r\n"));
+            
+            // 11. 送紙命令 (Form Feed) - 強制列印頁面
+            data.Add(0x0C); // Form Feed
+            
+            // 12. 最終重置命令
+            data.AddRange(Encoding.ASCII.GetBytes("\x1B" + "E")); // ESC E - Reset
+            
+            return data.ToArray();
+        }
+
+        /// <summary>
+        /// 產生 ESC/POS 格式的列印資料 (適用於熱感應印表機)
+        /// </summary>
+        private static byte[] GenerateEscPosData(string textContent)
+        {
+            var data = new List<byte>();
+            
+            // 初始化印表機
+            data.AddRange(new byte[] { 0x1B, 0x40 }); // ESC @
+            
+            // 設定字元編碼為 UTF-8
+            data.AddRange(new byte[] { 0x1B, 0x74, 0x06 }); // ESC t 6
+            
+            // 添加文字內容
+            var lines = textContent.Split('\n');
+            foreach (var line in lines)
+            {
+                var lineBytes = Encoding.UTF8.GetBytes(line.TrimEnd('\r'));
+                data.AddRange(lineBytes);
+                data.AddRange(new byte[] { 0x0A }); // LF
+            }
+            
+            // 送紙並切紙
+            data.AddRange(new byte[] { 0x0A, 0x0A, 0x0A }); // 3 個換行
+            data.AddRange(new byte[] { 0x1D, 0x56, 0x42, 0x00 }); // GS V B 0 (部分切紙)
+            
+            return data.ToArray();
+        }
+
+        /// <summary>
+        /// 產生純文字格式的列印資料 (針對 HP LaserJet 優化)
+        /// </summary>
+        private static byte[] GeneratePlainTextData(string textContent)
+        {
+            var data = new List<byte>();
+            
+            // 添加一些空行開始
+            data.AddRange(Encoding.ASCII.GetBytes("\r\n"));
+            
+            // 添加文字內容
+            var lines = textContent.Split('\n');
+            foreach (var line in lines)
+            {
+                var cleanLine = line.TrimEnd('\r');
+                data.AddRange(Encoding.UTF8.GetBytes(cleanLine));
+                data.AddRange(Encoding.ASCII.GetBytes("\r\n")); // CR+LF
+            }
+            
+            // 添加一些空行結束
+            data.AddRange(Encoding.ASCII.GetBytes("\r\n\r\n"));
+            
+            // 強制送紙命令 (Form Feed)
+            data.Add(0x0C); // Form Feed
+            
+            // 再加一個換行確保
+            data.AddRange(Encoding.ASCII.GetBytes("\r\n"));
+            
+            return data.ToArray();
+        }
+
+        /// <summary>
+        /// 取得系統中所有可用的印表機
+        /// </summary>
+        private List<PrinterInfo> GetAvailablePrinters()
+        {
+            var printers = new List<PrinterInfo>();
+            
+            try
+            {
+                // 檢查是否為 Windows 平台
+                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    _logger?.LogWarning("非 Windows 平台，無法使用 WMI 查詢印表機");
+                    return printers;
+                }
+
+                using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Printer");
+                foreach (ManagementObject printer in searcher.Get())
+                {
+                    var printerInfo = new PrinterInfo
+                    {
+                        Name = printer["Name"]?.ToString() ?? "",
+                        PortName = printer["PortName"]?.ToString() ?? "",
+                        DriverName = printer["DriverName"]?.ToString() ?? "",
+                        Status = printer["PrinterStatus"]?.ToString() ?? "",
+                        IsDefault = Convert.ToBoolean(printer["Default"]),
+                        IsLocal = Convert.ToBoolean(printer["Local"]),
+                        IsShared = Convert.ToBoolean(printer["Shared"])
+                    };
+                    
+                    printers.Add(printerInfo);
+                    _logger?.LogDebug($"發現印表機: {printerInfo.Name}, 埠: {printerInfo.PortName}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "取得印表機清單時發生錯誤");
+            }
+            
+            return printers;
+        }
+
+        /// <summary>
+        /// 根據連接埠找到對應的印表機
+        /// </summary>
+        private PrinterInfo? FindPrinterByPort(string portName)
+        {
+            var printers = GetAvailablePrinters();
+            return printers.FirstOrDefault(p => 
+                string.Equals(p.PortName, portName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// 使用 Windows API 直接列印到印表機 (改進版本)
+        /// </summary>
+        private async Task<ServiceResult> PrintUsingWindowsApi(string printerName, byte[] data, string documentName = "Test Page")
+        {
+            IntPtr hPrinter = IntPtr.Zero;
+            
+            try
+            {
+                // 開啟印表機
+                if (!OpenPrinter(printerName, out hPrinter, IntPtr.Zero))
+                {
+                    var error = Marshal.GetLastWin32Error();
+                    return ServiceResult.Failure($"無法開啟印表機 '{printerName}': 錯誤碼 {error}");
+                }
+
+                // 重要改變：根據印表機類型選擇正確的 DataType
+                string dataType = DetermineDataType(printerName);
+                _logger?.LogInformation($"使用 DataType: {dataType} 為印表機 '{printerName}'");
+
+                // 設定文件資訊
+                var docInfo = new DOC_INFO_1
+                {
+                    DocName = documentName,
+                    OutputFile = "",  // 空字串表示直接列印到印表機
+                    DataType = dataType  // 使用動態決定的 DataType
+                };
+
+                // 開始文件
+                if (!StartDocPrinter(hPrinter, 1, ref docInfo))
+                {
+                    var error = Marshal.GetLastWin32Error();
+                    return ServiceResult.Failure($"無法開始列印文件: 錯誤碼 {error}");
+                }
+
+                // 開始頁面
+                if (!StartPagePrinter(hPrinter))
+                {
+                    var error = Marshal.GetLastWin32Error();
+                    EndDocPrinter(hPrinter);
+                    return ServiceResult.Failure($"無法開始列印頁面: 錯誤碼 {error}");
+                }
+
+                // 寫入資料
+                if (!WritePrinter(hPrinter, data, data.Length, out int bytesWritten))
+                {
+                    var error = Marshal.GetLastWin32Error();
+                    EndPagePrinter(hPrinter);
+                    EndDocPrinter(hPrinter);
+                    return ServiceResult.Failure($"無法寫入列印資料: 錯誤碼 {error}");
+                }
+
+                _logger?.LogInformation($"已寫入 {bytesWritten} 位元組到印表機佇列");
+
+                // 結束頁面
+                if (!EndPagePrinter(hPrinter))
+                {
+                    var error = Marshal.GetLastWin32Error();
+                    EndDocPrinter(hPrinter);
+                    return ServiceResult.Failure($"無法結束列印頁面: 錯誤碼 {error}");
+                }
+
+                // 結束文件
+                if (!EndDocPrinter(hPrinter))
+                {
+                    var error = Marshal.GetLastWin32Error();
+                    return ServiceResult.Failure($"無法結束列印文件: 錯誤碼 {error}");
+                }
+
+                _logger?.LogInformation($"文件已送到印表機佇列 '{printerName}'");
+                
+                // 等待較長時間讓印表機處理
+                await Task.Delay(3000);
+                
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, $"使用 Windows API 列印時發生錯誤");
+                return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
+            }
+            finally
+            {
+                // 確保關閉印表機控制代碼
+                if (hPrinter != IntPtr.Zero)
+                {
+                    ClosePrinter(hPrinter);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 根據印表機決定適當的 DataType
+        /// </summary>
+        private string DetermineDataType(string printerName)
+        {
+            // 如果印表機名稱包含 PCL，嘗試使用 TEXT 讓驅動程式處理
+            if (printerName.Contains("PCL", StringComparison.OrdinalIgnoreCase))
+            {
+                return "TEXT";  // 讓 Windows 驅動程式處理格式轉換
+            }
+            
+            // 如果是 EPSON，同樣使用 TEXT
+            if (printerName.Contains("EPSON", StringComparison.OrdinalIgnoreCase))
+            {
+                return "TEXT";
+            }
+            
+            // HP 印表機通常需要驅動程式處理
+            if (printerName.Contains("HP", StringComparison.OrdinalIgnoreCase))
+            {
+                return "TEXT";
+            }
+            
+            // Canon 印表機
+            if (printerName.Contains("Canon", StringComparison.OrdinalIgnoreCase))
+            {
+                return "TEXT";
+            }
+            
+            // 預設使用 RAW (適合標籤機和熱感應印表機)
+            return "RAW";
+        }
+
+        /// <summary>
+        /// 使用 System.Drawing.Printing 列印 (建議優先使用)
+        /// </summary>
+        private async Task<ServiceResult> PrintUsingSystemDrawing(string printerName, string textContent)
+        {
+            try
+            {
+                // 檢查是否為 Windows 平台
+                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    return ServiceResult.Failure("System.Drawing.Printing 只支援 Windows 平台");
+                }
+
+                using var printDocument = new System.Drawing.Printing.PrintDocument();
+                printDocument.PrinterSettings.PrinterName = printerName;
+                
+                // 檢查印表機是否有效
+                if (!printDocument.PrinterSettings.IsValid)
+                {
+                    return ServiceResult.Failure($"印表機 '{printerName}' 無效或不可用");
+                }
+
+                // 設定列印內容
+                var lines = textContent.Split('\n').ToList();
+                var currentLine = 0;
+                
+                printDocument.PrintPage += (sender, e) =>
+                {
+                    if (e.Graphics == null) return;
+                    
+                    float yPos = e.MarginBounds.Top;
+                    float leftMargin = e.MarginBounds.Left;
+                    
+                    // 使用等寬字型
+                    using var font = new System.Drawing.Font("Courier New", 10);
+                    var lineHeight = font.GetHeight(e.Graphics);
+                    
+                    // 列印每一行
+                    while (currentLine < lines.Count && yPos < e.MarginBounds.Bottom)
+                    {
+                        var line = lines[currentLine].TrimEnd('\r');
+                        e.Graphics.DrawString(line, font, 
+                            System.Drawing.Brushes.Black, leftMargin, yPos);
+                        yPos += lineHeight;
+                        currentLine++;
+                    }
+                    
+                    // 如果還有更多行，設定需要更多頁面
+                    e.HasMorePages = (currentLine < lines.Count);
+                };
+
+                // 執行列印
+                printDocument.Print();
+                
+                _logger?.LogInformation($"已使用 System.Drawing.Printing 送出列印工作到 '{printerName}'");
+                
+                // 等待列印處理
+                await Task.Delay(2000);
+                
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "使用 System.Drawing.Printing 列印時發生錯誤");
+                return ServiceResult.Failure($"列印失敗: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 印表機資訊類別
+        /// </summary>
+        private class PrinterInfo
+        {
+            public string Name { get; set; } = "";
+            public string PortName { get; set; } = "";
+            public string DriverName { get; set; } = "";
+            public string Status { get; set; } = "";
+            public bool IsDefault { get; set; }
+            public bool IsLocal { get; set; }
+            public bool IsShared { get; set; }
         }
 
         #endregion
