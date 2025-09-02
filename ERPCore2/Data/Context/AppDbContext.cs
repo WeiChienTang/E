@@ -80,6 +80,7 @@ namespace ERPCore2.Data.Context
       public DbSet<Company> Companies { get; set; }
       public DbSet<PaperSetting> PaperSettings { get; set; }
       public DbSet<PrinterConfiguration> PrinterConfigurations { get; set; }
+      public DbSet<ReportPrintConfiguration> ReportPrintConfigurations { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
             {
@@ -610,6 +611,28 @@ namespace ERPCore2.Data.Context
 
                         entity.Property(e => e.RightMargin)
                               .HasPrecision(6, 2); // 總共6位數，小數點後2位
+                  });
+
+                  // 報表列印配置相關
+                  modelBuilder.Entity<ReportPrintConfiguration>(entity =>
+                  {
+                        // 欄位對應
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                        // 外鍵關係設定
+                        entity.HasOne(e => e.PrinterConfiguration)
+                              .WithMany()
+                              .HasForeignKey(e => e.PrinterConfigurationId)
+                              .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasOne(e => e.PaperSetting)
+                              .WithMany()
+                              .HasForeignKey(e => e.PaperSettingId)
+                              .OnDelete(DeleteBehavior.SetNull);
+
+                        // 建立複合索引確保報表類型的唯一性
+                        entity.HasIndex(e => e.ReportType)
+                              .IsUnique();
                   });
             }
     }

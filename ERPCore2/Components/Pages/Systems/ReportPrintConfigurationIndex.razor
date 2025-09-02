@@ -1,0 +1,125 @@
+@page "/report-print-configurations"
+@inject IReportPrintConfigurationService ReportPrintConfigurationService
+@rendermode InteractiveServer
+@inject INotificationService NotificationService
+
+<GenericIndexPageComponent TEntity="ReportPrintConfiguration" 
+                      TService="IReportPrintConfigurationService"
+                      Service="@ReportPrintConfigurationService"
+                      EntityBasePath="/report-print-configurations"
+                      PageTitle="報表列印配置"
+                      PageSubtitle="管理不同報表的列印設定"
+                      EntityName="報表列印配置"
+                      BreadcrumbItems="@breadcrumbItems"
+                      FilterDefinitions="@filterDefinitions"
+                      ColumnDefinitions="@columnDefinitions"
+                      DataLoader="@LoadReportPrintConfigurationsAsync"
+                      FilterApplier="@ApplyReportPrintConfigurationFilters"
+                      GetEntityDisplayName="@(config => config.ReportName)"
+                      RequiredPermission="ReportPrintConfiguration.Read"
+                      OnAddClick="@modalHandler.ShowAddModalAsync"
+                      OnRowClick="@modalHandler.ShowEditModalAsync"
+                      @ref="indexComponent" />
+
+<ReportPrintConfigurationEditModalComponent IsVisible="@showEditModal"
+                          IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                          ReportPrintConfigurationId="@editingReportPrintConfigurationId"
+                          OnReportPrintConfigurationSaved="@modalHandler.OnEntitySavedAsync"
+                          OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<ReportPrintConfiguration, IReportPrintConfigurationService> indexComponent = default!;
+    
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingReportPrintConfigurationId = null;
+    
+    // Modal 處理器
+    private ModalHandler<ReportPrintConfiguration, GenericIndexPageComponent<ReportPrintConfiguration, IReportPrintConfigurationService>> modalHandler = default!;
+    
+    // 欄位配置
+    private ReportPrintConfigurationFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<ReportPrintConfiguration, GenericIndexPageComponent<ReportPrintConfiguration, IReportPrintConfigurationService>>(
+                id => editingReportPrintConfigurationId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
+            await InitializeBreadcrumbsAsync();
+            
+            // 建立欄位配置（傳遞 NotificationService）
+            fieldConfiguration = new ReportPrintConfigurationFieldConfiguration(NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化報表列印配置頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化報表列印配置頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("系統管理", "/systems"),
+                new("報表列印配置")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    // 載入報表列印配置資料
+    private async Task<List<ReportPrintConfiguration>> LoadReportPrintConfigurationsAsync()
+    {
+        try
+        {
+            return await ReportPrintConfigurationService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadReportPrintConfigurationsAsync), GetType(), additionalData: "載入報表列印配置資料失敗");
+            await NotificationService.ShowErrorAsync("載入報表列印配置資料失敗");
+            // 設定安全的預設值
+            return new List<ReportPrintConfiguration>();
+        }
+    }
+
+    private IQueryable<ReportPrintConfiguration> ApplyReportPrintConfigurationFilters(SearchFilterModel searchModel, IQueryable<ReportPrintConfiguration> query)
+    {
+        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
+        if (fieldConfiguration == null)
+        {
+            // 如果配置未初始化，回傳基本排序的查詢
+            return query.OrderBy(r => r.ReportType);
+        }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyReportPrintConfigurationFilters), GetType());
+    }
+}
