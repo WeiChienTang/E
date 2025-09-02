@@ -194,27 +194,6 @@ public interface IReportPrintConfigurationService : IGenericManagementService<Re
 - **URL**：`/report-print-configurations`
 - **導航**：系統管理 > 報表列印配置
 
-### 資料庫結構
-```sql
--- ReportPrintConfigurations 資料表
-CREATE TABLE [ReportPrintConfigurations] (
-    [Id] int IDENTITY(1,1) NOT NULL,
-    [ReportType] nvarchar(50) NOT NULL,
-    [ReportName] nvarchar(100) NOT NULL,
-    [PrinterConfigurationId] int NULL,
-    [PaperSettingId] int NULL,
-    [Code] nvarchar(50) NULL,
-    [Status] int NOT NULL,
-    [IsDeleted] bit NOT NULL,
-    [CreatedAt] datetime2 NOT NULL,
-    [UpdatedAt] datetime2 NULL,
-    [CreatedBy] nvarchar(50) NULL,
-    [UpdatedBy] nvarchar(50) NULL,
-    [Remarks] nvarchar(500) NULL,
-    CONSTRAINT [PK_ReportPrintConfigurations] PRIMARY KEY ([Id])
-);
-```
-
 ## 📋 下階段規劃
 
 ### 🔄 階段四：整合與擴展（待實作）

@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Management;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace ERPCore2.Services
 {
@@ -58,6 +59,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 測試印表機連接並列印測試頁
         /// </summary>
+        [SupportedOSPlatform("windows6.1")]
         public async Task<ServiceResult> TestPrintAsync(PrinterConfiguration printerConfiguration)
         {
             try
@@ -265,6 +267,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 測試USB印表機列印 (改進版本)
         /// </summary>
+        [SupportedOSPlatform("windows6.1")]
         private async Task<ServiceResult> TestUsbPrintAsync(PrinterConfiguration printerConfiguration)
         {
             try
@@ -791,6 +794,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 使用 System.Drawing.Printing 列印 (建議優先使用)
         /// </summary>
+        [SupportedOSPlatform("windows6.1")]
         private async Task<ServiceResult> PrintUsingSystemDrawing(string printerName, string textContent)
         {
             try
