@@ -64,15 +64,7 @@
                            OnSupplierSaved="@OnSupplierSavedWrapper"
                            OnCancel="@supplierModalManager.HandleModalCancelAsync" />
 
-@* 列印設定選擇 Modal *@
-<PrintSettingsSelectionComponent @ref="printSettingsModal"
-                                 Title="採購單"
-                                 ModalId="purchaseOrderPrintModal"
-                                 ReportType="PurchaseOrder"
-                                 ReportId="@(PurchaseOrderId ?? 0)"
-                                 BaseUrl="@NavigationManager.BaseUri"
-                                 OnPrintConfirmed="@HandlePrintConfirmed"
-                                 OnPreviewRequested="@HandlePreviewRequested" />
+
 
 @code {
     // ===== 必要參數 =====
@@ -98,7 +90,6 @@
     
     // Modal 管理器
     private SupplierEditModalComponent? supplierEditModal;
-    private PrintSettingsSelectionComponent? printSettingsModal;
     private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
     
     // 下拉選單選項（向下相容）
@@ -196,71 +187,14 @@
                 return;
             }
             
-            // 顯示列印設定選擇 Modal
-            if (printSettingsModal != null)
-            {
-                await printSettingsModal.ShowModal();
-            }
-            else
-            {
-                // 如果組件尚未初始化，直接使用預設列印
-                await HandleDirectPrint(null);
-            }
+            // 直接執行列印，使用預設設定
+            await HandleDirectPrint(null);
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePrint), GetType(), 
                 additionalData: $"採購單列印處理失敗 - ID: {PurchaseOrderId}");
             await NotificationService.ShowErrorAsync("列印處理時發生錯誤");
-        }
-    }
-
-    /// <summary>
-    /// 處理列印確認 - 使用者選擇了列印設定後的回調
-    /// </summary>
-    private async Task HandlePrintConfirmed(ReportPrintConfiguration? printConfig)
-    {
-        try
-        {
-            await HandleDirectPrint(printConfig);
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePrintConfirmed), GetType(), 
-                additionalData: $"採購單列印確認處理失敗 - ID: {PurchaseOrderId}");
-            await NotificationService.ShowErrorAsync("列印確認處理時發生錯誤");
-        }
-    }
-
-    /// <summary>
-    /// 處理預覽請求 - 使用者要求預覽報表
-    /// </summary>
-    private async Task HandlePreviewRequested(ReportPrintConfiguration? printConfig)
-    {
-        try
-        {
-            if (!PurchaseOrderId.HasValue)
-            {
-                await NotificationService.ShowWarningAsync("無法預覽：採購單ID不存在");
-                return;
-            }
-
-            // 建立預覽 URL
-            var previewUrl = ReportPrintHelper.BuildReportUrl(
-                NavigationManager.BaseUri.TrimEnd('/'), 
-                PurchaseOrderId.Value, 
-                printConfig, 
-                "html");
-            previewUrl += "/preview";
-
-            // 開啟預覽視窗
-            await ReportPrintHelper.PreviewReportAsync(previewUrl, JSRuntime, "_blank");
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePreviewRequested), GetType(), 
-                additionalData: $"採購單預覽處理失敗 - ID: {PurchaseOrderId}");
-            await NotificationService.ShowErrorAsync("預覽處理時發生錯誤");
         }
     }
 
