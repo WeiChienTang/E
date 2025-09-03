@@ -70,6 +70,7 @@ namespace ERPCore2.Data
                 new CustomerTypeSeeder(),       // 客戶類型
                 new SupplierTypeSeeder(),       // 廠商類型
                 new PaperSettingSeeder(),       // 紙張設定
+                new PrinterConfigurationSeeder(), // 印表機配置
                 new EmployeeSeeder(),
                 new EmployeePositionSeeder(),
                 new DepartmentSeeder(),
@@ -85,7 +86,6 @@ namespace ERPCore2.Data
                 new ProductSeeder(),            // 依賴 ProductCategory, Unit, Supplier
                 new InventorySeeder(),
                 new WeatherSeeder(),
-                // new BasicDataSeeder(),       // 已廢棄，功能已分拆到專屬 Seeder
             };
         }
     }

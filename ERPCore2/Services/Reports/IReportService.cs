@@ -44,6 +44,18 @@ namespace ERPCore2.Services.Reports
         Task<string> GeneratePurchaseOrderReportAsync(int purchaseOrderId, ReportFormat format = ReportFormat.Html);
         
         /// <summary>
+        /// 生成採購單報表（支援列印配置）
+        /// </summary>
+        /// <param name="purchaseOrderId">採購單 ID</param>
+        /// <param name="format">輸出格式</param>
+        /// <param name="reportPrintConfig">報表列印配置</param>
+        /// <returns>報表內容</returns>
+        Task<string> GeneratePurchaseOrderReportAsync(
+            int purchaseOrderId, 
+            ReportFormat format, 
+            ReportPrintConfiguration? reportPrintConfig);
+        
+        /// <summary>
         /// 取得採購單報表配置
         /// </summary>
         /// <param name="company">公司資訊</param>

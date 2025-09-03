@@ -1,0 +1,351 @@
+@inject IJSRuntime JSRuntime
+@inject IReportPrintConfigurationService ReportPrintConfigurationService
+
+@* 列印設定選擇組件 - 可重用於各種報表 *@
+<div class="modal fade" id="@ModalId" tabindex="-1" aria-labelledby="@(ModalId)Label" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="@(ModalId)Label">@Title 列印設定</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
+            </div>
+            <div class="modal-body">
+                @if (IsLoading)
+                {
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">載入中...</span>
+                        </div>
+                        <p class="mt-2">載入列印配置中...</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h6 class="mb-3">選擇列印配置</h6>
+                            
+                            @if (AvailableConfigurations.Any())
+                            {
+                                <div class="list-group mb-3">
+                                    <!-- 系統預設選項 -->
+                                    <label class="list-group-item">
+                                        <input class="form-check-input me-1" type="radio" name="printConfig" 
+                                               value="" @onchange="@(() => SelectConfiguration(null))" 
+                                               checked="@(SelectedConfiguration == null)">
+                                        <strong>系統預設設定</strong>
+                                        <br><small class="text-muted">使用系統預設的列印設定</small>
+                                    </label>
+                                    
+                                    <!-- 自訂配置選項 -->
+                                    @foreach (var config in AvailableConfigurations)
+                                    {
+                                        <label class="list-group-item">
+                                            <input class="form-check-input me-1" type="radio" name="printConfig" 
+                                                   value="@config.Id" @onchange="@(() => SelectConfiguration(config))" 
+                                                   checked="@(SelectedConfiguration?.Id == config.Id)">
+                                            <strong>@config.ReportName</strong>
+                                            @if (!string.IsNullOrEmpty(config.PrinterConfiguration?.Name))
+                                            {
+                                                <br><small class="text-muted">印表機：@config.PrinterConfiguration.Name</small>
+                                            }
+                                            @if (!string.IsNullOrEmpty(config.PaperSetting?.Name))
+                                            {
+                                                <br><small class="text-muted">紙張：@config.PaperSetting.Name</small>
+                                            }
+                                        </label>
+                                    }
+                                </div>
+                                
+                                <!-- 選擇的配置詳細資訊 -->
+                                @if (SelectedConfiguration != null)
+                                {
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="card-title">配置詳細資訊</h6>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <p><strong>報表名稱：</strong>@SelectedConfiguration.ReportName</p>
+                                                    <p><strong>報表類型：</strong>@SelectedConfiguration.ReportType</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    @if (SelectedConfiguration.PrinterConfiguration != null)
+                                                    {
+                                                        <p><strong>印表機：</strong>@SelectedConfiguration.PrinterConfiguration.Name</p>
+                                                    }
+                                                    @if (SelectedConfiguration.PaperSetting != null)
+                                                    {
+                                                        <p><strong>紙張設定：</strong>@SelectedConfiguration.PaperSetting.Name</p>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    目前沒有可用的列印配置，將使用系統預設設定。
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-primary" @onclick="PreviewReport">
+                        <i class="fas fa-eye"></i> 預覽
+                    </button>
+                    <button type="button" class="btn btn-primary" @onclick="ConfirmPrint">
+                        <i class="fas fa-print"></i> 列印
+                    </button>
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> 取消
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    /// <summary>
+    /// 模態框標題
+    /// </summary>
+    [Parameter] public string Title { get; set; } = "報表";
+
+    /// <summary>
+    /// 模態框 ID
+    /// </summary>
+    [Parameter] public string ModalId { get; set; } = "printSettingsModal";
+
+    /// <summary>
+    /// 報表類型
+    /// </summary>
+    [Parameter] public string ReportType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 報表 ID
+    /// </summary>
+    [Parameter] public int ReportId { get; set; }
+
+    /// <summary>
+    /// 基礎 URL
+    /// </summary>
+    [Parameter] public string BaseUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 列印確認回調
+    /// </summary>
+    [Parameter] public EventCallback<ReportPrintConfiguration?> OnPrintConfirmed { get; set; }
+
+    /// <summary>
+    /// 預覽回調
+    /// </summary>
+    [Parameter] public EventCallback<ReportPrintConfiguration?> OnPreviewRequested { get; set; }
+
+    /// <summary>
+    /// 是否載入中
+    /// </summary>
+    private bool IsLoading = false;
+
+    /// <summary>
+    /// 可用的列印配置
+    /// </summary>
+    private List<ReportPrintConfiguration> AvailableConfigurations = new();
+
+    /// <summary>
+    /// 選擇的列印配置
+    /// </summary>
+    private ReportPrintConfiguration? SelectedConfiguration = null;
+
+    /// <summary>
+    /// 標記是否已經渲染完成
+    /// </summary>
+    private bool hasRendered = false;
+
+    /// <summary>
+    /// 組件初始化
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadConfigurationsWithoutJS();
+    }
+
+    /// <summary>
+    /// 組件渲染完成後
+    /// </summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            hasRendered = true;
+            // 在首次渲染完成後重新載入配置（包含 JS 互操作）
+            await LoadConfigurations();
+        }
+    }
+
+    /// <summary>
+    /// 載入可用的列印配置（不使用 JS 互操作）
+    /// </summary>
+    private async Task LoadConfigurationsWithoutJS()
+    {
+        IsLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            // 直接從服務取得配置，不使用 JavaScript 互操作
+            AvailableConfigurations = await ReportPrintConfigurationService.GetActiveConfigurationsAsync();
+
+            // 如果有指定報表類型，嘗試自動選擇對應的配置（不使用 JS）
+            if (!string.IsNullOrEmpty(ReportType))
+            {
+                SelectedConfiguration = await ReportPrintHelper.SelectPrintConfigurationWithoutJSAsync(
+                    ReportType, ReportPrintConfigurationService);
+            }
+        }
+        catch (Exception ex)
+        {
+            // 在靜態渲染期間，靜默處理錯誤
+            Console.WriteLine($"載入列印配置時發生錯誤: {ex.Message}");
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 載入可用的列印配置
+    /// </summary>
+    private async Task LoadConfigurations()
+    {
+        if (!hasRendered)
+        {
+            // 如果還未渲染完成，使用不含 JS 的版本
+            await LoadConfigurationsWithoutJS();
+            return;
+        }
+
+        IsLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            // 載入所有啟用的配置
+            AvailableConfigurations = await ReportPrintHelper.GetAvailableConfigurationsAsync(
+                ReportPrintConfigurationService, JSRuntime);
+
+            // 如果有指定報表類型，嘗試自動選擇對應的配置
+            if (!string.IsNullOrEmpty(ReportType))
+            {
+                SelectedConfiguration = await ReportPrintHelper.SelectPrintConfigurationAsync(
+                    ReportType, ReportPrintConfigurationService, JSRuntime);
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"載入列印配置時發生錯誤: {ex.Message}");
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 選擇配置
+    /// </summary>
+    /// <param name="configuration">選擇的配置</param>
+    private void SelectConfiguration(ReportPrintConfiguration? configuration)
+    {
+        SelectedConfiguration = configuration;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 確認列印
+    /// </summary>
+    private async Task ConfirmPrint()
+    {
+        if (!hasRendered) return; // 防止在靜態渲染期間執行
+
+        try
+        {
+            // 驗證配置
+            var (isValid, errorMessage) = ReportPrintHelper.ValidateConfiguration(SelectedConfiguration);
+            if (!isValid)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"列印配置無效: {errorMessage}");
+                return;
+            }
+
+            // 觸發列印確認回調
+            await OnPrintConfirmed.InvokeAsync(SelectedConfiguration);
+
+            // 關閉模態框
+            await JSRuntime.InvokeVoidAsync("eval", $"bootstrap.Modal.getInstance(document.getElementById('{ModalId}')).hide()");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"執行列印時發生錯誤: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("alert", $"列印失敗: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 預覽報表
+    /// </summary>
+    private async Task PreviewReport()
+    {
+        if (!hasRendered) return; // 防止在靜態渲染期間執行
+
+        try
+        {
+            // 驗證配置
+            var (isValid, errorMessage) = ReportPrintHelper.ValidateConfiguration(SelectedConfiguration);
+            if (!isValid)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"列印配置無效: {errorMessage}");
+                return;
+            }
+
+            // 觸發預覽回調
+            await OnPreviewRequested.InvokeAsync(SelectedConfiguration);
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"預覽報表時發生錯誤: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("alert", $"預覽失敗: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 顯示模態框
+    /// </summary>
+    public async Task ShowModal()
+    {
+        await LoadConfigurations();
+        if (hasRendered)
+        {
+            await JSRuntime.InvokeVoidAsync("eval", $"new bootstrap.Modal(document.getElementById('{ModalId}')).show()");
+        }
+    }
+
+    /// <summary>
+    /// 隱藏模態框
+    /// </summary>
+    public async Task HideModal()
+    {
+        if (hasRendered)
+        {
+            await JSRuntime.InvokeVoidAsync("eval", $"bootstrap.Modal.getInstance(document.getElementById('{ModalId}')).hide()");
+        }
+    }
+}

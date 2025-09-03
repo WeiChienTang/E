@@ -104,6 +104,87 @@ namespace ERPCore2.Services.Reports
             }
         }
 
+        public async Task<string> GeneratePurchaseOrderReportAsync(
+            int purchaseOrderId, 
+            ReportFormat format, 
+            ReportPrintConfiguration? reportPrintConfig)
+        {
+            try
+            {
+                // 載入採購單資料
+                var purchaseOrder = await _purchaseOrderService.GetByIdAsync(purchaseOrderId);
+                if (purchaseOrder == null)
+                {
+                    throw new ArgumentException($"找不到採購單 ID: {purchaseOrderId}");
+                }
+
+                // 載入採購單明細
+                var orderDetails = await _purchaseOrderService.GetOrderDetailsAsync(purchaseOrderId);
+
+                // 載入相關資料
+                Supplier? supplier = null;
+                if (purchaseOrder.SupplierId > 0)
+                {
+                    supplier = await _supplierService.GetByIdAsync(purchaseOrder.SupplierId);
+                }
+
+                // 載入公司資料
+                Company? company = null;
+                if (purchaseOrder.CompanyId > 0)
+                {
+                    company = await _companyService.GetByIdAsync(purchaseOrder.CompanyId);
+                }
+
+                // 載入商品資料並建立字典以便快速查詢
+                var allProducts = await _productService.GetAllAsync();
+                var productDict = allProducts.ToDictionary(p => p.Id, p => p);
+
+                // 計算稅額和總計
+                var taxAmount = purchaseOrder.TotalAmount * 0.05m;
+                var grandTotal = purchaseOrder.TotalAmount + taxAmount;
+                
+                // 建立報表資料
+                var reportData = new ReportData<PurchaseOrder, PurchaseOrderDetail>
+                {
+                    MainEntity = purchaseOrder,
+                    DetailEntities = orderDetails,
+                    AdditionalData = new Dictionary<string, object>
+                    {
+                        { "SupplierName", supplier?.CompanyName ?? "未指定" },
+                        { "SupplierContactPerson", supplier?.ContactPerson ?? "" },
+                        { "CompanyName", company?.CompanyName ?? "未指定" },
+                        { "CompanyAddress", company?.Address ?? "" },
+                        { "CompanyPhone", company?.Phone ?? "" },
+                        { "CompanyTaxId", company?.TaxId ?? "" },
+                        { "CompanyFax", company?.Fax ?? "" },
+                        { "ProductDict", productDict },
+                        { "ApprovalPerson", purchaseOrder.ApprovedByUser?.Name ?? purchaseOrder.CreatedBy ?? "" },
+                        { "PurchasingPerson", purchaseOrder.PurchasePersonnel ?? purchaseOrder.CreatedBy ?? "" },
+                        { "TaxAmount", taxAmount }, // 稅額 = 金額 * 5%
+                        { "GrandTotal", grandTotal }, // 總計 = 金額 + 稅額
+                        { "PrinterConfiguration", reportPrintConfig?.PrinterConfiguration as object ?? new object() },
+                        { "PaperSetting", reportPrintConfig?.PaperSetting as object ?? new object() },
+                        { "ReportPrintConfig", reportPrintConfig as object ?? new object() }
+                    }
+                };
+
+                // 取得報表配置（可能會根據列印配置調整）
+                var configuration = GetPurchaseOrderReportConfiguration(company);
+
+                // 根據格式生成報表
+                return format switch
+                {
+                    ReportFormat.Html => await _reportService.GenerateHtmlReportAsync(configuration, reportData),
+                    ReportFormat.Excel => throw new NotImplementedException("Excel 格式尚未實作"),
+                    _ => throw new ArgumentException($"不支援的報表格式: {format}")
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"生成採購單報表時發生錯誤: {ex.Message}", ex);
+            }
+        }
+
         public ReportConfiguration GetPurchaseOrderReportConfiguration(Company? company = null)
         {
             return new ReportConfiguration

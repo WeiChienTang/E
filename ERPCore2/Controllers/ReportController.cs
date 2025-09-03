@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ERPCore2.Services.Reports;
+using ERPCore2.Services;
+using ERPCore2.Data.Entities;
 using ERPCore2.Models;
 
 namespace ERPCore2.Controllers
@@ -12,10 +14,14 @@ namespace ERPCore2.Controllers
     public class ReportController : ControllerBase
     {
         private readonly IPurchaseOrderReportService _purchaseOrderReportService;
+        private readonly IReportPrintConfigurationService _reportPrintConfigurationService;
 
-        public ReportController(IPurchaseOrderReportService purchaseOrderReportService)
+        public ReportController(
+            IPurchaseOrderReportService purchaseOrderReportService,
+            IReportPrintConfigurationService reportPrintConfigurationService)
         {
             _purchaseOrderReportService = purchaseOrderReportService;
+            _reportPrintConfigurationService = reportPrintConfigurationService;
         }
 
         /// <summary>
@@ -23,9 +29,15 @@ namespace ERPCore2.Controllers
         /// </summary>
         /// <param name="id">採購單 ID</param>
         /// <param name="format">報表格式（html/excel）</param>
+        /// <param name="reportType">報表類型（用於查找列印配置）</param>
+        /// <param name="configId">指定的配置 ID</param>
         /// <returns>報表內容</returns>
         [HttpGet("purchase-order/{id}")]
-        public async Task<IActionResult> GeneratePurchaseOrderReport(int id, string format = "html")
+        public async Task<IActionResult> GeneratePurchaseOrderReport(
+            int id, 
+            string format = "html", 
+            string? reportType = null, 
+            int? configId = null)
         {
             try
             {
@@ -35,7 +47,60 @@ namespace ERPCore2.Controllers
                     _ => ReportFormat.Html
                 };
 
-                var reportContent = await _purchaseOrderReportService.GeneratePurchaseOrderReportAsync(id, reportFormat);
+                // 嘗試取得列印配置
+                ReportPrintConfiguration? printConfig = null;
+                
+                if (configId.HasValue)
+                {
+                    // 使用指定的配置 ID
+                    try
+                    {
+                        var configService = HttpContext.RequestServices.GetService<IReportPrintConfigurationService>();
+                        if (configService != null)
+                        {
+                            printConfig = await configService.GetByIdAsync(configId.Value);
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // 如果找不到配置，則使用預設設定
+                    }
+                }
+                else if (!string.IsNullOrEmpty(reportType))
+                {
+                    // 使用報表類型查找配置
+                    try
+                    {
+                        printConfig = await _reportPrintConfigurationService.GetByReportTypeAsync(reportType);
+                    }
+                    catch (Exception)
+                    {
+                        // 如果找不到配置，則使用預設設定
+                    }
+                }
+                else
+                {
+                    // 使用預設的採購單配置
+                    try
+                    {
+                        printConfig = await _reportPrintConfigurationService.GetByReportTypeAsync("PurchaseOrder");
+                    }
+                    catch (Exception)
+                    {
+                        // 如果找不到配置，則使用預設設定
+                    }
+                }
+
+                // 根據是否有列印配置選擇對應的方法
+                string reportContent;
+                if (printConfig != null)
+                {
+                    reportContent = await _purchaseOrderReportService.GeneratePurchaseOrderReportAsync(id, reportFormat, printConfig);
+                }
+                else
+                {
+                    reportContent = await _purchaseOrderReportService.GeneratePurchaseOrderReportAsync(id, reportFormat);
+                }
 
                 return reportFormat switch
                 {
