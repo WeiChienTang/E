@@ -2,9 +2,8 @@
 @using ERPCore2.Components.Shared.Buttons
 @inject IPurchaseOrderService PurchaseOrderService
 @inject INotificationService NotificationService
-@inject IJSRuntime JSRuntime
 
-@if (PendingOrderDetails != null && PendingOrderDetails.Any())
+@if (PendingOrderDetails != null && (PendingOrderDetails.Any() || (IsEditMode && ReceivingItems.Any())))
 {
     <div class="card">
             @if (!SupplierId.HasValue || SupplierId.Value <= 0)
@@ -171,6 +170,7 @@ else
     [Parameter] public int? SupplierId { get; set; }
     [Parameter] public List<PurchaseReceivingDetail> ExistingDetails { get; set; } = new List<PurchaseReceivingDetail>();
     [Parameter] public EventCallback<List<PurchaseReceivingDetail>> OnDetailsChanged { get; set; }
+    [Parameter] public bool IsEditMode { get; set; } = false;
 
     // ===== 內部狀態 =====
     private List<PurchaseOrderDetail> PendingOrderDetails { get; set; } = new List<PurchaseOrderDetail>();
@@ -218,7 +218,8 @@ else
         {
             if (SupplierId.HasValue && SupplierId.Value > 0)
             {
-                PendingOrderDetails = await PurchaseOrderService.GetPendingReceivingDetailsBySupplierAsync(SupplierId.Value);
+                // 使用統一的方法，透過 isEditMode 參數控制載入行為
+                PendingOrderDetails = await PurchaseOrderService.GetReceivingDetailsBySupplierAsync(SupplierId.Value, IsEditMode);
                 CreateReceivingItems();
             }
             else

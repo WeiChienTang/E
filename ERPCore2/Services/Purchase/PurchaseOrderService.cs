@@ -906,6 +906,60 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 取得指定供應商的採購明細（可根據編輯模式決定是否隱藏已完成項目）
+        /// </summary>
+        /// <param name="supplierId">供應商ID</param>
+        /// <param name="isEditMode">是否為編輯模式，true=顯示所有項目，false=隱藏已完成項目</param>
+        public async Task<List<PurchaseOrderDetail>> GetReceivingDetailsBySupplierAsync(int supplierId, bool isEditMode = false)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                var query = context.PurchaseOrderDetails
+                    .Include(pod => pod.Product)
+                        .ThenInclude(p => p.Unit)
+                    .Include(pod => pod.PurchaseOrder)
+                        .ThenInclude(po => po.Supplier)
+                    .Where(pod => 
+                        pod.PurchaseOrder.SupplierId == supplierId &&
+                        !pod.IsDeleted &&
+                        !pod.PurchaseOrder.IsDeleted &&
+                        pod.PurchaseOrder.IsApproved);
+
+                // 如果不是編輯模式，則過濾掉已完成的項目
+                if (!isEditMode)
+                {
+                    query = query.Where(pod =>
+                        // 檢查尚未完全進貨的明細 - 考慮手動完成標記
+                        !context.PurchaseReceivingDetails
+                            .Where(prd => prd.PurchaseOrderDetailId == pod.Id && !prd.IsDeleted)
+                            .Any(prd => prd.IsReceivingCompleted) &&
+                        pod.OrderQuantity > context.PurchaseReceivingDetails
+                            .Where(prd => prd.PurchaseOrderDetailId == pod.Id && !prd.IsDeleted)
+                            .Sum(prd => prd.ReceivedQuantity)
+                    );
+                }
+                
+                return await query
+                    .OrderBy(pod => pod.PurchaseOrder.OrderDate)
+                    .ThenBy(pod => pod.PurchaseOrder.PurchaseOrderNumber)
+                    .ThenBy(pod => pod.Product.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetReceivingDetailsBySupplierAsync), GetType(), _logger, new { 
+                    Method = nameof(GetReceivingDetailsBySupplierAsync),
+                    ServiceType = GetType().Name,
+                    SupplierId = supplierId,
+                    IsEditMode = isEditMode 
+                });
+                return new List<PurchaseOrderDetail>();
+            }
+        }
+
         #endregion
 
         #region 自動產生編號

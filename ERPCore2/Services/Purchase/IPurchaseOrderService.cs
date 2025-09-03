@@ -38,6 +38,7 @@ namespace ERPCore2.Services
         // 供應商相關進貨明細查詢 - 新增方法
         Task<List<PurchaseOrderDetail>> GetPendingReceivingDetailsBySupplierAsync(int supplierId);
         Task<List<PurchaseOrderDetail>> GetPendingReceivingDetailsBySupplierWithQuantityAsync(int supplierId);
+        Task<List<PurchaseOrderDetail>> GetReceivingDetailsBySupplierAsync(int supplierId, bool isEditMode = false);
         
         // 自動產生編號
         Task<string> GenerateOrderNumberAsync();
