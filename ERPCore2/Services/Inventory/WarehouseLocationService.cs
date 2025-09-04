@@ -167,6 +167,33 @@ namespace ERPCore2.Services
                 throw;
             }
         }
+
+        public async Task<bool> IsWarehouseLocationCodeExistsAsync(string code, int? excludeId = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.WarehouseLocations.Where(wl => wl.Code == code && !wl.IsDeleted);
+                
+                if (excludeId.HasValue)
+                {
+                    query = query.Where(wl => wl.Id != excludeId.Value);
+                }
+
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex, 
+                    nameof(IsWarehouseLocationCodeExistsAsync), 
+                    GetType(), 
+                    _logger,
+                    new { Code = code, ExcludeId = excludeId, ServiceType = GetType().Name }
+                );
+                throw;
+            }
+        }
     }
 }
 

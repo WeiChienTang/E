@@ -1,0 +1,270 @@
+@* 可重用的倉庫內位置編輯組件 - 可在任何頁面中嵌入 *@
+@inject IWarehouseLocationService WarehouseLocationService
+@inject IWarehouseService WarehouseService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="WarehouseLocation" 
+                          TService="IWarehouseLocationService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@WarehouseLocationId"
+                          Service="@WarehouseLocationService"
+                          EntityName="倉庫內位置"
+                          EntityNamePlural="倉庫內位置"
+                          ModalTitle="@(WarehouseLocationId.HasValue ? "編輯倉庫內位置" : "新增倉庫內位置")"
+                          Size="GenericEditModalComponent<WarehouseLocation, IWarehouseLocationService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadWarehouseLocationData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(WarehouseLocationId.HasValue ? "倉庫內位置更新成功" : "倉庫內位置新增成功")"
+                          SaveFailureMessage="倉庫內位置儲存失敗"
+                          RequiredPermission="WarehouseLocation.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? WarehouseLocationId { get; set; }
+    [Parameter] public EventCallback OnWarehouseLocationSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<WarehouseLocation, IWarehouseLocationService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<Warehouse> warehouses = new();
+
+    // ===== 必要方法 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadAdditionalDataAsync();
+            InitializeFormFields();
+        }
+    }
+
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            if (OnWarehouseLocationSaved.HasDelegate)
+            {
+                // 如果有指定儲存成功回調，則執行
+                await OnWarehouseLocationSaved.InvokeAsync();
+            }
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        try
+        {
+            if (IsVisibleChanged.HasDelegate)
+            {
+                await IsVisibleChanged.InvokeAsync(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"關閉視窗時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task<WarehouseLocation?> LoadWarehouseLocationData()
+    {
+        try
+        {
+            if (!WarehouseLocationId.HasValue)
+            {
+                // 新增模式 - 自動產生庫位代碼
+                var generatedCode = await GenerateWarehouseLocationCodeAsync();
+                return new WarehouseLocation
+                {
+                    Code = generatedCode,
+                    Status = EntityStatus.Active
+                };
+            }
+
+            // 編輯模式
+            return await WarehouseLocationService.GetByIdAsync(WarehouseLocationId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入倉庫內位置資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            // 載入倉庫清單用於下拉選單
+            warehouses = await WarehouseService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入倉庫資料時發生錯誤：{ex.Message}");
+            warehouses = new List<Warehouse>();
+        }
+    }
+
+    private void InitializeFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(WarehouseLocation.Code),
+                    Label = "庫位代碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入庫位代碼",
+                    IsRequired = true,
+                    MaxLength = 20,
+                    HelpText = "庫位的唯一識別代碼，新增時系統會自動產生，也可手動修改"
+                },
+                new()
+                {
+                    PropertyName = nameof(WarehouseLocation.Name),
+                    Label = "庫位名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入庫位名稱",
+                    IsRequired = true,
+                    MaxLength = 50,
+                    HelpText = "庫位的唯一名稱，用於識別不同庫位"
+                },
+                new()
+                {
+                    PropertyName = nameof(WarehouseLocation.WarehouseId),
+                    Label = "所屬倉庫",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    HelpText = "選擇此庫位所屬的倉庫",
+                    Options = warehouses.Select(w => new SelectOption
+                    {
+                        Text = w.Name,
+                        Value = w.Id.ToString()
+                    }).ToList()
+                },
+                new()
+                {
+                    PropertyName = nameof(WarehouseLocation.Zone),
+                    Label = "區域",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入區域代碼",
+                    IsRequired = false,
+                    MaxLength = 10,
+                    HelpText = "庫位所在區域（如：A區、B區等）"
+                },
+                new()
+                {
+                    PropertyName = nameof(WarehouseLocation.Aisle),
+                    Label = "排號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入排號",
+                    IsRequired = false,
+                    MaxLength = 10,
+                    HelpText = "庫位所在排號（如：01、02、03等）"
+                },
+                new()
+                {
+                    PropertyName = nameof(WarehouseLocation.Level),
+                    Label = "層號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入層號",
+                    IsRequired = false,
+                    MaxLength = 10,
+                    HelpText = "庫位所在層號（如：1F、2F、3F等）"
+                },
+                new()
+                {
+                    PropertyName = nameof(WarehouseLocation.Position),
+                    Label = "位號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入位號",
+                    IsRequired = false,
+                    MaxLength = 10,
+                    HelpText = "庫位具體位置號碼（如：A、B、C等）"
+                },
+                new()
+                {
+                    PropertyName = nameof(WarehouseLocation.MaxCapacity),
+                    Label = "最大容量",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入最大容量",
+                    IsRequired = false,
+                    HelpText = "此庫位可容納的最大數量（選填）",
+                    ContainerCssClass = "col-12"
+                }
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(WarehouseLocation.Code), "基本資訊" },
+                { nameof(WarehouseLocation.Name), "基本資訊" },
+                { nameof(WarehouseLocation.WarehouseId), "基本資訊" },
+                { nameof(WarehouseLocation.Zone), "位置資訊" },
+                { nameof(WarehouseLocation.Aisle), "位置資訊" },
+                { nameof(WarehouseLocation.Level), "位置資訊" },
+                { nameof(WarehouseLocation.Position), "位置資訊" },
+                { nameof(WarehouseLocation.MaxCapacity), "容量設定" }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(
+                ex,
+                nameof(InitializeFormFields),
+                GetType(),
+                additionalData: new { WarehouseLocationId }
+            );
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    /// <summary>
+    /// 生成庫位代碼
+    /// </summary>
+    private async Task<string> GenerateWarehouseLocationCodeAsync()
+    {
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            WarehouseLocationService,
+            "WL",
+            (service, code, excludeId) => service.IsWarehouseLocationCodeExistsAsync(code, excludeId)
+        );
+    }
+}

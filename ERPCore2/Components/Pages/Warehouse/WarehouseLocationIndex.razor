@@ -1,0 +1,160 @@
+@page "/warehouseLocations"
+@inject IWarehouseLocationService WarehouseLocationService
+@inject IWarehouseService WarehouseService
+@rendermode InteractiveServer
+@inject INotificationService NotificationService
+
+<GenericIndexPageComponent TEntity="WarehouseLocation" 
+                        TService="IWarehouseLocationService"
+                        Service="@WarehouseLocationService"
+                        EntityBasePath="/warehouseLocations"
+                        PageTitle="倉庫內位置管理"
+                        PageSubtitle="管理所有倉庫內位置資料與基本資訊"
+                        EntityName="倉庫內位置"
+                        BreadcrumbItems="@breadcrumbItems"
+                        FilterDefinitions="@filterDefinitions"
+                        ColumnDefinitions="@columnDefinitions"
+                        DataLoader="@LoadWarehouseLocationsAsync"
+                        FilterApplier="@ApplyWarehouseLocationFilters"
+                        GetEntityDisplayName="@(warehouseLocation => $"{warehouseLocation.Warehouse?.Name} - {warehouseLocation.Code}")"
+                        RequiredPermission="WarehouseLocation.Read"
+                        OnAddClick="@modalHandler.ShowAddModalAsync"
+                        OnRowClick="@modalHandler.ShowEditModalAsync"
+                        @ref="indexComponent" />
+
+<WarehouseLocationEditModalComponent IsVisible="@showEditModal"
+                           IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                           WarehouseLocationId="@editingWarehouseLocationId"
+                           OnWarehouseLocationSaved="@OnWarehouseLocationSavedAsync"
+                           OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<WarehouseLocation, IWarehouseLocationService> indexComponent = default!;
+    
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingWarehouseLocationId = null;
+    
+    // Modal 處理器
+    private ModalHandler<WarehouseLocation, GenericIndexPageComponent<WarehouseLocation, IWarehouseLocationService>> modalHandler = default!;
+    
+    // 欄位配置
+    private WarehouseLocationFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    // 相關資料
+    private List<Warehouse> warehouses = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<WarehouseLocation, GenericIndexPageComponent<WarehouseLocation, IWarehouseLocationService>>(
+                id => editingWarehouseLocationId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
+            await InitializeBreadcrumbsAsync();
+            
+            // 載入相關資料
+            await LoadWarehousesAsync();
+            
+            // 建立欄位配置（傳遞 NotificationService 和 warehouses）
+            fieldConfiguration = new WarehouseLocationFieldConfiguration(warehouses, NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: new { PageName = "WarehouseLocationIndex" });
+            await NotificationService.ShowErrorAsync("初始化倉庫內位置頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("庫存管理"),
+                new("倉庫內位置管理")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    // 載入倉庫內位置資料
+    private async Task<List<WarehouseLocation>> LoadWarehouseLocationsAsync()
+    {
+        try
+        {
+            return await WarehouseLocationService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehouseLocationsAsync), GetType(), additionalData: "載入倉庫內位置資料失敗");
+            await NotificationService.ShowErrorAsync("載入倉庫內位置資料失敗");
+            // 設定安全的預設值
+            return new List<WarehouseLocation>();
+        }
+    }
+
+    private async Task LoadWarehousesAsync()
+    {
+        try
+        {
+            warehouses = await WarehouseService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehousesAsync), GetType(), additionalData: "載入倉庫資料失敗");
+            await NotificationService.ShowErrorAsync("載入倉庫資料失敗");
+            // 設定安全的預設值
+            warehouses = new List<Warehouse>();
+        }
+    }
+
+    // 自定義篩選邏輯
+    private IQueryable<WarehouseLocation> ApplyWarehouseLocationFilters(SearchFilterModel searchModel, IQueryable<WarehouseLocation> query)
+    {
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyWarehouseLocationFilters), GetType());
+    }
+
+    // 處理倉庫內位置儲存成功事件
+    private async Task OnWarehouseLocationSavedAsync()
+    {
+        try
+        {
+            await modalHandler.OnModalCancelAsync(); // 關閉 Modal
+            if (indexComponent != null)
+            {
+                await indexComponent.ReloadData(); // 刷新頁面資料
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnWarehouseLocationSavedAsync), GetType(), additionalData: "處理倉庫內位置儲存成功事件失敗");
+            await NotificationService.ShowErrorAsync("處理儲存成功事件失敗");
+        }
+    }
+}
