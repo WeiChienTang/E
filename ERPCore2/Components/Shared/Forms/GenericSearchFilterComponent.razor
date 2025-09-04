@@ -416,7 +416,8 @@
         builder.AddAttribute(sequence + 9, "onfocus", EventCallback.Factory.Create(this, () =>
         {
             var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "");
-            if (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= filter.MinSearchLength)
+            // 當 MinSearchLength 為 0 時，允許空輸入觸發搜尋以顯示所有選項
+            if (filter.MinSearchLength == 0 || (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= filter.MinSearchLength))
             {
                 _ = HandleAutoCompleteInput(filter, inputValue);
             }
@@ -512,12 +513,16 @@
             autoCompleteTimers[fieldId]?.Dispose();
         }
         
-        // 如果輸入長度不足，隱藏下拉選單
+        // 如果輸入長度不足，檢查 MinSearchLength 設定
         if (inputValue.Length < filter.MinSearchLength)
         {
             autoCompleteVisible[fieldId] = false;
-            FilterModel.SetFilterValue(filter.PropertyName, ""); // 清空篩選值
-            _ = HandleFilterChanged();
+            // 如果 MinSearchLength > 0，清空篩選值
+            if (filter.MinSearchLength > 0)
+            {
+                FilterModel.SetFilterValue(filter.PropertyName, "");
+                _ = HandleFilterChanged();
+            }
             StateHasChanged();
             return Task.CompletedTask;
         }
@@ -570,7 +575,8 @@
                 if (!autoCompleteVisible.GetValueOrDefault(fieldId, false))
                 {
                     var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "");
-                    if (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= filter.MinSearchLength)
+                    // 當 MinSearchLength 為 0 時，允許空輸入觸發搜尋
+                    if (filter.MinSearchLength == 0 || (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= filter.MinSearchLength))
                     {
                         await HandleAutoCompleteInput(filter, inputValue);
                     }

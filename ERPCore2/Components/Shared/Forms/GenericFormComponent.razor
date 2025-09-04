@@ -649,7 +649,8 @@
             blurredFields.Remove(fieldId);
             
             var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "");
-            if (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= field.MinSearchLength)
+            // 當 MinSearchLength 為 0 時，允許空輸入觸發搜尋以顯示所有選項
+            if (field.MinSearchLength == 0 || (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= field.MinSearchLength))
             {
                 _ = HandleAutoCompleteInput(field, inputValue);
             }
@@ -775,19 +776,24 @@
             return;
         }
         
-        // 如果輸入為空，清空實體值並觸發變更事件
+        // 如果輸入為空，檢查 MinSearchLength 設定
         if (string.IsNullOrEmpty(inputValue))
         {
-            // 檢查目前實體值是否不為空，如果不為空才清空
-            var currentValue = GetPropertyValue(Model, field.PropertyName);
-            if (currentValue != null)
+            // 如果 MinSearchLength > 0，清空實體值並隱藏下拉選單
+            if (field.MinSearchLength > 0)
             {
-                SetPropertyValue(Model, field.PropertyName, null);
-                await OnFieldChanged.InvokeAsync((field.PropertyName, null));
+                // 檢查目前實體值是否不為空，如果不為空才清空
+                var currentValue = GetPropertyValue(Model, field.PropertyName);
+                if (currentValue != null)
+                {
+                    SetPropertyValue(Model, field.PropertyName, null);
+                    await OnFieldChanged.InvokeAsync((field.PropertyName, null));
+                }
+                autoCompleteVisible[fieldId] = false;
+                StateHasChanged();
+                return;
             }
-            autoCompleteVisible[fieldId] = false;
-            StateHasChanged();
-            return;
+            // 如果 MinSearchLength = 0，繼續執行搜尋以顯示所有選項
         }
         
         // 如果輸入長度不足，隱藏下拉選單
@@ -843,7 +849,8 @@
                 if (!autoCompleteVisible.GetValueOrDefault(fieldId, false))
                 {
                     var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "");
-                    if (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= field.MinSearchLength)
+                    // 當 MinSearchLength 為 0 時，允許空輸入觸發搜尋
+                    if (field.MinSearchLength == 0 || (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= field.MinSearchLength))
                     {
                         await HandleAutoCompleteInput(field, inputValue);
                     }
