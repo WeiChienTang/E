@@ -65,8 +65,15 @@ namespace ERPCore2.Services
                     .Include(pr => pr.ConfirmedByUser)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Product)
+                            .ThenInclude(p => p.Unit)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.PurchaseOrderDetail)
+                            .ThenInclude(pod => pod.Product)
+                                .ThenInclude(p => p.Unit)
+                    .Include(pr => pr.PurchaseReceivingDetails)
+                        .ThenInclude(prd => prd.PurchaseOrderDetail)
+                            .ThenInclude(pod => pod.PurchaseOrder)
+                                .ThenInclude(po => po.Supplier)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.WarehouseLocation)
                     .Where(pr => !pr.IsDeleted)
@@ -524,7 +531,7 @@ namespace ERPCore2.Services
                 var detailsToDelete = new List<PurchaseReceivingDetail>();
 
                 // 處理傳入的明細
-                foreach (var detail in (details ?? new List<PurchaseReceivingDetail>()).Where(d => d.ReceivedQuantity > 0))
+                foreach (var detail in (details ?? new List<PurchaseReceivingDetail>()).Where(d => d.ReceivedQuantity > 0 || d.IsReceivingCompleted))
                 {
                     // 驗證必要欄位
                     if (detail.PurchaseOrderDetailId <= 0)
@@ -629,7 +636,7 @@ namespace ERPCore2.Services
                     var detailsToDelete = new List<PurchaseReceivingDetail>();
 
                     // 處理傳入的明細
-                    foreach (var detail in details.Where(d => d.ReceivedQuantity > 0))
+                    foreach (var detail in details.Where(d => d.ReceivedQuantity > 0 || d.IsReceivingCompleted))
                     {
                         // 驗證必要欄位
                         if (detail.PurchaseOrderDetailId <= 0)

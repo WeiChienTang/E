@@ -41,37 +41,16 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "進貨單號",
                             FilterPlaceholder = "輸入進貨單號搜尋",
                             TableOrder = 1,
-                            FilterOrder = 1,
                             HeaderStyle = "width: 160px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PurchaseReceiving.ReceiptNumber), pr => pr.ReceiptNumber)
                         }
                     },
                     {
-                        nameof(PurchaseReceiving.PurchaseOrderId),
-                        new FieldDefinition<PurchaseReceiving>
-                        {
-                            PropertyName = "PurchaseOrder.PurchaseOrderNumber", // 表格顯示用
-                            FilterPropertyName = nameof(PurchaseReceiving.PurchaseOrderId), // 篩選器用
-                            DisplayName = "採購單號",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 2,
-                            FilterOrder = 2,
-                            HeaderStyle = "width: 160px;",
-                            Options = _purchaseOrders.Select(po => new SelectOption 
-                            { 
-                                Text = po.PurchaseOrderNumber, 
-                                Value = po.Id.ToString() 
-                            }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(PurchaseReceiving.PurchaseOrderId), pr => pr.PurchaseOrderId)
-                        }
-                    },
-                    {
                         "SupplierName",
                         new FieldDefinition<PurchaseReceiving>
                         {
-                            PropertyName = "PurchaseOrder.Supplier.CompanyName", // 透過關聯顯示供應商名稱
+                            PropertyName = "Supplier.CompanyName", // 直接使用供應商關聯顯示供應商名稱
                             DisplayName = "供應商",
                             TableOrder = 3,
                             FilterOrder = 3,
@@ -79,10 +58,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterPlaceholder = "輸入供應商名稱搜尋",
                             HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, "SupplierName", pr => 
-                                    pr.PurchaseOrder != null && pr.PurchaseOrder.Supplier != null 
-                                        ? pr.PurchaseOrder.Supplier.CompanyName 
-                                        : (pr.Supplier != null ? pr.Supplier.CompanyName : ""))
+                                model, query, "SupplierName", pr => pr.Supplier != null ? pr.Supplier.CompanyName : "")
                         }
                     },
                     {
@@ -94,7 +70,6 @@ namespace ERPCore2.FieldConfiguration
                             ColumnType = ColumnDataType.Date,
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 4,
-                            FilterOrder = 4,
                             HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(PurchaseReceiving.ReceiptDate), pr => pr.ReceiptDate)
@@ -109,7 +84,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "倉庫",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
-                            FilterOrder = 5,
                             HeaderStyle = "width: 140px;",
                             Options = _warehouses.Select(w => new SelectOption 
                             { 

@@ -960,6 +960,39 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 獲取供應商的未完成採購單（包含完整關聯資料用於判斷完成狀態）
+        /// </summary>
+        /// <param name="supplierId">供應商ID</param>
+        /// <returns>未完成的採購單清單</returns>
+        public async Task<List<PurchaseOrder>> GetIncompleteOrdersBySupplierAsync(int supplierId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.PurchaseOrders
+                    .Include(po => po.Supplier)
+                    .Include(po => po.Warehouse)
+                    .Include(po => po.PurchaseOrderDetails)
+                        .ThenInclude(pod => pod.Product)
+                    .Include(po => po.PurchaseOrderDetails)
+                        .ThenInclude(pod => pod.PurchaseReceivingDetails)
+                    .Where(po => po.SupplierId == supplierId && 
+                               !po.IsDeleted && 
+                               po.IsApproved) // 只包含已核准的訂單
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetIncompleteOrdersBySupplierAsync), GetType(), _logger, new { 
+                    Method = nameof(GetIncompleteOrdersBySupplierAsync),
+                    ServiceType = GetType().Name,
+                    SupplierId = supplierId 
+                });
+                return new List<PurchaseOrder>();
+            }
+        }
+
         #endregion
 
         #region 自動產生編號

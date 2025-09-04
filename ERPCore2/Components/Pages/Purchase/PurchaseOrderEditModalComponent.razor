@@ -599,7 +599,7 @@
         {
                     @if (editModalComponent?.Entity != null && availableProducts != null)
                     {
-                        <ProductManagerComponent TMainEntity="PurchaseOrder" 
+                        <PurchaseOrderProductManagerComponent TMainEntity="PurchaseOrder" 
                                                TDetailEntity="PurchaseOrderDetail"
                                                Products="@availableProducts"
                                                SelectedSupplierId="@editModalComponent.Entity.SupplierId"

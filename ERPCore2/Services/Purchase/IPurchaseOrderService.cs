@@ -40,6 +40,9 @@ namespace ERPCore2.Services
         Task<List<PurchaseOrderDetail>> GetPendingReceivingDetailsBySupplierWithQuantityAsync(int supplierId);
         Task<List<PurchaseOrderDetail>> GetReceivingDetailsBySupplierAsync(int supplierId, bool isEditMode = false);
         
+        // 新增：獲取供應商的未完成採購單（包含完整關聯資料用於判斷完成狀態）
+        Task<List<PurchaseOrder>> GetIncompleteOrdersBySupplierAsync(int supplierId);
+        
         // 自動產生編號
         Task<string> GenerateOrderNumberAsync();
     }

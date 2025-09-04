@@ -6,6 +6,7 @@
 @inject INotificationService NotificationService
 @inject ISupplierService SupplierService
 @inject IEmployeeService EmployeeService
+@inject IProductService ProductService
 @implements IDisposable
 
 <GenericEditModalComponent TEntity="PurchaseReceiving" 
@@ -51,9 +52,13 @@
     private List<WarehouseLocation> warehouseLocations = new();
     private List<Supplier> suppliers = new();
     private List<Employee> employees = new();
+    private List<Product> products = new();
     
     // ===== 採購入庫明細 =====
     private List<PurchaseReceivingDetail> purchaseReceivingDetails = new();
+    
+    // ===== 篩選狀態 =====
+    private int? filterProductId = null;
 
     // ===== 必要方法 =====
     protected override async Task OnParametersSetAsync()
@@ -142,10 +147,11 @@
                 // 載入採購入庫明細
                 await LoadPurchaseReceivingDetails(PurchaseReceivingId.Value);
                 
-                // 如果有供應商ID，更新採購單選項
+                // 如果有供應商ID，更新採購單選項和產品篩選選項
                 if (purchaseReceiving.SupplierId > 0)
                 {
                     await UpdatePurchaseOrderOptions(purchaseReceiving.SupplierId);
+                    await UpdateFilterProductOptions(purchaseReceiving.SupplierId);
                 }
                 
                 // 載入對應的採購單明細
@@ -180,7 +186,8 @@
                 LoadWarehousesAsync(),
                 LoadWarehouseLocationsAsync(),
                 LoadSuppliersAsync(),
-                LoadEmployeesAsync()
+                LoadEmployeesAsync(),
+                LoadProductsAsync()
             };
             
             await Task.WhenAll(tasks);
@@ -195,6 +202,8 @@
     {
         try
         {
+            // 使用服務的方法來獲取包含完整關聯資料的採購單
+            // 這樣我們可以正確判斷採購單的完成狀態
             purchaseOrders = await PurchaseOrderService.GetAllAsync();
         }
         catch (Exception ex)
@@ -264,8 +273,21 @@
         }
     }
 
+    private async Task LoadProductsAsync()
+    {
+        try
+        {
+            products = await ProductService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入產品資料時發生錯誤：{ex.Message}");
+            products = new List<Product>();
+        }
+    }
+
     /// <summary>
-    /// 更新採購單選項 - 根據供應商ID過濾
+    /// 更新採購單選項 - 根據供應商ID過濾，並排除已完成的採購單
     /// </summary>
     private async Task UpdatePurchaseOrderOptions(int? supplierId = null)
     {
@@ -279,8 +301,14 @@
                 
                 if (supplierId.HasValue && supplierId.Value > 0)
                 {
-                    // 根據供應商ID過濾採購單
-                    var filteredPurchaseOrders = purchaseOrders.Where(po => po.SupplierId == supplierId.Value).ToList();
+                    // 使用新的服務方法獲取包含完整關聯資料的採購單
+                    var supplierOrders = await PurchaseOrderService.GetIncompleteOrdersBySupplierAsync(supplierId.Value);
+                    
+                    // 過濾掉已完成的採購單
+                    var filteredPurchaseOrders = supplierOrders
+                        .Where(po => !IsOrderFullyCompleted(po))
+                        .ToList();
+                    
                     options.AddRange(filteredPurchaseOrders.Select(po => new SelectOption
                     {
                         Value = po.Id.ToString(),
@@ -295,6 +323,38 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"更新採購單選項時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 判斷採購單是否已完全完成
+    /// 完成條件：所有明細都已完成進貨（進貨數量 == 採購數量 或 標記為已完成）
+    /// </summary>
+    private bool IsOrderFullyCompleted(PurchaseOrder purchaseOrder)
+    {
+        try
+        {
+            // 如果沒有明細，視為未完成
+            if (purchaseOrder.PurchaseOrderDetails?.Any() != true)
+            {
+                return false;
+            }
+            
+            // 檢查是否所有明細都已完成
+            return purchaseOrder.PurchaseOrderDetails.All(pod => 
+            {
+                // 檢查該明細是否有對應的進貨記錄且標記為完成
+                var hasCompletedReceiving = pod.PurchaseReceivingDetails?.Any(prd => prd.IsReceivingCompleted) == true;
+                // 或者已經完全進貨（進貨數量 >= 訂購數量）
+                var isQuantityFullyReceived = pod.ReceivedQuantity >= pod.OrderQuantity;
+                
+                return hasCompletedReceiving || isQuantityFullyReceived;
+            });
+        }
+        catch
+        {
+            // 如果判斷過程中發生錯誤，預設為未完成以避免遺漏
+            return false;
         }
     }
 
@@ -331,6 +391,15 @@
                             Text = s.CompanyName
                         })).ToList(),
                     HelpText = "選擇供應商以載入該供應商的未完成進貨商品"
+                },
+                new()
+                {
+                    PropertyName = "FilterProductId", // 篩選用的虛擬欄位
+                    Label = "篩選產品",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    Options = await GetFilterProductOptions(),
+                    HelpText = "選擇特定產品進行篩選，或留空顯示所有產品"
                 },
                 new()
                 {
@@ -391,6 +460,7 @@
             {
                 { nameof(PurchaseReceiving.ReceiptNumber), "基本資訊" },
                 { nameof(PurchaseReceiving.SupplierId), "基本資訊" },
+                { "FilterProductId", "基本資訊" },
                 { nameof(PurchaseReceiving.PurchaseOrderId), "基本資訊" },
                 { nameof(PurchaseReceiving.ReceiptDate), "基本資訊" },
                 { nameof(PurchaseReceiving.WarehouseId), "基本資訊" },
@@ -402,6 +472,70 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"初始化表單欄位時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 取得產品篩選選項 - 根據選擇的供應商篩選
+    /// </summary>
+    private async Task<List<SelectOption>> GetFilterProductOptions()
+    {
+        try
+        {
+            var options = new List<SelectOption> {};
+            
+            // 如果有選擇供應商，只顯示該供應商的產品
+            if (editModalComponent?.Entity?.SupplierId > 0)
+            {
+                var supplierProducts = await ProductService.GetBySupplierAsync(editModalComponent.Entity.SupplierId);
+                options.AddRange(supplierProducts.Select(p => new SelectOption
+                {
+                    Value = p.Id.ToString(),
+                    Text = $"{p.Code} - {p.Name}"
+                }));
+            }
+            
+            return options;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入產品選項時發生錯誤：{ex.Message}");
+            return new List<SelectOption> {};
+        }
+    }
+
+    /// <summary>
+    /// 更新產品篩選選項 - 當供應商變更時調用
+    /// </summary>
+    private async Task UpdateFilterProductOptions(int? supplierId = null)
+    {
+        try
+        {
+            // 找到產品篩選欄位並更新其選項
+            var filterProductField = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+            if (filterProductField != null)
+            {
+                var options = new List<SelectOption> {};
+                
+                if (supplierId.HasValue && supplierId.Value > 0)
+                {
+                    var supplierProducts = await ProductService.GetBySupplierAsync(supplierId.Value);
+                    options.AddRange(supplierProducts.Select(p => new SelectOption
+                    {
+                        Value = p.Id.ToString(),
+                        Text = $"{p.Code} - {p.Name}"
+                    }));
+                }
+                
+                filterProductField.Options = options;
+                
+                // 清空目前的產品篩選選擇
+                filterProductId = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"更新產品篩選選項時發生錯誤：{ex.Message}");
         }
     }
 
@@ -493,15 +627,33 @@
                 }
                 
                 await UpdatePurchaseOrderOptions(supplierId);
+                
+                // 更新產品篩選選項
+                await UpdateFilterProductOptions(supplierId);
+                
                 StateHasChanged();
             }
             
-            // 當採購單ID變更時，觸發重新渲染（多採購單模式不需要載入特定明細）
-            if (fieldChange.PropertyName == nameof(PurchaseReceiving.PurchaseOrderId) && 
-                fieldChange.Value != null && 
-                int.TryParse(fieldChange.Value.ToString(), out int purchaseOrderId) && 
-                purchaseOrderId > 0)
+            // 當採購單ID變更時，觸發重新渲染以篩選對應的採購明細
+            if (fieldChange.PropertyName == nameof(PurchaseReceiving.PurchaseOrderId))
             {
+                // 無論選擇了特定採購單還是清空選擇，都需要重新渲染
+                StateHasChanged();
+            }
+            
+            // 當產品篩選變更時，更新篩選狀態並觸發重新渲染
+            if (fieldChange.PropertyName == "FilterProductId")
+            {
+                if (fieldChange.Value != null && 
+                    int.TryParse(fieldChange.Value.ToString(), out int productId) && 
+                    productId > 0)
+                {
+                    filterProductId = productId;
+                }
+                else
+                {
+                    filterProductId = null;
+                }
                 StateHasChanged();
             }
         }
@@ -527,9 +679,9 @@
             // 更新總金額
             purchaseReceiving.TotalAmount = purchaseReceivingDetails.Sum(d => d.SubtotalAmount);
 
-            // 過濾有效的明細（有進貨數量的）
+            // 過濾有效的明細（有進貨數量的或標記為已完成進貨的）
             var validDetails = purchaseReceivingDetails
-                .Where(detail => detail.ReceivedQuantity > 0)
+                .Where(detail => detail.ReceivedQuantity > 0 || detail.IsReceivingCompleted)
                 .ToList();
 
             if (!validDetails.Any())
@@ -607,6 +759,8 @@
                     {
                         <MultiOrderPurchaseReceivingDetailManagerComponent 
                             SupplierId="@editModalComponent.Entity.SupplierId"
+                            PurchaseOrderId="@editModalComponent.Entity.PurchaseOrderId"
+                            FilterProductId="@filterProductId"
                             ExistingDetails="@purchaseReceivingDetails"
                             OnDetailsChanged="@HandleReceivingDetailsChanged"
                             IsEditMode="@(PurchaseReceivingId.HasValue)" />
@@ -657,6 +811,7 @@
             warehouseLocations?.Clear();
             suppliers?.Clear();
             employees?.Clear();
+            products?.Clear();
         }
         catch
         {
