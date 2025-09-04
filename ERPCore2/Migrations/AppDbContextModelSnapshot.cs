@@ -80,7 +80,7 @@ namespace ERPCore2.Migrations
                     b.HasIndex("OwnerType", "OwnerId")
                         .HasDatabaseName("IX_Address_OwnerType_OwnerId");
 
-                    b.ToTable("Addresses");
+                    b.ToTable("Addresses", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.AddressType", b =>
@@ -130,7 +130,7 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AddressTypes");
+                    b.ToTable("AddressTypes", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Color", b =>
@@ -180,7 +180,7 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Colors");
+                    b.ToTable("Colors", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Company", b =>
@@ -270,7 +270,7 @@ namespace ERPCore2.Migrations
                         .IsUnique()
                         .HasFilter("[Code] IS NOT NULL");
 
-                    b.ToTable("Companies");
+                    b.ToTable("Companies", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Contact", b =>
@@ -332,7 +332,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("ContactTypeId");
 
-                    b.ToTable("Contacts");
+                    b.ToTable("Contacts", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.ContactType", b =>
@@ -382,7 +382,7 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ContactTypes");
+                    b.ToTable("ContactTypes", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Customer", b =>
@@ -445,7 +445,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("CustomerTypeId");
 
-                    b.ToTable("Customers");
+                    b.ToTable("Customers", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.CustomerType", b =>
@@ -491,7 +491,7 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CustomerTypes");
+                    b.ToTable("CustomerTypes", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.DeletedRecord", b =>
@@ -559,7 +559,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("TableName", "RecordId");
 
-                    b.ToTable("DeletedRecords");
+                    b.ToTable("DeletedRecords", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Department", b =>
@@ -610,7 +610,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("ManagerId");
 
-                    b.ToTable("Departments");
+                    b.ToTable("Departments", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Employee", b =>
@@ -698,7 +698,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("Employees");
+                    b.ToTable("Employees", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.EmployeePosition", b =>
@@ -744,7 +744,7 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("EmployeePositions");
+                    b.ToTable("EmployeePositions", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.ErrorLog", b =>
@@ -852,7 +852,7 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ErrorLogs");
+                    b.ToTable("ErrorLogs", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.InventoryReservation", b =>
@@ -948,7 +948,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("ReservationType", "ReservationStatus");
 
-                    b.ToTable("InventoryReservations");
+                    b.ToTable("InventoryReservations", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.InventoryStock", b =>
@@ -1027,7 +1027,7 @@ namespace ERPCore2.Migrations
                         .IsUnique()
                         .HasFilter("[WarehouseLocationId] IS NOT NULL");
 
-                    b.ToTable("InventoryStocks");
+                    b.ToTable("InventoryStocks", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.InventoryTransaction", b =>
@@ -1121,7 +1121,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("WarehouseId", "TransactionDate");
 
-                    b.ToTable("InventoryTransactions");
+                    b.ToTable("InventoryTransactions", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.InventoryTransactionType", b =>
@@ -1190,7 +1190,7 @@ namespace ERPCore2.Migrations
                         .IsUnique()
                         .HasFilter("[Code] IS NOT NULL");
 
-                    b.ToTable("InventoryTransactionTypes");
+                    b.ToTable("InventoryTransactionTypes", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Material", b =>
@@ -1240,7 +1240,7 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Materials");
+                    b.ToTable("Materials", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PaperSetting", b =>
@@ -1323,7 +1323,7 @@ namespace ERPCore2.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("PaperSettings");
+                    b.ToTable("PaperSettings", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Permission", b =>
@@ -1373,7 +1373,7 @@ namespace ERPCore2.Migrations
                         .IsUnique()
                         .HasFilter("[Code] IS NOT NULL");
 
-                    b.ToTable("Permissions");
+                    b.ToTable("Permissions", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PriceHistory", b =>
@@ -1459,7 +1459,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("ProductId", "PriceType", "ChangeDate");
 
-                    b.ToTable("PriceHistories");
+                    b.ToTable("PriceHistories", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PrinterConfiguration", b =>
@@ -1519,7 +1519,7 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PrinterConfigurations");
+                    b.ToTable("PrinterConfigurations", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Product", b =>
@@ -1605,7 +1605,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("WarehouseLocationId");
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.ProductCategory", b =>
@@ -1655,7 +1655,7 @@ namespace ERPCore2.Migrations
                         .IsUnique()
                         .HasFilter("[Code] IS NOT NULL");
 
-                    b.ToTable("ProductCategories");
+                    b.ToTable("ProductCategories", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.ProductPricing", b =>
@@ -1738,7 +1738,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("ProductId", "PricingType", "EffectiveDate");
 
-                    b.ToTable("ProductPricings");
+                    b.ToTable("ProductPricings", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.ProductSupplier", b =>
@@ -1807,7 +1807,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("UnitId");
 
-                    b.ToTable("ProductSuppliers");
+                    b.ToTable("ProductSuppliers", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseOrder", b =>
@@ -1905,7 +1905,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("SupplierId", "OrderDate");
 
-                    b.ToTable("PurchaseOrders");
+                    b.ToTable("PurchaseOrders", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseOrderDetail", b =>
@@ -1971,7 +1971,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("PurchaseOrderId", "ProductId");
 
-                    b.ToTable("PurchaseOrderDetails");
+                    b.ToTable("PurchaseOrderDetails", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceiving", b =>
@@ -2052,7 +2052,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("PurchaseOrderId", "ReceiptDate");
 
-                    b.ToTable("PurchaseReceivings");
+                    b.ToTable("PurchaseReceivings", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReceivingDetail", b =>
@@ -2133,7 +2133,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("PurchaseReceivingId", "ProductId");
 
-                    b.ToTable("PurchaseReceivingDetails");
+                    b.ToTable("PurchaseReceivingDetails", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReturn", b =>
@@ -2269,7 +2269,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("SupplierId", "ReturnDate");
 
-                    b.ToTable("PurchaseReturns");
+                    b.ToTable("PurchaseReturns", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReturnDetail", b =>
@@ -2379,7 +2379,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("PurchaseReturnId", "ProductId");
 
-                    b.ToTable("PurchaseReturnDetails");
+                    b.ToTable("PurchaseReturnDetails", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.ReportPrintConfiguration", b =>
@@ -2443,7 +2443,7 @@ namespace ERPCore2.Migrations
                     b.HasIndex("ReportType")
                         .IsUnique();
 
-                    b.ToTable("ReportPrintConfigurations");
+                    b.ToTable("ReportPrintConfigurations", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Role", b =>
@@ -2489,7 +2489,7 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.RolePermission", b =>
@@ -2540,7 +2540,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("RolePermissions");
+                    b.ToTable("RolePermissions", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.SalesDelivery", b =>
@@ -2641,7 +2641,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("SalesOrderId", "DeliveryDate");
 
-                    b.ToTable("SalesDeliveries");
+                    b.ToTable("SalesDeliveries", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.SalesDeliveryDetail", b =>
@@ -2715,7 +2715,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("SalesDeliveryId", "ProductId");
 
-                    b.ToTable("SalesDeliveryDetails");
+                    b.ToTable("SalesDeliveryDetails", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.SalesOrder", b =>
@@ -2819,7 +2819,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("OrderStatus", "OrderDate");
 
-                    b.ToTable("SalesOrders");
+                    b.ToTable("SalesOrders", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.SalesOrderDetail", b =>
@@ -2900,7 +2900,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("SalesOrderId", "ProductId");
 
-                    b.ToTable("SalesOrderDetails");
+                    b.ToTable("SalesOrderDetails", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.SalesReturn", b =>
@@ -3020,7 +3020,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("SalesOrderId", "ReturnDate");
 
-                    b.ToTable("SalesReturns");
+                    b.ToTable("SalesReturns", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.SalesReturnDetail", b =>
@@ -3122,7 +3122,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("SalesReturnId", "ProductId");
 
-                    b.ToTable("SalesReturnDetails");
+                    b.ToTable("SalesReturnDetails", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Size", b =>
@@ -3172,7 +3172,7 @@ namespace ERPCore2.Migrations
                         .IsUnique()
                         .HasFilter("[Code] IS NOT NULL");
 
-                    b.ToTable("Sizes");
+                    b.ToTable("Sizes", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.StockTaking", b =>
@@ -3278,7 +3278,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("WarehouseId", "TakingDate");
 
-                    b.ToTable("StockTakings");
+                    b.ToTable("StockTakings", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.StockTakingDetail", b =>
@@ -3366,7 +3366,7 @@ namespace ERPCore2.Migrations
                         .IsUnique()
                         .HasFilter("[WarehouseLocationId] IS NOT NULL");
 
-                    b.ToTable("StockTakingDetails");
+                    b.ToTable("StockTakingDetails", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Supplier", b =>
@@ -3429,7 +3429,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("SupplierTypeId");
 
-                    b.ToTable("Suppliers");
+                    b.ToTable("Suppliers", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.SupplierPricing", b =>
@@ -3508,7 +3508,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("ProductId", "SupplierId", "EffectiveDate");
 
-                    b.ToTable("SupplierPricings");
+                    b.ToTable("SupplierPricings", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.SupplierType", b =>
@@ -3554,7 +3554,7 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SupplierTypes");
+                    b.ToTable("SupplierTypes", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Unit", b =>
@@ -3604,7 +3604,7 @@ namespace ERPCore2.Migrations
                         .IsUnique()
                         .HasFilter("[Code] IS NOT NULL");
 
-                    b.ToTable("Units");
+                    b.ToTable("Units", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.UnitConversion", b =>
@@ -3662,7 +3662,7 @@ namespace ERPCore2.Migrations
                     b.HasIndex("FromUnitId", "ToUnitId")
                         .IsUnique();
 
-                    b.ToTable("UnitConversions");
+                    b.ToTable("UnitConversions", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Warehouse", b =>
@@ -3724,7 +3724,7 @@ namespace ERPCore2.Migrations
                         .IsUnique()
                         .HasFilter("[Code] IS NOT NULL");
 
-                    b.ToTable("Warehouses");
+                    b.ToTable("Warehouses", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.WarehouseLocation", b =>
@@ -3796,7 +3796,7 @@ namespace ERPCore2.Migrations
                         .IsUnique()
                         .HasFilter("[Code] IS NOT NULL");
 
-                    b.ToTable("WarehouseLocations");
+                    b.ToTable("WarehouseLocations", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Weather", b =>
@@ -3846,7 +3846,7 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Weathers");
+                    b.ToTable("Weathers", (string)null);
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Address", b =>
