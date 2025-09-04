@@ -85,7 +85,7 @@
         }
     }
 
-    // ===== 原有的初始化方法 =====
+    // ===== 初始化方法 =====
 
     private async Task InitializeBreadcrumbsAsync()
     {
@@ -107,6 +107,8 @@
         }
     }
 
+    // ===== 資料載入方法 =====
+
     private async Task LoadRelatedDataAsync()
     {
         try
@@ -127,7 +129,6 @@
         }
     }
 
-    // 載入庫存資料
     private async Task<List<InventoryStock>> LoadDataAsync()
     {
         try
@@ -144,24 +145,52 @@
         }
     }
 
+    // ===== 篩選方法 =====
+
     private IQueryable<InventoryStock> ApplyInventoryStockFilters(SearchFilterModel searchModel, IQueryable<InventoryStock> query)
     {
+        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
+        if (fieldConfiguration == null)
+        {
+            // 如果配置未初始化，回傳基本排序的查詢
+            return query.OrderBy(s => s.ProductId).ThenBy(s => s.WarehouseLocationId);
+        }
+
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyInventoryStockFilters), GetType());
     }
 
-    // 輔助方法
+    // ===== 輔助方法 =====
+
     private string GetProductName(int productId)
     {
-        var product = products.FirstOrDefault(p => p.Id == productId);
-        return product?.Name ?? $"商品-{productId}";
+        try
+        {
+            var product = products.FirstOrDefault(p => p.Id == productId);
+            return product?.Name ?? $"商品-{productId}";
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤但不顯示通知，因為這是輔助方法
+            _ = Task.Run(async () => await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetProductName), GetType(), additionalData: $"取得商品名稱失敗: ProductId={productId}"));
+            return $"商品-{productId}";
+        }
     }
 
     private string GetWarehouseLocationName(int? warehouseLocationId)
     {
-        if (!warehouseLocationId.HasValue)
-            return "未指定";
-        
-        var location = warehouseLocations.FirstOrDefault(l => l.Id == warehouseLocationId);
-        return location?.Name ?? $"位置-{warehouseLocationId}";
+        try
+        {
+            if (!warehouseLocationId.HasValue)
+                return "未指定";
+            
+            var location = warehouseLocations.FirstOrDefault(l => l.Id == warehouseLocationId);
+            return location?.Name ?? $"位置-{warehouseLocationId}";
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤但不顯示通知，因為這是輔助方法
+            _ = Task.Run(async () => await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetWarehouseLocationName), GetType(), additionalData: $"取得倉庫位置名稱失敗: WarehouseLocationId={warehouseLocationId}"));
+            return warehouseLocationId.HasValue ? $"位置-{warehouseLocationId}" : "未指定";
+        }
     }
 }
