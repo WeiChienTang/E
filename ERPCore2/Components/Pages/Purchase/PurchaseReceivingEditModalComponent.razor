@@ -54,7 +54,6 @@
     
     // ===== 採購入庫明細 =====
     private List<PurchaseReceivingDetail> purchaseReceivingDetails = new();
-    private List<PurchaseOrderDetail> availableOrderDetails = new();
 
     // ===== 必要方法 =====
     protected override async Task OnParametersSetAsync()
@@ -153,7 +152,7 @@
                 // 載入對應的採購單明細
                 if (purchaseReceiving.PurchaseOrderId.HasValue && purchaseReceiving.PurchaseOrderId.Value > 0)
                 {
-                    await LoadAvailableOrderDetails(purchaseReceiving.PurchaseOrderId.Value);
+                    // 注意：舊的單一採購單模式已移除，此處保留程式碼結構但不執行實際載入
                 }
                 
                 // 觸發重新渲染
@@ -448,22 +447,6 @@
     }
 
     /// <summary>
-    /// 載入可用的採購單明細
-    /// </summary>
-    private async Task LoadAvailableOrderDetails(int purchaseOrderId)
-    {
-        try
-        {
-            availableOrderDetails = await PurchaseOrderService.GetOrderDetailsAsync(purchaseOrderId);
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入採購單明細失敗：{ex.Message}");
-            availableOrderDetails = new List<PurchaseOrderDetail>();
-        }
-    }
-
-    /// <summary>
     /// 處理入庫明細變更
     /// </summary>
     private async Task HandleReceivingDetailsChanged(List<PurchaseReceivingDetail> details)
@@ -514,13 +497,12 @@
                 StateHasChanged();
             }
             
-            // 當採購單ID變更時，載入對應的採購單明細（單一採購單模式）
+            // 當採購單ID變更時，觸發重新渲染（多採購單模式不需要載入特定明細）
             if (fieldChange.PropertyName == nameof(PurchaseReceiving.PurchaseOrderId) && 
                 fieldChange.Value != null && 
                 int.TryParse(fieldChange.Value.ToString(), out int purchaseOrderId) && 
                 purchaseOrderId > 0)
             {
-                await LoadAvailableOrderDetails(purchaseOrderId);
                 StateHasChanged();
             }
         }
@@ -618,27 +600,10 @@
         {
             @if (editModalComponent?.Entity != null)
             {
-                // 判斷使用單一採購單模式還是多採購單模式
-                @if (editModalComponent.Entity.PurchaseOrderId.HasValue && editModalComponent.Entity.PurchaseOrderId.Value > 0)
+                // 使用多採購單模式
+                @if (editModalComponent.Entity.SupplierId > 0)
                 {
-                    // 單一採購單模式 - 使用原有元件
-                    try
-                    {
-                        <PurchaseReceivingDetailManagerComponent 
-                            PurchaseOrderId="@editModalComponent.Entity.PurchaseOrderId"
-                            ExistingDetails="@purchaseReceivingDetails"
-                            OnDetailsChanged="@HandleReceivingDetailsChanged" />
-                    }
-                    catch
-                    {
-                        <div class="alert alert-warning" role="alert">
-                            載入單一採購單明細管理器時發生錯誤，請重新整理頁面。
-                        </div>
-                    }
-                }
-                else if (editModalComponent.Entity.SupplierId > 0)
-                {
-                    // 多採購單模式 - 使用新元件
+                    // 多採購單模式
                     try
                     {
                         <MultiOrderPurchaseReceivingDetailManagerComponent 
@@ -650,7 +615,7 @@
                     catch
                     {
                         <div class="alert alert-warning" role="alert">
-                            載入多採購單明細管理器時發生錯誤，請重新整理頁面。
+                            載入明細管理器時發生錯誤，請重新整理頁面。
                         </div>
                     }
                 }
@@ -658,14 +623,14 @@
                 {
                     <div class="text-center py-3">
                         <i class="fas fa-info-circle text-info me-2"></i>
-                        <span class="text-muted">請先選擇供應商或採購單後再管理入庫明細</span>
+                        <span class="text-muted">請先選擇供應商後再管理入庫明細</span>
                     </div>
                 }
             }
             else
             {
                 <div class="text-center py-3">
-                    <span class="text-muted">請先選擇採購單後再管理入庫明細</span>
+                    <span class="text-muted">請先選擇供應商後再管理入庫明細</span>
                 </div>
             }
         }
@@ -686,7 +651,6 @@
         {
             // 清理任何需要清理的資源
             purchaseReceivingDetails?.Clear();
-            availableOrderDetails?.Clear();
             formFields?.Clear();
             formSections?.Clear();
             purchaseOrders?.Clear();
