@@ -283,32 +283,6 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<PurchaseReceiving>> GetByStatusAsync(PurchaseReceivingStatus status)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.PurchaseReceivings
-                    .Include(pr => pr.PurchaseOrder)
-                        .ThenInclude(po => po!.Supplier)
-                    .Include(pr => pr.Supplier)  // 新增直接供應商關聯
-                    .Include(pr => pr.Warehouse)
-                    .Where(pr => pr.ReceiptStatus == status && !pr.IsDeleted)
-                    .OrderByDescending(pr => pr.ReceiptDate)
-                    .ThenBy(pr => pr.ReceiptNumber)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByStatusAsync), GetType(), _logger, new { 
-                    Method = nameof(GetByStatusAsync),
-                    ServiceType = GetType().Name,
-                    Status = status 
-                });
-                return new List<PurchaseReceiving>();
-            }
-        }
-
         public async Task<List<PurchaseReceiving>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
             try
@@ -382,12 +356,7 @@ namespace ERPCore2.Services
                         return ServiceResult.Failure("找不到指定的進貨單");
                     }
 
-                    if (receipt.ReceiptStatus != PurchaseReceivingStatus.Draft)
-                    {
-                        return ServiceResult.Failure("只有草稿狀態的進貨單才能確認");
-                    }
-
-                    receipt.ReceiptStatus = PurchaseReceivingStatus.Approved;
+                    // 移除狀態檢查，直接確認
                     receipt.ConfirmedAt = DateTime.Now;
                     receipt.ConfirmedBy = confirmedBy;
                     receipt.UpdatedAt = DateTime.Now;
@@ -430,12 +399,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("找不到指定的進貨單");
                 }
 
-                if (receipt.ReceiptStatus == PurchaseReceivingStatus.Executed)
-                {
-                    return ServiceResult.Failure("已收貨的進貨單無法取消");
-                }
-
-                receipt.ReceiptStatus = PurchaseReceivingStatus.Voided;
+                // 移除狀態檢查，直接標記更新時間
                 receipt.UpdatedAt = DateTime.Now;
 
                 await context.SaveChangesAsync();
@@ -814,16 +778,16 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 自動更新入庫狀態 - 根據進貨明細完成情況判定
+        /// 自動更新入庫狀態 - 根據進貨明細完成情況判定 (已移除狀態管理)
         /// </summary>
         private async Task UpdateReceivingStatusAsync(AppDbContext context, PurchaseReceiving purchaseReceiving, List<PurchaseReceivingDetail> details)
         {
             try
             {
-                // 如果沒有明細，保持草稿狀態
+                // 移除狀態設定，僅保留基本邏輯檢查
                 if (!details.Any(d => d.ReceivedQuantity > 0))
                 {
-                    purchaseReceiving.ReceiptStatus = PurchaseReceivingStatus.Draft;
+                    // 無進貨明細時的處理
                     return;
                 }
 
@@ -836,7 +800,7 @@ namespace ERPCore2.Services
 
                 if (!purchaseOrderDetailIds.Any())
                 {
-                    purchaseReceiving.ReceiptStatus = PurchaseReceivingStatus.Draft;
+                    // 無對應採購明細時的處理
                     return;
                 }
 
@@ -910,19 +874,10 @@ namespace ERPCore2.Services
                     }
                 }
 
-                // 根據完成狀態設定入庫狀態
+                // 移除狀態設定，僅更新確認時間
                 if (allCompleted && hasAnyReceived)
                 {
-                    purchaseReceiving.ReceiptStatus = PurchaseReceivingStatus.Executed; // 已執行（完成）
                     purchaseReceiving.ConfirmedAt = DateTime.UtcNow;
-                }
-                else if (hasAnyReceived)
-                {
-                    purchaseReceiving.ReceiptStatus = PurchaseReceivingStatus.Approved; // 已核准（部分完成）
-                }
-                else
-                {
-                    purchaseReceiving.ReceiptStatus = PurchaseReceivingStatus.Draft; // 草稿（無進貨）
                 }
 
                 // 更新最後修改時間
@@ -936,9 +891,6 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     PurchaseReceivingId = purchaseReceiving.Id 
                 });
-                
-                // 預設設為已核准狀態
-                purchaseReceiving.ReceiptStatus = PurchaseReceivingStatus.Approved;
             }
         }
 

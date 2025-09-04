@@ -128,7 +128,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     ReceiptNumber = $"PR{receiptDate:yyyyMMdd}{order.Id:D3}",
                     ReceiptDate = receiptDate,
-                    ReceiptStatus = PurchaseReceivingStatus.Executed,
                     Remarks = $"採購訂單 {order.PurchaseOrderNumber} 進貨",
                     PurchaseOrderId = order.Id,
                     WarehouseId = order.WarehouseId!.Value,

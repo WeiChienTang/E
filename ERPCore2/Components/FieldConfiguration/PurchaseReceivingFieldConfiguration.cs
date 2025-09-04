@@ -121,52 +121,13 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(PurchaseReceiving.ReceiptStatus),
-                        new FieldDefinition<PurchaseReceiving>
-                        {
-                            PropertyName = nameof(PurchaseReceiving.ReceiptStatus),
-                            DisplayName = "進貨狀態",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 6,
-                            FilterOrder = 6,
-                            HeaderStyle = "width: 100px;",
-                            Options = Enum.GetValues<PurchaseReceivingStatus>()
-                                .Select(s => new SelectOption 
-                                { 
-                                    Text = GetStatusDescription(s), 
-                                    Value = ((int)s).ToString() 
-                                }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
-                                model, query, nameof(PurchaseReceiving.ReceiptStatus), pr => (int)pr.ReceiptStatus),
-                            CustomTemplate = item => builder =>
-                            {
-                                var receipt = (PurchaseReceiving)item;
-                                builder.OpenElement(0, "span");
-                                builder.AddAttribute(1, "class", "badge");
-                                
-                                var badgeClass = receipt.ReceiptStatus switch
-                                {
-                                    PurchaseReceivingStatus.Draft => "bg-secondary",
-                                    PurchaseReceivingStatus.Approved => "bg-primary",
-                                    PurchaseReceivingStatus.Executed => "bg-success",
-                                    PurchaseReceivingStatus.Voided => "bg-danger",
-                                    _ => "bg-secondary"
-                                };
-                                
-                                builder.AddAttribute(2, "class", $"badge {badgeClass}");
-                                builder.AddContent(3, GetStatusDescription(receipt.ReceiptStatus));
-                                builder.CloseElement();
-                            }
-                        }
-                    },
-                    {
                         nameof(PurchaseReceiving.TotalAmount),
                         new FieldDefinition<PurchaseReceiving>
                         {
                             PropertyName = nameof(PurchaseReceiving.TotalAmount),
                             DisplayName = "總金額",
                             ColumnType = ColumnDataType.Currency,
-                            TableOrder = 7,
+                            TableOrder = 6,
                             ShowInFilter = false,
                             HeaderStyle = "width: 120px; text-align: right;",
                         }
@@ -178,7 +139,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PurchaseReceiving.ConfirmedAt),
                             DisplayName = "確認時間",
                             ColumnType = ColumnDataType.DateTime,
-                            TableOrder = 8,
+                            TableOrder = 7,
                             ShowInFilter = false,
                             HeaderStyle = "width: 140px;",
                         }
@@ -229,21 +190,6 @@ namespace ERPCore2.FieldConfiguration
         {
             return q => q.OrderByDescending(pr => pr.ReceiptDate)
                          .ThenByDescending(pr => pr.ReceiptNumber);
-        }
-
-        /// <summary>
-        /// 取得狀態描述
-        /// </summary>
-        private static string GetStatusDescription(PurchaseReceivingStatus status)
-        {
-            return status switch
-            {
-                PurchaseReceivingStatus.Draft => "草稿",
-                PurchaseReceivingStatus.Approved => "已確認",
-                PurchaseReceivingStatus.Executed => "已入庫",
-                PurchaseReceivingStatus.Voided => "已取消",
-                _ => status.ToString()
-            };
         }
     }
 }

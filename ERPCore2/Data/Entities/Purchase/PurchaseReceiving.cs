@@ -10,7 +10,6 @@ namespace ERPCore2.Data.Entities
     /// </summary>
     [Index(nameof(ReceiptNumber), IsUnique = true)]
     [Index(nameof(PurchaseOrderId), nameof(ReceiptDate))]
-    [Index(nameof(ReceiptStatus), nameof(ReceiptDate))]
     public class PurchaseReceiving : BaseEntity
     {
         [Required(ErrorMessage = "進貨單號為必填")]
@@ -21,10 +20,6 @@ namespace ERPCore2.Data.Entities
         [Required(ErrorMessage = "進貨日期為必填")]
         [Display(Name = "進貨日期")]
         public DateTime ReceiptDate { get; set; } = DateTime.Today;
-
-        [Required(ErrorMessage = "進貨狀態為必填")]
-        [Display(Name = "進貨狀態")]
-        public PurchaseReceivingStatus ReceiptStatus { get; set; } = PurchaseReceivingStatus.Draft;
 
         [Display(Name = "進貨總金額")]
         [Column(TypeName = "decimal(18,2)")]

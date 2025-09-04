@@ -10,13 +10,6 @@ namespace ERPCore2.Services
     public interface IPurchaseReceivingService : IGenericManagementService<PurchaseReceiving>
     {
         /// <summary>
-        /// 根據狀態獲取進貨單
-        /// </summary>
-        /// <param name="status">進貨狀態</param>
-        /// <returns>進貨單列表</returns>
-        Task<List<PurchaseReceiving>> GetByStatusAsync(PurchaseReceivingStatus status);
-
-        /// <summary>
         /// 獲取指定日期範圍內的進貨單
         /// </summary>
         /// <param name="startDate">開始日期</param>
