@@ -1,0 +1,167 @@
+@page "/inventoryStocks"
+@inject IInventoryStockService InventoryStockService
+@inject IProductService ProductService
+@inject IWarehouseService WarehouseService
+@inject IWarehouseLocationService WarehouseLocationService
+@inject INotificationService NotificationService
+
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="InventoryStock" 
+                        TService="IInventoryStockService"
+                        Service="@InventoryStockService"
+                        EntityBasePath="/inventory-stocks"                          
+                        PageTitle="庫存查詢"
+                        PageSubtitle="管理商品庫存與倉庫位置"
+                        DataLoader="@LoadDataAsync"
+                        FilterApplier="@ApplyInventoryStockFilters"
+                        BreadcrumbItems="@breadcrumbItems"
+                        FilterDefinitions="@filterDefinitions"
+                        ColumnDefinitions="@columnDefinitions"
+                        EntityName="庫存"
+                        GetEntityDisplayName="@(stock => $"{GetProductName(stock.ProductId)} - {GetWarehouseLocationName(stock.WarehouseLocationId)}")"
+                        RequiredPermission="InventoryStock.Read"
+                        OnAddClick="@modalHandler.ShowAddModalAsync"
+                        OnRowClick="@modalHandler.ShowEditModalAsync"
+                        @ref="indexComponent"/>
+
+@* 庫存編輯 Modal *@
+<InventoryStockEditModalComponent IsVisible="@showEditModal"
+                                 IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                                 InventoryStockId="@editingInventoryStockId"
+                                 OnInventoryStockSaved="@modalHandler.OnEntitySavedAsync"
+                                 OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<InventoryStock, IInventoryStockService> indexComponent = default!;
+    
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingInventoryStockId = null;
+    
+    // Modal 處理器
+    private ModalHandler<InventoryStock, GenericIndexPageComponent<InventoryStock, IInventoryStockService>> modalHandler = default!;
+    
+    // 欄位配置
+    private InventoryStockFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    
+    // 相關資料
+    private List<Product> products = new();
+    private List<Warehouse> warehouses = new();
+    private List<WarehouseLocation> warehouseLocations = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<InventoryStock, GenericIndexPageComponent<InventoryStock, IInventoryStockService>>(
+                id => editingInventoryStockId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
+            await InitializeBreadcrumbsAsync();
+            await LoadRelatedDataAsync();
+            
+            // 建立欄位配置（傳遞所需參數）
+            fieldConfiguration = new InventoryStockFieldConfiguration(products, warehouses, warehouseLocations, NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化庫存頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化庫存頁面失敗");
+        }
+    }
+
+    // ===== 原有的初始化方法 =====
+
+    private async Task InitializeBreadcrumbsAsync()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("倉庫管理", "#"),
+                new("庫存查詢")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    private async Task LoadRelatedDataAsync()
+    {
+        try
+        {
+            // 載入相關資料
+            products = await ProductService.GetAllAsync();
+            warehouses = await WarehouseService.GetAllAsync();
+            warehouseLocations = await WarehouseLocationService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadRelatedDataAsync), GetType(), additionalData: "載入相關資料失敗");
+            await NotificationService.ShowErrorAsync("載入相關資料失敗");
+            // 設定安全的預設值
+            products = new List<Product>();
+            warehouses = new List<Warehouse>();
+            warehouseLocations = new List<WarehouseLocation>();
+        }
+    }
+
+    // 載入庫存資料
+    private async Task<List<InventoryStock>> LoadDataAsync()
+    {
+        try
+        {
+            return await InventoryStockService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), additionalData: "載入庫存資料失敗");
+            await NotificationService.ShowErrorAsync("載入庫存資料失敗");
+            // 設定安全的預設值
+            return new List<InventoryStock>();
+        }
+    }
+
+    private IQueryable<InventoryStock> ApplyInventoryStockFilters(SearchFilterModel searchModel, IQueryable<InventoryStock> query)
+    {
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyInventoryStockFilters), GetType());
+    }
+
+    // 輔助方法
+    private string GetProductName(int productId)
+    {
+        var product = products.FirstOrDefault(p => p.Id == productId);
+        return product?.Name ?? $"商品-{productId}";
+    }
+
+    private string GetWarehouseLocationName(int? warehouseLocationId)
+    {
+        if (!warehouseLocationId.HasValue)
+            return "未指定";
+        
+        var location = warehouseLocations.FirstOrDefault(l => l.Id == warehouseLocationId);
+        return location?.Name ?? $"位置-{warehouseLocationId}";
+    }
+}

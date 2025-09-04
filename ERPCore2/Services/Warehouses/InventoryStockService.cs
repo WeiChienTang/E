@@ -41,7 +41,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), typeof(InventoryStockService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
+                    Method = nameof(GetAllAsync),
+                    ServiceType = GetType().Name 
+                });
                 return new List<InventoryStock>();
             }
         }
@@ -61,7 +64,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByIdAsync), typeof(InventoryStockService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByIdAsync), GetType(), _logger, new { 
+                    Method = nameof(GetByIdAsync),
+                    ServiceType = GetType().Name,
+                    Id = id 
+                });
                 return null;
             }
         }
@@ -90,7 +97,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), typeof(InventoryStockService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { 
+                    Method = nameof(SearchAsync),
+                    ServiceType = GetType().Name,
+                    SearchTerm = searchTerm 
+                });
                 return new List<InventoryStock>();
             }
         }
@@ -134,7 +145,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), typeof(InventoryStockService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { 
+                    Method = nameof(ValidateAsync),
+                    ServiceType = GetType().Name,
+                    EntityId = entity.Id,
+                    ProductId = entity.ProductId,
+                    WarehouseId = entity.WarehouseId 
+                });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
         }
@@ -157,7 +174,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductIdAsync), typeof(InventoryStockService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductIdAsync), GetType(), _logger, new { 
+                    Method = nameof(GetByProductIdAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = productId 
+                });
                 return new List<InventoryStock>();
             }
         }
@@ -176,7 +197,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByWarehouseIdAsync), typeof(InventoryStockService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByWarehouseIdAsync), GetType(), _logger, new { 
+                    Method = nameof(GetByWarehouseIdAsync),
+                    ServiceType = GetType().Name,
+                    WarehouseId = warehouseId 
+                });
                 return new List<InventoryStock>();
             }
         }
@@ -197,7 +222,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductWarehouseAsync), typeof(InventoryStockService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductWarehouseAsync), GetType(), _logger, new { 
+                    Method = nameof(GetByProductWarehouseAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = productId,
+                    WarehouseId = warehouseId,
+                    LocationId = locationId 
+                });
                 return null;
             }
         }
@@ -218,7 +249,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetLowStockItemsAsync), typeof(InventoryStockService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetLowStockItemsAsync), GetType(), _logger, new { 
+                    Method = nameof(GetLowStockItemsAsync),
+                    ServiceType = GetType().Name 
+                });
                 return new List<InventoryStock>();
             }
         }
@@ -232,7 +266,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAvailableStockAsync), typeof(InventoryStockService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAvailableStockAsync), GetType(), _logger, new { 
+                    Method = nameof(GetAvailableStockAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = productId,
+                    WarehouseId = warehouseId,
+                    LocationId = locationId 
+                });
                 return 0;
             }
         }
@@ -328,7 +368,18 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(AddStockAsync), typeof(InventoryStockService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(AddStockAsync), GetType(), _logger, new { 
+                    Method = nameof(AddStockAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = productId,
+                    WarehouseId = warehouseId,
+                    Quantity = quantity,
+                    TransactionType = transactionType,
+                    TransactionNumber = transactionNumber,
+                    UnitCost = unitCost,
+                    LocationId = locationId,
+                    Remarks = remarks 
+                });
                 return ServiceResult.Failure("庫存增加失敗");
             }
         }
@@ -397,7 +448,17 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ReduceStockAsync), typeof(InventoryStockService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ReduceStockAsync), GetType(), _logger, new { 
+                    Method = nameof(ReduceStockAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = productId,
+                    WarehouseId = warehouseId,
+                    Quantity = quantity,
+                    TransactionType = transactionType,
+                    TransactionNumber = transactionNumber,
+                    LocationId = locationId,
+                    Remarks = remarks 
+                });
                 return ServiceResult.Failure("庫存扣減失敗");
             }
         }
@@ -452,7 +513,15 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(TransferStockAsync), typeof(InventoryStockService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(TransferStockAsync), GetType(), _logger, new {
+                    Method = nameof(TransferStockAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = productId,
+                    FromWarehouseId = fromWarehouseId,
+                    ToWarehouseId = toWarehouseId,
+                    Quantity = quantity,
+                    TransactionNumber = transactionNumber
+                });
                 return ServiceResult.Failure("庫存轉移失敗");
             }
         }
@@ -488,7 +557,14 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(AdjustStockAsync), typeof(InventoryStockService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(AdjustStockAsync), GetType(), _logger, new {
+                    Method = nameof(AdjustStockAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = productId,
+                    WarehouseId = warehouseId,
+                    NewQuantity = newQuantity,
+                    TransactionNumber = transactionNumber
+                });
                 return ServiceResult.Failure("庫存調整失敗");
             }
         }
@@ -539,9 +615,15 @@ namespace ERPCore2.Services
                     nameof(GetInventoryOverviewAsync),
                     GetType(),
                     _logger,
-                    new { WarehouseId = warehouseId, CategoryId = categoryId, LocationId = locationId }
+                    new { 
+                        Method = nameof(GetInventoryOverviewAsync),
+                        ServiceType = GetType().Name,
+                        WarehouseId = warehouseId, 
+                        CategoryId = categoryId, 
+                        LocationId = locationId 
+                    }
                 );
-                throw;
+                return new List<InventoryStock>();
             }
         }
 
@@ -570,9 +652,13 @@ namespace ERPCore2.Services
                     ex,
                     nameof(GetLowStockOverviewAsync),
                     GetType(),
-                    _logger
+                    _logger,
+                    new {
+                        Method = nameof(GetLowStockOverviewAsync),
+                        ServiceType = GetType().Name
+                    }
                 );
-                throw;
+                return new List<InventoryStock>();
             }
         }
 
@@ -627,9 +713,13 @@ namespace ERPCore2.Services
                     ex,
                     nameof(GetInventoryStatisticsAsync),
                     GetType(),
-                    _logger
+                    _logger,
+                    new {
+                        Method = nameof(GetInventoryStatisticsAsync),
+                        ServiceType = GetType().Name
+                    }
                 );
-                throw;
+                return new Dictionary<string, object>();
             }
         }
 
@@ -701,7 +791,15 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ReserveStockAsync), typeof(InventoryStockService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ReserveStockAsync), GetType(), _logger, new {
+                    Method = nameof(ReserveStockAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = productId,
+                    WarehouseId = warehouseId,
+                    Quantity = quantity,
+                    ReservationType = reservationType,
+                    ReferenceNumber = referenceNumber
+                });
                 return ServiceResult.Failure("庫存預留失敗");
             }
         }
@@ -757,7 +855,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ReleaseReservationAsync), typeof(InventoryStockService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ReleaseReservationAsync), GetType(), _logger, new {
+                    Method = nameof(ReleaseReservationAsync),
+                    ServiceType = GetType().Name,
+                    ReservationId = reservationId,
+                    ReleaseQuantity = releaseQuantity
+                });
                 return ServiceResult.Failure("預留釋放失敗");
             }
         }
@@ -770,7 +873,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CancelReservationAsync), typeof(InventoryStockService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CancelReservationAsync), GetType(), _logger, new {
+                    Method = nameof(CancelReservationAsync),
+                    ServiceType = GetType().Name,
+                    ReservationId = reservationId
+                });
                 return ServiceResult.Failure("預留取消失敗");
             }
         }
@@ -794,7 +901,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetActiveReservationsAsync), typeof(InventoryStockService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetActiveReservationsAsync), GetType(), _logger, new {
+                    Method = nameof(GetActiveReservationsAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = productId,
+                    WarehouseId = warehouseId
+                });
                 return new List<InventoryReservation>();
             }
         }
@@ -812,7 +924,14 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsStockAvailableAsync), typeof(InventoryStockService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsStockAvailableAsync), GetType(), _logger, new {
+                    Method = nameof(IsStockAvailableAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = productId,
+                    WarehouseId = warehouseId,
+                    RequiredQuantity = requiredQuantity,
+                    LocationId = locationId
+                });
                 return false;
             }
         }
@@ -839,7 +958,14 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateStockOperationAsync), typeof(InventoryStockService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateStockOperationAsync), GetType(), _logger, new {
+                    Method = nameof(ValidateStockOperationAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = productId,
+                    WarehouseId = warehouseId,
+                    Quantity = quantity,
+                    IsReduce = isReduce
+                });
                 return ServiceResult.Failure("庫存操作驗證失敗");
             }
         }

@@ -1,0 +1,462 @@
+@* 可重用的庫存編輯組件 - 可在任何頁面中嵌入 *@
+@inject IInventoryStockService InventoryStockService
+@inject IProductService ProductService
+@inject IWarehouseService WarehouseService
+@inject IWarehouseLocationService WarehouseLocationService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="InventoryStock" 
+                          TService="IInventoryStockService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@InventoryStockId"
+                          Service="@InventoryStockService"
+                          EntityName="庫存"
+                          EntityNamePlural="庫存"
+                          ModalTitle="@(InventoryStockId.HasValue ? "編輯庫存" : "新增庫存")"
+                          Size="GenericEditModalComponent<InventoryStock, IInventoryStockService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadInventoryStockData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(InventoryStockId.HasValue ? "庫存更新成功" : "庫存新增成功")"
+                          SaveFailureMessage="庫存儲存失敗"
+                          RequiredPermission="InventoryStock.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel"
+                          OnFieldChanged="@OnFieldValueChanged" />
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? InventoryStockId { get; set; }
+    [Parameter] public EventCallback<InventoryStock> OnInventoryStockSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<InventoryStock, IInventoryStockService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<Product> availableProducts = new();
+    private List<Warehouse> availableWarehouses = new();
+    private List<WarehouseLocation> availableWarehouseLocations = new();
+    private int? selectedWarehouseId = null;
+
+    // ===== 生命週期 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadAdditionalDataAsync();
+            InitializeFormFields();
+        }
+    }
+
+    // ===== 事件處理 =====
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            // 如果父組件需要知道庫存已儲存
+            if (OnInventoryStockSaved.HasDelegate && editModalComponent?.Entity != null)
+            {
+                await OnInventoryStockSaved.InvokeAsync(editModalComponent.Entity);
+            }
+
+            // 關閉 Modal
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+
+    // ===== 資料載入 =====
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            // 載入產品列表
+            availableProducts = await ProductService.GetAllAsync();
+            
+            // 載入倉庫列表  
+            availableWarehouses = await WarehouseService.GetAllAsync();
+            
+            // 載入所有倉庫位置（初始化時）
+            availableWarehouseLocations = await WarehouseLocationService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入庫存資料時發生錯誤：{ex.Message}");
+            availableProducts = new List<Product>();
+            availableWarehouses = new List<Warehouse>();
+            availableWarehouseLocations = new List<WarehouseLocation>();
+        }
+    }
+
+    private async Task<InventoryStock?> LoadInventoryStockData()
+    {
+        try
+        {
+            if (!InventoryStockId.HasValue) 
+            {
+                // 新增模式：建立新的庫存實體
+                var newInventoryStock = new InventoryStock
+                {
+                    CurrentStock = 0,
+                    ReservedStock = 0,
+                    InTransitStock = 0,
+                    Status = EntityStatus.Active
+                };
+                
+                // 應用預填值
+                if (PrefilledValues != null)
+                {
+                    foreach (var kvp in PrefilledValues)
+                    {
+                        var property = typeof(InventoryStock).GetProperty(kvp.Key);
+                        if (property != null && property.CanWrite && kvp.Value != null)
+                        {
+                            try
+                            {
+                                // 轉換值的類型
+                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
+                                property.SetValue(newInventoryStock, convertedValue);
+                            }
+                            catch (Exception)
+                            {
+                                // 忽略轉換失敗的值
+                            }
+                        }
+                    }
+                }
+                
+                return newInventoryStock;
+            }
+
+            var inventoryStock = await InventoryStockService.GetByIdAsync(InventoryStockId.Value);            
+            
+            if (inventoryStock == null)
+            {
+                // 如果找不到庫存，建立新的預設庫存
+                return new InventoryStock
+                {
+                    CurrentStock = 0,
+                    ReservedStock = 0,
+                    InTransitStock = 0,
+                    Status = EntityStatus.Active
+                };
+            }
+            
+            // 設定選中的倉庫，用於更新倉庫位置選項
+            selectedWarehouseId = inventoryStock.WarehouseId;
+            
+            return inventoryStock;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入庫存資料時發生錯誤：{ex.Message}");
+            
+            // 設定安全的預設值，確保程式不會崩潰
+            return new InventoryStock
+            {
+                CurrentStock = 0,
+                ReservedStock = 0,
+                InTransitStock = 0,
+                Status = EntityStatus.Active
+            };
+        }
+    }
+
+    // ===== 表單初始化 =====
+    private void InitializeFormFields()
+    {
+        try
+        {
+            // 準備產品選項
+            var productOptions = availableProducts.Select(p => new SelectOption
+            {
+                Text = $"{p.Code} - {p.Name}",
+                Value = p.Id.ToString()
+            }).ToList();
+
+            // 準備倉庫選項
+            var warehouseOptions = availableWarehouses.Select(w => new SelectOption
+            {
+                Text = $"{w.Code} - {w.Name}",
+                Value = w.Id.ToString()
+            }).ToList();
+
+            // 準備倉庫位置選項（根據選中的倉庫篩選）
+            var warehouseLocationOptions = GetWarehouseLocationOptions(selectedWarehouseId);
+
+            formFields = new List<FormFieldDefinition>
+            {
+                // 基本資訊區段
+                new()
+                {
+                    PropertyName = nameof(InventoryStock.ProductId),
+                    Label = "商品",
+                    FieldType = FormFieldType.Select,
+                    Placeholder = "請選擇商品",
+                    IsRequired = true,
+                    Options = productOptions,
+                    HelpText = "選擇要管理庫存的商品",
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryStock.WarehouseId),
+                    Label = "倉庫",
+                    FieldType = FormFieldType.Select,
+                    Placeholder = "請選擇倉庫",
+                    IsRequired = true,
+                    Options = warehouseOptions,
+                    HelpText = "選擇庫存所在的倉庫",
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryStock.WarehouseLocationId),
+                    Label = "倉庫位置",
+                    FieldType = FormFieldType.Select,
+                    Placeholder = "請選擇倉庫位置（可選）",
+                    IsRequired = false,
+                    Options = warehouseLocationOptions,
+                    HelpText = "選擇商品在倉庫中的具體位置（可選）"
+                },
+                
+                // 庫存數量區段
+                new()
+                {
+                    PropertyName = nameof(InventoryStock.CurrentStock),
+                    Label = "現有庫存",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入現有庫存數量",
+                    IsRequired = true,
+                    HelpText = "商品目前的實際庫存數量",
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryStock.ReservedStock),
+                    Label = "預留庫存",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入預留庫存數量",
+                    IsRequired = false,
+                    HelpText = "已預留但尚未出庫的數量",
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryStock.InTransitStock),
+                    Label = "在途庫存",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入在途庫存數量",
+                    IsRequired = false,
+                    HelpText = "已下單但尚未到貨的數量",
+                },
+                
+                // 庫存警戒線區段
+                new()
+                {
+                    PropertyName = nameof(InventoryStock.MinStockLevel),
+                    Label = "最低庫存警戒線",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入最低庫存警戒線",
+                    IsRequired = false,
+                    HelpText = "當庫存低於此數量時會發出警告",
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryStock.MaxStockLevel),
+                    Label = "最高庫存警戒線",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入最高庫存警戒線",
+                    IsRequired = false,
+                    HelpText = "建議的最大庫存數量",
+                },
+                
+                // 成本資訊區段
+                new()
+                {
+                    PropertyName = nameof(InventoryStock.AverageCost),
+                    Label = "平均成本",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入平均成本",
+                    IsRequired = false,
+                    HelpText = "商品的平均單位成本（系統會自動計算）",
+                    Step = 0.01m
+                },
+                
+                FormFieldConfigurationHelper.CreateRemarksField<InventoryStock>(
+                    label: "庫存備註",
+                    placeholder: "請輸入庫存備註",
+                    helpText: "其他需要補充的庫存相關資訊",
+                    rows: 2,
+                    containerCssClass: "col-12"
+                )
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(InventoryStock.ProductId), "基本資訊" },
+                { nameof(InventoryStock.WarehouseId), "基本資訊" },
+                { nameof(InventoryStock.WarehouseLocationId), "基本資訊" },
+                { nameof(InventoryStock.CurrentStock), "基本資訊" },
+                { nameof(InventoryStock.ReservedStock), "基本資訊" },
+                { nameof(InventoryStock.InTransitStock), "基本資訊" },
+                { nameof(InventoryStock.MinStockLevel), "基本資訊" },
+                { nameof(InventoryStock.MaxStockLevel), "基本資訊" },
+                { nameof(InventoryStock.AverageCost), "基本資訊" },
+                { nameof(InventoryStock.Remarks), "額外資料" }
+            };
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    // ===== 輔助方法 =====
+    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    {
+        try
+        {
+            // 處理倉庫變更事件，更新倉庫位置選項
+            if (fieldChange.PropertyName == nameof(InventoryStock.WarehouseId))
+            {
+                await OnWarehouseChanged(fieldChange.Value);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理欄位變更時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private List<SelectOption> GetWarehouseLocationOptions(int? warehouseId)
+    {
+        var options = new List<SelectOption>
+        {
+            new SelectOption { Text = "無指定位置", Value = "" }
+        };
+
+        if (warehouseId.HasValue)
+        {
+            var locations = availableWarehouseLocations
+                .Where(wl => wl.WarehouseId == warehouseId.Value)
+                .Select(wl => new SelectOption
+                {
+                    Text = $"{wl.Code} - {wl.Name}",
+                    Value = wl.Id.ToString()
+                }).ToList();
+            
+            options.AddRange(locations);
+        }
+
+        return options;
+    }
+
+    private async Task OnWarehouseChanged(object? value)
+    {
+        try
+        {
+            if (int.TryParse(value?.ToString(), out int warehouseId))
+            {
+                selectedWarehouseId = warehouseId;
+                
+                // 更新倉庫位置選項
+                var warehouseLocationField = formFields.FirstOrDefault(f => f.PropertyName == nameof(InventoryStock.WarehouseLocationId));
+                if (warehouseLocationField != null)
+                {
+                    warehouseLocationField.Options = GetWarehouseLocationOptions(warehouseId);
+                    StateHasChanged();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"更新倉庫位置選項時發生錯誤：{ex.Message}");
+        }
+    }
+
+    // ===== 公開方法 (供父組件調用) =====
+
+    /// <summary>
+    /// 開啟新增庫存 Modal
+    /// </summary>
+    public async Task ShowAddModal()
+    {
+        InventoryStockId = null;
+        selectedWarehouseId = null;
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(true);
+        }
+    }
+
+    /// <summary>
+    /// 開啟編輯庫存 Modal
+    /// </summary>
+    public async Task ShowEditModal(int inventoryStockId)
+    {
+        InventoryStockId = inventoryStockId;
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(true);
+        }
+    }
+
+    /// <summary>
+    /// 開啟新增庫存 Modal 並預填商品和倉庫
+    /// </summary>
+    public async Task ShowAddModalWithPrefilledData(int productId, int warehouseId)
+    {
+        InventoryStockId = null;
+        selectedWarehouseId = warehouseId;
+        
+        PrefilledValues = new Dictionary<string, object?>
+        {
+            { nameof(InventoryStock.ProductId), productId },
+            { nameof(InventoryStock.WarehouseId), warehouseId }
+        };
+        
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(true);
+        }
+    }
+}

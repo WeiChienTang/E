@@ -73,10 +73,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 
                 // 倉庫管理權限
                 new Permission { Code = "Warehouse.Read", Name = "檢視倉庫", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視倉庫基本資料與儲位設定" },
-                
-                // 庫存管理權限
                 new Permission { Code = "Inventory.Read", Name = "檢視庫存", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視庫存數量與庫存狀況" },
-                
+                new Permission { Code = "WarehouseLocation.Read", Name = "檢視倉庫位置", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視倉庫內部位置與儲位設定" },
                 // 庫存明細權限
                 new Permission { Code = "InventoryStock.Read", Name = "檢視庫存明細", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視詳細庫存明細與批號資訊" },
                 
