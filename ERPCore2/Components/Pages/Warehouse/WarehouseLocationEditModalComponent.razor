@@ -2,6 +2,7 @@
 @inject IWarehouseLocationService WarehouseLocationService
 @inject IWarehouseService WarehouseService
 @inject INotificationService NotificationService
+@inject ActionButtonHelper ActionButtonHelper
 
 <GenericEditModalComponent TEntity="WarehouseLocation" 
                           TService="IWarehouseLocationService"
@@ -17,6 +18,10 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
+                          AutoCompleteCollections="@GetAutoCompleteCollections()"
+                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
+                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadWarehouseLocationData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
@@ -25,6 +30,14 @@
                           RequiredPermission="WarehouseLocation.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel" />
+
+@* 倉庫編輯 Modal *@
+<WarehouseEditModalComponent @ref="warehouseEditModal"
+                            IsVisible="@warehouseModalManager.IsModalVisible"
+                            IsVisibleChanged="@warehouseModalManager.HandleModalVisibilityChangedAsync"
+                            WarehouseId="@warehouseModalManager.SelectedEntityId"
+                            OnWarehouseSaved="@OnWarehouseSavedWrapper"
+                            OnCancel="@warehouseModalManager.HandleModalCancelAsync" />
 
 @code {
     // ===== 必要參數 =====
@@ -39,14 +52,31 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     private List<Warehouse> warehouses = new();
+    
+    // Modal 管理器
+    private WarehouseEditModalComponent? warehouseEditModal;
+    private RelatedEntityModalManager<Warehouse> warehouseModalManager = default!;
 
     // ===== 必要方法 =====
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 管理器
+            InitializeWarehouseModalManager();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化倉庫位置編輯組件時發生錯誤");
+        }
+    }
+    
     protected override async Task OnParametersSetAsync()
     {
         if (IsVisible)
         {
             await LoadAdditionalDataAsync();
-            InitializeFormFields();
+            await InitializeFormFieldsAsync();
         }
     }
 
@@ -137,7 +167,7 @@
         }
     }
 
-    private void InitializeFormFields()
+    private async Task InitializeFormFieldsAsync()
     {
         try
         {
@@ -167,14 +197,12 @@
                 {
                     PropertyName = nameof(WarehouseLocation.WarehouseId),
                     Label = "所屬倉庫",
-                    FieldType = FormFieldType.Select,
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇倉庫",
                     IsRequired = true,
-                    HelpText = "選擇此庫位所屬的倉庫",
-                    Options = warehouses.Select(w => new SelectOption
-                    {
-                        Text = w.Name,
-                        Value = w.Id.ToString()
-                    }).ToList()
+                    MinSearchLength = 0,
+                    HelpText = "輸入倉庫名稱進行搜尋，或直接選擇",
+                    ActionButtons = await GetWarehouseActionButtonsAsync()
                 },
                 new()
                 {
@@ -223,7 +251,15 @@
                     FieldType = FormFieldType.Number,
                     Placeholder = "請輸入最大容量",
                     IsRequired = false,
-                    HelpText = "此庫位可容納的最大數量（選填）",
+                    HelpText = "此庫位可容納的最大數量（選填）",                    
+                },
+                new()
+                {
+                    PropertyName = nameof(WarehouseLocation.Remarks),
+                    Label = "備註",
+                    FieldType = FormFieldType.TextArea,
+                    IsRequired = false,
+                    HelpText = "其他備註信息（選填）",
                     ContainerCssClass = "col-12"
                 }
             };
@@ -233,18 +269,19 @@
                 { nameof(WarehouseLocation.Code), "基本資訊" },
                 { nameof(WarehouseLocation.Name), "基本資訊" },
                 { nameof(WarehouseLocation.WarehouseId), "基本資訊" },
-                { nameof(WarehouseLocation.Zone), "位置資訊" },
-                { nameof(WarehouseLocation.Aisle), "位置資訊" },
-                { nameof(WarehouseLocation.Level), "位置資訊" },
-                { nameof(WarehouseLocation.Position), "位置資訊" },
-                { nameof(WarehouseLocation.MaxCapacity), "容量設定" }
+                { nameof(WarehouseLocation.Zone), "基本資訊" },
+                { nameof(WarehouseLocation.Aisle), "基本資訊" },
+                { nameof(WarehouseLocation.Level), "基本資訊" },
+                { nameof(WarehouseLocation.Position), "基本資訊" },
+                { nameof(WarehouseLocation.MaxCapacity), "基本資訊" },
+                { nameof(WarehouseLocation.Remarks), "額外資訊" }
             };
         }
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                nameof(InitializeFormFields),
+                nameof(InitializeFormFieldsAsync),
                 GetType(),
                 additionalData: new { WarehouseLocationId }
             );
@@ -266,5 +303,129 @@
             "WL",
             (service, code, excludeId) => service.IsWarehouseLocationCodeExistsAsync(code, excludeId)
         );
+    }
+
+    // ===== AutoComplete 配置方法 =====
+    
+    /// <summary>
+    /// 配置 AutoComplete 資料集合
+    /// </summary>
+    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
+    {
+        return new Dictionary<string, IEnumerable<object>>
+        {
+            { nameof(WarehouseLocation.WarehouseId), warehouses.Cast<object>() }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 顯示屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(WarehouseLocation.WarehouseId), "Name" }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 值屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteValueProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(WarehouseLocation.WarehouseId), "Id" }
+        };
+    }
+
+    /// <summary>
+    /// 配置 Modal 管理器
+    /// </summary>
+    private Dictionary<string, object> GetModalManagers()
+    {
+        return new Dictionary<string, object>
+        {
+            { nameof(WarehouseLocation.WarehouseId), warehouseModalManager }
+        };
+    }
+
+    // ===== Modal 管理器初始化方法 =====
+    
+    /// <summary>
+    /// 初始化倉庫 Modal 管理器
+    /// </summary>
+    private void InitializeWarehouseModalManager()
+    {
+        warehouseModalManager = new RelatedEntityManagerBuilder<Warehouse>(NotificationService, "倉庫")
+            .WithPropertyName(nameof(WarehouseLocation.WarehouseId))
+            .WithReloadCallback(LoadAdditionalDataAsync)
+            .WithStateChangedCallback(StateHasChanged)
+            .WithAutoSelectCallback(warehouseId => 
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    editModalComponent.Entity.WarehouseId = warehouseId;
+                }
+            })
+            .WithCustomPostProcess(async warehouse => 
+            {
+                await InitializeFormFieldsAsync();
+            })
+            .Build();
+    }
+
+    // ===== ActionButton 產生方法 =====
+    
+    /// <summary>
+    /// 產生倉庫操作按鈕 - 使用統一 Helper
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetWarehouseActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            warehouseModalManager, 
+            nameof(WarehouseLocation.WarehouseId)
+        );
+    }
+
+    // ===== Modal 事件包裝器方法 =====
+    
+    /// <summary>
+    /// 包裝倉庫儲存事件
+    /// </summary>
+    private async Task OnWarehouseSavedWrapper()
+    {
+        try
+        {
+            // 由於 WarehouseEditModalComponent 沒有返回實體，我們手動處理
+            // 重新載入資料
+            if (warehouseModalManager.ReloadDataCallback != null)
+            {
+                await warehouseModalManager.ReloadDataCallback();
+            }
+            
+            // 執行自訂後處理邏輯
+            if (warehouseModalManager.CustomPostProcessCallback != null)
+            {
+                // 創建一個假的 Warehouse 實體，因為 WarehouseEditModalComponent 沒有返回實體
+                var dummyWarehouse = new Warehouse();
+                await warehouseModalManager.CustomPostProcessCallback(dummyWarehouse);
+            }
+            
+            // 關閉 Modal
+            await warehouseModalManager.CloseModalAsync();
+            
+            // 顯示成功訊息
+            await NotificationService.ShowSuccessAsync("倉庫已成功儲存，選項已更新");
+            
+            // 觸發狀態變更
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理倉庫儲存成功事件時發生錯誤：{ex.Message}");
+        }
     }
 }
