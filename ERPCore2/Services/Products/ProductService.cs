@@ -40,8 +40,6 @@ namespace ERPCore2.Services
                     .Include(p => p.ProductCategory)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
-                    .Include(p => p.Warehouse)
-                    .Include(p => p.WarehouseLocation)
                     .Where(p => !p.IsDeleted)
                     .OrderBy(p => p.Name)
                     .ToListAsync();
@@ -63,8 +61,6 @@ namespace ERPCore2.Services
                     .Include(p => p.ProductCategory)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
-                    .Include(p => p.Warehouse)
-                    .Include(p => p.WarehouseLocation)
                     .Include(p => p.ProductSuppliers)
                         .ThenInclude(ps => ps.Supplier)
                     .Include(p => p.ProductSuppliers)
@@ -91,8 +87,6 @@ namespace ERPCore2.Services
                     .Include(p => p.ProductCategory)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
-                    .Include(p => p.Warehouse)
-                    .Include(p => p.WarehouseLocation)
                     .Where(p => !p.IsDeleted &&
                                ((p.Name != null && p.Name.Contains(searchTerm)) ||
                                 (p.Code != null && p.Code.Contains(searchTerm))))

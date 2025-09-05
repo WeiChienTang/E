@@ -14,8 +14,6 @@ namespace ERPCore2.FieldConfiguration
         private readonly List<Supplier> _suppliers;
         private readonly List<Unit> _units;
         private readonly List<Size> _sizes;
-        private readonly List<Warehouse> _warehouses;
-        private readonly List<WarehouseLocation> _warehouseLocations;
         private readonly INotificationService? _notificationService;
         
         public ProductFieldConfiguration(
@@ -23,16 +21,12 @@ namespace ERPCore2.FieldConfiguration
             List<Supplier> suppliers,
             List<Unit> units,
             List<Size> sizes,
-            List<Warehouse> warehouses,
-            List<WarehouseLocation> warehouseLocations,
             INotificationService? notificationService = null)
         {
             _productCategories = productCategories;
             _suppliers = suppliers;
             _units = units;
             _sizes = sizes;
-            _warehouses = warehouses;
-            _warehouseLocations = warehouseLocations;
             _notificationService = notificationService;
         }
         
@@ -120,43 +114,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(Product.UnitId), p => p.UnitId)
                         }
-                    },
-                    {
-                        nameof(Product.WarehouseId),
-                        new FieldDefinition<Product>
-                        {
-                            PropertyName = "Warehouse.Name", // 表格顯示用
-                            FilterPropertyName = nameof(Product.WarehouseId), // 篩選器用
-                            DisplayName = "倉庫",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 6,
-                            Options = _warehouses.Select(w => new SelectOption 
-                            { 
-                                Text = w.Name, 
-                                Value = w.Id.ToString() 
-                            }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(Product.WarehouseId), p => p.WarehouseId)
-                        }
-                    },
-                    {
-                        nameof(Product.WarehouseLocationId),
-                        new FieldDefinition<Product>
-                        {
-                            PropertyName = "WarehouseLocation.Name", // 表格顯示用
-                            FilterPropertyName = nameof(Product.WarehouseLocationId), // 篩選器用
-                            DisplayName = "倉庫位置",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 7,
-                            Options = _warehouseLocations.Select(wl => new SelectOption 
-                            { 
-                                Text = wl.Name, 
-                                Value = wl.Id.ToString() 
-                            }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(Product.WarehouseLocationId), p => p.WarehouseLocationId)
-                        }
-                    },
+                    }
 
                 };
             }

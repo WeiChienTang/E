@@ -16,12 +16,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "商品名稱")]
         public string Name { get; set; } = string.Empty;
 
-        [Display(Name = "最低庫存警戒線")]
-        public int MinStockLevel { get; set; } = 0;
-        
-        [Display(Name = "最高庫存警戒線")]
-        public int MaxStockLevel { get; set; } = 0;
-
         // Foreign Keys
         [Display(Name = "單位")]
         [ForeignKey(nameof(Unit))]
@@ -35,20 +29,10 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(ProductCategory))]
         public int? ProductCategoryId { get; set; }
         
-        [Display(Name = "倉庫")]
-        [ForeignKey(nameof(Warehouse))]
-        public int? WarehouseId { get; set; }
-        
-        [Display(Name = "倉庫位置")]
-        [ForeignKey(nameof(WarehouseLocation))]
-        public int? WarehouseLocationId { get; set; }
-        
         // Navigation Properties
         public Unit? Unit { get; set; }
         public Size? Size { get; set; }
         public ProductCategory? ProductCategory { get; set; }
-        public Warehouse? Warehouse { get; set; }
-        public WarehouseLocation? WarehouseLocation { get; set; }
         public ICollection<ProductSupplier> ProductSuppliers { get; set; } = new List<ProductSupplier>();
         public ICollection<InventoryStock> InventoryStocks { get; set; } = new List<InventoryStock>();
     }

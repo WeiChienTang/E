@@ -1,4 +1,4 @@
-@* 產品供應商管理組件 - 管理產品的多個供應商資訊 *@
+@* 產品廠商管理組件 - 管理產品的多個廠商資訊 *@
 @inject INotificationService NotificationService
 @typeparam TProductSupplierEntity where TProductSupplierEntity : BaseEntity, new()
 @typeparam TProductEntity where TProductEntity : BaseEntity
@@ -12,8 +12,8 @@
                 <table class="table table-hover mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>供應商</th>
-                            <th>供應商商品代碼</th>
+                            <th>廠商</th>
+                            <th>廠商商品代碼</th>
                             <th>報價</th>
                             <th>交期</th>
                             <th>最小訂購量</th>
@@ -74,7 +74,7 @@
                 @if (!IsReadOnly)
                 {
                     <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" Size="ButtonSize.Small"
-                                           Text="新增第一個供應商" IconClass="bi-plus me-1" 
+                                           Text="新增第一個廠商" IconClass="bi-plus me-1" 
                                            OnClick="ShowAddModal" CssClass="mt-2" />
                 }
             </div>
@@ -82,24 +82,24 @@
     </div>
 </div>
 
-@* 新增/編輯供應商 Modal *@
+@* 新增/編輯廠商 Modal *@
 @if (showAddModal || showEditModal)
 {
     <div class="modal fade show d-block" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">@(showEditModal ? "編輯" : "新增")供應商資訊</h5>
+                    <h5 class="modal-title">@(showEditModal ? "編輯" : "新增")廠商資訊</h5>
                     <button type="button" class="btn-close" @onclick="CloseModal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-12">
-                            <label class="form-label">供應商 <span class="text-danger">*</span></label>
+                            <label class="form-label">廠商 <span class="text-danger">*</span></label>
                             @if (Options.Any())
                             {
                                 <select class="form-select" @bind="currentSupplierId">
-                                    <option value="">請選擇供應商</option>
+                                    <option value="">請選擇廠商</option>
                                     @foreach (var option in Options)
                                     {
                                         <option value="@GetOptionId(option)">@GetOptionDisplayText(option)</option>
@@ -109,14 +109,14 @@
                             else
                             {
                                 <div class="form-control bg-light text-muted">
-                                    沒有資料，請新增供應商
+                                    沒有資料，請新增廠商
                                 </div>
                             }
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">供應商商品代碼</label>
+                            <label class="form-label">廠商商品代碼</label>
                             <input type="text" class="form-control" @bind="currentSupplierProductCode" 
-                                   placeholder="請輸入供應商的商品代碼" maxlength="50">
+                                   placeholder="請輸入廠商的商品代碼" maxlength="50">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">報價</label>
@@ -187,18 +187,18 @@
 @code {
     // ===== 基本參數 =====
     [Parameter] public List<TProductSupplierEntity> Items { get; set; } = new();
-    [Parameter] public List<TSupplierEntity> Options { get; set; } = new(); // 供應商選項
+    [Parameter] public List<TSupplierEntity> Options { get; set; } = new(); // 廠商選項
     [Parameter] public List<Unit> UnitOptions { get; set; } = new(); // 單位選項
     [Parameter] public int ParentEntityId { get; set; }
     [Parameter] public bool IsReadOnly { get; set; } = false;
     
     // ===== 顯示設定 =====
-    [Parameter] public string Title { get; set; } = "供應商資訊";
+    [Parameter] public string Title { get; set; } = "廠商資訊";
     [Parameter] public string Subtitle { get; set; } = "";
     [Parameter] public string Icon { get; set; } = "building";
-    [Parameter] public string ItemDisplayName { get; set; } = "供應商";
+    [Parameter] public string ItemDisplayName { get; set; } = "廠商";
     [Parameter] public string EmptyIcon { get; set; } = "building-x";
-    [Parameter] public string EmptyMessage { get; set; } = "尚未新增供應商";
+    [Parameter] public string EmptyMessage { get; set; } = "尚未新增廠商";
     
     // ===== 委派參數 - Getter =====
     [Parameter] public Func<TProductSupplierEntity, int?> GetSupplierId { get; set; } = item => null;
@@ -266,7 +266,7 @@
                 return GetOptionDisplayText(supplier);
             }
         }
-        return "未知供應商";
+        return "未知廠商";
     }
 
     private string GetUnitDisplayText(TProductSupplierEntity item)
@@ -336,20 +336,20 @@
         // 檢查必要欄位
         if (string.IsNullOrEmpty(currentSupplierId))
         {
-            await NotificationService.ShowErrorAsync("請選擇供應商");
+            await NotificationService.ShowErrorAsync("請選擇廠商");
             return;
         }
         
         if (!int.TryParse(currentSupplierId, out var supplierId)) 
         {
-            await NotificationService.ShowErrorAsync("供應商選擇錯誤");
+            await NotificationService.ShowErrorAsync("廠商選擇錯誤");
             return;
         }
         
-        // 檢查是否已存在相同供應商
+        // 檢查是否已存在相同廠商
         if (Items.Any(item => GetSupplierId(item) == supplierId))
         {
-            await NotificationService.ShowErrorAsync("此供應商已存在，請選擇其他供應商");
+            await NotificationService.ShowErrorAsync("此廠商已存在，請選擇其他廠商");
             return;
         }
         
@@ -384,23 +384,23 @@
         // 檢查必要欄位
         if (string.IsNullOrEmpty(currentSupplierId))
         {
-            await NotificationService.ShowErrorAsync("請選擇供應商");
+            await NotificationService.ShowErrorAsync("請選擇廠商");
             return;
         }
         
         if (!int.TryParse(currentSupplierId, out var supplierId))
         {
-            await NotificationService.ShowErrorAsync("供應商選擇錯誤");
+            await NotificationService.ShowErrorAsync("廠商選擇錯誤");
             return;
         }
         
         var item = Items[editingIndex];
         var originalSupplierId = GetSupplierId(item);
         
-        // 如果更改了供應商，檢查是否已存在
+        // 如果更改了廠商，檢查是否已存在
         if (originalSupplierId != supplierId && Items.Any(i => GetSupplierId(i) == supplierId))
         {
-            await NotificationService.ShowErrorAsync("此供應商已存在，請選擇其他供應商");
+            await NotificationService.ShowErrorAsync("此廠商已存在，請選擇其他廠商");
             return;
         }
         
@@ -446,15 +446,15 @@
         
         if (!Items.Any())
         {
-            errors.Add("至少需要一個供應商");
+            errors.Add("至少需要一個廠商");
         }
         else
         {
-            // 檢查供應商重複
+            // 檢查廠商重複
             var supplierIds = Items.Select(item => GetSupplierId(item)).Where(id => id.HasValue).ToList();
             if (supplierIds.Count != supplierIds.Distinct().Count())
             {
-                errors.Add("存在重複的供應商");
+                errors.Add("存在重複的廠商");
             }
         }
           

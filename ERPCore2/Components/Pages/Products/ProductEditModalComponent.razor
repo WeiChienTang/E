@@ -4,8 +4,6 @@
 @inject IProductCategoryService ProductCategoryService
 @inject IUnitService UnitService
 @inject ISupplierService SupplierService
-@inject IWarehouseService WarehouseService
-@inject IWarehouseLocationService WarehouseLocationService
 @inject IInventoryStockService InventoryStockService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
@@ -68,22 +66,6 @@
                        OnSizeSaved="@OnSizeSavedWrapper"
                        OnCancel="@sizeModalManager.HandleModalCancelAsync" />
 
-@* 倉庫編輯 Modal *@
-<WarehouseEditModalComponent @ref="warehouseEditModal"
-                            IsVisible="@warehouseModalManager.IsModalVisible"
-                            IsVisibleChanged="@warehouseModalManager.HandleModalVisibilityChangedAsync"
-                            WarehouseId="@warehouseModalManager.SelectedEntityId"
-                            OnWarehouseSaved="@OnWarehouseSavedWrapper"
-                            OnCancel="@warehouseModalManager.HandleModalCancelAsync" />
-
-@* 倉庫位置編輯 Modal *@
-<WarehouseLocationEditModalComponent @ref="warehouseLocationEditModal"
-                                    IsVisible="@warehouseLocationModalManager.IsModalVisible"
-                                    IsVisibleChanged="@warehouseLocationModalManager.HandleModalVisibilityChangedAsync"
-                                    WarehouseLocationId="@warehouseLocationModalManager.SelectedEntityId"
-                                    OnWarehouseLocationSaved="@OnWarehouseLocationSavedWrapper"
-                                    OnCancel="@warehouseLocationModalManager.HandleModalCancelAsync" />
-
 @code {
     // ===== 必要參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -106,8 +88,6 @@
     private List<Supplier> availableSuppliers = new();
     private List<Unit> availableUnits = new();
     private List<Size> availableSizes = new();
-    private List<Warehouse> availableWarehouses = new();
-    private List<WarehouseLocation> availableWarehouseLocations = new();
     
     // 產品供應商集合
     private List<ProductSupplier> productSuppliers = new();
@@ -122,19 +102,11 @@
     private SizeEditModalComponent? sizeEditModal;
     private RelatedEntityModalManager<Size> sizeModalManager = default!;
     
-    private WarehouseEditModalComponent? warehouseEditModal;
-    private RelatedEntityModalManager<Warehouse> warehouseModalManager = default!;
-    
-    private WarehouseLocationEditModalComponent? warehouseLocationEditModal;
-    private RelatedEntityModalManager<WarehouseLocation> warehouseLocationModalManager = default!;
-    
     // 選項清單（向下相容）
     private List<SelectOption> productCategoryOptions = new();
     private List<SelectOption> supplierOptions = new();
     private List<SelectOption> unitOptions = new();
     private List<SelectOption> sizeOptions = new();
-    private List<SelectOption> warehouseOptions = new();
-    private List<SelectOption> warehouseLocationOptions = new();
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
@@ -145,37 +117,10 @@
             InitializeProductCategoryModalManager();
             InitializeUnitModalManager();
             InitializeSizeModalManager();
-            InitializeWarehouseModalManager();
-            InitializeWarehouseLocationModalManager();
         }
         catch (Exception)
         {
             await NotificationService.ShowErrorAsync("初始化產品編輯組件時發生錯誤");
-        }
-    }
-
-    /// <summary>
-    /// 載入倉庫位置 - 載入所有可用的倉庫位置
-    /// </summary>
-    private async Task LoadWarehouseLocationsAsync()
-    {
-        try
-        {
-            // 載入所有可用的倉庫位置
-            availableWarehouseLocations = await WarehouseLocationService.GetAllAsync();
-
-            // 更新選項清單
-            warehouseLocationOptions = availableWarehouseLocations.Select(wl => new SelectOption
-            {
-                Text = wl.Name,
-                Value = wl.Id.ToString()
-            }).ToList();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入倉庫位置時發生錯誤：{ex.Message}");
-            availableWarehouseLocations = new List<WarehouseLocation>();
-            warehouseLocationOptions = new List<SelectOption>();
         }
     }
     
@@ -211,9 +156,6 @@
     /// </summary>
     public async Task RefreshFormFieldsAfterEntityLoadAsync()
     {
-        // 載入倉庫位置
-        await LoadWarehouseLocationsAsync();
-        
         // 重新初始化表單欄位
         await InitializeFormFieldsAsync();
         
@@ -277,9 +219,7 @@
                 productSuppliers = new List<ProductSupplier>();
                 return new Product
                 {
-                    Status = EntityStatus.Active,
-                    MinStockLevel = 0,
-                    MaxStockLevel = 0
+                    Status = EntityStatus.Active
                 };
             }
             
@@ -344,18 +284,6 @@
                 Text = s.Name,
                 Value = s.Id.ToString()
             }).ToList();
-
-            // 載入倉庫
-            var warehouses = await WarehouseService.GetActiveAsync();
-            availableWarehouses = warehouses.ToList();
-            warehouseOptions = availableWarehouses.Select(w => new SelectOption
-            {
-                Text = w.Name,
-                Value = w.Id.ToString()
-            }).ToList();
-
-            // 載入倉庫位置
-            await LoadWarehouseLocationsAsync();
         }
         catch (Exception ex)
         {
@@ -422,47 +350,6 @@
             },
             new()
             {
-                PropertyName = nameof(Product.MinStockLevel),
-                Label = "最低庫存警戒線",
-                FieldType = FormFieldType.Number,
-                Placeholder = "請輸入最低庫存警戒線",
-                IsRequired = false,
-                HelpText = "當庫存低於此數量時會發出警告"
-            },
-            new()
-            {
-                PropertyName = nameof(Product.MaxStockLevel),
-                Label = "最高庫存警戒線",
-                FieldType = FormFieldType.Number,
-                Placeholder = "請輸入最高庫存警戒線",
-                IsRequired = false,
-                HelpText = "當庫存高於此數量時會發出警告"
-            },
-            new()
-            {
-                PropertyName = nameof(Product.WarehouseId),
-                Label = "倉庫",
-                FieldType = FormFieldType.AutoComplete,
-                Placeholder = "請輸入或選擇倉庫",
-                IsRequired = false,
-                MinSearchLength = 0,
-                HelpText = "輸入倉庫名稱進行搜尋，或直接選擇",
-                ActionButtons = await GetWarehouseActionButtonsAsync()
-            },
-            new()
-            {
-                PropertyName = nameof(Product.WarehouseLocationId),
-                Label = "倉庫位置",
-                FieldType = FormFieldType.AutoComplete,
-                Placeholder = "請輸入或選擇倉庫位置",
-                IsRequired = false,
-                MinSearchLength = 0,
-                HelpText = "選擇產品的倉庫位置",
-                ActionButtons = await GetWarehouseLocationActionButtonsAsync(),
-                IsReadOnly = !editModalComponent?.Entity?.WarehouseId.HasValue ?? true,
-            },
-            new()
-            {
                 PropertyName = nameof(Product.Remarks),
                 Label = "備註",
                 FieldType = FormFieldType.TextArea,
@@ -482,10 +369,6 @@
             { nameof(Product.SizeId), "基本資訊" },
             { nameof(Product.ProductCategoryId), "基本資訊" },
             { nameof(Product.UnitId), "基本資訊" },
-            { nameof(Product.MinStockLevel), "庫存設定" },
-            { nameof(Product.MaxStockLevel), "庫存設定" },
-            { nameof(Product.WarehouseId), "庫存設定" },
-            { nameof(Product.WarehouseLocationId), "庫存設定" },
             { nameof(Product.Remarks), "額外資訊" }
         };
     }
@@ -522,20 +405,6 @@
                 {
                     ["Name"] = searchTerm
                 }
-            },
-            {
-                nameof(Product.WarehouseId),
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["Name"] = searchTerm
-                }
-            },
-            {
-                nameof(Product.WarehouseLocationId),
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["Name"] = searchTerm
-                }
             }
         };
     }
@@ -549,9 +418,7 @@
         {
             { nameof(Product.ProductCategoryId), productCategoryModalManager },
             { nameof(Product.UnitId), unitModalManager },
-            { nameof(Product.SizeId), sizeModalManager },
-            { nameof(Product.WarehouseId), warehouseModalManager },
-            { nameof(Product.WarehouseLocationId), warehouseLocationModalManager }
+            { nameof(Product.SizeId), sizeModalManager }
         };
     }
 
@@ -564,18 +431,8 @@
         {
             { nameof(Product.ProductCategoryId), availableProductCategories.Cast<object>() },
             { nameof(Product.SizeId), availableSizes.Cast<object>() },
-            { nameof(Product.UnitId), availableUnits.Cast<object>() },
-            { nameof(Product.WarehouseId), availableWarehouses.Cast<object>() },
-            { nameof(Product.WarehouseLocationId), GetFilteredWarehouseLocations().Cast<object>() }
+            { nameof(Product.UnitId), availableUnits.Cast<object>() }
         };
-    }
-
-    /// <summary>
-    /// 取得所有可用的倉庫位置清單
-    /// </summary>
-    private IEnumerable<WarehouseLocation> GetFilteredWarehouseLocations()
-    {
-        return availableWarehouseLocations;
     }
 
     /// <summary>
@@ -587,9 +444,7 @@
         {
             { nameof(Product.ProductCategoryId), "Name" },
             { nameof(Product.SizeId), "Name" },
-            { nameof(Product.UnitId), "Name" },
-            { nameof(Product.WarehouseId), "Name" },
-            { nameof(Product.WarehouseLocationId), "Name" }
+            { nameof(Product.UnitId), "Name" }
         };
     }
 
@@ -602,9 +457,7 @@
         {
             { nameof(Product.ProductCategoryId), "Id" },
             { nameof(Product.SizeId), "Id" },
-            { nameof(Product.UnitId), "Id" },
-            { nameof(Product.WarehouseId), "Id" },
-            { nameof(Product.WarehouseLocationId), "Id" }
+            { nameof(Product.UnitId), "Id" }
         };
     }
 
@@ -733,9 +586,6 @@
                 return;
             }            
             
-            // 先同步庫存警戒線（使用最新的產品資料）
-            await SyncProductStockLevelsAsync(latestProduct);
-            
             // 只有在產品ID存在時才處理產品供應商關聯
             if (latestProduct.Id <= 0)
             {
@@ -769,164 +619,6 @@
         {
             await NotificationService.ShowErrorAsync($"儲存供應商資料時發生錯誤：{ex.Message}");
             // 記錄錯誤但不中斷流程，因為主要實體已經儲存成功
-        }
-    }
-    
-    /// <summary>
-    /// 同步產品庫存警戒線到 InventoryStock
-    /// </summary>
-    private async Task SyncProductStockLevelsAsync(Product product)
-    {
-        try
-        {       
-            // 確保產品ID有效（產品是唯一必須的值）
-            if (product.Id <= 0)
-            {
-                return;
-            }
-
-            // 查詢現有的庫存記錄（根據產品ID、倉庫ID和倉庫位置ID查詢）
-            var existingStock = await InventoryStockService.GetByProductWarehouseAsync(
-                product.Id, 
-                product.WarehouseId, 
-                product.WarehouseLocationId);
-
-            // 將 Product 的庫存警戒線值轉換為 nullable int
-            int? minLevel = product.MinStockLevel >= 0 ? product.MinStockLevel : null;
-            int? maxLevel = product.MaxStockLevel >= 0 ? product.MaxStockLevel : null;
-
-            if (existingStock != null)
-            {
-                // 更新現有記錄
-                bool hasChanges = false;
-                
-                if (existingStock.MinStockLevel != minLevel)
-                {
-                    existingStock.MinStockLevel = minLevel;
-                    hasChanges = true;
-                }
-                
-                if (existingStock.MaxStockLevel != maxLevel)
-                {
-                    existingStock.MaxStockLevel = maxLevel;
-                    hasChanges = true;
-                }
-                
-                // 同步倉庫和倉庫位置資訊（可能產品的倉庫設定有變更）
-                if (existingStock.WarehouseId != product.WarehouseId)
-                {
-                    existingStock.WarehouseId = product.WarehouseId;
-                    hasChanges = true;
-                }
-                
-                if (existingStock.WarehouseLocationId != product.WarehouseLocationId)
-                {
-                    existingStock.WarehouseLocationId = product.WarehouseLocationId;
-                    hasChanges = true;
-                }
-                
-                if (hasChanges)
-                {
-                    await InventoryStockService.UpdateAsync(existingStock);
-                }
-            }
-            else
-            {
-                // 創建新的庫存記錄（商品是必須的，倉庫和倉庫位置是可選的）
-                var newStock = new InventoryStock
-                {
-                    ProductId = product.Id,
-                    WarehouseId = product.WarehouseId,
-                    WarehouseLocationId = product.WarehouseLocationId,
-                    MinStockLevel = minLevel,
-                    MaxStockLevel = maxLevel,
-                    CurrentStock = 0,
-                    ReservedStock = 0,
-                    InTransitStock = 0
-                };
-                
-                await InventoryStockService.CreateAsync(newStock);
-                await NotificationService.ShowSuccessAsync("新庫存記錄創建成功");
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"儲存庫存警戒線時發生錯誤：{ex.Message}");
-        }
-    }
-    
-    /// <summary>
-    /// 同步庫存警戒線到 InventoryStock (即時同步)
-    /// </summary>
-    private async Task SyncStockLevelToInventoryAsync(Product product, string propertyName, object? value)
-    {
-        try
-        {
-            if (!product.WarehouseId.HasValue) return;
-
-            // 查詢現有的庫存記錄
-            var existingStock = await InventoryStockService.GetByProductWarehouseAsync(
-                product.Id,
-                product.WarehouseId.Value,
-                product.WarehouseLocationId);
-
-            if (existingStock != null)
-            {
-                // 更新現有記錄
-                bool hasChanges = false;
-
-                if (propertyName == nameof(Product.MinStockLevel))
-                {
-                    var newValue = value != null && int.TryParse(value.ToString(), out int intValue) && intValue >= 0 ? intValue : (int?)null;
-                    if (existingStock.MinStockLevel != newValue)
-                    {
-                        existingStock.MinStockLevel = newValue;
-                        hasChanges = true;
-                    }
-                }
-                else if (propertyName == nameof(Product.MaxStockLevel))
-                {
-                    var newValue = value != null && int.TryParse(value.ToString(), out int intValue) && intValue >= 0 ? intValue : (int?)null;
-                    if (existingStock.MaxStockLevel != newValue)
-                    {
-                        existingStock.MaxStockLevel = newValue;
-                        hasChanges = true;
-                    }
-                }
-
-                if (hasChanges)
-                {
-                    await InventoryStockService.UpdateAsync(existingStock);
-                }
-            }
-            else
-            {
-                // 檢查是否需要創建新記錄（允許0值）
-                int? minLevel = propertyName == nameof(Product.MinStockLevel) && value != null && int.TryParse(value.ToString(), out int minVal) && minVal >= 0 ? minVal : (int?)null;
-                int? maxLevel = propertyName == nameof(Product.MaxStockLevel) && value != null && int.TryParse(value.ToString(), out int maxVal) && maxVal >= 0 ? maxVal : (int?)null;
-
-                // 只要有設定任何警戒線值就創建記錄
-                if (minLevel.HasValue || maxLevel.HasValue)
-                {
-                    var newStock = new InventoryStock
-                    {
-                        ProductId = product.Id,
-                        WarehouseId = product.WarehouseId.Value,
-                        WarehouseLocationId = product.WarehouseLocationId,
-                        MinStockLevel = minLevel,
-                        MaxStockLevel = maxLevel,
-                        CurrentStock = 0,
-                        ReservedStock = 0,
-                        InTransitStock = 0
-                    };
-
-                    await InventoryStockService.CreateAsync(newStock);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"同步庫存警戒線時發生錯誤：{ex.Message}");
         }
     }
     
@@ -999,52 +691,6 @@
             .Build();
     }
 
-    /// <summary>
-    /// 初始化倉庫 Modal 管理器
-    /// </summary>
-    private void InitializeWarehouseModalManager()
-    {
-        warehouseModalManager = new RelatedEntityManagerBuilder<Warehouse>(NotificationService, "倉庫")
-            .WithPropertyName(nameof(Product.WarehouseId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(warehouseId => 
-            {
-                if (editModalComponent?.Entity != null)
-                {
-                    editModalComponent.Entity.WarehouseId = warehouseId;
-                }
-            })
-            .WithCustomPostProcess(async warehouse => 
-            {
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
-    }
-
-    /// <summary>
-    /// 初始化倉庫位置 Modal 管理器
-    /// </summary>
-    private void InitializeWarehouseLocationModalManager()
-    {
-        warehouseLocationModalManager = new RelatedEntityManagerBuilder<WarehouseLocation>(NotificationService, "倉庫位置")
-            .WithPropertyName(nameof(Product.WarehouseLocationId))
-            .WithReloadCallback(LoadWarehouseLocationsAsync) // 改為載入倉庫位置的方法
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(warehouseLocationId => 
-            {
-                if (editModalComponent?.Entity != null)
-                {
-                    editModalComponent.Entity.WarehouseLocationId = warehouseLocationId;
-                }
-            })
-            .WithCustomPostProcess(async warehouseLocation => 
-            {
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
-    }
-
     // ===== ActionButton 產生方法 =====
     
     /// <summary>
@@ -1083,30 +729,6 @@
         );
     }
 
-    /// <summary>
-    /// 產生倉庫操作按鈕 - 使用統一 Helper
-    /// </summary>
-    private async Task<List<FieldActionButton>> GetWarehouseActionButtonsAsync()
-    {
-        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
-            editModalComponent, 
-            warehouseModalManager, 
-            nameof(Product.WarehouseId)
-        );
-    }
-
-    /// <summary>
-    /// 產生倉庫位置操作按鈕 - 使用統一 Helper
-    /// </summary>
-    private async Task<List<FieldActionButton>> GetWarehouseLocationActionButtonsAsync()
-    {
-        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
-            editModalComponent, 
-            warehouseLocationModalManager, 
-            nameof(Product.WarehouseLocationId)
-        );
-    }
-
     // ===== Modal 事件包裝器方法 =====
     
     /// <summary>
@@ -1134,80 +756,6 @@
     }
 
     /// <summary>
-    /// 包裝倉庫儲存事件
-    /// </summary>
-    private async Task OnWarehouseSavedWrapper()
-    {
-        try
-        {
-            // 由於 WarehouseEditModalComponent 沒有返回實體，我們手動處理
-            // 重新載入資料
-            if (warehouseModalManager.ReloadDataCallback != null)
-            {
-                await warehouseModalManager.ReloadDataCallback();
-            }
-            
-            // 執行自訂後處理邏輯
-            if (warehouseModalManager.CustomPostProcessCallback != null)
-            {
-                // 創建一個虛擬實體用於觸發後處理
-                var dummyEntity = new Warehouse { Id = 0, Name = "新增的倉庫" };
-                await warehouseModalManager.CustomPostProcessCallback(dummyEntity);
-            }
-            
-            // 關閉 Modal
-            await warehouseModalManager.CloseModalAsync();
-            
-            // 顯示成功訊息
-            await NotificationService.ShowSuccessAsync("倉庫已成功儲存，選項已更新");
-            
-            // 觸發狀態變更
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理倉庫儲存成功事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 包裝倉庫位置儲存事件
-    /// </summary>
-    private async Task OnWarehouseLocationSavedWrapper()
-    {
-        try
-        {
-            // 由於 WarehouseLocationEditModalComponent 沒有返回實體，我們手動處理
-            // 重新載入資料
-            if (warehouseLocationModalManager.ReloadDataCallback != null)
-            {
-                await warehouseLocationModalManager.ReloadDataCallback();
-            }
-            
-            // 執行自訂後處理邏輯
-            if (warehouseLocationModalManager.CustomPostProcessCallback != null)
-            {
-                // 創建一個虛擬實體用於觸發後處理
-                var dummyEntity = new WarehouseLocation { Id = 0, Name = "新增的倉庫位置" };
-                await warehouseLocationModalManager.CustomPostProcessCallback(dummyEntity);
-            }
-            
-            // 關閉 Modal
-            await warehouseLocationModalManager.CloseModalAsync();
-            
-            // 顯示成功訊息
-            await NotificationService.ShowSuccessAsync("倉庫位置已成功儲存，選項已更新");
-            
-            // 觸發狀態變更
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理倉庫位置儲存成功事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    /// <summary>
     /// 處理欄位值變更事件 - 使用統一 Helper
     /// </summary>
     private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
@@ -1221,31 +769,8 @@
                 await RefreshFormFieldsAfterEntityLoadAsync();
             }
             
-            // 處理庫存警戒線字段變更 - 同步到 InventoryStock
-            if (fieldChange.PropertyName == nameof(Product.MinStockLevel) || 
-                fieldChange.PropertyName == nameof(Product.MaxStockLevel))
-            {
-                // 如果有選擇倉庫且產品已存在，立即同步到 InventoryStock
-                if (editModalComponent?.Entity != null && 
-                    editModalComponent.Entity.Id > 0 && 
-                    editModalComponent.Entity.WarehouseId.HasValue)
-                {
-                    await SyncStockLevelToInventoryAsync(editModalComponent.Entity, fieldChange.PropertyName, fieldChange.Value);
-                }
-                return;
-            }
-            // 處理倉庫變更 - 重新載入倉庫位置
-            else if (fieldChange.PropertyName == nameof(Product.WarehouseId))
-            {
-                // 重新載入倉庫位置
-                await LoadWarehouseLocationsAsync();
-
-                // 使用統一 Helper 處理倉庫欄位變更
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    warehouseModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-            }
             // 使用統一 Helper 處理產品分類欄位變更
-            else if (fieldChange.PropertyName == nameof(Product.ProductCategoryId))
+            if (fieldChange.PropertyName == nameof(Product.ProductCategoryId))
             {
                 await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                     productCategoryModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
@@ -1261,12 +786,6 @@
             {
                 await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                     sizeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-            }
-            // 使用統一 Helper 處理倉庫位置欄位變更
-            else if (fieldChange.PropertyName == nameof(Product.WarehouseLocationId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    warehouseLocationModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
             }
         }
         catch (Exception)
