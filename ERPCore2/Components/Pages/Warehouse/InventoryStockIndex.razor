@@ -29,7 +29,7 @@
 <InventoryStockEditModalComponent IsVisible="@showEditModal"
                                  IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                                  InventoryStockId="@editingInventoryStockId"
-                                 OnInventoryStockSaved="@modalHandler.OnEntitySavedAsync"
+                                 OnInventoryStockSaved="@OnInventoryStockSavedHandler"
                                  OnCancel="@modalHandler.OnModalCancelAsync" />
 
 @code {
@@ -142,6 +142,34 @@
             await NotificationService.ShowErrorAsync("載入庫存資料失敗");
             // 設定安全的預設值
             return new List<InventoryStock>();
+        }
+    }
+
+    // ===== 事件處理方法 =====
+
+    private async Task OnInventoryStockSavedHandler(InventoryStock savedInventoryStock)
+    {
+        try
+        {            
+            // 確保 savedInventoryStock 不為 null
+            if (savedInventoryStock == null)
+            {
+                return;
+            }
+            
+            // 先嘗試使用 modalHandler 的標準處理
+            await modalHandler.OnEntitySavedAsync(savedInventoryStock);
+            
+            // 如果標準處理沒有刷新，手動刷新
+            if (indexComponent != null)
+            {
+                await indexComponent.Refresh();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[InventoryStockIndex] OnInventoryStockSavedHandler 發生錯誤: {ex.Message}");
+            await NotificationService.ShowErrorAsync($"處理庫存儲存事件時發生錯誤：{ex.Message}");
         }
     }
 

@@ -64,8 +64,17 @@ namespace ERPCore2.FieldConfiguration
                             TableOrder = 2,
                             FilterOrder = 2,
                             HeaderStyle = "width: 150px;",
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, "ProductCode", s => s.Product.Code, allowNull: true)
+                            FilterFunction = (model, query) => {
+                                var filterValue = model.GetFilterValue("ProductCode")?.ToString();
+                                if (!string.IsNullOrWhiteSpace(filterValue))
+                                {
+                                    // 使用安全的方式查詢，避免導航屬性的 null reference
+                                    query = query.Where(s => s.Product != null && 
+                                                           s.Product.Code != null && 
+                                                           s.Product.Code.Contains(filterValue));
+                                }
+                                return query;
+                            }
                         }
                     },
                     {
@@ -249,7 +258,11 @@ namespace ERPCore2.FieldConfiguration
 
         protected override Func<IQueryable<InventoryStock>, IOrderedQueryable<InventoryStock>> GetDefaultSort()
         {
-            return query => query.OrderBy(s => s.Product!.Code).ThenBy(s => s.Warehouse!.Name).ThenBy(s => s.WarehouseLocation!.Code);
+            // 使用外鍵進行排序，避免導航屬性的 null reference 問題
+            return query => query
+                .OrderBy(s => s.ProductId)
+                .ThenBy(s => s.WarehouseId)
+                .ThenBy(s => s.WarehouseLocationId ?? 0); // null 值排在前面
         }
     }
 }
