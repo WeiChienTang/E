@@ -459,7 +459,7 @@
                 MinSearchLength = 0,
                 HelpText = "選擇產品的倉庫位置",
                 ActionButtons = await GetWarehouseLocationActionButtonsAsync(),
-                IsDisabled = false
+                IsReadOnly = !editModalComponent?.Entity?.WarehouseId.HasValue ?? true,
             },
             new()
             {

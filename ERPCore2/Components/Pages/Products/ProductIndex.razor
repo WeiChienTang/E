@@ -1,6 +1,8 @@
 @page "/products"
 @inject IProductService ProductService
 @inject ISizeService SizeService
+@inject IWarehouseService WarehouseService
+@inject IWarehouseLocationService WarehouseLocationService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
 
@@ -45,6 +47,8 @@
     private List<Supplier> suppliers = new();
     private List<Unit> units = new();
     private List<Size> sizes = new();
+    private List<Warehouse> warehouses = new();
+    private List<WarehouseLocation> warehouseLocations = new();
     
     // 欄位配置
     private ProductFieldConfiguration fieldConfiguration = default!;
@@ -73,11 +77,13 @@
             await LoadSuppliersAsync();
             await LoadUnitsAsync();
             await LoadSizesAsync();
+            await LoadWarehousesAsync();
+            await LoadWarehouseLocationsAsync();
             
             // 建立欄位配置（確保即使載入失敗也能創建配置）
             try
             {
-                fieldConfiguration = new ProductFieldConfiguration(productCategories, suppliers, units, sizes, NotificationService);
+                fieldConfiguration = new ProductFieldConfiguration(productCategories, suppliers, units, sizes, warehouses, warehouseLocations, NotificationService);
                 
                 // 使用欄位配置建立篩選器和表格欄位
                 filterDefinitions = fieldConfiguration.BuildFilters();
@@ -98,6 +104,8 @@
                     new List<Supplier>(), 
                     new List<Unit>(), 
                     new List<Size>(), 
+                    new List<Warehouse>(),
+                    new List<WarehouseLocation>(),
                     NotificationService);
             }
         }
@@ -209,6 +217,38 @@
             await NotificationService.ShowErrorAsync("載入尺寸資料失敗");
             // 設定安全的預設值
             sizes = new List<Size>();
+        }
+    }
+
+    // 載入倉庫資料
+    private async Task LoadWarehousesAsync()
+    {
+        try
+        {
+            warehouses = await WarehouseService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehousesAsync), GetType(), additionalData: "載入倉庫資料失敗");
+            await NotificationService.ShowErrorAsync("載入倉庫資料失敗");
+            // 設定安全的預設值
+            warehouses = new List<Warehouse>();
+        }
+    }
+
+    // 載入倉庫位置資料
+    private async Task LoadWarehouseLocationsAsync()
+    {
+        try
+        {
+            warehouseLocations = await WarehouseLocationService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehouseLocationsAsync), GetType(), additionalData: "載入倉庫位置資料失敗");
+            await NotificationService.ShowErrorAsync("載入倉庫位置資料失敗");
+            // 設定安全的預設值
+            warehouseLocations = new List<WarehouseLocation>();
         }
     }    
     private IQueryable<Product> ApplyProductFilters(SearchFilterModel searchModel, IQueryable<Product> query)

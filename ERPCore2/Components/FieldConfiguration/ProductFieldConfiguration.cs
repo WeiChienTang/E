@@ -14,6 +14,8 @@ namespace ERPCore2.FieldConfiguration
         private readonly List<Supplier> _suppliers;
         private readonly List<Unit> _units;
         private readonly List<Size> _sizes;
+        private readonly List<Warehouse> _warehouses;
+        private readonly List<WarehouseLocation> _warehouseLocations;
         private readonly INotificationService? _notificationService;
         
         public ProductFieldConfiguration(
@@ -21,12 +23,16 @@ namespace ERPCore2.FieldConfiguration
             List<Supplier> suppliers,
             List<Unit> units,
             List<Size> sizes,
+            List<Warehouse> warehouses,
+            List<WarehouseLocation> warehouseLocations,
             INotificationService? notificationService = null)
         {
             _productCategories = productCategories;
             _suppliers = suppliers;
             _units = units;
             _sizes = sizes;
+            _warehouses = warehouses;
+            _warehouseLocations = warehouseLocations;
             _notificationService = notificationService;
         }
         
@@ -44,7 +50,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "產品代碼",
                             FilterPlaceholder = "輸入產品代碼搜尋",
                             TableOrder = 1,
-                            FilterOrder = 1,
                             HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Product.Code), p => p.Code)
@@ -58,7 +63,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "產品名稱",
                             FilterPlaceholder = "輸入產品名稱搜尋",
                             TableOrder = 2,
-                            FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Product.Name), p => p.Name)
                         }
@@ -72,7 +76,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "尺寸",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
-                            FilterOrder = 3,
                             Options = _sizes.Select(s => new SelectOption 
                             { 
                                 Text = s.Name, 
@@ -91,7 +94,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "產品分類",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
-                            FilterOrder = 4,
                             Options = _productCategories.Select(pc => new SelectOption 
                             { 
                                 Text = pc.Name, 
@@ -110,7 +112,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "單位",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
-                            FilterOrder = 5,
                             Options = _units.Select(u => new SelectOption 
                             { 
                                 Text = u.Name, 
@@ -118,6 +119,42 @@ namespace ERPCore2.FieldConfiguration
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(Product.UnitId), p => p.UnitId)
+                        }
+                    },
+                    {
+                        nameof(Product.WarehouseId),
+                        new FieldDefinition<Product>
+                        {
+                            PropertyName = "Warehouse.Name", // 表格顯示用
+                            FilterPropertyName = nameof(Product.WarehouseId), // 篩選器用
+                            DisplayName = "倉庫",
+                            FilterType = SearchFilterType.Select,
+                            TableOrder = 6,
+                            Options = _warehouses.Select(w => new SelectOption 
+                            { 
+                                Text = w.Name, 
+                                Value = w.Id.ToString() 
+                            }).ToList(),
+                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
+                                model, query, nameof(Product.WarehouseId), p => p.WarehouseId)
+                        }
+                    },
+                    {
+                        nameof(Product.WarehouseLocationId),
+                        new FieldDefinition<Product>
+                        {
+                            PropertyName = "WarehouseLocation.Name", // 表格顯示用
+                            FilterPropertyName = nameof(Product.WarehouseLocationId), // 篩選器用
+                            DisplayName = "倉庫位置",
+                            FilterType = SearchFilterType.Select,
+                            TableOrder = 7,
+                            Options = _warehouseLocations.Select(wl => new SelectOption 
+                            { 
+                                Text = wl.Name, 
+                                Value = wl.Id.ToString() 
+                            }).ToList(),
+                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
+                                model, query, nameof(Product.WarehouseLocationId), p => p.WarehouseLocationId)
                         }
                     },
 
