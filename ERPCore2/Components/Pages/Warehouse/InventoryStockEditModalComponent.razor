@@ -280,7 +280,7 @@
                     Label = "倉庫",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請輸入或選擇倉庫",
-                    IsRequired = true,
+                    IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "輸入倉庫名稱進行搜尋，或直接選擇",
                     ActionButtons = await GetWarehouseActionButtonsAsync()
@@ -304,9 +304,9 @@
                     PropertyName = nameof(InventoryStock.CurrentStock),
                     Label = "現有庫存",
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入現有庫存數量",
-                    IsRequired = true,
-                    HelpText = "商品目前的實際庫存數量",
+                    Placeholder = "請輸入現有庫存數量（預設為0）",
+                    IsRequired = false,
+                    HelpText = "商品目前的實際庫存數量（預設為0）",
                 },
                 new()
                 {
@@ -353,9 +353,10 @@
                     PropertyName = nameof(InventoryStock.AverageCost),
                     Label = "平均成本",
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入平均成本",
+                    Placeholder = "系統自動計算",
                     IsRequired = false,
-                    HelpText = "商品的平均單位成本（系統會自動計算）",
+                    IsReadOnly = true,
+                    HelpText = "商品的平均單位成本（系統會自動計算，不可手動修改）",
                     Step = 0.01m
                 },
                 
@@ -373,12 +374,12 @@
                 { nameof(InventoryStock.ProductId), "基本資訊" },
                 { nameof(InventoryStock.WarehouseId), "基本資訊" },
                 { nameof(InventoryStock.WarehouseLocationId), "基本資訊" },
-                { nameof(InventoryStock.CurrentStock), "基本資訊" },
-                { nameof(InventoryStock.ReservedStock), "基本資訊" },
-                { nameof(InventoryStock.InTransitStock), "基本資訊" },
-                { nameof(InventoryStock.MinStockLevel), "基本資訊" },
-                { nameof(InventoryStock.MaxStockLevel), "基本資訊" },
                 { nameof(InventoryStock.AverageCost), "基本資訊" },
+                { nameof(InventoryStock.CurrentStock), "數量資訊" },
+                { nameof(InventoryStock.ReservedStock), "數量資訊" },
+                { nameof(InventoryStock.InTransitStock), "數量資訊" },
+                { nameof(InventoryStock.MinStockLevel), "數量資訊" },
+                { nameof(InventoryStock.MaxStockLevel), "數量資訊" },                
                 { nameof(InventoryStock.Remarks), "額外資料" }
             };
         }

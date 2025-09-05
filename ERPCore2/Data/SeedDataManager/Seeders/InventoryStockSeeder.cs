@@ -93,9 +93,9 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 // 期初庫存
                 transactions.Add(new InventoryTransaction
                 {
-                    TransactionNumber = $"INIT{stock.ProductId:D6}{stock.WarehouseId:D3}",
+                    TransactionNumber = $"INIT{stock.ProductId:D6}{stock.WarehouseId ?? 0:D3}",
                     ProductId = stock.ProductId,
-                    WarehouseId = stock.WarehouseId,
+                    WarehouseId = stock.WarehouseId ?? 0,
                     WarehouseLocationId = stock.WarehouseLocationId,
                     TransactionType = InventoryTransactionTypeEnum.OpeningBalance,
                     TransactionDate = transactionDate,
@@ -118,7 +118,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     {
                         TransactionNumber = $"PUR{DateTime.Now:yyyyMMdd}{random.Next(1000, 9999)}",
                         ProductId = stock.ProductId,
-                        WarehouseId = stock.WarehouseId,
+                        WarehouseId = stock.WarehouseId ?? 0,
                         WarehouseLocationId = stock.WarehouseLocationId,
                         TransactionType = InventoryTransactionTypeEnum.Purchase,
                         TransactionDate = transactionDate.AddDays(random.Next(1, 15)),
@@ -164,7 +164,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     {
                         ReservationNumber = $"RSV{DateTime.Now:yyyyMMdd}{random.Next(1000, 9999)}",
                         ProductId = stock.ProductId,
-                        WarehouseId = stock.WarehouseId,
+                        WarehouseId = stock.WarehouseId ?? 0,
                         WarehouseLocationId = stock.WarehouseLocationId,
                         ReservationType = InventoryReservationType.SalesOrder,
                         ReservationStatus = InventoryReservationStatus.Reserved,

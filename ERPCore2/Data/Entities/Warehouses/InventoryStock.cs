@@ -41,10 +41,9 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Product))]
         public int ProductId { get; set; }
         
-        [Required(ErrorMessage = "倉庫為必填")]
         [Display(Name = "倉庫")]
         [ForeignKey(nameof(Warehouse))]
-        public int WarehouseId { get; set; }
+        public int? WarehouseId { get; set; }
         
         [Display(Name = "倉庫位置")]
         [ForeignKey(nameof(WarehouseLocation))]
@@ -52,7 +51,7 @@ namespace ERPCore2.Data.Entities
         
         // Navigation Properties
         public Product Product { get; set; } = null!;
-        public Warehouse Warehouse { get; set; } = null!;
+        public Warehouse? Warehouse { get; set; }
         public WarehouseLocation? WarehouseLocation { get; set; }
         public ICollection<InventoryTransaction> InventoryTransactions { get; set; } = new List<InventoryTransaction>();
         public ICollection<InventoryReservation> InventoryReservations { get; set; } = new List<InventoryReservation>();

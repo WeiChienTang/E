@@ -35,8 +35,8 @@ namespace ERPCore2.Services
                     .Include(i => i.Warehouse)
                     .Include(i => i.WarehouseLocation)
                     .Where(i => !i.IsDeleted)
-                    .OrderBy(i => i.Product.Code)
-                    .ThenBy(i => i.Warehouse.Code)
+                    .OrderBy(i => i.Product!.Code)
+                    .ThenBy(i => i.Warehouse!.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -88,11 +88,11 @@ namespace ERPCore2.Services
                     .Include(i => i.Warehouse)
                     .Include(i => i.WarehouseLocation)
                     .Where(i => !i.IsDeleted && 
-                        ((i.Product.Code != null && i.Product.Code.ToLower().Contains(term)) ||
-                         (i.Product.Name != null && i.Product.Name.ToLower().Contains(term)) ||
-                         (i.Warehouse.Code != null && i.Warehouse.Code.ToLower().Contains(term)) ||
-                         (i.Warehouse.Name != null && i.Warehouse.Name.ToLower().Contains(term))))
-                    .OrderBy(i => i.Product.Code)
+                        ((i.Product!.Code != null && i.Product.Code.ToLower().Contains(term)) ||
+                         (i.Product!.Name != null && i.Product.Name.ToLower().Contains(term)) ||
+                         (i.Warehouse!.Code != null && i.Warehouse.Code.ToLower().Contains(term)) ||
+                         (i.Warehouse!.Name != null && i.Warehouse.Name.ToLower().Contains(term))))
+                    .OrderBy(i => i.Product!.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -114,9 +114,6 @@ namespace ERPCore2.Services
 
                 if (entity.ProductId <= 0)
                     errors.Add("必須選擇商品");
-
-                if (entity.WarehouseId <= 0)
-                    errors.Add("必須選擇倉庫");
 
                 if (entity.CurrentStock < 0)
                     errors.Add("庫存數量不能為負數");
@@ -169,7 +166,7 @@ namespace ERPCore2.Services
                     .Include(i => i.Warehouse)
                     .Include(i => i.WarehouseLocation)
                     .Where(i => i.ProductId == productId && !i.IsDeleted)
-                    .OrderBy(i => i.Warehouse.Code)
+                    .OrderBy(i => i.Warehouse!.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -604,8 +601,8 @@ namespace ERPCore2.Services
                 }
 
                 return await query
-                    .OrderBy(i => i.Warehouse.Name)
-                    .ThenBy(i => i.Product.Code)
+                    .OrderBy(i => i.Warehouse!.Name)
+                    .ThenBy(i => i.Product!.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
