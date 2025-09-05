@@ -13,6 +13,7 @@ namespace ERPCore2.Services
         Task<List<InventoryStock>> GetByProductIdAsync(int productId);
         Task<List<InventoryStock>> GetByWarehouseIdAsync(int warehouseId);
         Task<InventoryStock?> GetByProductWarehouseAsync(int productId, int warehouseId, int? locationId = null);
+        Task<InventoryStock?> GetByProductWarehouseAsync(int productId, int? warehouseId = null, int? locationId = null);
         Task<List<InventoryStock>> GetLowStockItemsAsync();
         Task<int> GetAvailableStockAsync(int productId, int warehouseId, int? locationId = null);
         

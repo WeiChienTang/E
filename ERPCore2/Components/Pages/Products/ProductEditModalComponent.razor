@@ -97,6 +97,10 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     
+    // 標誌變數，用於追蹤是否需要在實體載入後刷新欄位
+    private bool _entityLoadedButFieldsNotRefreshed = false;
+    private bool _hasCheckedEntityLoad = false;
+    
     // 原始資料集合（用於 AutoComplete）
     private List<ProductCategory> availableProductCategories = new();
     private List<Supplier> availableSuppliers = new();
@@ -159,16 +163,35 @@
     }
 
     /// <summary>
-    /// 載入倉庫位置 - 根據選擇的倉庫過濾
+    /// 檢查是否已選擇倉庫位置
+    /// </summary>
+    private bool HasSelectedWarehouseLocation()
+    {
+        return editModalComponent?.Entity?.WarehouseLocationId.HasValue ?? false;
+    }
+
+    /// <summary>
+    /// 檢查是否應該啟用倉庫位置欄位（有選擇倉庫 或 有現有的倉庫位置資料）
+    /// </summary>
+    private bool ShouldEnableWarehouseLocationField()
+    {
+        return HasSelectedWarehouse() || HasSelectedWarehouseLocation();
+    }
+
+    /// <summary>
+    /// 載入倉庫位置 - 根據選擇的倉庫過濾，或載入產品現有倉庫位置所屬的倉庫
     /// </summary>
     private async Task LoadWarehouseLocationsAsync()
     {
         try
         {
-            if (HasSelectedWarehouse() && editModalComponent?.Entity?.WarehouseId.HasValue == true)
+            var warehouseId = editModalComponent?.Entity?.WarehouseId;
+            var warehouseLocationId = editModalComponent?.Entity?.WarehouseLocationId;
+            
+            // 如果有選擇倉庫，載入該倉庫的位置
+            if (warehouseId.HasValue)
             {
-                // 載入特定倉庫的位置
-                var result = await WarehouseLocationService.GetByWarehouseIdAsync(editModalComponent.Entity.WarehouseId.Value);
+                var result = await WarehouseLocationService.GetByWarehouseIdAsync(warehouseId.Value);
                 if (result.IsSuccess && result.Data != null)
                 {
                     availableWarehouseLocations = result.Data.ToList();
@@ -178,9 +201,38 @@
                     availableWarehouseLocations = new List<WarehouseLocation>();
                 }
             }
+            // 如果沒有選擇倉庫但有倉庫位置資料，則載入該倉庫位置所屬倉庫的所有位置
+            else if (warehouseLocationId.HasValue)
+            {
+                // 先獲取該倉庫位置的資料以得知所屬倉庫
+                var location = await WarehouseLocationService.GetByIdAsync(warehouseLocationId.Value);
+                if (location != null)
+                {
+                    // 更新產品的倉庫選擇（這樣可以保持資料一致性）
+                    if (editModalComponent?.Entity != null)
+                    {
+                        editModalComponent.Entity.WarehouseId = location.WarehouseId;
+                    }
+                    
+                    // 載入該倉庫的所有位置
+                    var warehouseLocationsResult = await WarehouseLocationService.GetByWarehouseIdAsync(location.WarehouseId);
+                    if (warehouseLocationsResult.IsSuccess && warehouseLocationsResult.Data != null)
+                    {
+                        availableWarehouseLocations = warehouseLocationsResult.Data.ToList();
+                    }
+                    else
+                    {
+                        availableWarehouseLocations = new List<WarehouseLocation>();
+                    }
+                }
+                else
+                {
+                    availableWarehouseLocations = new List<WarehouseLocation>();
+                }
+            }
             else
             {
-                // 沒有選擇倉庫，清空倉庫位置
+                // 沒有選擇倉庫也沒有倉庫位置，清空倉庫位置
                 availableWarehouseLocations = new List<WarehouseLocation>();
             }
 
@@ -203,9 +255,47 @@
     {
         if (IsVisible)
         {
+            // 重置標誌，確保每次打開Modal時都會檢查
+            _entityLoadedButFieldsNotRefreshed = false;
+            _hasCheckedEntityLoad = false;
+            
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
         }
+    }
+
+    /// <summary>
+    /// 在組件渲染後檢查實體是否已載入，如果是則刷新倉庫位置
+    /// </summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // 只在編輯模式下且實體已載入但還沒檢查過時執行
+        if (IsVisible && ProductId.HasValue && !_hasCheckedEntityLoad && 
+            editModalComponent?.Entity != null && editModalComponent.Entity.Id > 0)
+        {
+            _hasCheckedEntityLoad = true;
+            await RefreshFormFieldsAfterEntityLoadAsync();
+        }
+    }
+
+    /// <summary>
+    /// 在實體載入後重新初始化表單欄位（解決編輯模式下倉庫位置欄位禁用問題）
+    /// </summary>
+    public async Task RefreshFormFieldsAfterEntityLoadAsync()
+    {
+        // 如果產品有倉庫或倉庫位置資料，載入倉庫位置
+        if (ShouldEnableWarehouseLocationField())
+        {
+            await LoadWarehouseLocationsAsync();
+        }
+        
+        // 重新初始化表單欄位，這會正確設定倉庫位置欄位的狀態
+        await InitializeFormFieldsAsync();
+        
+        // 確保倉庫位置欄位的狀態正確
+        await UpdateWarehouseLocationFieldAsync();
+        
+        StateHasChanged();
     }
 
     private async Task HandleSaveSuccess()
@@ -342,8 +432,8 @@
                 Value = w.Id.ToString()
             }).ToList();
 
-            // 載入倉庫位置 - 根據選擇的倉庫過濾
-            await LoadWarehouseLocationsAsync();
+            // 注意：不在此處載入倉庫位置，因為此時產品實體還沒載入
+            // 倉庫位置將在產品實體載入後通過 RefreshFormFieldsAfterEntityLoadAsync 載入
         }
         catch (Exception ex)
         {
@@ -442,12 +532,12 @@
                 PropertyName = nameof(Product.WarehouseLocationId),
                 Label = "倉庫位置",
                 FieldType = FormFieldType.AutoComplete,
-                Placeholder = "請先選擇倉庫",
+                Placeholder = ShouldEnableWarehouseLocationField() ? "請輸入或選擇倉庫位置" : "請先選擇倉庫",
                 IsRequired = false,
                 MinSearchLength = 0,
                 HelpText = "請先選擇倉庫，再選擇倉庫位置",
                 ActionButtons = await GetWarehouseLocationActionButtonsAsync(),
-                IsDisabled = !HasSelectedWarehouse()
+                IsDisabled = !ShouldEnableWarehouseLocationField()
             },
             new()
             {
@@ -477,8 +567,12 @@
             { nameof(Product.Remarks), "額外資訊" }
         };
 
-        // 初始化後，更新倉庫位置欄位的狀態
-        await UpdateWarehouseLocationFieldAsync();
+        // 在初始化後，如果產品有倉庫或倉庫位置資料，載入倉庫位置並更新欄位狀態
+        if (ShouldEnableWarehouseLocationField())
+        {
+            await LoadWarehouseLocationsAsync();
+            await UpdateWarehouseLocationFieldAsync();
+        }
     }
 
     private List<FormFieldDefinition> GetFormFields()
@@ -566,15 +660,21 @@
     /// </summary>
     private IEnumerable<WarehouseLocation> GetFilteredWarehouseLocations()
     {
-        // 如果沒有選擇倉庫，返回空集合
-        if (!HasSelectedWarehouse() || editModalComponent?.Entity?.WarehouseId.HasValue != true)
+        // 如果沒有倉庫或倉庫位置資料，返回空集合
+        if (!ShouldEnableWarehouseLocationField())
         {
             return new List<WarehouseLocation>();
         }
 
-        // 返回屬於選中倉庫的位置
-        var warehouseId = editModalComponent!.Entity!.WarehouseId!.Value;
-        return availableWarehouseLocations.Where(wl => wl.WarehouseId == warehouseId);
+        // 如果有選擇倉庫，返回屬於該倉庫的位置
+        if (editModalComponent?.Entity?.WarehouseId.HasValue == true)
+        {
+            var warehouseId = editModalComponent.Entity.WarehouseId.Value;
+            return availableWarehouseLocations.Where(wl => wl.WarehouseId == warehouseId);
+        }
+
+        // 如果沒有選擇倉庫但有倉庫位置，返回所有已載入的倉庫位置
+        return availableWarehouseLocations;
     }
 
     /// <summary>
@@ -723,27 +823,23 @@
     private async Task SaveSubCollectionsAsync(Product product)
     {
         try
-        {
-            await NotificationService.ShowInfoAsync($"SaveSubCollectionsAsync 被調用 - 產品ID: {product.Id}");
-            
+        {            
             // 確保我們有最新的產品資料
             var latestProduct = await ProductService.GetByIdAsync(product.Id);
             if (latestProduct == null)
             {
                 await NotificationService.ShowErrorAsync("無法獲取最新的產品資料");
                 return;
-            }
-            
-            await NotificationService.ShowInfoAsync($"最新產品資料 - ID: {latestProduct.Id}, 倉庫ID: {latestProduct.WarehouseId}, 最低: {latestProduct.MinStockLevel}, 最高: {latestProduct.MaxStockLevel}");
+            }            
             
             // 先同步庫存警戒線（使用最新的產品資料）
             await SyncProductStockLevelsAsync(latestProduct);
             
-            // 只有在產品ID存在時才處理產品供應商關聯（新增產品時可能ID還是0）
-            if (product.Id <= 0)
+            // 只有在產品ID存在時才處理產品供應商關聯
+            if (latestProduct.Id <= 0)
             {
-                await NotificationService.ShowWarningAsync("產品ID為0，跳過供應商關聯儲存");
-                return; // 新增的產品，ID可能還沒設定，跳過供應商關聯儲存
+                await NotificationService.ShowWarningAsync("產品ID無效，跳過供應商關聯儲存");
+                return; 
             }
 
             // 使用 ProductService 的更新供應商關聯方法
@@ -752,11 +848,11 @@
                 // 設定每個供應商關聯的 ProductId
                 foreach (var productSupplier in productSuppliers)
                 {
-                    productSupplier.ProductId = product.Id;
+                    productSupplier.ProductId = latestProduct.Id;
                 }
                 
                 // 更新產品供應商關聯
-                var result = await ProductService.UpdateProductSuppliersAsync(product.Id, productSuppliers);
+                var result = await ProductService.UpdateProductSuppliersAsync(latestProduct.Id, productSuppliers);
                 if (!result.IsSuccess)
                 {
                     await NotificationService.ShowErrorAsync($"儲存供應商資料時發生錯誤：{result.ErrorMessage}");
@@ -764,7 +860,7 @@
             }
 
             // 重新載入供應商資料以更新UI顯示
-            productSuppliers = await ProductService.GetProductSuppliersAsync(product.Id);
+            productSuppliers = await ProductService.GetProductSuppliersAsync(latestProduct.Id);
             
             StateHasChanged(); // 通知UI更新
         }
@@ -781,41 +877,25 @@
     private async Task SyncProductStockLevelsAsync(Product product)
     {
         try
-        {
-            // 添加調試信息
-            await NotificationService.ShowInfoAsync($"開始同步庫存警戒線 - 產品ID: {product.Id}, 倉庫ID: {product.WarehouseId}, 最低警戒線: {product.MinStockLevel}, 最高警戒線: {product.MaxStockLevel}");
-            
-            // 確保產品ID有效
+        {       
+            // 確保產品ID有效（產品是唯一必須的值）
             if (product.Id <= 0)
             {
-                await NotificationService.ShowWarningAsync("產品ID無效，無法同步庫存警戒線");
-                return;
-            }
-            
-            // 只有當產品有設定倉庫時才處理庫存警戒線
-            if (!product.WarehouseId.HasValue)
-            {
-                await NotificationService.ShowWarningAsync("產品未設定倉庫，跳過庫存警戒線同步");
                 return;
             }
 
-            // 查詢現有的庫存記錄
+            // 查詢現有的庫存記錄（根據產品ID、倉庫ID和倉庫位置ID查詢）
             var existingStock = await InventoryStockService.GetByProductWarehouseAsync(
                 product.Id, 
-                product.WarehouseId.Value, 
+                product.WarehouseId, 
                 product.WarehouseLocationId);
 
             // 將 Product 的庫存警戒線值轉換為 nullable int
-            // 修改邏輯：只要有設定倉庫，就應該同步警戒線（包括0值）
             int? minLevel = product.MinStockLevel >= 0 ? product.MinStockLevel : null;
             int? maxLevel = product.MaxStockLevel >= 0 ? product.MaxStockLevel : null;
 
-            await NotificationService.ShowInfoAsync($"轉換後的警戒線值 - 最低: {minLevel}, 最高: {maxLevel}");
-
             if (existingStock != null)
             {
-                await NotificationService.ShowInfoAsync($"找到現有庫存記錄ID: {existingStock.Id}");
-                
                 // 更新現有記錄
                 bool hasChanges = false;
                 
@@ -831,26 +911,31 @@
                     hasChanges = true;
                 }
                 
+                // 同步倉庫和倉庫位置資訊（可能產品的倉庫設定有變更）
+                if (existingStock.WarehouseId != product.WarehouseId)
+                {
+                    existingStock.WarehouseId = product.WarehouseId;
+                    hasChanges = true;
+                }
+                
+                if (existingStock.WarehouseLocationId != product.WarehouseLocationId)
+                {
+                    existingStock.WarehouseLocationId = product.WarehouseLocationId;
+                    hasChanges = true;
+                }
+                
                 if (hasChanges)
                 {
-                    await NotificationService.ShowInfoAsync("正在更新現有庫存記錄...");
                     await InventoryStockService.UpdateAsync(existingStock);
-                    await NotificationService.ShowSuccessAsync("庫存警戒線更新成功");
-                }
-                else
-                {
-                    await NotificationService.ShowInfoAsync("庫存警戒線無需更新");
                 }
             }
             else
             {
-                await NotificationService.ShowInfoAsync("創建新的庫存記錄...");
-                
-                // 創建新的庫存記錄（只要有設定倉庫就創建）
+                // 創建新的庫存記錄（商品是必須的，倉庫和倉庫位置是可選的）
                 var newStock = new InventoryStock
                 {
                     ProductId = product.Id,
-                    WarehouseId = product.WarehouseId.Value,
+                    WarehouseId = product.WarehouseId,
                     WarehouseLocationId = product.WarehouseLocationId,
                     MinStockLevel = minLevel,
                     MaxStockLevel = maxLevel,
@@ -1120,8 +1205,8 @@
             nameof(Product.WarehouseLocationId)
         );
 
-        // 如果沒有選擇倉庫，禁用所有按鈕
-        if (!HasSelectedWarehouse())
+        // 如果沒有倉庫或倉庫位置資料，禁用所有按鈕
+        if (!ShouldEnableWarehouseLocationField())
         {
             foreach (var button in buttons)
             {
@@ -1143,20 +1228,29 @@
             var warehouseLocationField = formFields.FirstOrDefault(f => f.PropertyName == nameof(Product.WarehouseLocationId));
             if (warehouseLocationField != null)
             {
-                // 重新生成按鈕，考慮倉庫選擇狀態
+                // 檢查是否應該啟用倉庫位置欄位
+                bool shouldEnable = ShouldEnableWarehouseLocationField();
+                
+                // 重新生成按鈕，考慮倉庫位置欄位的啟用狀態
                 warehouseLocationField.ActionButtons = await GetWarehouseLocationActionButtonsAsync();
                 
                 // 更新欄位的禁用狀態
-                warehouseLocationField.IsDisabled = !HasSelectedWarehouse();
+                warehouseLocationField.IsDisabled = !shouldEnable;
                 
-                // 如果沒有選擇倉庫，更新佔位符文字
-                if (!HasSelectedWarehouse())
+                // 更新佔位符文字
+                if (!shouldEnable)
                 {
                     warehouseLocationField.Placeholder = "請先選擇倉庫";
                 }
                 else
                 {
                     warehouseLocationField.Placeholder = "請輸入或選擇倉庫位置";
+                }
+                
+                // 如果應該啟用欄位，確保倉庫位置資料是最新的
+                if (shouldEnable)
+                {
+                    await LoadWarehouseLocationsAsync();
                 }
             }
         }
@@ -1273,6 +1367,13 @@
     {
         try
         {
+            // 在第一次欄位變更時檢查實體是否已載入，如果是編輯模式且倉庫位置欄位需要刷新，則刷新
+            if (!_entityLoadedButFieldsNotRefreshed && ProductId.HasValue && editModalComponent?.Entity != null)
+            {
+                _entityLoadedButFieldsNotRefreshed = true;
+                await RefreshFormFieldsAfterEntityLoadAsync();
+            }
+            
             // 處理庫存警戒線字段變更 - 同步到 InventoryStock
             if (fieldChange.PropertyName == nameof(Product.MinStockLevel) || 
                 fieldChange.PropertyName == nameof(Product.MaxStockLevel))

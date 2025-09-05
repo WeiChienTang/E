@@ -230,6 +230,33 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<InventoryStock?> GetByProductWarehouseAsync(int productId, int? warehouseId = null, int? locationId = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryStocks
+                    .Include(i => i.Product)
+                    .Include(i => i.Warehouse)
+                    .Include(i => i.WarehouseLocation)
+                    .FirstOrDefaultAsync(i => i.ProductId == productId && 
+                                            i.WarehouseId == warehouseId &&
+                                            i.WarehouseLocationId == locationId && 
+                                            !i.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductWarehouseAsync), GetType(), _logger, new { 
+                    Method = nameof(GetByProductWarehouseAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = productId,
+                    WarehouseId = warehouseId,
+                    LocationId = locationId 
+                });
+                return null;
+            }
+        }
+
         public async Task<List<InventoryStock>> GetLowStockItemsAsync()
         {
             try
