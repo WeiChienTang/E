@@ -27,16 +27,14 @@ namespace ERPCore2.Data.Entities
         /// <summary>
         /// 印表機設定ID
         /// </summary>
-        [Required(ErrorMessage = "印表機設定為必填")]
         [Display(Name = "印表機設定")]
-        public int PrinterConfigurationId { get; set; }
+        public int? PrinterConfigurationId { get; set; }
 
         /// <summary>
         /// 紙張設定ID
         /// </summary>
-        [Required(ErrorMessage = "紙張設定為必填")]
         [Display(Name = "紙張設定")]
-        public int PaperSettingId { get; set; }
+        public int? PaperSettingId { get; set; }
 
         // 導航屬性
         /// <summary>

@@ -64,18 +64,24 @@ namespace ERPCore2.Services
                 if (await IsReportTypeExistsAsync(entity.ReportType, entity.Id))
                     return ServiceResult.Failure("報表類型已存在");
 
-                // 檢查印表機設定是否存在
+                // 檢查印表機設定是否存在（如果有提供的話）
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var printerExists = await context.PrinterConfigurations
-                    .AnyAsync(p => p.Id == entity.PrinterConfigurationId && !p.IsDeleted);
-                if (!printerExists)
-                    return ServiceResult.Failure("指定的印表機設定不存在");
+                if (entity.PrinterConfigurationId.HasValue)
+                {
+                    var printerExists = await context.PrinterConfigurations
+                        .AnyAsync(p => p.Id == entity.PrinterConfigurationId.Value && !p.IsDeleted);
+                    if (!printerExists)
+                        return ServiceResult.Failure("指定的印表機設定不存在");
+                }
 
-                // 檢查紙張設定是否存在
-                var paperExists = await context.PaperSettings
-                    .AnyAsync(p => p.Id == entity.PaperSettingId && !p.IsDeleted);
-                if (!paperExists)
-                    return ServiceResult.Failure("指定的紙張設定不存在");
+                // 檢查紙張設定是否存在（如果有提供的話）
+                if (entity.PaperSettingId.HasValue)
+                {
+                    var paperExists = await context.PaperSettings
+                        .AnyAsync(p => p.Id == entity.PaperSettingId.Value && !p.IsDeleted);
+                    if (!paperExists)
+                        return ServiceResult.Failure("指定的紙張設定不存在");
+                }
 
                 return ServiceResult.Success();
             }
