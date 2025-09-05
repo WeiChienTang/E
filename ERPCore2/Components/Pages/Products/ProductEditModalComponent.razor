@@ -155,86 +155,14 @@
     }
 
     /// <summary>
-    /// 檢查是否已選擇倉庫
-    /// </summary>
-    private bool HasSelectedWarehouse()
-    {
-        return editModalComponent?.Entity?.WarehouseId.HasValue ?? false;
-    }
-
-    /// <summary>
-    /// 檢查是否已選擇倉庫位置
-    /// </summary>
-    private bool HasSelectedWarehouseLocation()
-    {
-        return editModalComponent?.Entity?.WarehouseLocationId.HasValue ?? false;
-    }
-
-    /// <summary>
-    /// 檢查是否應該啟用倉庫位置欄位（有選擇倉庫 或 有現有的倉庫位置資料）
-    /// </summary>
-    private bool ShouldEnableWarehouseLocationField()
-    {
-        return HasSelectedWarehouse() || HasSelectedWarehouseLocation();
-    }
-
-    /// <summary>
-    /// 載入倉庫位置 - 根據選擇的倉庫過濾，或載入產品現有倉庫位置所屬的倉庫
+    /// 載入倉庫位置 - 載入所有可用的倉庫位置
     /// </summary>
     private async Task LoadWarehouseLocationsAsync()
     {
         try
         {
-            var warehouseId = editModalComponent?.Entity?.WarehouseId;
-            var warehouseLocationId = editModalComponent?.Entity?.WarehouseLocationId;
-            
-            // 如果有選擇倉庫，載入該倉庫的位置
-            if (warehouseId.HasValue)
-            {
-                var result = await WarehouseLocationService.GetByWarehouseIdAsync(warehouseId.Value);
-                if (result.IsSuccess && result.Data != null)
-                {
-                    availableWarehouseLocations = result.Data.ToList();
-                }
-                else
-                {
-                    availableWarehouseLocations = new List<WarehouseLocation>();
-                }
-            }
-            // 如果沒有選擇倉庫但有倉庫位置資料，則載入該倉庫位置所屬倉庫的所有位置
-            else if (warehouseLocationId.HasValue)
-            {
-                // 先獲取該倉庫位置的資料以得知所屬倉庫
-                var location = await WarehouseLocationService.GetByIdAsync(warehouseLocationId.Value);
-                if (location != null)
-                {
-                    // 更新產品的倉庫選擇（這樣可以保持資料一致性）
-                    if (editModalComponent?.Entity != null)
-                    {
-                        editModalComponent.Entity.WarehouseId = location.WarehouseId;
-                    }
-                    
-                    // 載入該倉庫的所有位置
-                    var warehouseLocationsResult = await WarehouseLocationService.GetByWarehouseIdAsync(location.WarehouseId);
-                    if (warehouseLocationsResult.IsSuccess && warehouseLocationsResult.Data != null)
-                    {
-                        availableWarehouseLocations = warehouseLocationsResult.Data.ToList();
-                    }
-                    else
-                    {
-                        availableWarehouseLocations = new List<WarehouseLocation>();
-                    }
-                }
-                else
-                {
-                    availableWarehouseLocations = new List<WarehouseLocation>();
-                }
-            }
-            else
-            {
-                // 沒有選擇倉庫也沒有倉庫位置，清空倉庫位置
-                availableWarehouseLocations = new List<WarehouseLocation>();
-            }
+            // 載入所有可用的倉庫位置
+            availableWarehouseLocations = await WarehouseLocationService.GetAllAsync();
 
             // 更新選項清單
             warehouseLocationOptions = availableWarehouseLocations.Select(wl => new SelectOption
@@ -279,21 +207,15 @@
     }
 
     /// <summary>
-    /// 在實體載入後重新初始化表單欄位（解決編輯模式下倉庫位置欄位禁用問題）
+    /// 在實體載入後重新初始化表單欄位
     /// </summary>
     public async Task RefreshFormFieldsAfterEntityLoadAsync()
     {
-        // 如果產品有倉庫或倉庫位置資料，載入倉庫位置
-        if (ShouldEnableWarehouseLocationField())
-        {
-            await LoadWarehouseLocationsAsync();
-        }
+        // 載入倉庫位置
+        await LoadWarehouseLocationsAsync();
         
-        // 重新初始化表單欄位，這會正確設定倉庫位置欄位的狀態
+        // 重新初始化表單欄位
         await InitializeFormFieldsAsync();
-        
-        // 確保倉庫位置欄位的狀態正確
-        await UpdateWarehouseLocationFieldAsync();
         
         StateHasChanged();
     }
@@ -432,8 +354,8 @@
                 Value = w.Id.ToString()
             }).ToList();
 
-            // 注意：不在此處載入倉庫位置，因為此時產品實體還沒載入
-            // 倉庫位置將在產品實體載入後通過 RefreshFormFieldsAfterEntityLoadAsync 載入
+            // 載入倉庫位置
+            await LoadWarehouseLocationsAsync();
         }
         catch (Exception ex)
         {
@@ -532,12 +454,12 @@
                 PropertyName = nameof(Product.WarehouseLocationId),
                 Label = "倉庫位置",
                 FieldType = FormFieldType.AutoComplete,
-                Placeholder = ShouldEnableWarehouseLocationField() ? "請輸入或選擇倉庫位置" : "請先選擇倉庫",
+                Placeholder = "請輸入或選擇倉庫位置",
                 IsRequired = false,
                 MinSearchLength = 0,
-                HelpText = "請先選擇倉庫，再選擇倉庫位置",
+                HelpText = "選擇產品的倉庫位置",
                 ActionButtons = await GetWarehouseLocationActionButtonsAsync(),
-                IsDisabled = !ShouldEnableWarehouseLocationField()
+                IsDisabled = false
             },
             new()
             {
@@ -566,13 +488,6 @@
             { nameof(Product.WarehouseLocationId), "庫存設定" },
             { nameof(Product.Remarks), "額外資訊" }
         };
-
-        // 在初始化後，如果產品有倉庫或倉庫位置資料，載入倉庫位置並更新欄位狀態
-        if (ShouldEnableWarehouseLocationField())
-        {
-            await LoadWarehouseLocationsAsync();
-            await UpdateWarehouseLocationFieldAsync();
-        }
     }
 
     private List<FormFieldDefinition> GetFormFields()
@@ -656,24 +571,10 @@
     }
 
     /// <summary>
-    /// 取得過濾後的倉庫位置清單
+    /// 取得所有可用的倉庫位置清單
     /// </summary>
     private IEnumerable<WarehouseLocation> GetFilteredWarehouseLocations()
     {
-        // 如果沒有倉庫或倉庫位置資料，返回空集合
-        if (!ShouldEnableWarehouseLocationField())
-        {
-            return new List<WarehouseLocation>();
-        }
-
-        // 如果有選擇倉庫，返回屬於該倉庫的位置
-        if (editModalComponent?.Entity?.WarehouseId.HasValue == true)
-        {
-            var warehouseId = editModalComponent.Entity.WarehouseId.Value;
-            return availableWarehouseLocations.Where(wl => wl.WarehouseId == warehouseId);
-        }
-
-        // 如果沒有選擇倉庫但有倉庫位置，返回所有已載入的倉庫位置
         return availableWarehouseLocations;
     }
 
@@ -1195,69 +1096,15 @@
     }
 
     /// <summary>
-    /// 產生倉庫位置操作按鈕 - 使用統一 Helper，但檢查倉庫選擇狀態
+    /// 產生倉庫位置操作按鈕 - 使用統一 Helper
     /// </summary>
     private async Task<List<FieldActionButton>> GetWarehouseLocationActionButtonsAsync()
     {
-        var buttons = await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
             editModalComponent, 
             warehouseLocationModalManager, 
             nameof(Product.WarehouseLocationId)
         );
-
-        // 如果沒有倉庫或倉庫位置資料，禁用所有按鈕
-        if (!ShouldEnableWarehouseLocationField())
-        {
-            foreach (var button in buttons)
-            {
-                button.IsDisabled = true;
-                button.Title = "請先選擇倉庫";
-            }
-        }
-
-        return buttons;
-    }
-
-    /// <summary>
-    /// 更新倉庫位置欄位的按鈕狀態
-    /// </summary>
-    private async Task UpdateWarehouseLocationFieldAsync()
-    {
-        try
-        {
-            var warehouseLocationField = formFields.FirstOrDefault(f => f.PropertyName == nameof(Product.WarehouseLocationId));
-            if (warehouseLocationField != null)
-            {
-                // 檢查是否應該啟用倉庫位置欄位
-                bool shouldEnable = ShouldEnableWarehouseLocationField();
-                
-                // 重新生成按鈕，考慮倉庫位置欄位的啟用狀態
-                warehouseLocationField.ActionButtons = await GetWarehouseLocationActionButtonsAsync();
-                
-                // 更新欄位的禁用狀態
-                warehouseLocationField.IsDisabled = !shouldEnable;
-                
-                // 更新佔位符文字
-                if (!shouldEnable)
-                {
-                    warehouseLocationField.Placeholder = "請先選擇倉庫";
-                }
-                else
-                {
-                    warehouseLocationField.Placeholder = "請輸入或選擇倉庫位置";
-                }
-                
-                // 如果應該啟用欄位，確保倉庫位置資料是最新的
-                if (shouldEnable)
-                {
-                    await LoadWarehouseLocationsAsync();
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"更新倉庫位置欄位時發生錯誤：{ex.Message}");
-        }
     }
 
     // ===== Modal 事件包裝器方法 =====
@@ -1387,27 +1234,15 @@
                 }
                 return;
             }
-            // 處理倉庫變更 - 需要清空倉庫位置並重新載入
+            // 處理倉庫變更 - 重新載入倉庫位置
             else if (fieldChange.PropertyName == nameof(Product.WarehouseId))
             {
-                // 清空倉庫位置選擇
-                if (editModalComponent?.Entity != null)
-                {
-                    editModalComponent.Entity.WarehouseLocationId = null;
-                }
-
                 // 重新載入倉庫位置
                 await LoadWarehouseLocationsAsync();
-
-                // 重新初始化表單欄位以更新禁用狀態和按鈕
-                await InitializeFormFieldsAsync();
 
                 // 使用統一 Helper 處理倉庫欄位變更
                 await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                     warehouseModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-
-                // 手動更新倉庫位置欄位的 ActionButtons，考慮倉庫選擇狀態
-                await UpdateWarehouseLocationFieldAsync();
             }
             // 使用統一 Helper 處理產品分類欄位變更
             else if (fieldChange.PropertyName == nameof(Product.ProductCategoryId))
