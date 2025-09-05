@@ -1325,7 +1325,7 @@
                 var collection = AutoCompleteCollections[propertyName];
                 var displayProperty = AutoCompleteDisplayProperties?.GetValueOrDefault(propertyName, "Name") ?? "Name";
                 var valueProperty = AutoCompleteValueProperties?.GetValueOrDefault(propertyName, "Id") ?? "Id";
-                var maxResults = AutoCompleteMaxResults?.GetValueOrDefault(propertyName, 10) ?? 10;
+                var maxResults = AutoCompleteMaxResults?.GetValueOrDefault(propertyName, 100) ?? 100;
                 
                 var filteredResults = collection
                     .Where(item => 
