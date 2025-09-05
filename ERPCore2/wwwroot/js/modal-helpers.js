@@ -362,20 +362,21 @@ window.cleanupButtonTabNavigation = function () {
 
 // ===== ESC 鍵支援 =====
 
-// 全域變數來存儲 ESC 鍵監聽器的 DotNet 對象引用
-var escKeyDotNetHelper = null;
+// 使用堆疊管理多個 Modal 的 ESC 鍵監聽器
+var escKeyDotNetHelpers = [];
 var escKeyCleanupInProgress = false;
+var escKeyEventListenerAdded = false;
 
 // 設置 ESC 鍵監聽器
 window.setupEscKeyListener = function (dotNetHelper) {
-    // 清理之前的監聽器
-    cleanupEscKeyListener();
+    // 將新的 DotNet 對象引用加入堆疊
+    escKeyDotNetHelpers.push(dotNetHelper);
     
-    // 儲存 DotNet 對象引用
-    escKeyDotNetHelper = dotNetHelper;
-    
-    // 添加 ESC 鍵事件監聽器
-    document.addEventListener('keydown', handleEscapeKey);
+    // 只在第一次時添加事件監聽器
+    if (!escKeyEventListenerAdded) {
+        document.addEventListener('keydown', handleEscapeKey);
+        escKeyEventListenerAdded = true;
+    }
 };
 
 // 清理 ESC 鍵監聽器
@@ -387,22 +388,16 @@ window.cleanupEscKeyListener = function () {
     
     escKeyCleanupInProgress = true;
     
-    // 移除事件監聽器
-    document.removeEventListener('keydown', handleEscapeKey);
-    
-    // 清理 DotNet 對象引用
-    if (escKeyDotNetHelper) {
-        try {
-            // 先將引用設為 null，避免在 dispose 過程中被重複調用
-            var tempRef = escKeyDotNetHelper;
-            escKeyDotNetHelper = null;
+    try {
+        // 從堆疊中移除最後一個（最上層的）DotNet 對象引用
+        if (escKeyDotNetHelpers.length > 0) {
+            var removedHelper = escKeyDotNetHelpers.pop();
             
-            // 延遲 dispose 以避免消息通道問題，並增加安全檢查
+            // 延遲清理 DotNet 對象引用，避免消息通道問題
             setTimeout(function() {
                 try {
-                    // 檢查對象是否仍然有效
-                    if (tempRef && typeof tempRef.dispose === 'function') {
-                        tempRef.dispose();
+                    if (removedHelper && typeof removedHelper.dispose === 'function') {
+                        removedHelper.dispose();
                     }
                 } catch (error) {
                     // 安靜地忽略 dispose 錯誤，因為可能是 Blazor 連接已關閉
@@ -410,14 +405,19 @@ window.cleanupEscKeyListener = function () {
                 } finally {
                     escKeyCleanupInProgress = false;
                 }
-            }, 150); // 增加延遲時間
-            
-        } catch (error) {
-            console.debug('ESC key listener cleanup error (safe to ignore):', error.message);
-            escKeyDotNetHelper = null;
+            }, 150);
+        } else {
             escKeyCleanupInProgress = false;
         }
-    } else {
+        
+        // 當沒有任何 Modal 時，移除事件監聽器
+        if (escKeyDotNetHelpers.length === 0 && escKeyEventListenerAdded) {
+            document.removeEventListener('keydown', handleEscapeKey);
+            escKeyEventListenerAdded = false;
+        }
+        
+    } catch (error) {
+        console.debug('ESC key listener cleanup error (safe to ignore):', error.message);
         escKeyCleanupInProgress = false;
     }
 };
@@ -430,8 +430,14 @@ function handleEscapeKey(event) {
     }
     
     // 檢查是否有顯示的 modal
-    var visibleModal = document.querySelector('.modal.show');
-    if (!visibleModal) {
+    var visibleModals = document.querySelectorAll('.modal.show');
+    if (visibleModals.length === 0) {
+        return;
+    }
+    
+    // 找到最上層的 modal（z-index 最大的）
+    var topModal = getTopMostModal(visibleModals);
+    if (!topModal) {
         return;
     }
     
@@ -440,7 +446,7 @@ function handleEscapeKey(event) {
     
     // 檢查是否在輸入元素上且內容不為空（有實際輸入內容時才阻止 ESC）
     var shouldBlockEsc = false;
-    if (activeElement) {
+    if (activeElement && topModal.contains(activeElement)) {
         if (activeElement.tagName === 'TEXTAREA' && activeElement.value && activeElement.value.trim().length > 0) {
             shouldBlockEsc = true;
         } else if (activeElement.tagName === 'INPUT' && 
@@ -460,34 +466,72 @@ function handleEscapeKey(event) {
     event.preventDefault();
     event.stopPropagation();
     
-    // 調用 C# 方法處理 ESC 鍵
-    if (escKeyDotNetHelper) {
+    // 調用最上層 Modal 對應的 C# 方法處理 ESC 鍵
+    if (escKeyDotNetHelpers.length > 0) {
+        var topModalHelper = escKeyDotNetHelpers[escKeyDotNetHelpers.length - 1];
         try {
-            escKeyDotNetHelper.invokeMethodAsync('HandleEscapeKey')
+            topModalHelper.invokeMethodAsync('HandleEscapeKey')
                 .then(function() {
                     // ESC 鍵處理成功
                 })
                 .catch(function(error) {
                     // 嘗試直接關閉模態視窗作為備用方案
                     try {
-                        var modal = document.querySelector('.modal.show');
-                        if (modal) {
-                            var cancelButton = modal.querySelector('[data-bs-dismiss="modal"], .btn-secondary');
-                            if (cancelButton && typeof cancelButton.click === 'function') {
-                                cancelButton.click();
-                            }
+                        var cancelButton = topModal.querySelector('[data-bs-dismiss="modal"], .btn-secondary');
+                        if (cancelButton && typeof cancelButton.click === 'function') {
+                            cancelButton.click();
                         }
                     } catch (fallbackError) {
                         // 備用方案失敗，忽略錯誤
                     }
                 });
         } catch (error) {
-            // 調用失敗，忽略錯誤
+            // 調用失敗，嘗試備用方案
+            try {
+                var cancelButton = topModal.querySelector('[data-bs-dismiss="modal"], .btn-secondary');
+                if (cancelButton && typeof cancelButton.click === 'function') {
+                    cancelButton.click();
+                }
+            } catch (fallbackError) {
+                // 備用方案失敗，忽略錯誤
+            }
         }
     }
 }
 
-// 頁面卸載時清理 ESC 鍵監聽器
+// 輔助函數：找到最上層的 Modal
+function getTopMostModal(visibleModals) {
+    if (visibleModals.length === 1) {
+        return visibleModals[0];
+    }
+    
+    var topModal = null;
+    var maxZIndex = -1;
+    
+    for (var i = 0; i < visibleModals.length; i++) {
+        var modal = visibleModals[i];
+        var zIndex = parseInt(window.getComputedStyle(modal).zIndex, 10) || 0;
+        
+        if (zIndex > maxZIndex) {
+            maxZIndex = zIndex;
+            topModal = modal;
+        }
+    }
+    
+    // 如果沒有找到有效的 z-index，返回最後一個（通常是最後打開的）
+    return topModal || visibleModals[visibleModals.length - 1];
+}
+
+// 頁面卸載時清理所有 ESC 鍵監聽器
 window.addEventListener('beforeunload', function () {
-    cleanupEscKeyListener();
+    // 清理所有 DotNet 引用
+    while (escKeyDotNetHelpers.length > 0) {
+        cleanupEscKeyListener();
+    }
+    
+    // 移除事件監聽器
+    if (escKeyEventListenerAdded) {
+        document.removeEventListener('keydown', handleEscapeKey);
+        escKeyEventListenerAdded = false;
+    }
 });

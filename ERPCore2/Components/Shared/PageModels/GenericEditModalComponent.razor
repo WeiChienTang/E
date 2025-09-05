@@ -503,10 +503,7 @@
                 _isEscKeyListenerActive = true;
             }
             
-            // 先清理舊的引用
-            await CleanupEscKeyListenerAsync();
-            
-            // 創建新的 DotNetObjectReference
+            // 創建新的 DotNetObjectReference（不需要先清理，因為JavaScript現在使用堆疊管理）
             lock (_escKeyLock)
             {
                 _escKeyDotNetRef = DotNetObjectReference.Create(this);
