@@ -5,6 +5,8 @@
 @using ERPCore2.Data.Enums
 @using Microsoft.JSInterop
 @inject IProductService ProductService
+@inject IWarehouseService WarehouseService
+@inject IWarehouseLocationService WarehouseLocationService
 @inject IJSRuntime JSRuntime
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
@@ -21,20 +23,22 @@
                         }
                         else
                         {
-                            <th width="30%">商品</th>
-                            <th width="12%">@QuantityLabel</th>
-                            <th width="12%">@ReceivedQuantityLabel</th>
-                            <th width="12%">@PriceLabel</th>
+                            <th width="25%">商品</th>
+                            <th width="10%">@QuantityLabel</th>
+                            <th width="10%">@ReceivedQuantityLabel</th>
+                            <th width="10%">@PriceLabel</th>
+                            <th width="12%">倉庫</th>
+                            <th width="12%">庫位</th>
                             @if (ShowIsReceivingCompleted)
                             {
-                                <th width="10%">@IsReceivingCompletedLabel</th>
-                                <th width="17%" class="d-none d-sm-table-cell">@RemarksLabel</th>
+                                <th width="8%">@IsReceivingCompletedLabel</th>
+                                <th width="10%" class="d-none d-sm-table-cell">@RemarksLabel</th>
                             }
                             else
                             {
-                                <th width="25%" class="d-none d-sm-table-cell">@RemarksLabel</th>
+                                <th width="15%" class="d-none d-sm-table-cell">@RemarksLabel</th>
                             }
-                            <th width="5%">操作</th>
+                            <th width="3%">操作</th>
                         }
                     </tr>
                 </thead>
@@ -115,6 +119,36 @@
                                            step="0.01" 
                                            readonly="@IsReadOnly" />
                                 </td>
+                                <td>
+                                    <select class="form-select form-select-sm"
+                                            value="@item.WarehouseId"
+                                            @onchange="(e) => OnWarehouseChanged(item, int.TryParse(e.Value?.ToString(), out var warehouseId) ? warehouseId : 0)"
+                                            disabled="@IsReadOnly">
+                                        <option value="0">請選擇倉庫</option>
+                                        @if (Warehouses != null)
+                                        {
+                                            @foreach (var warehouse in Warehouses)
+                                            {
+                                                <option value="@warehouse.Id">@warehouse.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </td>
+                                <td>
+                                    <select class="form-select form-select-sm"
+                                            value="@item.WarehouseLocationId"
+                                            @onchange="(e) => OnWarehouseLocationChanged(item, int.TryParse(e.Value?.ToString(), out var locationId) ? locationId : 0)"
+                                            disabled="@(IsReadOnly || item.WarehouseId == 0)">
+                                        <option value="0">請選擇庫位</option>
+                                        @if (item.AvailableWarehouseLocations != null)
+                                        {
+                                            @foreach (var location in item.AvailableWarehouseLocations)
+                                            {
+                                                <option value="@location.Id">@location.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </td>
                                 @if (ShowIsReceivingCompleted)
                                 {
                                     <td class="text-center">
@@ -158,15 +192,15 @@
                 {
                     <tfoot>
                         <tr class="total-row">
-                            <th colspan="2">總計</th>
+                            <th colspan="4">總計</th>
                             <th class="text-end total-amount">@GetTotalAmount().ToString("C")</th>
                             @if (ShowIsReceivingCompleted)
                             {
-                                <th class="d-none d-sm-table-cell" colspan="3"></th>
+                                <th class="d-none d-sm-table-cell" colspan="4"></th>
                             }
                             else
                             {
-                                <th class="d-none d-sm-table-cell" colspan="2"></th>
+                                <th class="d-none d-sm-table-cell" colspan="3"></th>
                             }
                             <th class="d-sm-none"></th>
                         </tr>
@@ -204,6 +238,8 @@
     [Parameter] public string RemarksPropertyName { get; set; } = "Remarks"; // 備註欄位名稱
     [Parameter] public string? UnitIdPropertyName { get; set; } // 單位ID欄位名稱（可選）
     [Parameter] public string? IsReceivingCompletedPropertyName { get; set; } // 是否完成進貨欄位名稱（可選）
+    [Parameter] public string? WarehouseIdPropertyName { get; set; } // 倉庫ID欄位名稱（可選）
+    [Parameter] public string? WarehouseLocationIdPropertyName { get; set; } // 庫位ID欄位名稱（可選）
     
     // === 顯示控制參數 ===
     [Parameter] public bool ShowIsReceivingCompleted { get; set; } = false; // 是否顯示完成進貨欄位
@@ -221,6 +257,7 @@
     private List<ProductItem> ProductItems { get; set; } = new List<ProductItem>();
     private List<Product> FilteredProducts { get; set; } = new List<Product>();
     private List<Product> AvailableProducts { get; set; } = new List<Product>(); // 新增：儲存可用商品列表
+    private List<Warehouse> Warehouses { get; set; } = new List<Warehouse>(); // 新增：倉庫列表
     private int? _previousSelectedSupplierId = null; // 新增：追蹤前一個選擇的供應商ID
 
     protected override async Task OnInitializedAsync()
@@ -228,8 +265,11 @@
         // 載入可用商品
         await LoadAvailableProductsAsync();
         
+        // 載入倉庫資料
+        await LoadWarehousesAsync();
+        
         // 從現有明細載入資料
-        LoadExistingDetails();
+        await LoadExistingDetailsAsync();
         // 初始化時確保有1行空白
         EnsureOneEmptyRow();
     }
@@ -262,7 +302,7 @@
         // 當參數變更時重新載入
         if (ExistingDetails?.Any() == true)
         {
-            LoadExistingDetails(); // 這裡面已經會呼叫 EnsureOneEmptyRow()
+            await LoadExistingDetailsAsync(); // 這裡面已經會呼叫 EnsureOneEmptyRow()
         }
         else
         {
@@ -298,9 +338,69 @@
     }
 
     /// <summary>
+    /// 載入倉庫資料
+    /// </summary>
+    private async Task LoadWarehousesAsync()
+    {
+        try
+        {
+            Warehouses = await WarehouseService.GetAllAsync();
+        }
+        catch (Exception)
+        {
+            Warehouses = new List<Warehouse>();
+        }
+    }
+
+    /// <summary>
+    /// 倉庫變更處理
+    /// </summary>
+    private async Task OnWarehouseChanged(ProductItem item, int warehouseId)
+    {
+        item.WarehouseId = warehouseId;
+        item.WarehouseLocationId = 0; // 重置庫位選擇
+        
+        // 載入該倉庫的庫位資料
+        if (warehouseId > 0)
+        {
+            try
+            {
+                var result = await WarehouseLocationService.GetByWarehouseIdAsync(warehouseId);
+                if (result.IsSuccess && result.Data != null)
+                {
+                    item.AvailableWarehouseLocations = result.Data.ToList();
+                }
+                else
+                {
+                    item.AvailableWarehouseLocations = new List<WarehouseLocation>();
+                }
+            }
+            catch (Exception)
+            {
+                item.AvailableWarehouseLocations = new List<WarehouseLocation>();
+            }
+        }
+        else
+        {
+            item.AvailableWarehouseLocations = new List<WarehouseLocation>();
+        }
+        
+        await NotifyDetailsChanged();
+    }
+
+    /// <summary>
+    /// 庫位變更處理
+    /// </summary>
+    private async Task OnWarehouseLocationChanged(ProductItem item, int locationId)
+    {
+        item.WarehouseLocationId = locationId;
+        await NotifyDetailsChanged();
+    }
+
+    /// <summary>
     /// 從現有明細資料載入到 ProductItems
     /// </summary>
-    private void LoadExistingDetails()
+    private async Task LoadExistingDetailsAsync()
     {
         if (ExistingDetails?.Any() != true) return;
 
@@ -323,8 +423,30 @@
                     Remarks = GetPropertyValue<string>(detail, RemarksPropertyName) ?? string.Empty,
                     IsReceivingCompleted = !string.IsNullOrEmpty(IsReceivingCompletedPropertyName) ? 
                         Convert.ToBoolean(GetPropertyValue<object>(detail, IsReceivingCompletedPropertyName) ?? false) : false,
-                    ExistingDetailEntity = detail
+                    ExistingDetailEntity = detail,
+                    // 載入倉庫和庫位資訊
+                    WarehouseId = !string.IsNullOrEmpty(WarehouseIdPropertyName) ? 
+                        Convert.ToInt32(GetPropertyValue<object>(detail, WarehouseIdPropertyName) ?? 0) : 0,
+                    WarehouseLocationId = !string.IsNullOrEmpty(WarehouseLocationIdPropertyName) ? 
+                        Convert.ToInt32(GetPropertyValue<object>(detail, WarehouseLocationIdPropertyName) ?? 0) : 0
                 };
+                
+                // 如果有倉庫ID，載入對應的庫位列表
+                if (item.WarehouseId > 0)
+                {
+                    try
+                    {
+                        var result = await WarehouseLocationService.GetByWarehouseIdAsync(item.WarehouseId);
+                        if (result.IsSuccess && result.Data != null)
+                        {
+                            item.AvailableWarehouseLocations = result.Data.ToList();
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        item.AvailableWarehouseLocations = new List<WarehouseLocation>();
+                    }
+                }
                 
                 ProductItems.Add(item);
             }
@@ -377,6 +499,16 @@
             if (!string.IsNullOrEmpty(IsReceivingCompletedPropertyName))
             {
                 SetPropertyValue(detail, IsReceivingCompletedPropertyName, item.IsReceivingCompleted);
+            }
+            
+            // 設定倉庫和庫位欄位（如果有指定）
+            if (!string.IsNullOrEmpty(WarehouseIdPropertyName))
+            {
+                SetPropertyValue(detail, WarehouseIdPropertyName, item.WarehouseId);
+            }
+            if (!string.IsNullOrEmpty(WarehouseLocationIdPropertyName))
+            {
+                SetPropertyValue(detail, WarehouseLocationIdPropertyName, item.WarehouseLocationId);
             }
             
             details.Add(detail);
@@ -794,6 +926,11 @@
         public bool ShowDropdown { get; set; } = false;
         public int SelectedIndex { get; set; } = -1; // 新增：記錄當前選中的索引
         public TDetailEntity? ExistingDetailEntity { get; set; } // 新增：關聯的現有明細實體
+        
+        // 新增：倉庫相關屬性
+        public int WarehouseId { get; set; } = 0;
+        public int WarehouseLocationId { get; set; } = 0;
+        public List<WarehouseLocation> AvailableWarehouseLocations { get; set; } = new List<WarehouseLocation>();
     }
 }
 

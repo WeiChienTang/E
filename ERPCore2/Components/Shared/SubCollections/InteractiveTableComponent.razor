@@ -1,0 +1,514 @@
+@* 互動式表格組件 - 支援多種輸入控件和統一的UI風格 *@
+@using System.Reflection
+@using System.Web
+@using ERPCore2.Components.Shared.Buttons
+@typeparam TItem
+
+<div class="table-responsive table-container-hover">
+    <table class="table @GetTableClass()">
+        @if (ShowHeader && ColumnDefinitions != null && ColumnDefinitions.Any())
+        {
+            <thead class="@GetHeaderClass()">
+                <tr>
+                    @if (ShowRowNumbers)
+                    {
+                        <th scope="col" class="text-center" style="width: 60px;">#</th>
+                    }
+                    @foreach (var column in ColumnDefinitions)
+                    {
+                        <th scope="col" 
+                            class="@column.HeaderCssClass @(column.HideOnMobile ? "d-none d-md-table-cell" : "")" 
+                            style="@(GetColumnWidthStyle(column))">
+                            @if (!string.IsNullOrEmpty(column.IconClass))
+                            {
+                                <i class="@column.IconClass me-1"></i>
+                            }
+                            @column.Title
+                            @if (column.IsRequired)
+                            {
+                                <span class="text-danger ms-1">*</span>
+                            }
+                        </th>
+                    }
+                    @if (ShowActions && ActionsTemplate != null)
+                    {
+                        <th scope="col" class="text-center table-actions-column">@ActionsHeader</th>
+                    }
+                </tr>
+            </thead>
+        }
+        <tbody>
+            @if (Items != null && Items.Any())
+            {
+                var itemIndex = 0;
+                @foreach (var item in Items)
+                {
+                    var currentIndex = itemIndex;
+                    <tr class="@GetRowClass(item, currentIndex)" 
+                        @onclick="() => HandleRowClick(item)"
+                        style="@(EnableRowClick ? $"cursor: {RowClickCursor};" : "")">
+                        
+                        @if (ShowRowNumbers)
+                        {
+                            <td class="text-center text-muted">
+                                <small>@(currentIndex + 1)</small>
+                            </td>
+                        }
+                        
+                        @foreach (var column in ColumnDefinitions ?? new List<InteractiveColumnDefinition>())
+                        {
+                            <td class="@column.CellCssClass @(column.HideOnMobile ? "d-none d-md-table-cell" : "")"
+                                @onclick:stopPropagation="@(column.ColumnType != InteractiveColumnType.Display)">
+                                
+                                @* 根據欄位類型渲染不同的控件 *@
+                                @if (column.ColumnType == InteractiveColumnType.Display)
+                                {
+                                    @* 純顯示文字 *@
+                                    var value = GetPropertyValue(item, column.PropertyName);
+                                    string displayText;
+                                    
+                                    if (value == null)
+                                    {
+                                        displayText = column.NullDisplayText ?? "-";
+                                    }
+                                    else if (column.DisplayFormatter != null)
+                                    {
+                                        displayText = column.DisplayFormatter(value);
+                                    }
+                                    else
+                                    {
+                                        displayText = HttpUtility.HtmlEncode(value.ToString() ?? "");
+                                    }
+
+                                    <span>@((MarkupString)displayText)</span>
+                                }
+                                else if (column.ColumnType == InteractiveColumnType.Input)
+                                {
+                                    @* 文字輸入框 *@
+                                    var value = GetPropertyValue(item, column.PropertyName);
+                                    var stringValue = value?.ToString() ?? "";
+                                    var isDisabled = IsReadOnly || column.IsDisabled;
+                                    var validationClass = GetValidationCssClass(item, column.PropertyName);
+                                    
+                                    <input type="text" 
+                                           class="form-control form-control-sm @validationClass" 
+                                           value="@stringValue"
+                                           placeholder="@column.Placeholder"
+                                           title="@column.Tooltip"
+                                           disabled="@isDisabled"
+                                           readonly="@column.IsReadOnly"
+                                           @oninput="async (e) => await HandleInputChange(column, item, e.Value?.ToString())" />
+                                }
+                                else if (column.ColumnType == InteractiveColumnType.Number)
+                                {
+                                    @* 數字輸入框 *@
+                                    var value = GetPropertyValue(item, column.PropertyName);
+                                    var stringValue = value?.ToString() ?? "";
+                                    var isDisabled = IsReadOnly || column.IsDisabled;
+                                    var validationClass = GetValidationCssClass(item, column.PropertyName);
+                                    
+                                    <input type="number" 
+                                           class="form-control form-control-sm @validationClass" 
+                                           value="@stringValue"
+                                           placeholder="@column.Placeholder"
+                                           title="@column.Title"
+                                           min="@column.MinValue"
+                                           max="@column.MaxValue"
+                                           step="@column.Step"
+                                           disabled="@isDisabled"
+                                           readonly="@column.IsReadOnly"
+                                           @oninput="async (e) => await HandleInputChange(column, item, e.Value?.ToString())" />
+                                }
+                                else if (column.ColumnType == InteractiveColumnType.Select)
+                                {
+                                    @* 下拉選單 *@
+                                    var value = GetPropertyValue(item, column.PropertyName);
+                                    var selectedValue = value?.ToString() ?? "";
+                                    var isDisabled = IsReadOnly || column.IsDisabled;
+                                    var validationClass = GetValidationCssClass(item, column.PropertyName);
+                                    
+                                    <select class="form-select form-select-sm @validationClass"
+                                            value="@selectedValue"
+                                            title="@column.Title"
+                                            disabled="@isDisabled"
+                                            @onchange="async (e) => await HandleSelectionChange(column, item, e.Value)">
+                                        
+                                        @if (!string.IsNullOrEmpty(column.Placeholder))
+                                        {
+                                            <option value="">@column.Placeholder</option>
+                                        }
+                                        
+                                        @if (column.Options != null)
+                                        {
+                                            @foreach (var option in column.Options)
+                                            {
+                                                <option value="@option.Value" disabled="@option.IsDisabled">
+                                                    @option.Text
+                                                </option>
+                                            }
+                                        }
+                                    </select>
+                                }
+                                else if (column.ColumnType == InteractiveColumnType.Checkbox)
+                                {
+                                    @* 勾選框 *@
+                                    var value = GetPropertyValue(item, column.PropertyName);
+                                    var isChecked = value is bool boolValue && boolValue;
+                                    var isDisabled = IsReadOnly || column.IsDisabled;
+                                    
+                                    <div class="form-check form-switch d-flex justify-content-center">
+                                        <input class="form-check-input" 
+                                               type="checkbox" 
+                                               checked="@isChecked"
+                                               title="@column.Title"
+                                               disabled="@isDisabled"
+                                               @onchange="async (e) => await HandleCheckboxChange(column, item, e.Value)" />
+                                    </div>
+                                    
+                                    @if (!string.IsNullOrEmpty(column.CheckedText) || !string.IsNullOrEmpty(column.UncheckedText))
+                                    {
+                                        <small class="@(isChecked ? "text-success" : "text-muted")">
+                                            @(isChecked ? column.CheckedText : column.UncheckedText)
+                                        </small>
+                                    }
+                                }
+                                else if (column.ColumnType == InteractiveColumnType.Button)
+                                {
+                                    @* 按鈕 *@
+                                    var isDisabled = IsReadOnly || column.IsDisabled;
+                                    var buttonDisabled = isDisabled || (column.IsButtonDisabled?.Invoke(item!) ?? false);
+                                    
+                                    <GenericButtonComponent Text="@column.ButtonText"
+                                                           IconClass="@column.ButtonIcon"
+                                                           Variant="@column.ButtonVariant"
+                                                           Size="@column.ButtonSize"
+                                                           IsDisabled="@buttonDisabled"
+                                                           Title="@column.Title"
+                                                           OnClick="async () => await HandleButtonClick(column, item)" />
+                                }
+                                else if (column.ColumnType == InteractiveColumnType.Custom && column.CustomTemplate != null)
+                                {
+                                    @* 自訂模板 *@
+                                    @column.CustomTemplate(item!)
+                                }
+                            </td>
+                        }
+                        
+                        @if (ShowActions && ActionsTemplate != null)
+                        {
+                            <td class="text-center table-actions-column" @onclick:stopPropagation="true">
+                                @ActionsTemplate(item)
+                            </td>
+                        }
+                    </tr>
+                    itemIndex++;
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="@GetColspan()" class="text-center py-4 text-light-custom">
+                        @if (EmptyTemplate != null)
+                        {
+                            @EmptyTemplate
+                        }
+                        else
+                        {
+                            <i class="fas fa-inbox fa-2x mb-2 text-light-custom"></i>
+                            <br />
+                            @EmptyMessage
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+        @if (ShowTotalRow && Items != null && Items.Any())
+        {
+            <tfoot>
+                <tr class="table-info">
+                    @if (ShowRowNumbers)
+                    {
+                        <th></th>
+                    }
+                    @foreach (var column in ColumnDefinitions ?? new List<InteractiveColumnDefinition>())
+                    {
+                        <th class="@(column.HideOnMobile ? "d-none d-md-table-cell" : "")">
+                            @if (TotalRowTemplate != null)
+                            {
+                                @TotalRowTemplate(column)
+                            }
+                        </th>
+                    }
+                    @if (ShowActions)
+                    {
+                        <th></th>
+                    }
+                </tr>
+            </tfoot>
+        }
+    </table>
+</div>
+
+@code {
+    #region 參數定義
+    [Parameter] public IEnumerable<TItem>? Items { get; set; }
+    [Parameter] public List<InteractiveColumnDefinition>? ColumnDefinitions { get; set; }
+    [Parameter] public RenderFragment<TItem>? ActionsTemplate { get; set; }
+    [Parameter] public RenderFragment? EmptyTemplate { get; set; }
+    [Parameter] public RenderFragment<InteractiveColumnDefinition>? TotalRowTemplate { get; set; }
+    
+    // 表格樣式設定
+    [Parameter] public bool ShowHeader { get; set; } = true;
+    [Parameter] public bool ShowActions { get; set; } = false;
+    [Parameter] public bool ShowRowNumbers { get; set; } = false;
+    [Parameter] public bool ShowTotalRow { get; set; } = false;
+    [Parameter] public bool IsStriped { get; set; } = true;
+    [Parameter] public bool IsHoverable { get; set; } = true;
+    [Parameter] public bool IsBordered { get; set; } = true;
+    [Parameter] public bool IsReadOnly { get; set; } = false;
+    [Parameter] public string CssClass { get; set; } = string.Empty;
+    [Parameter] public string EmptyMessage { get; set; } = "沒有找到資料";
+    [Parameter] public string ActionsHeader { get; set; } = "操作";
+    
+    // 行互動設定
+    [Parameter] public Func<TItem, int, string>? GetRowCssClass { get; set; }
+    [Parameter] public EventCallback<TItem> OnRowClick { get; set; }
+    [Parameter] public bool EnableRowClick { get; set; } = false;
+    [Parameter] public string RowClickCursor { get; set; } = "pointer";
+    
+    // 驗證相關
+    [Parameter] public EventCallback<(TItem item, string propertyName, string? errorMessage)> OnValidationFailed { get; set; }
+    [Parameter] public Dictionary<string, string>? ValidationErrors { get; set; }
+    #endregion
+
+    #region 私有方法
+    private string GetTableClass()
+    {
+        var classes = new List<string>();
+        
+        if (IsStriped) classes.Add("table-striped");
+        if (IsHoverable) classes.Add("table-hover");
+        if (IsBordered) classes.Add("table-bordered");
+        classes.Add("table-with-column-borders");
+        
+        if (!string.IsNullOrEmpty(CssClass))
+            classes.Add(CssClass);
+            
+        return string.Join(" ", classes.Where(c => !string.IsNullOrEmpty(c)));
+    }
+
+    private string GetHeaderClass()
+    {
+        return "table-header-primary";
+    }
+
+    private string GetRowClass(TItem item, int index)
+    {
+        var baseClass = "";
+        if (GetRowCssClass != null)
+            baseClass = GetRowCssClass(item, index) ?? "";
+        return baseClass;
+    }
+
+    private string? GetColumnWidthStyle(InteractiveColumnDefinition column)
+    {
+        return !string.IsNullOrEmpty(column.Width) ? $"width: {column.Width};" : null;
+    }
+
+    private int GetColspan()
+    {
+        var columnCount = ColumnDefinitions?.Count ?? 0;
+        if (ShowRowNumbers) columnCount++;
+        if (ShowActions) columnCount++;
+        return columnCount;
+    }
+
+    private async Task HandleRowClick(TItem item)
+    {
+        if (EnableRowClick && OnRowClick.HasDelegate)
+        {
+            await OnRowClick.InvokeAsync(item);
+        }
+    }
+
+    private object? GetPropertyValue(TItem item, string propertyName)
+    {
+        if (item == null || string.IsNullOrEmpty(propertyName))
+            return null;
+
+        // 支援巢狀屬性 例如: "Customer.Name"
+        var parts = propertyName.Split('.');
+        object? currentValue = item;
+        
+        foreach (var part in parts)
+        {
+            if (currentValue == null) return null;
+            
+            var currentType = currentValue.GetType();
+            var property = currentType.GetProperty(part);
+            
+            if (property == null) return null;
+            
+            currentValue = property.GetValue(currentValue);
+        }
+        
+        return currentValue;
+    }
+
+    private void SetPropertyValue(TItem item, string propertyName, object? value)
+    {
+        if (item == null || string.IsNullOrEmpty(propertyName))
+            return;
+
+        try
+        {
+            var parts = propertyName.Split('.');
+            object? currentObj = item;
+            
+            // 找到最後一個物件
+            for (int i = 0; i < parts.Length - 1; i++)
+            {
+                if (currentObj == null) return;
+                
+                var property = currentObj.GetType().GetProperty(parts[i]);
+                if (property == null) return;
+                
+                currentObj = property.GetValue(currentObj);
+            }
+            
+            if (currentObj == null) return;
+            
+            // 設定最後的屬性值
+            var finalProperty = currentObj.GetType().GetProperty(parts.Last());
+            if (finalProperty != null && finalProperty.CanWrite)
+            {
+                // 型別轉換
+                var convertedValue = ConvertValue(value, finalProperty.PropertyType);
+                finalProperty.SetValue(currentObj, convertedValue);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"設定屬性值失敗: {ex.Message}");
+        }
+    }
+
+    private object? ConvertValue(object? value, Type targetType)
+    {
+        if (value == null)
+            return targetType.IsValueType ? Activator.CreateInstance(targetType) : null;
+
+        if (targetType.IsAssignableFrom(value.GetType()))
+            return value;
+
+        // 處理 Nullable 型別
+        var underlyingType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+
+        try
+        {
+            if (underlyingType == typeof(bool) && value is string strValue)
+            {
+                return bool.TryParse(strValue, out var boolResult) ? boolResult : false;
+            }
+
+            return Convert.ChangeType(value, underlyingType);
+        }
+        catch
+        {
+            return targetType.IsValueType ? Activator.CreateInstance(targetType) : null;
+        }
+    }
+
+    private async Task ValidateField(TItem item, InteractiveColumnDefinition column, string? value)
+    {
+        if (column.IsRequired && string.IsNullOrWhiteSpace(value))
+        {
+            await OnValidationFailed.InvokeAsync((item, column.PropertyName, $"{column.Title} 為必填欄位"));
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(column.ValidationPattern) && !string.IsNullOrWhiteSpace(value))
+        {
+            var regex = new System.Text.RegularExpressions.Regex(column.ValidationPattern);
+            if (!regex.IsMatch(value))
+            {
+                await OnValidationFailed.InvokeAsync((item, column.PropertyName, $"{column.Title} 格式不正確"));
+                return;
+            }
+        }
+
+        if (column.ColumnType == InteractiveColumnType.Number && !string.IsNullOrWhiteSpace(value))
+        {
+            if (decimal.TryParse(value, out var numValue))
+            {
+                if (column.MinValue.HasValue && numValue < column.MinValue.Value)
+                {
+                    await OnValidationFailed.InvokeAsync((item, column.PropertyName, $"{column.Title} 不能小於 {column.MinValue.Value}"));
+                    return;
+                }
+
+                if (column.MaxValue.HasValue && numValue > column.MaxValue.Value)
+                {
+                    await OnValidationFailed.InvokeAsync((item, column.PropertyName, $"{column.Title} 不能大於 {column.MaxValue.Value}"));
+                    return;
+                }
+            }
+            else
+            {
+                await OnValidationFailed.InvokeAsync((item, column.PropertyName, $"{column.Title} 必須為有效數字"));
+                return;
+            }
+        }
+    }
+
+    private string GetValidationCssClass(TItem item, string propertyName)
+    {
+        if (ValidationErrors?.ContainsKey($"{item?.GetHashCode()}_{propertyName}") == true)
+        {
+            return "is-invalid";
+        }
+        return "";
+    }
+    #endregion
+    #region 事件處理方法
+    private async Task HandleInputChange(InteractiveColumnDefinition column, TItem item, string? value)
+    {
+        await ValidateField(item, column, value);
+        SetPropertyValue(item, column.PropertyName, value);
+        
+        if (column.OnInputChanged.HasValue)
+        {
+            await column.OnInputChanged.Value.InvokeAsync((item!, value));
+        }
+    }
+
+    private async Task HandleSelectionChange(InteractiveColumnDefinition column, TItem item, object? value)
+    {
+        SetPropertyValue(item, column.PropertyName, value);
+        
+        if (column.OnSelectionChanged.HasValue)
+        {
+            await column.OnSelectionChanged.Value.InvokeAsync((item!, value));
+        }
+    }
+
+    private async Task HandleCheckboxChange(InteractiveColumnDefinition column, TItem item, object? value)
+    {
+        var isChecked = value is bool boolValue && boolValue;
+        SetPropertyValue(item, column.PropertyName, isChecked);
+        
+        if (column.OnCheckboxChanged.HasValue)
+        {
+            await column.OnCheckboxChanged.Value.InvokeAsync((item!, isChecked));
+        }
+    }
+
+    private async Task HandleButtonClick(InteractiveColumnDefinition column, TItem item)
+    {
+        if (column.OnButtonClick.HasValue)
+        {
+            await column.OnButtonClick.Value.InvokeAsync(item!);
+        }
+    }
+    #endregion
+}

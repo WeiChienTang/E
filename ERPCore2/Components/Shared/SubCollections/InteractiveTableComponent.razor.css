@@ -1,0 +1,82 @@
+/* InteractiveTableComponent 專用樣式 */
+
+/* 表格控件樣式 */
+.interactive-table .form-control-sm,
+.interactive-table .form-select-sm {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+/* 驗證錯誤樣式 */
+.interactive-table .is-invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/* 勾選框置中樣式 */
+.interactive-table .form-check.form-switch {
+    padding-left: 0;
+}
+
+.interactive-table .form-check-input {
+    margin-left: 0;
+}
+
+/* 按鈕在表格中的樣式調整 */
+.interactive-table .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* 手機版優化 */
+@media (max-width: 767px) {
+    .interactive-table .form-control-sm,
+    .interactive-table .form-select-sm {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.5rem;
+        min-height: 36px; /* 改善觸控體驗 */
+    }
+    
+    .interactive-table .btn-sm {
+        min-height: 36px;
+        padding: 0.375rem 0.5rem;
+    }
+}
+
+/* 數字輸入框樣式 */
+.interactive-table input[type="number"] {
+    text-align: right;
+}
+
+/* 隱藏 number input 的上下箭頭 */
+.interactive-table input[type="number"]::-webkit-outer-spin-button,
+.interactive-table input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.interactive-table input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+
+/* 唯讀控件樣式 */
+.interactive-table .form-control[readonly],
+.interactive-table .form-select[disabled] {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+}
+
+/* 必填欄位標記 */
+.interactive-table .text-danger {
+    color: #dc2626 !important;
+    font-weight: bold;
+}
+
+/* 行號樣式 */
+.interactive-table .row-number {
+    color: #6c757d;
+    font-weight: 500;
+    font-size: 0.875rem;
+}
