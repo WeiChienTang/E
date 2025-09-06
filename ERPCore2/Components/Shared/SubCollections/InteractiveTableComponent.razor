@@ -4,8 +4,8 @@
 @using ERPCore2.Components.Shared.Buttons
 @typeparam TItem
 
-<div class="table-responsive table-container-hover">
-    <table class="table @GetTableClass()">
+<div class="table-responsive table-container-hover interactive-table-container">
+    <table class="table @GetTableClass() interactive-table">
         @if (ShowHeader && ColumnDefinitions != null && ColumnDefinitions.Any())
         {
             <thead class="@GetHeaderClass()">
@@ -32,7 +32,7 @@
                     }
                     @if (ShowActions && ActionsTemplate != null)
                     {
-                        <th scope="col" class="text-center table-actions-column">@ActionsHeader</th>
+                        <th scope="col" class="text-center table-actions-column" style="@GetActionsColumnStyle()">@ActionsHeader</th>
                     }
                 </tr>
             </thead>
@@ -196,7 +196,7 @@
                         
                         @if (ShowActions && ActionsTemplate != null)
                         {
-                            <td class="text-center table-actions-column" @onclick:stopPropagation="true">
+                            <td class="text-center table-actions-column" style="@GetActionsColumnStyle()" @onclick:stopPropagation="true">
                                 @ActionsTemplate(item)
                             </td>
                         }
@@ -241,7 +241,7 @@
                     }
                     @if (ShowActions)
                     {
-                        <th></th>
+                        <th style="@GetActionsColumnStyle()"></th>
                     }
                 </tr>
             </tfoot>
@@ -269,6 +269,7 @@
     [Parameter] public string CssClass { get; set; } = string.Empty;
     [Parameter] public string EmptyMessage { get; set; } = "沒有找到資料";
     [Parameter] public string ActionsHeader { get; set; } = "操作";
+    [Parameter] public string ActionsColumnWidth { get; set; } = "auto"; // 新增操作欄位寬度參數
     
     // 行互動設定
     [Parameter] public Func<TItem, int, string>? GetRowCssClass { get; set; }
@@ -313,6 +314,11 @@
     private string? GetColumnWidthStyle(InteractiveColumnDefinition column)
     {
         return !string.IsNullOrEmpty(column.Width) ? $"width: {column.Width};" : null;
+    }
+
+    private string? GetActionsColumnStyle()
+    {
+        return !string.IsNullOrEmpty(ActionsColumnWidth) ? $"width: {ActionsColumnWidth};" : null;
     }
 
     private int GetColspan()

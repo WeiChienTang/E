@@ -274,9 +274,9 @@
 
 /* 表格操作欄位寬度控制 */
 .table-actions-column {
-    width: 60px !important;
-    min-width: 60px !important;
-    max-width: 60px !important;
+    width: auto !important;
+    min-width: 140px !important;
+    max-width: none !important;
 }
 
 /* 表格操作按鈕組樣式 */

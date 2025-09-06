@@ -1,82 +1,34 @@
-@* 產品廠商管理組件 - 管理產品的多個廠商資訊 *@
+@* 產品廠商管理組件 - 管理產品的多個廠商資訊 - 使用 InteractiveTableComponent 統一UI *@
+@using ERPCore2.Components.Shared.SubCollections
+@using ERPCore2.Components.Shared.Buttons
 @inject INotificationService NotificationService
 @typeparam TProductSupplierEntity where TProductSupplierEntity : BaseEntity, new()
 @typeparam TProductEntity where TProductEntity : BaseEntity
 @typeparam TSupplierEntity where TSupplierEntity : BaseEntity
 
-<div class="card border-0 shadow-sm">    
+<div class="card border-0 shadow-sm">
     <div class="card-body p-0">
-        @if (Items.Any())
+        <InteractiveTableComponent TItem="TProductSupplierEntity" 
+                                  Items="@Items"
+                                  ColumnDefinitions="@GetColumnDefinitions()"
+                                  IsReadOnly="@IsReadOnly"
+                                  ShowRowNumbers="false"
+                                  EmptyMessage="@EmptyMessage"
+                                  ShowActions="true"
+                                  ActionsTemplate="@GetActionsTemplate"
+                                  OnValidationFailed="@OnValidationFailed"
+                                  ValidationErrors="@validationErrors"
+                                  EnableRowClick="@(!IsReadOnly)"
+                                  OnRowClick="@HandleRowClick" />
+
+        @* 新增按鈕 - 只在非唯讀模式顯示 *@
+        @if (!IsReadOnly)
         {
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>廠商</th>
-                            <th>廠商商品代碼</th>
-                            <th>報價</th>
-                            <th>交期</th>
-                            <th>最小訂購量</th>
-                            <th>單位</th>
-                            @if (!IsReadOnly)
-                            {
-                                <th width="120">操作</th>
-                            }
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (int index = 0; index < Items.Count; index++)
-                        {
-                            var item = Items[index];
-                            var currentIndex = index; // 避免閉包問題
-                            <tr @onclick="() => { if (!IsReadOnly) ShowEditModal(currentIndex); }" 
-                                style="@(IsReadOnly ? "cursor: default;" : "cursor: pointer;")" 
-                                title="@(IsReadOnly ? "" : "點擊編輯")">
-                                <td>
-                                    <span>@GetSupplierDisplayText(item)</span>
-                                </td>
-                                <td>@(GetSupplierProductCode(item) ?? "-")</td>
-                                <td>@(GetSupplierPrice(item)?.ToString("N2") ?? "-")</td>
-                                <td>@(GetLeadTime(item)?.ToString() ?? "-") 天</td>
-                                <td>@(GetMinOrderQuantity(item)?.ToString() ?? "-")</td>
-                                <td>@(GetUnitDisplayText(item))</td>
-                                @if (!IsReadOnly)
-                                {
-                                    <td @onclick:stopPropagation="true">
-                                        <div class="btn-group btn-group-sm">
-                                            <GenericButtonComponent Variant="ButtonVariant.OutlineDanger" Size="ButtonSize.Small"
-                                                                   IconClass="bi bi-trash" OnClick="() => RemoveItemAsync(currentIndex)" 
-                                                                   Title="移除" />
-                                        </div>
-                                    </td>
-                                }
-                            </tr>
-                        }
-                        @* 新增按鈕行 *@
-                        @if (!IsReadOnly)
-                        {
-                            <tr>
-                                <td colspan="@(IsReadOnly ? 6 : 7)" class="text-center py-3 border-top">
-                                    <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" 
-                                                           Text="@($"新增{ItemDisplayName}")" 
-                                                           IconClass="bi-plus me-1" 
-                                                           OnClick="ShowAddModal" />
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
-        else
-        {
-            <div class="text-center py-5">
-                @if (!IsReadOnly)
-                {
-                    <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" Size="ButtonSize.Small"
-                                           Text="新增第一個廠商" IconClass="bi-plus me-1" 
-                                           OnClick="ShowAddModal" CssClass="mt-2" />
-                }
+            <div class="p-3 border-top text-center">
+                <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" 
+                                       Text="@($"新增{ItemDisplayName}")" 
+                                       IconClass="bi-plus me-1" 
+                                       OnClick="ShowAddModal" />
             </div>
         }
     </div>
@@ -247,10 +199,121 @@
     private int? currentLeadTime = null;
     private int? currentMinOrderQuantity = null;
     private string currentUnitId = string.Empty;
+    
+    // ===== InteractiveTableComponent 相關 =====
+    private Dictionary<string, string> validationErrors = new();
 
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
+    }
+
+    // ===== InteractiveTableComponent 方法 =====
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            // 廠商顯示欄位
+            new() 
+            { 
+                Title = "廠商", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "25%",
+                CustomTemplate = item => @<span>@GetSupplierDisplayText((TProductSupplierEntity)item)</span>
+            },
+            
+            // 廠商商品代碼 - 純顯示
+            new() 
+            { 
+                Title = "廠商商品代碼", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "20%",
+                CustomTemplate = item => @<span>@(GetSupplierProductCode((TProductSupplierEntity)item) ?? "-")</span>
+            },
+            
+            // 報價 - 純顯示，格式化為貨幣
+            new() 
+            { 
+                Title = "報價", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "15%",
+                CustomTemplate = item => @<span>@(GetSupplierPrice((TProductSupplierEntity)item)?.ToString("N2") ?? "-")</span>
+            },
+            
+            // 交期 - 純顯示
+            new() 
+            { 
+                Title = "交期", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "15%",
+                CustomTemplate = item => @<span>@(GetLeadTime((TProductSupplierEntity)item)?.ToString() ?? "-") 天</span>
+            },
+            
+            // 最小訂購量 - 純顯示
+            new() 
+            { 
+                Title = "最小訂購量", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "15%",
+                CustomTemplate = item => @<span>@(GetMinOrderQuantity((TProductSupplierEntity)item)?.ToString() ?? "-")</span>
+            },
+            
+            // 單位 - 純顯示
+            new() 
+            { 
+                Title = "單位", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "10%",
+                CustomTemplate = item => @<span>@GetUnitDisplayText((TProductSupplierEntity)item)</span>
+            }
+        };
+    }
+
+    private RenderFragment<TProductSupplierEntity> GetActionsTemplate => item => __builder =>
+    {
+        if (!IsReadOnly)
+        {
+            var index = Items.IndexOf(item);
+            <div class="btn-group btn-group-sm">
+                <GenericButtonComponent Variant="ButtonVariant.OutlineSecondary" 
+                                       Size="ButtonSize.Small"
+                                       IconClass="bi bi-pencil-square" 
+                                       OnClick="() => ShowEditModal(index)" 
+                                       Title="編輯" />
+                <GenericButtonComponent Variant="ButtonVariant.OutlineDanger" 
+                                       Size="ButtonSize.Small"
+                                       IconClass="bi bi-trash" 
+                                       OnClick="() => RemoveItemAsync(index)" 
+                                       Title="移除" />
+            </div>
+        }
+    };
+
+    private Task OnValidationFailed((TProductSupplierEntity item, string propertyName, string? errorMessage) args)
+    {
+        var key = $"{args.item.GetHashCode()}_{args.propertyName}";
+        validationErrors[key] = args.errorMessage ?? "";
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task HandleRowClick(TProductSupplierEntity item)
+    {
+        if (!IsReadOnly)
+        {
+            var index = Items.IndexOf(item);
+            if (index >= 0)
+            {
+                ShowEditModal(index);
+            }
+        }
+        return Task.CompletedTask;
     }
     
     // ===== 內部方法 =====
