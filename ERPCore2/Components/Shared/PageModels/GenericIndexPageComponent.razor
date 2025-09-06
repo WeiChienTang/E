@@ -9,6 +9,7 @@
 
 @using ERPCore2.Data.Enums
 @using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.Buttons
 
 @* 設置瀏覽器標題 *@
 <PageTitle>@PageTitle</PageTitle>
@@ -92,8 +93,6 @@
                     <GenericTableComponent TItem="TEntity"
                                           Items="@PagedItems"
                                           ColumnDefinitions="@GetFinalColumnDefinitions()"
-                                          ShowActions="@ShowActions"
-                                          ActionsTemplate="@GetFinalActionsTemplate()"
                                           EnableRowClick="@EnableRowClick"
                                           OnRowClick="@HandleRowClick"
                                           EnableSorting="@EnableSorting"
@@ -102,7 +101,6 @@
                                           IsBordered="@IsBordered"
                                           Size="@TableSize"
                                           EmptyMessage="@GetEmptyMessage()"
-                                          ActionsHeader="@ActionsHeader"
                                           EnablePagination="@EnablePagination"
                                           CurrentPage="@CurrentPage"
                                           PageSize="@PageSize"
@@ -190,15 +188,11 @@
     
     // 自動標準欄位設定
     [Parameter] public bool AutoAddRemarksColumn { get; set; } = true;
-    [Parameter] public bool AutoAddStatusColumn { get; set; } = false; // 預設關閉，因為狀態功能已停用
     [Parameter] public bool AutoAddCreatedAtColumn { get; set; } = true;
     [Parameter] public bool AutoAddRemarksFilter { get; set; } = true;
-    [Parameter] public bool AutoAddStatusFilter { get; set; } = false; // 預設關閉，因為狀態功能已停用
     [Parameter] public string RemarksColumnTitle { get; set; } = "備註";
-    [Parameter] public string StatusColumnTitle { get; set; } = "狀態";
     [Parameter] public string CreatedAtColumnTitle { get; set; } = "建立日期";
     [Parameter] public string RemarksFilterTitle { get; set; } = "備註內容";
-    [Parameter] public string StatusFilterTitle { get; set; } = "狀態";
     
     // 搜尋組件設定
     [Parameter] public bool AutoSearch { get; set; } = true;
@@ -226,7 +220,6 @@
     [Parameter] public bool ShowViewButton { get; set; } = false;
     [Parameter] public bool ShowEditButton { get; set; } = false;
     [Parameter] public bool ShowDeleteButton { get; set; } = true;
-    [Parameter] public bool ShowToggleStatusButton { get; set; } = false; // 預設關閉，因為狀態切換功能已停用
     [Parameter] public RenderFragment<TEntity>? CustomActionsTemplate { get; set; }
     
     // 自訂刪除處理函數 - 如果提供此參數，將會使用自訂邏輯而非預設刪除
@@ -435,90 +428,25 @@
     }
     
     /// <summary>
-    /// 通用啟用/停用狀態切換方法
-    /// </summary>
-    [Obsolete("此功能已停用，不再使用狀態切換功能")]
-    public async Task ToggleEntityStatusAsync(TEntity entity)
-    {
-        var displayName = GetEntityDisplayName(entity);
-        var currentStatus = entity.Status;
-        var newStatus = currentStatus == EntityStatus.Active ? EntityStatus.Inactive : EntityStatus.Active;
-        var actionText = newStatus == EntityStatus.Active ? "啟用" : "停用";
-        
-        try
-        {
-            // 使用反射調用服務的 SetStatusAsync 方法
-            var setStatusMethod = Service?.GetType().GetMethod("SetStatusAsync", new[] { typeof(int), typeof(EntityStatus) });
-            if (setStatusMethod != null)
-            {
-                var task = (Task)setStatusMethod.Invoke(Service, new object[] { entity.Id, newStatus })!;
-                await task;
-                
-                // 獲取結果
-                var resultProperty = task.GetType().GetProperty("Result");
-                if (resultProperty != null)
-                {
-                    var result = resultProperty.GetValue(task);
-                    var isSuccessProperty = result?.GetType().GetProperty("IsSuccess");
-                    var errorMessageProperty = result?.GetType().GetProperty("ErrorMessage");
-                    
-                    if (isSuccessProperty != null)
-                    {
-                        var isSuccess = (bool)isSuccessProperty.GetValue(result)!;
-                        if (isSuccess)
-                        {
-                            var successMessage = $"{EntityName}「{displayName}」{actionText}成功";
-                            await NotificationService.ShowSuccessAsync(successMessage);
-                            await Refresh();
-                        }
-                        else
-                        {
-                            var errorMessage = errorMessageProperty?.GetValue(result)?.ToString() ?? $"{actionText}失敗";
-                            await NotificationService.ShowErrorAsync($"{actionText}失敗：{errorMessage}");
-                        }
-                    }
-                }
-            }
-            else
-            {
-                await NotificationService.ShowErrorAsync("找不到狀態更新方法");
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"{actionText}時發生錯誤：{ex.Message}");
-        }
-    }
-    
-    /// <summary>
     /// 取得標準操作按鈕範本
     /// </summary>
     public RenderFragment<TEntity> GetStandardActionsTemplate()
     {
         return entity => 
-            @<div class="table-actions-group">
+            @<div>
                 @if (CustomActionsTemplate != null)
                 {
                     @CustomActionsTemplate(entity)
                 }
-                @if (ShowViewButton)
-                {
-                    <button class="btn btn-outline-info" @onclick="() => NavigateToDetail(entity)" @onclick:stopPropagation="true" title="檢視">
-                        <i class="bi bi-eye"></i>
-                    </button>
-                }
-                @if (ShowEditButton)
-                {
-                    <button class="btn btn-outline-warning" @onclick="() => NavigateToEdit(entity)" @onclick:stopPropagation="true" title="編輯">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                }
-                @* 狀態切換按鈕已移除，因為狀態切換功能已停用 *@
                 @if (ShowDeleteButton)
                 {
-                    <button class="btn btn-outline-danger" @onclick="@(async () => await DeleteEntityAsync(entity))" @onclick:stopPropagation="true" title="刪除">
-                        <i class="bi bi-trash"></i>
-                    </button>
+                    <GenericButtonComponent 
+                        Variant="ButtonVariant.Danger"
+                        IconClass="bi bi-trash text-white"
+                        Title="刪除"
+                        OnClick="async () => await DeleteEntityAsync(entity)"
+                        StopPropagation="true"
+                        CssClass="btn-square" />
                 }
             </div>;
     }
@@ -630,6 +558,27 @@
                 createdAtColumn.HeaderStyle = "width: 100px; text-align: center;";
                 createdAtColumn.CellCssClass = "text-center";
                 columns.Add(createdAtColumn);
+            }
+        }
+        
+        // 自動添加操作欄位
+        if (ShowActions && EnableStandardActions)
+        {
+            // 檢查是否已經有操作欄位，避免重複添加
+            if (!columns.Any(c => c.PropertyName == "Actions"))
+            {
+                var actionsTemplate = GetFinalActionsTemplate();
+                var actionsColumn = new TableColumnDefinition
+                {
+                    Title = ActionsHeader,
+                    PropertyName = "Actions", // 虛擬屬性名稱
+                    DataType = ColumnDataType.Html,
+                    HeaderCssClass = "text-center",
+                    CellCssClass = "text-center",
+                    HeaderStyle = "width: 60px;",
+                    CustomTemplate = (item) => actionsTemplate((TEntity)item)
+                };
+                columns.Add(actionsColumn);
             }
         }
         

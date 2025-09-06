@@ -26,10 +26,6 @@
                             }
                         </th>
                     }
-                    @if (ShowActions)
-                    {
-                        <th scope="col" class="text-center table-actions-column">@ActionsHeader</th>
-                    }
                 </tr>
             </thead>
         }
@@ -52,13 +48,6 @@
                                 {
                                     @((MarkupString)FormatCellValue(item, column))
                                 }
-                            </td>
-                        }
-                        
-                        @if (ShowActions && ActionsTemplate != null)
-                        {
-                            <td class="text-center table-actions-column">
-                                @ActionsTemplate(item)
                             </td>
                         }
                     </tr>
@@ -184,10 +173,8 @@
 @code {
     [Parameter] public IEnumerable<TItem>? Items { get; set; }
     [Parameter] public List<TableColumnDefinition>? ColumnDefinitions { get; set; }
-    [Parameter] public RenderFragment<TItem>? ActionsTemplate { get; set; }
     [Parameter] public RenderFragment? EmptyTemplate { get; set; }
     [Parameter] public bool ShowHeader { get; set; } = true;
-    [Parameter] public bool ShowActions { get; set; } = false;
     [Parameter] public bool IsStriped { get; set; } = true;
     [Parameter] public bool IsHoverable { get; set; } = true;
     [Parameter] public bool IsBordered { get; set; } = true;
@@ -195,7 +182,6 @@
     [Parameter] public TableSize Size { get; set; } = TableSize.Normal;
     [Parameter] public string CssClass { get; set; } = string.Empty;
     [Parameter] public string EmptyMessage { get; set; } = "沒有找到資料";
-    [Parameter] public string ActionsHeader { get; set; } = "操作";
     [Parameter] public Func<TItem, string>? GetRowCssClass { get; set; }
     [Parameter] public EventCallback<TItem> OnRowClick { get; set; }
     [Parameter] public bool EnableRowClick { get; set; } = false;    [Parameter] public string RowClickCursor { get; set; } = "pointer";
@@ -257,8 +243,7 @@
 
     private int GetColspan()
     {
-        var columnCount = ColumnDefinitions?.Count ?? 0;
-        return ShowActions ? columnCount + 1 : columnCount;
+        return ColumnDefinitions?.Count ?? 0;
     }
 
     private async Task HandleRowClick(TItem item)

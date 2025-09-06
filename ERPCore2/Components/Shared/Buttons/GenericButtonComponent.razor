@@ -6,6 +6,7 @@
         title="@(string.IsNullOrEmpty(Title) ? Text : Title)"
         disabled="@IsDisabled"
         @onclick="HandleClick"
+        @onclick:stopPropagation="StopPropagation"
         @attributes="AdditionalAttributes">
     @if (!string.IsNullOrEmpty(IconClass))
     {
@@ -74,6 +75,11 @@
     /// 圖示CSS類別
     /// </summary>
     [Parameter] public string IconClass { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 是否阻止事件冒泡
+    /// </summary>
+    [Parameter] public bool StopPropagation { get; set; } = false;
     
     /// <summary>
     /// 子內容

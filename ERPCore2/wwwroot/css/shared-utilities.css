@@ -267,36 +267,3 @@
     height: 1rem !important;
     line-height: 1 !important;
 }
-
-/* ========================================= */
-/* 表格操作按鈕樣式 */
-/* ========================================= */
-
-/* 表格操作欄位寬度控制 */
-.table-actions-column {
-    width: auto !important;
-    min-width: 140px !important;
-    max-width: none !important;
-}
-
-/* 表格操作按鈕組樣式 */
-.table-actions-group {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 4px;
-    white-space: nowrap;
-}
-
-.table-actions-group .btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-    line-height: 1.2;
-    border-radius: 0.25rem;
-}
-
-.table-actions-group .btn i {
-    font-size: 0.875rem;
-}
-
-/* ========================================= */

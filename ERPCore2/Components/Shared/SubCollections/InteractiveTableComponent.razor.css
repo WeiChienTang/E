@@ -31,7 +31,7 @@
 
 /* 操作欄位基礎寬度設置 - 適用於所有螢幕尺寸 */
 .table-actions-column {
-    min-width: 140px; /* 為 2 個按鈕提供足夠空間 */
+    min-width: 120px; /* 縮小容器寬度以配合較小的圖標 */
     width: auto; /* 根據內容自動調整寬度 */
 }
 

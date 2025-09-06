@@ -285,3 +285,56 @@
         font-size: 1rem;
     }
 }
+
+/* 表格操作按鈕圖標優化 - 支援 GenericButtonComponent 和直接 HTML button */
+.table-actions-column .btn i,
+.table-actions-group .btn i,
+.table-actions-column button i,
+.table-actions-group button i {
+    font-size: 0.8em !important; /* 表格操作按鈕的圖標縮小至80% */
+}
+
+/* 小型按鈕的圖標進一步縮小 */
+.table-actions-column .btn-sm i,
+.table-actions-group .btn-sm i,
+.table-actions-column button.btn-sm i,
+.table-actions-group button.btn-sm i {
+    font-size: 0.7em !important; /* 小型表格操作按鈕的圖標縮小至70% */
+}
+
+/* 支援所有圖標系統：FontAwesome、Bootstrap Icons 等 */
+.table-actions-column i[class*="fa-"],
+.table-actions-column i[class*="bi-"],
+.table-actions-group i[class*="fa-"],
+.table-actions-group i[class*="bi-"] {
+    font-size: 0.8em !important;
+}
+
+/* 手機版進一步優化 */
+@media (max-width: 768px) {
+    .table-actions-column .btn i,
+    .table-actions-group .btn i,
+    .table-actions-column button i,
+    .table-actions-group button i,
+    .table-actions-column i[class*="fa-"],
+    .table-actions-column i[class*="bi-"],
+    .table-actions-group i[class*="fa-"],
+    .table-actions-group i[class*="bi-"] {
+        font-size: 0.65em !important; /* 手機版表格操作按鈕圖標更小 */
+    }
+}
+
+/* 正方形按鈕樣式 */
+.btn-square {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+}
+
+.btn-square i {
+    margin: 0 !important;
+}

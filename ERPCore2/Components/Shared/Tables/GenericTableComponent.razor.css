@@ -81,6 +81,38 @@
     border-right: none;
 }
 
+/* 操作欄位基礎寬度設置 - 適用於所有螢幕尺寸 */
+.table-actions-column {
+    min-width: 80px; /* 進一步縮小基礎寬度 */
+    width: 80px; 
+    max-width: 80px; /* 限制最大寬度 */
+    white-space: nowrap; /* 防止按鈕換行 */
+}
+
+/* 操作欄位內容在表格主體的優化 */
+.table tbody .table-actions-column {
+    padding: 0.25rem 0.125rem; /* 進一步減少內邊距 */
+}
+
+/* 操作欄位內的按鈕容器樣式 */
+.table-actions-column > div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2px; /* 按鈕間的小間距 */
+    white-space: nowrap;
+}
+
+/* 操作欄位內的按鈕樣式 */
+.table-actions-column .btn {
+    padding: 0.25rem 0.375rem; /* 緊湊的按鈕內邊距 */
+    font-size: 0.75rem; /* 較小的字體 */
+    line-height: 1.2;
+    border-radius: 0.25rem;
+    min-width: auto; /* 移除最小寬度限制 */
+    border-width: 1px;
+}
+
 /* 表格容器 hover 效果 - 參考 NavigationCard 和 GenericSearchFilterComponent 的漂浮效果 */
 .table-container-hover {
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
@@ -150,6 +182,166 @@
         transform: none;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
+    
+    /* 確保表格標題在手機模式下可見 */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch; /* iOS 平滑滾動 */
+    }
+    
+    /* 表格標題固定顯示 */
+    .table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: var(--primary-blue-alt) !important;
+        color: var(--primary-white) !important;
+        white-space: nowrap;
+        min-width: 80px; /* 確保每列都有最小寬度 */
+    }
+    
+    /* 表格內容在手機版的優化 */
+    .table td {
+        min-width: 80px; /* 確保內容不會被過度壓縮 */
+        padding: 0.5rem 0.25rem; /* 調整手機版內邊距 */
+    }
+    
+    /* 操作欄位在手機版的優化 */
+    .table-responsive .table .table-actions-column {
+        min-width: 80px; /* 手機版保持一致的寬度 */
+        width: 80px;
+        max-width: 80px;
+        position: sticky; /* 固定在右側 */
+        right: 0;
+        background-color: white; /* 確保背景不透明 */
+        z-index: 1; /* 確保在其他列之上 */
+        box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1); /* 添加陰影效果 */
+    }
+    
+    /* 手機版操作欄位內的按鈕樣式優化 */
+    .table-actions-column .btn {
+        padding: 0.2rem 0.3rem; /* 手機版更小的內邊距 */
+        font-size: 0.7rem; /* 更小的字體 */
+        margin: 0; /* 移除邊距 */
+    }
+    
+    .table-actions-column > div {
+        gap: 1px; /* 手機版更小的間距 */
+    }
+    
+    /* 為 striped 表格調整背景色 */
+    .table-striped tbody tr:nth-of-type(odd) .table-actions-column {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    /* 為 hover 效果調整背景色 */
+    .table-hover tbody tr:hover .table-actions-column {
+        background-color: rgba(0, 0, 0, 0.075);
+    }
+}
+
+/* 平板版優化 */
+@media (min-width: 768px) and (max-width: 991px) {
+    .table-actions-column {
+        min-width: 75px; /* 平板版進一步縮小 */
+        width: 75px;
+        max-width: 75px;
+    }
+}
+
+/* 大螢幕優化 */
+@media (min-width: 992px) {
+    .table-actions-column {
+        min-width: 80px; /* 大螢幕保持緊湊 */
+        width: 80px;
+        max-width: 80px;
+    }
+}
+
+/* 超大螢幕優化 - 確保即使在很大的螢幕上也不會過寬 */
+@media (min-width: 1200px) {
+    .table-actions-column {
+        min-width: 80px;
+        width: 80px;
+        max-width: 80px;
+    }
+}
+
+/* 表格大小變體 */
+.table-sm .table-actions-column {
+    min-width: 70px; /* 小表格更緊湊 */
+    width: 70px;
+    max-width: 70px;
+}
+
+.table-lg .table-actions-column {
+    min-width: 85px; /* 大表格稍微寬一點 */
+    width: 85px;
+    max-width: 85px;
+}
+
+/* 排序圖標樣式 */
+.table th i.fa-sort {
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.table th:hover i.fa-sort {
+    opacity: 1;
+}
+
+/* 空資料狀態樣式 */
+.text-light-custom {
+    color: #6c757d !important;
+}
+
+/* 分頁按鈕群組響應式調整 */
+@media (max-width: 576px) {
+    .btn-group {
+        gap: 2px;
+    }
+    
+    .btn-group .btn {
+        font-size: 0.875rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    /* 小螢幕下的表格進一步優化 */
+    .table-responsive {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+    }
+    
+    /* 表格標題在極小螢幕的優化 */
+    .table thead th {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.25rem;
+        line-height: 1.2;
+    }
+    
+    /* 表格內容在極小螢幕的優化 */
+    .table td {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.25rem;
+    }
+    
+    /* 操作列在極小螢幕的特別優化 */
+    .table .table-actions-column {
+        min-width: 75px !important;
+        width: 75px !important;
+        max-width: 75px !important;
+    }
+    
+    /* 確保操作按鈕在小螢幕上仍然可用 */
+    .table-actions-column .btn {
+        padding: 0.125rem 0.2rem; /* 極小螢幕最緊湊的內邊距 */
+        font-size: 0.65rem; /* 極小字體 */
+        margin: 0; /* 移除間距節省空間 */
+    }
+    
+    .table-actions-column > div {
+        gap: 1px; /* 極小間距 */
+    }
 }
 
 /* 桌面模式下的額外保護 - 確保表格不會溢出並影響左側選單 */
@@ -164,5 +356,42 @@
     .table-container-hover {
         /* 在更大的螢幕上給予更多空間 */
         max-width: calc(100vw - 280px);
+    }
+}
+
+/* 手機版專門優化 - 確保表格標題可見性 */
+@media (max-width: 640px) {
+    /* 移除桌面版的寬度限制 */
+    .table-container-hover {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    
+    /* 確保表格響應式容器正常工作 */
+    .table-responsive {
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+        max-width: 100% !important;
+    }
+    
+    /* 確保表格本身不會被隱藏 */
+    .table {
+        min-width: 600px; /* 設定最小寬度確保所有列都能顯示 */
+        margin-bottom: 0 !important;
+    }
+    
+    /* 表格標題強制顯示 */
+    .table thead {
+        display: table-header-group !important;
+    }
+    
+    .table thead th {
+        display: table-cell !important;
+        position: relative !important; /* 改為相對定位避免遮擋問題 */
+        background-color: var(--primary-blue-alt) !important;
+        color: var(--primary-white) !important;
+        border-bottom: 2px solid var(--primary-blue) !important;
+        font-weight: 600 !important;
+        z-index: 1 !important;
     }
 }
