@@ -31,8 +31,8 @@
 
 /* 操作欄位基礎寬度設置 - 適用於所有螢幕尺寸 */
 .table-actions-column {
-    min-width: 120px; /* 縮小容器寬度以配合較小的圖標 */
-    width: auto; /* 根據內容自動調整寬度 */
+    min-width: 80px; /* 縮小容器寬度以配合較小的圖標 */
+    width: 80px; /* 根據內容自動調整寬度 */
 }
 
 /* 手機版優化 */
@@ -94,8 +94,8 @@
     
     /* 操作欄位適當寬度 */
     .table-responsive .table .table-actions-column {
-        min-width: 160px; /* 增加寬度以容納 2 個按鈕 */
-        width: auto; /* 根據內容自動調整寬度 */
+        min-width: 80px; /* 增加寬度以容納 2 個按鈕 */
+        width: 80px; /* 根據內容自動調整寬度 */
     }
 }
 

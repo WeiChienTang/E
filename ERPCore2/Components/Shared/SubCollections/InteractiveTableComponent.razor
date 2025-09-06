@@ -34,6 +34,10 @@
                     {
                         <th scope="col" class="text-center table-actions-column" style="@GetActionsColumnStyle()">@ActionsHeader</th>
                     }
+                    @if (ShowBuiltInActions)
+                    {
+                        <th scope="col" class="text-center table-actions-column" style="@GetActionsColumnStyle()">@ActionsHeader</th>
+                    }
                 </tr>
             </thead>
         }
@@ -200,6 +204,12 @@
                                 @ActionsTemplate(item)
                             </td>
                         }
+                        @if (ShowBuiltInActions)
+                        {
+                            <td class="text-center table-actions-column" style="@GetActionsColumnStyle()" @onclick:stopPropagation="true">
+                                @GetBuiltInActionsTemplate()(item)
+                            </td>
+                        }
                     </tr>
                     itemIndex++;
                 }
@@ -243,6 +253,10 @@
                     {
                         <th style="@GetActionsColumnStyle()"></th>
                     }
+                    @if (ShowBuiltInActions)
+                    {
+                        <th style="@GetActionsColumnStyle()"></th>
+                    }
                 </tr>
             </tfoot>
         }
@@ -280,6 +294,17 @@
     // 驗證相關
     [Parameter] public EventCallback<(TItem item, string propertyName, string? errorMessage)> OnValidationFailed { get; set; }
     [Parameter] public Dictionary<string, string>? ValidationErrors { get; set; }
+    
+    // 內建操作按鈕相關
+    [Parameter] public bool ShowBuiltInActions { get; set; } = false;
+    [Parameter] public bool ShowBuiltInDeleteButton { get; set; } = true;
+    [Parameter] public string DeleteButtonIcon { get; set; } = "bi bi-trash text-white";
+    [Parameter] public ButtonVariant DeleteButtonVariant { get; set; } = ButtonVariant.Danger;
+    [Parameter] public ButtonSize DeleteButtonSize { get; set; } = ButtonSize.Normal;
+    [Parameter] public string DeleteButtonTitle { get; set; } = "刪除";
+    [Parameter] public Func<TItem, bool>? IsDeleteDisabled { get; set; }
+    [Parameter] public EventCallback<TItem> OnItemDelete { get; set; }
+    [Parameter] public RenderFragment<TItem>? CustomActionsTemplate { get; set; }
     #endregion
 
     #region 私有方法
@@ -326,6 +351,7 @@
         var columnCount = ColumnDefinitions?.Count ?? 0;
         if (ShowRowNumbers) columnCount++;
         if (ShowActions) columnCount++;
+        if (ShowBuiltInActions) columnCount++;
         return columnCount;
     }
 
@@ -514,6 +540,39 @@
         if (column.OnButtonClick.HasValue)
         {
             await column.OnButtonClick.Value.InvokeAsync(item!);
+        }
+    }
+    
+    private RenderFragment<TItem> GetBuiltInActionsTemplate()
+    {
+        return item => __builder =>
+        {
+            <div class="d-flex gap-1 justify-content-center">
+                @if (CustomActionsTemplate != null)
+                {
+                    @CustomActionsTemplate(item)
+                }
+                @if (ShowBuiltInDeleteButton)
+                {
+                    var isDeleteDisabled = IsReadOnly || (IsDeleteDisabled?.Invoke(item) ?? false);
+                    <GenericButtonComponent Variant="@DeleteButtonVariant"
+                                           IconClass="@DeleteButtonIcon"
+                                           Size="@DeleteButtonSize"
+                                           IsDisabled="@isDeleteDisabled"
+                                           Title="@DeleteButtonTitle"
+                                           OnClick="async () => await HandleBuiltInDelete(item)"
+                                           StopPropagation="true"
+                                           CssClass="btn-square" />
+                }
+            </div>
+        };
+    }
+    
+    private async Task HandleBuiltInDelete(TItem item)
+    {
+        if (OnItemDelete.HasDelegate)
+        {
+            await OnItemDelete.InvokeAsync(item);
         }
     }
     #endregion

@@ -8,6 +8,7 @@
 
 - **統一UI風格**：與 `GenericTableComponent` 保持視覺一致性
 - **多元控件支援**：支援 Input、Number、Select、Checkbox、Button、Display、Custom 等類型
+- **內建操作功能**：提供標準的刪除按鈕和自訂操作範本
 - **靈活配置**：透過 `InteractiveColumnDefinition` 輕鬆配置欄位
 - **響應式設計**：自動適應不同螢幕尺寸
 - **即時驗證**：內建驗證機制和錯誤提示
@@ -29,6 +30,18 @@
                           ColumnDefinitions="@GetColumnDefinitions()"
                           IsReadOnly="@IsReadOnly"
                           ShowRowNumbers="true" />
+```
+
+### 2.1 使用內建操作功能
+
+```razor
+<InteractiveTableComponent TItem="ProductModel" 
+                          Items="@productItems"
+                          ColumnDefinitions="@GetColumnDefinitions()"
+                          IsReadOnly="@IsReadOnly"
+                          ShowRowNumbers="true"
+                          ShowBuiltInActions="true"
+                          OnItemDelete="@HandleDelete" />
 ```
 
 ### 3. 欄位定義範例
@@ -95,22 +108,10 @@
                 CheckedText = "啟用",
                 UncheckedText = "停用",
                 OnCheckboxChanged = OnActiveStatusChanged
-            },
-            
-            // 按鈕欄位
-            new() 
-            { 
-                Title = "操作", 
-                PropertyName = "",
-                ColumnType = InteractiveColumnType.Button,
-                Width = "10%",
-                ButtonText = "刪除",
-                ButtonIcon = "fas fa-trash",
-                ButtonVariant = ButtonVariant.Danger,
-                ButtonSize = ButtonSize.Small,
-                OnButtonClick = OnDeleteItem,
-                IsButtonDisabled = item => ((ProductModel)item).IsSystemDefault
             }
+            
+            // 注意：操作按鈕現在可以使用內建功能，不需要手動定義
+            // 只需設定 ShowBuiltInActions="true" 和 OnItemDelete 事件即可
         };
     }
 }
@@ -122,6 +123,7 @@
 @page "/interactive-table-demo"
 @using ERPCore2.Components.Shared.SubCollections
 @using ERPCore2.Components.Shared.Buttons
+@inject IJSRuntime JSRuntime
 
 <div class="container-fluid">
     <div class="row">
@@ -139,7 +141,10 @@
                                               ShowTotalRow="true"
                                               TotalRowTemplate="@GetTotalRowTemplate"
                                               OnValidationFailed="@OnValidationFailed"
-                                              ValidationErrors="@validationErrors" />
+                                              ValidationErrors="@validationErrors"
+                                              ShowBuiltInActions="true"
+                                              OnItemDelete="@OnDeleteItem"
+                                              IsDeleteDisabled="@(item => item.IsSystemDefault)" />
                 </div>
                 <div class="card-footer">
                     <button class="btn btn-primary" @onclick="AddNewItem">
@@ -224,10 +229,13 @@
         Console.WriteLine($"產品 {product.Code} 啟用狀態: {isChecked}");
     }
 
-    private async Task OnDeleteItem(object item)
+    private async Task OnDeleteItem(ProductModel item)
     {
-        var product = (ProductModel)item;
-        productItems.Remove(product);
+        // 可以添加確認對話框
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"確定要刪除產品 {item.Name} 嗎？");
+        if (!confirmed) return;
+        
+        productItems.Remove(item);
         StateHasChanged();
     }
 
@@ -274,6 +282,63 @@ public class ProductModel
 ```
 
 ## 🔧 進階功能
+
+### 內建操作功能
+
+#### 基本刪除按鈕
+```razor
+<InteractiveTableComponent ShowBuiltInActions="true" 
+                          OnItemDelete="@HandleDelete" />
+```
+
+#### 自訂刪除按鈕樣式
+```razor
+<InteractiveTableComponent ShowBuiltInActions="true" 
+                          DeleteButtonIcon="bi bi-x-circle"
+                          DeleteButtonVariant="ButtonVariant.OutlineDanger"
+                          DeleteButtonTitle="移除項目"
+                          OnItemDelete="@HandleDelete" />
+```
+
+#### 條件禁用刪除
+```razor
+<InteractiveTableComponent ShowBuiltInActions="true" 
+                          IsDeleteDisabled="@(item => item.IsSystemData)"
+                          OnItemDelete="@HandleDelete" />
+```
+
+#### 結合自訂操作
+```razor
+<InteractiveTableComponent ShowBuiltInActions="true" 
+                          OnItemDelete="@HandleDelete"
+                          CustomActionsTemplate="@GetCustomActions" />
+
+@code {
+    private RenderFragment<ProductModel> GetCustomActions => item => __builder =>
+    {
+        <GenericButtonComponent IconClass="bi bi-pencil"
+                               Variant="ButtonVariant.OutlinePrimary"
+                               Size="ButtonSize.Small"
+                               Title="編輯"
+                               OnClick="() => NavigateToEdit(item)" />
+    };
+}
+```
+
+### 與現有 ActionsTemplate 的相容性
+
+新的內建操作功能與現有的 `ActionsTemplate` 完全相容：
+
+1. **可以同時使用**：`ShowActions="true"` 和 `ShowBuiltInActions="true"` 可以並存
+2. **向後相容**：現有使用 `ActionsTemplate` 的代碼無需修改
+3. **優先級**：如果同時設定，`ActionsTemplate` 會顯示在內建操作之前
+
+#### 只要自訂操作（不要刪除按鈕）
+```razor
+<InteractiveTableComponent ShowBuiltInActions="true" 
+                          ShowBuiltInDeleteButton="false"
+                          CustomActionsTemplate="@GetCustomActions" />
+```
 
 ### 自訂模板欄位
 
@@ -330,8 +395,19 @@ new InteractiveColumnDefinition
 - `IsReadOnly`: 是否為唯讀模式
 - `ShowHeader`: 是否顯示表頭
 - `ShowRowNumbers`: 是否顯示行號
-- `ShowActions`: 是否顯示操作欄
+- `ShowActions`: 是否顯示操作欄（舊版方式）
 - `ShowTotalRow`: 是否顯示總計行
+
+### 內建操作參數
+- `ShowBuiltInActions`: 是否顯示內建操作欄
+- `ShowBuiltInDeleteButton`: 是否顯示內建刪除按鈕
+- `DeleteButtonIcon`: 刪除按鈕圖示（預設："bi bi-trash text-white"）
+- `DeleteButtonVariant`: 刪除按鈕樣式（預設：Danger）
+- `DeleteButtonSize`: 刪除按鈕尺寸（預設：Normal）
+- `DeleteButtonTitle`: 刪除按鈕提示文字（預設："刪除"）
+- `IsDeleteDisabled`: 判斷項目是否禁用刪除的函數
+- `OnItemDelete`: 項目刪除事件
+- `CustomActionsTemplate`: 自訂額外操作按鈕範本
 
 ### 樣式參數
 - `IsStriped`: 是否使用條紋樣式
@@ -351,15 +427,48 @@ new InteractiveColumnDefinition
 3. **效能考量**：對於大量資料，考慮實作虛擬化或分頁
 4. **可訪問性**：為按鈕和控件設定適當的 `Title` 屬性
 5. **行動裝置**：合理使用 `HideOnMobile` 屬性優化小螢幕體驗
+6. **操作按鈕**：優先使用內建操作功能(`ShowBuiltInActions`)而非手動定義Button欄位
+7. **刪除確認**：在 `OnItemDelete` 事件中實作確認對話框提升使用者體驗
 
 ## 🔄 遷移指南
 
-將現有的 SubCollection 組件遷移到 `InteractiveTableComponent`：
+### 將現有的 SubCollection 組件遷移到 `InteractiveTableComponent`：
 
-1. 分析現有表格的欄位類型
-2. 建立對應的 `InteractiveColumnDefinition` 列表
-3. 將事件處理邏輯遷移到新的事件模型
+1. **分析現有表格的欄位類型**
+2. **建立對應的 `InteractiveColumnDefinition` 列表**
+3. **將事件處理邏輯遷移到新的事件模型**
+4. **使用內建操作功能取代手動的操作按鈕**
+5. **測試並調整樣式和行為**
+6. **移除舊的表格實作程式碼**
+
+### 從手動操作按鈕遷移到內建操作：
+
+**舊版寫法**：
+```csharp
+new InteractiveColumnDefinition
+{
+    Title = "操作",
+    ColumnType = InteractiveColumnType.Button,
+    ButtonIcon = "bi bi-trash",
+    ButtonVariant = ButtonVariant.Danger,
+    OnButtonClick = EventCallback.Factory.Create<object>(this, HandleDelete)
+}
+```
+
+**新版寫法**：
+```razor
+<InteractiveTableComponent ShowBuiltInActions="true"
+                          OnItemDelete="@HandleDelete" />
+```
 4. 測試並調整樣式和行為
 5. 移除舊的表格實作程式碼
 
 這個組件將大幅簡化您的程式碼維護，並提供一致的使用者體驗。
+
+## 🎉 內建操作功能優勢
+
+- **🔧 簡化開發**：不需要為每個表格手動定義操作按鈕
+- **🎨 統一樣式**：所有刪除按鈕使用一致的視覺設計
+- **⚡ 提升效率**：只需設定 `ShowBuiltInActions="true"` 即可獲得標準操作功能
+- **🔧 高度可自訂**：支援自訂按鈕樣式、禁用條件和額外操作
+- **🔄 完全相容**：與現有的 `ActionsTemplate` 完全相容，可平滑遷移

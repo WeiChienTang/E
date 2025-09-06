@@ -14,8 +14,9 @@
                                   IsReadOnly="@IsReadOnly"
                                   ShowRowNumbers="false"
                                   EmptyMessage="@EmptyMessage"
-                                  ShowActions="true"
-                                  ActionsTemplate="@GetActionsTemplate" />
+                                  ShowBuiltInActions="true"
+                                  ShowBuiltInDeleteButton="true"
+                                  OnItemDelete="@HandleItemDelete" />
 
         @* 新增按鈕 - 只在非唯讀模式顯示 *@
         @if (!IsReadOnly)
@@ -233,18 +234,11 @@
         };
     }
 
-    private RenderFragment<TProductSupplierEntity> GetActionsTemplate => item => __builder =>
+    private async Task HandleItemDelete(TProductSupplierEntity item)
     {
-        if (!IsReadOnly)
-        {
-            var index = Items.IndexOf(item);
-            <GenericButtonComponent Variant="ButtonVariant.OutlineDanger" 
-                                   Size="ButtonSize.Small"
-                                   IconClass="bi bi-trash" 
-                                   OnClick="() => RemoveItemAsync(index)" 
-                                   Title="移除" />
-        }
-    };
+        var index = Items.IndexOf(item);
+        await RemoveItemAsync(index);
+    }
 
     private Task OnValidationFailed((TProductSupplierEntity item, string propertyName, string? errorMessage) args)
     {
