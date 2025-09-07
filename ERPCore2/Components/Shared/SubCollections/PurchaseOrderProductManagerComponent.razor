@@ -186,6 +186,7 @@ else
                            value="@productItem.ProductSearch"
                            @oninput="async (e) => await OnProductSearchInput(productItem, e.Value?.ToString())"
                            @onfocus="async () => await OnInputFocus(productItem)"
+                           @onblur="async () => await OnInputBlur(productItem)"
                            placeholder="@GetProductInputPlaceholder(isEmptyRow)" 
                            readonly="@IsReadOnly" />
                     
@@ -193,7 +194,8 @@ else
                     {
                         <div class="dropdown-menu show position-fixed w-auto shadow" 
                              style="z-index: 9999; max-height: 200px; overflow-y: auto; overflow-x: hidden; border: 1px solid #dee2e6; min-width: 300px; max-width: 500px;"
-                             id="dropdown-@ProductItems.IndexOf(productItem)">
+                             id="dropdown-@ProductItems.IndexOf(productItem)"
+                             @onmousedown:preventDefault="true">
                             @for (int i = 0; i < FilteredProducts.Count; i++)
                             {
                                 var product = FilteredProducts[i];
@@ -617,6 +619,15 @@ else
     private async Task OnInputFocus(ProductItem item)
     {
         await ShowProductDropdown(item);
+    }
+
+    private async Task OnInputBlur(ProductItem item)
+    {
+        // 延遲關閉下拉選單，讓用戶有時間點擊下拉選項
+        // 注意：下拉選單容器有 onmousedown:preventDefault 來防止 blur 在點擊時觸發
+        await Task.Delay(100);
+        item.ShowDropdown = false;
+        StateHasChanged();
     }
 
     private async Task OnProductSearchInput(ProductItem item, string? searchValue)
