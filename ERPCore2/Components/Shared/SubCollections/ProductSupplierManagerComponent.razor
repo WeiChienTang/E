@@ -1,6 +1,5 @@
 @* 產品廠商管理組件 - 管理產品的多個廠商資訊 - 使用 InteractiveTableComponent 統一UI *@
-@using ERPCore2.Components.Shared.SubCollections
-@using ERPCore2.Components.Shared.Buttons
+
 @inject INotificationService NotificationService
 @typeparam TProductSupplierEntity where TProductSupplierEntity : BaseEntity, new()
 @typeparam TProductEntity where TProductEntity : BaseEntity
@@ -17,17 +16,6 @@
                                   ShowBuiltInActions="true"
                                   ShowBuiltInDeleteButton="true"
                                   OnItemDelete="@HandleItemDelete" />
-
-        @* 新增按鈕 - 只在非唯讀模式顯示 *@
-        @if (!IsReadOnly)
-        {
-            <div class="p-3 border-top text-center">
-                <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" 
-                                       Text="@($"新增{ItemDisplayName}")" 
-                                       IconClass="bi-plus me-1" 
-                                       OnClick="AddNewRow" />
-            </div>
-        }
     </div>
 </div>
 
@@ -87,6 +75,55 @@
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
+        
+        var emptyCount = Items.Count(IsEmptyRow);
+        
+        // 總是確保有一行空行可以輸入
+        // 不論是否已有資料，都應該保持有空行供使用者新增
+        EnsureOneEmptyRow();
+        
+        var emptyCountAfter = Items.Count(IsEmptyRow);
+    }
+
+    // ===== AutoEmptyRowHelper 相關方法 =====
+    
+    /// <summary>
+    /// 檢查是否為空行
+    /// 業務邏輯：只要選擇了廠商，就算是有效的一行，不再是空行
+    /// </summary>
+    private bool IsEmptyRow(TProductSupplierEntity item)
+    {
+        var supplierId = GetSupplierId(item);
+        // 檢查廠商ID是否為空（null 或 0 都算空）
+        var isEmpty = !supplierId.HasValue || supplierId.Value <= 0;
+        
+        // 只要廠商有值（大於0），就不是空行
+        // 廠商是核心欄位，其他欄位可以後續填寫
+        return isEmpty;
+    }
+    
+    /// <summary>
+    /// 創建空的產品廠商項目
+    /// </summary>
+    private TProductSupplierEntity CreateEmptyItem()
+    {
+        var newItem = new TProductSupplierEntity();
+        SetParentId(newItem, ParentEntityId);
+        return newItem;
+    }
+    
+    /// <summary>
+    /// 確保有一行空行
+    /// </summary>
+    private void EnsureOneEmptyRow()
+    {
+        AutoEmptyRowHelper.For<TProductSupplierEntity>.EnsureOneEmptyRow(
+            Items, 
+            IsEmptyRow, 
+            CreateEmptyItem, 
+            SetParentId, 
+            ParentEntityId
+        );
     }
 
     // ===== InteractiveTableComponent 方法 =====
@@ -111,6 +148,7 @@
                                     value="@selectedValue"
                                     disabled="@IsReadOnly"
                                     @onchange="@(async (e) => await OnSupplierChanged((productSupplier, e.Value)))">
+                        <option value="">請選擇廠商</option>
                         @foreach (var option in Options)
                         {
                             <option value="@GetOptionId(option)">@GetOptionDisplayText(option)</option>
@@ -155,8 +193,6 @@
                     return @<input type="number" 
                                    class="form-control form-control-sm" 
                                    value="@value"
-                                   placeholder="0.00"
-                                   step="0.01"
                                    min="0"
                                    disabled="@IsReadOnly"
                                    @oninput="@(async (e) => await OnSupplierPriceChanged((productSupplier, e.Value?.ToString())))" />;
@@ -178,7 +214,6 @@
                     return @<input type="number" 
                                    class="form-control form-control-sm" 
                                    value="@value"
-                                   placeholder="0"
                                    min="0"
                                    disabled="@IsReadOnly"
                                    @oninput="@(async (e) => await OnLeadTimeChanged((productSupplier, e.Value?.ToString())))" />;
@@ -200,7 +235,6 @@
                     return @<input type="number" 
                                    class="form-control form-control-sm" 
                                    value="@value"
-                                   placeholder="0"
                                    min="0"
                                    disabled="@IsReadOnly"
                                    @oninput="@(async (e) => await OnMinOrderQuantityChanged((productSupplier, e.Value?.ToString())))" />;
@@ -224,6 +258,7 @@
                                     value="@selectedValue"
                                     disabled="@IsReadOnly"
                                     @onchange="@(async (e) => await OnUnitChanged((productSupplier, e.Value)))">
+                        <option value="">請選擇單位</option>
                         @foreach (var unit in UnitOptions)
                         {
                             <option value="@GetUnitOptionId(unit)">@GetUnitOptionDisplayText(unit)</option>
@@ -282,33 +317,30 @@
         return "-";
     }
 
-    // ===== 新增行方法 =====
-    private void AddNewRow()
-    {
-        if (IsReadOnly || !Options.Any()) return;
-        
-        var newItem = new TProductSupplierEntity();
-        SetParentId(newItem, ParentEntityId);
-        Items.Add(newItem);
-        StateHasChanged();
-    }
-
     // ===== InteractiveTableComponent 事件處理 =====
     private async Task OnSupplierChanged((object item, object? value) args)
     {
         var productSupplier = (TProductSupplierEntity)args.item;
+        var wasEmpty = IsEmptyRow(productSupplier);
+    
         
-        if (args.value != null && int.TryParse(args.value.ToString(), out var supplierId))
+        if (args.value != null && !string.IsNullOrEmpty(args.value.ToString()) && int.TryParse(args.value.ToString(), out var supplierId) && supplierId > 0)
         {
             // 檢查是否已存在相同廠商
-            if (Items.Where(i => i != productSupplier).Any(item => GetSupplierId(item) == supplierId))
+            var existingSupplierIds = Items.Where(i => i != productSupplier).Select(item => GetSupplierId(item)).Where(id => id.HasValue && id.Value > 0);
+            if (existingSupplierIds.Any(id => id!.Value == supplierId))
             {
                 await NotificationService.ShowErrorAsync("此廠商已存在，請選擇其他廠商");
                 SetSupplierId(productSupplier, null);
             }
             else
             {
-                SetSupplierId(productSupplier, supplierId);
+                SetSupplierId(productSupplier, supplierId);                
+                
+                // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+                var added = AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleInputChangeAdvanced(
+                    Items, productSupplier, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, ParentEntityId);
+                
                 await ItemsChanged.InvokeAsync(Items);
             }
         }
@@ -323,7 +355,14 @@
     private async Task OnSupplierProductCodeChanged((object item, string? value) args)
     {
         var productSupplier = (TProductSupplierEntity)args.item;
+        var wasEmpty = IsEmptyRow(productSupplier);
+        
         SetSupplierProductCode(productSupplier, args.value);
+        
+        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+        AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleInputChangeAdvanced(
+            Items, productSupplier, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, ParentEntityId);
+        
         await ItemsChanged.InvokeAsync(Items);
         StateHasChanged();
     }
@@ -331,6 +370,7 @@
     private async Task OnSupplierPriceChanged((object item, string? value) args)
     {
         var productSupplier = (TProductSupplierEntity)args.item;
+        var wasEmpty = IsEmptyRow(productSupplier);
         
         if (string.IsNullOrEmpty(args.value))
         {
@@ -341,6 +381,10 @@
             SetSupplierPrice(productSupplier, price);
         }
         
+        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+        AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleInputChangeAdvanced(
+            Items, productSupplier, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, ParentEntityId);
+        
         await ItemsChanged.InvokeAsync(Items);
         StateHasChanged();
     }
@@ -348,6 +392,7 @@
     private async Task OnLeadTimeChanged((object item, string? value) args)
     {
         var productSupplier = (TProductSupplierEntity)args.item;
+        var wasEmpty = IsEmptyRow(productSupplier);
         
         if (string.IsNullOrEmpty(args.value))
         {
@@ -358,6 +403,10 @@
             SetLeadTime(productSupplier, leadTime);
         }
         
+        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+        AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleInputChangeAdvanced(
+            Items, productSupplier, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, ParentEntityId);
+        
         await ItemsChanged.InvokeAsync(Items);
         StateHasChanged();
     }
@@ -365,6 +414,7 @@
     private async Task OnMinOrderQuantityChanged((object item, string? value) args)
     {
         var productSupplier = (TProductSupplierEntity)args.item;
+        var wasEmpty = IsEmptyRow(productSupplier);
         
         if (string.IsNullOrEmpty(args.value))
         {
@@ -375,6 +425,10 @@
             SetMinOrderQuantity(productSupplier, quantity);
         }
         
+        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+        AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleInputChangeAdvanced(
+            Items, productSupplier, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, ParentEntityId);
+        
         await ItemsChanged.InvokeAsync(Items);
         StateHasChanged();
     }
@@ -382,8 +436,9 @@
     private async Task OnUnitChanged((object item, object? value) args)
     {
         var productSupplier = (TProductSupplierEntity)args.item;
+        var wasEmpty = IsEmptyRow(productSupplier);
         
-        if (args.value != null && int.TryParse(args.value.ToString(), out var unitId))
+        if (args.value != null && !string.IsNullOrEmpty(args.value.ToString()) && int.TryParse(args.value.ToString(), out var unitId))
         {
             SetUnitId(productSupplier, unitId);
         }
@@ -391,6 +446,10 @@
         {
             SetUnitId(productSupplier, null);
         }
+        
+        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+        AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleInputChangeAdvanced(
+            Items, productSupplier, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, ParentEntityId);
         
         await ItemsChanged.InvokeAsync(Items);
         StateHasChanged();
@@ -402,7 +461,9 @@
         
         var removedItem = Items[index];
         
-        Items.RemoveAt(index);
+        // 使用 Helper 處理移除，自動確保空行
+        AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleItemRemove(
+            Items, removedItem, IsEmptyRow, CreateEmptyItem, SetParentId, ParentEntityId);
         
         await ItemRemoved.InvokeAsync(removedItem);
         await ItemsChanged.InvokeAsync(Items);
@@ -413,14 +474,16 @@
     {
         var errors = new List<string>();
         
-        if (!Items.Any())
+        // 使用 Helper 檢查是否有足夠的非空項目
+        if (!AutoEmptyRowHelper.For<TProductSupplierEntity>.HasSufficientItems(Items, IsEmptyRow, 1))
         {
             errors.Add("至少需要一個廠商");
         }
         else
         {
-            // 檢查廠商重複
-            var supplierIds = Items.Select(item => GetSupplierId(item)).Where(id => id.HasValue).ToList();
+            // 取得非空的項目進行重複檢查
+            var nonEmptyItems = AutoEmptyRowHelper.For<TProductSupplierEntity>.GetNonEmptyItems(Items, IsEmptyRow);
+            var supplierIds = nonEmptyItems.Select(item => GetSupplierId(item)).Where(id => id.HasValue).ToList();
             if (supplierIds.Count != supplierIds.Distinct().Count())
             {
                 errors.Add("存在重複的廠商");

@@ -2,7 +2,7 @@
 
 ## 📋 概述
 
-`InteractiveTableComponent` 是一個功能強大的互動式表格組件，專門設計來替代各種 SubCollection 組件中重複的表格UI。它支援多種輸入控件類型，保持與 `GenericTableComponent` 一致的視覺風格。
+`InteractiveTableComponent` 是一個功能強大的互動式表格組件，專門設計來替代各種 SubCollection 組件中重複的表格UI。它支援多種輸入控件類型，保持與 `GenericTableComponent` 一致的視覺風格，並配備了先進的自動空行功能。
 
 ## 🎯 設計目標
 
@@ -12,6 +12,97 @@
 - **靈活配置**：透過 `InteractiveColumnDefinition` 輕鬆配置欄位
 - **響應式設計**：自動適應不同螢幕尺寸
 - **即時驗證**：內建驗證機制和錯誤提示
+- **🆕 自動空行功能**：提供類似 Excel 的智能空行管理，提升使用者體驗
+
+## 🚀 自動空行功能 (AutoEmptyRow Feature)
+
+### 功能特色
+- **智能偵測**：自動判斷何時需要新增空行供使用者輸入
+- **類似 Excel 體驗**：使用者無需點擊「新增」按鈕，直接在空行開始輸入
+- **業務邏輯驅動**：根據不同組件的核心欄位智能判斷空行狀態
+- **效能優化**：避免不必要的重複新增，確保始終只有一行空行
+
+### 已整合自動空行功能的組件
+以下組件已成功整合自動空行功能，提供流暢的資料輸入體驗：
+
+#### ✅ ProductSupplierManagerComponent
+- **核心判定欄位**：廠商選擇 (SupplierId)
+- **業務邏輯**：只要選擇了廠商，即視為有效資料行
+- **使用場景**：產品廠商資訊管理
+- **整合狀態**：已完成測試，運行穩定
+
+### 如何為組件添加自動空行功能
+
+如果您的組件使用 `InteractiveTableComponent` 並希望添加自動空行功能，請參考以下步驟：
+
+#### 1. 引入 AutoEmptyRowHelper
+```csharp
+@using ERPCore2.Helpers
+```
+
+#### 2. 實作必要方法
+```csharp
+/// <summary>
+/// 定義空行判定邏輯 - 根據業務需求自訂
+/// </summary>
+private bool IsEmptyRow(TEntity item)
+{
+    // 以核心欄位為判定基準
+    var coreFieldValue = GetCoreField(item);
+    return !coreFieldValue.HasValue || coreFieldValue.Value <= 0;
+}
+
+/// <summary>
+/// 創建新的空項目
+/// </summary>
+private TEntity CreateEmptyItem()
+{
+    var newItem = new TEntity();
+    SetParentId(newItem, ParentEntityId); // 設定必要的關聯
+    return newItem;
+}
+
+/// <summary>
+/// 確保有空行的便利方法
+/// </summary>
+private void EnsureOneEmptyRow()
+{
+    AutoEmptyRowHelper.For<TEntity>.EnsureOneEmptyRow(
+        Items, IsEmptyRow, CreateEmptyItem, SetParentId, ParentEntityId);
+}
+```
+
+#### 3. 整合到組件生命週期
+```csharp
+protected override void OnParametersSet()
+{
+    base.OnParametersSet();
+    EnsureOneEmptyRow(); // 確保始終有空行
+}
+```
+
+#### 4. 在輸入事件中觸發檢查
+```csharp
+private async Task OnCoreFieldChanged((object item, object? value) args)
+{
+    var entity = (TEntity)args.item;
+    var wasEmpty = IsEmptyRow(entity); // 記錄變更前狀態
+    
+    // 執行業務邏輯
+    SetCoreField(entity, value);
+    
+    // 智能處理空行
+    AutoEmptyRowHelper.For<TEntity>.HandleInputChangeAdvanced(
+        Items, entity, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, ParentEntityId);
+    
+    await ItemsChanged.InvokeAsync(Items);
+    StateHasChanged();
+}
+```
+
+### 詳細技術文件
+有關自動空行功能的完整技術說明、實作細節和最佳實踐，請參閱：
+📖 [自動空行功能詳細說明](README_AutoEmptyRow_Feature.md)
 
 ## 🔧 基本使用
 

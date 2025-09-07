@@ -117,21 +117,10 @@ namespace ERPCore2.Helpers
                                 if (result is Task task)
                                 {
                                     await task;
-                                    // 記錄成功
-                                    Console.WriteLine($"[ModalHelper] 成功調用 {componentType.Name}.Refresh() 方法");
-                                }
-                                else
-                                {
-                                    // 記錄警告：Refresh 方法沒有回傳 Task
-                                    Console.WriteLine($"[ModalHelper] 警告：{componentType.Name}.Refresh() 方法沒有回傳 Task");
                                 }
                             }
                             catch (Exception ex)
                             {
-                                // 記錄詳細的調用錯誤
-                                Console.Error.WriteLine($"[ModalHelper] 調用 {componentType.Name}.Refresh() 方法時發生錯誤: {ex.Message}");
-                                Console.Error.WriteLine($"[ModalHelper] 錯誤堆疊: {ex.StackTrace}");
-                                
                                 // 嘗試記錄到資料庫（但不阻塞主流程）
                                 _ = Task.Run(async () => {
                                     try
@@ -148,32 +137,18 @@ namespace ERPCore2.Helpers
                         }
                         else
                         {
-                            // 記錄警告：找不到 Refresh 方法
-                            Console.WriteLine($"[ModalHelper] 警告：在 {componentType.Name} 中找不到 Refresh() 方法");
-                            
                             // 列出所有公開方法以供偵錯
                             var methods = componentType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
                                 .Where(m => m.Name.Contains("Refresh", StringComparison.OrdinalIgnoreCase))
                                 .Select(m => $"{m.Name}({string.Join(", ", m.GetParameters().Select(p => $"{p.ParameterType.Name} {p.Name}"))})")
                                 .ToArray();
-                            
-                            if (methods.Any())
-                            {
-                                Console.WriteLine($"[ModalHelper] 找到相關方法: {string.Join(", ", methods)}");
-                            }
                         }
                     }
                     catch (Exception ex)
                     {
-                        // 記錄反射操作本身的錯誤
-                        Console.Error.WriteLine($"[ModalHelper] 反射操作失敗: {ex.Message}");
-                        Console.Error.WriteLine($"[ModalHelper] 組件類型: {indexComponent.GetType().FullName}");
+                        await ErrorHandlingHelper.HandlePageErrorAsync(ex, $"{callerName}.RefreshCheck", callerType, 
+                            additionalData: $"檢查 {indexComponent.GetType().Name} 的 Refresh 方法失敗");
                     }
-                }
-                else
-                {
-                    // 記錄警告：indexComponent 為 null
-                    Console.WriteLine($"[ModalHelper] 警告：indexComponent 為 null，無法調用 Refresh 方法");
                 }
 
                 stateHasChanged();

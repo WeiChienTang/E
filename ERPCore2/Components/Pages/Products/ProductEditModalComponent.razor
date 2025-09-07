@@ -499,7 +499,7 @@
     // ===== 產品供應商委派屬性 =====
     
     // Getter 委派
-    private Func<ProductSupplier, int?> GetSupplierIdDelegate => item => item.SupplierId;
+    private Func<ProductSupplier, int?> GetSupplierIdDelegate => item => item.SupplierId > 0 ? item.SupplierId : (int?)null;
     private Func<ProductSupplier, string?> GetSupplierProductCodeDelegate => item => item.SupplierProductCode;
     private Func<ProductSupplier, decimal?> GetSupplierPriceDelegate => item => item.SupplierPrice;
     private Func<ProductSupplier, int?> GetLeadTimeDelegate => item => item.LeadTime;
@@ -507,7 +507,7 @@
     private Func<ProductSupplier, int?> GetUnitIdDelegate => item => item.UnitId;
     
     // Setter 委派
-    private Action<ProductSupplier, int?> SetSupplierIdDelegate => (item, value) => { if (value.HasValue) item.SupplierId = value.Value; };
+    private Action<ProductSupplier, int?> SetSupplierIdDelegate => (item, value) => item.SupplierId = value ?? 0;
     private Action<ProductSupplier, string?> SetSupplierProductCodeDelegate => (item, value) => item.SupplierProductCode = value;
     private Action<ProductSupplier, decimal?> SetSupplierPriceDelegate => (item, value) => item.SupplierPrice = value;
     private Action<ProductSupplier, int?> SetLeadTimeDelegate => (item, value) => item.LeadTime = value;
@@ -593,20 +593,35 @@
                 return; 
             }
 
+            // 使用 AutoEmptyRowHelper 過濾掉空行項目，只儲存有效的供應商關聯
+            var validProductSuppliers = AutoEmptyRowHelper.For<ProductSupplier>.GetNonEmptyItems(
+                productSuppliers, 
+                item => item.SupplierId <= 0
+            );
+
             // 使用 ProductService 的更新供應商關聯方法
-            if (productSuppliers.Any())
+            if (validProductSuppliers.Any())
             {
                 // 設定每個供應商關聯的 ProductId
-                foreach (var productSupplier in productSuppliers)
+                foreach (var productSupplier in validProductSuppliers)
                 {
                     productSupplier.ProductId = latestProduct.Id;
                 }
                 
                 // 更新產品供應商關聯
-                var result = await ProductService.UpdateProductSuppliersAsync(latestProduct.Id, productSuppliers);
+                var result = await ProductService.UpdateProductSuppliersAsync(latestProduct.Id, validProductSuppliers);
                 if (!result.IsSuccess)
                 {
                     await NotificationService.ShowErrorAsync($"儲存供應商資料時發生錯誤：{result.ErrorMessage}");
+                }
+            }
+            else
+            {
+                // 如果沒有有效的供應商關聯，清空所有關聯
+                var result = await ProductService.UpdateProductSuppliersAsync(latestProduct.Id, new List<ProductSupplier>());
+                if (!result.IsSuccess)
+                {
+                    await NotificationService.ShowErrorAsync($"清空供應商資料時發生錯誤：{result.ErrorMessage}");
                 }
             }
 
