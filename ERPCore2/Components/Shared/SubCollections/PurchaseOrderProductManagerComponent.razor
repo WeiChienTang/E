@@ -166,6 +166,16 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "25%",
+            EnableKeyboardNavigation = true,
+            GetDropdownItems = item => FilteredProducts ?? new List<Product>(),
+            DropdownDisplayFormatter = product => $"{((Product)product).Code} - {((Product)product).Name}",
+            OnDropdownItemSelected = EventCallback.Factory.Create<(object item, object? selectedItem)>(this, 
+                async args => await SelectProduct((ProductItem)args.item, (Product)args.selectedItem!)),
+            GetSelectedIndex = item => ((ProductItem)item).SelectedIndex,
+            SetSelectedIndex = (item, index) => ((ProductItem)item).SelectedIndex = index,
+            GetShowDropdown = item => ((ProductItem)item).ShowDropdown,
+            SetShowDropdown = (item, show) => ((ProductItem)item).ShowDropdown = show,
+            DropdownContainerIdFormat = "dropdown-{0}",
             CustomTemplate = item => 
             {
                 var productItem = (ProductItem)item;
@@ -176,7 +186,6 @@ else
                            value="@productItem.ProductSearch"
                            @oninput="async (e) => await OnProductSearchInput(productItem, e.Value?.ToString())"
                            @onfocus="async () => await OnInputFocus(productItem)"
-                           @onkeydown="(e) => OnKeyDown(productItem, e)"
                            placeholder="@GetProductInputPlaceholder(isEmptyRow)" 
                            readonly="@IsReadOnly" />
                     
@@ -784,40 +793,6 @@ else
         StateHasChanged();
     }
 
-    private async Task OnKeyDown(ProductItem item, KeyboardEventArgs e)
-    {
-        if (!item.ShowDropdown || FilteredProducts == null || !FilteredProducts.Any())
-            return;
-
-        switch (e.Key)
-        {
-            case "ArrowDown":
-                item.SelectedIndex = Math.Min(item.SelectedIndex + 1, FilteredProducts.Count - 1);
-                await ScrollSelectedItemIntoView(item);
-                StateHasChanged();
-                break;
-                
-            case "ArrowUp":
-                item.SelectedIndex = Math.Max(item.SelectedIndex - 1, 0);
-                await ScrollSelectedItemIntoView(item);
-                StateHasChanged();
-                break;
-                
-            case "Enter":
-                if (item.SelectedIndex >= 0 && item.SelectedIndex < FilteredProducts.Count)
-                {
-                    await SelectProduct(item, FilteredProducts[item.SelectedIndex]);
-                }
-                break;
-                
-            case "Escape":
-                item.ShowDropdown = false;
-                item.SelectedIndex = -1;
-                StateHasChanged();
-                break;
-        }
-    }
-
     public async Task RemoveItemAsync(int index)
     {
         if (IsReadOnly || index < 0 || index >= ProductItems.Count) return;
@@ -866,11 +841,6 @@ else
         }
         
         return AvailableProducts;
-    }
-
-    private async Task ScrollSelectedItemIntoView(ProductItem item)
-    {
-        await Task.CompletedTask;
     }
 
     /// <summary>

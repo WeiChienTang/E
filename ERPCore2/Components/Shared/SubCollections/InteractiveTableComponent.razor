@@ -193,8 +193,17 @@
                                 }
                                 else if (column.ColumnType == InteractiveColumnType.Custom && column.CustomTemplate != null)
                                 {
-                                    @* 自訂模板 *@
-                                    @column.CustomTemplate(item!)
+                                    @* 自訂模板 - 支援鍵盤導航 *@
+                                    @if (column.EnableKeyboardNavigation)
+                                    {
+                                        <div @onkeydown="async (e) => await HandleKeyboardNavigation(column, item, e)">
+                                            @column.CustomTemplate(item!)
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        @column.CustomTemplate(item!)
+                                    }
                                 }
                             </td>
                         }
@@ -615,5 +624,87 @@
             await OnItemDelete.InvokeAsync(item);
         }
     }
+    
+    #region 鍵盤導航相關方法
+    /// <summary>
+    /// 處理鍵盤導航事件
+    /// </summary>
+    private async Task HandleKeyboardNavigation(InteractiveColumnDefinition column, TItem item, KeyboardEventArgs e)
+    {
+        if (!column.EnableKeyboardNavigation || column.GetDropdownItems == null || 
+            column.GetShowDropdown == null || column.SetSelectedIndex == null || 
+            column.GetSelectedIndex == null || column.SetShowDropdown == null)
+            return;
+
+        var dropdownItems = column.GetDropdownItems(item!).ToList();
+        var showDropdown = column.GetShowDropdown(item!);
+        var selectedIndex = column.GetSelectedIndex(item!);
+
+        if (!showDropdown || !dropdownItems.Any())
+            return;
+
+        switch (e.Key)
+        {
+            case "ArrowDown":
+                var newDownIndex = Math.Min(selectedIndex + 1, dropdownItems.Count - 1);
+                column.SetSelectedIndex(item!, newDownIndex);
+                await ScrollSelectedItemIntoView(column, item, newDownIndex);
+                StateHasChanged();
+                break;
+                
+            case "ArrowUp":
+                var newUpIndex = Math.Max(selectedIndex - 1, 0);
+                column.SetSelectedIndex(item!, newUpIndex);
+                await ScrollSelectedItemIntoView(column, item, newUpIndex);
+                StateHasChanged();
+                break;
+                
+            case "Enter":
+                if (selectedIndex >= 0 && selectedIndex < dropdownItems.Count)
+                {
+                    var selectedItem = dropdownItems[selectedIndex];
+                    if (column.OnDropdownItemSelected.HasValue)
+                    {
+                        await column.OnDropdownItemSelected.Value.InvokeAsync((item!, selectedItem));
+                    }
+                }
+                break;
+                
+            case "Escape":
+                column.SetShowDropdown(item!, false);
+                column.SetSelectedIndex(item!, -1);
+                StateHasChanged();
+                break;
+        }
+    }
+
+    /// <summary>
+    /// 判斷是否為導航按鍵（用於 preventDefault）
+    /// </summary>
+    private bool IsNavigationKey(KeyboardEventArgs e)
+    {
+        return e.Key is "ArrowDown" or "ArrowUp" or "Enter" or "Escape";
+    }
+
+    /// <summary>
+    /// 將選中的項目捲動到可視範圍內
+    /// </summary>
+    private async Task ScrollSelectedItemIntoView(InteractiveColumnDefinition column, TItem item, int selectedIndex)
+    {
+        if (string.IsNullOrEmpty(column.DropdownContainerIdFormat))
+            return;
+            
+        try
+        {
+            // 這裡可以添加 JavaScript 互操作來實現捲動
+            // 目前先使用簡單的延遲
+            await Task.Delay(1);
+        }
+        catch (Exception)
+        {
+            // 忽略 JavaScript 錯誤
+        }
+    }
+    #endregion
     #endregion
 }

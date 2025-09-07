@@ -198,5 +198,52 @@ namespace ERPCore2.Components.Shared.SubCollections
         /// </summary>
         public RenderFragment<object>? CustomTemplate { get; set; }
         #endregion
+
+        #region 鍵盤導航專用屬性
+        /// <summary>
+        /// 是否啟用鍵盤導航（適用於下拉選單相關欄位）
+        /// </summary>
+        public bool EnableKeyboardNavigation { get; set; } = false;
+        
+        /// <summary>
+        /// 下拉選單項目列表（用於鍵盤導航）
+        /// </summary>
+        public Func<object, IEnumerable<object>>? GetDropdownItems { get; set; }
+        
+        /// <summary>
+        /// 下拉選單顯示格式化函數
+        /// </summary>
+        public Func<object, string>? DropdownDisplayFormatter { get; set; }
+        
+        /// <summary>
+        /// 下拉選單項目選擇事件
+        /// </summary>
+        public EventCallback<(object item, object? selectedItem)>? OnDropdownItemSelected { get; set; }
+        
+        /// <summary>
+        /// 取得當前選中索引的函數
+        /// </summary>
+        public Func<object, int>? GetSelectedIndex { get; set; }
+        
+        /// <summary>
+        /// 設定選中索引的函數
+        /// </summary>
+        public Action<object, int>? SetSelectedIndex { get; set; }
+        
+        /// <summary>
+        /// 判斷是否顯示下拉選單的函數
+        /// </summary>
+        public Func<object, bool>? GetShowDropdown { get; set; }
+        
+        /// <summary>
+        /// 設定下拉選單顯示狀態的函數
+        /// </summary>
+        public Action<object, bool>? SetShowDropdown { get; set; }
+        
+        /// <summary>
+        /// 下拉選單容器ID格式（用於定位和捲動）
+        /// </summary>
+        public string? DropdownContainerIdFormat { get; set; }
+        #endregion
     }
 }
