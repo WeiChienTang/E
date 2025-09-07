@@ -25,6 +25,11 @@
     transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
+/* 修正主要按鈕 hover 時圖標顏色 */
+.btn-primary:hover i {
+    color: var(--table-hover-text) !important;
+}
+
 .btn-primary:focus {
     background-color: var(--primary-blue-hover);
     border-color: var(--primary-blue-hover);
@@ -51,6 +56,11 @@
     transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
+/* 修正次要按鈕 hover 時圖標顏色 */
+.btn-secondary:hover i {
+    color: var(--table-hover-text) !important;
+}
+
 /* 成功按鈕樣式 */
 .btn-success {
     background-color: var(--success-color);
@@ -63,6 +73,11 @@
     border-color: var(--table-hover-bg-striped);
     color: var(--table-hover-text);
     transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+/* 修正成功按鈕 hover 時圖標顏色 */
+.btn-success:hover i {
+    color: var(--table-hover-text) !important;
 }
 
 /* 警告按鈕樣式 */
@@ -79,6 +94,11 @@
     transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
+/* 修正警告按鈕 hover 時圖標顏色 */
+.btn-warning:hover i {
+    color: var(--table-hover-text) !important;
+}
+
 /* 危險按鈕樣式 */
 .btn-danger {
     background-color: var(--danger-color);
@@ -91,6 +111,11 @@
     border-color: var(--table-hover-bg-striped);
     color: var(--table-hover-text);
     transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+/* 修正危險按鈕 hover 時圖標顏色 */
+.btn-danger:hover i {
+    color: var(--table-hover-text) !important;
 }
 
 /* 資訊按鈕樣式 */
@@ -107,6 +132,11 @@
     transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
+/* 修正資訊按鈕 hover 時圖標顏色 */
+.btn-info:hover i {
+    color: var(--table-hover-text) !important;
+}
+
 /* 輪廓按鈕樣式 */
 .btn-outline-primary {
     color: var(--primary-blue);
@@ -119,6 +149,11 @@
     border-color: var(--table-hover-bg-striped);
     color: var(--table-hover-text);
     transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+/* 修正輪廓主要按鈕 hover 時圖標顏色 */
+.btn-outline-primary:hover i {
+    color: var(--table-hover-text) !important;
 }
 
 .btn-outline-secondary {
@@ -134,6 +169,11 @@
     transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
+/* 修正輪廓次要按鈕 hover 時圖標顏色 */
+.btn-outline-secondary:hover i {
+    color: var(--table-hover-text) !important;
+}
+
 .btn-outline-success {
     color: var(--success-color);
     border-color: var(--success-color);
@@ -145,6 +185,11 @@
     border-color: var(--table-hover-bg-striped);
     color: var(--table-hover-text);
     transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+/* 修正輪廓成功按鈕 hover 時圖標顏色 */
+.btn-outline-success:hover i {
+    color: var(--table-hover-text) !important;
 }
 
 .btn-outline-warning {
@@ -160,6 +205,11 @@
     transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
+/* 修正輪廓警告按鈕 hover 時圖標顏色 */
+.btn-outline-warning:hover i {
+    color: var(--table-hover-text) !important;
+}
+
 .btn-outline-danger {
     color: var(--danger-color);
     border-color: var(--danger-color);
@@ -173,6 +223,11 @@
     transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
+/* 修正輪廓危險按鈕 hover 時圖標顏色 */
+.btn-outline-danger:hover i {
+    color: var(--table-hover-text) !important;
+}
+
 .btn-outline-info {
     color: var(--info-color);
     border-color: var(--info-color);
@@ -184,6 +239,11 @@
     border-color: var(--table-hover-bg-striped);
     color: var(--table-hover-text);
     transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+/* 修正輪廓資訊按鈕 hover 時圖標顏色 */
+.btn-outline-info:hover i {
+    color: var(--table-hover-text) !important;
 }
 
 /* 按鈕尺寸 */

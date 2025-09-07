@@ -1,147 +1,40 @@
-@typeparam TAddressEntity where TAddressEntity : ERPCore2.Data.BaseEntity, new()
-@typeparam TParentEntity where TParentEntity : ERPCore2.Data.BaseEntity
-@using ERPCore2.Services
-@using Microsoft.JSInterop
+@* 地址管理組件 - 管理實體的多個地址資訊 - 使用 InteractiveTableComponent 統一UI *@
+
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
+@using ERPCore2.Helpers
+@typeparam TAddressEntity where TAddressEntity : ERPCore2.Data.BaseEntity, new()
+@typeparam TParentEntity where TParentEntity : ERPCore2.Data.BaseEntity
 
-<div class="table-responsive">
-    <table class="table table-sm table-hover">
-        <thead class="table-light">
-            <tr>
-                <th>地址資訊</th>
-                @if (!IsReadOnly)
-                {
-                    <th width="100">操作</th>
-                }
-            </tr>
-        </thead>
-        <tbody>
-                        @for (int i = 0; i < Items.Count; i++)
-                        {
-                            var index = i;
-                            var item = Items[index];
-                            <tr @onclick="() => { if (!IsReadOnly) ShowEditModal(index); }" style="@(IsReadOnly ? "cursor: default;" : "cursor: pointer;")" title="@(IsReadOnly ? "" : "點擊編輯")">
-                                <td>
-                                    <span>@GetAddressDisplayText(item)</span>
-                                </td>
-                                @if (!IsReadOnly)
-                                {
-                                    <td @onclick:stopPropagation="true">
-                                        <div class="btn-group btn-group-sm">
-                                            <GenericButtonComponent Variant="ButtonVariant.OutlineInfo" Size="ButtonSize.Small"
-                                                                   IconClass="bi bi-geo-alt" OnClick="() => OpenGoogleMaps(item)" 
-                                                                   Title="在 Google 地圖中查看" />
-                                            <GenericButtonComponent Variant="ButtonVariant.OutlineDanger" Size="ButtonSize.Small"
-                                                                   IconClass="bi bi-trash" OnClick="() => RemoveItemAsync(index)" 
-                                                                   Title="移除" />
-                                        </div>
-                                    </td>
-                                }
-                            </tr>
-                        }
-                        @* 新增按鈕行 *@
-                        @if (!IsReadOnly)
-                        {
-                            <tr>
-                                <td colspan="@(IsReadOnly ? 1 : 2)" class="text-center py-3 border-top">
-                                    <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" 
-                                                           Text="@($"新增{ItemDisplayName}")" 
-                                                           IconClass="bi-plus me-1" 
-                                                           OnClick="ShowAddModal" />
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-
-@* 新增/編輯地址 Modal *@
-@if (showAddModal || showEditModal)
-{
-    <div class="modal fade show d-block" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">@(showEditModal ? "編輯" : "新增")地址</h5>
-                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-md-12">
-                            <label class="form-label">@TypeDisplayName <span class="text-danger">*</span></label>
-                            @if (Options.Any())
-                            {
-                                <select class="form-select" @bind="currentAddressTypeId">
-                                    @foreach (var option in Options)
-                                    {
-                                        <option value="@GetOptionId(option)">@GetOptionDisplayText(option)</option>
-                                    }
-                                </select>
-                            }
-                            else
-                            {
-                                <div class="form-control bg-light text-muted">
-                                    沒有資料，請新增@TypeDisplayName
-                                </div>
-                            }
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">詳細地址 <span class="text-danger">*</span></label>
-                            <textarea class="form-control" rows="2" @bind="currentAddress" placeholder="請輸入詳細地址"></textarea>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">備註</label>
-                            <textarea class="form-control" rows="2" @bind="currentRemarks" placeholder="請輸入備註"></textarea>
-                        </div>
-                    </div>
-                </div>
-
-                @* 元數據區段 - 顯示審計資訊 *@
-                @if (showEditModal && editingIndex >= 0 && editingIndex < Items.Count && Items[editingIndex].Id > 0)
-                {
-                    var editingItem = Items[editingIndex];
-                    <div class="modal-metadata border-top bg-light px-3 py-2">
-                        <div class="text-muted small d-flex flex-wrap gap-3">
-                            <span><strong>建立時間：</strong>@editingItem.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")</span>
-                            <span><strong>創建者：</strong>@(editingItem.CreatedBy ?? "系統")</span>
-                            @if (editingItem.UpdatedAt.HasValue)
-                            {
-                                <span><strong>最後更新時間：</strong>@editingItem.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</span>
-                                <span><strong>最後修改者：</strong>@(editingItem.UpdatedBy ?? "系統")</span>
-                            }
-                        </div>
-                    </div>
-                }
-
-                <div class="modal-footer">
-                    <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="取消" OnClick="CloseModal" />
-                    <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@(showEditModal ? "更新" : "新增")" 
-                                           OnClick="@(showEditModal ? () => UpdateItemAsync() : () => AddItemAsync())" 
-                                           IsDisabled="@(!Options.Any())" />
-                </div>
-            </div>
-        </div>
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <InteractiveTableComponent TItem="TAddressEntity" 
+                                  Items="@Items"
+                                  ColumnDefinitions="@GetColumnDefinitions()"
+                                  IsReadOnly="@IsReadOnly"
+                                  ShowRowNumbers="false"
+                                  EmptyMessage="@EmptyMessage"
+                                  ShowBuiltInActions="true"
+                                  ShowBuiltInDeleteButton="true"
+                                  OnItemDelete="@HandleItemDelete"
+                                  CustomActionsTemplate="@GetCustomActions" />
     </div>
-    <div class="modal-backdrop fade show"></div>
-}
-
+</div>
 @code {
     // ===== 基本參數 =====
     [Parameter] public List<TAddressEntity> Items { get; set; } = new();
-    [Parameter] public List<ERPCore2.Data.BaseEntity> Options { get; set; } = new(); 
-        
-    // 地址類型選項
+    [Parameter] public List<ERPCore2.Data.BaseEntity> Options { get; set; } = new(); // 地址類型選項
     [Parameter] public int ParentEntityId { get; set; }
     [Parameter] public bool IsReadOnly { get; set; } = false;
     
     // ===== 顯示設定 =====
     [Parameter] public string Title { get; set; } = "地址資訊";
+    [Parameter] public string Subtitle { get; set; } = "";
     [Parameter] public string Icon { get; set; } = "geo-alt";
     [Parameter] public string ItemDisplayName { get; set; } = "地址";
     [Parameter] public string TypeDisplayName { get; set; } = "地址類型";
-    [Parameter] public string EmptyIcon { get; set; } = "bi-geo-alt";
-    [Parameter] public string EmptyMessage { get; set; } = "尚無資料";
+    [Parameter] public string EmptyIcon { get; set; } = "geo-alt-x";
+    [Parameter] public string EmptyMessage { get; set; } = "尚未新增地址";
     
     // ===== 委派參數 - Getter =====
     [Parameter] public Func<TAddressEntity, int?> GetTypeId { get; set; } = item => null;
@@ -171,18 +64,151 @@
     [Parameter] public EventCallback<TAddressEntity> ItemAdded { get; set; }
     [Parameter] public EventCallback<TAddressEntity> ItemRemoved { get; set; }
     
-    // ===== Modal 狀態 =====
-    private bool showAddModal = false;
-    private bool showEditModal = false;
-    private int editingIndex = -1;
-    private string currentAddressTypeId = string.Empty;
-    private string currentAddress = string.Empty;
-    private string currentRemarks = string.Empty;
-    
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
+        
+        // 總是確保有一行空行可以輸入
+        EnsureOneEmptyRow();
     }
+
+    // ===== AutoEmptyRowHelper 相關方法 =====
+    
+    /// <summary>
+    /// 檢查是否為空行
+    /// 業務邏輯：只要選擇了地址類型，就算是有效的一行，不再是空行
+    /// </summary>
+    private bool IsEmptyRow(TAddressEntity item)
+    {
+        var typeId = GetTypeId(item);
+        // 檢查地址類型ID是否為空（null 或 0 都算空）
+        var isEmpty = !typeId.HasValue || typeId.Value <= 0;
+        
+        // 只要地址類型有值（大於0），就不是空行
+        // 地址類型是核心欄位，其他欄位可以後續填寫
+        return isEmpty;
+    }
+    
+    /// <summary>
+    /// 創建空的地址項目
+    /// </summary>
+    private TAddressEntity CreateEmptyItem()
+    {
+        var newItem = new TAddressEntity();
+        SetParentId(newItem, ParentEntityId);
+        return newItem;
+    }
+    
+    /// <summary>
+    /// 確保有一行空行
+    /// </summary>
+    private void EnsureOneEmptyRow()
+    {
+        AutoEmptyRowHelper.For<TAddressEntity>.EnsureOneEmptyRow(
+            Items, 
+            IsEmptyRow, 
+            CreateEmptyItem, 
+            SetParentId, 
+            ParentEntityId
+        );
+    }
+
+    // ===== InteractiveTableComponent 方法 =====
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            // 地址類型選擇欄位
+            new() 
+            { 
+                Title = TypeDisplayName, 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "25%",
+                CustomTemplate = item => 
+                {
+                    var address = (TAddressEntity)item;
+                    var typeId = GetTypeId(address);
+                    var selectedValue = typeId?.ToString() ?? "";
+                    
+                    return @<select class="form-select form-select-sm" 
+                                    value="@selectedValue"
+                                    disabled="@IsReadOnly"
+                                    @onchange="@(async (e) => await OnTypeChanged((address, e.Value)))">
+                        <option value="">請選擇地址類型</option>
+                        @foreach (var option in Options)
+                        {
+                            <option value="@GetOptionId(option)">@GetOptionDisplayText(option)</option>
+                        }
+                    </select>;
+                }
+            },
+            
+            // 詳細地址 - 文字輸入
+            new() 
+            { 
+                Title = "詳細地址", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "50%",
+                CustomTemplate = item => 
+                {
+                    var address = (TAddressEntity)item;
+                    var value = GetAddress(address) ?? "";
+                    
+                    return @<input type="text" 
+                                   class="form-control form-control-sm" 
+                                   value="@value"
+                                   placeholder="請輸入詳細地址"
+                                   disabled="@IsReadOnly"
+                                   @oninput="@(async (e) => await OnAddressChanged((address, e.Value?.ToString())))" />;
+                }
+            },
+            
+            // 備註 - 文字輸入
+            new() 
+            { 
+                Title = "備註", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "25%",
+                CustomTemplate = item => 
+                {
+                    var address = (TAddressEntity)item;
+                    var value = GetRemarks(address) ?? "";
+                    
+                    return @<input type="text" 
+                                   class="form-control form-control-sm" 
+                                   value="@value"
+                                   placeholder="備註"
+                                   disabled="@IsReadOnly"
+                                   @oninput="@(async (e) => await OnRemarksChanged((address, e.Value?.ToString())))" />;
+                }
+            }
+        };
+    }
+
+    private async Task HandleItemDelete(TAddressEntity item)
+    {
+        var index = Items.IndexOf(item);
+        await RemoveItemAsync(index);
+    }
+
+    // ===== 自定義操作按鈕 - Google 地圖查看 =====
+    private RenderFragment<TAddressEntity> GetCustomActions => item => __builder =>
+    {
+        var address = GetAddress(item);
+        var hasAddress = !string.IsNullOrWhiteSpace(address);
+        
+        <GenericButtonComponent Variant="ButtonVariant.Primary"
+                               IconClass="bi bi-geo-alt text-white"
+                               Size="ButtonSize.Large"
+                               IsDisabled="@(!hasAddress)"
+                               Title="在 Google 地圖中查看"
+                               OnClick="() => OpenGoogleMaps(item)"
+                               StopPropagation="true"
+                               CssClass="btn-square" />
+    };
     
     // ===== 內部方法 =====
 
@@ -197,140 +223,68 @@
         
         return "未設定地址";
     }
-    
-    private void ShowAddModal()
+
+    // ===== InteractiveTableComponent 事件處理 =====
+    private async Task OnTypeChanged((object item, object? value) args)
     {
-        if (IsReadOnly) return;
-        
-        ClearModalData();
-        
-        // 自動選擇地址類型
-        if (Options.Any())
+        var address = (TAddressEntity)args.item;
+        var wasEmpty = IsEmptyRow(address);
+    
+        if (args.value != null && !string.IsNullOrEmpty(args.value.ToString()) && int.TryParse(args.value.ToString(), out var typeId) && typeId > 0)
         {
-            // 優先選擇"公司地址"或類似的營業地址類型
-            var companyAddressType = Options.FirstOrDefault(o => 
-                GetOptionDisplayText(o).Contains("公司") || 
-                GetOptionDisplayText(o).Contains("營業") ||
-                GetOptionDisplayText(o).Contains("辦公"));
-            
-            if (companyAddressType != null)
+            // 檢查是否已存在相同地址類型
+            var existingTypeIds = Items.Where(i => i != address).Select(item => GetTypeId(item)).Where(id => id.HasValue && id.Value > 0);
+            if (existingTypeIds.Any(id => id!.Value == typeId))
             {
-                currentAddressTypeId = GetOptionId(companyAddressType).ToString();
+                await NotificationService.ShowErrorAsync("此地址類型已存在，請選擇其他類型");
+                SetTypeId(address, null);
             }
             else
             {
-                // 如果沒有公司地址類型，選擇第一個
-                var firstOption = Options.First();
-                currentAddressTypeId = GetOptionId(firstOption).ToString();
+                SetTypeId(address, typeId);                
+                
+                // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+                var added = AutoEmptyRowHelper.For<TAddressEntity>.HandleInputChangeAdvanced(
+                    Items, address, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, ParentEntityId);
+                
+                await ItemsChanged.InvokeAsync(Items);
             }
         }
-        
-        showAddModal = true;
-    }
-    
-    private void ShowEditModal(int index)
-    {
-        if (IsReadOnly || index < 0 || index >= Items.Count) return;
-        
-        editingIndex = index;
-        var item = Items[index];
-        
-        var typeId = GetTypeId(item);
-        currentAddressTypeId = typeId?.ToString() ?? string.Empty;
-        currentAddress = GetAddress(item) ?? string.Empty;
-        currentRemarks = GetRemarks(item) ?? string.Empty;
-        
-        showEditModal = true;
-    }
-    
-    private void CloseModal()
-    {
-        showAddModal = false;
-        showEditModal = false;
-        editingIndex = -1;
-        ClearModalData();
-    }
-    
-    private void ClearModalData()
-    {
-        currentAddressTypeId = string.Empty;
-        currentAddress = string.Empty;
-        currentRemarks = string.Empty;
-    }
-    
-    public async Task AddItemAsync()
-    {
-        if (IsReadOnly || !Options.Any()) return;
-        
-        // 檢查必要欄位
-        if (string.IsNullOrWhiteSpace(currentAddress))
+        else
         {
-            await NotificationService.ShowErrorAsync("詳細地址為必填欄位");
-            return;
+            SetTypeId(address, null);
+            await ItemsChanged.InvokeAsync(Items);
         }
-        
-        // 如果 currentAddressTypeId 為空，使用預設選中的類型
-        if (string.IsNullOrEmpty(currentAddressTypeId) && Options.Any())
-        {
-            var firstOption = Options.First();
-            currentAddressTypeId = GetOptionId(firstOption).ToString();
-        }
-        
-        if (!int.TryParse(currentAddressTypeId, out var typeId))
-        {
-            await NotificationService.ShowErrorAsync($"{TypeDisplayName}選擇錯誤");
-            return;
-        }
-        
-        var newItem = new TAddressEntity();
-        SetParentId(newItem, ParentEntityId);
-        SetTypeId(newItem, typeId);
-        SetAddress(newItem, currentAddress);
-        SetRemarks(newItem, currentRemarks);
-        
-        Items.Add(newItem);
-        
-        await ItemAdded.InvokeAsync(newItem);
-        await ItemsChanged.InvokeAsync(Items);
-        
-        CloseModal();
         StateHasChanged();
     }
-    
-    public async Task UpdateItemAsync()
+
+    private async Task OnAddressChanged((object item, string? value) args)
     {
-        if (IsReadOnly || editingIndex < 0 || editingIndex >= Items.Count) return;
-        if (!Options.Any()) return;
+        var address = (TAddressEntity)args.item;
+        var wasEmpty = IsEmptyRow(address);
         
-        // 檢查必要欄位
-        if (string.IsNullOrWhiteSpace(currentAddress))
-        {
-            await NotificationService.ShowErrorAsync("詳細地址為必填欄位");
-            return;
-        }
+        SetAddress(address, args.value);
         
-        // 如果 currentAddressTypeId 為空，使用預設選中的類型
-        if (string.IsNullOrEmpty(currentAddressTypeId) && Options.Any())
-        {
-            var firstOption = Options.First();
-            currentAddressTypeId = GetOptionId(firstOption).ToString();
-        }
-        
-        if (!int.TryParse(currentAddressTypeId, out var typeId))
-        {
-            await NotificationService.ShowErrorAsync($"{TypeDisplayName}選擇錯誤");
-            return;
-        }
-        
-        var item = Items[editingIndex];
-        
-        SetTypeId(item, typeId);
-        SetAddress(item, currentAddress);
-        SetRemarks(item, currentRemarks);
+        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+        AutoEmptyRowHelper.For<TAddressEntity>.HandleInputChangeAdvanced(
+            Items, address, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, ParentEntityId);
         
         await ItemsChanged.InvokeAsync(Items);
+        StateHasChanged();
+    }
+
+    private async Task OnRemarksChanged((object item, string? value) args)
+    {
+        var address = (TAddressEntity)args.item;
+        var wasEmpty = IsEmptyRow(address);
         
-        CloseModal();
+        SetRemarks(address, args.value);
+        
+        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+        AutoEmptyRowHelper.For<TAddressEntity>.HandleInputChangeAdvanced(
+            Items, address, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, ParentEntityId);
+        
+        await ItemsChanged.InvokeAsync(Items);
         StateHasChanged();
     }
     
@@ -340,7 +294,9 @@
         
         var removedItem = Items[index];
         
-        Items.RemoveAt(index);
+        // 使用 Helper 處理移除，自動確保空行
+        AutoEmptyRowHelper.For<TAddressEntity>.HandleItemRemove(
+            Items, removedItem, IsEmptyRow, CreateEmptyItem, SetParentId, ParentEntityId);
         
         await ItemRemoved.InvokeAsync(removedItem);
         await ItemsChanged.InvokeAsync(Items);
@@ -372,9 +328,33 @@
         }
     }
     
-    public Task<bool> ValidateAsync()
+    public async Task<bool> ValidateAsync()
     {
-        // 地址通常不強制驗證，可以根據需要自訂
-        return Task.FromResult(true);
+        var errors = new List<string>();
+        
+        // 使用 Helper 檢查是否有足夠的非空項目
+        if (!AutoEmptyRowHelper.For<TAddressEntity>.HasSufficientItems(Items, IsEmptyRow, 1))
+        {
+            errors.Add("至少需要一個地址");
+        }
+        else
+        {
+            // 取得非空的項目進行重複檢查
+            var nonEmptyItems = AutoEmptyRowHelper.For<TAddressEntity>.GetNonEmptyItems(Items, IsEmptyRow);
+            var typeIds = nonEmptyItems.Select(item => GetTypeId(item)).Where(id => id.HasValue).ToList();
+            if (typeIds.Count != typeIds.Distinct().Count())
+            {
+                errors.Add("存在重複的地址類型");
+            }
+        }
+          
+        if (errors.Any())
+        {
+            var errorMessage = string.Join("\n", errors);
+            await NotificationService.ShowErrorAsync(errorMessage);
+            return false;
+        }
+        
+        return true;
     }
 }
