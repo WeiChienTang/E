@@ -5,7 +5,24 @@
     min-height: 44px; /* 確保行有足夠高度 */
 }
 
-.interactive-table tbody td {
+.interactiv    /* 操作欄位智慧調整樣式 - 手機版也使用自動調整 */
+    .table-responsive .table .table-actions-column {
+        min-width: 100px !important; /* 增加最小寬度以確保有足夠空間容納按鈕 */
+        max-width: none !important; /* 移除最大寬度限制，允許根據內容擴展 */
+        white-space: nowrap; /* 防止內容換行 */
+        padding: 0.25rem 0.5rem !important; /* 確保有適當的內邊距 */
+        vertical-align: middle !important; /* 垂直置中 */
+        text-align: center !important; /* 水平置中 */
+        width: auto !important; /* 允許寬度自動調整 */
+        /* 移除固定寬度限制，讓組件的 GetActionsColumnStyle() 方法來控制寬度 */
+    }
+    
+    /* 當操作欄位有明確寬度設定時，在行動裝置上也要尊重該設定 */
+    .table-responsive .table .table-actions-column[style*="width"] {
+        min-width: unset !important; /* 移除最小寬度限制，完全依賴智慧調整 */
+        max-width: unset !important; /* 移除最大寬度限制 */
+        width: auto !important; /* 讓 inline style 的寬度設定生效 */
+    } td {
     vertical-align: middle; /* 所有儲存格內容垂直置中 */
     min-height: 44px; /* 確保儲存格有足夠高度 */
 }
@@ -42,15 +59,18 @@
 /* 操作欄位基礎樣式設置 - 適用於所有螢幕尺寸 */
 .table-actions-column {
     min-width: 80px; /* 基礎最小寬度以容納操作按鈕 */
+    max-width: none; /* 允許欄位根據內容擴展 */
     white-space: nowrap; /* 防止內容換行 */
     vertical-align: middle !important; /* 垂直置中 */
     text-align: center !important; /* 水平置中 */
     padding: 0.5rem 0.25rem !important; /* 適當的內邊距 */
+    width: auto; /* 允許寬度自動調整 */
 }
 
 /* 當操作欄位有明確寬度設定時，尊重該設定 */
 .table-actions-column[style*="width"] {
     min-width: unset; /* 移除最小寬度限制 */
+    max-width: unset; /* 移除最大寬度限制 */
 }
 
 /* 操作欄位內容容器樣式 */
@@ -59,6 +79,8 @@
     justify-content: center !important; /* 水平置中 */
     height: 100%; /* 占滿整個儲存格高度 */
     gap: 0.25rem; /* 按鈕間距 */
+    flex-wrap: nowrap; /* 確保按鈕不會換行 */
+    min-width: fit-content; /* 確保容器能夠適應內容大小 */
 }
 
 /* 操作欄位內按鈕樣式 */
@@ -66,6 +88,8 @@
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    white-space: nowrap; /* 確保按鈕文字不會換行 */
+    min-width: fit-content; /* 按鈕寬度適應內容 */
 }
 
 /* 手機版優化 */
@@ -83,7 +107,7 @@
         min-width: 900px; /* 進一步增加表格最小寬度以確保操作欄位有足夠空間 */
         margin-bottom: 0;
         white-space: nowrap; /* 防止文字換行 */
-        table-layout: fixed; /* 確保固定佈局讓百分比寬度生效 */
+        table-layout: auto; /* 使用自動佈局讓欄位能根據內容自動調整 */
     }
     
     /* 表格儲存格在手機版的樣式調整 */
@@ -139,9 +163,9 @@
     
     /* 操作欄位適當樣式 */
     .table-responsive .table .table-actions-column {
-        min-width: 80px !important; /* 最小寬度以容納按鈕 */
+        min-width: 120px !important; /* 增加最小寬度以確保有足夠空間容納按鈕 */
         white-space: nowrap; /* 防止內容換行 */
-        padding: 0.25rem 0.5rem !important; /* 確保有適當的內邊距 */
+        padding: 0.375rem 0.75rem !important; /* 增加左右內邊距提供更多空間 */
         vertical-align: middle !important; /* 垂直置中 */
         text-align: center !important; /* 水平置中 */
     }
@@ -151,16 +175,18 @@
         min-width: unset !important; /* 移除最小寬度限制 */
     }
     
-    /* 操作欄位內的按鈕樣式 */
+    /* 操作欄位內的按鈕樣式 - 保持彈性尺寸 */
     .table-responsive .table .table-actions-column .btn {
         padding: 0.375rem 0.5rem; /* 按鈕內邊距 */
         font-size: 0.875rem; /* 按鈕字體大小 */
         margin: 0 0.125rem; /* 按鈕間距 */
-        min-width: 32px; /* 按鈕最小寬度 */
-        min-height: 32px; /* 按鈕最小高度 */
+        min-width: 36px; /* 稍微增加按鈕最小寬度以改善觸控體驗 */
+        min-height: 36px; /* 稍微增加按鈕最小高度以改善觸控體驗 */
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        /* 讓按鈕能夠根據內容自動調整大小 */
+        width: auto; /* 自動寬度 */
     }
     
     /* 操作欄位內的圖標樣式 */
@@ -168,12 +194,14 @@
         font-size: 1rem !important; /* 確保圖標大小正常，使用 !important 覆蓋其他樣式 */
     }
     
-    /* 操作欄位內的 flex 容器樣式 */
+    /* 操作欄位內的 flex 容器樣式 - 支援智慧調整 */
     .table-responsive .table .table-actions-column .d-flex {
-        gap: 0.25rem !important; /* 確保按鈕之間有適當間距 */
+        gap: 0.375rem !important; /* 稍微增加按鈕之間的間距 */
         justify-content: center !important;
         align-items: center !important;
         height: 100% !important; /* 占滿整個儲存格高度 */
+        flex-wrap: nowrap !important; /* 確保按鈕不會換行 */
+        min-width: fit-content; /* 確保容器能夠適應內容大小 */
     }
     
     /* 為手機用戶添加滾動提示 */

@@ -1,130 +1,24 @@
+@* 聯絡方式管理組件 - 管理實體的多個聯絡方式資訊 - 使用 InteractiveTableComponent 統一UI *@
+
+@inject INotificationService NotificationService
+@using ERPCore2.Helpers
+@using ERPCore2.Components.Shared.SubCollections
 @typeparam TContactEntity where TContactEntity : ERPCore2.Data.BaseEntity, new()
 @typeparam TParentEntity where TParentEntity : ERPCore2.Data.BaseEntity
-@using ERPCore2.Data.Enums
-@using ERPCore2.Components.Shared.Headers
-@using ERPCore2.Components.Shared.Buttons
-@using ERPCore2.Services
-@inject INotificationService NotificationService
 
-<div class="table-responsive">
-    <table class="table table-sm table-hover">
-        <thead class="table-light">
-            <tr>
-                <th>聯絡資訊</th>
-                @if (!IsReadOnly)
-                {
-                    <th width="100">操作</th>
-                }
-            </tr>
-        </thead>
-        <tbody>
-                        @for (int i = 0; i < Items.Count; i++)
-                        {
-                            var index = i;
-                            var item = Items[index];
-                            <tr @onclick="() => { if (!IsReadOnly) ShowEditModal(index); }" style="@(IsReadOnly ? "cursor: default;" : "cursor: pointer;")" title="@(IsReadOnly ? "" : "點擊編輯")">
-                                <td>
-                                    <span>@GetContactDisplayText(item)</span>
-                                </td>
-                                @if (!IsReadOnly)
-                                {
-                                    <td @onclick:stopPropagation="true">
-                                        <div class="btn-group btn-group-sm">
-                                            <GenericButtonComponent Variant="ButtonVariant.OutlineDanger" Size="ButtonSize.Small"
-                                                                   IconClass="bi bi-trash" OnClick="() => RemoveItemAsync(index)" 
-                                                                   Title="移除" />
-                                        </div>
-                                    </td>
-                                }
-                            </tr>
-                        }
-                        @* 新增按鈕行 *@
-                        @if (!IsReadOnly)
-                        {
-                            <tr>
-                                <td colspan="@(IsReadOnly ? 1 : 2)" class="text-center py-3 border-top">
-                                    <GenericButtonComponent Variant="ButtonVariant.OutlinePrimary" 
-                                                           Text="@($"新增{ItemDisplayName}")" 
-                                                           IconClass="bi-plus me-1" 
-                                                           OnClick="ShowAddModal" />
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-
-@* 新增/編輯聯絡方式 Modal *@
-@if (showAddModal || showEditModal)
-{
-    <div class="modal fade show d-block" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">@(showEditModal ? "編輯" : "新增")@ItemDisplayName</h5>
-                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="form-label">@TypeDisplayName <span class="text-danger">*</span></label>
-                            @if (Options.Any())
-                            {
-                                <select class="form-select" @bind="currentContactTypeId">
-                                    @foreach (var option in Options)
-                                    {
-                                        <option value="@GetOptionId(option)">@GetOptionDisplayText(option)</option>
-                                    }
-                                </select>
-                            }
-                            else
-                            {
-                                <div class="alert alert-warning">
-                                    <i class="bi bi-exclamation-triangle me-2"></i>
-                                    請先新增聯絡類型資料
-                                </div>
-                            }
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">@ValueDisplayName <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" @bind="currentContactValue" 
-                                   placeholder="@ValuePlaceholder">
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">備註</label>
-                            <textarea class="form-control" rows="1" style="resize: vertical; min-height: calc(1.5em + 0.75rem + 2px);" @bind="currentRemarks" placeholder="請輸入備註"></textarea>
-                        </div>
-                    </div>
-                </div>
-
-                @* 元數據區段 - 顯示審計資訊 *@
-                @if (showEditModal && editingIndex >= 0 && editingIndex < Items.Count && Items[editingIndex].Id > 0)
-                {
-                    var editingItem = Items[editingIndex];
-                    <div class="modal-metadata border-top bg-light px-3 py-2">
-                        <div class="text-muted small d-flex flex-wrap gap-3">
-                            <span><strong>建立時間：</strong>@editingItem.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")</span>
-                            <span><strong>創建者：</strong>@(editingItem.CreatedBy ?? "系統")</span>
-                            @if (editingItem.UpdatedAt.HasValue)
-                            {
-                                <span><strong>最後更新時間：</strong>@editingItem.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</span>
-                                <span><strong>最後修改者：</strong>@(editingItem.UpdatedBy ?? "系統")</span>
-                            }
-                        </div>
-                    </div>
-                }
-
-                <div class="modal-footer">
-                    <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="取消" OnClick="CloseModal" />
-                    <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@(showEditModal ? "更新" : "新增")" 
-                                           OnClick="@(showEditModal ? () => UpdateItemAsync() : () => AddItemAsync())" 
-                                           IsDisabled="@(!Options.Any())" />
-                </div>
-            </div>
-        </div>
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <InteractiveTableComponent TItem="TContactEntity" 
+                                  Items="@Items"
+                                  ColumnDefinitions="@GetColumnDefinitions()"
+                                  IsReadOnly="@IsReadOnly"
+                                  ShowRowNumbers="false"
+                                  EmptyMessage="@EmptyMessage"
+                                  ShowBuiltInActions="true"
+                                  ShowBuiltInDeleteButton="true"
+                                  OnItemDelete="@HandleItemDelete" />
     </div>
-    <div class="modal-backdrop fade show"></div>
-}
+</div>
 
 @code {
     // ===== 基本參數 =====
@@ -135,13 +29,14 @@
     
     // ===== 顯示設定 =====
     [Parameter] public string Title { get; set; } = "聯絡方式";
+    [Parameter] public string Subtitle { get; set; } = "";
     [Parameter] public string Icon { get; set; } = "telephone";
     [Parameter] public string ItemDisplayName { get; set; } = "聯絡方式";
     [Parameter] public string TypeDisplayName { get; set; } = "聯絡類型";
     [Parameter] public string ValueDisplayName { get; set; } = "聯絡內容";
     [Parameter] public string ValuePlaceholder { get; set; } = "請輸入聯絡內容";
-    [Parameter] public string EmptyIcon { get; set; } = "bi-telephone-x";
-    [Parameter] public string EmptyMessage { get; set; } = "尚無資料";
+    [Parameter] public string EmptyIcon { get; set; } = "telephone-x";
+    [Parameter] public string EmptyMessage { get; set; } = "尚未新增聯絡方式";
     
     // ===== 委派參數 - Getter =====
     [Parameter] public Func<TContactEntity, int?> GetTypeId { get; set; } = item => null;
@@ -172,171 +67,222 @@
     [Parameter] public EventCallback<TContactEntity> ItemRemoved { get; set; }
     [Parameter] public EventCallback<TContactEntity> PrimaryChanged { get; set; }
     
-    // ===== Modal 狀態 =====
-    private bool showAddModal = false;
-    private bool showEditModal = false;
-    private int editingIndex = -1;
-    private string currentContactTypeId = string.Empty;
-    private string currentContactValue = string.Empty;
-    private string currentRemarks = string.Empty;
-    
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
+        
+        var emptyCount = Items.Count(IsEmptyRow);
+        
+        // 總是確保有一行空行可以輸入
+        // 不論是否已有資料，都應該保持有空行供使用者新增
+        EnsureOneEmptyRow();
+        
+        var emptyCountAfter = Items.Count(IsEmptyRow);
+    }
+
+    // ===== AutoEmptyRowHelper 相關方法 =====
+    
+    /// <summary>
+    /// 檢查是否為空行
+    /// 業務邏輯：只要選擇了聯絡類型或輸入了聯絡內容，就算是有效的一行，不再是空行
+    /// </summary>
+    private bool IsEmptyRow(TContactEntity item)
+    {
+        var typeId = GetTypeId(item);
+        var contactValue = GetContactValue(item);
+        
+        // 檢查聯絡類型或聯絡內容是否有值
+        var hasType = typeId.HasValue && typeId.Value > 0;
+        var hasValue = !string.IsNullOrWhiteSpace(contactValue);
+        
+        // 只要有其中一個欄位有值，就不是空行
+        return !hasType && !hasValue;
+    }
+    
+    /// <summary>
+    /// 創建空的聯絡方式項目
+    /// </summary>
+    private TContactEntity CreateEmptyItem()
+    {
+        var newItem = new TContactEntity();
+        SetParentId(newItem, ParentEntityId);
+        return newItem;
+    }
+    
+    /// <summary>
+    /// 確保有一行空行
+    /// </summary>
+    private void EnsureOneEmptyRow()
+    {
+        AutoEmptyRowHelper.For<TContactEntity>.EnsureOneEmptyRow(
+            Items, 
+            IsEmptyRow, 
+            CreateEmptyItem, 
+            SetParentId, 
+            ParentEntityId
+        );
+    }
+
+    // ===== InteractiveTableComponent 方法 =====
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            // 聯絡類型選擇欄位
+            new() 
+            { 
+                Title = TypeDisplayName, 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "25%",
+                CustomTemplate = item => 
+                {
+                    var contact = (TContactEntity)item;
+                    var typeId = GetTypeId(contact);
+                    var selectedValue = typeId?.ToString() ?? "";
+                    
+                    return @<select class="form-select form-select-sm" 
+                                    value="@selectedValue"
+                                    disabled="@IsReadOnly"
+                                    @onchange="@(async (e) => await OnTypeChanged((contact, e.Value)))">
+                        <option value="">請選擇類型</option>
+                        @foreach (var option in Options)
+                        {
+                            <option value="@GetOptionId(option)">@GetOptionDisplayText(option)</option>
+                        }
+                    </select>;
+                }
+            },
+            
+            // 聯絡內容 - 文字輸入
+            new() 
+            { 
+                Title = ValueDisplayName, 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "35%",
+                CustomTemplate = item => 
+                {
+                    var contact = (TContactEntity)item;
+                    var value = GetContactValue(contact) ?? "";
+                    
+                    return @<input type="text" 
+                                   class="form-control form-control-sm" 
+                                   value="@value"
+                                   placeholder="@ValuePlaceholder"
+                                   disabled="@IsReadOnly"
+                                   @oninput="@(async (e) => await OnContactValueChanged((contact, e.Value?.ToString())))" />;
+                }
+            },
+            
+            // 備註 - 文字輸入
+            new() 
+            { 
+                Title = "備註", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "40%",
+                CustomTemplate = item => 
+                {
+                    var contact = (TContactEntity)item;
+                    var value = GetRemarks(contact) ?? "";
+                    
+                    return @<input type="text" 
+                                   class="form-control form-control-sm" 
+                                   value="@value"
+                                   placeholder="請輸入備註"
+                                   disabled="@IsReadOnly"
+                                   @oninput="@(async (e) => await OnRemarksChanged((contact, e.Value?.ToString())))" />;
+                }
+            }
+        };
+    }
+
+    private async Task HandleItemDelete(TContactEntity item)
+    {
+        var index = Items.IndexOf(item);
+        await RemoveItemAsync(index);
+    }
+
+    private Task OnValidationFailed((TContactEntity item, string propertyName, string? errorMessage) args)
+    {
+        // 不再需要此方法，因為驗證已移至自訂模板中
+        return Task.CompletedTask;
+    }
+
+    private Task HandleRowClick(TContactEntity item)
+    {
+        // 不再需要此方法，因為直接在表格上編輯
+        return Task.CompletedTask;
     }
     
     // ===== 內部方法 =====
 
-    private string GetContactDisplayText(TContactEntity item)
+    private string GetTypeDisplayText(TContactEntity item)
     {
-        var contactValue = GetContactValue(item);
         var typeId = GetTypeId(item);
-        
-        if (!string.IsNullOrWhiteSpace(contactValue))
+        if (typeId.HasValue)
         {
-            if (typeId.HasValue)
+            var type = Options.FirstOrDefault(o => GetOptionId(o) == typeId.Value);
+            if (type != null)
             {
-                var typeOption = Options.FirstOrDefault(o => GetOptionId(o) == typeId.Value);
-                if (typeOption != null)
-                {
-                    var typeName = GetOptionDisplayText(typeOption);
-                    return $"{typeName}: {contactValue}";
-                }
+                return GetOptionDisplayText(type);
             }
-            return contactValue;
         }
-        
-        return "未設定聯絡資訊";
+        return "未知類型";
     }
-    
-    private void ShowAddModal()
+
+    // ===== InteractiveTableComponent 事件處理 =====
+    private async Task OnTypeChanged((object item, object? value) args)
     {
-        if (IsReadOnly) return;
+        var contact = (TContactEntity)args.item;
+        var wasEmpty = IsEmptyRow(contact);
         
-        ClearModalData();
-        
-        // 設定預設聯絡類型：優先選擇電話，否則選第一個
-        if (Options.Any())
+        if (args.value != null && !string.IsNullOrEmpty(args.value.ToString()) && int.TryParse(args.value.ToString(), out var typeId) && typeId > 0)
         {
-            var phoneOption = Options.FirstOrDefault(o => 
-                GetOptionDisplayText(o).Contains("電話") || 
-                GetOptionDisplayText(o).Contains("Phone") ||
-                GetOptionDisplayText(o).ToLower().Contains("tel"));
+            SetTypeId(contact, typeId);
             
-            if (phoneOption != null)
-            {
-                currentContactTypeId = GetOptionId(phoneOption).ToString();
-            }
-            else
-            {
-                currentContactTypeId = GetOptionId(Options.First()).ToString();
-            }
+            // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+            var added = AutoEmptyRowHelper.For<TContactEntity>.HandleInputChangeAdvanced(
+                Items, contact, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, ParentEntityId);
+            
+            await ItemsChanged.InvokeAsync(Items);
         }
-        
-        showAddModal = true;
-    }
-    
-    private void ShowEditModal(int index)
-    {
-        if (IsReadOnly || index < 0 || index >= Items.Count) return;
-        
-        editingIndex = index;
-        var item = Items[index];
-        
-        var typeId = GetTypeId(item);
-        currentContactTypeId = typeId?.ToString() ?? string.Empty;
-        currentContactValue = GetContactValue(item) ?? string.Empty;
-        currentRemarks = GetRemarks(item) ?? string.Empty;
-        
-        showEditModal = true;
-    }
-    
-    private void CloseModal()
-    {
-        showAddModal = false;
-        showEditModal = false;
-        editingIndex = -1;
-        ClearModalData();
-    }
-    
-    private void ClearModalData()
-    {
-        currentContactTypeId = string.Empty;
-        currentContactValue = string.Empty;
-        currentRemarks = string.Empty;
-    }
-    
-    public async Task AddItemAsync()
-    {
-        if (IsReadOnly || !Options.Any()) return;
-        
-        // 檢查必要欄位
-        if (string.IsNullOrWhiteSpace(currentContactValue))
+        else
         {
-            await NotificationService.ShowErrorAsync($"{ValueDisplayName}為必填欄位");
-            return;
+            SetTypeId(contact, null);
+            await ItemsChanged.InvokeAsync(Items);
         }
-        
-        // 如果沒有設定類型ID，使用第一個選項
-        if (string.IsNullOrEmpty(currentContactTypeId) && Options.Any())
-        {
-            currentContactTypeId = GetOptionId(Options.First()).ToString();
-        }
-        
-        if (!int.TryParse(currentContactTypeId, out var typeId)) 
-        {
-            await NotificationService.ShowErrorAsync($"{TypeDisplayName}選擇錯誤");
-            return;
-        }
-        
-        var newItem = new TContactEntity();
-        SetParentId(newItem, ParentEntityId);
-        SetTypeId(newItem, typeId);
-        SetContactValue(newItem, currentContactValue);
-        SetRemarks(newItem, currentRemarks);
-        
-        Items.Add(newItem);
-        
-        await ItemAdded.InvokeAsync(newItem);
-        await ItemsChanged.InvokeAsync(Items);
-        
-        CloseModal();
         StateHasChanged();
     }
-    
-    public async Task UpdateItemAsync()
+
+    private async Task OnContactValueChanged((object item, string? value) args)
     {
-        if (IsReadOnly || editingIndex < 0 || editingIndex >= Items.Count) return;
-        if (!Options.Any()) return;
+        var contact = (TContactEntity)args.item;
+        var wasEmpty = IsEmptyRow(contact);
         
-        // 檢查必要欄位
-        if (string.IsNullOrWhiteSpace(currentContactValue))
-        {
-            await NotificationService.ShowErrorAsync($"{ValueDisplayName}為必填欄位");
-            return;
-        }
+        SetContactValue(contact, args.value ?? "");
         
-        // 如果沒有設定類型ID，使用第一個選項
-        if (string.IsNullOrEmpty(currentContactTypeId) && Options.Any())
-        {
-            currentContactTypeId = GetOptionId(Options.First()).ToString();
-        }
-        
-        if (!int.TryParse(currentContactTypeId, out var typeId))
-        {
-            await NotificationService.ShowErrorAsync($"{TypeDisplayName}選擇錯誤");
-            return;
-        }
-        
-        var item = Items[editingIndex];
-        
-        SetTypeId(item, typeId);
-        SetContactValue(item, currentContactValue);
-        SetRemarks(item, currentRemarks);
+        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+        AutoEmptyRowHelper.For<TContactEntity>.HandleInputChangeAdvanced(
+            Items, contact, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, ParentEntityId);
         
         await ItemsChanged.InvokeAsync(Items);
+        StateHasChanged();
+    }
+
+    private async Task OnRemarksChanged((object item, string? value) args)
+    {
+        var contact = (TContactEntity)args.item;
+        var wasEmpty = IsEmptyRow(contact);
         
-        CloseModal();
+        SetRemarks(contact, args.value);
+        
+        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+        AutoEmptyRowHelper.For<TContactEntity>.HandleInputChangeAdvanced(
+            Items, contact, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, ParentEntityId);
+        
+        await ItemsChanged.InvokeAsync(Items);
         StateHasChanged();
     }
     
@@ -346,32 +292,44 @@
         
         var removedItem = Items[index];
         
-        Items.RemoveAt(index);
+        // 使用 Helper 處理移除，自動確保空行
+        AutoEmptyRowHelper.For<TContactEntity>.HandleItemRemove(
+            Items, removedItem, IsEmptyRow, CreateEmptyItem, SetParentId, ParentEntityId);
         
         await ItemRemoved.InvokeAsync(removedItem);
         await ItemsChanged.InvokeAsync(Items);
         StateHasChanged();
     }
     
-    
     public async Task<bool> ValidateAsync()
     {
         var errors = new List<string>();
         
-        for (int i = 0; i < Items.Count; i++)
+        // 使用 Helper 檢查是否有足夠的非空項目
+        if (!AutoEmptyRowHelper.For<TContactEntity>.HasSufficientItems(Items, IsEmptyRow, 1))
         {
-            var item = Items[i];
-            var contactValue = GetContactValue(item);
-            var typeId = GetTypeId(item);
+            errors.Add("至少需要一個聯絡方式");
+        }
+        else
+        {
+            // 取得非空的項目進行詳細驗證
+            var nonEmptyItems = AutoEmptyRowHelper.For<TContactEntity>.GetNonEmptyItems(Items, IsEmptyRow);
             
-            if (string.IsNullOrWhiteSpace(contactValue))
+            for (int i = 0; i < nonEmptyItems.Count; i++)
             {
-                errors.Add($"{ItemDisplayName} #{i + 1} 的{ValueDisplayName}為必填");
-            }
-            
-            if (!typeId.HasValue)
-            {
-                errors.Add($"{ItemDisplayName} #{i + 1} 的{TypeDisplayName}為必填");
+                var item = nonEmptyItems[i];
+                var contactValue = GetContactValue(item);
+                var typeId = GetTypeId(item);
+                
+                if (string.IsNullOrWhiteSpace(contactValue))
+                {
+                    errors.Add($"{ItemDisplayName} #{i + 1} 的{ValueDisplayName}為必填");
+                }
+                
+                if (!typeId.HasValue || typeId.Value <= 0)
+                {
+                    errors.Add($"{ItemDisplayName} #{i + 1} 的{TypeDisplayName}為必填");
+                }
             }
         }
           
