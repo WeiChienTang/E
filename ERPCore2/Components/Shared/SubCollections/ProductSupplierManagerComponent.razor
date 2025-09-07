@@ -188,12 +188,13 @@
                 CustomTemplate = item => 
                 {
                     var productSupplier = (TProductSupplierEntity)item;
-                    var value = GetSupplierPrice(productSupplier)?.ToString("F2") ?? "";
+                    var value = GetSupplierPrice(productSupplier)?.ToString("F0") ?? "";
                     
                     return @<input type="number" 
                                    class="form-control form-control-sm" 
                                    value="@value"
                                    min="0"
+                                   step="1"
                                    disabled="@IsReadOnly"
                                    @oninput="@(async (e) => await OnSupplierPriceChanged((productSupplier, e.Value?.ToString())))" />;
                 }
@@ -376,9 +377,9 @@
         {
             SetSupplierPrice(productSupplier, null);
         }
-        else if (decimal.TryParse(args.value, out var price))
+        else if (int.TryParse(args.value, out var price))
         {
-            SetSupplierPrice(productSupplier, price);
+            SetSupplierPrice(productSupplier, (decimal)price);
         }
         
         // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
