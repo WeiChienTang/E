@@ -1,8 +1,6 @@
 @* 採購單商品管理組件 - 使用 InteractiveTableComponent 統一UI 並整合自動空行功能 *@
 
 @inject IProductService ProductService
-@inject IWarehouseService WarehouseService
-@inject IWarehouseLocationService WarehouseLocationService
 @inject INotificationService NotificationService
 @using ERPCore2.Helpers
 @typeparam TMainEntity where TMainEntity : BaseEntity
@@ -60,8 +58,7 @@ else
     [Parameter] public string RemarksPropertyName { get; set; } = "Remarks";
     [Parameter] public string? UnitIdPropertyName { get; set; }
     [Parameter] public string? IsReceivingCompletedPropertyName { get; set; }
-    [Parameter] public string? WarehouseIdPropertyName { get; set; }
-    [Parameter] public string? WarehouseLocationIdPropertyName { get; set; }
+
     
     // ===== 顯示控制參數 =====
     [Parameter] public bool ShowIsReceivingCompleted { get; set; } = false;
@@ -86,14 +83,12 @@ else
 
     private List<ProductItem> ProductItems { get; set; } = new List<ProductItem>();
     private List<Product> AvailableProducts { get; set; } = new List<Product>();
-    private List<Warehouse> Warehouses { get; set; } = new List<Warehouse>();
     private int? _previousSelectedSupplierId = null;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadAvailableProductsAsync();
-        await LoadWarehousesAsync();
-        await LoadExistingDetailsAsync();
+        LoadExistingDetailsAsync();
         EnsureOneEmptyRow();
     }
 
@@ -109,7 +104,7 @@ else
             
             // 如果更換供應商，需要清空現有選項並重新載入
             ProductItems.Clear();
-            await LoadExistingDetailsAsync();
+            LoadExistingDetailsAsync();
             return; // 供應商變更時已經處理完畢，直接返回
         }
         
@@ -241,62 +236,6 @@ else
             }
         });
 
-        // 倉庫選擇欄位
-        columns.Add(new() 
-        { 
-            Title = "倉庫", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
-            Width = "12%",
-            CustomTemplate = item => 
-            {
-                var productItem = (ProductItem)item;
-                var selectedValue = productItem.WarehouseId.ToString();
-                
-                return @<select class="form-select form-select-sm"
-                                value="@selectedValue"
-                                @onchange="(e) => OnWarehouseChanged(productItem, int.TryParse(e.Value?.ToString(), out var warehouseId) ? warehouseId : 0)"
-                                disabled="@IsReadOnly">
-                    <option value="0">請選擇倉庫</option>
-                    @if (Warehouses != null)
-                    {
-                        @foreach (var warehouse in Warehouses)
-                        {
-                            <option value="@warehouse.Id">@warehouse.Name</option>
-                        }
-                    }
-                </select>;
-            }
-        });
-
-        // 庫位選擇欄位
-        columns.Add(new() 
-        { 
-            Title = "庫位", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
-            Width = "12%",
-            CustomTemplate = item => 
-            {
-                var productItem = (ProductItem)item;
-                var selectedValue = productItem.WarehouseLocationId.ToString();
-                
-                return @<select class="form-select form-select-sm"
-                                value="@selectedValue"
-                                @onchange="(e) => OnWarehouseLocationChanged(productItem, int.TryParse(e.Value?.ToString(), out var locationId) ? locationId : 0)"
-                                disabled="@(IsReadOnly || productItem.WarehouseId == 0)">
-                    <option value="0">請選擇庫位</option>
-                    @if (productItem.AvailableWarehouseLocations != null)
-                    {
-                        @foreach (var location in productItem.AvailableWarehouseLocations)
-                        {
-                            <option value="@location.Id">@location.Name</option>
-                        }
-                    }
-                </select>;
-            }
-        });
-
         // 完成進貨欄位 (條件顯示)
         if (ShowIsReceivingCompleted)
         {
@@ -393,24 +332,9 @@ else
     }
 
     /// <summary>
-    /// 載入倉庫資料
-    /// </summary>
-    private async Task LoadWarehousesAsync()
-    {
-        try
-        {
-            Warehouses = await WarehouseService.GetAllAsync();
-        }
-        catch (Exception)
-        {
-            Warehouses = new List<Warehouse>();
-        }
-    }
-
-    /// <summary>
     /// 從現有明細資料載入到 ProductItems
     /// </summary>
-    private async Task LoadExistingDetailsAsync()
+    private void LoadExistingDetailsAsync()
     {
         if (ExistingDetails?.Any() != true) 
         {
@@ -438,29 +362,8 @@ else
                     Remarks = GetPropertyValue<string>(detail, RemarksPropertyName) ?? string.Empty,
                     IsReceivingCompleted = !string.IsNullOrEmpty(IsReceivingCompletedPropertyName) ? 
                         Convert.ToBoolean(GetPropertyValue<object>(detail, IsReceivingCompletedPropertyName) ?? false) : false,
-                    ExistingDetailEntity = detail,
-                    WarehouseId = !string.IsNullOrEmpty(WarehouseIdPropertyName) ? 
-                        Convert.ToInt32(GetPropertyValue<object>(detail, WarehouseIdPropertyName) ?? 0) : 0,
-                    WarehouseLocationId = !string.IsNullOrEmpty(WarehouseLocationIdPropertyName) ? 
-                        Convert.ToInt32(GetPropertyValue<object>(detail, WarehouseLocationIdPropertyName) ?? 0) : 0
+                    ExistingDetailEntity = detail
                 };
-                
-                // 如果有倉庫ID，載入對應的庫位列表
-                if (item.WarehouseId > 0)
-                {
-                    try
-                    {
-                        var result = await WarehouseLocationService.GetByWarehouseIdAsync(item.WarehouseId);
-                        if (result.IsSuccess && result.Data != null)
-                        {
-                            item.AvailableWarehouseLocations = result.Data.ToList();
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        item.AvailableWarehouseLocations = new List<WarehouseLocation>();
-                    }
-                }
                 
                 ProductItems.Add(item);
             }
@@ -507,15 +410,6 @@ else
             if (!string.IsNullOrEmpty(IsReceivingCompletedPropertyName))
             {
                 SetPropertyValue(detail, IsReceivingCompletedPropertyName, item.IsReceivingCompleted);
-            }
-            
-            if (!string.IsNullOrEmpty(WarehouseIdPropertyName))
-            {
-                SetPropertyValue(detail, WarehouseIdPropertyName, item.WarehouseId);
-            }
-            if (!string.IsNullOrEmpty(WarehouseLocationIdPropertyName))
-            {
-                SetPropertyValue(detail, WarehouseLocationIdPropertyName, item.WarehouseLocationId);
             }
             
             details.Add(detail);
@@ -715,57 +609,6 @@ else
         StateHasChanged();
     }
 
-    private async Task OnWarehouseChanged(ProductItem item, int warehouseId)
-    {
-        var wasEmpty = IsEmptyRow(item);
-        
-        item.WarehouseId = warehouseId;
-        item.WarehouseLocationId = 0;
-        
-        if (warehouseId > 0)
-        {
-            try
-            {
-                var result = await WarehouseLocationService.GetByWarehouseIdAsync(warehouseId);
-                if (result.IsSuccess && result.Data != null)
-                {
-                    item.AvailableWarehouseLocations = result.Data.ToList();
-                }
-                else
-                {
-                    item.AvailableWarehouseLocations = new List<WarehouseLocation>();
-                }
-            }
-            catch (Exception)
-            {
-                item.AvailableWarehouseLocations = new List<WarehouseLocation>();
-            }
-        }
-        else
-        {
-            item.AvailableWarehouseLocations = new List<WarehouseLocation>();
-        }
-        
-        AutoEmptyRowHelper.ForAny<ProductItem>.HandleInputChange(
-            ProductItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
-        await NotifyDetailsChanged();
-        StateHasChanged();
-    }
-
-    private async Task OnWarehouseLocationChanged(ProductItem item, int locationId)
-    {
-        var wasEmpty = IsEmptyRow(item);
-        
-        item.WarehouseLocationId = locationId;
-        
-        AutoEmptyRowHelper.ForAny<ProductItem>.HandleInputChange(
-            ProductItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
-        await NotifyDetailsChanged();
-        StateHasChanged();
-    }
-
     private async Task OnIsReceivingCompletedChanged(ProductItem item)
     {
         var wasEmpty = IsEmptyRow(item);
@@ -853,9 +696,5 @@ else
         public int SelectedIndex { get; set; } = -1;
         public List<Product> FilteredProducts { get; set; } = new List<Product>();
         public TDetailEntity? ExistingDetailEntity { get; set; }
-        
-        public int WarehouseId { get; set; } = 0;
-        public int WarehouseLocationId { get; set; } = 0;
-        public List<WarehouseLocation> AvailableWarehouseLocations { get; set; } = new List<WarehouseLocation>();
     }
 }

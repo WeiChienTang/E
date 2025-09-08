@@ -9,9 +9,6 @@
 @inject ActionButtonHelper ActionButtonHelper
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@using ERPCore2.Helpers
-@using ERPCore2.Components.Shared.SubCollections
-@using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
 
 <GenericEditModalComponent TEntity="PurchaseOrder" 
@@ -50,7 +47,6 @@
                           OnApprove="@HandlePurchaseOrderApprove"
                           OnReject="@HandlePurchaseOrderReject"
                           GetApprovalStatus="@GetPurchaseOrderApprovalStatus"
-                          GetApprovalHistory="@GetPurchaseOrderApprovalHistory"
                           >
 
 </GenericEditModalComponent>

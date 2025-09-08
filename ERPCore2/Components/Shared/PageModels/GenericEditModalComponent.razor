@@ -36,6 +36,78 @@
                                           Title="關閉" />
                 </div>
 
+                @* Modal Actions - 按鈕區塊移到頂部 *@
+                <div class="modal-footer border-bottom border-top-0 d-flex align-items-center">
+                    @* 左側：審核狀態顯示 *@
+                    <div class="flex-grow-1">
+                        @if (ShowApprovalSection && !IsLoading && Entity != null && Entity.Id > 0 && !string.IsNullOrEmpty(ApprovalStatusText))
+                        {
+                            <span class="badge bg-info me-2">
+                                <i class="fas fa-info-circle me-1"></i>@ApprovalStatusText
+                            </span>
+                        }
+                    </div>
+                    
+                    @* 中央：審核操作按鈕 *@
+                    @if (ShowApprovalSection && !IsLoading && Entity != null && Entity.Id > 0)
+                    {
+                        @* 有權限者才能看到審核通過/駁回按鈕 *@
+                        @if (!IsEntityApproved())
+                        {
+                            <PermissionCheck Permission="@ApprovalPermission">
+                                <div class="d-flex gap-2 me-3">
+                                    <GenericButtonComponent Text="通過" 
+                                                          Variant="ButtonVariant.Success" 
+                                                          OnClick="HandleApprove" 
+                                                          IsDisabled="@(IsSubmitting || IsApproving || IsRejecting)"
+                                                          IsLoading="@IsApproving" />
+                                    <GenericButtonComponent Text="駁回" 
+                                                          Variant="ButtonVariant.Danger" 
+                                                          OnClick="HandleReject" 
+                                                          IsDisabled="@(IsSubmitting || IsApproving || IsRejecting)"
+                                                          IsLoading="@IsRejecting" />
+                                </div>
+                            </PermissionCheck>
+                        }
+                    }
+                    
+                    @* 右側：原有的主要操作按鈕 *@
+                    <div class="d-flex gap-2">
+                        @* 根據審核狀態動態顯示按鈕 *@
+                        @if (IsEntityApproved())
+                        {
+                            @* 已審核狀態：只顯示完成按鈕 *@
+                            <GenericButtonComponent Text="完成" 
+                                                  Variant="ButtonVariant.Primary" 
+                                                  OnClick="HandleApprovedEntityComplete" 
+                                                  IsDisabled="@IsSubmitting" />
+                        }
+                        else
+                        {
+                            @* 未審核狀態：顯示取消和儲存按鈕 *@
+                            <GenericButtonComponent Text="@CancelButtonText" 
+                                                  Variant="ButtonVariant.Secondary" 
+                                                  OnClick="HandleCancel" 
+                                                  IsDisabled="@IsSubmitting" />
+                            <GenericButtonComponent Text="@SaveButtonText" 
+                                                  Variant="ButtonVariant.Primary" 
+                                                  OnClick="HandleSave" 
+                                                  IsDisabled="@(IsSubmitting || IsLoading)" 
+                                                  IsLoading="@IsSubmitting" />
+                        }
+                        
+                        @* 列印按鈕：無論審核狀態如何都顯示 *@
+                        @if (ShowPrintButton)
+                        {
+                            <GenericButtonComponent Text="@PrintButtonText" 
+                                                  Variant="ButtonVariant.Info" 
+                                                  IconClass="fas fa-print"
+                                                  OnClick="HandlePrint" 
+                                                  IsDisabled="@(IsSubmitting || IsLoading)" />
+                        }
+                    </div>
+                </div>
+
                 @* Modal Body *@
                 <div class="modal-body edit-modal-body">
                     @if (IsLoading)
@@ -126,101 +198,7 @@
                     </div>
                 }
 
-                @* 審核區段 - 在元數據和Footer之間 *@
-                @if (ShowApprovalSection && !IsLoading && Entity != null && Entity.Id > 0)
-                {
-                    <div class="modal-approval-section border-top bg-warning-subtle px-3 py-3">
-                        <div class="row align-items-center">
-                            <div class="col-md-8">
-                                <h6 class="mb-2">
-                                    <i class="fas fa-check-circle me-2"></i>審核作業
-                                </h6>
-                                @if (!string.IsNullOrEmpty(ApprovalStatusText))
-                                {
-                                    <div class="approval-status mb-2">
-                                        <span class="badge bg-info">@ApprovalStatusText</span>
-                                    </div>
-                                }
-                                @if (ApprovalHistoryList.Any())
-                                {
-                                    <div class="approval-history">
-                                        <small class="text-muted">
-                                            <strong>審核記錄：</strong>
-                                            @foreach (var history in ApprovalHistoryList.Take(3))
-                                            {
-                                                <div>@history</div>
-                                            }
-                                            @if (ApprovalHistoryList.Count > 3)
-                                            {
-                                                <div class="text-primary">...等 @ApprovalHistoryList.Count 筆記錄</div>
-                                            }
-                                        </small>
-                                    </div>
-                                }
-                            </div>
-                            @if (!IsEntityApproved())
-                            {
-                                <PermissionCheck Permission="@ApprovalPermission">
-                                    <div class="col-md-4 text-end">
-                                        <div class="approval-actions">
-                                            <GenericButtonComponent Text="@ApproveButtonText" 
-                                                                Variant="ButtonVariant.Success" 
-                                                                IconClass="fas fa-check"
-                                                                Size="ButtonSize.Small"
-                                                                OnClick="HandleApprove" 
-                                                                IsDisabled="@(IsSubmitting || IsApproving || IsRejecting)"
-                                                                IsLoading="@IsApproving" />
-                                            <GenericButtonComponent Text="@RejectButtonText" 
-                                                                Variant="ButtonVariant.Danger" 
-                                                                IconClass="fas fa-times"
-                                                                Size="ButtonSize.Small"
-                                                                OnClick="HandleReject" 
-                                                                IsDisabled="@(IsSubmitting || IsApproving || IsRejecting)"
-                                                                IsLoading="@IsRejecting"
-                                                                CssClass="ms-2" />
-                                        </div>
-                                    </div>
-                                </PermissionCheck>
-                            }
-                        </div>
-                    </div>
-                }
-                
-                @* Modal Footer *@
-                <div class="modal-footer">
-                    @* 根據審核狀態動態顯示按鈕 *@
-                    @if (IsEntityApproved())
-                    {
-                        @* 已審核狀態：只顯示完成按鈕 *@
-                        <GenericButtonComponent Text="完成" 
-                                              Variant="ButtonVariant.Primary" 
-                                              OnClick="HandleApprovedEntityComplete" 
-                                              IsDisabled="@IsSubmitting" />
-                    }
-                    else
-                    {
-                        @* 未審核狀態：顯示取消和儲存按鈕 *@
-                        <GenericButtonComponent Text="@CancelButtonText" 
-                                              Variant="ButtonVariant.Secondary" 
-                                              OnClick="HandleCancel" 
-                                              IsDisabled="@IsSubmitting" />
-                        <GenericButtonComponent Text="@SaveButtonText" 
-                                              Variant="ButtonVariant.Primary" 
-                                              OnClick="HandleSave" 
-                                              IsDisabled="@(IsSubmitting || IsLoading)" 
-                                              IsLoading="@IsSubmitting" />
-                    }
-                    
-                    @* 列印按鈕：無論審核狀態如何都顯示 *@
-                    @if (ShowPrintButton)
-                    {
-                        <GenericButtonComponent Text="@PrintButtonText" 
-                                              Variant="ButtonVariant.Info" 
-                                              IconClass="fas fa-print"
-                                              OnClick="HandlePrint" 
-                                              IsDisabled="@(IsSubmitting || IsLoading)" />
-                    }
-                </div>
+
             </div>
         </div>
     </div>
@@ -345,9 +323,6 @@
     [Parameter] public Func<Task<bool>>? OnApprove { get; set; }
     [Parameter] public Func<Task<bool>>? OnReject { get; set; }
     [Parameter] public Func<Task<string?>>? GetApprovalStatus { get; set; }
-    [Parameter] public Func<Task<List<string>>>? GetApprovalHistory { get; set; }
-    [Parameter] public string ApproveButtonText { get; set; } = "審核通過";
-    [Parameter] public string RejectButtonText { get; set; } = "審核駁回";
     
     // ===== 內部狀態 =====
     
@@ -363,7 +338,6 @@
     private bool IsApproving { get; set; } = false;
     private bool IsRejecting { get; set; } = false;
     private string? ApprovalStatusText { get; set; }
-    private List<string> ApprovalHistoryList { get; set; } = new();
     
     // AutoComplete 搜尋關鍵字追蹤
     private readonly Dictionary<string, string> _lastSearchTerms = new();
@@ -679,12 +653,6 @@
             {
                 ApprovalStatusText = await GetApprovalStatus();
             }
-
-            // 載入審核歷史
-            if (GetApprovalHistory != null)
-            {
-                ApprovalHistoryList = await GetApprovalHistory();
-            }
         }
         catch (Exception ex)
         {
@@ -884,6 +852,8 @@
         }
     }
     
+
+    
     private async Task CloseModal()
     {
         await CleanupTabNavigationAsync();
@@ -1005,7 +975,6 @@
         IsApproving = false;
         IsRejecting = false;
         ApprovalStatusText = null;
-        ApprovalHistoryList.Clear();
     }
     
     // ===== 通知方法 =====
