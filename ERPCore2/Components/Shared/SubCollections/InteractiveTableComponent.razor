@@ -179,8 +179,8 @@
                                         
                                         @if (showDropdown && filteredItems.Any() && !isDisabled)
                                         {
-                                            <div class="dropdown-menu show position-fixed w-auto shadow" 
-                                                 style="z-index: 9999; max-height: @column.DropdownMaxHeight; overflow-y: auto; overflow-x: hidden; border: 1px solid #dee2e6; min-width: @column.DropdownMinWidth; max-width: @column.DropdownMaxWidth;"
+                                            <div class="dropdown-menu show position-absolute w-auto shadow" 
+                                                 style="top: 100%; left: 0; z-index: 9999; max-height: @column.DropdownMaxHeight; overflow-y: auto; overflow-x: hidden; border: 1px solid #dee2e6; min-width: @column.DropdownMinWidth; max-width: @column.DropdownMaxWidth;"
                                                  @onmousedown:preventDefault="true">
                                                 @{
                                                     var dropdownItemIndex = 0;
