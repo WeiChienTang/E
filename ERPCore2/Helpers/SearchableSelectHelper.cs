@@ -146,6 +146,9 @@ namespace ERPCore2.Helpers
             // 啟用鍵盤導航
             column.EnableKeyboardNavigation = true;
 
+            // 設定下拉選單容器 ID 格式（用於滾動定位）
+            column.DropdownContainerIdFormat = "searchable-dropdown-{0}-{1}";
+
             // 設定鍵盤導航相關函數
             column.GetDropdownItems = (item) => {
                 var filteredItems = GetPropertyValue(item, filteredItemsPropertyName) as IEnumerable<object>;

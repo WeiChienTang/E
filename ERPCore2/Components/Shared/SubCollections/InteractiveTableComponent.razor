@@ -2,6 +2,7 @@
 @using System.Reflection
 @using System.Web
 @using ERPCore2.Components.Shared.Buttons
+@inject IJSRuntime JSRuntime
 @typeparam TItem
 
 <div class="table-responsive table-container-hover interactive-table-container">
@@ -180,8 +181,9 @@
                                         
                                         @if (showDropdown && filteredItems.Any() && !isDisabled)
                                         {
+                                            var dropdownId = $"dropdown-{GetHashCode()}-{currentIndex}";
                                             <div class="dropdown-menu show position-absolute w-auto shadow searchable-dropdown" 
-                                                 id="dropdown-@(GetHashCode())-@(currentIndex)"
+                                                 id="@dropdownId"
                                                  style="z-index: 10000; max-height: @column.DropdownMaxHeight; overflow-y: auto; overflow-x: hidden; border: 1px solid #dee2e6; min-width: @column.DropdownMinWidth; max-width: @column.DropdownMaxWidth;"
                                                  @onmousedown:preventDefault="true">
                                                 @{
@@ -192,8 +194,10 @@
                                                     var currentDropdownIndex = dropdownItemIndex;
                                                     var isSelected = selectedIndex == currentDropdownIndex;
                                                     var displayText = column.ItemDisplayFormatter?.Invoke(dropdownItem) ?? dropdownItem.ToString() ?? "";
+                                                    var itemId = $"dropdown-item-{GetHashCode()}-{currentIndex}-{currentDropdownIndex}";
                                                     
                                                     <a class="dropdown-item @(isSelected ? "active bg-primary text-white" : "")" 
+                                                       id="@itemId"
                                                        href="#" 
                                                        @onclick="async () => await HandleSearchableSelectItemClick(column, item, dropdownItem)" 
                                                        @onclick:preventDefault="true"
@@ -744,14 +748,13 @@
     /// </summary>
     private async Task ScrollSelectedItemIntoView(InteractiveColumnDefinition column, TItem item, int selectedIndex)
     {
-        if (string.IsNullOrEmpty(column.DropdownContainerIdFormat))
-            return;
-            
         try
         {
-            // 這裡可以添加 JavaScript 互操作來實現捲動
-            // 目前先使用簡單的延遲
-            await Task.Delay(1);
+            var currentIndex = Items?.ToList().IndexOf(item) ?? 0;
+            var dropdownId = $"dropdown-{GetHashCode()}-{currentIndex}";
+            var itemId = $"dropdown-item-{GetHashCode()}-{currentIndex}-{selectedIndex}";
+            
+            await JSRuntime.InvokeVoidAsync("scrollDropdownItemIntoView", dropdownId, itemId);
         }
         catch (Exception)
         {
@@ -935,4 +938,42 @@
     // 滾動和視窗大小變化時重新定位
     window.addEventListener('scroll', positionSearchableDropdown);
     window.addEventListener('resize', positionSearchableDropdown);
+    
+    // 將選中的下拉選單項目滾動到可視範圍內
+    window.scrollDropdownItemIntoView = function(dropdownId, itemId) {
+        try {
+            const dropdown = document.getElementById(dropdownId);
+            const item = document.getElementById(itemId);
+            
+            if (!dropdown || !item) {
+                return;
+            }
+            
+            const dropdownRect = dropdown.getBoundingClientRect();
+            const itemRect = item.getBoundingClientRect();
+            
+            // 計算項目相對於下拉容器的位置
+            const itemTop = item.offsetTop;
+            const itemBottom = itemTop + item.offsetHeight;
+            const dropdownScrollTop = dropdown.scrollTop;
+            const dropdownHeight = dropdown.clientHeight;
+            
+            // 檢查項目是否在可視範圍內
+            const isItemVisible = itemTop >= dropdownScrollTop && 
+                                itemBottom <= dropdownScrollTop + dropdownHeight;
+            
+            if (!isItemVisible) {
+                // 如果項目在可視範圍上方，滾動到項目頂部
+                if (itemTop < dropdownScrollTop) {
+                    dropdown.scrollTop = itemTop;
+                }
+                // 如果項目在可視範圍下方，滾動到項目底部
+                else if (itemBottom > dropdownScrollTop + dropdownHeight) {
+                    dropdown.scrollTop = itemBottom - dropdownHeight;
+                }
+            }
+        } catch (error) {
+            console.warn('Error scrolling dropdown item into view:', error);
+        }
+    };
 </script>
