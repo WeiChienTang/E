@@ -18,8 +18,9 @@ class ToastManager {
                 this.container.id = 'toast-container';
                 this.container.className = 'toast-container-slide position-fixed';
                 this.container.style.zIndex = '9999';
-                this.container.style.top = '20px';
+                this.container.style.top = '50%';
                 this.container.style.right = '20px';
+                this.container.style.transform = 'translateY(-50%)';
                 this.container.style.width = '320px';
                 this.container.style.maxHeight = 'calc(100vh - 40px)';
                 this.container.style.overflowY = 'visible'; // 改為 visible 避免拉桿
