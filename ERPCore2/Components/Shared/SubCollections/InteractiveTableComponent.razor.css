@@ -283,6 +283,32 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* 搜尋下拉選單優化 - 解決容器限制問題 */
+.interactive-table-container .position-relative {
+    position: static !important; /* 移除 relative 定位，避免限制下拉選單 */
+}
+
+/* 搜尋下拉選單樣式優化 */
+.interactive-table-container .dropdown-menu.show {
+    position: fixed !important; /* 使用 fixed 定位，相對於視窗定位 */
+    z-index: 10000 !important; /* 提高層級，確保顯示在最上層 */
+    transform: none !important; /* 移除可能的變換效果 */
+    will-change: auto !important; /* 優化渲染性能 */
+}
+
+/* 確保表格容器不會裁切下拉選單 - 但保持水平滾動 */
+.interactive-table-container.table-responsive {
+    overflow-x: auto; /* 保持水平滾動 */
+    overflow-y: visible !important; /* 允許垂直內容（下拉選單）超出容器邊界 */
+}
+
+/* 為搜尋下拉選單的父容器特殊處理 */
+.interactive-table-container td:has(.searchable-dropdown.show),
+.interactive-table-container td .position-relative:has(.searchable-dropdown.show) {
+    overflow: visible !important;
+    position: static !important;
+}
+
 /* 下拉選單在手機版的優化 */
 @media (max-width: 767px) {
     /* 下拉選單在手機版的寬度調整 */
@@ -301,5 +327,17 @@
     /* 下拉選單項目選中狀態在手機版的顯示優化 */
     .dropdown-item.active {
         background-color: #007bff !important;
+    }
+    
+    /* 手機版搜尋下拉選單特殊處理 */
+    .interactive-table-container .dropdown-menu.show {
+        position: fixed !important;
+        top: auto !important;
+        left: 10px !important;
+        right: 10px !important;
+        max-height: 60vh !important; /* 限制最大高度為視窗高度的60% */
+        overflow-y: auto !important;
+        margin: 0 !important;
+        width: auto !important;
     }
 }

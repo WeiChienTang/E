@@ -143,7 +143,80 @@ namespace ERPCore2.Helpers
                 };
             }
 
+            // 啟用鍵盤導航
+            column.EnableKeyboardNavigation = true;
+
+            // 設定鍵盤導航相關函數
+            column.GetDropdownItems = (item) => {
+                var filteredItems = GetPropertyValue(item, filteredItemsPropertyName) as IEnumerable<object>;
+                return filteredItems ?? new List<object>();
+            };
+
+            column.GetSelectedIndex = (item) => {
+                return GetPropertyValue(item, selectedIndexPropertyName) as int? ?? -1;
+            };
+
+            column.SetSelectedIndex = (item, index) => {
+                SetPropertyValue(item, selectedIndexPropertyName, index);
+            };
+
+            column.GetShowDropdown = (item) => {
+                return GetPropertyValue(item, showDropdownPropertyName) as bool? ?? false;
+            };
+
+            column.SetShowDropdown = (item, show) => {
+                SetPropertyValue(item, showDropdownPropertyName, show);
+            };
+
+            if (onItemSelected.HasValue)
+            {
+                // 使用委託方式處理項目選擇事件
+                var originalCallback = onItemSelected.Value;
+                column.OnDropdownItemSelected = EventCallback.Factory.Create<(object, object?)>(
+                    originalCallback,
+                    async (args) => {
+                        // 調用原始的 onItemSelected 事件
+                        if (args.Item1 is TItem typedItem)
+                        {
+                            await originalCallback.InvokeAsync((typedItem, (TSelectItem?)args.Item2));
+                        }
+                    });
+            }
+
             return column;
+        }
+
+        /// <summary>
+        /// 使用反射取得屬性值
+        /// </summary>
+        private static object? GetPropertyValue(object obj, string propertyName)
+        {
+            var property = obj.GetType().GetProperty(propertyName);
+            return property?.GetValue(obj);
+        }
+
+        /// <summary>
+        /// 使用反射設定屬性值
+        /// </summary>
+        private static void SetPropertyValue(object obj, string propertyName, object? value)
+        {
+            var property = obj.GetType().GetProperty(propertyName);
+            if (property != null && property.CanWrite)
+            {
+                if (value != null && property.PropertyType != value.GetType())
+                {
+                    if (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                    {
+                        var underlyingType = Nullable.GetUnderlyingType(property.PropertyType);
+                        value = Convert.ChangeType(value, underlyingType!);
+                    }
+                    else
+                    {
+                        value = Convert.ChangeType(value, property.PropertyType);
+                    }
+                }
+                property.SetValue(obj, value);
+            }
         }
         
         /// <summary>
