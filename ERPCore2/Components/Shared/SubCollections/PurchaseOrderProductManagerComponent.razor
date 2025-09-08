@@ -4,6 +4,7 @@
 @inject IWarehouseService WarehouseService
 @inject IWarehouseLocationService WarehouseLocationService
 @inject INotificationService NotificationService
+@using ERPCore2.Helpers
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
 
@@ -84,7 +85,6 @@ else
     [Parameter] public bool IsReadOnly { get; set; } = false;
 
     private List<ProductItem> ProductItems { get; set; } = new List<ProductItem>();
-    private List<Product> FilteredProducts { get; set; } = new List<Product>();
     private List<Product> AvailableProducts { get; set; } = new List<Product>();
     private List<Warehouse> Warehouses { get; set; } = new List<Warehouse>();
     private int? _previousSelectedSupplierId = null;
@@ -159,23 +159,13 @@ else
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 商品選擇欄位 - 自訂模板
+        // 商品選擇欄位 - 簡化實作
         columns.Add(new() 
         { 
             Title = "商品", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "25%",
-            EnableKeyboardNavigation = true,
-            GetDropdownItems = item => FilteredProducts ?? new List<Product>(),
-            DropdownDisplayFormatter = product => $"{((Product)product).Code} - {((Product)product).Name}",
-            OnDropdownItemSelected = EventCallback.Factory.Create<(object item, object? selectedItem)>(this, 
-                async args => await SelectProduct((ProductItem)args.item, (Product)args.selectedItem!)),
-            GetSelectedIndex = item => ((ProductItem)item).SelectedIndex,
-            SetSelectedIndex = (item, index) => ((ProductItem)item).SelectedIndex = index,
-            GetShowDropdown = item => ((ProductItem)item).ShowDropdown,
-            SetShowDropdown = (item, show) => ((ProductItem)item).ShowDropdown = show,
-            DropdownContainerIdFormat = "dropdown-{0}",
             CustomTemplate = item => 
             {
                 var productItem = (ProductItem)item;
@@ -185,27 +175,29 @@ else
                     <input type="text" class="form-control form-control-sm @(isEmptyRow ? "empty-row-input" : "")" 
                            value="@productItem.ProductSearch"
                            @oninput="async (e) => await OnProductSearchInput(productItem, e.Value?.ToString())"
-                           @onfocus="async () => await OnInputFocus(productItem)"
-                           @onblur="async () => await OnInputBlur(productItem)"
+                           @onfocus="() => OnProductInputFocus(productItem)"
+                           @onblur="async () => await OnProductInputBlur(productItem)"
                            placeholder="@GetProductInputPlaceholder(isEmptyRow)" 
                            readonly="@IsReadOnly" />
                     
-                    @if (productItem.ShowDropdown && FilteredProducts != null && FilteredProducts.Any() && !IsReadOnly)
+                    @if (productItem.ShowDropdown && productItem.FilteredProducts.Any() && !IsReadOnly)
                     {
                         <div class="dropdown-menu show position-fixed w-auto shadow" 
                              style="z-index: 9999; max-height: 200px; overflow-y: auto; overflow-x: hidden; border: 1px solid #dee2e6; min-width: 300px; max-width: 500px;"
                              id="dropdown-@ProductItems.IndexOf(productItem)"
                              @onmousedown:preventDefault="true">
-                            @for (int i = 0; i < FilteredProducts.Count; i++)
+                            @for (int i = 0; i < productItem.FilteredProducts.Count; i++)
                             {
-                                var product = FilteredProducts[i];
+                                var product = productItem.FilteredProducts[i];
                                 var index = i;
-                                <a class="dropdown-item @(productItem.SelectedIndex == index ? "active bg-primary text-white" : "")" 
+                                var isSelected = productItem.SelectedIndex == index;
+                                
+                                <a class="dropdown-item @(isSelected ? "active bg-primary text-white" : "")" 
                                    href="#" 
-                                   @onclick="() => SelectProduct(productItem, product)" 
+                                   @onclick="() => OnProductSelected(productItem, product)" 
                                    @onclick:preventDefault="true"
                                    style="cursor: pointer; padding: 8px 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
-                                   @onmouseenter="() => productItem.SelectedIndex = index">
+                                   @onmouseenter="() => OnProductItemMouseEnter(productItem, index)">
                                     <strong>@product.Code</strong> - @product.Name
                                 </a>
                             }
@@ -614,20 +606,73 @@ else
         }
     }
 
+    // ===== FilterableDropdown 事件處理 =====
+
+    private void OnProductInputFocus(ProductItem item)
+    {
+        if (!string.IsNullOrWhiteSpace(item.ProductSearch))
+        {
+            // 如果有輸入內容，重新觸發搜尋
+            _ = OnProductSearchInput(item, item.ProductSearch);
+        }
+        else
+        {
+            // 顯示所有可用選項
+            item.SelectedIndex = -1;
+            var availableProducts = GetAvailableProducts();
+            item.FilteredProducts = availableProducts.Take(20).ToList();
+            item.ShowDropdown = item.FilteredProducts.Any();
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnProductInputBlur(ProductItem item)
+    {
+        // 延遲關閉下拉選單，讓用戶有時間點擊下拉選項
+        await Task.Delay(100);
+        item.ShowDropdown = false;
+        StateHasChanged();
+    }
+
+    private async Task OnProductSelected(ProductItem item, Product product)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        // 更新ProductItem
+        item.SelectedProduct = product;
+        item.ProductSearch = $"{product.Code} - {product.Name}";
+        item.ShowDropdown = false;
+        item.SelectedIndex = -1;
+        
+        // 處理自動空行邏輯
+        AutoEmptyRowHelper.ForAny<ProductItem>.HandleInputChange(
+            ProductItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    private void OnProductItemMouseEnter(ProductItem item, int index)
+    {
+        item.SelectedIndex = index;
+        StateHasChanged();
+    }
+
     // ===== InteractiveTableComponent 事件處理 =====
 
-    private async Task OnInputFocus(ProductItem item)
+    private void OnInputFocus(ProductItem item)
     {
-        await ShowProductDropdown(item);
+        OnProductInputFocus(item);
     }
 
     private async Task OnInputBlur(ProductItem item)
     {
-        // 延遲關閉下拉選單，讓用戶有時間點擊下拉選項
-        // 注意：下拉選單容器有 onmousedown:preventDefault 來防止 blur 在點擊時觸發
-        await Task.Delay(100);
-        item.ShowDropdown = false;
-        StateHasChanged();
+        await OnProductInputBlur(item);
+    }
+
+    private async Task SelectProduct(ProductItem item, Product product)
+    {
+        await OnProductSelected(item, product);
     }
 
     private async Task OnProductSearchInput(ProductItem item, string? searchValue)
@@ -642,21 +687,21 @@ else
             item.SelectedIndex = -1;
             
             var availableProducts = GetAvailableProducts();
-            FilteredProducts = availableProducts.Take(20).ToList();
-            item.ShowDropdown = FilteredProducts.Any();
+            item.FilteredProducts = availableProducts.Take(20).ToList();
+            item.ShowDropdown = item.FilteredProducts.Any();
         }
         else
         {
             var availableProducts = GetAvailableProducts();
             
-            FilteredProducts = availableProducts
+            item.FilteredProducts = availableProducts
                 .Where(p => p.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true ||
                            p.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true)
                 .Take(20)
                 .ToList();
             
-            item.ShowDropdown = FilteredProducts.Any();
-            item.SelectedIndex = FilteredProducts.Any() ? 0 : -1;
+            item.ShowDropdown = item.FilteredProducts.Any();
+            item.SelectedIndex = item.FilteredProducts.Any() ? 0 : -1;
         }
         
         AutoEmptyRowHelper.ForAny<ProductItem>.HandleInputChange(
@@ -788,22 +833,6 @@ else
         StateHasChanged();
     }
 
-    private async Task SelectProduct(ProductItem item, Product product)
-    {
-        var wasEmpty = IsEmptyRow(item);
-        
-        item.ProductSearch = $"{product.Code} - {product.Name}";
-        item.SelectedProduct = product;
-        item.ShowDropdown = false;
-        item.SelectedIndex = -1;
-        
-        AutoEmptyRowHelper.ForAny<ProductItem>.HandleInputChange(
-            ProductItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
-        await NotifyDetailsChanged();
-        StateHasChanged();
-    }
-
     public async Task RemoveItemAsync(int index)
     {
         if (IsReadOnly || index < 0 || index >= ProductItems.Count) return;
@@ -815,30 +844,6 @@ else
         
         await NotifyDetailsChanged();
         StateHasChanged();
-    }
-
-    // ===== 舊版相容性方法 =====
-
-    private async Task ShowProductDropdown(ProductItem item)
-    {
-        if (!string.IsNullOrWhiteSpace(item.ProductSearch))
-        {
-            await OnProductSearchInput(item, item.ProductSearch);
-        }
-        else
-        {
-            item.SelectedIndex = -1;
-            var availableProducts = GetAvailableProducts();
-            FilteredProducts = availableProducts.Take(20).ToList();
-            item.ShowDropdown = FilteredProducts.Any();
-        }
-        
-        if (item.ShowDropdown)
-        {
-            StateHasChanged();
-            await Task.Delay(10);
-            await PositionDropdownAsync(item);
-        }
     }
 
     /// <summary>
@@ -930,6 +935,7 @@ else
         public bool IsReceivingCompleted { get; set; } = false;
         public bool ShowDropdown { get; set; } = false;
         public int SelectedIndex { get; set; } = -1;
+        public List<Product> FilteredProducts { get; set; } = new List<Product>();
         public TDetailEntity? ExistingDetailEntity { get; set; }
         
         public int WarehouseId { get; set; } = 0;
