@@ -26,6 +26,11 @@ namespace ERPCore2.Components.Shared.SubCollections
         Select,
         
         /// <summary>
+        /// 可搜尋下拉選單 - 輸入框 + 動態下拉選單
+        /// </summary>
+        SearchableSelect,
+        
+        /// <summary>
         /// 勾選框
         /// </summary>
         Checkbox,

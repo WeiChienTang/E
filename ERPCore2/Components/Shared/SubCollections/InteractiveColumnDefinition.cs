@@ -192,6 +192,93 @@ namespace ERPCore2.Components.Shared.SubCollections
         public string? NullDisplayText { get; set; }
         #endregion
 
+        #region SearchableSelect 專用屬性
+        /// <summary>
+        /// 搜尋值屬性名稱（用於可搜尋下拉選單）
+        /// </summary>
+        public string? SearchValuePropertyName { get; set; }
+        
+        /// <summary>
+        /// 選中項目屬性名稱（用於可搜尋下拉選單）
+        /// </summary>
+        public string? SelectedItemPropertyName { get; set; }
+        
+        /// <summary>
+        /// 過濾項目列表屬性名稱（用於可搜尋下拉選單）
+        /// </summary>
+        public string? FilteredItemsPropertyName { get; set; }
+        
+        /// <summary>
+        /// 顯示下拉選單屬性名稱（用於可搜尋下拉選單）
+        /// </summary>
+        public string? ShowDropdownPropertyName { get; set; }
+        
+        /// <summary>
+        /// 選中索引屬性名稱（用於可搜尋下拉選單）
+        /// </summary>
+        public string? SelectedIndexPropertyName { get; set; }
+        
+        /// <summary>
+        /// 所有可用項目的資料來源函數
+        /// </summary>
+        public Func<IEnumerable<object>>? AvailableItemsProvider { get; set; }
+        
+        /// <summary>
+        /// 項目顯示格式化函數（用於顯示 Code - Name 格式）
+        /// </summary>
+        public Func<object, string>? ItemDisplayFormatter { get; set; }
+        
+        /// <summary>
+        /// 搜尋過濾函數
+        /// </summary>
+        public Func<object, string, bool>? SearchFilter { get; set; }
+        
+        /// <summary>
+        /// 搜尋輸入變更事件
+        /// </summary>
+        public EventCallback<(object item, string? searchValue)>? OnSearchInputChanged { get; set; }
+        
+        /// <summary>
+        /// 項目選擇事件
+        /// </summary>
+        public EventCallback<(object item, object? selectedItem)>? OnItemSelected { get; set; }
+        
+        /// <summary>
+        /// 輸入框焦點事件
+        /// </summary>
+        public EventCallback<object>? OnInputFocus { get; set; }
+        
+        /// <summary>
+        /// 輸入框失焦事件
+        /// </summary>
+        public EventCallback<object>? OnInputBlur { get; set; }
+        
+        /// <summary>
+        /// 項目滑鼠移入事件
+        /// </summary>
+        public EventCallback<(object item, int index)>? OnItemMouseEnter { get; set; }
+        
+        /// <summary>
+        /// 最大顯示項目數量（預設20）
+        /// </summary>
+        public int MaxDisplayItems { get; set; } = 20;
+        
+        /// <summary>
+        /// 下拉選單最大高度（CSS值，預設 200px）
+        /// </summary>
+        public string DropdownMaxHeight { get; set; } = "200px";
+        
+        /// <summary>
+        /// 下拉選單最小寬度（CSS值，預設 300px）
+        /// </summary>
+        public string DropdownMinWidth { get; set; } = "300px";
+        
+        /// <summary>
+        /// 下拉選單最大寬度（CSS值，預設 500px）
+        /// </summary>
+        public string DropdownMaxWidth { get; set; } = "500px";
+        #endregion
+
         #region Custom 專用屬性
         /// <summary>
         /// 自訂模板
@@ -244,6 +331,60 @@ namespace ERPCore2.Components.Shared.SubCollections
         /// 下拉選單容器ID格式（用於定位和捲動）
         /// </summary>
         public string? DropdownContainerIdFormat { get; set; }
+        #endregion
+        
+        #region 原始 Callback 存儲 - 用於 SearchableSelectHelper
+        /// <summary>
+        /// 原始搜尋輸入變更回調
+        /// </summary>
+        internal EventCallback<(object item, string? searchValue)>? SearchInputChangedCallback { get; set; }
+        
+        /// <summary>
+        /// 原始項目選擇回調
+        /// </summary>
+        internal EventCallback<(object item, object? selectedItem)>? ItemSelectedCallback { get; set; }
+        
+        /// <summary>
+        /// 原始輸入框焦點回調
+        /// </summary>
+        internal EventCallback<object>? InputFocusCallback { get; set; }
+        
+        /// <summary>
+        /// 原始輸入框失焦回調
+        /// </summary>
+        internal EventCallback<object>? InputBlurCallback { get; set; }
+        
+        /// <summary>
+        /// 原始項目滑鼠移入回調
+        /// </summary>
+        internal EventCallback<(object item, int index)>? ItemMouseEnterCallback { get; set; }
+        #endregion
+        
+        #region Action 委託 - 用於 SearchableSelectHelper 類型轉換
+        /// <summary>
+        /// 搜尋輸入變更委託
+        /// </summary>
+        internal Action<object, string?>? SearchInputChangedAction { get; set; }
+        
+        /// <summary>
+        /// 項目選擇委託
+        /// </summary>
+        internal Action<object, object?>? ItemSelectedAction { get; set; }
+        
+        /// <summary>
+        /// 輸入框焦點委託
+        /// </summary>
+        internal Action<object>? InputFocusAction { get; set; }
+        
+        /// <summary>
+        /// 輸入框失焦委託
+        /// </summary>
+        internal Action<object>? InputBlurAction { get; set; }
+        
+        /// <summary>
+        /// 項目滑鼠移入委託
+        /// </summary>
+        internal Action<object, int>? ItemMouseEnterAction { get; set; }
         #endregion
     }
 }

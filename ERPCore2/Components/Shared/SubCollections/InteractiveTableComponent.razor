@@ -154,6 +154,57 @@
                                         }
                                     </select>
                                 }
+                                else if (column.ColumnType == InteractiveColumnType.SearchableSelect)
+                                {
+                                    @* 可搜尋下拉選單 *@
+                                    var searchValue = GetPropertyValue(item, column.SearchValuePropertyName ?? "")?.ToString() ?? "";
+                                    var selectedItem = GetPropertyValue(item, column.SelectedItemPropertyName ?? "");
+                                    var filteredItems = GetPropertyValue(item, column.FilteredItemsPropertyName ?? "") as IEnumerable<object> ?? new List<object>();
+                                    var showDropdown = GetPropertyValue(item, column.ShowDropdownPropertyName ?? "") is bool showValue && showValue;
+                                    var selectedIndex = GetPropertyValue(item, column.SelectedIndexPropertyName ?? "") is int indexValue ? indexValue : -1;
+                                    var isDisabled = IsReadOnly || column.IsDisabled;
+                                    var validationClass = GetValidationCssClass(item, column.PropertyName);
+                                    
+                                    <div class="position-relative">
+                                        <input type="text" 
+                                               class="form-control form-control-sm @validationClass" 
+                                               value="@searchValue"
+                                               placeholder="@column.Placeholder"
+                                               title="@column.Tooltip"
+                                               disabled="@isDisabled"
+                                               readonly="@column.IsReadOnly"
+                                               @oninput="async (e) => await HandleSearchableSelectInput(column, item, e.Value?.ToString())"
+                                               @onfocus="async () => await HandleSearchableSelectFocus(column, item)"
+                                               @onblur="async () => await HandleSearchableSelectBlur(column, item)" />
+                                        
+                                        @if (showDropdown && filteredItems.Any() && !isDisabled)
+                                        {
+                                            <div class="dropdown-menu show position-fixed w-auto shadow" 
+                                                 style="z-index: 9999; max-height: @column.DropdownMaxHeight; overflow-y: auto; overflow-x: hidden; border: 1px solid #dee2e6; min-width: @column.DropdownMinWidth; max-width: @column.DropdownMaxWidth;"
+                                                 @onmousedown:preventDefault="true">
+                                                @{
+                                                    var dropdownItemIndex = 0;
+                                                }
+                                                @foreach (var dropdownItem in filteredItems.Take(column.MaxDisplayItems))
+                                                {
+                                                    var currentDropdownIndex = dropdownItemIndex;
+                                                    var isSelected = selectedIndex == currentDropdownIndex;
+                                                    var displayText = column.ItemDisplayFormatter?.Invoke(dropdownItem) ?? dropdownItem.ToString() ?? "";
+                                                    
+                                                    <a class="dropdown-item @(isSelected ? "active bg-primary text-white" : "")" 
+                                                       href="#" 
+                                                       @onclick="async () => await HandleSearchableSelectItemClick(column, item, dropdownItem)" 
+                                                       @onclick:preventDefault="true"
+                                                       style="cursor: pointer; padding: 8px 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+                                                       @onmouseenter="async () => await HandleSearchableSelectItemMouseEnter(column, item, currentDropdownIndex)">
+                                                        @((MarkupString)displayText)
+                                                    </a>
+                                                    dropdownItemIndex++;
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                }
                                 else if (column.ColumnType == InteractiveColumnType.Checkbox)
                                 {
                                     @* 勾選框 *@
@@ -706,5 +757,92 @@
         }
     }
     #endregion
+    #endregion
+    
+    #region SearchableSelect 事件處理方法
+    private async Task HandleSearchableSelectInput(InteractiveColumnDefinition column, TItem item, string? value)
+    {
+        // 優先使用 Action 委託（來自 SearchableSelectHelper）
+        if (column.SearchInputChangedAction != null)
+        {
+            column.SearchInputChangedAction(item!, value);
+        }
+        else if (column.SearchInputChangedCallback.HasValue)
+        {
+            await column.SearchInputChangedCallback.Value.InvokeAsync((item!, value));
+        }
+        else if (column.OnSearchInputChanged.HasValue)
+        {
+            await column.OnSearchInputChanged.Value.InvokeAsync((item!, value));
+        }
+    }
+    
+    private async Task HandleSearchableSelectFocus(InteractiveColumnDefinition column, TItem item)
+    {
+        // 優先使用 Action 委託（來自 SearchableSelectHelper）
+        if (column.InputFocusAction != null)
+        {
+            column.InputFocusAction(item!);
+        }
+        else if (column.InputFocusCallback.HasValue)
+        {
+            await column.InputFocusCallback.Value.InvokeAsync(item!);
+        }
+        else if (column.OnInputFocus.HasValue)
+        {
+            await column.OnInputFocus.Value.InvokeAsync(item!);
+        }
+    }
+    
+    private async Task HandleSearchableSelectBlur(InteractiveColumnDefinition column, TItem item)
+    {
+        // 優先使用 Action 委託（來自 SearchableSelectHelper）
+        if (column.InputBlurAction != null)
+        {
+            column.InputBlurAction(item!);
+        }
+        else if (column.InputBlurCallback.HasValue)
+        {
+            await column.InputBlurCallback.Value.InvokeAsync(item!);
+        }
+        else if (column.OnInputBlur.HasValue)
+        {
+            await column.OnInputBlur.Value.InvokeAsync(item!);
+        }
+    }
+    
+    private async Task HandleSearchableSelectItemClick(InteractiveColumnDefinition column, TItem item, object selectedItem)
+    {
+        // 優先使用 Action 委託（來自 SearchableSelectHelper）
+        if (column.ItemSelectedAction != null)
+        {
+            column.ItemSelectedAction(item!, selectedItem);
+        }
+        else if (column.ItemSelectedCallback.HasValue)
+        {
+            await column.ItemSelectedCallback.Value.InvokeAsync((item!, selectedItem));
+        }
+        else if (column.OnItemSelected.HasValue)
+        {
+            await column.OnItemSelected.Value.InvokeAsync((item!, selectedItem));
+        }
+    }
+    
+    private async Task HandleSearchableSelectItemMouseEnter(InteractiveColumnDefinition column, TItem item, int index)
+    {
+        // 優先使用 Action 委託（來自 SearchableSelectHelper）
+        if (column.ItemMouseEnterAction != null)
+        {
+            column.ItemMouseEnterAction(item!, index);
+        }
+        else if (column.ItemMouseEnterCallback.HasValue)
+        {
+            await column.ItemMouseEnterCallback.Value.InvokeAsync((item!, index));
+        }
+        else if (column.OnItemMouseEnter.HasValue)
+        {
+            await column.OnItemMouseEnter.Value.InvokeAsync((item!, index));
+        }
+    }
     #endregion
 }

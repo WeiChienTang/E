@@ -1,4 +1,13 @@
-# InteractiveTableComponent 使用指南
+# Inte## 🔧 設計目標
+
+- **統一UI風格**：與 `GenericTableComponent` 保持視覺一致性
+- **多元控件支援**：支援 Input、Number、Select、Checkbox、Button、Display、Custom、**SearchableSelect** 等類型
+- **內建操作功能**：提供標準的刪除按鈕和自訂操作範本
+- **靈活配置**：透過 `InteractiveColumnDefinition` 輕鬆配置欄位
+- **響應式設計**：自動適應不同螢幕尺寸
+- **即時驗證**：內建驗證機制和錯誤提示
+- **🆕 自動空行功能**：提供類似 Excel 的智能空行管理，提升使用者體驗
+- **🔍 智能搜尋選擇**：統一的 SearchableSelect 功能，解決重複實作 input + dropdown 的問題bleComponent 使用指南
 
 ## 📋 概述
 
@@ -104,6 +113,227 @@ private async Task OnCoreFieldChanged((object item, object? value) args)
 有關自動空行功能的完整技術說明、實作細節和最佳實踐，請參閱：
 📖 [自動空行功能詳細說明](README_AutoEmptyRow_Feature.md)
 
+## 🔍 SearchableSelect 功能
+
+### 功能概述
+`SearchableSelect` 是專為解決重複實作 input + dropdown 功能而設計的統一解決方案。它提供了智能搜尋、即時過濾和鍵盤操作等功能，讓開發者無需每次都重新撰寫相同的邏輯。
+
+### 核心特色
+- **🔍 即時搜尋**：支援輸入文字即時過濾選項
+- **⌨️ 鍵盤操作**：上下箭頭選擇、Enter 確認、Esc 取消
+- **🎯 智能過濾**：可自訂過濾邏輯，支援模糊搜尋
+- **📱 響應式設計**：自動調整下拉選單位置和尺寸
+- **🔧 高度可配置**：支援自訂顯示格式、最大顯示項目數等
+- **🚀 效能優化**：只顯示前 N 項結果，避免大量資料造成效能問題
+
+### 使用 SearchableSelectHelper 快速設定
+
+#### 1. 商品搜尋選擇欄位
+```csharp
+@using ERPCore2.Helpers
+
+private List<InteractiveColumnDefinition> GetColumnDefinitions()
+{
+    var columns = new List<InteractiveColumnDefinition>();
+    
+    // 使用 SearchableSelectHelper 快速建立商品搜尋欄位
+    var productColumn = SearchableSelectHelper.CreateProductSearchableSelect<ProductItem, Product>(
+        title: "商品",
+        availableProductsProvider: () => AvailableProducts,
+        onSearchInputChanged: EventCallback.Factory.Create<(ProductItem, string?)>(this, OnProductSearchInput),
+        onProductSelected: EventCallback.Factory.Create<(ProductItem, Product?)>(this, OnProductSelected),
+        onInputFocus: EventCallback.Factory.Create<ProductItem>(this, OnProductInputFocus),
+        onInputBlur: EventCallback.Factory.Create<ProductItem>(this, OnProductInputBlur),
+        onItemMouseEnter: EventCallback.Factory.Create<(ProductItem, int)>(this, OnProductItemMouseEnter),
+        isReadOnly: IsReadOnly
+    );
+    productColumn.Width = "25%";
+    columns.Add(productColumn);
+    
+    return columns;
+}
+
+// 事件處理方法
+private async Task OnProductSearchInput((ProductItem item, string? searchValue) args)
+{
+    var wasEmpty = IsEmptyRow(args.item);
+    
+    // 更新搜尋值和過濾結果
+    args.item.ProductSearch = args.searchValue ?? string.Empty;
+    args.item.FilteredProducts = FilterProducts(args.searchValue);
+    args.item.ShowDropdown = args.item.FilteredProducts.Any();
+    
+    // 處理自動空行邏輯
+    AutoEmptyRowHelper.ForAny<ProductItem>.HandleInputChange(
+        ProductItems, args.item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(args.item));
+    
+    await NotifyDetailsChanged();
+    StateHasChanged();
+}
+
+private async Task OnProductSelected((ProductItem item, Product? product) args)
+{
+    var wasEmpty = IsEmptyRow(args.item);
+    
+    // 更新選擇的商品
+    args.item.SelectedProduct = args.product;
+    args.item.ProductSearch = args.product != null ? $"{args.product.Code} - {args.product.Name}" : string.Empty;
+    args.item.ShowDropdown = false;
+    
+    // 處理自動空行邏輯
+    AutoEmptyRowHelper.ForAny<ProductItem>.HandleInputChange(
+        ProductItems, args.item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(args.item));
+    
+    await NotifyDetailsChanged();
+    StateHasChanged();
+}
+
+private List<Product> FilterProducts(string? searchValue)
+{
+    if (string.IsNullOrWhiteSpace(searchValue))
+        return AvailableProducts.Take(20).ToList();
+        
+    return AvailableProducts
+        .Where(p => p.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true ||
+                   p.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true)
+        .Take(20)
+        .ToList();
+}
+```
+
+#### 2. 自訂 SearchableSelect 欄位
+```csharp
+// 使用通用的 SearchableSelectHelper.CreateSearchableSelect 方法
+var customColumn = SearchableSelectHelper.CreateSearchableSelect<CustomerItem, Customer>(
+    title: "客戶",
+    width: "30%",
+    searchValuePropertyName: "CustomerSearch",
+    selectedItemPropertyName: "SelectedCustomer", 
+    filteredItemsPropertyName: "FilteredCustomers",
+    showDropdownPropertyName: "ShowDropdown",
+    selectedIndexPropertyName: "SelectedIndex",
+    availableItemsProvider: () => AvailableCustomers,
+    itemDisplayFormatter: customer => $"{customer.Code} - {customer.Name}",
+    searchFilter: (customer, searchValue) => 
+        customer.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true ||
+        customer.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true,
+    onSearchInputChanged: EventCallback.Factory.Create<(CustomerItem, string?)>(this, OnCustomerSearchInput),
+    onItemSelected: EventCallback.Factory.Create<(CustomerItem, Customer?)>(this, OnCustomerSelected),
+    onInputFocus: EventCallback.Factory.Create<CustomerItem>(this, OnCustomerInputFocus),
+    onInputBlur: EventCallback.Factory.Create<CustomerItem>(this, OnCustomerInputBlur),
+    onItemMouseEnter: EventCallback.Factory.Create<(CustomerItem, int)>(this, OnCustomerItemMouseEnter),
+    placeholder: "輸入客戶代碼或名稱...",
+    maxDisplayItems: 15,
+    isReadOnly: IsReadOnly
+);
+columns.Add(customColumn);
+```
+
+### 直接使用 InteractiveColumnType.SearchableSelect
+
+如果您需要更細緻的控制，也可以直接使用 `SearchableSelect` 欄位類型：
+
+```csharp
+new InteractiveColumnDefinition
+{
+    Title = "供應商",
+    PropertyName = "SelectedSupplier",
+    ColumnType = InteractiveColumnType.SearchableSelect,
+    Width = "25%",
+    
+    // SearchableSelect 專用屬性
+    SearchValuePropertyName = "SupplierSearch",
+    SelectedItemPropertyName = "SelectedSupplier",
+    FilteredItemsPropertyName = "FilteredSuppliers", 
+    ShowDropdownPropertyName = "ShowDropdown",
+    SelectedIndexPropertyName = "SelectedIndex",
+    
+    // 資料提供者和格式化
+    AvailableItemsProvider = () => AvailableSuppliers.Cast<object>().ToList(),
+    ItemDisplayFormatter = item => 
+    {
+        var supplier = (Supplier)item;
+        return $"{supplier.Code} - {supplier.Name}";
+    },
+    
+    // 搜尋過濾邏輯
+    SearchFilter = (item, searchValue) =>
+    {
+        var supplier = (Supplier)item;
+        return supplier.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true ||
+               supplier.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true;
+    },
+    
+    // 事件處理
+    OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, OnSupplierSearchInput),
+    OnItemSelected = EventCallback.Factory.Create<(object, object?)>(this, OnSupplierSelected),
+    OnInputFocus = EventCallback.Factory.Create<object>(this, OnSupplierInputFocus),
+    OnInputBlur = EventCallback.Factory.Create<object>(this, OnSupplierInputBlur),
+    OnItemMouseEnter = EventCallback.Factory.Create<(object, int)>(this, OnSupplierItemMouseEnter),
+    
+    // 顯示設定
+    Placeholder = "輸入供應商代碼或名稱...",
+    MaxDisplayItems = 20,
+    IsRequired = true
+}
+```
+
+### 資料模型要求
+
+使用 SearchableSelect 功能時，您的資料模型需要包含以下屬性：
+
+```csharp
+public class ProductItem
+{
+    // 搜尋相關屬性
+    public string ProductSearch { get; set; } = string.Empty;
+    public Product? SelectedProduct { get; set; }
+    public List<Product> FilteredProducts { get; set; } = new List<Product>();
+    public bool ShowDropdown { get; set; } = false;
+    public int SelectedIndex { get; set; } = -1;
+    
+    // 其他業務屬性...
+    public int Quantity { get; set; }
+    public decimal Price { get; set; }
+    // ...
+}
+```
+
+### 最佳實踐
+
+1. **效能優化**：使用 `MaxDisplayItems` 限制顯示的選項數量
+2. **使用者體驗**：提供有意義的 `Placeholder` 文字
+3. **搜尋邏輯**：實作合理的模糊搜尋邏輯，支援代碼和名稱搜尋
+4. **鍵盤支援**：確保所有事件處理器都正確實作
+5. **自動空行整合**：與 AutoEmptyRowHelper 結合使用以提供最佳的輸入體驗
+
+### 遷移指南
+
+從自訂的 input + dropdown 實作遷移到 SearchableSelect：
+
+**舊版寫法**：
+```csharp
+// 需要手動實作大量的事件處理和UI邏輯
+CustomTemplate = item => 
+{
+    // 100+ 行的自訂下拉選單實作...
+};
+```
+
+**新版寫法**：
+```csharp
+// 使用 SearchableSelectHelper，只需幾行程式碼
+var column = SearchableSelectHelper.CreateProductSearchableSelect<ProductItem, Product>(
+    title: "商品",
+    availableProductsProvider: () => AvailableProducts,
+    onSearchInputChanged: EventCallback.Factory.Create<(ProductItem, string?)>(this, OnProductSearchInput),
+    onProductSelected: EventCallback.Factory.Create<(ProductItem, Product?)>(this, OnProductSelected),
+    // ... 其他事件處理器
+);
+```
+
+這大幅簡化了程式碼，提高了一致性和可維護性。
+
 ## 🔧 基本使用
 
 ### 1. 引入必要的命名空間
@@ -199,7 +429,18 @@ private async Task OnCoreFieldChanged((object item, object? value) args)
                 CheckedText = "啟用",
                 UncheckedText = "停用",
                 OnCheckboxChanged = OnActiveStatusChanged
-            }
+            },
+            
+            // 🆕 智能搜尋選擇欄位 (使用 SearchableSelectHelper)
+            SearchableSelectHelper.CreateProductSearchableSelect<ProductModel, Product>(
+                title: "相關產品",
+                availableProductsProvider: () => AvailableProducts,
+                onSearchInputChanged: EventCallback.Factory.Create<(ProductModel, string?)>(this, OnRelatedProductSearchInput),
+                onProductSelected: EventCallback.Factory.Create<(ProductModel, Product?)>(this, OnRelatedProductSelected),
+                onInputFocus: EventCallback.Factory.Create<ProductModel>(this, OnRelatedProductInputFocus),
+                onInputBlur: EventCallback.Factory.Create<ProductModel>(this, OnRelatedProductInputBlur),
+                isReadOnly: IsReadOnly
+            )
             
             // 注意：操作按鈕現在可以使用內建功能，不需要手動定義
             // 只需設定 ShowBuiltInActions="true" 和 OnItemDelete 事件即可
@@ -320,6 +561,60 @@ private async Task OnCoreFieldChanged((object item, object? value) args)
         Console.WriteLine($"產品 {product.Code} 啟用狀態: {isChecked}");
     }
 
+    // 🆕 SearchableSelect 事件處理方法
+    private async Task OnRelatedProductSearchInput((ProductModel item, string? searchValue) args)
+    {
+        // 更新搜尋值和過濾結果
+        args.item.RelatedProductSearch = args.searchValue ?? string.Empty;
+        args.item.FilteredRelatedProducts = FilterRelatedProducts(args.searchValue);
+        args.item.ShowRelatedProductDropdown = args.item.FilteredRelatedProducts.Any();
+        StateHasChanged();
+    }
+
+    private async Task OnRelatedProductSelected((ProductModel item, Product? product) args)
+    {
+        // 更新選擇的相關產品
+        args.item.SelectedRelatedProduct = args.product;
+        args.item.RelatedProductSearch = args.product != null ? $"{args.product.Code} - {args.product.Name}" : string.Empty;
+        args.item.ShowRelatedProductDropdown = false;
+        StateHasChanged();
+    }
+
+    private async Task OnRelatedProductInputFocus(ProductModel item)
+    {
+        // 聚焦時顯示下拉選單
+        if (!string.IsNullOrWhiteSpace(item.RelatedProductSearch))
+        {
+            item.FilteredRelatedProducts = FilterRelatedProducts(item.RelatedProductSearch);
+        }
+        else
+        {
+            item.FilteredRelatedProducts = AvailableProducts.Take(20).ToList();
+        }
+        item.ShowRelatedProductDropdown = item.FilteredRelatedProducts.Any();
+        StateHasChanged();
+    }
+
+    private async Task OnRelatedProductInputBlur(ProductModel item)
+    {
+        // 延遲關閉下拉選單，讓用戶有時間點擊選項
+        await Task.Delay(100);
+        item.ShowRelatedProductDropdown = false;
+        StateHasChanged();
+    }
+
+    private List<Product> FilterRelatedProducts(string? searchValue)
+    {
+        if (string.IsNullOrWhiteSpace(searchValue))
+            return AvailableProducts.Take(20).ToList();
+            
+        return AvailableProducts
+            .Where(p => p.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true ||
+                       p.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true)
+            .Take(20)
+            .ToList();
+    }
+
     private async Task OnDeleteItem(ProductModel item)
     {
         // 可以添加確認對話框
@@ -369,6 +664,13 @@ public class ProductModel
     public int WarehouseId { get; set; }
     public bool IsActive { get; set; }
     public bool IsSystemDefault { get; set; } = false;
+    
+    // 🆕 SearchableSelect 相關屬性
+    public string RelatedProductSearch { get; set; } = string.Empty;
+    public Product? SelectedRelatedProduct { get; set; }
+    public List<Product> FilteredRelatedProducts { get; set; } = new List<Product>();
+    public bool ShowRelatedProductDropdown { get; set; } = false;
+    public int SelectedRelatedProductIndex { get; set; } = -1;
 }
 ```
 
@@ -520,6 +822,12 @@ new InteractiveColumnDefinition
 5. **行動裝置**：合理使用 `HideOnMobile` 屬性優化小螢幕體驗
 6. **操作按鈕**：優先使用內建操作功能(`ShowBuiltInActions`)而非手動定義Button欄位
 7. **刪除確認**：在 `OnItemDelete` 事件中實作確認對話框提升使用者體驗
+8. **🆕 SearchableSelect 最佳實踐**：
+   - 使用 `SearchableSelectHelper` 減少重複程式碼
+   - 設定合理的 `MaxDisplayItems` 避免效能問題
+   - 結合 `AutoEmptyRowHelper` 提供最佳輸入體驗
+   - 實作有意義的搜尋過濾邏輯
+   - 提供清楚的 Placeholder 文字指引使用者
 
 ## 🔄 遷移指南
 
@@ -551,6 +859,42 @@ new InteractiveColumnDefinition
 <InteractiveTableComponent ShowBuiltInActions="true"
                           OnItemDelete="@HandleDelete" />
 ```
+
+### 從自訂 input + dropdown 遷移到 SearchableSelect：
+
+**舊版寫法**：
+```csharp
+// 需要手動實作 100+ 行的自訂 CustomTemplate
+new InteractiveColumnDefinition
+{
+    Title = "商品",
+    ColumnType = InteractiveColumnType.Custom,
+    CustomTemplate = item => 
+    {
+        // 大量的手動 UI 和事件處理邏輯...
+        return @<div class="position-relative">
+            <input type="text" @oninput="..." @onfocus="..." @onblur="..." />
+            @if (showDropdown) {
+                <div class="dropdown-menu">
+                    // 手動下拉選單實作...
+                </div>
+            }
+        </div>;
+    }
+}
+```
+
+**新版寫法**：
+```csharp
+// 使用 SearchableSelectHelper，大幅簡化程式碼
+var productColumn = SearchableSelectHelper.CreateProductSearchableSelect<ProductItem, Product>(
+    title: "商品",
+    availableProductsProvider: () => AvailableProducts,
+    onSearchInputChanged: EventCallback.Factory.Create<(ProductItem, string?)>(this, OnProductSearchInput),
+    onProductSelected: EventCallback.Factory.Create<(ProductItem, Product?)>(this, OnProductSelected),
+    // ... 其他事件處理器
+);
+```
 4. 測試並調整樣式和行為
 5. 移除舊的表格實作程式碼
 
@@ -563,3 +907,33 @@ new InteractiveColumnDefinition
 - **⚡ 提升效率**：只需設定 `ShowBuiltInActions="true"` 即可獲得標準操作功能
 - **🔧 高度可自訂**：支援自訂按鈕樣式、禁用條件和額外操作
 - **🔄 完全相容**：與現有的 `ActionsTemplate` 完全相容，可平滑遷移
+
+## 🔍 SearchableSelect 功能優勢
+
+- **🚀 開發效率**：使用 `SearchableSelectHelper` 大幅減少重複程式碼
+- **🎯 統一體驗**：所有 input + dropdown 功能使用一致的 UI 和互動邏輯
+- **⌨️ 完整支援**：內建鍵盤操作、搜尋過濾、位置調整等功能
+- **📱 響應式設計**：自動適應不同螢幕尺寸和裝置
+- **🔧 高度靈活**：支援自訂顯示格式、過濾邏輯和事件處理
+- **⚡ 效能優化**：智能限制顯示項目數量，確保大量資料下的流暢體驗
+
+## 📚 實際應用範例
+
+以下是在 `PurchaseOrderProductManagerComponent` 中使用新的 SearchableSelect 功能的實際範例：
+
+```csharp
+// 原本需要 100+ 行的自訂實作，現在只需要幾行程式碼
+var productColumn = SearchableSelectHelper.CreateProductSearchableSelect<ProductItem, Product>(
+    title: "商品",
+    availableProductsProvider: () => AvailableProducts,
+    onSearchInputChanged: EventCallback.Factory.Create<(ProductItem, string?)>(this, OnProductSearchInput),
+    onProductSelected: EventCallback.Factory.Create<(ProductItem, Product?)>(this, OnProductSelected),
+    onInputFocus: EventCallback.Factory.Create<ProductItem>(this, OnProductInputFocus),
+    onInputBlur: EventCallback.Factory.Create<ProductItem>(this, OnProductInputBlur),
+    onItemMouseEnter: EventCallback.Factory.Create<(ProductItem, int)>(this, OnProductItemMouseEnter),
+    isReadOnly: IsReadOnly
+);
+productColumn.Width = "25%";
+```
+
+這種統一的方式不僅減少了程式碼重複，還確保了所有類似功能的一致性和可維護性。

@@ -159,53 +159,20 @@ else
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 商品選擇欄位 - 簡化實作
-        columns.Add(new() 
-        { 
-            Title = "商品", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
-            Width = "25%",
-            CustomTemplate = item => 
-            {
-                var productItem = (ProductItem)item;
-                var isEmptyRow = IsEmptyRow(productItem);
-                
-                return @<div class="position-relative">
-                    <input type="text" class="form-control form-control-sm @(isEmptyRow ? "empty-row-input" : "")" 
-                           value="@productItem.ProductSearch"
-                           @oninput="async (e) => await OnProductSearchInput(productItem, e.Value?.ToString())"
-                           @onfocus="() => OnProductInputFocus(productItem)"
-                           @onblur="async () => await OnProductInputBlur(productItem)"
-                           placeholder="@GetProductInputPlaceholder(isEmptyRow)" 
-                           readonly="@IsReadOnly" />
-                    
-                    @if (productItem.ShowDropdown && productItem.FilteredProducts.Any() && !IsReadOnly)
-                    {
-                        <div class="dropdown-menu show position-fixed w-auto shadow" 
-                             style="z-index: 9999; max-height: 200px; overflow-y: auto; overflow-x: hidden; border: 1px solid #dee2e6; min-width: 300px; max-width: 500px;"
-                             id="dropdown-@ProductItems.IndexOf(productItem)"
-                             @onmousedown:preventDefault="true">
-                            @for (int i = 0; i < productItem.FilteredProducts.Count; i++)
-                            {
-                                var product = productItem.FilteredProducts[i];
-                                var index = i;
-                                var isSelected = productItem.SelectedIndex == index;
-                                
-                                <a class="dropdown-item @(isSelected ? "active bg-primary text-white" : "")" 
-                                   href="#" 
-                                   @onclick="() => OnProductSelected(productItem, product)" 
-                                   @onclick:preventDefault="true"
-                                   style="cursor: pointer; padding: 8px 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
-                                   @onmouseenter="() => OnProductItemMouseEnter(productItem, index)">
-                                    <strong>@product.Code</strong> - @product.Name
-                                </a>
-                            }
-                        </div>
-                    }
-                </div>;
-            }
-        });
+        // 商品選擇欄位 - 使用統一的 SearchableSelect
+        columns.Add(SearchableSelectHelper.CreateProductSearchableSelect<ProductItem, Product>(
+            title: "商品",
+            availableProductsProvider: () => GetAvailableProducts(),
+            onSearchInputChanged: EventCallback.Factory.Create<(ProductItem item, string? searchValue)>(this, async args => await OnProductSearchInput(args.item, args.searchValue)),
+            onProductSelected: EventCallback.Factory.Create<(ProductItem item, Product? selectedProduct)>(this, async args => {
+                if (args.selectedProduct != null)
+                    await OnProductSelected(args.item, args.selectedProduct);
+            }),
+            onInputFocus: EventCallback.Factory.Create<ProductItem>(this, item => OnProductInputFocus(item)),
+            onInputBlur: EventCallback.Factory.Create<ProductItem>(this, async item => await OnProductInputBlur(item)),
+            onItemMouseEnter: EventCallback.Factory.Create<(ProductItem item, int index)>(this, args => OnProductItemMouseEnter(args.item, args.index)),
+            isReadOnly: IsReadOnly
+        ));
 
         // 數量欄位
         columns.Add(new() 
@@ -658,23 +625,6 @@ else
         StateHasChanged();
     }
 
-    // ===== InteractiveTableComponent 事件處理 =====
-
-    private void OnInputFocus(ProductItem item)
-    {
-        OnProductInputFocus(item);
-    }
-
-    private async Task OnInputBlur(ProductItem item)
-    {
-        await OnProductInputBlur(item);
-    }
-
-    private async Task SelectProduct(ProductItem item, Product product)
-    {
-        await OnProductSelected(item, product);
-    }
-
     private async Task OnProductSearchInput(ProductItem item, string? searchValue)
     {
         var wasEmpty = IsEmptyRow(item);
@@ -710,11 +660,7 @@ else
         await NotifyDetailsChanged();
         StateHasChanged();
         
-        if (item.ShowDropdown)
-        {
-            await Task.Delay(10);
-            await PositionDropdownAsync(item);
-        }
+        // 下拉選單定位現在由 SearchableSelect 統一處理
     }
 
     private async Task OnQuantityInput(ProductItem item, string? value)
@@ -857,36 +803,6 @@ else
         }
         
         return AvailableProducts;
-    }
-
-    /// <summary>
-    /// 使用 JavaScript 定位下拉選單
-    /// </summary>
-    private async Task PositionDropdownAsync(ProductItem item)
-    {
-        try
-        {
-            var itemIndex = ProductItems.IndexOf(item);
-            // 簡化的 JavaScript 定位邏輯
-            await Task.Delay(1);
-        }
-        catch (Exception)
-        {
-            // 忽略 JavaScript 錯誤
-        }
-    }
-
-    /// <summary>
-    /// 取得商品輸入框的提示文字
-    /// </summary>
-    private string GetProductInputPlaceholder(bool isEmptyRow)
-    {
-        if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
-        {
-            return "請先選擇供應商...";
-        }
-        
-        return isEmptyRow ? "點擊開始輸入商品..." : "輸入商品編號或名稱...";
     }
 
     private decimal GetTotalAmount()
