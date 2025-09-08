@@ -728,6 +728,12 @@ namespace ERPCore2.Services
         {
             try
             {
+                // 檢查是否已核准 - 已核准的採購單不可刪除
+                if (entity.IsApproved)
+                {
+                    return ServiceResult.Failure("已核准的採購單無法刪除");
+                }
+                
                 var checkResult = await DependencyCheckHelper.CheckPurchaseOrderDependenciesAsync(_contextFactory, entity.Id);
                 if (!checkResult.CanDelete)
                 {
