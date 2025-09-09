@@ -671,7 +671,7 @@
 
             if (!validDetails.Any())
             {
-                await NotificationService.ShowErrorAsync("請至少輸入一筆進貨明細");
+                await NotificationService.ShowErrorAsync("請至少輸入一筆進貨明細 (包括本次入庫、倉庫或已完成進貨的)");
                 return false;
             }
 

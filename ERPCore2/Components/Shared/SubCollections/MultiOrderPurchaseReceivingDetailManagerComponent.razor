@@ -2,6 +2,8 @@
 
 @inject IPurchaseOrderService PurchaseOrderService
 @inject INotificationService NotificationService
+@inject IWarehouseService WarehouseService
+@inject IWarehouseLocationService WarehouseLocationService
 @using ERPCore2.Helpers
 @using ERPCore2.Components.Shared.SubCollections
 
@@ -113,6 +115,8 @@ else
     // ===== 內部狀態 =====
     private List<PurchaseOrderDetail> PendingOrderDetails { get; set; } = new List<PurchaseOrderDetail>();
     private List<ReceivingItem> ReceivingItems { get; set; } = new List<ReceivingItem>();
+    private List<Warehouse> Warehouses { get; set; } = new List<Warehouse>();
+    private List<WarehouseLocation> AllWarehouseLocations { get; set; } = new List<WarehouseLocation>();
     private int? _previousSupplierId = null;
     private int? _previousPurchaseOrderId = null;
     private int? _previousFilterProductId = null;
@@ -296,6 +300,62 @@ else
             }
         });
 
+        // 倉庫欄位
+        columns.Add(new()
+        {
+            Title = "倉庫",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "10%",
+            CustomTemplate = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                var selectedWarehouseId = receivingItem.WarehouseId?.ToString() ?? "";
+                
+                return @<div>
+                    <select class="form-select form-select-sm @(receivingItem.WarehouseValidationError != null ? "is-invalid" : "")" 
+                            value="@selectedWarehouseId"
+                            @onchange="(e) => OnWarehouseChanged(receivingItem, e.Value?.ToString())">
+                        <option value="">請選擇倉庫</option>
+                        @foreach (var warehouse in Warehouses)
+                        {
+                            <option value="@warehouse.Id">@warehouse.Code - @warehouse.Name</option>
+                        }
+                    </select>
+                    @if (receivingItem.WarehouseValidationError != null)
+                    {
+                        <small class="text-danger">@receivingItem.WarehouseValidationError</small>
+                    }
+                </div>;
+            }
+        });
+
+        // 倉庫位置欄位
+        columns.Add(new()
+        {
+            Title = "倉庫位置",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "10%",
+            CustomTemplate = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                var selectedLocationId = receivingItem.WarehouseLocationId?.ToString() ?? "";
+                var availableLocations = GetAvailableLocations(receivingItem.WarehouseId);
+                
+                return @<select class="form-select form-select-sm" 
+                                value="@selectedLocationId"
+                                disabled="@(!receivingItem.WarehouseId.HasValue)"
+                                @onchange="(e) => OnWarehouseLocationChanged(receivingItem, e.Value?.ToString())">
+                    <option value="">請選擇位置</option>
+                    @foreach (var location in availableLocations)
+                    {
+                        <option value="@location.Id">@location.Code - @location.Name</option>
+                    }
+                </select>;
+            }
+        });
+
         // 單價欄位
         columns.Add(new()
         {
@@ -335,18 +395,6 @@ else
                                @onclick="() => OnIsReceivingCompletedChanged(receivingItem)"
                                title="手動標記為完成進貨" />
                     </div>
-                    @if (receivingItem.IsReceivingCompleted)
-                    {
-                        <small class="text-success">
-                            <i class="fas fa-check-circle"></i> 已完成
-                        </small>
-                    }
-                    @if (receivingItem.IsReceivingCompleted && receivingItem.ReceivedQuantity == 0)
-                    {
-                        <small class="text-info d-block">
-                            <i class="fas fa-info-circle"></i> 標記完成
-                        </small>
-                    }
                 </div>;
             }
         });
@@ -369,12 +417,46 @@ else
     {
         try
         {
+            await LoadWarehousesAsync();
+            await LoadWarehouseLocationsAsync();
             await LoadPendingOrderDetailsAsync();
             LoadExistingDetails();
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 載入倉庫資料
+    /// </summary>
+    private async Task LoadWarehousesAsync()
+    {
+        try
+        {
+            Warehouses = await WarehouseService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入倉庫資料時發生錯誤：{ex.Message}");
+            Warehouses = new List<Warehouse>();
+        }
+    }
+
+    /// <summary>
+    /// 載入倉庫位置資料
+    /// </summary>
+    private async Task LoadWarehouseLocationsAsync()
+    {
+        try
+        {
+            AllWarehouseLocations = await WarehouseLocationService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入倉庫位置資料時發生錯誤：{ex.Message}");
+            AllWarehouseLocations = new List<WarehouseLocation>();
         }
     }
 
@@ -445,7 +527,9 @@ else
             {
                 PurchaseOrderDetail = od,
                 ReceivedQuantity = 0,
-                UnitPrice = od.UnitPrice
+                UnitPrice = od.UnitPrice,
+                WarehouseId = null, // 需要使用者手動選擇
+                WarehouseLocationId = null
             }).ToList();
         }
     }
@@ -465,6 +549,8 @@ else
                 PurchaseOrderDetail = existingDetail.PurchaseOrderDetail,
                 ReceivedQuantity = existingDetail.ReceivedQuantity,
                 UnitPrice = existingDetail.UnitPrice,
+                WarehouseId = existingDetail.WarehouseId,
+                WarehouseLocationId = existingDetail.WarehouseLocationId,
                 InspectionRemarks = existingDetail.InspectionRemarks,
                 BatchNumber = existingDetail.BatchNumber,
                 ExpiryDate = existingDetail.ExpiryDate,
@@ -484,6 +570,8 @@ else
                 {
                     item.ReceivedQuantity = existingDetail.ReceivedQuantity;
                     item.UnitPrice = existingDetail.UnitPrice;
+                    item.WarehouseId = existingDetail.WarehouseId;
+                    item.WarehouseLocationId = existingDetail.WarehouseLocationId;
                     item.InspectionRemarks = existingDetail.InspectionRemarks;
                     item.BatchNumber = existingDetail.BatchNumber;
                     item.ExpiryDate = existingDetail.ExpiryDate;
@@ -604,6 +692,85 @@ else
         StateHasChanged();
     }
 
+    /// <summary>
+    /// 倉庫變更
+    /// </summary>
+    private async Task OnWarehouseChanged(ReceivingItem item, string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            item.WarehouseId = null;
+            item.WarehouseLocationId = null;
+            item.WarehouseValidationError = null;
+        }
+        else if (int.TryParse(value, out int warehouseId))
+        {
+            // 驗證倉庫ID是否存在於倉庫列表中
+            var warehouse = Warehouses.FirstOrDefault(w => w.Id == warehouseId);
+            if (warehouse != null)
+            {
+                item.WarehouseId = warehouseId;
+                item.WarehouseLocationId = null; // 清空位置選擇
+                item.WarehouseValidationError = null;
+            }
+            else
+            {
+                item.WarehouseId = null;
+                item.WarehouseLocationId = null;
+                item.WarehouseValidationError = "選擇的倉庫不存在";
+            }
+        }
+        else
+        {
+            item.WarehouseValidationError = "請選擇有效的倉庫";
+        }
+
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 倉庫位置變更
+    /// </summary>
+    private async Task OnWarehouseLocationChanged(ReceivingItem item, string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            item.WarehouseLocationId = null;
+        }
+        else if (int.TryParse(value, out int locationId))
+        {
+            // 驗證位置ID是否存在於可用位置列表中
+            var availableLocations = GetAvailableLocations(item.WarehouseId);
+            var location = availableLocations.FirstOrDefault(l => l.Id == locationId);
+            if (location != null)
+            {
+                item.WarehouseLocationId = locationId;
+            }
+            else
+            {
+                item.WarehouseLocationId = null;
+            }
+        }
+
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 取得指定倉庫的可用位置
+    /// </summary>
+    private List<WarehouseLocation> GetAvailableLocations(int? warehouseId)
+    {
+        if (!warehouseId.HasValue)
+            return new List<WarehouseLocation>();
+            
+        return AllWarehouseLocations
+            .Where(loc => loc.WarehouseId == warehouseId.Value)
+            .OrderBy(loc => loc.Code)
+            .ToList();
+    }
+
     // ===== 資料轉換和通知 =====
 
     /// <summary>
@@ -613,7 +780,7 @@ else
     {
         var details = new List<PurchaseReceivingDetail>();
 
-        foreach (var item in ReceivingItems.Where(x => x.ReceivedQuantity > 0 || x.IsReceivingCompleted))
+        foreach (var item in ReceivingItems.Where(x => (x.ReceivedQuantity > 0 || x.IsReceivingCompleted) && x.WarehouseId.HasValue))
         {
             PurchaseReceivingDetail detail;
 
@@ -633,6 +800,8 @@ else
             detail.ProductId = item.PurchaseOrderDetail.ProductId;
             detail.ReceivedQuantity = item.ReceivedQuantity;
             detail.UnitPrice = item.UnitPrice;
+            detail.WarehouseId = item.WarehouseId!.Value; // 確保倉庫ID有值，因為已在 Where 條件中檢查過
+            detail.WarehouseLocationId = item.WarehouseLocationId;
             detail.InspectionRemarks = item.InspectionRemarks;
             detail.BatchNumber = item.BatchNumber;
             detail.ExpiryDate = item.ExpiryDate;
@@ -683,13 +852,26 @@ else
         var errors = new List<string>();
         
         // 檢查是否有入庫項目
-        var validItems = ReceivingItems.Where(item => item.ReceivedQuantity > 0 || item.IsReceivingCompleted).ToList();
-        if (!validItems.Any())
+        var potentialItems = ReceivingItems.Where(item => item.ReceivedQuantity > 0 || item.IsReceivingCompleted).ToList();
+        if (!potentialItems.Any())
         {
             errors.Add("至少需要一個入庫項目");
         }
         
-        // 檢查數量合理性
+        // 只驗證有效的入庫項目（有數量或標記完成，且有倉庫）
+        var validItems = potentialItems.Where(item => item.WarehouseId.HasValue).ToList();
+        
+        // 檢查是否有項目缺少倉庫
+        var itemsWithoutWarehouse = potentialItems.Where(item => !item.WarehouseId.HasValue).ToList();
+        if (itemsWithoutWarehouse.Any())
+        {
+            foreach (var item in itemsWithoutWarehouse)
+            {
+                errors.Add($"商品 {item.PurchaseOrderDetail.Product.Code} 必須選擇倉庫");
+            }
+        }
+        
+        // 檢查數量合理性和必填欄位
         foreach (var item in validItems)
         {
             var pendingQuantity = GetPendingQuantity(item.PurchaseOrderDetail);
@@ -722,11 +904,14 @@ else
         public PurchaseOrderDetail PurchaseOrderDetail { get; set; } = null!;
         public int ReceivedQuantity { get; set; } = 0;
         public decimal UnitPrice { get; set; } = 0;
+        public int? WarehouseId { get; set; }
+        public int? WarehouseLocationId { get; set; }
         public string? InspectionRemarks { get; set; }
         public string? BatchNumber { get; set; }
         public DateTime? ExpiryDate { get; set; }
         public bool IsReceivingCompleted { get; set; } = false;
         public string? ValidationError { get; set; }
+        public string? WarehouseValidationError { get; set; }
         public PurchaseReceivingDetail? ExistingDetailEntity { get; set; }
     }
 }
