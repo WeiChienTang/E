@@ -6,7 +6,6 @@
 .modal-desktop {
     width: 98% !important;
     max-width: none !important;
-    max-width: 98vw !important;
 }
 
 /* 自訂超大尺寸 Modal - 適合桌面螢幕 */
