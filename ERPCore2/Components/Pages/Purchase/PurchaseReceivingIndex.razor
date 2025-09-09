@@ -9,9 +9,9 @@
                           TService="IPurchaseReceivingService"
                           Service="@PurchaseReceivingService"
                           EntityBasePath="/purchase/receiving"
-                          PageTitle="採購進貨管理"
-                          PageSubtitle="管理所有採購進貨單資料與進貨狀態"
-                          EntityName="採購進貨單"
+                          PageTitle="進貨管理"
+                          PageSubtitle="管理所有進貨單資料與進貨狀態"
+                          EntityName="進貨單"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
@@ -24,7 +24,7 @@
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />
 
-@* 採購進貨單編輯 Modal *@
+@* 進貨單編輯 Modal *@
 <PurchaseReceivingEditModalComponent IsVisible="@showEditModal"
                                     IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                                     PurchaseReceivingId="@editingPurchaseReceivingId"
@@ -79,8 +79,8 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化採購進貨頁面失敗");
-            await NotificationService.ShowErrorAsync("初始化採購進貨頁面失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化進貨頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化進貨頁面失敗");
         }
     }
 
@@ -95,7 +95,7 @@
             {
                 new("首頁", "/"),
                 new("採購管理", "#"),
-                new("採購進貨管理")
+                new("進貨管理")
             };
         }
         catch (Exception ex)
@@ -108,7 +108,7 @@
     }
 
     /// <summary>
-    /// 載入採購進貨單資料
+    /// 載入進貨單資料
     /// </summary>
     private async Task<List<PurchaseReceiving>> LoadPurchaseReceivingsAsync()
     {
@@ -118,8 +118,8 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPurchaseReceivingsAsync), GetType(), additionalData: "載入採購進貨單資料失敗");
-            await NotificationService.ShowErrorAsync("載入採購進貨單資料失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPurchaseReceivingsAsync), GetType(), additionalData: "載入進貨單資料失敗");
+            await NotificationService.ShowErrorAsync("載入進貨單資料失敗");
             return new List<PurchaseReceiving>();
         }
     }
@@ -178,7 +178,7 @@
     }
 
     /// <summary>
-    /// 應用採購進貨單篩選器
+    /// 應用進貨單篩選器
     /// </summary>
     private IQueryable<PurchaseReceiving> ApplyPurchaseReceivingFilters(SearchFilterModel searchModel, IQueryable<PurchaseReceiving> query)
     {
