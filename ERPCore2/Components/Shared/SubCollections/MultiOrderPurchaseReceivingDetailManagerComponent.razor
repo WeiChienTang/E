@@ -1,219 +1,99 @@
-@* 多採購單採購入庫明細管理元件 *@
-@using ERPCore2.Components.Shared.Buttons
+@* 多採購單採購入庫明細管理元件 - 使用 InteractiveTableComponent 統一UI *@
+
 @inject IPurchaseOrderService PurchaseOrderService
 @inject INotificationService NotificationService
+@using ERPCore2.Helpers
+@using ERPCore2.Components.Shared.SubCollections
 
-@if ((IsEditMode && ReceivingItems.Any()) || (!IsEditMode && PendingOrderDetails != null && PendingOrderDetails.Any()))
+@if (!SupplierId.HasValue || SupplierId.Value <= 0)
 {
-    <div class="card">
-            @if (!SupplierId.HasValue || SupplierId.Value <= 0)
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <div class="supplier-warning">
+                <i class="fas fa-building text-info fa-3x mb-3"></i>
+                <h5 class="text-muted">請先選擇供應商</h5>
+                <p class="text-muted">選擇供應商後即可查看該供應商的未完成進貨商品</p>
+            </div>
+        </div>
+    </div>
+}
+else if ((IsEditMode && ReceivingItems.Any()) || (!IsEditMode && PendingOrderDetails != null && PendingOrderDetails.Any()))
+{
+    <div class="card border-0 shadow-sm">
+        @* 篩選資訊顯示 *@
+        @if (PurchaseOrderId.HasValue && PurchaseOrderId.Value > 0 && !IsEditMode)
+        {
+            var selectedOrder = PendingOrderDetails.FirstOrDefault(pod => pod.PurchaseOrderId == PurchaseOrderId.Value)?.PurchaseOrder;
+            @if (selectedOrder != null)
             {
-                <div class="text-center text-muted py-5">
-                    <i class="fas fa-building fa-3x mb-3"></i>
-                    <p class="fs-5">請先選擇供應商</p>
-                    <p>選擇供應商後即可查看該供應商的未完成進貨商品</p>
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-filter me-2"></i>
+                    <span>正在顯示採購單：<strong>@selectedOrder.PurchaseOrderNumber</strong> 的商品明細</span>
                 </div>
             }
-            else
+        }
+        
+        @if (FilterProductId.HasValue && FilterProductId.Value > 0 && !IsEditMode)
+        {
+            var selectedProduct = PendingOrderDetails.FirstOrDefault(pod => pod.ProductId == FilterProductId.Value)?.Product;
+            @if (selectedProduct != null)
             {
-                @if (PurchaseOrderId.HasValue && PurchaseOrderId.Value > 0 && !IsEditMode)
-                {
-                    var selectedOrder = PendingOrderDetails.FirstOrDefault(pod => pod.PurchaseOrderId == PurchaseOrderId.Value)?.PurchaseOrder;
-                    @if (selectedOrder != null)
-                    {
-                        <div class="alert alert-info d-flex align-items-center mb-3">
-                            <i class="fas fa-filter me-2"></i>
-                            <span>正在顯示採購單：<strong>@selectedOrder.PurchaseOrderNumber</strong> 的商品明細</span>
-                        </div>
-                    }
-                }
-                
-                @if (FilterProductId.HasValue && FilterProductId.Value > 0 && !IsEditMode)
-                {
-                    var selectedProduct = PendingOrderDetails.FirstOrDefault(pod => pod.ProductId == FilterProductId.Value)?.Product;
-                    @if (selectedProduct != null)
-                    {
-                        <div class="alert alert-warning d-flex align-items-center mb-3">
-                            <i class="fas fa-filter me-2"></i>
-                            <span>正在篩選產品：<strong>@selectedProduct.Code - @selectedProduct.Name</strong></span>
-                        </div>
-                    }
-                }
-                
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover rounded overflow-hidden">
-                        <thead class="table-dark">
-                            <tr>
-                                <th width="14%">採購單</th>
-                                <th width="12%">供應商</th>
-                                <th width="18%">商品</th>
-                                <th width="8%">訂購量</th>
-                                <th width="8%">已入庫</th>
-                                <th width="8%">待入庫</th>
-                                <th width="8%">本次入庫</th>
-                                <th width="10%">單價</th>
-                                <th width="10%">完成進貨</th>
-                                <th width="4%">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in ReceivingItems)
-                            {
-                                var orderDetail = item.PurchaseOrderDetail;
-                                
-                                <tr>
-                                    <td>
-                                        <small class="text-primary">@orderDetail.PurchaseOrder.PurchaseOrderNumber</small>
-                                    </td>
-                                    <td>
-                                        <small class="text-success">
-                                            @orderDetail.PurchaseOrder.Supplier.CompanyName
-                                        </small>
-                                    </td>
-                                    <td>
-                                        <div class="product-info">
-                                            <strong>@orderDetail.Product.Code</strong>
-                                            <br />
-                                            <small class="text-muted">@orderDetail.Product.Name</small>
-                                            @if (!string.IsNullOrEmpty(orderDetail.Remarks))
-                                            {
-                                                <br />
-                                                <small class="text-info">
-                                                    <i class="fas fa-comment"></i> @orderDetail.Remarks
-                                                </small>
-                                            }
-                                        </div>
-                                    </td>
-                                    <td class="text-end">
-                                        <input type="number" class="form-control form-control-sm text-end" 
-                                               value="@orderDetail.OrderQuantity"
-                                               readonly />
-                                    </td>
-                                    <td class="text-end">
-                                        <div class="input-group input-group-sm">
-                                            <input type="number" class="form-control text-end @(orderDetail.ReceivedQuantity >= orderDetail.OrderQuantity ? "bg-success-subtle" : "")" 
-                                                   value="@orderDetail.ReceivedQuantity"
-                                                   readonly />
-                                            <span class="input-group-text @(orderDetail.ReceivedQuantity >= orderDetail.OrderQuantity ? "bg-success text-white" : "bg-light text-muted")">
-                                                <small>已入庫</small>
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td class="text-end">
-                                        <div class="input-group input-group-sm">
-                                            <input type="number" class="form-control text-end @(GetPendingQuantity(orderDetail) <= 0 ? "bg-success-subtle" : "bg-warning-subtle")" 
-                                                   value="@GetPendingQuantity(orderDetail)"
-                                                   readonly />
-                                            <span class="input-group-text @(GetPendingQuantity(orderDetail) <= 0 ? "bg-success text-white" : "bg-warning text-dark")">
-                                                <small>@(GetPendingQuantity(orderDetail) <= 0 ? "完成" : "待入庫")</small>
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <input type="number" class="form-control form-control-sm text-end" 
-                                               value="@(item.ReceivedQuantity == 0 ? "" : item.ReceivedQuantity.ToString())"
-                                               @oninput="(e) => OnReceivedQuantityChanged(item, e.Value?.ToString())"
-                                               placeholder="0" 
-                                               min="0" 
-                                               max="@GetPendingQuantity(orderDetail)"
-                                               step="1" />
-                                        @if (item.ValidationError != null)
-                                        {
-                                            <small class="text-danger">@item.ValidationError</small>
-                                        }
-                                        @if (GetPendingQuantity(orderDetail) <= 0)
-                                        {
-                                            <small class="text-success">
-                                                <i class="fas fa-check-circle"></i> 已完成進貨
-                                            </small>
-                                        }
-                                    </td>
-                                    <td>
-                                        <input type="number" class="form-control form-control-sm text-end" 
-                                               @bind="item.UnitPrice"
-                                               @oninput="(e) => OnUnitPriceChanged(item, e.Value?.ToString())"
-                                               placeholder="0.00" 
-                                               min="0" 
-                                               step="0.01" />
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="form-check form-switch d-flex justify-content-center">
-                                            <input class="form-check-input" 
-                                                   type="checkbox" 
-                                                   checked="@item.IsReceivingCompleted"
-                                                   @onclick="(e) => OnIsReceivingCompletedChanged(item)"
-                                                   title="手動標記為完成進貨" />
-                                        </div>
-                                        @if (item.IsReceivingCompleted)
-                                        {
-                                            <small class="text-success">
-                                                <i class="fas fa-check-circle"></i> 已完成
-                                            </small>
-                                        }
-                                        @if (item.IsReceivingCompleted && item.ReceivedQuantity == 0)
-                                        {
-                                            <small class="text-info d-block">
-                                                <i class="fas fa-info-circle"></i> 標記完成
-                                            </small>
-                                        }
-                                    </td>
-                                    <td class="text-center">
-                                        <!-- 移除操作可能不需要，先註解掉 -->
-                                        @* <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                @onclick="() => RemoveItem(item)"
-                                                title="移除此項目">
-                                            <i class="fas fa-times"></i>
-                                        </button> *@
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                        <tfoot>
-                            <tr class="table-info">
-                                <th colspan="8">總計</th>
-                                <th class="text-center">@GetTotalAmount().ToString("C")</th>
-                                <th></th>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-                
-                
-                <div class="d-flex justify-content-end gap-2 p-3">
-                    @if (!IsEditMode)
-                    {
-                        <GenericButtonComponent Variant="ButtonVariant.Success" 
-                                               Text="填入所有待入庫量" 
-                                               IconClass="fas fa-fill" 
-                                               OnClick="FillAllOrderQuantities" />
-                    }
-                    <GenericButtonComponent Variant="ButtonVariant.Danger" 
-                                           Text="清空所有數量" 
-                                           IconClass="fas fa-times" 
-                                           OnClick="ClearAllQuantities" />
+                <div class="card-header bg-warning text-dark">
+                    <i class="fas fa-filter me-2"></i>
+                    <span>正在篩選產品：<strong>@selectedProduct.Code - @selectedProduct.Name</strong></span>
                 </div>
             }
+        }
+
+        <div class="card-body p-0">
+            <InteractiveTableComponent TItem="ReceivingItem" 
+                                      Items="@ReceivingItems"
+                                      ColumnDefinitions="@GetColumnDefinitions()"
+                                      IsReadOnly="false"
+                                      ShowRowNumbers="false"
+                                      EmptyMessage="@EmptyMessage"
+                                      ShowTotalRow="true"
+                                      TotalRowTemplate="@GetTotalRowTemplate" />
+        </div>
+        
+        <div class="card-footer">
+            <div class="d-flex justify-content-end gap-2">
+                @if (!IsEditMode)
+                {
+                    <button class="btn btn-success" @onclick="FillAllOrderQuantities">
+                        <i class="fas fa-fill me-1"></i>填入所有待入庫量
+                    </button>
+                }
+                <button class="btn btn-outline-danger" @onclick="ClearAllQuantities">
+                    <i class="fas fa-times me-1"></i>清空所有數量
+                </button>
+            </div>
+        </div>
     </div>
 }
 else
 {
-    <div class="text-center text-muted py-5">
-        <i class="fas fa-clipboard-list fa-3x mb-3"></i>
-        @if (IsEditMode)
-        {
-            <p class="fs-5">此入庫單尚無明細資料</p>
-            <p>請檢查資料載入狀況或聯繫系統管理員</p>
-        }
-        else if (PurchaseOrderId.HasValue && PurchaseOrderId.Value > 0)
-        {
-            <p class="fs-5">該採購單尚無未完成進貨的商品</p>
-            <p>該採購單的所有商品都已完成進貨，或您可以選擇其他採購單</p>
-        }
-        else
-        {
-            <p class="fs-5">尚無未完成進貨的商品</p>
-            <p>該供應商的所有採購項目都已完成進貨</p>
-        }
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <div class="empty-state">
+                <i class="fas fa-clipboard-list fa-3x mb-3 text-muted"></i>
+                @if (IsEditMode)
+                {
+                    <h5 class="text-muted">此入庫單尚無明細資料</h5>
+                    <p class="text-muted">請檢查資料載入狀況或聯繫系統管理員</p>
+                }
+                else if (PurchaseOrderId.HasValue && PurchaseOrderId.Value > 0)
+                {
+                    <h5 class="text-muted">該採購單尚無未完成進貨的商品</h5>
+                    <p class="text-muted">該採購單的所有商品都已完成進貨，或您可以選擇其他採購單</p>
+                }
+                else
+                {
+                    <h5 class="text-muted">尚無未完成進貨的商品</h5>
+                    <p class="text-muted">該供應商的所有採購項目都已完成進貨</p>
+                }
+            </div>
+        </div>
     </div>
 }
 
@@ -226,6 +106,10 @@ else
     [Parameter] public EventCallback<List<PurchaseReceivingDetail>> OnDetailsChanged { get; set; }
     [Parameter] public bool IsEditMode { get; set; } = false;
 
+    // ===== 顯示設定 =====
+    [Parameter] public string Title { get; set; } = "入庫明細";
+    [Parameter] public string EmptyMessage { get; set; } = "尚無入庫明細";
+    
     // ===== 內部狀態 =====
     private List<PurchaseOrderDetail> PendingOrderDetails { get; set; } = new List<PurchaseOrderDetail>();
     private List<ReceivingItem> ReceivingItems { get; set; } = new List<ReceivingItem>();
@@ -252,6 +136,231 @@ else
             LoadExistingDetails();
         }
     }
+
+    // ===== InteractiveTableComponent 方法 =====
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        var columns = new List<InteractiveColumnDefinition>();
+
+        // 採購單欄位
+        columns.Add(new()
+        {
+            Title = "採購單",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "14%",
+            CustomTemplate = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                var orderDetail = receivingItem.PurchaseOrderDetail;
+                return @<small class="text-primary fw-bold">@orderDetail.PurchaseOrder.PurchaseOrderNumber</small>;
+            }
+        });
+
+        // 供應商欄位
+        columns.Add(new()
+        {
+            Title = "供應商",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "18%",
+            HideOnMobile = true,
+            CustomTemplate = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                var orderDetail = receivingItem.PurchaseOrderDetail;
+                return @<small class="text-success">@orderDetail.PurchaseOrder.Supplier.CompanyName</small>;
+            }
+        });
+
+        // 商品欄位
+        columns.Add(new()
+        {
+            Title = "商品",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "12%",
+            CustomTemplate = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                var orderDetail = receivingItem.PurchaseOrderDetail;
+                return @<div class="product-info">
+                    <strong>@orderDetail.Product.Code</strong>
+                    <br />
+                    <small class="text-muted">@orderDetail.Product.Name</small>
+                    @if (!string.IsNullOrEmpty(orderDetail.Remarks))
+                    {
+                        <br />
+                        <small class="text-info">
+                            <i class="fas fa-comment"></i> @orderDetail.Remarks
+                        </small>
+                    }
+                </div>;
+            }
+        });
+
+        // 訂購量欄位（唯讀）
+        columns.Add(new()
+        {
+            Title = "訂購量",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "8%",
+            CustomTemplate = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                var orderDetail = receivingItem.PurchaseOrderDetail;
+                return @<input type="number" class="form-control form-control-sm text-end" 
+                               value="@orderDetail.OrderQuantity"
+                               readonly 
+                               style="background-color: #f8f9fa; cursor: not-allowed;" />;
+            }
+        });
+
+        // 已入庫欄位（唯讀）
+        columns.Add(new()
+        {
+            Title = "已入庫",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "8%",
+            CustomTemplate = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                var orderDetail = receivingItem.PurchaseOrderDetail;
+                var isCompleted = orderDetail.ReceivedQuantity >= orderDetail.OrderQuantity;
+                return @<div class="input-group input-group-sm">
+                    <input type="number" class="form-control text-end @(isCompleted ? "bg-success text-white" : "")" 
+                           value="@orderDetail.ReceivedQuantity"
+                           readonly 
+                           style="cursor: not-allowed;" />
+                </div>;
+            }
+        });
+
+        // 待入庫欄位（唯讀）
+        columns.Add(new()
+        {
+            Title = "待入庫",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "8%",
+            CustomTemplate = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                var orderDetail = receivingItem.PurchaseOrderDetail;
+                var pendingQuantity = GetPendingQuantity(orderDetail);
+                var isCompleted = pendingQuantity <= 0;
+                return @<div class="input-group input-group-sm">
+                    <input type="number" class="form-control text-end @(isCompleted ? "bg-success text-white" : "bg-warning text-dark")" 
+                           value="@pendingQuantity"
+                           readonly 
+                           style="cursor: not-allowed;" />
+                </div>;
+            }
+        });
+
+        // 本次入庫欄位
+        columns.Add(new()
+        {
+            Title = "本次入庫",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "8%",
+            CustomTemplate = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                var orderDetail = receivingItem.PurchaseOrderDetail;
+                var pendingQuantity = GetPendingQuantity(orderDetail);
+                var value = receivingItem.ReceivedQuantity > 0 ? receivingItem.ReceivedQuantity.ToString() : "";
+                
+                return @<div>
+                    <input type="number" class="form-control form-control-sm text-end" 
+                           value="@value"
+                           @oninput="(e) => OnReceivedQuantityChanged(receivingItem, e.Value?.ToString())"
+                           placeholder="0" 
+                           min="0" 
+                           max="@pendingQuantity"
+                           step="1" />
+                    @if (receivingItem.ValidationError != null)
+                    {
+                        <small class="text-danger">@receivingItem.ValidationError</small>
+                    }
+                    @if (pendingQuantity <= 0)
+                    {
+                        <small class="text-success">
+                            <i class="fas fa-check-circle"></i> 已完成進貨
+                        </small>
+                    }
+                </div>;
+            }
+        });
+
+        // 單價欄位
+        columns.Add(new()
+        {
+            Title = "單價",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "8%",
+            CustomTemplate = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                var value = receivingItem.UnitPrice > 0 ? receivingItem.UnitPrice.ToString("F0") : "";
+                
+                return @<input type="number" class="form-control form-control-sm text-end" 
+                               value="@value"
+                               @oninput="(e) => OnUnitPriceChanged(receivingItem, e.Value?.ToString())"
+                               placeholder="0.00" 
+                               min="0" />;
+            }
+        });
+
+        // 完成進貨欄位
+        columns.Add(new()
+        {
+            Title = "完成",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "5%",
+            CustomTemplate = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                
+                return @<div class="text-center">
+                    <div class="form-check form-switch d-flex justify-content-center">
+                        <input class="form-check-input" 
+                               type="checkbox" 
+                               checked="@receivingItem.IsReceivingCompleted"
+                               @onclick="() => OnIsReceivingCompletedChanged(receivingItem)"
+                               title="手動標記為完成進貨" />
+                    </div>
+                    @if (receivingItem.IsReceivingCompleted)
+                    {
+                        <small class="text-success">
+                            <i class="fas fa-check-circle"></i> 已完成
+                        </small>
+                    }
+                    @if (receivingItem.IsReceivingCompleted && receivingItem.ReceivedQuantity == 0)
+                    {
+                        <small class="text-info d-block">
+                            <i class="fas fa-info-circle"></i> 標記完成
+                        </small>
+                    }
+                </div>;
+            }
+        });
+
+        return columns;
+    }
+
+    private RenderFragment<InteractiveColumnDefinition> GetTotalRowTemplate => column => __builder =>
+    {
+        if (column.Title == "單價")
+        {
+            <strong class="text-success">總計: @GetTotalAmount().ToString("C")</strong>
+        }
+    };
 
     /// <summary>
     /// 載入所有必要資料
@@ -423,7 +532,12 @@ else
     /// </summary>
     private async Task OnReceivedQuantityChanged(ReceivingItem item, string? value)
     {
-        if (int.TryParse(value, out int quantity))
+        if (string.IsNullOrEmpty(value))
+        {
+            item.ReceivedQuantity = 0;
+            item.ValidationError = null;
+        }
+        else if (int.TryParse(value, out int quantity))
         {
             if (quantity < 0)
             {
@@ -447,8 +561,8 @@ else
         }
         else
         {
-            item.ReceivedQuantity = 0;
-            item.ValidationError = null;
+            // 保持原值，但顯示錯誤
+            item.ValidationError = "請輸入有效的數字";
         }
 
         await NotifyDetailsChanged();
@@ -460,13 +574,20 @@ else
     /// </summary>
     private async Task OnUnitPriceChanged(ReceivingItem item, string? value)
     {
-        if (decimal.TryParse(value, out decimal price) && price >= 0)
-        {
-            item.UnitPrice = price;
-        }
-        else
+        if (string.IsNullOrEmpty(value))
         {
             item.UnitPrice = 0;
+        }
+        else if (decimal.TryParse(value, out decimal price))
+        {
+            if (price >= 0)
+            {
+                item.UnitPrice = price;
+            }
+            else
+            {
+                item.UnitPrice = 0;
+            }
         }
 
         await NotifyDetailsChanged();
@@ -552,6 +673,45 @@ else
     private int GetPendingQuantity(PurchaseOrderDetail orderDetail)
     {
         return orderDetail.OrderQuantity - orderDetail.ReceivedQuantity;
+    }
+
+    /// <summary>
+    /// 驗證所有入庫明細
+    /// </summary>
+    public async Task<bool> ValidateAsync()
+    {
+        var errors = new List<string>();
+        
+        // 檢查是否有入庫項目
+        var validItems = ReceivingItems.Where(item => item.ReceivedQuantity > 0 || item.IsReceivingCompleted).ToList();
+        if (!validItems.Any())
+        {
+            errors.Add("至少需要一個入庫項目");
+        }
+        
+        // 檢查數量合理性
+        foreach (var item in validItems)
+        {
+            var pendingQuantity = GetPendingQuantity(item.PurchaseOrderDetail);
+            if (item.ReceivedQuantity > pendingQuantity)
+            {
+                errors.Add($"商品 {item.PurchaseOrderDetail.Product.Code} 的入庫量超過待進貨量");
+            }
+            
+            if (item.UnitPrice < 0)
+            {
+                errors.Add($"商品 {item.PurchaseOrderDetail.Product.Code} 的單價不可為負數");
+            }
+        }
+        
+        if (errors.Any())
+        {
+            var errorMessage = string.Join("\n", errors);
+            await NotificationService.ShowErrorAsync(errorMessage);
+            return false;
+        }
+        
+        return true;
     }
 
     /// <summary>

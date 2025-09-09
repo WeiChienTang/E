@@ -5,6 +5,8 @@
 @inject IWarehouseLocationService WarehouseLocationService
 @inject INotificationService NotificationService
 
+@using ERPCore2.Models
+
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="InventoryStock" 
@@ -23,6 +25,9 @@
                         RequiredPermission="InventoryStock.Read"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
+                        ShowStatisticsCards="true"
+                        StatisticsCardConfigs="@statisticsCardConfigs"
+                        StatisticsDataLoader="@LoadStatisticsDataAsync"
                         @ref="indexComponent"/>
 
 @* 庫存編輯 Modal *@
@@ -55,6 +60,9 @@
     private List<Product> products = new();
     private List<Warehouse> warehouses = new();
     private List<WarehouseLocation> warehouseLocations = new();
+    
+    // 統計卡片相關
+    private List<StatisticsCardConfig> statisticsCardConfigs = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -77,6 +85,9 @@
             // 使用欄位配置建立篩選器和表格欄位
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();
+            
+            // 初始化統計卡片配置
+            InitializeStatisticsCardConfigs();
         }
         catch (Exception ex)
         {
@@ -185,6 +196,218 @@
         }
 
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyInventoryStockFilters), GetType());
+    }
+
+    // ===== 統計相關方法 =====
+    
+    /// <summary>
+    /// 初始化統計卡片配置
+    /// </summary>
+    private void InitializeStatisticsCardConfigs()
+    {
+        try
+        {
+            statisticsCardConfigs = new List<StatisticsCardConfig>
+            {
+                new()
+                {
+                    Title = "總商品數量",
+                    DataKey = "TotalProducts",
+                    BorderColor = "primary",
+                    TextColor = "primary",
+                    OnClick = EventCallback.Factory.Create(this, HandleTotalProductsClick)
+                },
+                new()
+                {
+                    Title = "總庫存價值",
+                    DataKey = "TotalInventoryValue",
+                    BorderColor = "success",
+                    TextColor = "success",
+                    IsCurrency = true,
+                    OnClick = EventCallback.Factory.Create(this, HandleTotalValueClick)
+                },
+                new()
+                {
+                    Title = "低庫存警戒",
+                    DataKey = "LowStockCount",
+                    BorderColor = "warning",
+                    TextColor = "warning",
+                    OnClick = EventCallback.Factory.Create(this, HandleLowStockClick)
+                },
+                new()
+                {
+                    Title = "零庫存商品",
+                    DataKey = "ZeroStockCount",
+                    BorderColor = "danger",
+                    TextColor = "danger",
+                    OnClick = EventCallback.Factory.Create(this, HandleZeroStockClick)
+                },
+                new()
+                {
+                    Title = "未設警戒線",
+                    DataKey = "NoWarningLevelCount",
+                    BorderColor = "secondary",
+                    TextColor = "secondary",
+                    OnClick = EventCallback.Factory.Create(this, HandleNoWarningLevelClick)
+                },
+                new()
+                {
+                    Title = "庫存過多",
+                    DataKey = "OverStockCount",
+                    BorderColor = "info",
+                    TextColor = "info",
+                    OnClick = EventCallback.Factory.Create(this, HandleOverStockClick)
+                },
+                new()
+                {
+                    Title = "呆滯庫存",
+                    DataKey = "StaleStockCount",
+                    BorderColor = "warning",
+                    TextColor = "warning",
+                    OnClick = EventCallback.Factory.Create(this, HandleStaleStockClick)
+                },
+                new()
+                {
+                    Title = "預留過高",
+                    DataKey = "HighReservedStockCount",
+                    BorderColor = "danger",
+                    TextColor = "danger",
+                    OnClick = EventCallback.Factory.Create(this, HandleHighReservedStockClick)
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤但不顯示通知，因為這不是關鍵功能
+            _ = Task.Run(async () => await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeStatisticsCardConfigs), GetType(), additionalData: "初始化統計卡片配置失敗"));
+            // 設定安全的預設值
+            statisticsCardConfigs = new List<StatisticsCardConfig>();
+        }
+    }
+    
+    /// <summary>
+    /// 載入統計資料
+    /// </summary>
+    private async Task<Dictionary<string, object>> LoadStatisticsDataAsync()
+    {
+        try
+        {
+            return await InventoryStockService.GetInventoryStatisticsAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadStatisticsDataAsync), GetType(), additionalData: "載入統計資料失敗");
+            await NotificationService.ShowErrorAsync("載入統計資料失敗");
+            // 返回空的統計資料
+            return new Dictionary<string, object>();
+        }
+    }
+    
+    // ===== 統計卡片點擊事件處理 =====
+    
+    private async Task HandleTotalProductsClick()
+    {
+        try
+        {
+            // 清除所有篩選，顯示全部商品
+            if (indexComponent != null)
+            {
+                indexComponent.ResetFilters();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleTotalProductsClick), GetType());
+        }
+    }
+    
+    private async Task HandleTotalValueClick()
+    {
+        try
+        {
+            // 可以導航到庫存價值報表或顯示詳細資訊
+            await NotificationService.ShowInfoAsync("庫存總價值詳細資訊功能開發中...");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleTotalValueClick), GetType());
+        }
+    }
+    
+    private async Task HandleLowStockClick()
+    {
+        try
+        {
+            // 篩選顯示低庫存商品
+            // 這裡需要透過篩選器來實現，暫時顯示訊息
+            await NotificationService.ShowWarningAsync("低庫存商品篩選功能開發中...");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleLowStockClick), GetType());
+        }
+    }
+    
+    private async Task HandleZeroStockClick()
+    {
+        try
+        {
+            // 篩選顯示零庫存商品
+            // 這裡需要透過篩選器來實現，暫時顯示訊息
+            await NotificationService.ShowWarningAsync("零庫存商品篩選功能開發中...");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleZeroStockClick), GetType());
+        }
+    }
+    
+    private async Task HandleNoWarningLevelClick()
+    {
+        try
+        {
+            await NotificationService.ShowInfoAsync("發現尚未設定警戒線的商品。建議您為這些商品設定最低和最高庫存警戒線，以便更好地管理庫存。");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleNoWarningLevelClick), GetType());
+        }
+    }
+    
+    private async Task HandleOverStockClick()
+    {
+        try
+        {
+            await NotificationService.ShowWarningAsync("發現庫存超過最高警戒線的商品。這可能導致資金積壓，建議檢查是否需要調整採購策略。");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleOverStockClick), GetType());
+        }
+    }
+    
+    private async Task HandleStaleStockClick()
+    {
+        try
+        {
+            await NotificationService.ShowWarningAsync("發現30天內沒有異動的呆滯庫存。建議檢查這些商品是否需要促銷或調整庫存策略。");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleStaleStockClick), GetType());
+        }
+    }
+    
+    private async Task HandleHighReservedStockClick()
+    {
+        try
+        {
+            await NotificationService.ShowWarningAsync("發現預留庫存比例過高的商品。預留庫存超過總庫存的50%可能影響可用庫存，建議檢查預留設定。");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleHighReservedStockClick), GetType());
+        }
     }
 
     // ===== 輔助方法 =====

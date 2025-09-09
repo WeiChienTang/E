@@ -130,7 +130,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     ReceiptDate = receiptDate,
                     Remarks = $"採購訂單 {order.PurchaseOrderNumber} 進貨",
                     PurchaseOrderId = order.Id,
-                    WarehouseId = order.WarehouseId!.Value,
+                    SupplierId = order.SupplierId,
                     ConfirmedBy = 24, // 使用實際存在的 admin 員工 ID
                     ConfirmedAt = receiptDate.AddHours(2),
                     Status = EntityStatus.Active,
@@ -161,6 +161,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                             ProductId = orderDetail.ProductId,
                             ReceivedQuantity = orderDetail.ReceivedQuantity,
                             UnitPrice = orderDetail.UnitPrice,
+                            WarehouseId = order.WarehouseId!.Value,
                             InspectionRemarks = "品質良好",
                             BatchNumber = $"BATCH{DateTime.Now:yyyyMMdd}{random.Next(100, 999)}",
                             Status = EntityStatus.Active,

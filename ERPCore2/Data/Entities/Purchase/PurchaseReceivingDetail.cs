@@ -11,6 +11,7 @@ namespace ERPCore2.Data.Entities
     [Index(nameof(PurchaseReceivingId), nameof(ProductId))]
     [Index(nameof(PurchaseOrderDetailId))]
     [Index(nameof(ProductId))]
+    [Index(nameof(WarehouseId))]
     public class PurchaseReceivingDetail : BaseEntity
     {
         [Required(ErrorMessage = "採購進貨單為必填")]
@@ -41,6 +42,11 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal SubtotalAmount => ReceivedQuantity * UnitPrice;
 
+        [Required(ErrorMessage = "倉庫為必填")]
+        [Display(Name = "倉庫")]
+        [ForeignKey(nameof(Warehouse))]
+        public int WarehouseId { get; set; }
+
         [Display(Name = "倉庫位置")]
         [ForeignKey(nameof(WarehouseLocation))]
         public int? WarehouseLocationId { get; set; }
@@ -64,6 +70,7 @@ namespace ERPCore2.Data.Entities
         public PurchaseReceiving PurchaseReceiving { get; set; } = null!;
         public PurchaseOrderDetail PurchaseOrderDetail { get; set; } = null!;
         public Product Product { get; set; } = null!;
+        public Warehouse Warehouse { get; set; } = null!;
         public WarehouseLocation? WarehouseLocation { get; set; }
     }
 }

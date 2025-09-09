@@ -2,19 +2,21 @@
 @using ERPCore2.Components.Shared.Cards
 @using ERPCore2.Models
 
-<StatisticsCardContainer>
+<div class="d-flex flex-wrap mb-4 statistics-cards-container">
     @foreach (var cardConfig in CardConfigs)
     {
-        <StatisticsCard Title="@cardConfig.Title"
-                       Value="@GetCardValue(cardConfig)"
-                       IconClass="@cardConfig.IconClass"
-                       BorderColor="@cardConfig.BorderColor"
-                       TextColor="@cardConfig.TextColor"
-                       IsCurrency="@cardConfig.IsCurrency"
-                       IsClickable="@(cardConfig.OnClick.HasDelegate)"
-                       OnClick="@cardConfig.OnClick" />
+        <div class="statistics-card-wrapper">
+            <StatisticsCard Title="@cardConfig.Title"
+                           Value="@GetCardValue(cardConfig)"
+                           IconClass="@cardConfig.IconClass"
+                           BorderColor="@cardConfig.BorderColor"
+                           TextColor="@cardConfig.TextColor"
+                           IsCurrency="@cardConfig.IsCurrency"
+                           IsClickable="@(cardConfig.OnClick.HasDelegate)"
+                           OnClick="@cardConfig.OnClick" />
+        </div>
     }
-</StatisticsCardContainer>
+</div>
 
 @code {
     /// <summary>

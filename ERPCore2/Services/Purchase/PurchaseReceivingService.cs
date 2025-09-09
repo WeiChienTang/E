@@ -33,10 +33,11 @@ namespace ERPCore2.Services
                     .Include(pr => pr.PurchaseOrder)
                         .ThenInclude(po => po!.Supplier)
                     .Include(pr => pr.Supplier)  // 新增直接供應商關聯
-                    .Include(pr => pr.Warehouse)
                     .Include(pr => pr.ConfirmedByUser)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Product)
+                    .Include(pr => pr.PurchaseReceivingDetails)
+                        .ThenInclude(prd => prd.Warehouse)
                     .Where(pr => !pr.IsDeleted)
                     .OrderByDescending(pr => pr.ReceiptDate)
                     .ThenBy(pr => pr.ReceiptNumber)
@@ -61,7 +62,6 @@ namespace ERPCore2.Services
                     .Include(pr => pr.PurchaseOrder)
                         .ThenInclude(po => po!.Supplier)
                     .Include(pr => pr.Supplier)  // 新增直接供應商關聯
-                    .Include(pr => pr.Warehouse)
                     .Include(pr => pr.ConfirmedByUser)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Product)
@@ -76,6 +76,8 @@ namespace ERPCore2.Services
                                 .ThenInclude(po => po.Supplier)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.WarehouseLocation)
+                    .Include(pr => pr.PurchaseReceivingDetails)
+                        .ThenInclude(prd => prd.Warehouse)
                     .Where(pr => !pr.IsDeleted)
                     .FirstOrDefaultAsync(pr => pr.Id == id);
             }
@@ -99,7 +101,6 @@ namespace ERPCore2.Services
                     .Include(pr => pr.PurchaseOrder)
                         .ThenInclude(po => po!.Supplier)
                     .Include(pr => pr.Supplier)  // 新增直接供應商關聯
-                    .Include(pr => pr.Warehouse)
                     .Include(pr => pr.ConfirmedByUser)
                     .Where(pr => !pr.IsDeleted && (
                         pr.ReceiptNumber.Contains(searchTerm) ||
@@ -197,14 +198,7 @@ namespace ERPCore2.Services
                     }
                 }
 
-                // 檢查倉庫是否存在
-                var warehouseExists = await context.Warehouses
-                    .AnyAsync(w => w.Id == entity.WarehouseId && !w.IsDeleted);
-                
-                if (!warehouseExists)
-                {
-                    return ServiceResult.Failure("指定的倉庫不存在");
-                }
+
 
                 return ServiceResult.Success();
             }
@@ -299,7 +293,6 @@ namespace ERPCore2.Services
                     .Include(pr => pr.PurchaseOrder)
                         .ThenInclude(po => po!.Supplier)
                     .Include(pr => pr.Supplier)  // 新增直接供應商關聯
-                    .Include(pr => pr.Warehouse)
                     .Where(pr => pr.ReceiptDate >= startDate && pr.ReceiptDate <= endDate && !pr.IsDeleted)
                     .OrderByDescending(pr => pr.ReceiptDate)
                     .ThenBy(pr => pr.ReceiptNumber)
@@ -326,9 +319,10 @@ namespace ERPCore2.Services
                     .Include(pr => pr.PurchaseOrder)
                         .ThenInclude(po => po!.Supplier)
                     .Include(pr => pr.Supplier)  // 新增直接供應商關聯
-                    .Include(pr => pr.Warehouse)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Product)
+                    .Include(pr => pr.PurchaseReceivingDetails)
+                        .ThenInclude(prd => prd.Warehouse)
                     .Where(pr => pr.PurchaseOrderId == purchaseOrderId && !pr.IsDeleted)
                     .OrderByDescending(pr => pr.ReceiptDate)
                     .ThenBy(pr => pr.ReceiptNumber)

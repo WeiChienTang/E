@@ -419,20 +419,6 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(PurchaseReceiving.WarehouseId),
-                    Label = "入庫倉庫",
-                    FieldType = FormFieldType.Select,
-                    IsRequired = true,
-                    Options = new List<SelectOption> { new() { Value = "", Text = "請選擇..." } }
-                        .Concat(warehouses.Select(w => new SelectOption
-                        {
-                            Value = w.Id.ToString(),
-                            Text = $"{w.Code} - {w.Name}"
-                        })).ToList(),
-                    HelpText = "請選擇入庫倉庫"
-                },
-                new()
-                {
                     PropertyName = nameof(PurchaseReceiving.ConfirmedAt),
                     Label = "確認時間",
                     FieldType = FormFieldType.DateTime,
@@ -463,7 +449,6 @@
                 { "FilterProductId", "基本資訊" },
                 { nameof(PurchaseReceiving.PurchaseOrderId), "基本資訊" },
                 { nameof(PurchaseReceiving.ReceiptDate), "基本資訊" },
-                { nameof(PurchaseReceiving.WarehouseId), "基本資訊" },
                 { nameof(PurchaseReceiving.ConfirmedAt), "確認資訊" },
                 { nameof(PurchaseReceiving.ConfirmedBy), "確認資訊" },
                 { nameof(BaseEntity.Remarks), "其他資訊" }

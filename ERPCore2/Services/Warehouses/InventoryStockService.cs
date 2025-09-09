@@ -722,12 +722,48 @@ namespace ERPCore2.Services
                     .Where(w => !w.IsDeleted)
                     .CountAsync();
 
+                // 新增：未設定警戒線的商品數量（MinStockLevel 或 MaxStockLevel 任一為 null 或 <= 0）
+                var noWarningLevelCount = await context.InventoryStocks
+                    .Where(i => !i.IsDeleted &&
+                               (!i.MinStockLevel.HasValue || i.MinStockLevel.Value <= 0 ||
+                                !i.MaxStockLevel.HasValue || i.MaxStockLevel.Value <= 0))
+                    .CountAsync();
+
+                // 新增：超過最高警戒線的商品數量（庫存過多）
+                var overStockCount = await context.InventoryStocks
+                    .Where(i => !i.IsDeleted &&
+                               i.MaxStockLevel.HasValue &&
+                               i.MaxStockLevel.Value > 0 &&
+                               i.CurrentStock > i.MaxStockLevel.Value)
+                    .CountAsync();
+
+                // 新增：呆滯庫存數量（30天沒有異動）
+                var staleStockCount = await context.InventoryStocks
+                    .Where(i => !i.IsDeleted &&
+                               (!i.LastTransactionDate.HasValue ||
+                                i.LastTransactionDate.Value <= DateTime.Now.AddDays(-30)))
+                    .CountAsync();
+
+                // 新增：預留庫存過高的商品數量（預留庫存佔總庫存比例 > 50%）
+                var highReservedStockCount = await context.InventoryStocks
+                    .Where(i => !i.IsDeleted &&
+                               i.CurrentStock > 0 &&
+                               i.ReservedStock > 0 &&
+                               (decimal)i.ReservedStock / i.CurrentStock > 0.5m)
+                    .CountAsync();
+
                 // 確保數據類型一致性
                 stats.Add("TotalProducts", totalProducts);
                 stats.Add("TotalInventoryValue", totalInventoryValue);
                 stats.Add("LowStockCount", lowStockCount);
                 stats.Add("ZeroStockCount", zeroStockCount);
                 stats.Add("WarehouseCount", warehouseCount);
+                
+                // 新增的統計項目
+                stats.Add("NoWarningLevelCount", noWarningLevelCount);
+                stats.Add("OverStockCount", overStockCount);
+                stats.Add("StaleStockCount", staleStockCount);
+                stats.Add("HighReservedStockCount", highReservedStockCount);
 
                 return stats;
             }

@@ -313,18 +313,20 @@
                     PropertyName = nameof(InventoryStock.ReservedStock),
                     Label = "預留庫存",
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入預留庫存數量",
+                    Placeholder = "系統自動計算",
                     IsRequired = false,
-                    HelpText = "已預留但尚未出庫的數量",
+                    IsReadOnly = true,
+                    HelpText = "已預留但尚未出庫的數量（系統會自動計算，不可手動修改）",
                 },
                 new()
                 {
                     PropertyName = nameof(InventoryStock.InTransitStock),
                     Label = "在途庫存",
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入在途庫存數量",
+                    Placeholder = "系統自動計算",
                     IsRequired = false,
-                    HelpText = "已下單但尚未到貨的數量",
+                    IsReadOnly = true,
+                    HelpText = "已下單但尚未到貨的數量（系統會自動計算，不可手動修改）",
                 },
                 
                 // 庫存警戒線區段
@@ -373,13 +375,13 @@
             {
                 { nameof(InventoryStock.ProductId), "基本資訊" },
                 { nameof(InventoryStock.WarehouseId), "基本資訊" },
-                { nameof(InventoryStock.WarehouseLocationId), "基本資訊" },
-                { nameof(InventoryStock.AverageCost), "基本資訊" },
-                { nameof(InventoryStock.CurrentStock), "數量資訊" },
-                { nameof(InventoryStock.ReservedStock), "數量資訊" },
-                { nameof(InventoryStock.InTransitStock), "數量資訊" },
+                { nameof(InventoryStock.WarehouseLocationId), "基本資訊" },                
+                { nameof(InventoryStock.CurrentStock), "數量資訊" },                              
                 { nameof(InventoryStock.MinStockLevel), "數量資訊" },
-                { nameof(InventoryStock.MaxStockLevel), "數量資訊" },                
+                { nameof(InventoryStock.MaxStockLevel), "數量資訊" },     
+                { nameof(InventoryStock.AverageCost), "系統計算" },    
+                { nameof(InventoryStock.InTransitStock), "系統計算" },    
+                { nameof(InventoryStock.ReservedStock), "系統計算" },  
                 { nameof(InventoryStock.Remarks), "額外資料" }
             };
         }

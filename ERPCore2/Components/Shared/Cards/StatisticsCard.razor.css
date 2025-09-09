@@ -1,0 +1,35 @@
+/* 統計卡片元件樣式 */
+
+.statistics-card-clickable {
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.statistics-card-clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+}
+
+.statistics-card-clickable:active {
+    transform: translateY(0);
+}
+
+/* 卡片內容樣式調整 */
+.statistics-card-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+}
+
+.statistics-card-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0;
+    color: #5a5c69;
+}
+
+.statistics-card-icon {
+    font-size: 2rem;
+    color: #dddfeb;
+}

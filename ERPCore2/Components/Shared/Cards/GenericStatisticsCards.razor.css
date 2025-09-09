@@ -1,0 +1,38 @@
+/* 通用統計卡片套裝組件樣式 */
+
+.statistics-cards-container {
+    gap: 15px;
+}
+
+.statistics-card-wrapper {
+    flex: 1;
+    min-width: 120px;
+    max-width: calc(12.5% - 15px);
+}
+
+/* 響應式設計 */
+@media (max-width: 1400px) {
+    .statistics-card-wrapper {
+        max-width: calc(16.666% - 15px); /* 6 個卡片 */
+    }
+}
+
+@media (max-width: 1200px) {
+    .statistics-card-wrapper {
+        max-width: calc(25% - 15px); /* 4 個卡片 */
+    }
+}
+
+@media (max-width: 768px) {
+    .statistics-card-wrapper {
+        max-width: calc(50% - 15px); /* 2 個卡片 */
+        min-width: 150px;
+    }
+}
+
+@media (max-width: 576px) {
+    .statistics-card-wrapper {
+        max-width: 100%; /* 1 個卡片 */
+        min-width: 200px;
+    }
+}

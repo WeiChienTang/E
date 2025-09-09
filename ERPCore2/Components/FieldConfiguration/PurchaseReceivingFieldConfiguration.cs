@@ -76,25 +76,6 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(PurchaseReceiving.WarehouseId),
-                        new FieldDefinition<PurchaseReceiving>
-                        {
-                            PropertyName = "Warehouse.Name", // 表格顯示用
-                            FilterPropertyName = nameof(PurchaseReceiving.WarehouseId), // 篩選器用
-                            DisplayName = "倉庫",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 5,
-                            HeaderStyle = "width: 140px;",
-                            Options = _warehouses.Select(w => new SelectOption 
-                            { 
-                                Text = w.Name, 
-                                Value = w.Id.ToString() 
-                            }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(PurchaseReceiving.WarehouseId), pr => pr.WarehouseId)
-                        }
-                    },
-                    {
                         nameof(PurchaseReceiving.TotalAmount),
                         new FieldDefinition<PurchaseReceiving>
                         {

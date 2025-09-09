@@ -293,14 +293,14 @@ namespace ERPCore2.Helpers
                     result.DependentEntities.Add($"庫存記錄({inventoryCount}筆)");
                 }
 
-                // 檢查進貨記錄
-                var purchaseReceivingCount = await context.PurchaseReceivings
-                    .CountAsync(pr => pr.WarehouseId == warehouseId && !pr.IsDeleted);
+                // 檢查進貨記錄明細
+                var purchaseReceivingDetailCount = await context.PurchaseReceivingDetails
+                    .CountAsync(prd => prd.WarehouseId == warehouseId && !prd.IsDeleted);
                     
-                if (purchaseReceivingCount > 0)
+                if (purchaseReceivingDetailCount > 0)
                 {
                     result.CanDelete = false;
-                    result.DependentEntities.Add($"進貨記錄({purchaseReceivingCount}筆)");
+                    result.DependentEntities.Add($"進貨記錄明細({purchaseReceivingDetailCount}筆)");
                 }
 
                 // 檢查採購訂單

@@ -353,11 +353,6 @@ namespace ERPCore2.Data.Context
                         .HasForeignKey(pr => pr.PurchaseOrderId)
                         .OnDelete(DeleteBehavior.Restrict);
 
-                        entity.HasOne(pr => pr.Warehouse)
-                        .WithMany()
-                        .HasForeignKey(pr => pr.WarehouseId)
-                        .OnDelete(DeleteBehavior.Restrict);
-
                         entity.HasOne(pr => pr.ConfirmedByUser)
                         .WithMany()
                         .HasForeignKey(pr => pr.ConfirmedBy)
@@ -382,6 +377,11 @@ namespace ERPCore2.Data.Context
                         entity.HasOne(prd => prd.Product)
                         .WithMany()
                         .HasForeignKey(prd => prd.ProductId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(prd => prd.Warehouse)
+                        .WithMany()
+                        .HasForeignKey(prd => prd.WarehouseId)
                         .OnDelete(DeleteBehavior.Restrict);
 
                         entity.HasOne(prd => prd.WarehouseLocation)
