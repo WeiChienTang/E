@@ -264,7 +264,7 @@
     [Parameter] public string EntityName { get; set; } = "資料";
     [Parameter] public string EntityNamePlural { get; set; } = "資料";
     [Parameter] public string ModalTitle { get; set; } = string.Empty;
-    [Parameter] public ModalSize Size { get; set; } = ModalSize.Large;
+    [Parameter] public ModalSize Size { get; set; } = ModalSize.Desktop;
     
     // 按鈕設定
     [Parameter] public string SaveButtonText { get; set; } = "儲存";
@@ -933,7 +933,7 @@
             ModalSize.Large => "modal-lg",
             ModalSize.ExtraLarge => "modal-xl",
             ModalSize.Desktop => "modal-xl modal-desktop", // 新增桌面專用樣式
-            _ => "modal-lg"
+            _ => "modal-xl modal-desktop"
         };
     }
     
