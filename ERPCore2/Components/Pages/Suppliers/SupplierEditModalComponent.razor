@@ -5,6 +5,9 @@
 @inject IContactTypeService ContactTypeService
 @inject IAddressTypeService AddressTypeService
 @inject ISupplierTypeService SupplierTypeService
+@inject IProductSupplierService ProductSupplierService
+@inject IProductService ProductService
+@inject IUnitService UnitService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 @using ERPCore2.Helpers
@@ -69,6 +72,11 @@
     // 聯絡資訊和地址資訊相關變數
     private List<Contact> supplierContacts = new();
     private List<Address> supplierAddresses = new();
+    
+    // 產品供應商關聯相關變數
+    private List<ProductSupplier> supplierProducts = new();
+    private List<Product> availableProducts = new();
+    private List<Unit> availableUnits = new();
     
     // 子集合組件用的轉換清單
     private List<ERPCore2.Data.BaseEntity> contactTypeOptions = new();
@@ -137,6 +145,10 @@
             contactTypes = await ContactTypeService.GetActiveAsync();
             addressTypes = await AddressTypeService.GetActiveAsync();
             
+            // 載入產品和單位選項
+            availableProducts = await ProductService.GetActiveProductsAsync();
+            availableUnits = await UnitService.GetActiveAsync();
+            
             // 轉換為子集合組件用的基礎實體清單
             contactTypeOptions = contactTypes.Cast<ERPCore2.Data.BaseEntity>().ToList();
             addressTypeOptions = addressTypes.Cast<ERPCore2.Data.BaseEntity>().ToList();
@@ -147,6 +159,8 @@
             supplierTypes = new List<SupplierType>();
             contactTypes = new List<ContactType>();
             addressTypes = new List<AddressType>();
+            availableProducts = new List<Product>();
+            availableUnits = new List<Unit>();
             contactTypeOptions = new List<ERPCore2.Data.BaseEntity>();
             addressTypeOptions = new List<ERPCore2.Data.BaseEntity>();
         }
@@ -344,6 +358,7 @@
                 
                 supplierContacts = new List<Contact>();
                 supplierAddresses = new List<Address>();
+                supplierProducts = new List<ProductSupplier>();
                 
                 return newSupplier;
             }
@@ -360,6 +375,9 @@
             supplierContacts = await ContactService.GetByOwnerAsync(ContactOwnerTypes.Supplier, SupplierId.Value);
             supplierAddresses = await AddressService.GetSupplierAddressesAsync(SupplierId.Value);
             
+            // 載入供應商產品資訊
+            supplierProducts = await ProductSupplierService.GetBySupplierId(SupplierId.Value);
+            
             return supplier;
         }
         catch (Exception)
@@ -367,6 +385,10 @@
             _ = NotificationService.ShowErrorAsync("載入廠商資料時發生錯誤");
             
             // 設定安全的預設值，確保程式不會崩潰
+            supplierContacts = new List<Contact>();
+            supplierAddresses = new List<Address>();
+            supplierProducts = new List<ProductSupplier>();
+            
             return new Supplier
             {
                 Code = "",
@@ -407,7 +429,7 @@
                 result = await SupplierService.UpdateAsync(entity);
                 if (result.IsSuccess)
                 {
-                    // 更新聯絡方式和地址資料
+                    // 更新聯絡方式、地址資料和產品關聯
                     await UpdateSupplierSubCollectionsAsync(entity.Id);
                 }
             }
@@ -417,7 +439,7 @@
                 result = await SupplierService.CreateAsync(entity);
                 if (result.IsSuccess)
                 {
-                    // 更新聯絡方式和地址資料
+                    // 更新聯絡方式、地址資料和產品關聯
                     await UpdateSupplierSubCollectionsAsync(entity.Id);
                 }
             }
@@ -477,11 +499,102 @@
             // 重新加載地址資料以更新UI顯示
             supplierAddresses = await AddressService.GetSupplierAddressesAsync(supplierId);
 
+            // 更新產品供應商關聯
+            await UpdateSupplierProductsAsync(supplierId);
+
             StateHasChanged(); // 通知UI更新
         }
         catch (Exception)
         {
             _ = NotificationService.ShowErrorAsync("更新廠商相關資料時發生錯誤");
+        }
+    }
+
+    /// <summary>
+    /// 更新供應商產品關聯
+    /// </summary>
+    private async Task UpdateSupplierProductsAsync(int supplierId)
+    {
+        try
+        {            
+            // 確保我們有最新的供應商資料
+            if (supplierId <= 0)
+            {
+                await NotificationService.ShowWarningAsync("供應商ID無效，跳過產品關聯儲存");
+                return; 
+            }
+
+            // 使用 AutoEmptyRowHelper 過濾掉空行項目，只儲存有效的產品關聯
+            var validSupplierProducts = AutoEmptyRowHelper.For<ProductSupplier>.GetNonEmptyItems(
+                supplierProducts, 
+                item => item.ProductId <= 0
+            );
+
+            // 使用 ProductSupplierService 的更新產品關聯方法
+            if (validSupplierProducts.Any())
+            {
+                // 設定每個產品關聯的 SupplierId
+                foreach (var supplierProduct in validSupplierProducts)
+                {
+                    supplierProduct.SupplierId = supplierId;
+                }
+                
+                // 取得產品ID列表並更新關聯
+                var productIds = validSupplierProducts.Select(sp => sp.ProductId).Where(id => id > 0).ToList();
+                var result = await ProductSupplierService.BatchSetSupplierProductsAsync(supplierId, productIds);
+                if (!result.IsSuccess)
+                {
+                    await NotificationService.ShowErrorAsync($"儲存產品關聯時發生錯誤：{result.ErrorMessage}");
+                }
+                
+                // 更新詳細資訊（價格、交期等）
+                foreach (var supplierProduct in validSupplierProducts)
+                {
+                    if (supplierProduct.ProductId > 0)
+                    {
+                        var existingRelation = await ProductSupplierService.GetByProductAndSupplierAsync(
+                            supplierProduct.ProductId, supplierId);
+                        
+                        if (existingRelation != null)
+                        {
+                            // 更新價格資訊
+                            if (supplierProduct.SupplierPrice.HasValue || !string.IsNullOrEmpty(supplierProduct.SupplierProductCode))
+                            {
+                                await ProductSupplierService.UpdateSupplierPriceAsync(
+                                    existingRelation.Id, 
+                                    supplierProduct.SupplierPrice,
+                                    supplierProduct.SupplierProductCode);
+                            }
+                            
+                            // 更新交期資訊
+                            if (supplierProduct.LeadTime.HasValue || supplierProduct.MinOrderQuantity.HasValue)
+                            {
+                                await ProductSupplierService.UpdateDeliveryInfoAsync(
+                                    existingRelation.Id,
+                                    supplierProduct.LeadTime,
+                                    supplierProduct.MinOrderQuantity);
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // 如果沒有有效的產品關聯，清空所有關聯
+                var result = await ProductSupplierService.BatchSetSupplierProductsAsync(supplierId, new List<int>());
+                if (!result.IsSuccess)
+                {
+                    await NotificationService.ShowErrorAsync($"清空產品關聯時發生錯誤：{result.ErrorMessage}");
+                }
+            }
+
+            // 重新載入產品關聯資料以更新UI顯示
+            supplierProducts = await ProductSupplierService.GetBySupplierId(supplierId);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存產品關聯時發生錯誤：{ex.Message}");
+            // 記錄錯誤但不中斷流程，因為主要實體已經儲存成功
         }
     }
 
@@ -543,48 +656,139 @@
     }
 
     /// <summary>
-    /// 取得額外區段內容（聯絡方式和地址管理）
+    /// 處理供應商產品變更事件
+    /// </summary>
+    private Task OnSupplierProductsChanged(List<ProductSupplier> updatedProducts)
+    {
+        try
+        {
+            supplierProducts = updatedProducts;
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("更新產品資料時發生錯誤");
+            return Task.CompletedTask;
+        }
+    }
+
+    /// <summary>
+    /// 處理供應商產品新增事件
+    /// </summary>
+    private Task OnSupplierProductAdded(ProductSupplier addedProduct)
+    {
+        try
+        {
+            // 可以在這裡添加額外的邏輯
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("新增產品時發生錯誤");
+            return Task.CompletedTask;
+        }
+    }
+
+    /// <summary>
+    /// 處理供應商產品移除事件
+    /// </summary>
+    private Task OnSupplierProductRemoved(ProductSupplier removedProduct)
+    {
+        try
+        {
+            // 可以在這裡添加額外的邏輯
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("移除產品時發生錯誤");
+            return Task.CompletedTask;
+        }
+    }
+
+    /// <summary>
+    /// 取得額外區段內容（聯絡方式、地址管理和產品管理）
     /// </summary>
     private RenderFragment? GetAdditionalSections()
     {
-        return @<div class="row mt-4">
-            <div class="col-md-6">
-                <ContactManagerComponent TContactEntity="Contact"
-                                       TParentEntity="Supplier"
-                                       Items="@supplierContacts"
-                                       Options="@contactTypeOptions"
-                                       ParentEntityId="@(SupplierId ?? editModalComponent?.Entity?.Id ?? 0)"
-                                       Title="聯絡方式"
-                                       ItemDisplayName="聯絡方式"
-                                       TypeDisplayName="聯絡類型"
-                                       ValueDisplayName="聯絡內容"
-                                       ValuePlaceholder="請輸入聯絡內容"
-                                       GetTypeId="@(c => c.ContactTypeId)"
-                                       GetContactValue="@(c => c.ContactValue)"
-                                       GetOptionId="@(option => option.Id)"
-                                       GetOptionDisplayText="@(option => ((ContactType)option).TypeName)"
-                                       SetTypeId="@((c, typeId) => c.ContactTypeId = typeId)"
-                                       SetContactValue="@((c, value) => c.ContactValue = value)"
-                                       SetParentId="@((c, parentId) => { c.OwnerType = ContactOwnerTypes.Supplier; c.OwnerId = parentId; })"
-                                       ItemsChanged="@OnSupplierContactsChanged" />
+        return @<div class="mt-4">
+            <div class="row">
+                <div class="col-md-6">
+                    <ContactManagerComponent TContactEntity="Contact"
+                                           TParentEntity="Supplier"
+                                           Items="@supplierContacts"
+                                           Options="@contactTypeOptions"
+                                           ParentEntityId="@(SupplierId ?? editModalComponent?.Entity?.Id ?? 0)"
+                                           Title="聯絡方式"
+                                           ItemDisplayName="聯絡方式"
+                                           TypeDisplayName="聯絡類型"
+                                           ValueDisplayName="聯絡內容"
+                                           ValuePlaceholder="請輸入聯絡內容"
+                                           GetTypeId="@(c => c.ContactTypeId)"
+                                           GetContactValue="@(c => c.ContactValue)"
+                                           GetOptionId="@(option => option.Id)"
+                                           GetOptionDisplayText="@(option => ((ContactType)option).TypeName)"
+                                           SetTypeId="@((c, typeId) => c.ContactTypeId = typeId)"
+                                           SetContactValue="@((c, value) => c.ContactValue = value)"
+                                           SetParentId="@((c, parentId) => { c.OwnerType = ContactOwnerTypes.Supplier; c.OwnerId = parentId; })"
+                                           ItemsChanged="@OnSupplierContactsChanged" />
+                </div>
+                <div class="col-md-6">
+                    <AddressManagerComponent TAddressEntity="Address"
+                                           TParentEntity="Supplier"
+                                           Items="@supplierAddresses"
+                                           Options="@addressTypeOptions"
+                                           ParentEntityId="@(SupplierId ?? editModalComponent?.Entity?.Id ?? 0)"
+                                           Title="地址資訊"
+                                           ItemDisplayName="地址"
+                                           TypeDisplayName="地址類型"
+                                           GetTypeId="@(a => a.AddressTypeId)"
+                                           GetAddress="@(a => a.AddressLine)"
+                                           GetOptionId="@(option => option.Id)"
+                                           GetOptionDisplayText="@(option => ((AddressType)option).TypeName)"
+                                           SetTypeId="@((a, typeId) => a.AddressTypeId = typeId)"
+                                           SetAddress="@((a, address) => a.AddressLine = address)"
+                                           SetParentId="@((a, parentId) => SetSupplierIdForAddress(a, parentId))"
+                                           ItemsChanged="@OnSupplierAddressesChanged" />
+                </div>
             </div>
-            <div class="col-md-6">
-                <AddressManagerComponent TAddressEntity="Address"
-                                       TParentEntity="Supplier"
-                                       Items="@supplierAddresses"
-                                       Options="@addressTypeOptions"
-                                       ParentEntityId="@(SupplierId ?? editModalComponent?.Entity?.Id ?? 0)"
-                                       Title="地址資訊"
-                                       ItemDisplayName="地址"
-                                       TypeDisplayName="地址類型"
-                                       GetTypeId="@(a => a.AddressTypeId)"
-                                       GetAddress="@(a => a.AddressLine)"
-                                       GetOptionId="@(option => option.Id)"
-                                       GetOptionDisplayText="@(option => ((AddressType)option).TypeName)"
-                                       SetTypeId="@((a, typeId) => a.AddressTypeId = typeId)"
-                                       SetAddress="@((a, address) => a.AddressLine = address)"
-                                       SetParentId="@((a, parentId) => SetSupplierIdForAddress(a, parentId))"
-                                       ItemsChanged="@OnSupplierAddressesChanged" />
+            <div class="row mt-4">
+                <div class="col-12">
+                    <SupplierProductManagerComponent TProductSupplierEntity="ProductSupplier"
+                                                   TProductEntity="Product"
+                                                   TSupplierEntity="Supplier"
+                                                   Items="@supplierProducts"
+                                                   ProductOptions="@availableProducts"
+                                                   UnitOptions="@availableUnits"
+                                                   ParentEntityId="@(SupplierId ?? editModalComponent?.Entity?.Id ?? 0)"
+                                                   IsReadOnly="@false"
+                                                   Title="產品資訊"
+                                                   ItemDisplayName="產品"
+                                                   EmptyMessage="尚未新增產品"
+                                                   GetProductId="@GetProductIdDelegate"
+                                                   GetSupplierProductCode="@GetSupplierProductCodeDelegate"
+                                                   GetSupplierPrice="@GetSupplierPriceDelegate"
+                                                   GetLeadTime="@GetLeadTimeDelegate"
+                                                   GetMinOrderQuantity="@GetMinOrderQuantityDelegate"
+                                                   GetUnitId="@GetUnitIdDelegate"
+                                                   GetProductOptionId="@GetProductOptionIdDelegate"
+                                                   GetProductOptionDisplayText="@GetProductOptionDisplayTextDelegate"
+                                                   GetUnitOptionId="@GetUnitOptionIdDelegate"
+                                                   GetUnitOptionDisplayText="@GetUnitOptionDisplayTextDelegate"
+                                                   SetProductId="@SetProductIdDelegate"
+                                                   SetSupplierProductCode="@SetSupplierProductCodeDelegate"
+                                                   SetSupplierPrice="@SetSupplierPriceDelegate"
+                                                   SetLeadTime="@SetLeadTimeDelegate"
+                                                   SetMinOrderQuantity="@SetMinOrderQuantityDelegate"
+                                                   SetUnitId="@SetUnitIdDelegate"
+                                                   SetSupplierId="@SetSupplierIdDelegate"
+                                                   ItemsChanged="@OnSupplierProductsChanged"
+                                                   ItemAdded="@OnSupplierProductAdded"
+                                                   ItemRemoved="@OnSupplierProductRemoved" />
+                </div>
             </div>
         </div>;
     }
@@ -636,4 +840,27 @@
             await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
         }
     }
+
+    // ===== SupplierProductManagerComponent 委派屬性 =====
+    
+    // Getter 委派
+    private Func<ProductSupplier, int?> GetProductIdDelegate => item => item.ProductId > 0 ? item.ProductId : (int?)null;
+    private Func<ProductSupplier, string?> GetSupplierProductCodeDelegate => item => item.SupplierProductCode;
+    private Func<ProductSupplier, decimal?> GetSupplierPriceDelegate => item => item.SupplierPrice;
+    private Func<ProductSupplier, int?> GetLeadTimeDelegate => item => item.LeadTime;
+    private Func<ProductSupplier, int?> GetMinOrderQuantityDelegate => item => item.MinOrderQuantity;
+    private Func<ProductSupplier, int?> GetUnitIdDelegate => item => item.UnitId;
+    private Func<Product, int> GetProductOptionIdDelegate => product => product.Id;
+    private Func<Product, string> GetProductOptionDisplayTextDelegate => product => $"{product.Code} - {product.Name}";
+    private Func<Unit, int> GetUnitOptionIdDelegate => unit => unit.Id;
+    private Func<Unit, string> GetUnitOptionDisplayTextDelegate => unit => unit.Name;
+    
+    // Setter 委派
+    private Action<ProductSupplier, int?> SetProductIdDelegate => (item, value) => item.ProductId = value ?? 0;
+    private Action<ProductSupplier, string?> SetSupplierProductCodeDelegate => (item, value) => item.SupplierProductCode = value;
+    private Action<ProductSupplier, decimal?> SetSupplierPriceDelegate => (item, value) => item.SupplierPrice = value;
+    private Action<ProductSupplier, int?> SetLeadTimeDelegate => (item, value) => item.LeadTime = value;
+    private Action<ProductSupplier, int?> SetMinOrderQuantityDelegate => (item, value) => item.MinOrderQuantity = value;
+    private Action<ProductSupplier, int?> SetUnitIdDelegate => (item, value) => item.UnitId = value;
+    private Action<ProductSupplier, int> SetSupplierIdDelegate => (item, supplierId) => item.SupplierId = supplierId;
 }

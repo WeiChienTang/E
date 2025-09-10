@@ -1,0 +1,504 @@
+@* 供應商產品管理組件 - 管理供應商的多個產品資訊 - 使用 InteractiveTableComponent 統一UI *@
+
+@inject INotificationService NotificationService
+@using ERPCore2.Helpers
+@typeparam TProductSupplierEntity where TProductSupplierEntity : BaseEntity, new()
+@typeparam TProductEntity where TProductEntity : BaseEntity
+@typeparam TSupplierEntity where TSupplierEntity : BaseEntity
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <InteractiveTableComponent TItem="TProductSupplierEntity" 
+                                  Items="@Items"
+                                  ColumnDefinitions="@GetColumnDefinitions()"
+                                  IsReadOnly="@IsReadOnly"
+                                  ShowRowNumbers="false"
+                                  EmptyMessage="@EmptyMessage"
+                                  ShowBuiltInActions="true"
+                                  ShowBuiltInDeleteButton="true"
+                                  OnItemDelete="@HandleItemDelete" />
+    </div>
+</div>
+
+@code {
+    // ===== 基本參數 =====
+    [Parameter] public List<TProductSupplierEntity> Items { get; set; } = new();
+    [Parameter] public List<TProductEntity> ProductOptions { get; set; } = new(); // 產品選項
+    [Parameter] public List<Unit> UnitOptions { get; set; } = new(); // 單位選項
+    [Parameter] public int ParentEntityId { get; set; } // 供應商ID
+    [Parameter] public bool IsReadOnly { get; set; } = false;
+    
+    // ===== 顯示設定 =====
+    [Parameter] public string Title { get; set; } = "產品資訊";
+    [Parameter] public string Subtitle { get; set; } = "";
+    [Parameter] public string Icon { get; set; } = "box-seam";
+    [Parameter] public string ItemDisplayName { get; set; } = "產品";
+    [Parameter] public string EmptyIcon { get; set; } = "box";
+    [Parameter] public string EmptyMessage { get; set; } = "尚未新增產品";
+    
+    // ===== 委派參數 - Getter =====
+    [Parameter] public Func<TProductSupplierEntity, int?> GetProductId { get; set; } = item => null;
+    [Parameter] public Func<TProductSupplierEntity, string?> GetSupplierProductCode { get; set; } = item => null;
+    [Parameter] public Func<TProductSupplierEntity, decimal?> GetSupplierPrice { get; set; } = item => null;
+    [Parameter] public Func<TProductSupplierEntity, int?> GetLeadTime { get; set; } = item => null;
+    [Parameter] public Func<TProductSupplierEntity, int?> GetMinOrderQuantity { get; set; } = item => null;
+    [Parameter] public Func<TProductSupplierEntity, int?> GetUnitId { get; set; } = item => null;
+    [Parameter] public Func<TProductEntity, int> GetProductOptionId { get; set; } = product => product.Id;
+    [Parameter] public Func<TProductEntity, string> GetProductOptionDisplayText { get; set; } = product => 
+    {
+        // 檢查是否有 Name 和 Code 屬性並取得其值
+        var nameProperty = product.GetType().GetProperty("Name");
+        var codeProperty = product.GetType().GetProperty("Code");
+        
+        var name = nameProperty?.GetValue(product) as string ?? "";
+        var code = codeProperty?.GetValue(product) as string ?? "";
+        
+        if (!string.IsNullOrEmpty(code) && !string.IsNullOrEmpty(name))
+        {
+            return $"{code} - {name}";
+        }
+        else if (!string.IsNullOrEmpty(name))
+        {
+            return name;
+        }
+        else if (!string.IsNullOrEmpty(code))
+        {
+            return code;
+        }
+        
+        return product.ToString() ?? "";
+    };
+    [Parameter] public Func<Unit, int> GetUnitOptionId { get; set; } = unit => unit.Id;
+    [Parameter] public Func<Unit, string> GetUnitOptionDisplayText { get; set; } = unit => unit.Name;
+    
+    // ===== 委派參數 - Setter =====
+    [Parameter] public Action<TProductSupplierEntity, int?> SetProductId { get; set; } = (item, productId) => { };
+    [Parameter] public Action<TProductSupplierEntity, string?> SetSupplierProductCode { get; set; } = (item, value) => { };
+    [Parameter] public Action<TProductSupplierEntity, decimal?> SetSupplierPrice { get; set; } = (item, value) => { };
+    [Parameter] public Action<TProductSupplierEntity, int?> SetLeadTime { get; set; } = (item, value) => { };
+    [Parameter] public Action<TProductSupplierEntity, int?> SetMinOrderQuantity { get; set; } = (item, value) => { };
+    [Parameter] public Action<TProductSupplierEntity, int?> SetUnitId { get; set; } = (item, value) => { };
+    [Parameter] public Action<TProductSupplierEntity, int> SetSupplierId { get; set; } = (item, supplierId) => { }; // 設定供應商ID
+    
+    // ===== 事件參數 =====
+    [Parameter] public EventCallback<List<TProductSupplierEntity>> ItemsChanged { get; set; }
+    [Parameter] public EventCallback<TProductSupplierEntity> ItemAdded { get; set; }
+    [Parameter] public EventCallback<TProductSupplierEntity> ItemRemoved { get; set; }
+    
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        
+        var emptyCount = Items.Count(IsEmptyRow);
+        
+        // 總是確保有一行空行可以輸入
+        // 不論是否已有資料，都應該保持有空行供使用者新增
+        EnsureOneEmptyRow();
+        
+        var emptyCountAfter = Items.Count(IsEmptyRow);
+    }
+
+    // ===== AutoEmptyRowHelper 相關方法 =====
+    
+    /// <summary>
+    /// 檢查是否為空行
+    /// 業務邏輯：只要選擇了產品，就算是有效的一行，不再是空行
+    /// </summary>
+    private bool IsEmptyRow(TProductSupplierEntity item)
+    {
+        var productId = GetProductId(item);
+        // 檢查產品ID是否為空（null 或 0 都算空）
+        var isEmpty = !productId.HasValue || productId.Value <= 0;
+        
+        // 只要產品有值（大於0），就不是空行
+        // 產品是核心欄位，其他欄位可以後續填寫
+        return isEmpty;
+    }
+    
+    /// <summary>
+    /// 創建空的供應商產品項目
+    /// </summary>
+    private TProductSupplierEntity CreateEmptyItem()
+    {
+        var newItem = new TProductSupplierEntity();
+        SetSupplierId(newItem, ParentEntityId); // 設定供應商ID
+        return newItem;
+    }
+    
+    /// <summary>
+    /// 確保有一行空行
+    /// </summary>
+    private void EnsureOneEmptyRow()
+    {
+        AutoEmptyRowHelper.For<TProductSupplierEntity>.EnsureOneEmptyRow(
+            Items, 
+            IsEmptyRow, 
+            CreateEmptyItem, 
+            SetSupplierId, 
+            ParentEntityId
+        );
+    }
+
+    // ===== InteractiveTableComponent 方法 =====
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            // 產品選擇欄位
+            new() 
+            { 
+                Title = "產品", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "25%",
+                CustomTemplate = item => 
+                {
+                    var productSupplier = (TProductSupplierEntity)item;
+                    var productId = GetProductId(productSupplier);
+                    var selectedValue = productId?.ToString() ?? "";
+                    
+                    return @<select class="form-select form-select-sm" 
+                                    value="@selectedValue"
+                                    disabled="@IsReadOnly"
+                                    @onchange="@(async (e) => await OnProductChanged((productSupplier, e.Value)))">
+                        <option value="">請選擇產品</option>
+                        @foreach (var product in ProductOptions)
+                        {
+                            <option value="@GetProductOptionId(product)">@GetProductOptionDisplayText(product)</option>
+                        }
+                    </select>;
+                }
+            },
+            
+            // 供應商商品代碼 - 文字輸入
+            new() 
+            { 
+                Title = "供應商商品代碼", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "20%",
+                CustomTemplate = item => 
+                {
+                    var productSupplier = (TProductSupplierEntity)item;
+                    var value = GetSupplierProductCode(productSupplier) ?? "";
+                    
+                    return @<input type="text" 
+                                   class="form-control form-control-sm" 
+                                   value="@value"
+                                   placeholder="請輸入代碼"
+                                   disabled="@IsReadOnly"
+                                   @oninput="@(async (e) => await OnSupplierProductCodeChanged((productSupplier, e.Value?.ToString())))" />;
+                }
+            },
+            
+            // 報價 - 數字輸入
+            new() 
+            { 
+                Title = "報價", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "15%",
+                CustomTemplate = item => 
+                {
+                    var productSupplier = (TProductSupplierEntity)item;
+                    var value = GetSupplierPrice(productSupplier)?.ToString("F0") ?? "";
+                    
+                    return @<input type="number" 
+                                   class="form-control form-control-sm" 
+                                   value="@value"
+                                   min="0"
+                                   step="1"
+                                   disabled="@IsReadOnly"
+                                   @oninput="@(async (e) => await OnSupplierPriceChanged((productSupplier, e.Value?.ToString())))" />;
+                }
+            },
+            
+            // 交期 - 數字輸入
+            new() 
+            { 
+                Title = "交期(天)", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "15%",
+                CustomTemplate = item => 
+                {
+                    var productSupplier = (TProductSupplierEntity)item;
+                    var value = GetLeadTime(productSupplier)?.ToString() ?? "";
+                    
+                    return @<input type="number" 
+                                   class="form-control form-control-sm" 
+                                   value="@value"
+                                   min="0"
+                                   disabled="@IsReadOnly"
+                                   @oninput="@(async (e) => await OnLeadTimeChanged((productSupplier, e.Value?.ToString())))" />;
+                }
+            },
+            
+            // 最小訂購量 - 數字輸入
+            new() 
+            { 
+                Title = "最小訂購量", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "15%",
+                CustomTemplate = item => 
+                {
+                    var productSupplier = (TProductSupplierEntity)item;
+                    var value = GetMinOrderQuantity(productSupplier)?.ToString() ?? "";
+                    
+                    return @<input type="number" 
+                                   class="form-control form-control-sm" 
+                                   value="@value"
+                                   min="0"
+                                   disabled="@IsReadOnly"
+                                   @oninput="@(async (e) => await OnMinOrderQuantityChanged((productSupplier, e.Value?.ToString())))" />;
+                }
+            },
+            
+            // 單位選擇欄位
+            new() 
+            { 
+                Title = "單位", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "15%",
+                CustomTemplate = item => 
+                {
+                    var productSupplier = (TProductSupplierEntity)item;
+                    var unitId = GetUnitId(productSupplier);
+                    var selectedValue = unitId?.ToString() ?? "";
+                    
+                    return @<select class="form-select form-select-sm" 
+                                    value="@selectedValue"
+                                    disabled="@IsReadOnly"
+                                    @onchange="@(async (e) => await OnUnitChanged((productSupplier, e.Value)))">
+                        <option value="">請選擇單位</option>
+                        @foreach (var unit in UnitOptions)
+                        {
+                            <option value="@GetUnitOptionId(unit)">@GetUnitOptionDisplayText(unit)</option>
+                        }
+                    </select>;
+                }
+            }
+        };
+    }
+
+    private async Task HandleItemDelete(TProductSupplierEntity item)
+    {
+        var index = Items.IndexOf(item);
+        await RemoveItemAsync(index);
+    }
+
+    // ===== 內部方法 =====
+
+    private string GetProductDisplayText(TProductSupplierEntity item)
+    {
+        var productId = GetProductId(item);
+        if (productId.HasValue)
+        {
+            var product = ProductOptions.FirstOrDefault(p => GetProductOptionId(p) == productId.Value);
+            if (product != null)
+            {
+                return GetProductOptionDisplayText(product);
+            }
+        }
+        return "未知產品";
+    }
+
+    private string GetUnitDisplayText(TProductSupplierEntity item)
+    {
+        var unitId = GetUnitId(item);
+        if (unitId.HasValue)
+        {
+            var unit = UnitOptions.FirstOrDefault(u => GetUnitOptionId(u) == unitId.Value);
+            if (unit != null)
+            {
+                return GetUnitOptionDisplayText(unit);
+            }
+        }
+        return "-";
+    }
+
+    // ===== InteractiveTableComponent 事件處理 =====
+    private async Task OnProductChanged((object item, object? value) args)
+    {
+        var productSupplier = (TProductSupplierEntity)args.item;
+        var wasEmpty = IsEmptyRow(productSupplier);
+    
+        
+        if (args.value != null && !string.IsNullOrEmpty(args.value.ToString()) && int.TryParse(args.value.ToString(), out var productId) && productId > 0)
+        {
+            // 檢查是否已存在相同產品
+            var existingProductIds = Items.Where(i => i != productSupplier).Select(item => GetProductId(item)).Where(id => id.HasValue && id.Value > 0);
+            if (existingProductIds.Any(id => id!.Value == productId))
+            {
+                await NotificationService.ShowErrorAsync("此產品已存在，請選擇其他產品");
+                SetProductId(productSupplier, null);
+            }
+            else
+            {
+                SetProductId(productSupplier, productId);                
+                
+                // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+                var added = AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleInputChangeAdvanced(
+                    Items, productSupplier, IsEmptyRow, CreateEmptyItem, wasEmpty, SetSupplierId, ParentEntityId);
+                
+                await ItemsChanged.InvokeAsync(Items);
+            }
+        }
+        else
+        {
+            SetProductId(productSupplier, null);
+            await ItemsChanged.InvokeAsync(Items);
+        }
+        StateHasChanged();
+    }
+
+    private async Task OnSupplierProductCodeChanged((object item, string? value) args)
+    {
+        var productSupplier = (TProductSupplierEntity)args.item;
+        var wasEmpty = IsEmptyRow(productSupplier);
+        
+        SetSupplierProductCode(productSupplier, args.value);
+        
+        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+        AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleInputChangeAdvanced(
+            Items, productSupplier, IsEmptyRow, CreateEmptyItem, wasEmpty, SetSupplierId, ParentEntityId);
+        
+        await ItemsChanged.InvokeAsync(Items);
+        StateHasChanged();
+    }
+
+    private async Task OnSupplierPriceChanged((object item, string? value) args)
+    {
+        var productSupplier = (TProductSupplierEntity)args.item;
+        var wasEmpty = IsEmptyRow(productSupplier);
+        
+        if (string.IsNullOrEmpty(args.value))
+        {
+            SetSupplierPrice(productSupplier, null);
+        }
+        else if (int.TryParse(args.value, out var price))
+        {
+            SetSupplierPrice(productSupplier, (decimal)price);
+        }
+        
+        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+        AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleInputChangeAdvanced(
+            Items, productSupplier, IsEmptyRow, CreateEmptyItem, wasEmpty, SetSupplierId, ParentEntityId);
+        
+        await ItemsChanged.InvokeAsync(Items);
+        StateHasChanged();
+    }
+
+    private async Task OnLeadTimeChanged((object item, string? value) args)
+    {
+        var productSupplier = (TProductSupplierEntity)args.item;
+        var wasEmpty = IsEmptyRow(productSupplier);
+        
+        if (string.IsNullOrEmpty(args.value))
+        {
+            SetLeadTime(productSupplier, null);
+        }
+        else if (int.TryParse(args.value, out var leadTime))
+        {
+            SetLeadTime(productSupplier, leadTime);
+        }
+        
+        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+        AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleInputChangeAdvanced(
+            Items, productSupplier, IsEmptyRow, CreateEmptyItem, wasEmpty, SetSupplierId, ParentEntityId);
+        
+        await ItemsChanged.InvokeAsync(Items);
+        StateHasChanged();
+    }
+
+    private async Task OnMinOrderQuantityChanged((object item, string? value) args)
+    {
+        var productSupplier = (TProductSupplierEntity)args.item;
+        var wasEmpty = IsEmptyRow(productSupplier);
+        
+        if (string.IsNullOrEmpty(args.value))
+        {
+            SetMinOrderQuantity(productSupplier, null);
+        }
+        else if (int.TryParse(args.value, out var quantity))
+        {
+            SetMinOrderQuantity(productSupplier, quantity);
+        }
+        
+        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+        AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleInputChangeAdvanced(
+            Items, productSupplier, IsEmptyRow, CreateEmptyItem, wasEmpty, SetSupplierId, ParentEntityId);
+        
+        await ItemsChanged.InvokeAsync(Items);
+        StateHasChanged();
+    }
+
+    private async Task OnUnitChanged((object item, object? value) args)
+    {
+        var productSupplier = (TProductSupplierEntity)args.item;
+        var wasEmpty = IsEmptyRow(productSupplier);
+        
+        if (args.value != null && !string.IsNullOrEmpty(args.value.ToString()) && int.TryParse(args.value.ToString(), out var unitId))
+        {
+            SetUnitId(productSupplier, unitId);
+        }
+        else
+        {
+            SetUnitId(productSupplier, null);
+        }
+        
+        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+        AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleInputChangeAdvanced(
+            Items, productSupplier, IsEmptyRow, CreateEmptyItem, wasEmpty, SetSupplierId, ParentEntityId);
+        
+        await ItemsChanged.InvokeAsync(Items);
+        StateHasChanged();
+    }
+    
+    public async Task RemoveItemAsync(int index)
+    {
+        if (IsReadOnly || index < 0 || index >= Items.Count) return;
+        
+        var removedItem = Items[index];
+        
+        // 使用 Helper 處理移除，自動確保空行
+        AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleItemRemove(
+            Items, removedItem, IsEmptyRow, CreateEmptyItem, SetSupplierId, ParentEntityId);
+        
+        await ItemRemoved.InvokeAsync(removedItem);
+        await ItemsChanged.InvokeAsync(Items);
+        StateHasChanged();
+    }
+    
+    public async Task<bool> ValidateAsync()
+    {
+        var errors = new List<string>();
+        
+        // 使用 Helper 檢查是否有足夠的非空項目
+        if (!AutoEmptyRowHelper.For<TProductSupplierEntity>.HasSufficientItems(Items, IsEmptyRow, 1))
+        {
+            errors.Add("至少需要一個產品");
+        }
+        else
+        {
+            // 取得非空的項目進行重複檢查
+            var nonEmptyItems = AutoEmptyRowHelper.For<TProductSupplierEntity>.GetNonEmptyItems(Items, IsEmptyRow);
+            var productIds = nonEmptyItems.Select(item => GetProductId(item)).Where(id => id.HasValue).ToList();
+            if (productIds.Count != productIds.Distinct().Count())
+            {
+                errors.Add("存在重複的產品");
+            }
+        }
+          
+        if (errors.Any())
+        {
+            var errorMessage = string.Join("\n", errors);
+            await NotificationService.ShowErrorAsync(errorMessage);
+            return false;
+        }
+        
+        return true;
+    }
+}
