@@ -12,6 +12,8 @@ namespace ERPCore2.Services
     /// </summary>
     public class PurchaseReceivingService : GenericManagementService<PurchaseReceiving>, IPurchaseReceivingService
     {
+        private readonly IInventoryStockService? _inventoryStockService;
+
         public PurchaseReceivingService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
@@ -20,6 +22,14 @@ namespace ERPCore2.Services
             IDbContextFactory<AppDbContext> contextFactory, 
             ILogger<GenericManagementService<PurchaseReceiving>> logger) : base(contextFactory, logger)
         {
+        }
+
+        public PurchaseReceivingService(
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<PurchaseReceiving>> logger,
+            IInventoryStockService inventoryStockService) : base(contextFactory, logger)
+        {
+            _inventoryStockService = inventoryStockService;
         }
 
         #region 覆寫基本方法
@@ -357,12 +367,10 @@ namespace ERPCore2.Services
                         return ServiceResult.Failure("找不到指定的進貨單");
                     }
 
-                    // 移除狀態檢查，直接確認
+                    // 移除狀態檢查，直接確認（庫存更新已在儲存時處理）
                     receipt.ConfirmedAt = DateTime.Now;
                     receipt.ConfirmedBy = confirmedBy;
                     receipt.UpdatedAt = DateTime.Now;
-
-                    // TODO: 在這裡實作庫存更新邏輯
 
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();
@@ -486,6 +494,30 @@ namespace ERPCore2.Services
 
                     // 自動計算並更新入庫狀態
                     await UpdateReceivingStatusAsync(context, savedEntity, details);
+
+                    // 更新庫存邏輯
+                    if (_inventoryStockService != null)
+                    {
+                        foreach (var detail in details.Where(d => !d.IsDeleted && d.ReceivedQuantity > 0))
+                        {
+                            var stockResult = await _inventoryStockService.AddStockAsync(
+                                detail.ProductId,
+                                detail.WarehouseId,
+                                detail.ReceivedQuantity,
+                                InventoryTransactionTypeEnum.Purchase,
+                                savedEntity.ReceiptNumber,
+                                detail.UnitPrice,
+                                detail.WarehouseLocationId,
+                                $"採購進貨 - {savedEntity.ReceiptNumber}"
+                            );
+
+                            if (!stockResult.IsSuccess)
+                            {
+                                await transaction.RollbackAsync();
+                                return ServiceResult<PurchaseReceiving>.Failure($"更新庫存失敗：{stockResult.ErrorMessage}");
+                            }
+                        }
+                    }
 
                     await transaction.CommitAsync();
                     return ServiceResult<PurchaseReceiving>.Success(savedEntity);
