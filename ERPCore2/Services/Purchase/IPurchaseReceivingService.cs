@@ -68,5 +68,12 @@ namespace ERPCore2.Services
         /// <param name="details">明細清單</param>
         /// <returns>服務結果</returns>
         Task<ServiceResult> UpdateDetailsAsync(int purchaseReceivingId, List<PurchaseReceivingDetail> details);
+
+        /// <summary>
+        /// 取得指定產品最近一次進貨的倉庫和位置資訊
+        /// </summary>
+        /// <param name="productId">產品ID</param>
+        /// <returns>倉庫ID和倉庫位置ID的元組，如無歷史記錄則回傳null</returns>
+        Task<(int? WarehouseId, int? WarehouseLocationId)> GetLastReceivingLocationAsync(int productId);
     }
 }

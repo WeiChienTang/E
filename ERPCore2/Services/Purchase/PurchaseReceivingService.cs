@@ -927,6 +927,33 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 取得指定產品最近一次進貨的倉庫和位置資訊
+        /// </summary>
+        public async Task<(int? WarehouseId, int? WarehouseLocationId)> GetLastReceivingLocationAsync(int productId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var lastReceiving = await context.PurchaseReceivingDetails
+                    .Where(prd => prd.ProductId == productId && !prd.IsDeleted)
+                    .OrderByDescending(prd => prd.CreatedAt)
+                    .Select(prd => new { prd.WarehouseId, prd.WarehouseLocationId })
+                    .FirstOrDefaultAsync();
+                    
+                return (lastReceiving?.WarehouseId, lastReceiving?.WarehouseLocationId);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetLastReceivingLocationAsync), GetType(), _logger, new { 
+                    Method = nameof(GetLastReceivingLocationAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = productId 
+                });
+                return (null, null);
+            }
+        }
+
         #endregion
     }
 }

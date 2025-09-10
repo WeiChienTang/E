@@ -1,6 +1,7 @@
 @* 多採購單採購入庫明細管理元件 - 使用 InteractiveTableComponent 統一UI *@
 
 @inject IPurchaseOrderService PurchaseOrderService
+@inject IPurchaseReceivingService PurchaseReceivingService
 @inject INotificationService NotificationService
 @inject IWarehouseService WarehouseService
 @inject IWarehouseLocationService WarehouseLocationService
@@ -47,6 +48,18 @@ else if ((IsEditMode && ReceivingItems.Any()) || (!IsEditMode && PendingOrderDet
             }
         }
 
+        @if (!IsEditMode && ReceivingItems.Any(ri => ri.WarehouseId.HasValue && ri.ExistingDetailEntity == null))
+        {
+            <div class="card-body bg-light py-2 border-bottom">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-info-circle text-info me-2"></i>
+                    <small class="text-muted">
+                        系統已根據各產品最近一次進貨記錄自動填入倉庫和位置，您可以視需要修改
+                    </small>
+                </div>
+            </div>
+        }
+        
         <div class="card-body p-0">
             <InteractiveTableComponent TItem="ReceivingItem" 
                                       Items="@ReceivingItems"
@@ -311,10 +324,12 @@ else
             {
                 var receivingItem = (ReceivingItem)item;
                 var selectedWarehouseId = receivingItem.WarehouseId?.ToString() ?? "";
+                var isAutoFilled = !IsEditMode && receivingItem.WarehouseId.HasValue && receivingItem.ExistingDetailEntity == null;
                 
                 return @<div>
-                    <select class="form-select form-select-sm @(receivingItem.WarehouseValidationError != null ? "is-invalid" : "")" 
+                    <select class="form-select form-select-sm @(receivingItem.WarehouseValidationError != null ? "is-invalid" : "") @(isAutoFilled ? "border-info" : "")" 
                             value="@selectedWarehouseId"
+                            title="@(isAutoFilled ? "已根據歷史進貨記錄自動填入" : "")"
                             @onchange="(e) => OnWarehouseChanged(receivingItem, e.Value?.ToString())">
                         <option value="">請選擇倉庫</option>
                         @foreach (var warehouse in Warehouses)
@@ -322,6 +337,12 @@ else
                             <option value="@warehouse.Id">@warehouse.Code - @warehouse.Name</option>
                         }
                     </select>
+                    @if (isAutoFilled)
+                    {
+                        <small class="text-info">
+                            <i class="fas fa-history"></i> 歷史記錄
+                        </small>
+                    }
                     @if (receivingItem.WarehouseValidationError != null)
                     {
                         <small class="text-danger">@receivingItem.WarehouseValidationError</small>
@@ -342,17 +363,27 @@ else
                 var receivingItem = (ReceivingItem)item;
                 var selectedLocationId = receivingItem.WarehouseLocationId?.ToString() ?? "";
                 var availableLocations = GetAvailableLocations(receivingItem.WarehouseId);
+                var isAutoFilled = !IsEditMode && receivingItem.WarehouseLocationId.HasValue && receivingItem.ExistingDetailEntity == null;
                 
-                return @<select class="form-select form-select-sm" 
-                                value="@selectedLocationId"
-                                disabled="@(!receivingItem.WarehouseId.HasValue)"
-                                @onchange="(e) => OnWarehouseLocationChanged(receivingItem, e.Value?.ToString())">
-                    <option value="">請選擇位置</option>
-                    @foreach (var location in availableLocations)
+                return @<div>
+                    <select class="form-select form-select-sm @(isAutoFilled ? "border-info" : "")" 
+                            value="@selectedLocationId"
+                            disabled="@(!receivingItem.WarehouseId.HasValue)"
+                            title="@(isAutoFilled ? "已根據歷史進貨記錄自動填入" : "")"
+                            @onchange="(e) => OnWarehouseLocationChanged(receivingItem, e.Value?.ToString())">
+                        <option value="">請選擇位置</option>
+                        @foreach (var location in availableLocations)
+                        {
+                            <option value="@location.Id">@location.Code - @location.Name</option>
+                        }
+                    </select>
+                    @if (isAutoFilled)
                     {
-                        <option value="@location.Id">@location.Code - @location.Name</option>
+                        <small class="text-info">
+                            <i class="fas fa-history"></i> 歷史記錄
+                        </small>
                     }
-                </select>;
+                </div>;
             }
         });
 
@@ -479,7 +510,7 @@ else
                     // 新增模式：載入供應商的未完成進貨明細
                     PendingOrderDetails = await PurchaseOrderService.GetReceivingDetailsBySupplierAsync(SupplierId.Value, false);
                 }
-                CreateReceivingItems();
+                await CreateReceivingItems();
             }
             else
             {
@@ -498,7 +529,7 @@ else
     /// <summary>
     /// 從未完成進貨明細建立入庫項目
     /// </summary>
-    private void CreateReceivingItems()
+    private async Task CreateReceivingItems()
     {
         if (IsEditMode)
         {
@@ -523,14 +554,25 @@ else
                 filteredOrderDetails = filteredOrderDetails.Where(od => od.ProductId == FilterProductId.Value);
             }
             
-            ReceivingItems = filteredOrderDetails.Select(od => new ReceivingItem
+            var orderDetailsList = filteredOrderDetails.ToList();
+            ReceivingItems = new List<ReceivingItem>();
+            
+            // 為每個產品查詢最近一次進貨的倉庫和位置資訊
+            foreach (var od in orderDetailsList)
             {
-                PurchaseOrderDetail = od,
-                ReceivedQuantity = 0,
-                UnitPrice = od.UnitPrice,
-                WarehouseId = null, // 需要使用者手動選擇
-                WarehouseLocationId = null
-            }).ToList();
+                var (lastWarehouseId, lastWarehouseLocationId) = await GetLastReceivingLocationAsync(od.ProductId);
+                
+                var receivingItem = new ReceivingItem
+                {
+                    PurchaseOrderDetail = od,
+                    ReceivedQuantity = 0,
+                    UnitPrice = od.UnitPrice,
+                    WarehouseId = lastWarehouseId,
+                    WarehouseLocationId = lastWarehouseLocationId
+                };
+                
+                ReceivingItems.Add(receivingItem);
+            }
         }
     }
 
@@ -842,6 +884,22 @@ else
     private int GetPendingQuantity(PurchaseOrderDetail orderDetail)
     {
         return orderDetail.OrderQuantity - orderDetail.ReceivedQuantity;
+    }
+
+    /// <summary>
+    /// 取得指定產品最近一次進貨的倉庫和位置資訊
+    /// </summary>
+    private async Task<(int? WarehouseId, int? WarehouseLocationId)> GetLastReceivingLocationAsync(int productId)
+    {
+        try
+        {
+            return await PurchaseReceivingService.GetLastReceivingLocationAsync(productId);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowWarningAsync($"查詢產品歷史進貨位置時發生錯誤：{ex.Message}");
+            return (null, null);
+        }
     }
 
     /// <summary>
