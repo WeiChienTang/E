@@ -7,6 +7,7 @@
 @inject IWarehouseLocationService WarehouseLocationService
 @using ERPCore2.Helpers
 @using ERPCore2.Components.Shared.SubCollections
+@using ERPCore2.Components.Shared.Buttons
 
 @if (!SupplierId.HasValue || SupplierId.Value <= 0)
 {
@@ -75,13 +76,15 @@ else if ((IsEditMode && ReceivingItems.Any()) || (!IsEditMode && PendingOrderDet
             <div class="d-flex justify-content-end gap-2">
                 @if (!IsEditMode)
                 {
-                    <button class="btn btn-success" @onclick="FillAllOrderQuantities">
-                        <i class="fas fa-fill me-1"></i>填入所有待入庫量
-                    </button>
+                    <GenericButtonComponent Text="入庫量全填"
+                                          Variant="ButtonVariant.Success"
+                                          IconClass="fas fa-fill"
+                                          OnClick="FillAllOrderQuantities" />
                 }
-                <button class="btn btn-outline-danger" @onclick="ClearAllQuantities">
-                    <i class="fas fa-times me-1"></i>清空所有數量
-                </button>
+                <GenericButtonComponent Text="入庫量清空"
+                                      Variant="ButtonVariant.Danger"
+                                      IconClass="fas fa-times"
+                                      OnClick="ClearAllQuantities" />
             </div>
         </div>
     </div>
@@ -236,6 +239,7 @@ else
                 return @<input type="number" class="form-control form-control-sm text-end" 
                                value="@orderDetail.OrderQuantity"
                                readonly 
+                               tabindex="-1"
                                style="background-color: #f8f9fa; cursor: not-allowed;" />;
             }
         });
@@ -256,6 +260,7 @@ else
                     <input type="number" class="form-control text-end @(isCompleted ? "bg-success text-white" : "")" 
                            value="@orderDetail.ReceivedQuantity"
                            readonly 
+                           tabindex="-1"
                            style="cursor: not-allowed;" />
                 </div>;
             }
@@ -278,6 +283,7 @@ else
                     <input type="number" class="form-control text-end @(isCompleted ? "bg-success text-white" : "bg-warning text-dark")" 
                            value="@pendingQuantity"
                            readonly 
+                           tabindex="-1"
                            style="cursor: not-allowed;" />
                 </div>;
             }
