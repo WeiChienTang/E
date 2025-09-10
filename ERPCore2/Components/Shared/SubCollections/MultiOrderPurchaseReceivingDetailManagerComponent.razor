@@ -133,6 +133,7 @@ else
     private int? _previousSupplierId = null;
     private int? _previousPurchaseOrderId = null;
     private int? _previousFilterProductId = null;
+    private bool _isInitialized = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -149,8 +150,13 @@ else
             _previousSupplierId = SupplierId;
             _previousPurchaseOrderId = PurchaseOrderId;
             _previousFilterProductId = FilterProductId;
-            await LoadPendingOrderDetailsAsync();
-            LoadExistingDetails();
+            
+            // 只在已初始化後才重新載入資料，避免與 OnInitializedAsync 重複
+            if (_isInitialized)
+            {
+                await LoadPendingOrderDetailsAsync();
+                LoadExistingDetails();
+            }
         }
     }
 
@@ -222,7 +228,7 @@ else
             Title = "訂購量",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "8%",
+            Width = "5%",
             CustomTemplate = item =>
             {
                 var receivingItem = (ReceivingItem)item;
@@ -240,7 +246,7 @@ else
             Title = "已入庫",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "8%",
+            Width = "5%",
             CustomTemplate = item =>
             {
                 var receivingItem = (ReceivingItem)item;
@@ -261,7 +267,7 @@ else
             Title = "待入庫",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "8%",
+            Width = "5%",
             CustomTemplate = item =>
             {
                 var receivingItem = (ReceivingItem)item;
@@ -283,7 +289,7 @@ else
             Title = "本次入庫",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "8%",
+            Width = "5%",
             CustomTemplate = item =>
             {
                 var receivingItem = (ReceivingItem)item;
@@ -319,7 +325,7 @@ else
             Title = "倉庫",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
+            Width = "12%",
             CustomTemplate = item =>
             {
                 var receivingItem = (ReceivingItem)item;
@@ -357,7 +363,7 @@ else
             Title = "倉庫位置",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
+            Width = "12%",
             CustomTemplate = item =>
             {
                 var receivingItem = (ReceivingItem)item;
@@ -393,7 +399,7 @@ else
             Title = "單價",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "8%",
+            Width = "10%",
             CustomTemplate = item =>
             {
                 var receivingItem = (ReceivingItem)item;
@@ -452,6 +458,7 @@ else
             await LoadWarehouseLocationsAsync();
             await LoadPendingOrderDetailsAsync();
             LoadExistingDetails();
+            _isInitialized = true;
         }
         catch (Exception ex)
         {
@@ -533,9 +540,11 @@ else
     {
         if (IsEditMode)
         {
-            // 編輯模式：基於現有明細建立項目，不需要過濾
-            ReceivingItems = new List<ReceivingItem>();
-            // 在編輯模式下，項目將在 LoadExistingDetails 中建立
+            // 編輯模式：只在沒有項目時初始化空列表，項目將在 LoadExistingDetails 中建立
+            if (!ReceivingItems.Any())
+            {
+                ReceivingItems = new List<ReceivingItem>();
+            }
         }
         else
         {
@@ -585,20 +594,46 @@ else
 
         if (IsEditMode)
         {
-            // 編輯模式：基於現有明細建立入庫項目
-            ReceivingItems = ExistingDetails.Select(existingDetail => new ReceivingItem
+            // 編輯模式：只在 ReceivingItems 為空時才基於現有明細建立入庫項目，避免重複創建
+            if (!ReceivingItems.Any())
             {
-                PurchaseOrderDetail = existingDetail.PurchaseOrderDetail,
-                ReceivedQuantity = existingDetail.ReceivedQuantity,
-                UnitPrice = existingDetail.UnitPrice,
-                WarehouseId = existingDetail.WarehouseId,
-                WarehouseLocationId = existingDetail.WarehouseLocationId,
-                InspectionRemarks = existingDetail.InspectionRemarks,
-                BatchNumber = existingDetail.BatchNumber,
-                ExpiryDate = existingDetail.ExpiryDate,
-                IsReceivingCompleted = existingDetail.IsReceivingCompleted,
-                ExistingDetailEntity = existingDetail
-            }).ToList();
+                ReceivingItems = ExistingDetails.Select(existingDetail => new ReceivingItem
+                {
+                    PurchaseOrderDetail = existingDetail.PurchaseOrderDetail,
+                    ReceivedQuantity = existingDetail.ReceivedQuantity,
+                    UnitPrice = existingDetail.UnitPrice,
+                    WarehouseId = existingDetail.WarehouseId,
+                    WarehouseLocationId = existingDetail.WarehouseLocationId,
+                    InspectionRemarks = existingDetail.InspectionRemarks,
+                    BatchNumber = existingDetail.BatchNumber,
+                    ExpiryDate = existingDetail.ExpiryDate,
+                    IsReceivingCompleted = existingDetail.IsReceivingCompleted,
+                    ExistingDetailEntity = existingDetail
+                }).ToList();
+            }
+            else
+            {
+                // 如果已有項目，則更新現有項目而不是重新創建
+                foreach (var existingDetail in ExistingDetails)
+                {
+                    var item = ReceivingItems.FirstOrDefault(ri => 
+                        ri.ExistingDetailEntity?.Id == existingDetail.Id ||
+                        (ri.PurchaseOrderDetail?.Id == existingDetail.PurchaseOrderDetailId && ri.ExistingDetailEntity == null));
+                    
+                    if (item != null)
+                    {
+                        item.ReceivedQuantity = existingDetail.ReceivedQuantity;
+                        item.UnitPrice = existingDetail.UnitPrice;
+                        item.WarehouseId = existingDetail.WarehouseId;
+                        item.WarehouseLocationId = existingDetail.WarehouseLocationId;
+                        item.InspectionRemarks = existingDetail.InspectionRemarks;
+                        item.BatchNumber = existingDetail.BatchNumber;
+                        item.ExpiryDate = existingDetail.ExpiryDate;
+                        item.IsReceivingCompleted = existingDetail.IsReceivingCompleted;
+                        item.ExistingDetailEntity = existingDetail;
+                    }
+                }
+            }
         }
         else
         {
