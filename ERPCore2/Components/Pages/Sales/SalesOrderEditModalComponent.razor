@@ -1,83 +1,863 @@
+@* 可重用的銷貨訂單編輯組件 - 可在任何頁面中嵌入 *@
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@using ERPCore2.Services
+@using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.Modals
+@using ERPCore2.Components.Shared.SubCollections
+@using ERPCore2.Helpers
+@using ERPCore2.Models
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+
 @inject ISalesOrderService SalesOrderService
+@inject ISalesOrderDetailService SalesOrderDetailService
+@inject ICustomerService CustomerService
+@inject ICompanyService CompanyService
+@inject IProductService ProductService
+@inject IEmployeeService EmployeeService
+@inject IUnitService UnitService
 @inject INotificationService NotificationService
+@inject NavigationManager NavigationManager
+@inject ActionButtonHelper ActionButtonHelper
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
-<div class="modal fade @(IsVisible ? "show" : "")" tabindex="-1" style="display: @(IsVisible ? "block" : "none")" aria-hidden="@(!IsVisible)">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    @if (SalesOrderId.HasValue)
-                    {
-                        <text>編輯銷貨訂單</text>
-                    }
-                    else
-                    {
-                        <text>新增銷貨訂單</text>
-                    }
-                </h5>
-                <button type="button" class="btn-close" @onclick="HandleCancel" aria-label="Close"></button>
-            </div>
-            
-            <div class="modal-body">
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
-                    銷貨訂單編輯功能即將推出，敬請期待！
-                </div>
-                
-                @if (SalesOrderId.HasValue)
-                {
-                    <div class="mb-3">
-                        <strong>訂單ID:</strong> @SalesOrderId
-                    </div>
-                }
-                
-                <div class="mb-3">
-                    <strong>說明:</strong> 此功能將包含銷貨訂單的完整編輯介面，包括客戶選擇、商品明細、金額計算等功能。
-                </div>
-            </div>
-            
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" @onclick="HandleCancel">關閉</button>
-                <!-- 未來將加入儲存按鈕 -->
-                <!-- <button type="button" class="btn btn-primary" @onclick="HandleSave">儲存</button> -->
-            </div>
-        </div>
-    </div>
-</div>
+<GenericEditModalComponent TEntity="SalesOrder" 
+                          TService="ISalesOrderService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@SalesOrderId"
+                          Service="@SalesOrderService"
+                          EntityName="銷貨訂單"
+                          EntityNamePlural="銷貨訂單"
+                          ModalTitle="@(SalesOrderId.HasValue ? "編輯銷貨訂單" : "新增銷貨訂單")"
+                          Size="GenericEditModalComponent<SalesOrder, ISalesOrderService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
+                          AutoCompleteCollections="@GetAutoCompleteCollections()"
+                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
+                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          ModalManagers="@GetModalManagers()"
+                          DataLoader="@LoadSalesOrderData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          SaveHandler="@SaveSalesOrderWrapper"
+                          SaveSuccessMessage="@(SalesOrderId.HasValue ? "銷貨訂單更新成功" : "銷貨訂單新增成功")"
+                          SaveFailureMessage="銷貨訂單儲存失敗"
+                          RequiredPermission="SalesOrder.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel"
+                          OnFieldChanged="@OnFieldValueChanged"
+                          CustomModules="@GetCustomModules()"
+                          ShowPrintButton="false"
+                          >
 
-@if (IsVisible)
-{
-    <div class="modal-backdrop fade show"></div>
-}
+</GenericEditModalComponent>
+
+@* 暫時移除客戶編輯 Modal，等待創建 CustomerEditModalComponent *@
 
 @code {
-    [Parameter] public bool IsVisible { get; set; }
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
     [Parameter] public int? SalesOrderId { get; set; }
     [Parameter] public EventCallback<SalesOrder> OnSalesOrderSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
 
-    private async Task HandleCancel()
-    {
-        await IsVisibleChanged.InvokeAsync(false);
-        await OnCancel.InvokeAsync();
-    }
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<SalesOrder, ISalesOrderService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    
+    // 原始資料集合（用於 AutoComplete）
+    private List<Customer> availableCustomers = new();
+    private List<Company> availableCompanies = new();
+    private List<Employee> availableEmployees = new();
+    private List<Product> availableProducts = new();
+    private List<Unit> availableUnits = new();
+    
+    // 銷貨訂單明細
+    private List<SalesOrderDetail> salesOrderDetails = new();
+    
+    // Modal 管理器
+    private RelatedEntityModalManager<Customer> customerModalManager = default!;
+    
+    // 下拉選單選項（向下相容）
+    private List<Customer> customers = new();
+    private List<Company> companies = new();
+    private List<Employee> employees = new();
+    private List<SelectOption> customerOptions = new();
+    private List<SelectOption> companyOptions = new();
+    private List<SelectOption> employeeOptions = new();
+    private List<SelectOption> statusOptions = new();
 
-    private async Task HandleSave()
+    // ===== 必要方法 =====
+    protected override async Task OnInitializedAsync()
     {
         try
         {
-            // 未來在此處實作儲存邏輯
-            // 創建一個臨時的 SalesOrder 對象作為示例
-            var savedOrder = new SalesOrder { Id = SalesOrderId ?? 0, SalesOrderNumber = "SO-TEMP" };
-            
-            await NotificationService.ShowSuccessAsync("儲存成功！");
-            await IsVisibleChanged.InvokeAsync(false);
-            await OnSalesOrderSaved.InvokeAsync(savedOrder);
+            // 初始化 Modal 管理器
+            InitializeCustomerModalManager();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化銷貨訂單編輯組件時發生錯誤");
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+        }
+    }
+
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            Console.WriteLine($"[SalesOrderEditModalComponent] HandleSaveSuccess 被調用");
+            if (OnSalesOrderSaved.HasDelegate && editModalComponent?.Entity != null)
+            {
+                Console.WriteLine($"[SalesOrderEditModalComponent] 準備調用 OnSalesOrderSaved 事件");
+                await OnSalesOrderSaved.InvokeAsync(editModalComponent.Entity);
+                Console.WriteLine($"[SalesOrderEditModalComponent] OnSalesOrderSaved 事件調用完成");
+            }
+            else
+            {
+                Console.WriteLine($"[SalesOrderEditModalComponent] OnSalesOrderSaved 事件沒有委派或實體為空");
+            }
+            await CloseModal();
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"儲存失敗：{ex.Message}");
+            Console.WriteLine($"[SalesOrderEditModalComponent] HandleSaveSuccess 發生錯誤: {ex.Message}");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(), 
+                additionalData: "銷貨訂單編輯Modal儲存成功處理失敗");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+            // 不要直接調用 CloseModal，讓 GenericEditModalComponent 處理
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(), 
+                additionalData: "銷貨訂單編輯Modal取消處理失敗");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        try
+        {
+            if (IsVisibleChanged.HasDelegate)
+            {
+                await IsVisibleChanged.InvokeAsync(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(CloseModal), GetType(), 
+                additionalData: "銷貨訂單編輯Modal關閉失敗");
+        }
+    }
+
+    private async Task<SalesOrder?> LoadSalesOrderData()
+    {
+        try
+        {
+            if (!SalesOrderId.HasValue)
+            {
+                // 新增模式 - 自動產生銷貨訂單號並設定預設公司
+                var generatedCode = await GenerateSalesOrderNumberAsync();
+                
+                var newOrder = new SalesOrder
+                {
+                    OrderDate = DateTime.Today,
+                    ExpectedDeliveryDate = DateTime.Today.AddDays(7),
+                    Status = EntityStatus.Active,
+                    TotalAmount = 0,
+                    SalesOrderNumber = generatedCode
+                };
+                
+                // 清空明細
+                salesOrderDetails.Clear();
+                
+                return newOrder;
+            }
+
+            // 編輯模式 - 載入銷貨訂單和明細
+            var salesOrder = await SalesOrderService.GetWithDetailsAsync(SalesOrderId.Value);
+            
+            if (salesOrder != null)
+            {
+                // 載入銷貨訂單明細
+                await LoadSalesOrderDetails(SalesOrderId.Value);
+                
+                // 在實體載入後重新初始化表單欄位
+                await Task.Delay(10); // 短暫延遲確保實體已設定
+                _ = Task.Run(async () =>
+                {
+                    await InvokeAsync(async () =>
+                    {
+                        await InitializeFormFieldsAsync();
+                        StateHasChanged();
+                    });
+                });
+                
+                // 觸發重新渲染以更新 ProductManagerComponent
+                StateHasChanged();
+            }
+            
+            return salesOrder;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSalesOrderData), GetType(), 
+                additionalData: $"載入銷貨訂單資料失敗 - ID: {SalesOrderId}");
+            await NotificationService.ShowErrorAsync($"載入銷貨訂單資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            // 載入客戶選項
+            customers = await CustomerService.GetAllAsync();
+            availableCustomers = customers; // 用於 AutoComplete
+            customerOptions = customers.Where(c => c.Status == EntityStatus.Active)
+                .Select(c => new SelectOption
+                {
+                    Text = c.CompanyName,
+                    Value = c.Id.ToString()
+                }).ToList();
+
+            // 載入公司選項
+            companies = await CompanyService.GetAllAsync();
+            availableCompanies = companies; // 用於 AutoComplete
+            companyOptions = companies.Where(c => c.Status == EntityStatus.Active)
+                .Select(c => new SelectOption
+                {
+                    Text = c.CompanyName,
+                    Value = c.Id.ToString()
+                }).ToList();
+
+            // 載入員工選項
+            employees = await EmployeeService.GetAllAsync();
+            availableEmployees = employees; // 用於 AutoComplete
+            employeeOptions = employees.Where(e => e.Status == EntityStatus.Active)
+                .Select(e => new SelectOption
+                {
+                    Text = e.Name ?? string.Empty,
+                    Value = e.Id.ToString()
+                }).ToList();
+
+            // 載入商品資料
+            availableProducts = await ProductService.GetAllAsync();
+
+            // 載入單位資料
+            availableUnits = await UnitService.GetAllAsync();
+
+            // 初始化狀態選項
+            statusOptions = new List<SelectOption>
+            {
+                new SelectOption { Text = "啟用", Value = "Active" },
+                new SelectOption { Text = "停用", Value = "Inactive" }
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType(), 
+                additionalData: "銷貨訂單編輯Modal載入額外資料失敗");
+            
+            // 設定安全的預設值
+            customerOptions = new List<SelectOption>();
+            companyOptions = new List<SelectOption>();
+            employeeOptions = new List<SelectOption>();
+            statusOptions = new List<SelectOption>();
+            availableProducts = new List<Product>();
+            availableUnits = new List<Unit>();
+        }
+    }
+
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(SalesOrder.SalesOrderNumber),
+                    Label = "銷貨單號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入銷貨單號",
+                    IsRequired = true,
+                    MaxLength = 30,
+                    HelpText = "銷貨訂單的唯一編號，新增時系統會自動產生，也可手動修改"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesOrder.CustomerId),
+                    Label = "客戶",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇客戶",
+                    IsRequired = true,
+                    MinSearchLength = 0,
+                    HelpText = "輸入客戶名稱進行搜尋，或直接選擇",
+                    ActionButtons = await GetCustomerActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesOrder.EmployeeId),
+                    Label = "業務員",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請選擇業務員",
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "選擇負責此訂單的業務員"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesOrder.OrderDate),
+                    Label = "訂單日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "銷貨訂單建立日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesOrder.ExpectedDeliveryDate),
+                    Label = "預定出貨日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "預計出貨給客戶的日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesOrder.PaymentTerms),
+                    Label = "付款條件",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入付款條件",
+                    IsRequired = false,
+                    MaxLength = 200,
+                    HelpText = "與客戶約定的付款方式和期限"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesOrder.DeliveryTerms),
+                    Label = "交貨條件",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入交貨條件",
+                    IsRequired = false,
+                    MaxLength = 200,
+                    HelpText = "與客戶約定的交貨方式和條件"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesOrder.Remarks),
+                    Label = "備註",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入備註",
+                    IsRequired = false,
+                    MaxLength = 500,
+                    Rows = 2,
+                    HelpText = "銷貨訂單的額外說明或注意事項",
+                    ContainerCssClass = "col-12"
+                }
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(SalesOrder.SalesOrderNumber), "基本資訊" },
+                { nameof(SalesOrder.CustomerId), "基本資訊" },
+                { nameof(SalesOrder.EmployeeId), "基本資訊" },
+                { nameof(SalesOrder.OrderDate), "基本資訊" },
+                { nameof(SalesOrder.ExpectedDeliveryDate), "基本資訊" },
+                { nameof(SalesOrder.PaymentTerms), "交易條件" },
+                { nameof(SalesOrder.DeliveryTerms), "交易條件" },
+                { nameof(SalesOrder.Remarks), "額外資訊" }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFormFieldsAsync), GetType(), 
+                additionalData: "銷貨訂單編輯Modal表單欄位初始化失敗");
+            
+            // 設定安全的預設值
+            formFields = new List<FormFieldDefinition>();
+            formSections = new Dictionary<string, string>();
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    /// <summary>
+    /// 生成銷貨訂單號
+    /// </summary>
+    private async Task<string> GenerateSalesOrderNumberAsync()
+    {
+        try
+        {
+            // 使用 CodeGenerationHelper 生成訂單號
+            return CodeGenerationHelper.GenerateSimpleEntityCode("SO", usePreciseTimestamp: true);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GenerateSalesOrderNumberAsync), GetType(), 
+                additionalData: "生成銷貨訂單號失敗");
+            
+            // 如果失敗，使用簡單的時間戳記
+            return $"SO{DateTime.Now:yyyyMMddHHmmss}";
+        }
+    }
+    
+    // ===== AutoComplete 配置方法 =====
+    
+    /// <summary>
+    /// 配置 AutoComplete 預填器
+    /// </summary>
+    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
+    {
+        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
+        {
+            {
+                nameof(SalesOrder.CustomerId), searchTerm => new Dictionary<string, object?>
+                {
+                    { "CompanyName", searchTerm }
+                }
+            },
+            {
+                nameof(SalesOrder.EmployeeId), searchTerm => new Dictionary<string, object?>
+                {
+                    { "Name", searchTerm }
+                }
+            }
+        };
+    }
+    
+    /// <summary>
+    /// 配置 AutoComplete 資料集合
+    /// </summary>
+    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
+    {
+        return new Dictionary<string, IEnumerable<object>>
+        {
+            { nameof(SalesOrder.CustomerId), availableCustomers.Cast<object>() },
+            { nameof(SalesOrder.EmployeeId), availableEmployees.Cast<object>() }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 顯示屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(SalesOrder.CustomerId), "CompanyName" },
+            { nameof(SalesOrder.EmployeeId), "Name" }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 值屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteValueProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(SalesOrder.CustomerId), "Id" },
+            { nameof(SalesOrder.EmployeeId), "Id" }
+        };
+    }
+    
+    /// <summary>
+    /// 配置 Modal 管理器
+    /// </summary>
+    private Dictionary<string, object> GetModalManagers()
+    {
+        return new Dictionary<string, object>
+        {
+            { nameof(SalesOrder.CustomerId), customerModalManager }
+        };
+    }
+    
+    /// <summary>
+    /// 配置自訂模組
+    /// </summary>
+    private List<GenericEditModalComponent<SalesOrder, ISalesOrderService>.CustomModule> GetCustomModules()
+    {
+        // 確保只在需要時才返回模組，並且檢查所有必要的條件
+        if (editModalComponent == null)
+        {
+            return new List<GenericEditModalComponent<SalesOrder, ISalesOrderService>.CustomModule>();
+        }
+
+        return new List<GenericEditModalComponent<SalesOrder, ISalesOrderService>.CustomModule>
+        {
+            new GenericEditModalComponent<SalesOrder, ISalesOrderService>.CustomModule
+            {
+                Order = 1,
+                IsVisible = true,
+                Content = CreateProductManagerContent()
+            }
+        };
+    }
+
+    /// <summary>
+    /// 創建商品管理器內容的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateProductManagerContent() => __builder =>
+    {
+        try
+        {
+            @if (editModalComponent?.Entity != null && availableProducts != null && availableUnits != null)
+            {
+                <SalesOrderProductManagerComponent TSalesOrderDetailEntity="SalesOrderDetail" 
+                                                  TProductEntity="Product"
+                                                  TSalesOrderEntity="SalesOrder"
+                                                  Items="@salesOrderDetails"
+                                                  ProductOptions="@availableProducts"
+                                                  UnitOptions="@availableUnits"
+                                                  ParentEntityId="@(editModalComponent.Entity.Id)"
+                                                  IsReadOnly="false"
+                                                  GetProductId="@(item => item.ProductId)"
+                                                  SetProductId="@((item, value) => item.ProductId = value ?? 0)"
+                                                  GetQuantity="@(item => item.OrderQuantity)"
+                                                  SetQuantity="@((item, value) => item.OrderQuantity = value ?? 0m)"
+                                                  GetUnitPrice="@(item => item.UnitPrice)"
+                                                  SetUnitPrice="@((item, value) => item.UnitPrice = value ?? 0m)"
+                                                  GetDiscount="@(item => item.DiscountPercentage)"
+                                                  SetDiscount="@((item, value) => item.DiscountPercentage = value ?? 0m)"
+                                                  GetUnitId="@(item => item.UnitId)"
+                                                  SetUnitId="@((item, value) => item.UnitId = value)"
+                                                  GetRemark="@(item => item.DetailRemarks)"
+                                                  SetRemark="@((item, value) => item.DetailRemarks = value)"
+                                                  SetSalesOrderId="@((item, value) => item.SalesOrderId = value)"
+                                                  ItemsChanged="@HandleDetailsChanged"
+                                                  ItemDisplayName="銷售產品"
+                                                  EmptyMessage="尚未新增銷售產品" />
+            }
+            else
+            {
+                <div class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">載入中...</span>
+                    </div>
+                </div>
+            }
+        }
+        catch
+        {
+            <div class="alert alert-warning" role="alert">
+                載入明細管理器時發生錯誤，請重新整理頁面。
+            </div>
+        }
+    };
+    
+    // ===== Modal 管理器初始化方法 =====
+    
+    /// <summary>
+    /// 初始化客戶 Modal 管理器
+    /// </summary>
+    private void InitializeCustomerModalManager()
+    {
+        customerModalManager = new RelatedEntityManagerBuilder<Customer>(NotificationService, "客戶")
+            .WithPropertyName(nameof(SalesOrder.CustomerId))
+            .WithReloadCallback(LoadAdditionalDataAsync)
+            .WithStateChangedCallback(StateHasChanged)
+            .WithAutoSelectCallback(customerId => 
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    editModalComponent.Entity.CustomerId = customerId;
+                }
+            })
+            .WithCustomPostProcess(async customer => 
+            {
+                await InitializeFormFieldsAsync();
+            })
+            .Build();
+    }
+    
+    // ===== ActionButton 產生方法 =====
+    
+    /// <summary>
+    /// 產生客戶操作按鈕 - 暫時返回空列表，等待 CustomerEditModalComponent 完成
+    /// </summary>
+    private Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
+    {
+        // 暫時返回空列表，等待客戶編輯組件完成
+        return Task.FromResult(new List<FieldActionButton>());
+    }
+    
+    // ===== Modal 事件包裝器方法 =====
+    
+    /// <summary>
+    /// 包裝客戶儲存事件 - 暫時空實作
+    /// </summary>
+    private async Task OnCustomerSavedWrapper(Customer savedCustomer)
+    {
+        // 暫時空實作，等待客戶編輯組件完成
+        await Task.CompletedTask;
+    }
+    
+    /// <summary>
+    /// 處理欄位值變更事件 - 使用統一 Helper
+    /// </summary>
+    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    {
+        try
+        {
+            // 使用統一 Helper 處理客戶欄位變更
+            if (fieldChange.PropertyName == nameof(SalesOrder.CustomerId))
+            {
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    customerModalManager, 
+                    formFields, 
+                    nameof(SalesOrder.CustomerId), 
+                    fieldChange.Value
+                );
+                
+                // 客戶變更時，觸發商品管理器重新渲染
+                StateHasChanged();
+            }
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
+        }
+    }
+
+    // ===== 銷貨明細管理方法 =====
+    
+    /// <summary>
+    /// 載入銷貨訂單明細
+    /// </summary>
+    private async Task LoadSalesOrderDetails(int salesOrderId)
+    {
+        try
+        {
+            // 從現有的銷貨訂單取得明細
+            var salesOrder = await SalesOrderService.GetWithDetailsAsync(salesOrderId);
+            if (salesOrder?.SalesOrderDetails != null)
+            {
+                salesOrderDetails = salesOrder.SalesOrderDetails.ToList();
+            }
+            else
+            {
+                salesOrderDetails = new List<SalesOrderDetail>();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSalesOrderDetails), GetType(), 
+                additionalData: $"載入銷貨訂單明細失敗 - OrderId: {salesOrderId}");
+            salesOrderDetails = new List<SalesOrderDetail>();
+        }
+    }
+
+    /// <summary>
+    /// 處理銷貨明細變更
+    /// </summary>
+    private async Task HandleDetailsChanged(List<SalesOrderDetail> details)
+    {
+        try
+        {
+            salesOrderDetails = details ?? new List<SalesOrderDetail>();
+            
+            // 重新計算每項明細的小計
+            foreach (var detail in salesOrderDetails)
+            {
+                if (detail.ProductId > 0) // 只有選擇了產品的明細才計算
+                {
+                    var subtotal = detail.OrderQuantity * detail.UnitPrice;
+                    
+                    // 計算折扣
+                    if (detail.DiscountPercentage > 0 && detail.DiscountPercentage <= 100)
+                    {
+                        detail.DiscountAmount = subtotal * (detail.DiscountPercentage / 100);
+                        subtotal = subtotal - detail.DiscountAmount;
+                    }
+                    else
+                    {
+                        detail.DiscountAmount = 0;
+                    }
+                    
+                    detail.Subtotal = subtotal;
+                    detail.PendingQuantity = detail.OrderQuantity - detail.DeliveredQuantity;
+                }
+                else
+                {
+                    detail.Subtotal = 0;
+                    detail.DiscountAmount = 0;
+                    detail.PendingQuantity = 0;
+                }
+            }
+            
+            // 除錯：檢查明細資料
+            Console.WriteLine($"HandleDetailsChanged: 收到 {salesOrderDetails.Count} 筆明細");
+            foreach (var detail in salesOrderDetails.Where(d => d.ProductId > 0))
+            {
+                Console.WriteLine($"明細 - ProductId: {detail.ProductId}, OrderQuantity: {detail.OrderQuantity}, UnitPrice: {detail.UnitPrice}, DiscountPercentage: {detail.DiscountPercentage}, Subtotal: {detail.Subtotal}");
+            }
+            
+            // 更新主檔的總金額
+            if (editModalComponent?.Entity != null)
+            {
+                editModalComponent.Entity.TotalAmount = salesOrderDetails.Sum(d => d.Subtotal);
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDetailsChanged), GetType(), 
+                additionalData: "處理銷貨明細變更失敗");
+        }
+    }
+
+    /// <summary>
+    /// 包裝方法 - 提供給 GenericEditModalComponent 使用的儲存處理器
+    /// </summary>
+    private async Task<bool> SaveSalesOrderWrapper(SalesOrder salesOrder)
+    {
+        return await SaveSalesOrderWithDetails(salesOrder);
+    }
+
+    /// <summary>
+    /// 自訂儲存邏輯 - 同時儲存主檔和明細
+    /// </summary>
+    private async Task<bool> SaveSalesOrderWithDetails(SalesOrder salesOrder)
+    {
+        try
+        {
+            if (salesOrder == null)
+            {
+                await NotificationService.ShowErrorAsync("沒有要儲存的銷貨訂單資料");
+                return false;
+            }
+
+            // 更新總金額
+            salesOrder.TotalAmount = salesOrderDetails.Sum(d => d.Subtotal);
+
+            // 儲存主檔
+            ServiceResult<SalesOrder> result;
+            if (SalesOrderId.HasValue)
+            {
+                result = await SalesOrderService.UpdateAsync(salesOrder);
+            }
+            else
+            {
+                result = await SalesOrderService.CreateAsync(salesOrder);
+            }
+
+            if (!result.IsSuccess || result.Data == null)
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "儲存銷貨訂單失敗");
+                return false;
+            }
+
+            // 儲存明細
+            await SaveSalesOrderDetails(result.Data.Id);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveSalesOrderWithDetails), GetType(), 
+                additionalData: "儲存銷貨訂單和明細失敗");
+            await NotificationService.ShowErrorAsync($"儲存時發生錯誤：{ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 儲存銷貨訂單明細
+    /// </summary>
+    private async Task SaveSalesOrderDetails(int salesOrderId)
+    {
+        try
+        {
+            // 只處理有效的明細（已選擇產品的）
+            var validDetails = salesOrderDetails.Where(d => d.ProductId > 0).ToList();
+            
+            Console.WriteLine($"SaveSalesOrderDetails: 準備儲存 {validDetails.Count} 筆有效明細");
+            
+            // 設定主檔ID和時間戳記
+            foreach (var detail in validDetails)
+            {
+                detail.SalesOrderId = salesOrderId;
+                if (detail.Id == 0)
+                {
+                    detail.Status = EntityStatus.Active;
+                    detail.CreatedAt = DateTime.Now;
+                }
+                else
+                {
+                    detail.UpdatedAt = DateTime.Now;
+                }
+                
+                Console.WriteLine($"儲存前明細 - Id: {detail.Id}, ProductId: {detail.ProductId}, OrderQuantity: {detail.OrderQuantity}, UnitPrice: {detail.UnitPrice}, Subtotal: {detail.Subtotal}");
+            }
+
+            // 先獲取現有的明細
+            var existingOrder = await SalesOrderService.GetWithDetailsAsync(salesOrderId);
+            var existingDetails = existingOrder?.SalesOrderDetails?.ToList() ?? new List<SalesOrderDetail>();
+            
+            // 處理新增和更新的明細
+            foreach (var detail in validDetails)
+            {
+                if (detail.Id == 0)
+                {
+                    // 新增明細
+                    var createResult = await SalesOrderDetailService.CreateAsync(detail);
+                    if (createResult.IsSuccess && createResult.Data != null)
+                    {
+                        // 更新本地明細的 ID
+                        detail.Id = createResult.Data.Id;
+                    }
+                }
+                else
+                {
+                    // 更新明細
+                    await SalesOrderDetailService.UpdateAsync(detail);
+                }
+            }
+
+            // 處理刪除的明細（現有的但不在當前有效列表中的）
+            var currentDetailIds = validDetails.Where(d => d.Id > 0).Select(d => d.Id).ToList();
+            var detailsToDelete = existingDetails.Where(e => !currentDetailIds.Contains(e.Id)).ToList();
+            
+            Console.WriteLine($"準備刪除 {detailsToDelete.Count} 筆明細");
+            foreach (var detailToDelete in detailsToDelete)
+            {
+                await SalesOrderDetailService.DeleteAsync(detailToDelete.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveSalesOrderDetails), GetType(), 
+                additionalData: $"儲存銷貨訂單明細失敗 - OrderId: {salesOrderId}");
+            throw; // 重新拋出例外，讓上層處理
         }
     }
 }
