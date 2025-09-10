@@ -304,8 +304,7 @@ namespace ERPCore2.Services
                 if (detail == null)
                     return ServiceResult.Failure("找不到指定的退回明細");
                 
-                if (detail.PurchaseReturn.ReturnStatus != PurchaseReturnStatus.Processing)
-                    return ServiceResult.Failure("只有處理中的退回單才能進行出庫作業");
+                // 移除狀態檢查，因為已刪除 ReturnStatus 屬性
                 
                 if (shippedQuantity <= 0)
                     return ServiceResult.Failure("出庫數量必須大於0");
@@ -347,8 +346,7 @@ namespace ERPCore2.Services
                 if (detail == null)
                     return ServiceResult.Failure("找不到指定的退回明細");
                 
-                if (detail.PurchaseReturn.ReturnStatus != PurchaseReturnStatus.Processing)
-                    return ServiceResult.Failure("只有處理中的退回單才能進行報廢作業");
+                // 移除狀態檢查，因為已刪除 ReturnStatus 屬性
                 
                 if (scrapQuantity <= 0)
                     return ServiceResult.Failure("報廢數量必須大於0");
@@ -712,7 +710,6 @@ namespace ERPCore2.Services
                         .ThenInclude(pr => pr.Supplier)
                     .Include(prd => prd.Product)
                     .Where(prd => !prd.IsDeleted &&
-                                 prd.PurchaseReturn.ReturnStatus == PurchaseReturnStatus.Processing &&
                                  !prd.IsShipped &&
                                  prd.ShippedQuantity < prd.ReturnQuantity)
                     .OrderBy(prd => prd.PurchaseReturn.ExpectedProcessDate)

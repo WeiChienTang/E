@@ -1,6 +1,5 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
-using ERPCore2.Data.Enums;
 using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -129,30 +128,6 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<PurchaseReturn>> GetByStatusAsync(PurchaseReturnStatus status)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.PurchaseReturns
-                    .Include(pr => pr.Supplier)
-                    .Include(pr => pr.PurchaseOrder)
-                    .Include(pr => pr.PurchaseReceiving)
-                    .Where(pr => pr.ReturnStatus == status && !pr.IsDeleted)
-                    .OrderByDescending(pr => pr.ReturnDate)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByStatusAsync), GetType(), _logger, new { 
-                    Method = nameof(GetByStatusAsync),
-                    ServiceType = GetType().Name,
-                    Status = status 
-                });
-                return new List<PurchaseReturn>();
-            }
-        }
-
         public async Task<List<PurchaseReturn>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
             try
@@ -266,7 +241,6 @@ namespace ERPCore2.Services
                     .Where(pr => !pr.IsDeleted && (
                         pr.PurchaseReturnNumber.ToLower().Contains(lowerSearchTerm) ||
                         pr.Supplier.CompanyName.ToLower().Contains(lowerSearchTerm) ||
-                        (pr.ReturnDescription != null && pr.ReturnDescription.ToLower().Contains(lowerSearchTerm)) ||
                         (pr.PurchaseOrder != null && pr.PurchaseOrder.PurchaseOrderNumber.ToLower().Contains(lowerSearchTerm)) ||
                         (pr.PurchaseReceiving != null && pr.PurchaseReceiving.ReceiptNumber.ToLower().Contains(lowerSearchTerm))
                     ))
@@ -320,190 +294,6 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<ServiceResult> SubmitAsync(int id)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var purchaseReturn = await context.PurchaseReturns.FindAsync(id);
-                
-                if (purchaseReturn == null || purchaseReturn.IsDeleted)
-                    return ServiceResult.Failure("找不到指定的採購退回記錄");
-                
-                if (purchaseReturn.ReturnStatus != PurchaseReturnStatus.Draft)
-                    return ServiceResult.Failure("只有草稿狀態的退回單可以送出");
-                
-                purchaseReturn.ReturnStatus = PurchaseReturnStatus.Submitted;
-                purchaseReturn.UpdatedAt = DateTime.UtcNow;
-                
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SubmitAsync), GetType(), _logger, new { 
-                    Method = nameof(SubmitAsync),
-                    ServiceType = GetType().Name,
-                    Id = id 
-                });
-                return ServiceResult.Failure("送出採購退回過程發生錯誤");
-            }
-        }
-
-        public async Task<ServiceResult> ConfirmAsync(int id, int confirmedBy)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var purchaseReturn = await context.PurchaseReturns.FindAsync(id);
-                
-                if (purchaseReturn == null || purchaseReturn.IsDeleted)
-                    return ServiceResult.Failure("找不到指定的採購退回記錄");
-                
-                if (purchaseReturn.ReturnStatus != PurchaseReturnStatus.Submitted)
-                    return ServiceResult.Failure("只有已送出狀態的退回單可以確認");
-                
-                purchaseReturn.ReturnStatus = PurchaseReturnStatus.Confirmed;
-                purchaseReturn.ConfirmedAt = DateTime.UtcNow;
-                purchaseReturn.ConfirmedBy = confirmedBy;
-                purchaseReturn.UpdatedAt = DateTime.UtcNow;
-                
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ConfirmAsync), GetType(), _logger, new { 
-                    Method = nameof(ConfirmAsync),
-                    ServiceType = GetType().Name,
-                    Id = id,
-                    ConfirmedBy = confirmedBy 
-                });
-                return ServiceResult.Failure("確認採購退回過程發生錯誤");
-            }
-        }
-
-        public async Task<ServiceResult> StartProcessingAsync(int id)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var purchaseReturn = await context.PurchaseReturns.FindAsync(id);
-                
-                if (purchaseReturn == null || purchaseReturn.IsDeleted)
-                    return ServiceResult.Failure("找不到指定的採購退回記錄");
-                
-                if (purchaseReturn.ReturnStatus != PurchaseReturnStatus.Confirmed)
-                    return ServiceResult.Failure("只有已確認狀態的退回單可以開始處理");
-                
-                purchaseReturn.ReturnStatus = PurchaseReturnStatus.Processing;
-                purchaseReturn.UpdatedAt = DateTime.UtcNow;
-                
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(StartProcessingAsync), GetType(), _logger, new { 
-                    Method = nameof(StartProcessingAsync),
-                    ServiceType = GetType().Name,
-                    Id = id 
-                });
-                return ServiceResult.Failure("開始處理採購退回過程發生錯誤");
-            }
-        }
-
-        public async Task<ServiceResult> CompleteAsync(int id)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var purchaseReturn = await context.PurchaseReturns.FindAsync(id);
-                
-                if (purchaseReturn == null || purchaseReturn.IsDeleted)
-                    return ServiceResult.Failure("找不到指定的採購退回記錄");
-                
-                if (purchaseReturn.ReturnStatus != PurchaseReturnStatus.Processing)
-                    return ServiceResult.Failure("只有處理中狀態的退回單可以完成");
-                
-                purchaseReturn.ReturnStatus = PurchaseReturnStatus.Completed;
-                purchaseReturn.ProcessCompletedAt = DateTime.UtcNow;
-                purchaseReturn.ActualProcessDate = DateTime.UtcNow;
-                purchaseReturn.UpdatedAt = DateTime.UtcNow;
-                
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CompleteAsync), GetType(), _logger, new { 
-                    Method = nameof(CompleteAsync),
-                    ServiceType = GetType().Name,
-                    Id = id 
-                });
-                return ServiceResult.Failure("完成採購退回過程發生錯誤");
-            }
-        }
-
-        public async Task<ServiceResult> CancelAsync(int id, string? remarks = null)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var purchaseReturn = await context.PurchaseReturns.FindAsync(id);
-                
-                if (purchaseReturn == null || purchaseReturn.IsDeleted)
-                    return ServiceResult.Failure("找不到指定的採購退回記錄");
-                
-                if (purchaseReturn.ReturnStatus == PurchaseReturnStatus.Completed)
-                    return ServiceResult.Failure("已完成的退回單無法取消");
-                
-                purchaseReturn.ReturnStatus = PurchaseReturnStatus.Cancelled;
-                if (!string.IsNullOrWhiteSpace(remarks))
-                    purchaseReturn.ProcessRemarks = remarks;
-                purchaseReturn.UpdatedAt = DateTime.UtcNow;
-                
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CancelAsync), GetType(), _logger, new { 
-                    Method = nameof(CancelAsync),
-                    ServiceType = GetType().Name,
-                    Id = id,
-                    Remarks = remarks 
-                });
-                return ServiceResult.Failure("取消採購退回過程發生錯誤");
-            }
-        }
-
-        public async Task<ServiceResult> UpdateStatusAsync(int id, PurchaseReturnStatus status, string? remarks = null)
-        {
-            try
-            {
-                return status switch
-                {
-                    PurchaseReturnStatus.Submitted => await SubmitAsync(id),
-                    PurchaseReturnStatus.Processing => await StartProcessingAsync(id),
-                    PurchaseReturnStatus.Completed => await CompleteAsync(id),
-                    PurchaseReturnStatus.Cancelled => await CancelAsync(id, remarks),
-                    _ => ServiceResult.Failure("不支援的狀態變更")
-                };
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateStatusAsync), GetType(), _logger, new { 
-                    Method = nameof(UpdateStatusAsync),
-                    ServiceType = GetType().Name,
-                    Id = id,
-                    Status = status,
-                    Remarks = remarks 
-                });
-                return ServiceResult.Failure("更新採購退回狀態過程發生錯誤");
-            }
-        }
-
         public async Task<ServiceResult> CalculateTotalsAsync(int id)
         {
             try
@@ -535,7 +325,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<ServiceResult> RefundProcessAsync(int id, decimal refundAmount, string? remarks = null)
+        public async Task<ServiceResult> RefundProcessAsync(int id, decimal refundAmount)
         {
             try
             {
@@ -544,9 +334,6 @@ namespace ERPCore2.Services
                 
                 if (purchaseReturn == null || purchaseReturn.IsDeleted)
                     return ServiceResult.Failure("找不到指定的採購退回記錄");
-                
-                if (purchaseReturn.ReturnStatus != PurchaseReturnStatus.Completed)
-                    return ServiceResult.Failure("只有已完成的退回單可以進行退款");
                 
                 if (refundAmount <= 0)
                     return ServiceResult.Failure("退款金額必須大於0");
@@ -557,8 +344,6 @@ namespace ERPCore2.Services
                 purchaseReturn.IsRefunded = true;
                 purchaseReturn.RefundDate = DateTime.UtcNow;
                 purchaseReturn.RefundAmount = refundAmount;
-                if (!string.IsNullOrWhiteSpace(remarks))
-                    purchaseReturn.RefundRemarks = remarks;
                 purchaseReturn.UpdatedAt = DateTime.UtcNow;
                 
                 await context.SaveChangesAsync();
@@ -570,8 +355,7 @@ namespace ERPCore2.Services
                     Method = nameof(RefundProcessAsync),
                     ServiceType = GetType().Name,
                     Id = id,
-                    RefundAmount = refundAmount,
-                    Remarks = remarks 
+                    RefundAmount = refundAmount
                 });
                 return ServiceResult.Failure("退款處理過程發生錯誤");
             }
@@ -598,8 +382,6 @@ namespace ERPCore2.Services
                     ReturnDate = DateTime.Today,
                     SupplierId = purchaseOrder.SupplierId,
                     PurchaseOrderId = purchaseOrderId,
-                    ReturnStatus = PurchaseReturnStatus.Draft,
-                    ReturnReason = PurchaseReturnReason.QualityIssue,
                     PurchaseReturnDetails = details
                 };
                 
@@ -630,7 +412,7 @@ namespace ERPCore2.Services
                 var purchaseReceiving = await context.PurchaseReceivings
                     .Include(pr => pr.PurchaseOrder)
                         .ThenInclude(po => po!.Supplier)
-                    .Include(pr => pr.Supplier)  // 新增直接供應商關聯
+                    .Include(pr => pr.Supplier)
                     .FirstOrDefaultAsync(pr => pr.Id == purchaseReceivingId && !pr.IsDeleted);
                 
                 if (purchaseReceiving == null)
@@ -646,8 +428,6 @@ namespace ERPCore2.Services
                     SupplierId = purchaseReceiving.PurchaseOrder?.SupplierId ?? purchaseReceiving.SupplierId,
                     PurchaseOrderId = purchaseReceiving.PurchaseOrderId,
                     PurchaseReceivingId = purchaseReceivingId,
-                    ReturnStatus = PurchaseReturnStatus.Draft,
-                    ReturnReason = PurchaseReturnReason.QualityIssue,
                     PurchaseReturnDetails = details
                 };
                 
@@ -688,16 +468,8 @@ namespace ERPCore2.Services
                 return new PurchaseReturnStatistics
                 {
                     TotalReturns = returns.Count,
-                    PendingReturns = returns.Count(pr => pr.ReturnStatus == PurchaseReturnStatus.Submitted),
-                    ProcessingReturns = returns.Count(pr => pr.ReturnStatus == PurchaseReturnStatus.Processing),
-                    CompletedReturns = returns.Count(pr => pr.ReturnStatus == PurchaseReturnStatus.Completed),
-                    CancelledReturns = returns.Count(pr => pr.ReturnStatus == PurchaseReturnStatus.Cancelled),
                     TotalReturnAmount = returns.Sum(pr => pr.TotalReturnAmountWithTax),
                     TotalRefundAmount = returns.Where(pr => pr.IsRefunded).Sum(pr => pr.RefundAmount),
-                    ReturnReasonCounts = returns.GroupBy(pr => pr.ReturnReason)
-                        .ToDictionary(g => g.Key, g => g.Count()),
-                    StatusCounts = returns.GroupBy(pr => pr.ReturnStatus)
-                        .ToDictionary(g => g.Key, g => g.Count()),
                     SupplierReturnAmounts = returns.GroupBy(pr => pr.SupplierId)
                         .ToDictionary(g => g.Key, g => g.Sum(pr => pr.TotalReturnAmountWithTax))
                 };
@@ -714,58 +486,13 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<PurchaseReturn>> GetPendingReturnsAsync()
-        {
-            try
-            {
-                return await GetByStatusAsync(PurchaseReturnStatus.Submitted);
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPendingReturnsAsync), GetType(), _logger, new { 
-                    Method = nameof(GetPendingReturnsAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<PurchaseReturn>();
-            }
-        }
-
-        public async Task<List<PurchaseReturn>> GetOverdueReturnsAsync()
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var currentDate = DateTime.Today;
-                
-                return await context.PurchaseReturns
-                    .Include(pr => pr.Supplier)
-                    .Include(pr => pr.PurchaseOrder)
-                    .Include(pr => pr.PurchaseReceiving)
-                    .Where(pr => !pr.IsDeleted &&
-                                pr.ReturnStatus != PurchaseReturnStatus.Completed &&
-                                pr.ReturnStatus != PurchaseReturnStatus.Cancelled &&
-                                pr.ExpectedProcessDate.HasValue &&
-                                pr.ExpectedProcessDate.Value < currentDate)
-                    .OrderBy(pr => pr.ExpectedProcessDate)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetOverdueReturnsAsync), GetType(), _logger, new { 
-                    Method = nameof(GetOverdueReturnsAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<PurchaseReturn>();
-            }
-        }
-
         public async Task<decimal> GetTotalReturnAmountAsync(int supplierId, DateTime? startDate = null, DateTime? endDate = null)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.PurchaseReturns
-                    .Where(pr => pr.SupplierId == supplierId && !pr.IsDeleted && pr.ReturnStatus == PurchaseReturnStatus.Completed);
+                    .Where(pr => pr.SupplierId == supplierId && !pr.IsDeleted);
                 
                 if (startDate.HasValue)
                     query = query.Where(pr => pr.ReturnDate >= startDate.Value);

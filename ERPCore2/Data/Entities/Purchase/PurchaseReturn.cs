@@ -10,7 +10,6 @@ namespace ERPCore2.Data.Entities
     /// </summary>
     [Index(nameof(PurchaseReturnNumber), IsUnique = true)]
     [Index(nameof(SupplierId), nameof(ReturnDate))]
-    [Index(nameof(ReturnStatus), nameof(ReturnDate))]
     [Index(nameof(PurchaseOrderId), nameof(ReturnDate))]
     public class PurchaseReturn : BaseEntity
     {
@@ -29,25 +28,9 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "實際處理日期")]
         public DateTime? ActualProcessDate { get; set; }
 
-        [Required(ErrorMessage = "退回狀態為必填")]
-        [Display(Name = "退回狀態")]
-        public PurchaseReturnStatus ReturnStatus { get; set; } = PurchaseReturnStatus.Draft;
-
-        [Required(ErrorMessage = "退回原因為必填")]
-        [Display(Name = "退回原因")]
-        public PurchaseReturnReason ReturnReason { get; set; } = PurchaseReturnReason.QualityIssue;
-
         [MaxLength(100, ErrorMessage = "處理人員不可超過100個字元")]
         [Display(Name = "處理人員")]
         public string? ProcessPersonnel { get; set; }
-
-        [MaxLength(500, ErrorMessage = "退回說明不可超過500個字元")]
-        [Display(Name = "退回說明")]
-        public string? ReturnDescription { get; set; }
-
-        [MaxLength(500, ErrorMessage = "處理備註不可超過500個字元")]
-        [Display(Name = "處理備註")]
-        public string? ProcessRemarks { get; set; }
 
         [Display(Name = "退回總金額")]
         [Column(TypeName = "decimal(18,2)")]
@@ -71,15 +54,7 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal RefundAmount { get; set; } = 0;
 
-        [MaxLength(200, ErrorMessage = "退款備註不可超過200個字元")]
-        [Display(Name = "退款備註")]
-        public string? RefundRemarks { get; set; }
 
-        [Display(Name = "確認時間")]
-        public DateTime? ConfirmedAt { get; set; }
-
-        [Display(Name = "處理完成時間")]
-        public DateTime? ProcessCompletedAt { get; set; }
 
         // Foreign Keys
         [Required(ErrorMessage = "供應商為必填")]
