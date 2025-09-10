@@ -86,6 +86,7 @@ namespace ERPCore2.Data
 
             // 銷貨相關服務
             services.AddScoped<ISalesOrderService, SalesOrderService>();
+            services.AddScoped<ISalesOrderDetailService, SalesOrderDetailService>();
 
             services.AddScoped<ISalesReturnService, SalesReturnService>();
             services.AddScoped<ISalesReturnDetailService, SalesReturnDetailService>();

@@ -1,0 +1,167 @@
+@page "/salesOrders"
+@inject ISalesOrderService SalesOrderService
+@inject ICustomerService CustomerService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="SalesOrder" 
+                      TService="ISalesOrderService"
+                      Service="@SalesOrderService"
+                      EntityBasePath="/sales-orders"
+                      PageTitle="銷貨訂單管理"
+                      PageSubtitle="管理所有銷貨訂單資料與明細資訊"
+                      EntityName="銷貨訂單"
+                      BreadcrumbItems="@breadcrumbItems"
+                      FilterDefinitions="@filterDefinitions"
+                      ColumnDefinitions="@columnDefinitions"
+                      DataLoader="@LoadSalesOrdersAsync"
+                      FilterApplier="@ApplySalesOrderFilters"
+                      GetEntityDisplayName="@(salesOrder => salesOrder.SalesOrderNumber)"
+                      RequiredPermission="SalesOrder.Read"
+                      OnAddClick="@modalHandler.ShowAddModalAsync"
+                      OnRowClick="@modalHandler.ShowEditModalAsync"
+                      @ref="indexComponent" />
+
+@* 銷貨訂單編輯 Modal *@
+<SalesOrderEditModalComponent IsVisible="@showEditModal"
+                           IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                           SalesOrderId="@editingSalesOrderId"
+                           OnSalesOrderSaved="@modalHandler.OnEntitySavedAsync"
+                           OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<SalesOrder, ISalesOrderService> indexComponent = default!;
+    
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingSalesOrderId = null;
+    
+    // Modal 處理器
+    private ModalHandler<SalesOrder, GenericIndexPageComponent<SalesOrder, ISalesOrderService>> modalHandler = default!;
+    
+    // 選項清單
+    private List<Customer> customers = new();
+    private List<Employee> employees = new();
+    
+    // 欄位配置
+    private SalesOrderFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<SalesOrder, GenericIndexPageComponent<SalesOrder, ISalesOrderService>>(
+                id => editingSalesOrderId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
+            await InitializeBreadcrumbsAsync();
+            
+            // 載入相關資料
+            await LoadCustomersAsync();
+            await LoadEmployeesAsync();
+            
+            // 建立欄位配置（在載入相關資料後，並傳遞 NotificationService）
+            fieldConfiguration = new SalesOrderFieldConfiguration(customers, employees, NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化銷貨訂單頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化銷貨訂單頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("銷售管理", "#"),
+                new("銷貨訂單管理")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    // 載入銷貨訂單資料
+    private async Task<List<SalesOrder>> LoadSalesOrdersAsync()
+    {
+        try
+        {
+            return await SalesOrderService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSalesOrdersAsync), GetType(), additionalData: "載入銷貨訂單資料失敗");
+            await NotificationService.ShowErrorAsync("載入銷貨訂單資料失敗");
+            // 設定安全的預設值
+            return new List<SalesOrder>();
+        }
+    }
+
+    // 載入客戶資料
+    private async Task LoadCustomersAsync()
+    {
+        try
+        {
+            customers = await CustomerService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomersAsync), GetType(), additionalData: "載入客戶資料失敗");
+            await NotificationService.ShowErrorAsync("載入客戶資料失敗");
+            // 設定安全的預設值
+            customers = new List<Customer>();
+        }
+    }
+
+    // 載入員工資料
+    private async Task LoadEmployeesAsync()
+    {
+        try
+        {
+            employees = await EmployeeService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadEmployeesAsync), GetType(), additionalData: "載入員工資料失敗");
+            await NotificationService.ShowErrorAsync("載入員工資料失敗");
+            // 設定安全的預設值
+            employees = new List<Employee>();
+        }
+    }
+
+    private IQueryable<SalesOrder> ApplySalesOrderFilters(SearchFilterModel searchModel, IQueryable<SalesOrder> query)
+    {
+        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
+        if (fieldConfiguration == null)
+        {
+            return query.OrderByDescending(so => so.OrderDate);
+        }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySalesOrderFilters), GetType());
+    }
+}

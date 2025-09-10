@@ -1,0 +1,83 @@
+@inject ISalesOrderService SalesOrderService
+@inject INotificationService NotificationService
+
+<div class="modal fade @(IsVisible ? "show" : "")" tabindex="-1" style="display: @(IsVisible ? "block" : "none")" aria-hidden="@(!IsVisible)">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    @if (SalesOrderId.HasValue)
+                    {
+                        <text>編輯銷貨訂單</text>
+                    }
+                    else
+                    {
+                        <text>新增銷貨訂單</text>
+                    }
+                </h5>
+                <button type="button" class="btn-close" @onclick="HandleCancel" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    銷貨訂單編輯功能即將推出，敬請期待！
+                </div>
+                
+                @if (SalesOrderId.HasValue)
+                {
+                    <div class="mb-3">
+                        <strong>訂單ID:</strong> @SalesOrderId
+                    </div>
+                }
+                
+                <div class="mb-3">
+                    <strong>說明:</strong> 此功能將包含銷貨訂單的完整編輯介面，包括客戶選擇、商品明細、金額計算等功能。
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="HandleCancel">關閉</button>
+                <!-- 未來將加入儲存按鈕 -->
+                <!-- <button type="button" class="btn btn-primary" @onclick="HandleSave">儲存</button> -->
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (IsVisible)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? SalesOrderId { get; set; }
+    [Parameter] public EventCallback<SalesOrder> OnSalesOrderSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private async Task HandleCancel()
+    {
+        await IsVisibleChanged.InvokeAsync(false);
+        await OnCancel.InvokeAsync();
+    }
+
+    private async Task HandleSave()
+    {
+        try
+        {
+            // 未來在此處實作儲存邏輯
+            // 創建一個臨時的 SalesOrder 對象作為示例
+            var savedOrder = new SalesOrder { Id = SalesOrderId ?? 0, SalesOrderNumber = "SO-TEMP" };
+            
+            await NotificationService.ShowSuccessAsync("儲存成功！");
+            await IsVisibleChanged.InvokeAsync(false);
+            await OnSalesOrderSaved.InvokeAsync(savedOrder);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存失敗：{ex.Message}");
+        }
+    }
+}
