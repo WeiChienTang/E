@@ -1,0 +1,272 @@
+@page "/purchase/returns"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.Tables
+@using ERPCore2.Components.Pages.Purchase
+@using ERPCore2.Helpers
+@using ERPCore2.FieldConfiguration
+@inject IPurchaseReturnService PurchaseReturnService
+@inject ISupplierService SupplierService
+@inject IPurchaseOrderService PurchaseOrderService
+@inject IPurchaseReceivingService PurchaseReceivingService
+@inject IWarehouseService WarehouseService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="PurchaseReturn" 
+                          TService="IPurchaseReturnService"
+                          Service="@PurchaseReturnService"
+                          EntityBasePath="/purchase/returns"
+                          PageTitle="進貨退出管理"
+                          PageSubtitle="管理所有進貨退出單資料與退款狀態"
+                          EntityName="進貨退出單"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadPurchaseReturnsAsync"
+                          InitializeBasicData="@LoadBasicDataAsync"
+                          FilterApplier="@ApplyPurchaseReturnFilters"
+                          GetEntityDisplayName="@(returnItem => returnItem.PurchaseReturnNumber)"
+                          RequiredPermission="PurchaseReturn.Read"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
+                          @ref="indexComponent" />
+
+@* 進貨退出編輯 Modal *@
+<PurchaseReturnEditModalComponent IsVisible="@showEditModal"
+                                 IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                                 PurchaseReturnId="@editingPurchaseReturnId"
+                                 OnPurchaseReturnSaved="@modalHandler.OnEntitySavedAsync"
+                                 OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<PurchaseReturn, IPurchaseReturnService> indexComponent = default!;
+    
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingPurchaseReturnId = null;
+    
+    // Modal 處理器
+    private ModalHandler<PurchaseReturn, GenericIndexPageComponent<PurchaseReturn, IPurchaseReturnService>> modalHandler = default!;
+    
+    // 欄位配置
+    private PurchaseReturnFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    // 相關資料
+    private List<Supplier> suppliers = new();
+    private List<PurchaseOrder> purchaseOrders = new();
+    private List<PurchaseReceiving> purchaseReceivings = new();
+    private List<Warehouse> warehouses = new();
+    private List<Employee> employees = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<PurchaseReturn, GenericIndexPageComponent<PurchaseReturn, IPurchaseReturnService>>(
+                id => editingPurchaseReturnId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
+            await InitializeBreadcrumbsAsync();
+            
+            // 載入相關資料
+            await LoadSuppliersAsync();
+            await LoadPurchaseOrdersAsync();
+            await LoadPurchaseReceivingsAsync();
+            await LoadWarehousesAsync();
+            await LoadEmployeesAsync();
+            
+            // 建立欄位配置
+            fieldConfiguration = new PurchaseReturnFieldConfiguration(
+                suppliers, 
+                purchaseOrders, 
+                purchaseReceivings, 
+                warehouses, 
+                employees, 
+                NotificationService);
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化進貨退出頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化進貨退出頁面失敗");
+        }
+    }
+
+    /// <summary>
+    /// 初始化麵包屑導航
+    /// </summary>
+    private async Task InitializeBreadcrumbsAsync()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("採購管理", "#"),
+                new("進貨退出管理")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    /// <summary>
+    /// 載入進貨退出資料
+    /// </summary>
+    private async Task<List<PurchaseReturn>> LoadPurchaseReturnsAsync()
+    {
+        try
+        {
+            return await PurchaseReturnService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPurchaseReturnsAsync), GetType(), additionalData: "載入進貨退出資料失敗");
+            await NotificationService.ShowErrorAsync("載入進貨退出資料失敗");
+            return new List<PurchaseReturn>();
+        }
+    }
+
+    /// <summary>
+    /// 載入基礎資料
+    /// </summary>
+    private async Task LoadBasicDataAsync()
+    {
+        try
+        {
+            await LoadSuppliersAsync();
+            await LoadPurchaseOrdersAsync();
+            await LoadPurchaseReceivingsAsync();
+            await LoadWarehousesAsync();
+            await LoadEmployeesAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadBasicDataAsync), GetType(), additionalData: "載入基礎資料失敗");
+            await NotificationService.ShowErrorAsync("載入基礎資料失敗");
+        }
+    }
+
+    /// <summary>
+    /// 載入供應商資料
+    /// </summary>
+    private async Task LoadSuppliersAsync()
+    {
+        try
+        {
+            suppliers = await SupplierService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSuppliersAsync), GetType(), additionalData: "載入供應商資料失敗");
+            await NotificationService.ShowErrorAsync("載入供應商資料失敗");
+            suppliers = new List<Supplier>();
+        }
+    }
+
+    /// <summary>
+    /// 載入採購訂單資料
+    /// </summary>
+    private async Task LoadPurchaseOrdersAsync()
+    {
+        try
+        {
+            // 載入已核准的採購訂單
+            var allOrders = await PurchaseOrderService.GetAllAsync();
+            purchaseOrders = allOrders.Where(po => po.IsApproved).ToList();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPurchaseOrdersAsync), GetType(), additionalData: "載入採購訂單資料失敗");
+            await NotificationService.ShowErrorAsync("載入採購訂單資料失敗");
+            purchaseOrders = new List<PurchaseOrder>();
+        }
+    }
+
+    /// <summary>
+    /// 載入採購進貨資料
+    /// </summary>
+    private async Task LoadPurchaseReceivingsAsync()
+    {
+        try
+        {
+            purchaseReceivings = await PurchaseReceivingService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPurchaseReceivingsAsync), GetType(), additionalData: "載入採購進貨資料失敗");
+            await NotificationService.ShowErrorAsync("載入採購進貨資料失敗");
+            purchaseReceivings = new List<PurchaseReceiving>();
+        }
+    }
+
+    /// <summary>
+    /// 載入倉庫資料
+    /// </summary>
+    private async Task LoadWarehousesAsync()
+    {
+        try
+        {
+            warehouses = await WarehouseService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehousesAsync), GetType(), additionalData: "載入倉庫資料失敗");
+            await NotificationService.ShowErrorAsync("載入倉庫資料失敗");
+            warehouses = new List<Warehouse>();
+        }
+    }
+
+    /// <summary>
+    /// 載入員工資料
+    /// </summary>
+    private async Task LoadEmployeesAsync()
+    {
+        try
+        {
+            employees = await EmployeeService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadEmployeesAsync), GetType(), additionalData: "載入員工資料失敗");
+            await NotificationService.ShowErrorAsync("載入員工資料失敗");
+            employees = new List<Employee>();
+        }
+    }
+
+    /// <summary>
+    /// 應用進貨退出篩選器
+    /// </summary>
+    private IQueryable<PurchaseReturn> ApplyPurchaseReturnFilters(SearchFilterModel searchModel, IQueryable<PurchaseReturn> query)
+    {
+        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
+        if (fieldConfiguration == null)
+        {
+            // 如果配置未初始化，回傳基本排序的查詢
+            return query.OrderByDescending(pr => pr.ReturnDate)
+                       .ThenByDescending(pr => pr.PurchaseReturnNumber);
+        }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyPurchaseReturnFilters), GetType());
+    }
+}

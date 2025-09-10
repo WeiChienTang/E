@@ -1,0 +1,425 @@
+@* 進貨退出編輯模態組件 *@
+@inject IPurchaseReturnService PurchaseReturnService
+@inject ISupplierService SupplierService
+@inject IPurchaseOrderService PurchaseOrderService
+@inject IPurchaseReceivingService PurchaseReceivingService
+@inject IWarehouseService WarehouseService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="PurchaseReturn" 
+                          TService="IPurchaseReturnService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@PurchaseReturnId"
+                          Service="@PurchaseReturnService"
+                          EntityName="進貨退出"
+                          EntityNamePlural="進貨退出"
+                          ModalTitle="@(PurchaseReturnId.HasValue ? "編輯進貨退出" : "新增進貨退出")"
+                          Size="GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          AutoCompleteCollections="@GetAutoCompleteCollections()"
+                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
+                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          DataLoader="@LoadPurchaseReturnData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(PurchaseReturnId.HasValue ? "進貨退出更新成功" : "進貨退出新增成功")"
+                          SaveFailureMessage="進貨退出儲存失敗"
+                          RequiredPermission="PurchaseReturn.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel" />
+
+@code {
+    // 參數
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? PurchaseReturnId { get; set; }
+    [Parameter] public EventCallback<PurchaseReturn> OnPurchaseReturnSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // 組件參考
+    private GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>? editModalComponent;
+
+    // 表單欄位和區塊
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    // 相關資料
+    private List<Supplier> suppliers = new();
+    private List<PurchaseOrder> purchaseOrders = new();
+    private List<PurchaseReceiving> purchaseReceivings = new();
+    private List<Warehouse> warehouses = new();
+    private List<Employee> employees = new();
+
+    // ===== 生命週期 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadAdditionalDataAsync();
+            InitializeFormFields();
+        }
+    }
+
+    // ===== 事件處理 =====
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            // 如果父組件需要知道進貨退出已儲存
+            if (OnPurchaseReturnSaved.HasDelegate && editModalComponent?.Entity != null)
+            {
+                await OnPurchaseReturnSaved.InvokeAsync(editModalComponent.Entity);
+            }
+            // 不需要手動關閉 Modal，GenericEditModalComponent 會處理
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    // ===== 資料載入 =====
+    private async Task<PurchaseReturn?> LoadPurchaseReturnData()
+    {
+        try
+        {
+            if (!PurchaseReturnId.HasValue)
+            {
+                // 新增模式 - 返回預設值
+                return new PurchaseReturn
+                {
+                    PurchaseReturnNumber = string.Empty,
+                    ReturnDate = DateTime.Today,
+                    Status = EntityStatus.Active
+                };
+            }
+            else
+            {
+                // 編輯模式 - 載入現有資料
+                return await PurchaseReturnService.GetWithDetailsAsync(PurchaseReturnId.Value);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入進貨退出資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            await Task.WhenAll(
+                LoadSuppliersAsync(),
+                LoadPurchaseOrdersAsync(),
+                LoadPurchaseReceivingsAsync(),
+                LoadWarehousesAsync(),
+                LoadEmployeesAsync()
+            );
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task LoadSuppliersAsync()
+    {
+        try
+        {
+            suppliers = await SupplierService.GetAllAsync();
+        }
+        catch (Exception)
+        {
+            suppliers = new List<Supplier>();
+        }
+    }
+
+    private async Task LoadPurchaseOrdersAsync()
+    {
+        try
+        {
+            var allOrders = await PurchaseOrderService.GetAllAsync();
+            purchaseOrders = allOrders.Where(po => po.IsApproved).ToList();
+        }
+        catch (Exception)
+        {
+            purchaseOrders = new List<PurchaseOrder>();
+        }
+    }
+
+    private async Task LoadPurchaseReceivingsAsync()
+    {
+        try
+        {
+            purchaseReceivings = await PurchaseReceivingService.GetAllAsync();
+        }
+        catch (Exception)
+        {
+            purchaseReceivings = new List<PurchaseReceiving>();
+        }
+    }
+
+    private async Task LoadWarehousesAsync()
+    {
+        try
+        {
+            warehouses = await WarehouseService.GetAllAsync();
+        }
+        catch (Exception)
+        {
+            warehouses = new List<Warehouse>();
+        }
+    }
+
+    private async Task LoadEmployeesAsync()
+    {
+        try
+        {
+            employees = await EmployeeService.GetAllAsync();
+        }
+        catch (Exception)
+        {
+            employees = new List<Employee>();
+        }
+    }
+
+    // ===== 表單設定 =====
+    private void InitializeFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(PurchaseReturn.PurchaseReturnNumber),
+                    Label = "退回單號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入退回單號",
+                    IsRequired = true,
+                    MaxLength = 30,
+                    Order = 1
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReturn.SupplierId),
+                    Label = "供應商",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "選擇供應商",
+                    IsRequired = true,
+                    Order = 2
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReturn.ReturnDate),
+                    Label = "退回日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    Order = 3
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReturn.PurchaseOrderId),
+                    Label = "原採購訂單",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "選擇原採購訂單",
+                    IsRequired = false,
+                    Order = 4
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReturn.PurchaseReceivingId),
+                    Label = "原進貨單",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "選擇原進貨單",
+                    IsRequired = false,
+                    Order = 5
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReturn.ExpectedProcessDate),
+                    Label = "預計處理日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    Order = 6
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReturn.ActualProcessDate),
+                    Label = "實際處理日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    Order = 7
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReturn.ProcessPersonnel),
+                    Label = "處理人員",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入處理人員",
+                    MaxLength = 100,
+                    Order = 8
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReturn.EmployeeId),
+                    Label = "處理員工",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "選擇處理員工",
+                    IsRequired = false,
+                    Order = 9
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReturn.WarehouseId),
+                    Label = "退貨倉庫",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "選擇退貨倉庫",
+                    IsRequired = false,
+                    Order = 10
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReturn.TotalReturnAmount),
+                    Label = "退回總金額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    Order = 11
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReturn.ReturnTaxAmount),
+                    Label = "退回稅額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    Order = 12
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReturn.TotalReturnAmountWithTax),
+                    Label = "退回含稅總金額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    Order = 13
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReturn.IsRefunded),
+                    Label = "是否已退款",
+                    FieldType = FormFieldType.Checkbox,
+                    Order = 14
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReturn.RefundDate),
+                    Label = "退款日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    Order = 15
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReturn.RefundAmount),
+                    Label = "退款金額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    Order = 16
+                }
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(PurchaseReturn.PurchaseReturnNumber), "基本資訊" },
+                { nameof(PurchaseReturn.SupplierId), "基本資訊" },
+                { nameof(PurchaseReturn.ReturnDate), "基本資訊" },
+                { nameof(PurchaseReturn.PurchaseOrderId), "基本資訊" },
+                { nameof(PurchaseReturn.PurchaseReceivingId), "基本資訊" },
+                { nameof(PurchaseReturn.ExpectedProcessDate), "處理資訊" },
+                { nameof(PurchaseReturn.ActualProcessDate), "處理資訊" },
+                { nameof(PurchaseReturn.ProcessPersonnel), "處理資訊" },
+                { nameof(PurchaseReturn.EmployeeId), "處理資訊" },
+                { nameof(PurchaseReturn.WarehouseId), "處理資訊" },
+                { nameof(PurchaseReturn.TotalReturnAmount), "金額資訊" },
+                { nameof(PurchaseReturn.ReturnTaxAmount), "金額資訊" },
+                { nameof(PurchaseReturn.TotalReturnAmountWithTax), "金額資訊" },
+                { nameof(PurchaseReturn.IsRefunded), "退款資訊" },
+                { nameof(PurchaseReturn.RefundDate), "退款資訊" },
+                { nameof(PurchaseReturn.RefundAmount), "退款資訊" }
+            };
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    // ===== AutoComplete 設定 =====
+    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
+    {
+        return new Dictionary<string, IEnumerable<object>>
+        {
+            { nameof(PurchaseReturn.SupplierId), suppliers.Cast<object>() },
+            { nameof(PurchaseReturn.PurchaseOrderId), purchaseOrders.Cast<object>() },
+            { nameof(PurchaseReturn.PurchaseReceivingId), purchaseReceivings.Cast<object>() },
+            { nameof(PurchaseReturn.EmployeeId), employees.Cast<object>() },
+            { nameof(PurchaseReturn.WarehouseId), warehouses.Cast<object>() }
+        };
+    }
+
+    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(PurchaseReturn.SupplierId), nameof(Supplier.CompanyName) },
+            { nameof(PurchaseReturn.PurchaseOrderId), nameof(PurchaseOrder.PurchaseOrderNumber) },
+            { nameof(PurchaseReturn.PurchaseReceivingId), nameof(PurchaseReceiving.ReceiptNumber) },
+            { nameof(PurchaseReturn.EmployeeId), nameof(Employee.Name) },
+            { nameof(PurchaseReturn.WarehouseId), nameof(Warehouse.Name) }
+        };
+    }
+
+    private Dictionary<string, string> GetAutoCompleteValueProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(PurchaseReturn.SupplierId), nameof(Supplier.Id) },
+            { nameof(PurchaseReturn.PurchaseOrderId), nameof(PurchaseOrder.Id) },
+            { nameof(PurchaseReturn.PurchaseReceivingId), nameof(PurchaseReceiving.Id) },
+            { nameof(PurchaseReturn.EmployeeId), nameof(Employee.Id) },
+            { nameof(PurchaseReturn.WarehouseId), nameof(Warehouse.Id) }
+        };
+    }
+}

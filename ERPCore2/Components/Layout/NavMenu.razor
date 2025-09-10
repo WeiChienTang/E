@@ -89,8 +89,8 @@
         <NavMenuItem Text="採購管理" IconClass="bi bi-truck" MenuKey="purchase_management">
             <DropdownItems>
                 <NavDropdownItem Text="採購單維護" Url="/purchase/orders" RequiredPermission="PurchaseOrder.Read" ParentMenuKey="purchase_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="進貨管理" Url="/purchase/receiving" RequiredPermission="PurchaseReceiving.Read" ParentMenuKey="purchase_management" IconClass="bi bi-caret-right-fill"/>
-                @* <NavDropdownItem Text="退回" Url="/purchase-returns" RequiredPermission="PurchaseReturn.Read" ParentMenuKey="purchase_management" /> *@
+                <NavDropdownItem Text="進貨" Url="/purchase/receiving" RequiredPermission="PurchaseReceiving.Read" ParentMenuKey="purchase_management" IconClass="bi bi-caret-right-fill"/>
+                <NavDropdownItem Text="進貨退出" Url="/purchase/returns" RequiredPermission="PurchaseReturn.Read" ParentMenuKey="purchase_management" IconClass="bi bi-caret-right-fill"/>
             </DropdownItems>
         </NavMenuItem>     
         
