@@ -103,8 +103,6 @@
                 {
                     SalesOrderNumber = await GenerateSalesOrderNumberAsync(),
                     OrderDate = DateTime.Today,
-                    OrderStatus = SalesOrderStatus.Draft,
-                    SalesType = SalesType.Normal,
                     Status = EntityStatus.Active
                 };
             }
@@ -161,15 +159,6 @@
                     PropertyName = nameof(SalesOrder.ExpectedDeliveryDate),
                     Label = "預計交貨日期",
                     FieldType = FormFieldType.Date
-                },
-                new()
-                {
-                    PropertyName = nameof(SalesOrder.OrderRemarks),
-                    Label = "訂單備註",
-                    FieldType = FormFieldType.TextArea,
-                    MaxLength = 500,
-                    Rows = 3,
-                    Placeholder = "請輸入訂單備註"
                 }
             };
 
@@ -179,8 +168,7 @@
                 { nameof(SalesOrder.OrderDate), "基本資訊" },
                 { nameof(SalesOrder.CustomerId), "基本資訊" },
                 { nameof(SalesOrder.EmployeeId), "基本資訊" },
-                { nameof(SalesOrder.ExpectedDeliveryDate), "交貨資訊" },
-                { nameof(SalesOrder.OrderRemarks), "額外資訊" }
+                { nameof(SalesOrder.ExpectedDeliveryDate), "交貨資訊" }
             };
         }
         catch (Exception ex)

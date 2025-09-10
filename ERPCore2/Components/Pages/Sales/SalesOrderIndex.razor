@@ -33,7 +33,6 @@
     // 選項清單
     private List<SelectOption> customerOptions = new();
     private List<SelectOption> employeeOptions = new();
-    private List<SelectOption> statusOptions = new();
 
     protected override void OnInitialized()
     {
@@ -85,7 +84,6 @@
                 .AddText("SearchTerm", "搜尋", "請輸入銷貨單號、客戶名稱...")
                 .AddSelect("CustomerId", "客戶", new List<SelectOption>()) // 空的選項，稍後載入
                 .AddSelect("EmployeeId", "銷售人員", new List<SelectOption>()) // 空的選項，稍後載入
-                .AddSelect("OrderStatus", "訂單狀態", new List<SelectOption>()) // 空的選項，稍後載入
                 .AddDateRange("OrderDateRange", "訂單日期")
                 .Build();
         }
@@ -131,31 +129,11 @@
                 })
                 .ToList();
 
-            // 準備訂單狀態選項
-            statusOptions = Enum.GetValues<SalesOrderStatus>()
-                .Select(status => new SelectOption
-                {
-                    Text = status switch
-                    {
-                        SalesOrderStatus.Draft => "草稿",
-                        SalesOrderStatus.Submitted => "已送出",
-                        SalesOrderStatus.Confirmed => "已確認",
-                        SalesOrderStatus.PartialDelivered => "部分出貨",
-                        SalesOrderStatus.Completed => "已完成",
-                        SalesOrderStatus.Cancelled => "已取消",
-                        SalesOrderStatus.Closed => "已關閉",
-                        _ => status.ToString()
-                    },
-                    Value = status.ToString()
-                })
-                .ToList();
-
             // 重新建立篩選定義，包含載入的選項
             filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
                 .AddText("SearchTerm", "搜尋", "請輸入銷貨單號、客戶名稱...")
                 .AddSelect("CustomerId", "客戶", customerOptions)
                 .AddSelect("EmployeeId", "銷售人員", employeeOptions)
-                .AddSelect("OrderStatus", "訂單狀態", statusOptions)
                 .AddDateRange("OrderDateRange", "訂單日期")
                 .Build();
 
@@ -209,9 +187,7 @@
                 var lowerSearchTerm = searchTerm.ToLower();
                 query = query.Where(so => 
                     so.SalesOrderNumber.ToLower().Contains(lowerSearchTerm) ||
-                    so.Customer.CompanyName.ToLower().Contains(lowerSearchTerm) ||
-                    (so.SalesPersonnel != null && so.SalesPersonnel.ToLower().Contains(lowerSearchTerm)) ||
-                    (so.OrderRemarks != null && so.OrderRemarks.ToLower().Contains(lowerSearchTerm))
+                    so.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)
                 );
             }
 
@@ -229,12 +205,7 @@
                 query = query.Where(so => so.EmployeeId == employeeId);
             }
 
-            // 訂單狀態篩選
-            var statusFilter = searchModel.GetFilterValue("OrderStatus")?.ToString();
-            if (!string.IsNullOrWhiteSpace(statusFilter) && Enum.TryParse<SalesOrderStatus>(statusFilter, out var status))
-            {
-                query = query.Where(so => so.OrderStatus == status);
-            }
+
 
             // 日期範圍篩選
             var dateRange = searchModel.GetFilterValue("OrderDateRange") as DateRange;
@@ -300,54 +271,12 @@
                 new TableColumnDefinition
                 {
                     Title = "銷售人員",
-                    PropertyName = "Employee.FirstName",
-                    DataType = ColumnDataType.Html,
+                    PropertyName = "Employee.Name",
+                    DataType = ColumnDataType.Text,
                     HeaderStyle = "width: 130px;",
-                    NullDisplayText = "-",
-                    CustomTemplate = entity =>
-                    {
-                        var order = entity as SalesOrder;
-                        if (order?.Employee != null)
-                        {
-                            return @<span>@(order.Employee.Name ?? "")</span>;
-                        }
-                        return @<span>@(order?.SalesPersonnel ?? "-")</span>;
-                    }
+                    NullDisplayText = "-"
                 },
-                new TableColumnDefinition
-                {
-                    Title = "訂單狀態",
-                    PropertyName = "OrderStatus",
-                    DataType = ColumnDataType.Html,
-                    HeaderStyle = "width: 100px;",
-                    CustomTemplate = entity =>
-                    {
-                        var order = entity as SalesOrder;
-                        var statusClass = order?.OrderStatus switch
-                        {
-                            SalesOrderStatus.Draft => "badge bg-secondary",
-                            SalesOrderStatus.Submitted => "badge bg-info",
-                            SalesOrderStatus.Confirmed => "badge bg-primary",
-                            SalesOrderStatus.PartialDelivered => "badge bg-warning",
-                            SalesOrderStatus.Completed => "badge bg-success",
-                            SalesOrderStatus.Cancelled => "badge bg-danger",
-                            SalesOrderStatus.Closed => "badge bg-dark",
-                            _ => "badge bg-secondary"
-                        };
-                        var statusText = order?.OrderStatus switch
-                        {
-                            SalesOrderStatus.Draft => "草稿",
-                            SalesOrderStatus.Submitted => "已送出",
-                            SalesOrderStatus.Confirmed => "已確認",
-                            SalesOrderStatus.PartialDelivered => "部分出貨",
-                            SalesOrderStatus.Completed => "已完成",
-                            SalesOrderStatus.Cancelled => "已取消",
-                            SalesOrderStatus.Closed => "已關閉",
-                            _ => order?.OrderStatus.ToString() ?? ""
-                        };
-                        return @<span class="@statusClass">@statusText</span>;
-                    }
-                },
+
                 new TableColumnDefinition
                 {
                     Title = "交期",
@@ -364,27 +293,7 @@
                     HeaderStyle = "width: 150px;",
                     IsSortable = true
                 },
-                new TableColumnDefinition
-                {
-                    Title = "備註",
-                    PropertyName = "OrderRemarks",
-                    DataType = ColumnDataType.Html,
-                    HeaderStyle = "min-width: 100px;",
-                    NullDisplayText = "-",
-                    CustomTemplate = entity =>
-                    {
-                        var order = entity as SalesOrder;
-                        var remarks = order?.OrderRemarks;
-                        if (string.IsNullOrEmpty(remarks)) return @<span>-</span>;
-                        
-                        // 截斷過長的備註
-                        if (remarks.Length > 50)
-                        {
-                            return @<span title="@remarks">@(remarks[..50])...</span>;
-                        }
-                        return @<span>@remarks</span>;
-                    }
-                }
+
             };
         }
         catch (Exception ex)

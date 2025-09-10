@@ -1,5 +1,4 @@
 using ERPCore2.Data.Entities;
-using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 
 namespace ERPCore2.Services
@@ -20,19 +19,9 @@ namespace ERPCore2.Services
         Task<List<SalesOrder>> GetByCustomerIdAsync(int customerId);
 
         /// <summary>
-        /// 根據訂單狀態取得銷貨訂單
-        /// </summary>
-        Task<List<SalesOrder>> GetByOrderStatusAsync(SalesOrderStatus orderStatus);
-
-        /// <summary>
         /// 根據日期範圍取得銷貨訂單
         /// </summary>
         Task<List<SalesOrder>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
-
-        /// <summary>
-        /// 更新訂單狀態
-        /// </summary>
-        Task<ServiceResult> UpdateOrderStatusAsync(int orderId, SalesOrderStatus newStatus);
 
         /// <summary>
         /// 計算訂單總金額

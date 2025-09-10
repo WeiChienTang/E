@@ -10,7 +10,6 @@ namespace ERPCore2.Data.Entities
     /// </summary>
     [Index(nameof(SalesOrderNumber), IsUnique = true)]
     [Index(nameof(CustomerId), nameof(OrderDate))]
-    [Index(nameof(OrderStatus), nameof(OrderDate))]
     public class SalesOrder : BaseEntity
     {
         [Required(ErrorMessage = "銷貨單號為必填")]
@@ -24,25 +23,6 @@ namespace ERPCore2.Data.Entities
 
         [Display(Name = "預計交貨日期")]
         public DateTime? ExpectedDeliveryDate { get; set; }
-
-        [Display(Name = "實際交貨日期")]
-        public DateTime? ActualDeliveryDate { get; set; }
-
-        [Required(ErrorMessage = "訂單狀態為必填")]
-        [Display(Name = "訂單狀態")]
-        public SalesOrderStatus OrderStatus { get; set; } = SalesOrderStatus.Draft;
-
-        [Required(ErrorMessage = "銷貨類型為必填")]
-        [Display(Name = "銷貨類型")]
-        public SalesType SalesType { get; set; } = SalesType.Normal;
-
-        [MaxLength(100, ErrorMessage = "銷售人員不可超過100個字元")]
-        [Display(Name = "銷售人員")]
-        public string? SalesPersonnel { get; set; }
-
-        [MaxLength(500, ErrorMessage = "訂單備註不可超過500個字元")]
-        [Display(Name = "訂單備註")]
-        public string? OrderRemarks { get; set; }
 
         [Display(Name = "訂單總金額")]
         [Column(TypeName = "decimal(18,2)")]

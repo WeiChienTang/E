@@ -1,6 +1,5 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
-using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -92,9 +91,7 @@ namespace ERPCore2.Services
                     .Include(so => so.Employee)
                     .Where(so => !so.IsDeleted && (
                         so.SalesOrderNumber.ToLower().Contains(lowerSearchTerm) ||
-                        so.Customer.CompanyName.ToLower().Contains(lowerSearchTerm) ||
-                        (so.SalesPersonnel != null && so.SalesPersonnel.ToLower().Contains(lowerSearchTerm)) ||
-                        (so.OrderRemarks != null && so.OrderRemarks.ToLower().Contains(lowerSearchTerm))
+                        so.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)
                     ))
                     .OrderByDescending(so => so.OrderDate)
                     .ThenBy(so => so.SalesOrderNumber)
@@ -197,28 +194,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<SalesOrder>> GetByOrderStatusAsync(SalesOrderStatus orderStatus)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.SalesOrders
-                    .Include(so => so.Customer)
-                    .Include(so => so.Employee)
-                    .Where(so => so.OrderStatus == orderStatus && !so.IsDeleted)
-                    .OrderByDescending(so => so.OrderDate)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByOrderStatusAsync), GetType(), _logger, new {
-                    Method = nameof(GetByOrderStatusAsync),
-                    ServiceType = GetType().Name,
-                    OrderStatus = orderStatus
-                });
-                return new List<SalesOrder>();
-            }
-        }
+
 
         public async Task<List<SalesOrder>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
@@ -244,33 +220,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<ServiceResult> UpdateOrderStatusAsync(int orderId, SalesOrderStatus newStatus)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var order = await context.SalesOrders.FindAsync(orderId);
-                
-                if (order == null || order.IsDeleted)
-                    return ServiceResult.Failure("找不到指定的銷貨訂單");
 
-                order.OrderStatus = newStatus;
-                order.UpdatedAt = DateTime.Now;
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateOrderStatusAsync), GetType(), _logger, new {
-                    Method = nameof(UpdateOrderStatusAsync),
-                    ServiceType = GetType().Name,
-                    OrderId = orderId,
-                    NewStatus = newStatus
-                });
-                return ServiceResult.Failure("更新訂單狀態時發生錯誤");
-            }
-        }
 
         public async Task<ServiceResult> CalculateOrderTotalAsync(int orderId)
         {
