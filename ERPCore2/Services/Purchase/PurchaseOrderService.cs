@@ -12,8 +12,6 @@ namespace ERPCore2.Services
     /// </summary>
     public class PurchaseOrderService : GenericManagementService<PurchaseOrder>, IPurchaseOrderService
     {
-        private readonly IInventoryStockService? _inventoryStockService;
-
         public PurchaseOrderService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
@@ -22,14 +20,6 @@ namespace ERPCore2.Services
             IDbContextFactory<AppDbContext> contextFactory, 
             ILogger<GenericManagementService<PurchaseOrder>> logger) : base(contextFactory, logger)
         {
-        }
-
-        public PurchaseOrderService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<PurchaseOrder>> logger,
-            IInventoryStockService inventoryStockService) : base(contextFactory, logger)
-        {
-            _inventoryStockService = inventoryStockService;
         }
 
         // 採購服務專注於採購流程管理，不處理庫存邏輯
@@ -317,15 +307,6 @@ namespace ERPCore2.Services
                     // order.UpdatedBy = currentUser.Name;
                     
                     await context.SaveChangesAsync();
-
-                    // 採購確認時，增加在途庫存
-                    var inventoryUpdateResult = await UpdateInTransitStockAsync(orderId, true);
-                    if (!inventoryUpdateResult.IsSuccess)
-                    {
-                        await transaction.RollbackAsync();
-                        return ServiceResult.Failure($"核准訂單成功，但更新在途庫存失敗：{inventoryUpdateResult.ErrorMessage}");
-                    }
-
                     await transaction.CommitAsync();
                     return ServiceResult.Success();
                 }
@@ -366,9 +347,6 @@ namespace ERPCore2.Services
                     if (order.ReceivedAmount > 0)
                         return ServiceResult.Failure("已有進貨記錄的訂單無法駁回");
 
-                    // 記錄是否之前已核准（需要減少在途庫存）
-                    bool wasApproved = order.IsApproved;
-                    
                     // 重置審核狀態
                     order.IsApproved = false;
                     order.ApprovedBy = null;
@@ -382,18 +360,6 @@ namespace ERPCore2.Services
                     // order.UpdatedBy = currentUser.Name;
                     
                     await context.SaveChangesAsync();
-
-                    // 如果之前已核准，需要減少在途庫存
-                    if (wasApproved)
-                    {
-                        var inventoryUpdateResult = await UpdateInTransitStockAsync(orderId, false);
-                        if (!inventoryUpdateResult.IsSuccess)
-                        {
-                            await transaction.RollbackAsync();
-                            return ServiceResult.Failure($"駁回訂單成功，但更新在途庫存失敗：{inventoryUpdateResult.ErrorMessage}");
-                        }
-                    }
-
                     await transaction.CommitAsync();
                     return ServiceResult.Success();
                 }
@@ -417,174 +383,6 @@ namespace ERPCore2.Services
         }
 
         #endregion
-
-        #region 採購在途庫存管理
-
-        /// <summary>
-        /// 更新採購訂單的在途庫存
-        /// 採購確認時增加在途庫存，不檢查倉庫和庫位
-        /// </summary>
-        /// <param name="purchaseOrderId">採購訂單ID</param>
-        /// <param name="isIncrease">是否增加在途庫存</param>
-        /// <returns></returns>
-        private async Task<ServiceResult> UpdateInTransitStockAsync(int purchaseOrderId, bool isIncrease)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                
-                // 取得採購訂單明細
-                var orderDetails = await context.PurchaseOrderDetails
-                    .Include(pod => pod.PurchaseOrder)
-                    .Where(pod => pod.PurchaseOrderId == purchaseOrderId && !pod.IsDeleted)
-                    .ToListAsync();
-
-                if (!orderDetails.Any())
-                {
-                    return ServiceResult.Success(); // 沒有明細，直接成功
-                }
-
-                // 逐筆更新商品的在途庫存
-                foreach (var detail in orderDetails)
-                {
-                    await UpdateProductInTransitStockAsync(
-                        detail.ProductId, 
-                        detail.OrderQuantity, 
-                        isIncrease,
-                        detail.PurchaseOrder.PurchaseOrderNumber);
-                }
-
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateInTransitStockAsync), GetType(), _logger, new { 
-                    Method = nameof(UpdateInTransitStockAsync),
-                    ServiceType = GetType().Name,
-                    PurchaseOrderId = purchaseOrderId,
-                    IsIncrease = isIncrease 
-                });
-                return ServiceResult.Failure("更新在途庫存時發生錯誤");
-            }
-        }
-
-        /// <summary>
-        /// 更新特定商品的在途庫存
-        /// 不檢查倉庫和庫位，只針對商品本身更新在途庫存
-        /// </summary>
-        /// <param name="productId">商品ID</param>
-        /// <param name="quantity">數量</param>
-        /// <param name="isIncrease">是否增加</param>
-        /// <param name="orderNumber">採購訂單號</param>
-        /// <returns></returns>
-        private async Task UpdateProductInTransitStockAsync(int productId, int quantity, bool isIncrease, string orderNumber)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                
-                // 查找該商品的庫存記錄（不考慮特定倉庫或庫位）
-                var stock = await context.InventoryStocks
-                    .FirstOrDefaultAsync(i => i.ProductId == productId && 
-                                            !i.IsDeleted);
-
-                if (stock == null)
-                {
-                    // 如果沒有庫存記錄，創建一個基本記錄
-                    stock = new InventoryStock
-                    {
-                        ProductId = productId,
-                        WarehouseId = null,  // 採購階段不指定倉庫
-                        WarehouseLocationId = null,  // 採購階段不指定庫位
-                        CurrentStock = 0,
-                        ReservedStock = 0,
-                        InTransitStock = isIncrease ? quantity : 0,
-                        Status = EntityStatus.Active,
-                        CreatedAt = DateTime.Now,
-                        UpdatedAt = DateTime.Now
-                    };
-                    await context.InventoryStocks.AddAsync(stock);
-                }
-                else
-                {
-                    // 更新在途庫存
-                    if (isIncrease)
-                    {
-                        stock.InTransitStock += quantity;
-                    }
-                    else
-                    {
-                        stock.InTransitStock = Math.Max(0, stock.InTransitStock - quantity);
-                    }
-                    stock.UpdatedAt = DateTime.Now;
-                }
-
-                await context.SaveChangesAsync();
-
-                // 記錄庫存異動日誌
-                await LogInventoryTransactionAsync(context, productId, quantity, isIncrease, orderNumber, stock.Id);
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateProductInTransitStockAsync), GetType(), _logger, new { 
-                    Method = nameof(UpdateProductInTransitStockAsync),
-                    ServiceType = GetType().Name,
-                    ProductId = productId,
-                    Quantity = quantity,
-                    IsIncrease = isIncrease,
-                    OrderNumber = orderNumber 
-                });
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// 記錄庫存異動日誌
-        /// </summary>
-        private async Task LogInventoryTransactionAsync(AppDbContext context, int productId, 
-            int quantity, bool isIncrease, string orderNumber, int inventoryStockId)
-        {
-            try
-            {
-                // 由於 InventoryTransaction 需要 WarehouseId，我們需要找一個預設倉庫
-                // 或者採購階段不記錄 InventoryTransaction，只在實際入庫時記錄
-                
-                // 暫時跳過記錄 InventoryTransaction，因為採購階段沒有指定倉庫
-                // 實際的庫存異動記錄應該在入庫時由庫存服務負責
-                
-                // var transaction = new InventoryTransaction
-                // {
-                //     ProductId = productId,
-                //     WarehouseId = ?, // 採購階段沒有指定倉庫
-                //     WarehouseLocationId = null,
-                //     TransactionType = InventoryTransactionTypeEnum.Purchase,
-                //     TransactionNumber = orderNumber,
-                //     TransactionDate = DateTime.Now,
-                //     Quantity = isIncrease ? quantity : -quantity,
-                //     TransactionRemarks = isIncrease ? "採購訂單核准-增加在途庫存" : "採購訂單駁回-減少在途庫存",
-                //     ReferenceNumber = orderNumber,
-                //     InventoryStockId = inventoryStockId,
-                //     Status = EntityStatus.Active,
-                //     CreatedAt = DateTime.Now,
-                //     UpdatedAt = DateTime.Now
-                // };
-
-                // await context.InventoryTransactions.AddAsync(transaction);
-                // await context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(LogInventoryTransactionAsync), GetType(), _logger, new { 
-                    Method = nameof(LogInventoryTransactionAsync),
-                    ServiceType = GetType().Name,
-                    ProductId = productId,
-                    Quantity = quantity,
-                    IsIncrease = isIncrease,
-                    OrderNumber = orderNumber 
-                });
-                // 日誌記錄失敗不應該影響主要流程，所以不重新拋出異常
-            }
-        }
 
         public async Task<ServiceResult> CancelOrderAsync(int orderId, string reason)
         {
@@ -613,12 +411,13 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CancelOrderAsync), GetType(), _logger, new { 
                     Method = nameof(CancelOrderAsync),
                     ServiceType = GetType().Name,
-                    OrderId = orderId,
-                    Reason = reason 
+                    OrderId = orderId 
                 });
-                return ServiceResult.Failure("取消訂單時發生錯誤");
+                return ServiceResult.Failure("關閉訂單時發生錯誤");
             }
         }
+
+
 
         public async Task<ServiceResult> CloseOrderAsync(int orderId)
         {
@@ -1258,8 +1057,6 @@ namespace ERPCore2.Services
                 return $"PO{DateTime.Today:yyyyMMdd}001";
             }
         }
-
-        #endregion
 
         #endregion
     }
