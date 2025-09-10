@@ -1,7 +1,7 @@
 @page "/sales-returns"
 @inject ISalesReturnService SalesReturnService
 @inject ISalesOrderService SalesOrderService
-@inject ISalesDeliveryService SalesDeliveryService
+
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
 @rendermode InteractiveServer
@@ -35,7 +35,7 @@
     // 選項清單
     private List<SelectOption> customerOptions = new();
     private List<SelectOption> salesOrderOptions = new();
-    private List<SelectOption> salesDeliveryOptions = new();
+
     private List<SelectOption> employeeOptions = new();
     private List<SelectOption> statusOptions = new();
     private List<SelectOption> reasonOptions = new();
@@ -140,17 +140,7 @@
                 })
                 .ToList();
 
-            // 載入銷貨出貨選項
-            var salesDeliveries = await SalesDeliveryService.GetAllAsync();
-            salesDeliveryOptions = salesDeliveries
-                .Where(sd => !sd.IsDeleted)
-                .OrderBy(sd => sd.DeliveryNumber)
-                .Select(sd => new SelectOption 
-                { 
-                    Value = sd.Id.ToString(),
-                    Text = $"{sd.DeliveryNumber} - {sd.SalesOrder?.Customer?.CompanyName ?? "未知客戶"}"
-                })
-                .ToList();
+
 
             // 載入員工選項
             var employees = await EmployeeService.GetAllAsync();
@@ -195,7 +185,7 @@
                 .AddText("SearchTerm", "搜尋", "請輸入退回單號、客戶名稱、處理人員...")
                 .AddSelect("CustomerId", "客戶", customerOptions)
                 .AddSelect("SalesOrderId", "銷貨訂單", salesOrderOptions)
-                .AddSelect("SalesDeliveryId", "銷貨出貨", salesDeliveryOptions)
+
                 .AddSelect("ReturnStatus", "退回狀態", statusOptions)
                 .AddSelect("ReturnReason", "退回原因", reasonOptions)
                 .AddSelect("EmployeeId", "處理人員", employeeOptions)
@@ -266,12 +256,7 @@
                 query = query.Where(sr => sr.SalesOrderId == salesOrderId);
             }
 
-            // 銷貨出貨篩選
-            var salesDeliveryIdFilter = searchModel.GetFilterValue("SalesDeliveryId")?.ToString();
-            if (!string.IsNullOrWhiteSpace(salesDeliveryIdFilter) && int.TryParse(salesDeliveryIdFilter, out var salesDeliveryId))
-            {
-                query = query.Where(sr => sr.SalesDeliveryId == salesDeliveryId);
-            }
+
 
             // 退回狀態篩選
             var statusFilter = searchModel.GetFilterValue("ReturnStatus")?.ToString();

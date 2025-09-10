@@ -32,7 +32,6 @@ namespace ERPCore2.Services
                         .ThenInclude(sr => sr.Customer)
                     .Include(srd => srd.Product)
                     .Include(srd => srd.SalesOrderDetail)
-                    .Include(srd => srd.SalesDeliveryDetail)
                     .Where(srd => !srd.IsDeleted)
                     .OrderBy(srd => srd.SalesReturnId)
                     .ThenBy(srd => srd.Product.Code)
@@ -59,7 +58,6 @@ namespace ERPCore2.Services
                         .ThenInclude(sr => sr.Customer)
                     .Include(srd => srd.Product)
                     .Include(srd => srd.SalesOrderDetail)
-                    .Include(srd => srd.SalesDeliveryDetail)
                     .FirstOrDefaultAsync(srd => srd.Id == id && !srd.IsDeleted);
             }
             catch (Exception ex)
@@ -181,7 +179,6 @@ namespace ERPCore2.Services
                 return await context.SalesReturnDetails
                     .Include(srd => srd.Product)
                     .Include(srd => srd.SalesOrderDetail)
-                    .Include(srd => srd.SalesDeliveryDetail)
                     .Where(srd => srd.SalesReturnId == salesReturnId && !srd.IsDeleted)
                     .OrderBy(srd => srd.Product.Code)
                     .ToListAsync();
@@ -249,31 +246,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<SalesReturnDetail>> GetBySalesDeliveryDetailIdAsync(int salesDeliveryDetailId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.SalesReturnDetails
-                    .Include(srd => srd.SalesReturn)
-                        .ThenInclude(sr => sr.Customer)
-                    .Include(srd => srd.Product)
-                    .Include(srd => srd.SalesDeliveryDetail)
-                    .Where(srd => srd.SalesDeliveryDetailId == salesDeliveryDetailId && !srd.IsDeleted)
-                    .OrderByDescending(srd => srd.SalesReturn.ReturnDate)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySalesDeliveryDetailIdAsync), GetType(), _logger, new
-                {
-                    Method = nameof(GetBySalesDeliveryDetailIdAsync),
-                    ServiceType = GetType().Name,
-                    SalesDeliveryDetailId = salesDeliveryDetailId
-                });
-                return new List<SalesReturnDetail>();
-            }
-        }
+
 
         public decimal CalculateSubtotal(SalesReturnDetail detail)
         {
@@ -518,25 +491,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
 
-                // 如果有銷貨出貨明細ID，檢查退回數量是否超過可退回數量
-                if (detail.SalesDeliveryDetailId.HasValue)
-                {
-                    var deliveryDetail = await context.SalesDeliveryDetails
-                        .FirstOrDefaultAsync(sdd => sdd.Id == detail.SalesDeliveryDetailId.Value);
 
-                    if (deliveryDetail != null)
-                    {
-                        // 取得該出貨明細已經退回的總數量（排除目前這筆明細）
-                        var existingReturnQuantity = await context.SalesReturnDetails
-                            .Where(srd => srd.SalesDeliveryDetailId == detail.SalesDeliveryDetailId.Value &&
-                                         srd.Id != detail.Id && !srd.IsDeleted)
-                            .SumAsync(srd => srd.ReturnQuantity);
-
-                        var availableQuantity = deliveryDetail.DeliveryQuantity - existingReturnQuantity;
-                        if (detail.ReturnQuantity > availableQuantity)
-                            return ServiceResult.Failure($"退回數量不能超過可退回數量 {availableQuantity}");
-                    }
-                }
 
                 return ServiceResult.Success();
             }
@@ -548,7 +503,7 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     DetailId = detail.Id,
                     ReturnQuantity = detail.ReturnQuantity,
-                    SalesDeliveryDetailId = detail.SalesDeliveryDetailId
+
                 });
                 return ServiceResult.Failure("驗證退回數量時發生錯誤");
             }

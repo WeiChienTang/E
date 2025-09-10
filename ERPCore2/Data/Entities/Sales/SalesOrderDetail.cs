@@ -63,6 +63,5 @@ namespace ERPCore2.Data.Entities
         public SalesOrder SalesOrder { get; set; } = null!;
         public Product Product { get; set; } = null!;
         public Unit? Unit { get; set; }
-        public ICollection<SalesDeliveryDetail> SalesDeliveryDetails { get; set; } = new List<SalesDeliveryDetail>();
     }
 }

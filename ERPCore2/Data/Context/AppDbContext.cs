@@ -61,8 +61,6 @@ namespace ERPCore2.Data.Context
       // Sales Management
       public DbSet<SalesOrder> SalesOrders { get; set; }
       public DbSet<SalesOrderDetail> SalesOrderDetails { get; set; }
-      public DbSet<SalesDelivery> SalesDeliveries { get; set; }
-      public DbSet<SalesDeliveryDetail> SalesDeliveryDetails { get; set; }
       public DbSet<SalesReturn> SalesReturns { get; set; }
       public DbSet<SalesReturnDetail> SalesReturnDetails { get; set; }
       
@@ -496,45 +494,7 @@ namespace ERPCore2.Data.Context
                         .OnDelete(DeleteBehavior.SetNull);
                   });
 
-                  modelBuilder.Entity<SalesDelivery>(entity =>
-                  {
-                        entity.HasKey(sd => sd.Id);
 
-                        entity.HasOne(sd => sd.SalesOrder)
-                        .WithMany(so => so.SalesDeliveries)
-                        .HasForeignKey(sd => sd.SalesOrderId)
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                        entity.HasOne(sd => sd.Employee)
-                        .WithMany()
-                        .HasForeignKey(sd => sd.EmployeeId)
-                        .OnDelete(DeleteBehavior.SetNull);
-                  });
-
-                  modelBuilder.Entity<SalesDeliveryDetail>(entity =>
-                  {
-                        entity.HasKey(sdd => sdd.Id);
-
-                        entity.HasOne(sdd => sdd.SalesDelivery)
-                        .WithMany(sd => sd.SalesDeliveryDetails)
-                        .HasForeignKey(sdd => sdd.SalesDeliveryId)
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                        entity.HasOne(sdd => sdd.Product)
-                        .WithMany()
-                        .HasForeignKey(sdd => sdd.ProductId)
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                        entity.HasOne(sdd => sdd.SalesOrderDetail)
-                        .WithMany(sod => sod.SalesDeliveryDetails)
-                        .HasForeignKey(sdd => sdd.SalesOrderDetailId)
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                        entity.HasOne(sdd => sdd.Unit)
-                        .WithMany()
-                        .HasForeignKey(sdd => sdd.UnitId)
-                        .OnDelete(DeleteBehavior.SetNull);
-                  });
 
                   // Sales Return Relationships
                   modelBuilder.Entity<SalesReturn>(entity =>
@@ -551,10 +511,7 @@ namespace ERPCore2.Data.Context
                         .HasForeignKey(sr => sr.SalesOrderId)
                         .OnDelete(DeleteBehavior.SetNull);
 
-                        entity.HasOne(sr => sr.SalesDelivery)
-                        .WithMany()
-                        .HasForeignKey(sr => sr.SalesDeliveryId)
-                        .OnDelete(DeleteBehavior.SetNull);
+
 
                         entity.HasOne(sr => sr.Employee)
                         .WithMany()
@@ -581,10 +538,7 @@ namespace ERPCore2.Data.Context
                         .HasForeignKey(srd => srd.SalesOrderDetailId)
                         .OnDelete(DeleteBehavior.SetNull);
 
-                        entity.HasOne(srd => srd.SalesDeliveryDetail)
-                        .WithMany()
-                        .HasForeignKey(srd => srd.SalesDeliveryDetailId)
-                        .OnDelete(DeleteBehavior.SetNull);
+
                   });
 
                   // 紙張設定相關

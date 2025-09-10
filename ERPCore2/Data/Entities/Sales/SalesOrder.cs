@@ -62,6 +62,5 @@ namespace ERPCore2.Data.Entities
         public Customer Customer { get; set; } = null!;
         public Employee? Employee { get; set; }
         public ICollection<SalesOrderDetail> SalesOrderDetails { get; set; } = new List<SalesOrderDetail>();
-        public ICollection<SalesDelivery> SalesDeliveries { get; set; } = new List<SalesDelivery>();
     }
 }

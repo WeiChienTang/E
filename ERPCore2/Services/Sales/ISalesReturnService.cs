@@ -38,12 +38,7 @@ namespace ERPCore2.Services
         /// <returns>銷貨退回清單</returns>
         Task<List<SalesReturn>> GetBySalesOrderIdAsync(int salesOrderId);
 
-        /// <summary>
-        /// 根據銷貨出貨單取得銷貨退回清單
-        /// </summary>
-        /// <param name="salesDeliveryId">銷貨出貨單ID</param>
-        /// <returns>銷貨退回清單</returns>
-        Task<List<SalesReturn>> GetBySalesDeliveryIdAsync(int salesDeliveryId);
+
 
         /// <summary>
         /// 根據日期範圍取得銷貨退回清單

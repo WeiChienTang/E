@@ -31,7 +31,6 @@ namespace ERPCore2.Services
                 return await context.SalesReturns
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.SalesOrder)
-                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.SalesReturnDetails)
                         .ThenInclude(srd => srd.Product)
@@ -59,14 +58,11 @@ namespace ERPCore2.Services
                 return await context.SalesReturns
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.SalesOrder)
-                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.SalesReturnDetails)
                         .ThenInclude(srd => srd.Product)
                     .Include(sr => sr.SalesReturnDetails)
                         .ThenInclude(srd => srd.SalesOrderDetail)
-                    .Include(sr => sr.SalesReturnDetails)
-                        .ThenInclude(srd => srd.SalesDeliveryDetail)
                     .FirstOrDefaultAsync(sr => sr.Id == id && !sr.IsDeleted);
             }
             catch (Exception ex)
@@ -94,7 +90,6 @@ namespace ERPCore2.Services
                 return await context.SalesReturns
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.SalesOrder)
-                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Where(sr => !sr.IsDeleted &&
                         (sr.SalesReturnNumber.ToLower().Contains(lowerSearchTerm) ||
@@ -207,7 +202,6 @@ namespace ERPCore2.Services
                 return await context.SalesReturns
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.SalesOrder)
-                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Where(sr => sr.CustomerId == customerId && !sr.IsDeleted)
                     .OrderByDescending(sr => sr.ReturnDate)
@@ -234,7 +228,6 @@ namespace ERPCore2.Services
                 return await context.SalesReturns
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.SalesOrder)
-                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Where(sr => sr.ReturnStatus == status && !sr.IsDeleted)
                     .OrderByDescending(sr => sr.ReturnDate)
@@ -261,7 +254,6 @@ namespace ERPCore2.Services
                 return await context.SalesReturns
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.SalesOrder)
-                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Where(sr => sr.SalesOrderId == salesOrderId && !sr.IsDeleted)
                     .OrderByDescending(sr => sr.ReturnDate)
@@ -280,32 +272,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<SalesReturn>> GetBySalesDeliveryIdAsync(int salesDeliveryId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.SalesReturns
-                    .Include(sr => sr.Customer)
-                    .Include(sr => sr.SalesOrder)
-                    .Include(sr => sr.SalesDelivery)
-                    .Include(sr => sr.Employee)
-                    .Where(sr => sr.SalesDeliveryId == salesDeliveryId && !sr.IsDeleted)
-                    .OrderByDescending(sr => sr.ReturnDate)
-                    .ThenBy(sr => sr.SalesReturnNumber)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySalesDeliveryIdAsync), GetType(), _logger, new
-                {
-                    Method = nameof(GetBySalesDeliveryIdAsync),
-                    ServiceType = GetType().Name,
-                    SalesDeliveryId = salesDeliveryId
-                });
-                return new List<SalesReturn>();
-            }
-        }
+
 
         public async Task<List<SalesReturn>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
@@ -315,7 +282,6 @@ namespace ERPCore2.Services
                 return await context.SalesReturns
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.SalesOrder)
-                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Where(sr => sr.ReturnDate >= startDate && sr.ReturnDate <= endDate && !sr.IsDeleted)
                     .OrderByDescending(sr => sr.ReturnDate)

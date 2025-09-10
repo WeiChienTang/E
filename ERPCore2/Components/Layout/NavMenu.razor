@@ -95,14 +95,12 @@
         </NavMenuItem>     
         
         <!-- 銷貨管理下拉選單 -->
-        @* <NavMenuItem Text="銷貨管理" IconClass="bi bi-cart-fill" MenuKey="sales_management">
+        <NavMenuItem Text="銷貨管理" IconClass="bi bi-cart-fill" MenuKey="sales_management">
             <DropdownItems>
-                <NavDropdownItem Text="銷貨訂單" Url="/sales-orders" RequiredPermission="SalesOrder.Read" ParentMenuKey="sales_management" />
-                <NavDropdownItem Text="銷貨出貨" Url="/sales-deliveries" RequiredPermission="SalesDelivery.Read" ParentMenuKey="sales_management" />
-                <NavDropdownItem Text="銷貨退回" Url="/sales-returns" RequiredPermission="SalesReturn.Read" ParentMenuKey="sales_management" />
+                <NavDropdownItem Text="銷貨" Url="/salesOrders" RequiredPermission="SalesOrder.Read" ParentMenuKey="sales_management" IconClass="bi bi-caret-right-fill"/>
+                <NavDropdownItem Text="銷貨退回" Url="/salesReturns" RequiredPermission="SalesReturn.Read" ParentMenuKey="sales_management" IconClass="bi bi-caret-right-fill"/>
             </DropdownItems>
-        </NavMenuItem> *@
-
+        </NavMenuItem>
 
 
         <!-- 製程管理下拉選單 -->

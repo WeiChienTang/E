@@ -269,8 +269,6 @@ namespace ERPCore2.Services
                         .ThenInclude(sod => sod.Product)
                     .Include(so => so.SalesOrderDetails)
                         .ThenInclude(sod => sod.Unit)
-                    .Include(so => so.SalesDeliveries)
-                        .ThenInclude(sd => sd.SalesDeliveryDetails)
                     .FirstOrDefaultAsync(so => so.Id == orderId && !so.IsDeleted);
             }
             catch (Exception ex)
