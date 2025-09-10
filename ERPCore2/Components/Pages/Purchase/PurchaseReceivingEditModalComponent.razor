@@ -7,6 +7,7 @@
 @inject ISupplierService SupplierService
 @inject IEmployeeService EmployeeService
 @inject IProductService ProductService
+@inject ActionButtonHelper ActionButtonHelper
 @implements IDisposable
 
 <GenericEditModalComponent TEntity="PurchaseReceiving" 
@@ -23,6 +24,11 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
+                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
+                          AutoCompleteCollections="@GetAutoCompleteCollections()"
+                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
+                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadPurchaseReceivingData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="false"
@@ -34,6 +40,15 @@
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           CustomModules="@GetCustomModules()" />
+
+@* 供應商編輯 Modal *@
+<SupplierEditModalComponent @ref="supplierEditModal"
+                           IsVisible="@supplierModalManager.IsModalVisible"
+                           IsVisibleChanged="@supplierModalManager.HandleModalVisibilityChangedAsync"
+                           SupplierId="@supplierModalManager.SelectedEntityId"
+                           PrefilledValues="@supplierModalManager.PrefilledValues"
+                           OnSupplierSaved="@OnSupplierSavedWrapper"
+                           OnCancel="@supplierModalManager.HandleModalCancelAsync" />
 
 @code {
     // ===== 必要參數 =====
@@ -59,8 +74,25 @@
     
     // ===== 篩選狀態 =====
     private int? filterProductId = null;
+    
+    // ===== Modal 管理器 =====
+    private SupplierEditModalComponent? supplierEditModal;
+    private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
 
     // ===== 必要方法 =====
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 管理器
+            InitializeSupplierModalManager();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化組件時發生錯誤");
+        }
+    }
+    
     protected override async Task OnParametersSetAsync()
     {
         try
@@ -382,15 +414,12 @@
                 {
                     PropertyName = nameof(PurchaseReceiving.SupplierId),
                     Label = "供應商",
-                    FieldType = FormFieldType.Select,
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇供應商",
                     IsRequired = true,
-                    Options = new List<SelectOption> { new() { Value = "", Text = "請選擇..." } }
-                        .Concat(suppliers.Select(s => new SelectOption
-                        {
-                            Value = s.Id.ToString(),
-                            Text = s.CompanyName
-                        })).ToList(),
-                    HelpText = "選擇供應商以載入該供應商的未完成進貨商品"
+                    MinSearchLength = 0,
+                    HelpText = "輸入供應商名稱進行搜尋，或直接選擇",
+                    ActionButtons = GetSupplierActionButtonsAsync()
                 },
                 new()
                 {
@@ -533,6 +562,67 @@
     }
 
     /// <summary>
+    /// 配置 AutoComplete 預填器
+    /// </summary>
+    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
+    {
+        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
+        {
+            {
+                nameof(PurchaseReceiving.SupplierId),
+                searchTerm => new Dictionary<string, object?>
+                {
+                    ["CompanyName"] = searchTerm
+                }
+            }
+        };
+    }
+
+    /// <summary>
+    /// 配置 Modal 管理器
+    /// </summary>
+    private Dictionary<string, object> GetModalManagers()
+    {
+        return new Dictionary<string, object>
+        {
+            { nameof(PurchaseReceiving.SupplierId), supplierModalManager }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 資料集合
+    /// </summary>
+    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
+    {
+        return new Dictionary<string, IEnumerable<object>>
+        {
+            { nameof(PurchaseReceiving.SupplierId), suppliers.Cast<object>() }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 顯示屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(PurchaseReceiving.SupplierId), "CompanyName" }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 值屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteValueProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(PurchaseReceiving.SupplierId), "Id" }
+        };
+    }
+
+    /// <summary>
     /// 生成採購入庫單號
     /// </summary>
     private async Task<string> GenerateReceiptNumberAsync()
@@ -615,6 +705,14 @@
                 
                 // 更新產品篩選選項
                 await UpdateFilterProductOptions(supplierId);
+                
+                // 更新供應商欄位的操作按鈕
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    supplierModalManager, 
+                    formFields, 
+                    nameof(PurchaseReceiving.SupplierId), 
+                    fieldChange.Value
+                );
                 
                 StateHasChanged();
             }
@@ -780,6 +878,74 @@
         }
     };
     
+    // ===== Modal 管理器初始化方法 =====
+    
+    /// <summary>
+    /// 初始化供應商 Modal 管理器
+    /// </summary>
+    private void InitializeSupplierModalManager()
+    {
+        supplierModalManager = new RelatedEntityManagerBuilder<Supplier>(NotificationService, "供應商")
+            .WithPropertyName(nameof(PurchaseReceiving.SupplierId))
+            .WithReloadCallback(LoadAdditionalDataAsync)
+            .WithStateChangedCallback(StateHasChanged)
+            .WithAutoSelectCallback(supplierId => 
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    editModalComponent.Entity.SupplierId = supplierId;
+                }
+            })
+            .WithCustomPostProcess(async supplier => 
+            {
+                await InitializeFormFieldsAsync();
+            })
+            .Build();
+    }
+
+    /// <summary>
+    /// 產生供應商操作按鈕
+    /// </summary>
+    private List<FieldActionButton> GetSupplierActionButtonsAsync()
+    {
+        var buttons = new List<FieldActionButton>
+        {
+            new()
+            {
+                Text = "新增",
+                IconClass = "fas fa-plus",
+                Variant = "OutlineSuccess",
+                Size = "Small",
+                Title = "新增供應商",
+                OnClick = async () => await supplierModalManager.OpenModalAsync(null)
+            }
+        };
+
+        // 如果有選中的供應商，添加編輯按鈕
+        if (editModalComponent?.Entity?.SupplierId > 0)
+        {
+            buttons.Add(new()
+            {
+                Text = "編輯",
+                IconClass = "fas fa-edit",
+                Variant = "OutlinePrimary",
+                Size = "Small",
+                Title = "編輯供應商",
+                OnClick = async () => await supplierModalManager.OpenModalAsync(editModalComponent.Entity.SupplierId)
+            });
+        }
+
+        return buttons;
+    }
+
+    /// <summary>
+    /// 包裝供應商儲存事件
+    /// </summary>
+    private async Task OnSupplierSavedWrapper(Supplier savedSupplier)
+    {
+        await supplierModalManager.HandleEntitySavedAsync(savedSupplier, shouldAutoSelect: true);
+    }
+
     /// <summary>
     /// 釋放資源
     /// </summary>
