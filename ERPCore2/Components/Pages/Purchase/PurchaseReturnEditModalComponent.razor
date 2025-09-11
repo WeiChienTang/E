@@ -2,7 +2,9 @@
 @inject IPurchaseReturnService PurchaseReturnService
 @inject ISupplierService SupplierService
 @inject IPurchaseReceivingService PurchaseReceivingService
+@inject IProductService ProductService
 @inject INotificationService NotificationService
+@inject ActionButtonHelper ActionButtonHelper
 
 <GenericEditModalComponent TEntity="PurchaseReturn" 
                           TService="IPurchaseReturnService"
@@ -18,9 +20,11 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
+                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
                           AutoCompleteCollections="@GetAutoCompleteCollections()"
                           AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
                           AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadPurchaseReturnData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
@@ -28,7 +32,17 @@
                           SaveFailureMessage="進貨退出儲存失敗"
                           RequiredPermission="PurchaseReturn.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel" />
+                          OnCancel="@HandleCancel"
+                          OnFieldChanged="@OnFieldValueChanged" />
+
+@* 廠商編輯 Modal *@
+<SupplierEditModalComponent @ref="supplierEditModal"
+                           IsVisible="@supplierModalManager.IsModalVisible"
+                           IsVisibleChanged="@supplierModalManager.HandleModalVisibilityChangedAsync"
+                           SupplierId="@supplierModalManager.SelectedEntityId"
+                           PrefilledValues="@supplierModalManager.PrefilledValues"
+                           OnSupplierSaved="@OnSupplierSavedWrapper"
+                           OnCancel="@supplierModalManager.HandleModalCancelAsync" />
 
 @code {
     // 參數
@@ -48,14 +62,36 @@
     // 相關資料
     private List<Supplier> suppliers = new();
     private List<PurchaseReceiving> purchaseReceivings = new();
+    private List<Product> products = new();
+    
+    // ===== 篩選狀態 =====
+    private int? filterProductId = null;
+    private int? filterPurchaseReceivingId = null;
+    
+    // Modal 管理器
+    private SupplierEditModalComponent? supplierEditModal;
+    private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
 
     // ===== 生命週期 =====
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 管理器
+            InitializeSupplierModalManager();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化進貨退出編輯組件時發生錯誤");
+        }
+    }
+
     protected override async Task OnParametersSetAsync()
     {
         if (IsVisible)
         {
             await LoadAdditionalDataAsync();
-            InitializeFormFields();
+            await InitializeFormFieldsAsync();
         }
     }
 
@@ -105,10 +141,10 @@
         {
             if (!PurchaseReturnId.HasValue)
             {
-                // 新增模式 - 返回預設值
+                // 新增模式 - 返回預設值並生成退回單號
                 return new PurchaseReturn
                 {
-                    PurchaseReturnNumber = string.Empty,
+                    PurchaseReturnNumber = await GeneratePurchaseReturnNumberAsync(),
                     ReturnDate = DateTime.Today,
                     Status = EntityStatus.Active
                 };
@@ -132,7 +168,8 @@
         {
             await Task.WhenAll(
                 LoadSuppliersAsync(),
-                LoadPurchaseReceivingsAsync()
+                LoadPurchaseReceivingsAsync(),
+                LoadProductsAsync()
             );
         }
         catch (Exception ex)
@@ -165,8 +202,21 @@
         }
     }
 
+    private async Task LoadProductsAsync()
+    {
+        try
+        {
+            products = await ProductService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入產品資料時發生錯誤：{ex.Message}");
+            products = new List<Product>();
+        }
+    }
+
     // ===== 表單設定 =====
-    private void InitializeFormFields()
+    private async Task InitializeFormFieldsAsync()
     {
         try
         {
@@ -180,16 +230,40 @@
                     Placeholder = "請輸入退回單號",
                     IsRequired = true,
                     MaxLength = 30,
-                    Order = 1
+                    Order = 1,
+                    HelpText = "系統自動生成的唯一退回單號，也可手動修改"
                 },
                 new()
                 {
                     PropertyName = nameof(PurchaseReturn.SupplierId),
                     Label = "廠商",
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "選擇廠商",
+                    Placeholder = "請輸入或選擇廠商",
                     IsRequired = true,
-                    Order = 2
+                    MinSearchLength = 0,
+                    Order = 2,
+                    HelpText = "輸入廠商名稱進行搜尋，或直接選擇",
+                    ActionButtons = await GetSupplierActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = "FilterProductId", // 篩選用的虛擬欄位
+                    Label = "篩選商品",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    Order = 3,
+                    Options = await GetFilterProductOptions(),
+                    HelpText = "選擇特定商品進行篩選，或留空顯示所有商品"
+                },
+                new()
+                {
+                    PropertyName = "FilterPurchaseReceivingId", // 篩選用的虛擬欄位
+                    Label = "篩選進貨單",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    Order = 4,
+                    Options = await GetFilterPurchaseReceivingOptions(),
+                    HelpText = "選擇特定進貨單進行篩選，或留空顯示所有進貨單"
                 },
                 new()
                 {
@@ -197,7 +271,8 @@
                     Label = "退回日期",
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
-                    Order = 3
+                    Order = 5,
+                    HelpText = "請選擇退回日期"
                 },
                 new()
                 {
@@ -206,7 +281,8 @@
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "選擇原進貨單",
                     IsRequired = false,
-                    Order = 4
+                    Order = 6,
+                    HelpText = "選擇此退回單所對應的原進貨單"
                 },
                 new()
                 {
@@ -214,7 +290,8 @@
                     Label = "退回總金額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    Order = 5
+                    Order = 7,
+                    HelpText = "請輸入退回總金額"
                 },
                 new()
                 {
@@ -222,7 +299,8 @@
                     Label = "退回稅額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    Order = 12
+                    Order = 8,
+                    HelpText = "請輸入退回稅額"
                 },
                 new()
                 {
@@ -230,14 +308,16 @@
                     Label = "退回含稅總金額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    Order = 13
+                    Order = 9,
+                    HelpText = "請輸入退回含稅總金額"
                 },
                 new()
                 {
                     PropertyName = nameof(PurchaseReturn.IsRefunded),
                     Label = "是否已退款",
                     FieldType = FormFieldType.Checkbox,
-                    Order = 14
+                    Order = 10,
+                    HelpText = "標記此退回單是否已經退款"
                 },
                 new()
                 {
@@ -245,7 +325,19 @@
                     Label = "退款日期",
                     FieldType = FormFieldType.Date,
                     IsRequired = false,
-                    Order = 11
+                    Order = 11,
+                    HelpText = "請選擇退款日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReturn.Remarks),
+                    Label = "備註",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入備註",
+                    IsRequired = false,
+                    MaxLength = 500,
+                    Order = 12,
+                    HelpText = "可輸入相關備註資訊"
                 }
             };
 
@@ -253,6 +345,8 @@
             {
                 { nameof(PurchaseReturn.PurchaseReturnNumber), "基本資訊" },
                 { nameof(PurchaseReturn.SupplierId), "基本資訊" },
+                { "FilterProductId", "基本資訊" },
+                { "FilterPurchaseReceivingId", "基本資訊" },
                 { nameof(PurchaseReturn.ReturnDate), "基本資訊" },
                 { nameof(PurchaseReturn.PurchaseReceivingId), "基本資訊" },
                 { nameof(PurchaseReturn.TotalReturnAmount), "金額資訊" },
@@ -273,7 +367,164 @@
         return formFields;
     }
 
+    /// <summary>
+    /// 取得商品篩選選項 - 根據選擇的廠商篩選
+    /// </summary>
+    private async Task<List<SelectOption>> GetFilterProductOptions()
+    {
+        try
+        {
+            var options = new List<SelectOption> {};
+            
+            // 如果有選擇廠商，只顯示該廠商的產品
+            if (editModalComponent?.Entity?.SupplierId > 0)
+            {
+                var supplierProducts = await ProductService.GetBySupplierAsync(editModalComponent.Entity.SupplierId);
+                options.AddRange(supplierProducts.Select(p => new SelectOption
+                {
+                    Value = p.Id.ToString(),
+                    Text = $"{p.Code} - {p.Name}"
+                }));
+            }
+            
+            return options;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入商品選項時發生錯誤：{ex.Message}");
+            return new List<SelectOption> {};
+        }
+    }
+
+    /// <summary>
+    /// 取得進貨單篩選選項 - 根據選擇的廠商篩選
+    /// </summary>
+    private async Task<List<SelectOption>> GetFilterPurchaseReceivingOptions()
+    {
+        try
+        {
+            var options = new List<SelectOption> {};
+            
+            // 如果有選擇廠商，只顯示該廠商的進貨單
+            if (editModalComponent?.Entity?.SupplierId > 0)
+            {
+                var supplierReceivings = purchaseReceivings
+                    .Where(pr => pr.SupplierId == editModalComponent.Entity.SupplierId)
+                    .ToList();
+                    
+                options.AddRange(supplierReceivings.Select(pr => new SelectOption
+                {
+                    Value = pr.Id.ToString(),
+                    Text = $"{pr.ReceiptNumber} - {pr.ReceiptDate:yyyy/MM/dd}"
+                }));
+            }
+            
+            return options;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入進貨單選項時發生錯誤：{ex.Message}");
+            return new List<SelectOption> {};
+        }
+    }
+
+    /// <summary>
+    /// 更新商品篩選選項 - 當廠商變更時調用
+    /// </summary>
+    private async Task UpdateFilterProductOptions(int? supplierId = null)
+    {
+        try
+        {
+            // 找到商品篩選欄位並更新其選項
+            var filterProductField = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+            if (filterProductField != null)
+            {
+                var options = new List<SelectOption> {};
+                
+                if (supplierId.HasValue && supplierId.Value > 0)
+                {
+                    var supplierProducts = await ProductService.GetBySupplierAsync(supplierId.Value);
+                    options.AddRange(supplierProducts.Select(p => new SelectOption
+                    {
+                        Value = p.Id.ToString(),
+                        Text = $"{p.Code} - {p.Name}"
+                    }));
+                }
+                
+                filterProductField.Options = options;
+                
+                // 清空目前的商品篩選選擇
+                filterProductId = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"更新商品篩選選項時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 更新進貨單篩選選項 - 當廠商變更時調用
+    /// </summary>
+    private async Task UpdateFilterPurchaseReceivingOptions(int? supplierId = null)
+    {
+        try
+        {
+            // 找到進貨單篩選欄位並更新其選項
+            var filterReceivingField = formFields.FirstOrDefault(f => f.PropertyName == "FilterPurchaseReceivingId");
+            if (filterReceivingField != null)
+            {
+                var options = new List<SelectOption> {};
+                
+                if (supplierId.HasValue && supplierId.Value > 0)
+                {
+                    var supplierReceivings = purchaseReceivings
+                        .Where(pr => pr.SupplierId == supplierId.Value)
+                        .ToList();
+                        
+                    options.AddRange(supplierReceivings.Select(pr => new SelectOption
+                    {
+                        Value = pr.Id.ToString(),
+                        Text = $"{pr.ReceiptNumber} - {pr.ReceiptDate:yyyy/MM/dd}"
+                    }));
+                }
+                
+                filterReceivingField.Options = options;
+                
+                // 清空目前的進貨單篩選選擇
+                filterPurchaseReceivingId = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"更新進貨單篩選選項時發生錯誤：{ex.Message}");
+        }
+    }
+
     // ===== AutoComplete 設定 =====
+    
+    /// <summary>
+    /// 配置 AutoComplete 預填器
+    /// </summary>
+    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
+    {
+        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
+        {
+            {
+                nameof(PurchaseReturn.SupplierId), searchTerm => new Dictionary<string, object?>
+                {
+                    { "CompanyName", searchTerm }
+                }
+            },
+            {
+                nameof(PurchaseReturn.PurchaseReceivingId), searchTerm => new Dictionary<string, object?>
+                {
+                    { "ReceiptNumber", searchTerm }
+                }
+            }
+        };
+    }
+    
     private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
     {
         return new Dictionary<string, IEnumerable<object>>
@@ -299,5 +550,139 @@
             { nameof(PurchaseReturn.SupplierId), nameof(Supplier.Id) },
             { nameof(PurchaseReturn.PurchaseReceivingId), nameof(PurchaseReceiving.Id) }
         };
+    }
+
+    // ===== Modal 管理器配置方法 =====
+    
+    /// <summary>
+    /// 配置 Modal 管理器
+    /// </summary>
+    private Dictionary<string, object> GetModalManagers()
+    {
+        return new Dictionary<string, object>
+        {
+            { nameof(PurchaseReturn.SupplierId), supplierModalManager }
+        };
+    }
+    
+    // ===== Modal 管理器初始化方法 =====
+    
+    /// <summary>
+    /// 初始化廠商 Modal 管理器
+    /// </summary>
+    private void InitializeSupplierModalManager()
+    {
+        supplierModalManager = new RelatedEntityManagerBuilder<Supplier>(NotificationService, "廠商")
+            .WithPropertyName(nameof(PurchaseReturn.SupplierId))
+            .WithReloadCallback(LoadAdditionalDataAsync)
+            .WithStateChangedCallback(StateHasChanged)
+            .WithAutoSelectCallback(supplierId => 
+            {
+                // 自動選擇廠商時的回調邏輯
+            })
+            .WithCustomPostProcess(async supplier => 
+            {
+                await InitializeFormFieldsAsync();
+            })
+            .Build();
+    }
+    
+    // ===== ActionButton 產生方法 =====
+    
+    /// <summary>
+    /// 產生廠商操作按鈕 - 使用統一 Helper
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetSupplierActionButtonsAsync()
+    {
+        var buttons = await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            supplierModalManager, 
+            nameof(PurchaseReturn.SupplierId)
+        );
+        
+        return buttons;
+    }
+    
+    // ===== Modal 事件包裝器方法 =====
+    
+    /// <summary>
+    /// 包裝廠商儲存事件
+    /// </summary>
+    private async Task OnSupplierSavedWrapper(Supplier savedSupplier)
+    {
+        await supplierModalManager.HandleEntitySavedAsync(savedSupplier, shouldAutoSelect: true);
+    }
+    
+    /// <summary>
+    /// 處理欄位值變更事件 - 使用統一 Helper
+    /// </summary>
+    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    {
+        try
+        {
+            // 當廠商變更時，更新篩選選項
+            if (fieldChange.PropertyName == nameof(PurchaseReturn.SupplierId))
+            {
+                int? supplierId = null;
+                if (fieldChange.Value != null && 
+                    int.TryParse(fieldChange.Value.ToString(), out int parsedSupplierId) && 
+                    parsedSupplierId > 0)
+                {
+                    supplierId = parsedSupplierId;
+                }
+                
+                // 更新商品和進貨單篩選選項
+                await UpdateFilterProductOptions(supplierId);
+                await UpdateFilterPurchaseReceivingOptions(supplierId);
+                
+                StateHasChanged();
+            }
+            
+            // 當商品篩選變更時，更新篩選狀態並觸發重新渲染
+            if (fieldChange.PropertyName == "FilterProductId")
+            {
+                if (fieldChange.Value != null && 
+                    int.TryParse(fieldChange.Value.ToString(), out int productId) && 
+                    productId > 0)
+                {
+                    filterProductId = productId;
+                }
+                else
+                {
+                    filterProductId = null;
+                }
+                StateHasChanged();
+            }
+            
+            // 當進貨單篩選變更時，更新篩選狀態並觸發重新渲染
+            if (fieldChange.PropertyName == "FilterPurchaseReceivingId")
+            {
+                if (fieldChange.Value != null && 
+                    int.TryParse(fieldChange.Value.ToString(), out int receivingId) && 
+                    receivingId > 0)
+                {
+                    filterPurchaseReceivingId = receivingId;
+                }
+                else
+                {
+                    filterPurchaseReceivingId = null;
+                }
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理欄位變更時發生錯誤：{ex.Message}");
+        }
+    }
+
+    // ===== 輔助方法 =====
+    private async Task<string> GeneratePurchaseReturnNumberAsync()
+    {
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            PurchaseReturnService,
+            "PR",
+            (service, code, excludeId) => service.IsPurchaseReturnNumberExistsAsync(code, excludeId)
+        );
     }
 }
