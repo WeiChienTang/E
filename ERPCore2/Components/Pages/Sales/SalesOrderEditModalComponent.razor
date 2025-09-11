@@ -530,32 +530,54 @@
     {
         try
         {
-            @if (editModalComponent?.Entity != null && availableProducts != null && availableUnits != null)
+            @if (editModalComponent?.Entity != null)
             {
-                <SalesOrderProductManagerComponent TSalesOrderDetailEntity="SalesOrderDetail" 
-                                                  TProductEntity="Product"
-                                                  TSalesOrderEntity="SalesOrder"
-                                                  Items="@salesOrderDetails"
-                                                  ProductOptions="@availableProducts"
-                                                  UnitOptions="@availableUnits"
-                                                  ParentEntityId="@(editModalComponent.Entity.Id)"
-                                                  IsReadOnly="false"
-                                                  GetProductId="@(item => item.ProductId)"
-                                                  SetProductId="@((item, value) => item.ProductId = value ?? 0)"
-                                                  GetQuantity="@(item => item.OrderQuantity)"
-                                                  SetQuantity="@((item, value) => item.OrderQuantity = value ?? 0m)"
-                                                  GetUnitPrice="@(item => item.UnitPrice)"
-                                                  SetUnitPrice="@((item, value) => item.UnitPrice = value ?? 0m)"
-                                                  GetDiscount="@(item => item.DiscountPercentage)"
-                                                  SetDiscount="@((item, value) => item.DiscountPercentage = value ?? 0m)"
-                                                  GetUnitId="@(item => item.UnitId)"
-                                                  SetUnitId="@((item, value) => item.UnitId = value)"
-                                                  GetRemark="@(item => item.DetailRemarks)"
-                                                  SetRemark="@((item, value) => item.DetailRemarks = value)"
-                                                  SetSalesOrderId="@((item, value) => item.SalesOrderId = value)"
-                                                  ItemsChanged="@HandleDetailsChanged"
-                                                  ItemDisplayName="銷售產品"
-                                                  EmptyMessage="尚未新增銷售產品" />
+                // 檢查是否有可用的商品和單位資料
+                @if (availableProducts != null && availableProducts.Any() && availableUnits != null && availableUnits.Any())
+                {
+                    // 檢查是否已選擇客戶
+                    @if (editModalComponent.Entity.CustomerId > 0)
+                    {
+                        <SalesOrderProductManagerComponent TSalesOrderDetailEntity="SalesOrderDetail" 
+                                                          TProductEntity="Product"
+                                                          TSalesOrderEntity="SalesOrder"
+                                                          Items="@salesOrderDetails"
+                                                          ProductOptions="@availableProducts"
+                                                          UnitOptions="@availableUnits"
+                                                          ParentEntityId="@(editModalComponent.Entity.Id)"
+                                                          IsReadOnly="false"
+                                                          GetProductId="@(item => item.ProductId)"
+                                                          SetProductId="@((item, value) => item.ProductId = value ?? 0)"
+                                                          GetQuantity="@(item => item.OrderQuantity)"
+                                                          SetQuantity="@((item, value) => item.OrderQuantity = value ?? 0m)"
+                                                          GetUnitPrice="@(item => item.UnitPrice)"
+                                                          SetUnitPrice="@((item, value) => item.UnitPrice = value ?? 0m)"
+                                                          GetDiscount="@(item => item.DiscountPercentage)"
+                                                          SetDiscount="@((item, value) => item.DiscountPercentage = value ?? 0m)"
+                                                          GetUnitId="@(item => item.UnitId)"
+                                                          SetUnitId="@((item, value) => item.UnitId = value)"
+                                                          GetRemark="@(item => item.DetailRemarks)"
+                                                          SetRemark="@((item, value) => item.DetailRemarks = value)"
+                                                          SetSalesOrderId="@((item, value) => item.SalesOrderId = value)"
+                                                          ItemsChanged="@HandleDetailsChanged"
+                                                          ItemDisplayName="銷售產品"
+                                                          EmptyMessage="尚未新增銷售產品" />
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            請先選擇客戶後再進行銷售明細管理
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="alert alert-warning text-center" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        無可用的商品或單位資料，請聯繫系統管理員
+                    </div>
+                }
             }
             else
             {
