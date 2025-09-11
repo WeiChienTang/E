@@ -200,14 +200,14 @@
                 CustomTemplate = item => 
                 {
                     var salesOrderDetail = (TSalesOrderDetailEntity)item;
-                    var value = GetQuantity(salesOrderDetail)?.ToString("F2") ?? "";
+                    var quantity = GetQuantity(salesOrderDetail) ?? 0;
+                    var value = quantity > 0 ? quantity.ToString("F0") : "";
                     
                     return @<input type="number" 
                                    class="form-control form-control-sm text-end" 
                                    value="@value"
                                    min="0"
-                                   step="0.01"
-                                   placeholder="0.00"
+                                   placeholder=""
                                    disabled="@IsReadOnly"
                                    @oninput="@(async (e) => await OnQuantityChanged((salesOrderDetail, e.Value?.ToString())))" />;
                 }
@@ -223,14 +223,15 @@
                 CustomTemplate = item => 
                 {
                     var salesOrderDetail = (TSalesOrderDetailEntity)item;
-                    var value = GetUnitPrice(salesOrderDetail)?.ToString("F0") ?? "";
+                    var unitPrice = GetUnitPrice(salesOrderDetail) ?? 0;
+                    var value = unitPrice > 0 ? unitPrice.ToString("F0") : "";
                     
                     return @<input type="number" 
                                    class="form-control form-control-sm text-end" 
                                    value="@value"
                                    min="0"
                                    step="1"
-                                   placeholder="0"
+                                   placeholder=""
                                    disabled="@IsReadOnly"
                                    @oninput="@(async (e) => await OnUnitPriceChanged((salesOrderDetail, e.Value?.ToString())))" />;
                 }
@@ -246,15 +247,15 @@
                 CustomTemplate = item => 
                 {
                     var salesOrderDetail = (TSalesOrderDetailEntity)item;
-                    var value = GetDiscount(salesOrderDetail)?.ToString("F2") ?? "";
+                    var discount = GetDiscount(salesOrderDetail) ?? 0;
+                    var value = discount > 0 ? discount.ToString("F0") : "";
                     
                     return @<input type="number" 
                                    class="form-control form-control-sm text-end" 
                                    value="@value"
                                    min="0"
                                    max="100"
-                                   step="0.01"
-                                   placeholder="0.00"
+                                   placeholder=""
                                    disabled="@IsReadOnly"
                                    @oninput="@(async (e) => await OnDiscountChanged((salesOrderDetail, e.Value?.ToString())))" />;
                 }

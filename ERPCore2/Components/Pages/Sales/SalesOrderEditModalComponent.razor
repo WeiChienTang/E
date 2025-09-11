@@ -714,13 +714,6 @@
                 }
             }
             
-            // 除錯：檢查明細資料
-            Console.WriteLine($"HandleDetailsChanged: 收到 {salesOrderDetails.Count} 筆明細");
-            foreach (var detail in salesOrderDetails.Where(d => d.ProductId > 0))
-            {
-                Console.WriteLine($"明細 - ProductId: {detail.ProductId}, OrderQuantity: {detail.OrderQuantity}, UnitPrice: {detail.UnitPrice}, DiscountPercentage: {detail.DiscountPercentage}, Subtotal: {detail.Subtotal}");
-            }
-            
             // 更新主檔的總金額
             if (editModalComponent?.Entity != null)
             {

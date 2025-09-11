@@ -50,7 +50,7 @@
 
 </GenericEditModalComponent>
 
-@* 供應商編輯 Modal *@
+@* 廠商編輯 Modal *@
 <SupplierEditModalComponent @ref="supplierEditModal"
                            IsVisible="@supplierModalManager.IsModalVisible"
                            IsVisibleChanged="@supplierModalManager.HandleModalVisibilityChangedAsync"
@@ -78,7 +78,7 @@
     private List<Supplier> availableSuppliers = new();
     private List<Company> availableCompanies = new();
     private List<Product> availableProducts = new();
-    private List<Product> filteredProductsBySupplier = new(); // 根據供應商過濾的商品
+    private List<Product> filteredProductsBySupplier = new(); // 根據廠商過濾的商品
     
     // 採購訂單明細
     private List<PurchaseOrderDetail> purchaseOrderDetails = new();
@@ -325,7 +325,7 @@
     {
         try
         {
-            // 載入供應商選項
+            // 載入廠商選項
             suppliers = await SupplierService.GetAllAsync();
             availableSuppliers = suppliers; // 用於 AutoComplete
             supplierOptions = suppliers.Where(s => s.Status == EntityStatus.Active)
@@ -402,12 +402,12 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseOrder.SupplierId),
-                    Label = "供應商",
+                    Label = "廠商",
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇供應商",
+                    Placeholder = "請輸入或選擇廠商",
                     IsRequired = true,
                     MinSearchLength = 0,
-                    HelpText = "輸入供應商名稱進行搜尋，或直接選擇",
+                    HelpText = "輸入廠商名稱進行搜尋，或直接選擇",
                     ActionButtons = await GetSupplierActionButtonsAsync(),
                     IsReadOnly = isApproved
                 },
@@ -426,7 +426,7 @@
                     Label = "預定交貨日期",
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
-                    HelpText = "預計供應商交貨的日期",
+                    HelpText = "預計廠商交貨的日期",
                     IsReadOnly = isApproved
                 },
 
@@ -592,34 +592,56 @@
     {
         try
         {
-                    @if (editModalComponent?.Entity != null && availableProducts != null)
+            @if (editModalComponent?.Entity != null)
+            {
+                // 檢查是否有可用的商品資料
+                @if (availableProducts != null && availableProducts.Any())
+                {
+                    // 檢查是否已選擇廠商
+                    @if (editModalComponent.Entity.SupplierId > 0)
                     {
                         <PurchaseOrderProductManagerComponent TMainEntity="PurchaseOrder" 
-                                               TDetailEntity="PurchaseOrderDetail"
-                                               Products="@availableProducts"
-                                               SelectedSupplierId="@editModalComponent.Entity.SupplierId"
-                                               MainEntity="@editModalComponent.Entity"
-                                               ExistingDetails="@purchaseOrderDetails"
-                                               OnDetailsChanged="@HandleDetailsChanged"
-                                               MainEntityIdPropertyName="PurchaseOrderId"
-                                               QuantityPropertyName="OrderQuantity"
-                                               ReceivedQuantityPropertyName="ReceivedQuantity"
-                                               UnitPricePropertyName="UnitPrice"
-                                               RemarksPropertyName="DetailRemarks"
-                                               QuantityLabel="採購數量"
-                                               ReceivedQuantityLabel="已進貨數量"
-                                               PriceLabel="採購單價"
-                                               RemarksLabel="採購備註"
-                                               IsReadOnly="@(editModalComponent.Entity.IsApproved)" />
+                                                   TDetailEntity="PurchaseOrderDetail"
+                                                   Products="@availableProducts"
+                                                   SelectedSupplierId="@editModalComponent.Entity.SupplierId"
+                                                   MainEntity="@editModalComponent.Entity"
+                                                   ExistingDetails="@purchaseOrderDetails"
+                                                   OnDetailsChanged="@HandleDetailsChanged"
+                                                   MainEntityIdPropertyName="PurchaseOrderId"
+                                                   QuantityPropertyName="OrderQuantity"
+                                                   ReceivedQuantityPropertyName="ReceivedQuantity"
+                                                   UnitPricePropertyName="UnitPrice"
+                                                   RemarksPropertyName="DetailRemarks"
+                                                   QuantityLabel="採購數量"
+                                                   ReceivedQuantityLabel="已進貨數量"
+                                                   PriceLabel="採購單價"
+                                                   RemarksLabel="採購備註"
+                                                   IsReadOnly="@(editModalComponent.Entity.IsApproved)" />
                     }
                     else
                     {
-                        <div class="text-center py-3">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">載入中...</span>
-                            </div>
+                        <div class="alert alert-info text-center" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            請先選擇廠商後再進行採購明細管理
                         </div>
                     }
+                }
+                else
+                {
+                    <div class="alert alert-warning text-center" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        無可用的商品資料，請聯繫系統管理員
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">載入中...</span>
+                    </div>
+                </div>
+            }
         }
         catch
         {
@@ -632,11 +654,11 @@
     // ===== Modal 管理器初始化方法 =====
     
     /// <summary>
-    /// 初始化供應商 Modal 管理器
+    /// 初始化廠商 Modal 管理器
     /// </summary>
     private void InitializeSupplierModalManager()
     {
-        supplierModalManager = new RelatedEntityManagerBuilder<Supplier>(NotificationService, "供應商")
+        supplierModalManager = new RelatedEntityManagerBuilder<Supplier>(NotificationService, "廠商")
             .WithPropertyName(nameof(PurchaseOrder.SupplierId))
             .WithReloadCallback(LoadAdditionalDataAsync)
             .WithStateChangedCallback(StateHasChanged)
@@ -657,7 +679,7 @@
     // ===== ActionButton 產生方法 =====
     
     /// <summary>
-    /// 產生供應商操作按鈕 - 使用統一 Helper
+    /// 產生廠商操作按鈕 - 使用統一 Helper
     /// </summary>
     private async Task<List<FieldActionButton>> GetSupplierActionButtonsAsync()
     {
@@ -683,7 +705,7 @@
     // ===== Modal 事件包裝器方法 =====
     
     /// <summary>
-    /// 包裝供應商儲存事件
+    /// 包裝廠商儲存事件
     /// </summary>
     private async Task OnSupplierSavedWrapper(Supplier savedSupplier)
     {
@@ -697,7 +719,7 @@
     {
         try
         {
-            // 使用統一 Helper 處理供應商欄位變更
+            // 使用統一 Helper 處理廠商欄位變更
             if (fieldChange.PropertyName == nameof(PurchaseOrder.SupplierId))
             {
                 await ActionButtonHelper.UpdateFieldActionButtonsAsync(
@@ -707,7 +729,7 @@
                     fieldChange.Value
                 );
                 
-                // 供應商變更時，觸發商品管理器重新渲染
+                // 廠商變更時，觸發商品管理器重新渲染
                 StateHasChanged();
             }
         }

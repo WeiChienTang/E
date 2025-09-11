@@ -111,8 +111,8 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSuppliersAsync), GetType(), additionalData: "載入供應商資料失敗");
-            await NotificationService.ShowErrorAsync("載入供應商資料失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSuppliersAsync), GetType(), additionalData: "載入廠商資料失敗");
+            await NotificationService.ShowErrorAsync("載入廠商資料失敗");
             // 設定安全的預設值
             suppliers = new List<Supplier>();
         }
