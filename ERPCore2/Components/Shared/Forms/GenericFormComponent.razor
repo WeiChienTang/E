@@ -776,19 +776,20 @@
             return;
         }
         
-        // 如果輸入為空，檢查 MinSearchLength 設定
+        // 如果輸入為空，清空實體值
         if (string.IsNullOrEmpty(inputValue))
         {
-            // 如果 MinSearchLength > 0，清空實體值並隱藏下拉選單
+            // 檢查目前實體值是否不為空，如果不為空才清空
+            var currentValue = GetPropertyValue(Model, field.PropertyName);
+            if (currentValue != null)
+            {
+                SetPropertyValue(Model, field.PropertyName, null);
+                await OnFieldChanged.InvokeAsync((field.PropertyName, null));
+            }
+            
+            // 如果 MinSearchLength > 0，隱藏下拉選單並返回
             if (field.MinSearchLength > 0)
             {
-                // 檢查目前實體值是否不為空，如果不為空才清空
-                var currentValue = GetPropertyValue(Model, field.PropertyName);
-                if (currentValue != null)
-                {
-                    SetPropertyValue(Model, field.PropertyName, null);
-                    await OnFieldChanged.InvokeAsync((field.PropertyName, null));
-                }
                 autoCompleteVisible[fieldId] = false;
                 StateHasChanged();
                 return;
