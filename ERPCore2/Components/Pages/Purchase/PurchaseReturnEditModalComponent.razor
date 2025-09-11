@@ -28,7 +28,8 @@
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadPurchaseReturnData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
-                          UseGenericSave="true"
+                          UseGenericSave="false"
+                          SaveHandler="@SavePurchaseReturnWithDetails"
                           SaveSuccessMessage="@(PurchaseReturnId.HasValue ? "進貨退出更新成功" : "進貨退出新增成功")"
                           SaveFailureMessage="進貨退出儲存失敗"
                           RequiredPermission="PurchaseReturn.Read"
@@ -70,6 +71,9 @@
     private int? filterProductId = null;
     private int? filterPurchaseReceivingId = null;
     
+    // ===== 退貨明細 =====
+    private List<PurchaseReturnDetail> purchaseReturnDetails = new();
+    
     // Modal 管理器
     private SupplierEditModalComponent? supplierEditModal;
     private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
@@ -82,18 +86,26 @@
             // 初始化 Modal 管理器
             InitializeSupplierModalManager();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync("初始化進貨退出編輯組件時發生錯誤");
+            await NotificationService.ShowErrorAsync($"初始化進貨退出編輯組件時發生錯誤：{ex.Message}");
         }
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        if (IsVisible)
+        try
         {
-            await LoadAdditionalDataAsync();
-            await InitializeFormFieldsAsync();
+            if (IsVisible)
+            {
+                await LoadAdditionalDataAsync();
+                await InitializeFormFieldsAsync();
+            }
+            
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入進貨退出資料時發生錯誤：{ex.Message}");
         }
     }
 
@@ -143,23 +155,69 @@
         {
             if (!PurchaseReturnId.HasValue)
             {
-                // 新增模式 - 返回預設值並生成退回單號
-                return new PurchaseReturn
+                purchaseReturnDetails = new List<PurchaseReturnDetail>(); // 清空明細
+                
+                try
                 {
-                    PurchaseReturnNumber = await GeneratePurchaseReturnNumberAsync(),
-                    ReturnDate = DateTime.Today,
-                    Status = EntityStatus.Active
-                };
+                    var number = await GeneratePurchaseReturnNumberAsync();                    
+                    return new PurchaseReturn
+                    {
+                        PurchaseReturnNumber = number,
+                        ReturnDate = DateTime.Today,
+                        Status = EntityStatus.Active
+                    };
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
             }
             else
-            {
-                // 編輯模式 - 載入現有資料
-                return await PurchaseReturnService.GetWithDetailsAsync(PurchaseReturnId.Value);
+            {                
+                if (PurchaseReturnService == null)
+                {
+                    return null;
+                }
+                
+                var purchaseReturn = await PurchaseReturnService.GetWithDetailsAsync(PurchaseReturnId.Value);
+                
+                if (purchaseReturn != null)
+                {
+                    // 檢查明細
+                    if (purchaseReturn.PurchaseReturnDetails == null)
+                    {
+                        purchaseReturnDetails = new List<PurchaseReturnDetail>();
+                    }
+                    else
+                    {
+                        purchaseReturnDetails = purchaseReturn.PurchaseReturnDetails.ToList();
+                    }
+                    
+
+                    // 檢查並設定預設值
+                    if (purchaseReturn.ReturnDate == default(DateTime))
+                    {
+                        purchaseReturn.ReturnDate = DateTime.Today;
+                    }
+                    
+                    if (purchaseReturn.Status == default(EntityStatus))
+                    {
+                        purchaseReturn.Status = EntityStatus.Active;
+                    }
+                    
+                }
+                else
+                {
+                    purchaseReturnDetails = new List<PurchaseReturnDetail>();
+                }
+                
+                return purchaseReturn;
             }
         }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入進貨退出資料時發生錯誤：{ex.Message}");
+        catch (Exception)
+        {            
+            // 確保即使發生錯誤也要初始化明細列表
+            purchaseReturnDetails = new List<PurchaseReturnDetail>();
             return null;
         }
     }
@@ -168,15 +226,17 @@
     {
         try
         {
+            
             await Task.WhenAll(
                 LoadSuppliersAsync(),
                 LoadPurchaseReceivingsAsync(),
                 LoadProductsAsync()
             );
+            
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入附加資料時發生錯誤：{ex.Message}");
         }
     }
 
@@ -210,9 +270,8 @@
         {
             products = await ProductService.GetAllAsync();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            await NotificationService.ShowErrorAsync($"載入產品資料時發生錯誤：{ex.Message}");
             products = new List<Product>();
         }
     }
@@ -275,16 +334,6 @@
                     IsRequired = true,
                     Order = 5,
                     HelpText = "請選擇退回日期"
-                },
-                new()
-                {
-                    PropertyName = nameof(PurchaseReturn.PurchaseReceivingId),
-                    Label = "原進貨單",
-                    FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "選擇原進貨單",
-                    IsRequired = false,
-                    Order = 6,
-                    HelpText = "選擇此退回單所對應的原進貨單"
                 },
                 new()
                 {
@@ -352,22 +401,28 @@
                 { "FilterProductId", "基本資訊" },
                 { "FilterPurchaseReceivingId", "基本資訊" },
                 { nameof(PurchaseReturn.ReturnDate), "基本資訊" },
-                { nameof(PurchaseReturn.PurchaseReceivingId), "基本資訊" },
                 { nameof(PurchaseReturn.TotalReturnAmount), "金額資訊" },
                 { nameof(PurchaseReturn.ReturnTaxAmount), "金額資訊" },
                 { nameof(PurchaseReturn.TotalReturnAmountWithTax), "金額資訊" },
                 { nameof(PurchaseReturn.IsRefunded), "退款資訊" },
                 { nameof(PurchaseReturn.RefundDate), "退款資訊" }
             };
+            
         }
         catch (Exception)
-        {
-            _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
+        {            
+            // 確保即使發生錯誤也有基本的表單結構
+            formFields = new List<FormFieldDefinition>();
+            formSections = new Dictionary<string, string>();
         }
     }
 
     private List<FormFieldDefinition> GetFormFields()
     {
+        if (formFields == null)
+        {
+            return new List<FormFieldDefinition>();
+        }
         return formFields;
     }
 
@@ -530,16 +585,17 @@
     }
     
     private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
-    {
+    {        
         return new Dictionary<string, IEnumerable<object>>
         {
-            { nameof(PurchaseReturn.SupplierId), suppliers.Cast<object>() },
-            { nameof(PurchaseReturn.PurchaseReceivingId), purchaseReceivings.Cast<object>() }
+            { nameof(PurchaseReturn.SupplierId), suppliers?.Cast<object>() ?? new List<object>() },
+            { nameof(PurchaseReturn.PurchaseReceivingId), purchaseReceivings?.Cast<object>() ?? new List<object>() }
         };
     }
 
     private Dictionary<string, string> GetAutoCompleteDisplayProperties()
     {
+
         return new Dictionary<string, string>
         {
             { nameof(PurchaseReturn.SupplierId), nameof(Supplier.CompanyName) },
@@ -549,6 +605,7 @@
 
     private Dictionary<string, string> GetAutoCompleteValueProperties()
     {
+
         return new Dictionary<string, string>
         {
             { nameof(PurchaseReturn.SupplierId), nameof(Supplier.Id) },
@@ -563,9 +620,10 @@
     /// </summary>
     private Dictionary<string, object> GetModalManagers()
     {
+
         return new Dictionary<string, object>
         {
-            { nameof(PurchaseReturn.SupplierId), supplierModalManager }
+            { nameof(PurchaseReturn.SupplierId), supplierModalManager ?? new object() }
         };
     }
     
@@ -725,10 +783,14 @@
     {
         try
         {
+
             if (editModalComponent == null)
             {
+
                 return new List<GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.CustomModule>();
             }
+
+            var content = CreateReturnDetailManagerContent();
 
             return new List<GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.CustomModule>
             {
@@ -738,7 +800,7 @@
                     Order = 1,
                     CssClass = "mt-4",
                     IsVisible = true,
-                    Content = CreateReturnDetailManagerContent()
+                    Content = content
                 }
             };
         }
@@ -756,23 +818,31 @@
     {
         try
         {
+
             @if (editModalComponent?.Entity != null)
             {
+
                 @if (editModalComponent.Entity.SupplierId > 0)
                 {
                     try
                     {
+
                         <PurchaseReturnDetailManagerComponent 
                             SupplierId="@editModalComponent.Entity.SupplierId"
                             FilterPurchaseReceivingId="@filterPurchaseReceivingId"
                             FilterProductId="@filterProductId"
                             IsEditMode="@(PurchaseReturnId.HasValue)"
+                            ExistingReturnDetails="@(purchaseReturnDetails ?? new List<PurchaseReturnDetail>())"
                             OnReturnDetailsChanged="@HandleReturnDetailsChanged" />
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        <div class="alert alert-warning" role="alert">
-                            載入退貨明細管理器時發生錯誤，請重新整理頁面。
+                        <div class="alert alert-danger" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>載入退貨明細管理器時發生錯誤</strong>
+                            <br/>錯誤類型：@ex.GetType().Name
+                            <br/>錯誤訊息：@ex.Message
+                            <br/>請檢查資料完整性或聯繫系統管理員
                         </div>
                     }
                 }
@@ -786,15 +856,28 @@
             }
             else
             {
+                var componentStatus = editModalComponent == null ? "null" : "not null";
+                var entityStatus = editModalComponent?.Entity == null ? "null" : "not null";
                 <div class="text-center py-3">
-                    <span class="text-muted">請先選擇廠商後再管理退貨明細</span>
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">載入中...</span>
+                    </div>
+                    <p class="text-muted mt-2">正在載入退貨明細管理器...</p>
                 </div>
             }
         }
-        catch
+        catch (Exception ex)
         {
-            <div class="alert alert-warning" role="alert">
-                載入退貨明細管理器時發生錯誤，請重新整理頁面。
+            <div class="alert alert-danger" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>載入退貨明細管理器時發生嚴重錯誤</strong>
+                <br/>錯誤類型：@ex.GetType().Name
+                <br/>錯誤訊息：@ex.Message
+                <br/>請重新整理頁面，如問題持續請聯繫系統管理員
+                <details class="mt-2">
+                    <summary>技術詳情</summary>
+                    <pre class="mt-1 small">@ex.StackTrace</pre>
+                </details>
             </div>
         }
     };
@@ -805,7 +888,10 @@
     private async Task HandleReturnDetailsChanged(List<PurchaseReturnDetail> returnDetails)
     {
         try
-        {
+        { 
+            // 儲存退貨明細到內部狀態
+            purchaseReturnDetails = returnDetails ?? new List<PurchaseReturnDetail>();
+            
             // 這裡可以處理退貨明細變更的邏輯
             // 例如計算總金額等
             StateHasChanged();
@@ -813,6 +899,53 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"處理退貨明細變更時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 自訂儲存邏輯 - 同時儲存主檔和明細
+    /// </summary>
+    private async Task<bool> SavePurchaseReturnWithDetails(PurchaseReturn purchaseReturn)
+    {
+        try
+        {
+            if (purchaseReturn == null)
+            {
+                return false;
+            }
+            
+            if (PurchaseReturnService == null)
+            {
+                return false;
+            }
+            
+            if (purchaseReturnDetails == null)
+            {
+                purchaseReturnDetails = new List<PurchaseReturnDetail>();
+            }
+                        
+            // 呼叫服務的 SaveWithDetailsAsync 方法
+            var result = await PurchaseReturnService.SaveWithDetailsAsync(purchaseReturn, purchaseReturnDetails);
+            
+            if (result == null)
+            {
+                return false;
+            }
+            
+            if (result.IsSuccess)
+            {
+                return true;
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"儲存失敗：{result.ErrorMessage}");
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存採購退貨時發生錯誤：{ex.Message}");
+            return false;
         }
     }
 }

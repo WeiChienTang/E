@@ -9,10 +9,20 @@ namespace ERPCore2.Services
 {
     public class PurchaseReturnService : GenericManagementService<PurchaseReturn>, IPurchaseReturnService
     {
+        private readonly IInventoryStockService? _inventoryStockService;
+
         public PurchaseReturnService(
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<PurchaseReturn>> logger) : base(contextFactory, logger)
         {
+        }
+
+        public PurchaseReturnService(
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<PurchaseReturn>> logger,
+            IInventoryStockService inventoryStockService) : base(contextFactory, logger)
+        {
+            _inventoryStockService = inventoryStockService;
         }
 
         public override async Task<List<PurchaseReturn>> GetAllAsync()
@@ -69,10 +79,25 @@ namespace ERPCore2.Services
                     .Include(pr => pr.PurchaseReceiving)
                     .Include(pr => pr.PurchaseReturnDetails)
                         .ThenInclude(prd => prd.Product)
+                            .ThenInclude(p => p.Unit)
                     .Include(pr => pr.PurchaseReturnDetails)
                         .ThenInclude(prd => prd.Unit)
                     .Include(pr => pr.PurchaseReturnDetails)
                         .ThenInclude(prd => prd.WarehouseLocation)
+                    .Include(pr => pr.PurchaseReturnDetails)
+                        .ThenInclude(prd => prd.PurchaseReceivingDetail)
+                            .ThenInclude(prd => prd!.PurchaseReceiving)
+                                .ThenInclude(pr => pr.Supplier)
+                    .Include(pr => pr.PurchaseReturnDetails)
+                        .ThenInclude(prd => prd.PurchaseReceivingDetail)
+                            .ThenInclude(prd => prd!.Product)
+                                .ThenInclude(p => p.Unit)
+                    .Include(pr => pr.PurchaseReturnDetails)
+                        .ThenInclude(prd => prd.PurchaseReceivingDetail)
+                            .ThenInclude(prd => prd!.Warehouse)
+                    .Include(pr => pr.PurchaseReturnDetails)
+                        .ThenInclude(prd => prd.PurchaseReceivingDetail)
+                            .ThenInclude(prd => prd!.WarehouseLocation)
                     .FirstOrDefaultAsync(pr => pr.Id == id && !pr.IsDeleted);
             }
             catch (Exception ex)
@@ -489,6 +514,227 @@ namespace ERPCore2.Services
             {
                 var today = DateTime.Today;
                 return $"RT{today:yyyyMMdd}001";
+            }
+        }
+
+        /// <summary>
+        /// 儲存採購退貨連同明細
+        /// </summary>
+        public async Task<ServiceResult<PurchaseReturn>> SaveWithDetailsAsync(PurchaseReturn purchaseReturn, List<PurchaseReturnDetail> details)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+
+                try
+                {
+                    // 驗證主檔
+                    var validationResult = await ValidateAsync(purchaseReturn);
+                    if (!validationResult.IsSuccess)
+                    {
+                        return ServiceResult<PurchaseReturn>.Failure(validationResult.ErrorMessage);
+                    }
+
+                    // 儲存主檔 - 在同一個 context 中處理
+                    PurchaseReturn savedEntity;
+                    var dbSet = context.Set<PurchaseReturn>();
+
+                    if (purchaseReturn.Id > 0)
+                    {
+                        // 更新模式
+                        var existingEntity = await dbSet
+                            .FirstOrDefaultAsync(x => x.Id == purchaseReturn.Id && !x.IsDeleted);
+                            
+                        if (existingEntity == null)
+                        {
+                            await transaction.RollbackAsync();
+                            return ServiceResult<PurchaseReturn>.Failure("找不到要更新的採購退貨資料");
+                        }
+
+                        // 更新主檔資訊
+                        purchaseReturn.UpdatedAt = DateTime.UtcNow;
+                        purchaseReturn.CreatedAt = existingEntity.CreatedAt; // 保持原建立時間
+                        purchaseReturn.CreatedBy = existingEntity.CreatedBy; // 保持原建立者
+
+                        context.Entry(existingEntity).CurrentValues.SetValues(purchaseReturn);
+                        savedEntity = existingEntity;
+                    }
+                    else
+                    {
+                        // 新增模式
+                        purchaseReturn.CreatedAt = DateTime.UtcNow;
+                        purchaseReturn.UpdatedAt = DateTime.UtcNow;
+                        purchaseReturn.IsDeleted = false;
+                        purchaseReturn.Status = EntityStatus.Active;
+
+                        await dbSet.AddAsync(purchaseReturn);
+                        savedEntity = purchaseReturn;
+                    }
+
+                    // 先儲存主檔以取得 ID
+                    await context.SaveChangesAsync();
+
+                    // 儲存明細 - 在同一個 context 和 transaction 中處理
+                    var detailResult = await UpdateDetailsInContext(context, savedEntity.Id, details);
+                    if (!detailResult.IsSuccess)
+                    {
+                        await transaction.RollbackAsync();
+                        return ServiceResult<PurchaseReturn>.Failure($"儲存明細失敗：{detailResult.ErrorMessage}");
+                    }
+
+                    // 更新庫存邏輯 - 退貨需要減少庫存
+                    if (_inventoryStockService != null)
+                    {
+                        foreach (var detail in details.Where(d => !d.IsDeleted && d.ReturnQuantity > 0))
+                        {
+                            // 取得倉庫ID
+                            int? warehouseId = null;
+                            if (detail.WarehouseLocationId.HasValue)
+                            {
+                                var warehouseLocation = await context.WarehouseLocations
+                                    .FirstOrDefaultAsync(wl => wl.Id == detail.WarehouseLocationId.Value);
+                                warehouseId = warehouseLocation?.WarehouseId;
+                            }
+
+                            // 如果沒有倉庫ID，跳過此明細
+                            if (!warehouseId.HasValue)
+                                continue;
+
+                            // 退貨需要減少庫存，所以使用負數量
+                            var stockResult = await _inventoryStockService.AddStockAsync(
+                                detail.ProductId,
+                                warehouseId.Value,
+                                -detail.ReturnQuantity, // 負數量表示減少庫存
+                                InventoryTransactionTypeEnum.Return,
+                                savedEntity.PurchaseReturnNumber,
+                                detail.ReturnUnitPrice,
+                                detail.WarehouseLocationId,
+                                $"採購退貨 - {savedEntity.PurchaseReturnNumber}"
+                            );
+
+                            if (!stockResult.IsSuccess)
+                            {
+                                await transaction.RollbackAsync();
+                                return ServiceResult<PurchaseReturn>.Failure($"更新庫存失敗：{stockResult.ErrorMessage}");
+                            }
+                        }
+                    }
+
+                    await transaction.CommitAsync();
+                    return ServiceResult<PurchaseReturn>.Success(savedEntity);
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SaveWithDetailsAsync), GetType(), _logger, new { 
+                    Method = nameof(SaveWithDetailsAsync),
+                    ServiceType = GetType().Name,
+                    PurchaseReturnId = purchaseReturn.Id 
+                });
+                return ServiceResult<PurchaseReturn>.Failure($"儲存採購退貨時發生錯誤：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 在指定的 DbContext 中更新採購退貨明細
+        /// </summary>
+        private async Task<ServiceResult> UpdateDetailsInContext(AppDbContext context, int purchaseReturnId, List<PurchaseReturnDetail> details)
+        {
+            try
+            {
+                // 取得現有的明細記錄
+                var existingDetails = await context.PurchaseReturnDetails
+                    .Where(d => d.PurchaseReturnId == purchaseReturnId && !d.IsDeleted)
+                    .ToListAsync();
+
+                // 準備新的明細資料
+                var newDetailsToAdd = new List<PurchaseReturnDetail>();
+                var updatedDetailsToUpdate = new List<(PurchaseReturnDetail existing, PurchaseReturnDetail updated)>();
+
+                foreach (var detail in details.Where(d => !d.IsDeleted))
+                {
+                    detail.PurchaseReturnId = purchaseReturnId;
+
+                    if (detail.Id > 0)
+                    {
+                        // 更新現有明細
+                        var existingDetail = existingDetails.FirstOrDefault(ed => ed.Id == detail.Id);
+                        if (existingDetail != null)
+                        {
+                            updatedDetailsToUpdate.Add((existingDetail, detail));
+                        }
+                    }
+                    else
+                    {
+                        // 新增明細
+                        detail.CreatedAt = DateTime.UtcNow;
+                        detail.UpdatedAt = DateTime.UtcNow;
+                        detail.IsDeleted = false;
+                        newDetailsToAdd.Add(detail);
+                    }
+                }
+
+                // 標記刪除的明細
+                var detailIdsToKeep = details.Where(d => d.Id > 0 && !d.IsDeleted).Select(d => d.Id).ToList();
+                var detailsToDelete = existingDetails.Where(ed => !detailIdsToKeep.Contains(ed.Id)).ToList();
+
+                // 執行資料庫操作
+                foreach (var detailToDelete in detailsToDelete)
+                {
+                    detailToDelete.IsDeleted = true;
+                    detailToDelete.UpdatedAt = DateTime.UtcNow;
+                }
+
+                foreach (var (existing, updated) in updatedDetailsToUpdate)
+                {
+                    updated.CreatedAt = existing.CreatedAt; // 保持原建立時間
+                    updated.UpdatedAt = DateTime.UtcNow;
+                    context.Entry(existing).CurrentValues.SetValues(updated);
+                }
+
+                if (newDetailsToAdd.Any())
+                {
+                    await context.PurchaseReturnDetails.AddRangeAsync(newDetailsToAdd);
+                }
+
+                await context.SaveChangesAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateDetailsInContext), GetType(), _logger, new { 
+                    Method = nameof(UpdateDetailsInContext),
+                    ServiceType = GetType().Name,
+                    PurchaseReturnId = purchaseReturnId 
+                });
+                return ServiceResult.Failure($"更新明細時發生錯誤：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 更新採購退貨明細
+        /// </summary>
+        public async Task<ServiceResult> UpdateDetailsAsync(int purchaseReturnId, List<PurchaseReturnDetail> details)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await UpdateDetailsInContext(context, purchaseReturnId, details);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateDetailsAsync), GetType(), _logger, new { 
+                    Method = nameof(UpdateDetailsAsync),
+                    ServiceType = GetType().Name,
+                    PurchaseReturnId = purchaseReturnId 
+                });
+                return ServiceResult.Failure($"更新採購退貨明細時發生錯誤：{ex.Message}");
             }
         }
     }

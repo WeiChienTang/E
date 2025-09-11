@@ -160,6 +160,13 @@ else
             {
                 var returnItem = (ReturnItem)item;
                 var receivingDetail = returnItem.PurchaseReceivingDetail;
+                
+                // 加強空值檢查
+                if (receivingDetail?.PurchaseReceiving == null)
+                {
+                    return @<small class="text-muted">-</small>;
+                }
+                
                 return @<small class="text-primary fw-bold">@receivingDetail.PurchaseReceiving.ReceiptNumber</small>;
             }
         });
@@ -176,6 +183,13 @@ else
             {
                 var returnItem = (ReturnItem)item;
                 var receivingDetail = returnItem.PurchaseReceivingDetail;
+                
+                // 加強空值檢查
+                if (receivingDetail?.PurchaseReceiving == null)
+                {
+                    return @<small class="text-muted">-</small>;
+                }
+                
                 return @<small class="text-muted">@receivingDetail.PurchaseReceiving.ReceiptDate.ToString("MM/dd")</small>;
             }
         });
@@ -191,6 +205,15 @@ else
             {
                 var returnItem = (ReturnItem)item;
                 var receivingDetail = returnItem.PurchaseReceivingDetail;
+                
+                // 加強空值檢查
+                if (receivingDetail?.Product == null)
+                {
+                    return @<div class="product-info">
+                        <small class="text-muted">商品資訊載入中...</small>
+                    </div>;
+                }
+                
                 return @<div class="product-info">
                     <strong>@receivingDetail.Product.Code</strong>
                     <br />
@@ -457,8 +480,32 @@ else
             {
                 if (IsEditMode)
                 {
-                    // 編輯模式：不載入廠商的全部明細，只基於現有明細建立項目
-                    ReturnableDetails = new List<PurchaseReceivingDetail>();
+                    // 編輯模式：根據現有退貨明細，載入對應的進貨明細以提供完整的導航屬性
+                    if (ExistingReturnDetails?.Any() == true)
+                    {
+                        var receivingDetailIds = ExistingReturnDetails
+                            .Where(rd => rd.PurchaseReceivingDetailId.HasValue)
+                            .Select(rd => rd.PurchaseReceivingDetailId!.Value)
+                            .Distinct()
+                            .ToList();
+                        
+                        if (receivingDetailIds.Any())
+                        {
+                            // 透過服務獲取進貨明細（暫時先載入廠商的所有可退貨明細，然後篩選）
+                            var allReturnableDetails = await PurchaseReceivingService.GetReturnableDetailsBySupplierAsync(SupplierId.Value);
+                            ReturnableDetails = allReturnableDetails
+                                .Where(prd => receivingDetailIds.Contains(prd.Id))
+                                .ToList();
+                        }
+                        else
+                        {
+                            ReturnableDetails = new List<PurchaseReceivingDetail>();
+                        }
+                    }
+                    else
+                    {
+                        ReturnableDetails = new List<PurchaseReceivingDetail>();
+                    }
                 }
                 else
                 {
@@ -550,10 +597,13 @@ else
                 ReturnItems = ExistingReturnDetails.Select(existingDetail => new ReturnItem
                 {
                     ExistingReturnDetail = existingDetail,
-                    PurchaseReceivingDetail = existingDetail.PurchaseReceivingDetail!,
+                    // 從 ReturnableDetails 中找到對應的 PurchaseReceivingDetail 以獲得完整的導航屬性
+                    PurchaseReceivingDetail = ReturnableDetails
+                        .FirstOrDefault(rd => rd.Id == existingDetail.PurchaseReceivingDetailId) 
+                        ?? existingDetail.PurchaseReceivingDetail!,
                     ReturnQuantity = existingDetail.ReturnQuantity,
                     ReturnUnitPrice = existingDetail.ReturnUnitPrice,
-                    WarehouseLocationId = existingDetail.PurchaseReceivingDetail!.WarehouseLocationId, // 直接使用原進貨的倉庫位置
+                    WarehouseLocationId = existingDetail.PurchaseReceivingDetail?.WarehouseLocationId, // 直接使用原進貨的倉庫位置
                     ReturnReason = existingDetail.DetailRemarks ?? "",
                     QualityCondition = existingDetail.QualityCondition ?? "",
                     BatchNumber = existingDetail.BatchNumber ?? "",
@@ -571,7 +621,7 @@ else
                         item.ExistingReturnDetail = existingDetail;
                         item.ReturnQuantity = existingDetail.ReturnQuantity;
                         item.ReturnUnitPrice = existingDetail.ReturnUnitPrice;
-                        item.WarehouseLocationId = existingDetail.PurchaseReceivingDetail!.WarehouseLocationId; // 直接使用原進貨的倉庫位置
+                        item.WarehouseLocationId = existingDetail.PurchaseReceivingDetail?.WarehouseLocationId; // 直接使用原進貨的倉庫位置
                         item.ReturnReason = existingDetail.DetailRemarks ?? "";
                         item.QualityCondition = existingDetail.QualityCondition ?? "";
                         item.BatchNumber = existingDetail.BatchNumber ?? "";
