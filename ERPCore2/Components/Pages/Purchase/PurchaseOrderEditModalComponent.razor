@@ -428,6 +428,20 @@
                     IsRequired = true,
                     HelpText = "預計廠商交貨的日期",
                     IsReadOnly = isApproved
+                },
+
+                new()
+                {
+                    PropertyName = nameof(PurchaseOrder.Remarks),
+                    Label = "備註",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入備註",
+                    IsRequired = false,
+                    MaxLength = 500,
+                    Rows = 2,
+                    HelpText = "採購單的額外說明或注意事項",
+                    ContainerCssClass = "col-12",
+                    IsReadOnly = isApproved
                 }
             };
 
@@ -438,8 +452,7 @@
                 { nameof(PurchaseOrder.SupplierId), "基本資訊" },
                 { nameof(PurchaseOrder.OrderDate), "基本資訊" },
                 { nameof(PurchaseOrder.ExpectedDeliveryDate), "基本資訊" },
-                { nameof(PurchaseOrder.Remarks), "額外資訊" },
-                { nameof(BaseEntity.Remarks), "其他資訊" }
+                { nameof(PurchaseOrder.Remarks), "額外資訊" }
             };
         }
         catch (Exception ex)
