@@ -75,5 +75,12 @@ namespace ERPCore2.Services
         /// <param name="productId">產品ID</param>
         /// <returns>倉庫ID和倉庫位置ID的元組，如無歷史記錄則回傳null</returns>
         Task<(int? WarehouseId, int? WarehouseLocationId)> GetLastReceivingLocationAsync(int productId);
+
+        /// <summary>
+        /// 取得指定廠商的可退貨明細（已進貨但尚未全部退貨）
+        /// </summary>
+        /// <param name="supplierId">廠商ID</param>
+        /// <returns>可退貨的進貨明細清單</returns>
+        Task<List<PurchaseReceivingDetail>> GetReturnableDetailsBySupplierAsync(int supplierId);
     }
 }

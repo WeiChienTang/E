@@ -748,5 +748,30 @@ namespace ERPCore2.Services
                 return new List<PurchaseReturnDetail>();
             }
         }
+
+        /// <summary>
+        /// 取得指定進貨明細的已退貨數量
+        /// </summary>
+        /// <param name="purchaseReceivingDetailId">進貨明細ID</param>
+        /// <returns>已退貨數量</returns>
+        public async Task<int> GetReturnedQuantityByReceivingDetailAsync(int purchaseReceivingDetailId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.PurchaseReturnDetails
+                    .Where(prd => prd.PurchaseReceivingDetailId == purchaseReceivingDetailId && !prd.IsDeleted)
+                    .SumAsync(prd => prd.ReturnQuantity);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetReturnedQuantityByReceivingDetailAsync), GetType(), _logger, new { 
+                    Method = nameof(GetReturnedQuantityByReceivingDetailAsync),
+                    ServiceType = GetType().Name,
+                    PurchaseReceivingDetailId = purchaseReceivingDetailId 
+                });
+                return 0;
+            }
+        }
     }
 }

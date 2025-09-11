@@ -876,6 +876,52 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 取得指定廠商的可退貨明細（已進貨但尚未全部退貨）
+        /// </summary>
+        /// <param name="supplierId">廠商ID</param>
+        /// <returns>可退貨的進貨明細清單</returns>
+        public async Task<List<PurchaseReceivingDetail>> GetReturnableDetailsBySupplierAsync(int supplierId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                return await context.PurchaseReceivingDetails
+                    .Include(prd => prd.PurchaseReceiving)
+                        .ThenInclude(pr => pr.Supplier)
+                    .Include(prd => prd.Product)
+                        .ThenInclude(p => p.Unit)
+                    .Include(prd => prd.PurchaseOrderDetail)
+                        .ThenInclude(pod => pod.PurchaseOrder)
+                    .Include(prd => prd.Warehouse)
+                    .Include(prd => prd.WarehouseLocation)
+                    .Where(prd => 
+                        prd.PurchaseReceiving.SupplierId == supplierId &&
+                        !prd.IsDeleted &&
+                        !prd.PurchaseReceiving.IsDeleted &&
+                        prd.ReceivedQuantity > 0 && // 已進貨的明細
+                        // 檢查是否已全部退貨 - 計算已退貨數量
+                        prd.ReceivedQuantity > context.PurchaseReturnDetails
+                            .Where(prt => prt.PurchaseReceivingDetailId == prd.Id && !prt.IsDeleted)
+                            .Sum(prt => prt.ReturnQuantity)
+                    )
+                    .OrderBy(prd => prd.PurchaseReceiving.ReceiptDate)
+                    .ThenBy(prd => prd.PurchaseReceiving.ReceiptNumber)
+                    .ThenBy(prd => prd.Product.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetReturnableDetailsBySupplierAsync), GetType(), _logger, new { 
+                    Method = nameof(GetReturnableDetailsBySupplierAsync),
+                    ServiceType = GetType().Name,
+                    SupplierId = supplierId 
+                });
+                return new List<PurchaseReceivingDetail>();
+            }
+        }
+
         #endregion
     }
 }

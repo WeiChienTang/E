@@ -32,5 +32,12 @@ namespace ERPCore2.Services
         Task<Dictionary<int, int>> GetReturnQuantityByProductAsync(DateTime? startDate = null, DateTime? endDate = null);
         Task<List<PurchaseReturnDetail>> GetPendingShipmentDetailsAsync();
         Task<List<PurchaseReturnDetail>> GetHighValueReturnsAsync(decimal minAmount);
+        
+        /// <summary>
+        /// 取得指定進貨明細的已退貨數量
+        /// </summary>
+        /// <param name="purchaseReceivingDetailId">進貨明細ID</param>
+        /// <returns>已退貨數量</returns>
+        Task<int> GetReturnedQuantityByReceivingDetailAsync(int purchaseReceivingDetailId);
     }
 }

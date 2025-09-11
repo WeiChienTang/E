@@ -1,4 +1,5 @@
 @* 進貨退出編輯模態組件 *@
+@using Microsoft.AspNetCore.Components.Rendering
 @inject IPurchaseReturnService PurchaseReturnService
 @inject ISupplierService SupplierService
 @inject IPurchaseReceivingService PurchaseReceivingService
@@ -33,7 +34,8 @@
                           RequiredPermission="PurchaseReturn.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
-                          OnFieldChanged="@OnFieldValueChanged" />
+                          OnFieldChanged="@OnFieldValueChanged"
+                          CustomModules="@GetCustomModules()" />
 
 @* 廠商編輯 Modal *@
 <SupplierEditModalComponent @ref="supplierEditModal"
@@ -326,7 +328,8 @@
                     FieldType = FormFieldType.Date,
                     IsRequired = false,
                     Order = 11,
-                    HelpText = "請選擇退款日期"
+                    HelpText = "請選擇退款日期",
+                    IsDisabled = !(editModalComponent?.Entity?.IsRefunded ?? false)
                 },
                 new()
                 {
@@ -337,8 +340,9 @@
                     IsRequired = false,
                     MaxLength = 500,
                     Order = 12,
-                    HelpText = "可輸入相關備註資訊"
-                }
+                    HelpText = "可輸入相關備註資訊",
+                    ContainerCssClass = "col-12"
+                } 
             };
 
             formSections = new Dictionary<string, string>
@@ -669,6 +673,34 @@
                 }
                 StateHasChanged();
             }
+            
+            // 當「是否已退款」變更時，處理退款日期的邏輯
+            if (fieldChange.PropertyName == nameof(PurchaseReturn.IsRefunded) && 
+                fieldChange.Value is bool isRefunded)
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    if (isRefunded)
+                    {
+                        // 設為 true 時，自動設定退款日期為當日
+                        editModalComponent.Entity.RefundDate = DateTime.Today;
+                    }
+                    else
+                    {
+                        // 設為 false 時，清空退款日期
+                        editModalComponent.Entity.RefundDate = null;
+                    }
+                    
+                    // 更新退款日期欄位的禁用狀態
+                    var refundDateField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseReturn.RefundDate));
+                    if (refundDateField != null)
+                    {
+                        refundDateField.IsDisabled = !isRefunded;
+                    }
+                    
+                    StateHasChanged();
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -684,5 +716,103 @@
             "PR",
             (service, code, excludeId) => service.IsPurchaseReturnNumberExistsAsync(code, excludeId)
         );
+    }
+
+    /// <summary>
+    /// 配置自訂模組
+    /// </summary>
+    private List<GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.CustomModule> GetCustomModules()
+    {
+        try
+        {
+            if (editModalComponent == null)
+            {
+                return new List<GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.CustomModule>();
+            }
+
+            return new List<GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.CustomModule>
+            {
+                new GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.CustomModule
+                {
+                    Title = "退貨明細",
+                    Order = 1,
+                    CssClass = "mt-4",
+                    IsVisible = true,
+                    Content = CreateReturnDetailManagerContent()
+                }
+            };
+        }
+        catch
+        {
+            // 如果創建模組時發生錯誤，返回空列表
+            return new List<GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.CustomModule>();
+        }
+    }
+
+    /// <summary>
+    /// 創建退貨明細管理器內容的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateReturnDetailManagerContent() => __builder =>
+    {
+        try
+        {
+            @if (editModalComponent?.Entity != null)
+            {
+                @if (editModalComponent.Entity.SupplierId > 0)
+                {
+                    try
+                    {
+                        <PurchaseReturnDetailManagerComponent 
+                            SupplierId="@editModalComponent.Entity.SupplierId"
+                            FilterPurchaseReceivingId="@filterPurchaseReceivingId"
+                            FilterProductId="@filterProductId"
+                            IsEditMode="@(PurchaseReturnId.HasValue)"
+                            OnReturnDetailsChanged="@HandleReturnDetailsChanged" />
+                    }
+                    catch
+                    {
+                        <div class="alert alert-warning" role="alert">
+                            載入退貨明細管理器時發生錯誤，請重新整理頁面。
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="alert alert-info text-center" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        請先選擇廠商後再進行退貨明細管理
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-3">
+                    <span class="text-muted">請先選擇廠商後再管理退貨明細</span>
+                </div>
+            }
+        }
+        catch
+        {
+            <div class="alert alert-warning" role="alert">
+                載入退貨明細管理器時發生錯誤，請重新整理頁面。
+            </div>
+        }
+    };
+
+    /// <summary>
+    /// 處理退貨明細變更
+    /// </summary>
+    private async Task HandleReturnDetailsChanged(List<PurchaseReturnDetail> returnDetails)
+    {
+        try
+        {
+            // 這裡可以處理退貨明細變更的邏輯
+            // 例如計算總金額等
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理退貨明細變更時發生錯誤：{ex.Message}");
+        }
     }
 }
