@@ -1,22 +1,16 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
+using ERPCore2.Data.Enums;
 using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace ERPCore2.Services
 {
-    /// <summary>
-    /// 採購退回服務
-    /// </summary>
     public class PurchaseReturnService : GenericManagementService<PurchaseReturn>, IPurchaseReturnService
     {
-        public PurchaseReturnService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
-        {
-        }
-
         public PurchaseReturnService(
-            IDbContextFactory<AppDbContext> contextFactory, 
+            IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<PurchaseReturn>> logger) : base(contextFactory, logger)
         {
         }
@@ -28,11 +22,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
-                    .Include(pr => pr.PurchaseOrder)
                     .Include(pr => pr.PurchaseReceiving)
-                    .Include(pr => pr.Employee)
-                    .Include(pr => pr.Warehouse)
-                    .Include(pr => pr.ConfirmedByUser)
                     .Where(pr => !pr.IsDeleted)
                     .OrderByDescending(pr => pr.ReturnDate)
                     .ThenBy(pr => pr.PurchaseReturnNumber)
@@ -55,11 +45,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
-                    .Include(pr => pr.PurchaseOrder)
                     .Include(pr => pr.PurchaseReceiving)
-                    .Include(pr => pr.Employee)
-                    .Include(pr => pr.Warehouse)
-                    .Include(pr => pr.ConfirmedByUser)
                     .FirstOrDefaultAsync(pr => pr.Id == id && !pr.IsDeleted);
             }
             catch (Exception ex)
@@ -80,11 +66,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
-                    .Include(pr => pr.PurchaseOrder)
                     .Include(pr => pr.PurchaseReceiving)
-                    .Include(pr => pr.Employee)
-                    .Include(pr => pr.Warehouse)
-                    .Include(pr => pr.ConfirmedByUser)
                     .Include(pr => pr.PurchaseReturnDetails)
                         .ThenInclude(prd => prd.Product)
                     .Include(pr => pr.PurchaseReturnDetails)
@@ -111,10 +93,10 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
-                    .Include(pr => pr.PurchaseOrder)
                     .Include(pr => pr.PurchaseReceiving)
                     .Where(pr => pr.SupplierId == supplierId && !pr.IsDeleted)
                     .OrderByDescending(pr => pr.ReturnDate)
+                    .ThenBy(pr => pr.PurchaseReturnNumber)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -122,7 +104,7 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySupplierIdAsync), GetType(), _logger, new { 
                     Method = nameof(GetBySupplierIdAsync),
                     ServiceType = GetType().Name,
-                    SupplierId = supplierId 
+                    SupplierId = supplierId
                 });
                 return new List<PurchaseReturn>();
             }
@@ -135,10 +117,10 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
-                    .Include(pr => pr.PurchaseOrder)
                     .Include(pr => pr.PurchaseReceiving)
                     .Where(pr => pr.ReturnDate >= startDate && pr.ReturnDate <= endDate && !pr.IsDeleted)
                     .OrderByDescending(pr => pr.ReturnDate)
+                    .ThenBy(pr => pr.PurchaseReturnNumber)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -147,31 +129,7 @@ namespace ERPCore2.Services
                     Method = nameof(GetByDateRangeAsync),
                     ServiceType = GetType().Name,
                     StartDate = startDate,
-                    EndDate = endDate 
-                });
-                return new List<PurchaseReturn>();
-            }
-        }
-
-        public async Task<List<PurchaseReturn>> GetByPurchaseOrderIdAsync(int purchaseOrderId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.PurchaseReturns
-                    .Include(pr => pr.Supplier)
-                    .Include(pr => pr.PurchaseOrder)
-                    .Include(pr => pr.PurchaseReceiving)
-                    .Where(pr => pr.PurchaseOrderId == purchaseOrderId && !pr.IsDeleted)
-                    .OrderByDescending(pr => pr.ReturnDate)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByPurchaseOrderIdAsync), GetType(), _logger, new { 
-                    Method = nameof(GetByPurchaseOrderIdAsync),
-                    ServiceType = GetType().Name,
-                    PurchaseOrderId = purchaseOrderId 
+                    EndDate = endDate
                 });
                 return new List<PurchaseReturn>();
             }
@@ -184,10 +142,10 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
-                    .Include(pr => pr.PurchaseOrder)
                     .Include(pr => pr.PurchaseReceiving)
                     .Where(pr => pr.PurchaseReceivingId == purchaseReceivingId && !pr.IsDeleted)
                     .OrderByDescending(pr => pr.ReturnDate)
+                    .ThenBy(pr => pr.PurchaseReturnNumber)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -195,7 +153,7 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByPurchaseReceivingIdAsync), GetType(), _logger, new { 
                     Method = nameof(GetByPurchaseReceivingIdAsync),
                     ServiceType = GetType().Name,
-                    PurchaseReceivingId = purchaseReceivingId 
+                    PurchaseReceivingId = purchaseReceivingId
                 });
                 return new List<PurchaseReturn>();
             }
@@ -207,8 +165,11 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.PurchaseReturns.Where(pr => pr.PurchaseReturnNumber == purchaseReturnNumber && !pr.IsDeleted);
+                
                 if (excludeId.HasValue)
+                {
                     query = query.Where(pr => pr.Id != excludeId.Value);
+                }
                 
                 return await query.AnyAsync();
             }
@@ -218,7 +179,7 @@ namespace ERPCore2.Services
                     Method = nameof(IsPurchaseReturnNumberExistsAsync),
                     ServiceType = GetType().Name,
                     PurchaseReturnNumber = purchaseReturnNumber,
-                    ExcludeId = excludeId 
+                    ExcludeId = excludeId
                 });
                 return false;
             }
@@ -228,23 +189,16 @@ namespace ERPCore2.Services
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(searchTerm))
-                    return await GetAllAsync();
-
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var lowerSearchTerm = searchTerm.ToLower();
-
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
-                    .Include(pr => pr.PurchaseOrder)
                     .Include(pr => pr.PurchaseReceiving)
-                    .Where(pr => !pr.IsDeleted && (
-                        pr.PurchaseReturnNumber.ToLower().Contains(lowerSearchTerm) ||
-                        pr.Supplier.CompanyName.ToLower().Contains(lowerSearchTerm) ||
-                        (pr.PurchaseOrder != null && pr.PurchaseOrder.PurchaseOrderNumber.ToLower().Contains(lowerSearchTerm)) ||
-                        (pr.PurchaseReceiving != null && pr.PurchaseReceiving.ReceiptNumber.ToLower().Contains(lowerSearchTerm))
-                    ))
+                    .Where(pr => !pr.IsDeleted &&
+                        (pr.PurchaseReturnNumber.Contains(searchTerm) ||
+                         (pr.Supplier != null && pr.Supplier.CompanyName.Contains(searchTerm)) ||
+                         (pr.PurchaseReceiving != null && pr.PurchaseReceiving.ReceiptNumber.Contains(searchTerm))))
                     .OrderByDescending(pr => pr.ReturnDate)
+                    .ThenBy(pr => pr.PurchaseReturnNumber)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -252,7 +206,7 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new { 
                     Method = nameof(SearchAsync),
                     ServiceType = GetType().Name,
-                    SearchTerm = searchTerm 
+                    SearchTerm = searchTerm
                 });
                 return new List<PurchaseReturn>();
             }
@@ -260,94 +214,115 @@ namespace ERPCore2.Services
 
         public override async Task<ServiceResult> ValidateAsync(PurchaseReturn entity)
         {
+            var result = new ServiceResult();
+
             try
             {
-                var errors = new List<string>();
-                
-                if (string.IsNullOrWhiteSpace(entity.PurchaseReturnNumber))
-                    errors.Add("退回單號不能為空");
-                
-                if (entity.SupplierId <= 0)
-                    errors.Add("必須選擇供應商");
-                
-                if (entity.ReturnDate == default)
-                    errors.Add("退回日期不能為空");
-                
-                if (!string.IsNullOrWhiteSpace(entity.PurchaseReturnNumber) && 
-                    await IsPurchaseReturnNumberExistsAsync(entity.PurchaseReturnNumber, entity.Id == 0 ? null : entity.Id))
-                    errors.Add("退回單號已存在");
-                
-                if (errors.Any())
-                    return ServiceResult.Failure(string.Join("; ", errors));
-                    
-                return ServiceResult.Success();
+                // 檢查退回單號是否已存在
+                if (await IsPurchaseReturnNumberExistsAsync(entity.PurchaseReturnNumber, entity.Id > 0 ? entity.Id : null))
+                {
+                    result.IsSuccess = false;
+                    result.ErrorMessage = "退回單號已存在";
+                    return result;
+                }
+
+                // 檢查供應商是否存在
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var supplierExists = await context.Suppliers.AnyAsync(s => s.Id == entity.SupplierId && !s.IsDeleted);
+                if (!supplierExists)
+                {
+                    result.IsSuccess = false;
+                    result.ErrorMessage = "指定的供應商不存在";
+                    return result;
+                }
+
+                result.IsSuccess = true;
+                return result;
             }
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { 
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
-                    EntityId = entity.Id,
-                    EntityNumber = entity.PurchaseReturnNumber 
+                    EntityId = entity?.Id
                 });
-                return ServiceResult.Failure("驗證過程發生錯誤");
+                result.IsSuccess = false;
+                result.ErrorMessage = "驗證時發生錯誤";
+                return result;
             }
         }
 
         public async Task<ServiceResult> CalculateTotalsAsync(int id)
         {
+            var result = new ServiceResult();
+
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var purchaseReturn = await context.PurchaseReturns
                     .Include(pr => pr.PurchaseReturnDetails)
                     .FirstOrDefaultAsync(pr => pr.Id == id && !pr.IsDeleted);
-                
+
                 if (purchaseReturn == null)
-                    return ServiceResult.Failure("找不到指定的採購退回記錄");
-                
-                purchaseReturn.TotalReturnAmount = purchaseReturn.PurchaseReturnDetails.Sum(prd => prd.ReturnSubtotal);
-                purchaseReturn.ReturnTaxAmount = purchaseReturn.TotalReturnAmount * 0.05m; // 假設稅率5%
+                {
+                    result.IsSuccess = false;
+                    result.ErrorMessage = "找不到指定的採購退回記錄";
+                    return result;
+                }
+
+                // 計算總金額
+                purchaseReturn.TotalReturnAmount = purchaseReturn.PurchaseReturnDetails
+                    .Where(prd => !prd.IsDeleted)
+                    .Sum(prd => prd.ReturnQuantity * prd.ReturnUnitPrice);
+
+                // 計算稅額 (假設稅率為 5%)
+                purchaseReturn.ReturnTaxAmount = purchaseReturn.TotalReturnAmount * 0.05m;
+
+                // 計算含稅總金額
                 purchaseReturn.TotalReturnAmountWithTax = purchaseReturn.TotalReturnAmount + purchaseReturn.ReturnTaxAmount;
-                purchaseReturn.UpdatedAt = DateTime.UtcNow;
-                
+
                 await context.SaveChangesAsync();
-                return ServiceResult.Success();
+
+                result.IsSuccess = true;
+                return result;
             }
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CalculateTotalsAsync), GetType(), _logger, new { 
                     Method = nameof(CalculateTotalsAsync),
                     ServiceType = GetType().Name,
-                    Id = id 
+                    Id = id
                 });
-                return ServiceResult.Failure("計算採購退回金額過程發生錯誤");
+                result.IsSuccess = false;
+                result.ErrorMessage = "計算時發生錯誤";
+                return result;
             }
         }
 
         public async Task<ServiceResult> RefundProcessAsync(int id, decimal refundAmount)
         {
+            var result = new ServiceResult();
+
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var purchaseReturn = await context.PurchaseReturns.FindAsync(id);
-                
-                if (purchaseReturn == null || purchaseReturn.IsDeleted)
-                    return ServiceResult.Failure("找不到指定的採購退回記錄");
-                
-                if (refundAmount <= 0)
-                    return ServiceResult.Failure("退款金額必須大於0");
-                
-                if (refundAmount > purchaseReturn.TotalReturnAmountWithTax)
-                    return ServiceResult.Failure("退款金額不能超過退回總金額");
-                
+                var purchaseReturn = await context.PurchaseReturns
+                    .FirstOrDefaultAsync(pr => pr.Id == id && !pr.IsDeleted);
+
+                if (purchaseReturn == null)
+                {
+                    result.IsSuccess = false;
+                    result.ErrorMessage = "找不到指定的採購退回記錄";
+                    return result;
+                }
+
                 purchaseReturn.IsRefunded = true;
-                purchaseReturn.RefundDate = DateTime.UtcNow;
-                purchaseReturn.RefundAmount = refundAmount;
-                purchaseReturn.UpdatedAt = DateTime.UtcNow;
-                
+                purchaseReturn.RefundDate = DateTime.Now;
+
                 await context.SaveChangesAsync();
-                return ServiceResult.Success();
+
+                result.IsSuccess = true;
+                return result;
             }
             catch (Exception ex)
             {
@@ -357,96 +332,67 @@ namespace ERPCore2.Services
                     Id = id,
                     RefundAmount = refundAmount
                 });
-                return ServiceResult.Failure("退款處理過程發生錯誤");
-            }
-        }
-
-        public async Task<ServiceResult> CreateFromPurchaseOrderAsync(int purchaseOrderId, List<PurchaseReturnDetail> details)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var purchaseOrder = await context.PurchaseOrders
-                    .Include(po => po.Supplier)
-                    .FirstOrDefaultAsync(po => po.Id == purchaseOrderId && !po.IsDeleted);
-                
-                if (purchaseOrder == null)
-                    return ServiceResult.Failure("找不到指定的採購訂單");
-                
-                // 生成退回單號
-                var returnNumber = await GenerateReturnNumberAsync(context);
-                
-                var purchaseReturn = new PurchaseReturn
-                {
-                    PurchaseReturnNumber = returnNumber,
-                    ReturnDate = DateTime.Today,
-                    SupplierId = purchaseOrder.SupplierId,
-                    PurchaseOrderId = purchaseOrderId,
-                    PurchaseReturnDetails = details
-                };
-                
-                context.PurchaseReturns.Add(purchaseReturn);
-                await context.SaveChangesAsync();
-                
-                // 計算總金額
-                await CalculateTotalsAsync(purchaseReturn.Id);
-                
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CreateFromPurchaseOrderAsync), GetType(), _logger, new { 
-                    Method = nameof(CreateFromPurchaseOrderAsync),
-                    ServiceType = GetType().Name,
-                    PurchaseOrderId = purchaseOrderId 
-                });
-                return ServiceResult.Failure("從採購訂單建立退回單過程發生錯誤");
+                result.IsSuccess = false;
+                result.ErrorMessage = "退款處理時發生錯誤";
+                return result;
             }
         }
 
         public async Task<ServiceResult> CreateFromPurchaseReceivingAsync(int purchaseReceivingId, List<PurchaseReturnDetail> details)
         {
+            var result = new ServiceResult();
+
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var purchaseReceiving = await context.PurchaseReceivings
-                    .Include(pr => pr.PurchaseOrder)
-                        .ThenInclude(po => po!.Supplier)
-                    .Include(pr => pr.Supplier)
-                    .FirstOrDefaultAsync(pr => pr.Id == purchaseReceivingId && !pr.IsDeleted);
-                
-                if (purchaseReceiving == null)
-                    return ServiceResult.Failure("找不到指定的採購進貨單");
-                
-                // 生成退回單號
-                var returnNumber = await GenerateReturnNumberAsync(context);
-                
-                var purchaseReturn = new PurchaseReturn
+                using var transaction = await context.Database.BeginTransactionAsync();
+
+                try
                 {
-                    PurchaseReturnNumber = returnNumber,
-                    ReturnDate = DateTime.Today,
-                    SupplierId = purchaseReceiving.PurchaseOrder?.SupplierId ?? purchaseReceiving.SupplierId,
-                    PurchaseOrderId = purchaseReceiving.PurchaseOrderId,
-                    PurchaseReceivingId = purchaseReceivingId,
-                    PurchaseReturnDetails = details
-                };
-                
-                context.PurchaseReturns.Add(purchaseReturn);
-                await context.SaveChangesAsync();
-                
-                // 計算總金額
-                await CalculateTotalsAsync(purchaseReturn.Id);
-                
-                return ServiceResult.Success();
+                    var purchaseReceiving = await context.PurchaseReceivings
+                        .FirstOrDefaultAsync(pr => pr.Id == purchaseReceivingId && !pr.IsDeleted);
+
+                    if (purchaseReceiving == null)
+                    {
+                        result.IsSuccess = false;
+                        result.ErrorMessage = "找不到指定的進貨單";
+                        return result;
+                    }
+
+                    var purchaseReturn = new PurchaseReturn
+                    {
+                        PurchaseReturnNumber = await GenerateReturnNumberAsync(context),
+                        SupplierId = purchaseReceiving.SupplierId,
+                        PurchaseReceivingId = purchaseReceivingId,
+                        ReturnDate = DateTime.Today,
+                        Status = EntityStatus.Active,
+                        PurchaseReturnDetails = details
+                    };
+
+                    context.PurchaseReturns.Add(purchaseReturn);
+                    await context.SaveChangesAsync();
+
+                    await transaction.CommitAsync();
+
+                    result.IsSuccess = true;
+                    return result;
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
             }
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CreateFromPurchaseReceivingAsync), GetType(), _logger, new { 
                     Method = nameof(CreateFromPurchaseReceivingAsync),
                     ServiceType = GetType().Name,
-                    PurchaseReceivingId = purchaseReceivingId 
+                    PurchaseReceivingId = purchaseReceivingId
                 });
-                return ServiceResult.Failure("從採購進貨單建立退回單過程發生錯誤");
+                result.IsSuccess = false;
+                result.ErrorMessage = "創建採購退回單時發生錯誤";
+                return result;
             }
         }
 
@@ -455,23 +401,21 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.PurchaseReturns.Where(pr => !pr.IsDeleted);
                 
+                var query = context.PurchaseReturns.Where(pr => !pr.IsDeleted);
+
                 if (startDate.HasValue)
                     query = query.Where(pr => pr.ReturnDate >= startDate.Value);
-                
+
                 if (endDate.HasValue)
                     query = query.Where(pr => pr.ReturnDate <= endDate.Value);
-                
+
                 var returns = await query.ToListAsync();
-                
+
                 return new PurchaseReturnStatistics
                 {
                     TotalReturns = returns.Count,
-                    TotalReturnAmount = returns.Sum(pr => pr.TotalReturnAmountWithTax),
-                    TotalRefundAmount = returns.Where(pr => pr.IsRefunded).Sum(pr => pr.RefundAmount),
-                    SupplierReturnAmounts = returns.GroupBy(pr => pr.SupplierId)
-                        .ToDictionary(g => g.Key, g => g.Sum(pr => pr.TotalReturnAmountWithTax))
+                    TotalReturnAmount = returns.Sum(pr => pr.TotalReturnAmountWithTax)
                 };
             }
             catch (Exception ex)
@@ -480,7 +424,7 @@ namespace ERPCore2.Services
                     Method = nameof(GetStatisticsAsync),
                     ServiceType = GetType().Name,
                     StartDate = startDate,
-                    EndDate = endDate 
+                    EndDate = endDate
                 });
                 return new PurchaseReturnStatistics();
             }
@@ -491,15 +435,16 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
+                
                 var query = context.PurchaseReturns
                     .Where(pr => pr.SupplierId == supplierId && !pr.IsDeleted);
-                
+
                 if (startDate.HasValue)
                     query = query.Where(pr => pr.ReturnDate >= startDate.Value);
-                
+
                 if (endDate.HasValue)
                     query = query.Where(pr => pr.ReturnDate <= endDate.Value);
-                
+
                 return await query.SumAsync(pr => pr.TotalReturnAmountWithTax);
             }
             catch (Exception ex)
@@ -509,7 +454,7 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     SupplierId = supplierId,
                     StartDate = startDate,
-                    EndDate = endDate 
+                    EndDate = endDate
                 });
                 return 0;
             }
@@ -517,25 +462,36 @@ namespace ERPCore2.Services
 
         private async Task<string> GenerateReturnNumberAsync(AppDbContext context)
         {
-            var today = DateTime.Today;
-            var prefix = $"PR{today:yyyyMM}";
-            
-            var lastNumber = await context.PurchaseReturns
-                .Where(pr => pr.PurchaseReturnNumber.StartsWith(prefix))
-                .OrderByDescending(pr => pr.PurchaseReturnNumber)
-                .Select(pr => pr.PurchaseReturnNumber)
-                .FirstOrDefaultAsync();
-            
-            var sequence = 1;
-            if (!string.IsNullOrEmpty(lastNumber) && lastNumber.Length >= prefix.Length + 4)
+            try
             {
-                if (int.TryParse(lastNumber.Substring(prefix.Length), out var lastSequence))
+                var today = DateTime.Today;
+                var prefix = $"RT{today:yyyyMMdd}";
+                
+                var lastReturn = await context.PurchaseReturns
+                    .Where(pr => pr.PurchaseReturnNumber.StartsWith(prefix))
+                    .OrderByDescending(pr => pr.PurchaseReturnNumber)
+                    .FirstOrDefaultAsync();
+
+                if (lastReturn == null)
                 {
-                    sequence = lastSequence + 1;
+                    return $"{prefix}001";
                 }
+
+                var lastNumber = lastReturn.PurchaseReturnNumber.Substring(prefix.Length);
+                if (int.TryParse(lastNumber, out int number))
+                {
+                    return $"{prefix}{(number + 1):D3}";
+                }
+
+                return $"{prefix}001";
             }
-            
-            return $"{prefix}{sequence:D4}";
+            catch
+            {
+                var today = DateTime.Today;
+                return $"RT{today:yyyyMMdd}001";
+            }
         }
     }
+
+
 }

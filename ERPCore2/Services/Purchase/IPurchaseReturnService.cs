@@ -12,7 +12,7 @@ namespace ERPCore2.Services
         // 查詢方法
         Task<List<PurchaseReturn>> GetBySupplierIdAsync(int supplierId);
         Task<List<PurchaseReturn>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
-        Task<List<PurchaseReturn>> GetByPurchaseOrderIdAsync(int purchaseOrderId);
+
         Task<List<PurchaseReturn>> GetByPurchaseReceivingIdAsync(int purchaseReceivingId);
         Task<PurchaseReturn?> GetWithDetailsAsync(int id);
         Task<bool> IsPurchaseReturnNumberExistsAsync(string purchaseReturnNumber, int? excludeId = null);
@@ -20,7 +20,7 @@ namespace ERPCore2.Services
         // 業務邏輯
         Task<ServiceResult> CalculateTotalsAsync(int id);
         Task<ServiceResult> RefundProcessAsync(int id, decimal refundAmount);
-        Task<ServiceResult> CreateFromPurchaseOrderAsync(int purchaseOrderId, List<PurchaseReturnDetail> details);
+
         Task<ServiceResult> CreateFromPurchaseReceivingAsync(int purchaseReceivingId, List<PurchaseReturnDetail> details);
 
         // 報表和統計

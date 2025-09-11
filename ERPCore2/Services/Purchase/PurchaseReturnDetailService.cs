@@ -712,8 +712,7 @@ namespace ERPCore2.Services
                     .Where(prd => !prd.IsDeleted &&
                                  !prd.IsShipped &&
                                  prd.ShippedQuantity < prd.ReturnQuantity)
-                    .OrderBy(prd => prd.PurchaseReturn.ExpectedProcessDate)
-                    .ThenBy(prd => prd.PurchaseReturn.ReturnDate)
+                    .OrderBy(prd => prd.PurchaseReturn.ReturnDate)
                     .ToListAsync();
             }
             catch (Exception ex)

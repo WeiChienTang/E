@@ -1,10 +1,7 @@
 @* 進貨退出編輯模態組件 *@
 @inject IPurchaseReturnService PurchaseReturnService
 @inject ISupplierService SupplierService
-@inject IPurchaseOrderService PurchaseOrderService
 @inject IPurchaseReceivingService PurchaseReceivingService
-@inject IWarehouseService WarehouseService
-@inject IEmployeeService EmployeeService
 @inject INotificationService NotificationService
 
 <GenericEditModalComponent TEntity="PurchaseReturn" 
@@ -50,10 +47,7 @@
 
     // 相關資料
     private List<Supplier> suppliers = new();
-    private List<PurchaseOrder> purchaseOrders = new();
     private List<PurchaseReceiving> purchaseReceivings = new();
-    private List<Warehouse> warehouses = new();
-    private List<Employee> employees = new();
 
     // ===== 生命週期 =====
     protected override async Task OnParametersSetAsync()
@@ -138,10 +132,7 @@
         {
             await Task.WhenAll(
                 LoadSuppliersAsync(),
-                LoadPurchaseOrdersAsync(),
-                LoadPurchaseReceivingsAsync(),
-                LoadWarehousesAsync(),
-                LoadEmployeesAsync()
+                LoadPurchaseReceivingsAsync()
             );
         }
         catch (Exception ex)
@@ -162,19 +153,6 @@
         }
     }
 
-    private async Task LoadPurchaseOrdersAsync()
-    {
-        try
-        {
-            var allOrders = await PurchaseOrderService.GetAllAsync();
-            purchaseOrders = allOrders.Where(po => po.IsApproved).ToList();
-        }
-        catch (Exception)
-        {
-            purchaseOrders = new List<PurchaseOrder>();
-        }
-    }
-
     private async Task LoadPurchaseReceivingsAsync()
     {
         try
@@ -184,30 +162,6 @@
         catch (Exception)
         {
             purchaseReceivings = new List<PurchaseReceiving>();
-        }
-    }
-
-    private async Task LoadWarehousesAsync()
-    {
-        try
-        {
-            warehouses = await WarehouseService.GetAllAsync();
-        }
-        catch (Exception)
-        {
-            warehouses = new List<Warehouse>();
-        }
-    }
-
-    private async Task LoadEmployeesAsync()
-    {
-        try
-        {
-            employees = await EmployeeService.GetAllAsync();
-        }
-        catch (Exception)
-        {
-            employees = new List<Employee>();
         }
     }
 
@@ -247,64 +201,12 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(PurchaseReturn.PurchaseOrderId),
-                    Label = "原採購訂單",
-                    FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "選擇原採購訂單",
-                    IsRequired = false,
-                    Order = 4
-                },
-                new()
-                {
                     PropertyName = nameof(PurchaseReturn.PurchaseReceivingId),
                     Label = "原進貨單",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "選擇原進貨單",
                     IsRequired = false,
-                    Order = 5
-                },
-                new()
-                {
-                    PropertyName = nameof(PurchaseReturn.ExpectedProcessDate),
-                    Label = "預計處理日期",
-                    FieldType = FormFieldType.Date,
-                    IsRequired = false,
-                    Order = 6
-                },
-                new()
-                {
-                    PropertyName = nameof(PurchaseReturn.ActualProcessDate),
-                    Label = "實際處理日期",
-                    FieldType = FormFieldType.Date,
-                    IsRequired = false,
-                    Order = 7
-                },
-                new()
-                {
-                    PropertyName = nameof(PurchaseReturn.ProcessPersonnel),
-                    Label = "處理人員",
-                    FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入處理人員",
-                    MaxLength = 100,
-                    Order = 8
-                },
-                new()
-                {
-                    PropertyName = nameof(PurchaseReturn.EmployeeId),
-                    Label = "處理員工",
-                    FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "選擇處理員工",
-                    IsRequired = false,
-                    Order = 9
-                },
-                new()
-                {
-                    PropertyName = nameof(PurchaseReturn.WarehouseId),
-                    Label = "退貨倉庫",
-                    FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "選擇退貨倉庫",
-                    IsRequired = false,
-                    Order = 10
+                    Order = 4
                 },
                 new()
                 {
@@ -312,7 +214,7 @@
                     Label = "退回總金額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    Order = 11
+                    Order = 5
                 },
                 new()
                 {
@@ -343,15 +245,7 @@
                     Label = "退款日期",
                     FieldType = FormFieldType.Date,
                     IsRequired = false,
-                    Order = 15
-                },
-                new()
-                {
-                    PropertyName = nameof(PurchaseReturn.RefundAmount),
-                    Label = "退款金額",
-                    FieldType = FormFieldType.Number,
-                    IsRequired = false,
-                    Order = 16
+                    Order = 11
                 }
             };
 
@@ -360,19 +254,12 @@
                 { nameof(PurchaseReturn.PurchaseReturnNumber), "基本資訊" },
                 { nameof(PurchaseReturn.SupplierId), "基本資訊" },
                 { nameof(PurchaseReturn.ReturnDate), "基本資訊" },
-                { nameof(PurchaseReturn.PurchaseOrderId), "基本資訊" },
                 { nameof(PurchaseReturn.PurchaseReceivingId), "基本資訊" },
-                { nameof(PurchaseReturn.ExpectedProcessDate), "處理資訊" },
-                { nameof(PurchaseReturn.ActualProcessDate), "處理資訊" },
-                { nameof(PurchaseReturn.ProcessPersonnel), "處理資訊" },
-                { nameof(PurchaseReturn.EmployeeId), "處理資訊" },
-                { nameof(PurchaseReturn.WarehouseId), "處理資訊" },
                 { nameof(PurchaseReturn.TotalReturnAmount), "金額資訊" },
                 { nameof(PurchaseReturn.ReturnTaxAmount), "金額資訊" },
                 { nameof(PurchaseReturn.TotalReturnAmountWithTax), "金額資訊" },
                 { nameof(PurchaseReturn.IsRefunded), "退款資訊" },
-                { nameof(PurchaseReturn.RefundDate), "退款資訊" },
-                { nameof(PurchaseReturn.RefundAmount), "退款資訊" }
+                { nameof(PurchaseReturn.RefundDate), "退款資訊" }
             };
         }
         catch (Exception)
@@ -392,10 +279,7 @@
         return new Dictionary<string, IEnumerable<object>>
         {
             { nameof(PurchaseReturn.SupplierId), suppliers.Cast<object>() },
-            { nameof(PurchaseReturn.PurchaseOrderId), purchaseOrders.Cast<object>() },
-            { nameof(PurchaseReturn.PurchaseReceivingId), purchaseReceivings.Cast<object>() },
-            { nameof(PurchaseReturn.EmployeeId), employees.Cast<object>() },
-            { nameof(PurchaseReturn.WarehouseId), warehouses.Cast<object>() }
+            { nameof(PurchaseReturn.PurchaseReceivingId), purchaseReceivings.Cast<object>() }
         };
     }
 
@@ -404,10 +288,7 @@
         return new Dictionary<string, string>
         {
             { nameof(PurchaseReturn.SupplierId), nameof(Supplier.CompanyName) },
-            { nameof(PurchaseReturn.PurchaseOrderId), nameof(PurchaseOrder.PurchaseOrderNumber) },
-            { nameof(PurchaseReturn.PurchaseReceivingId), nameof(PurchaseReceiving.ReceiptNumber) },
-            { nameof(PurchaseReturn.EmployeeId), nameof(Employee.Name) },
-            { nameof(PurchaseReturn.WarehouseId), nameof(Warehouse.Name) }
+            { nameof(PurchaseReturn.PurchaseReceivingId), nameof(PurchaseReceiving.ReceiptNumber) }
         };
     }
 
@@ -416,10 +297,7 @@
         return new Dictionary<string, string>
         {
             { nameof(PurchaseReturn.SupplierId), nameof(Supplier.Id) },
-            { nameof(PurchaseReturn.PurchaseOrderId), nameof(PurchaseOrder.Id) },
-            { nameof(PurchaseReturn.PurchaseReceivingId), nameof(PurchaseReceiving.Id) },
-            { nameof(PurchaseReturn.EmployeeId), nameof(Employee.Id) },
-            { nameof(PurchaseReturn.WarehouseId), nameof(Warehouse.Id) }
+            { nameof(PurchaseReturn.PurchaseReceivingId), nameof(PurchaseReceiving.Id) }
         };
     }
 }

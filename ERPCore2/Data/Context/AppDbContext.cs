@@ -392,30 +392,10 @@ namespace ERPCore2.Data.Context
                         .HasForeignKey(pr => pr.SupplierId)
                         .OnDelete(DeleteBehavior.Restrict);
 
-                        entity.HasOne(pr => pr.PurchaseOrder)
-                        .WithMany()
-                        .HasForeignKey(pr => pr.PurchaseOrderId)
-                        .OnDelete(DeleteBehavior.Restrict);
-
                         entity.HasOne(pr => pr.PurchaseReceiving)
                         .WithMany()
                         .HasForeignKey(pr => pr.PurchaseReceivingId)
                         .OnDelete(DeleteBehavior.Restrict);
-
-                        entity.HasOne(pr => pr.Employee)
-                        .WithMany()
-                        .HasForeignKey(pr => pr.EmployeeId)
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                        entity.HasOne(pr => pr.Warehouse)
-                        .WithMany()
-                        .HasForeignKey(pr => pr.WarehouseId)
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                        entity.HasOne(pr => pr.ConfirmedByUser)
-                        .WithMany()
-                        .HasForeignKey(pr => pr.ConfirmedBy)
-                        .OnDelete(DeleteBehavior.NoAction);
                   });
 
                   modelBuilder.Entity<PurchaseReturnDetail>(entity =>

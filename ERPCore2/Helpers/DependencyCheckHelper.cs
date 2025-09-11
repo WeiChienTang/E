@@ -313,15 +313,7 @@ namespace ERPCore2.Helpers
                     result.DependentEntities.Add($"採購訂單({purchaseOrderCount}筆)");
                 }
 
-                // 檢查採購退貨
-                var purchaseReturnCount = await context.PurchaseReturns
-                    .CountAsync(pr => pr.WarehouseId == warehouseId && !pr.IsDeleted);
-                    
-                if (purchaseReturnCount > 0)
-                {
-                    result.CanDelete = false;
-                    result.DependentEntities.Add($"採購退貨({purchaseReturnCount}筆)");
-                }
+
 
                 // 檢查庫存異動記錄
                 var inventoryTransactionCount = await context.InventoryTransactions

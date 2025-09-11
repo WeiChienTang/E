@@ -10,7 +10,6 @@ namespace ERPCore2.Data.Entities
     /// </summary>
     [Index(nameof(PurchaseReturnNumber), IsUnique = true)]
     [Index(nameof(SupplierId), nameof(ReturnDate))]
-    [Index(nameof(PurchaseOrderId), nameof(ReturnDate))]
     public class PurchaseReturn : BaseEntity
     {
         [Required(ErrorMessage = "退回單號為必填")]
@@ -21,16 +20,6 @@ namespace ERPCore2.Data.Entities
         [Required(ErrorMessage = "退回日期為必填")]
         [Display(Name = "退回日期")]
         public DateTime ReturnDate { get; set; } = DateTime.Today;
-
-        [Display(Name = "預計處理日期")]
-        public DateTime? ExpectedProcessDate { get; set; }
-
-        [Display(Name = "實際處理日期")]
-        public DateTime? ActualProcessDate { get; set; }
-
-        [MaxLength(100, ErrorMessage = "處理人員不可超過100個字元")]
-        [Display(Name = "處理人員")]
-        public string? ProcessPersonnel { get; set; }
 
         [Display(Name = "退回總金額")]
         [Column(TypeName = "decimal(18,2)")]
@@ -50,45 +39,19 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "退款日期")]
         public DateTime? RefundDate { get; set; }
 
-        [Display(Name = "退款金額")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal RefundAmount { get; set; } = 0;
-
-
-
         // Foreign Keys
         [Required(ErrorMessage = "供應商為必填")]
         [Display(Name = "供應商")]
         [ForeignKey(nameof(Supplier))]
         public int SupplierId { get; set; }
 
-        [Display(Name = "原始採購訂單")]
-        [ForeignKey(nameof(PurchaseOrder))]
-        public int? PurchaseOrderId { get; set; }
-
         [Display(Name = "原始採購進貨單")]
         [ForeignKey(nameof(PurchaseReceiving))]
         public int? PurchaseReceivingId { get; set; }
 
-        [Display(Name = "處理員工")]
-        [ForeignKey(nameof(Employee))]
-        public int? EmployeeId { get; set; }
-
-        [Display(Name = "退貨倉庫")]
-        [ForeignKey(nameof(Warehouse))]
-        public int? WarehouseId { get; set; }
-
-        [Display(Name = "確認人員")]
-        [ForeignKey(nameof(ConfirmedByUser))]
-        public int? ConfirmedBy { get; set; }
-
         // Navigation Properties
         public Supplier Supplier { get; set; } = null!;
-        public PurchaseOrder? PurchaseOrder { get; set; }
         public PurchaseReceiving? PurchaseReceiving { get; set; }
-        public Employee? Employee { get; set; }
-        public Warehouse? Warehouse { get; set; }
-        public Employee? ConfirmedByUser { get; set; }
         public ICollection<PurchaseReturnDetail> PurchaseReturnDetails { get; set; } = new List<PurchaseReturnDetail>();
     }
 }

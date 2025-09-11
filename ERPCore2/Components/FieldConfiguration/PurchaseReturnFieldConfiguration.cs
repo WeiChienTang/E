@@ -87,28 +87,13 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        "PurchaseOrderNumber",
-                        new FieldDefinition<PurchaseReturn>
-                        {
-                            PropertyName = "PurchaseOrder.PurchaseOrderNumber",
-                            DisplayName = "原採購單號",
-                            TableOrder = 4,
-                            FilterOrder = 4,
-                            FilterType = SearchFilterType.Text,
-                            FilterPlaceholder = "輸入原採購單號搜尋",
-                            HeaderStyle = "width: 160px;",
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, "PurchaseOrderNumber", pr => pr.PurchaseOrder != null ? pr.PurchaseOrder.PurchaseOrderNumber : "", allowNull: true)
-                        }
-                    },
-                    {
                         "PurchaseReceivingNumber",
                         new FieldDefinition<PurchaseReturn>
                         {
                             PropertyName = "PurchaseReceiving.ReceiptNumber",
                             DisplayName = "原進貨單號",
-                            TableOrder = 5,
-                            FilterOrder = 5,
+                            TableOrder = 4,
+                            FilterOrder = 4,
                             FilterType = SearchFilterType.Text,
                             FilterPlaceholder = "輸入原進貨單號搜尋",
                             HeaderStyle = "width: 160px;",
@@ -175,28 +160,7 @@ namespace ERPCore2.FieldConfiguration
                             HeaderStyle = "width: 120px;",
                         }
                     },
-                    {
-                        nameof(PurchaseReturn.ProcessPersonnel),
-                        new FieldDefinition<PurchaseReturn>
-                        {
-                            PropertyName = nameof(PurchaseReturn.ProcessPersonnel),
-                            DisplayName = "處理人員",
-                            TableOrder = 9,
-                            ShowInFilter = false,
-                            HeaderStyle = "width: 120px;",
-                        }
-                    },
-                    {
-                        nameof(PurchaseReturn.ConfirmedBy),
-                        new FieldDefinition<PurchaseReturn>
-                        {
-                            PropertyName = "ConfirmedByUser.Name",
-                            DisplayName = "確認人員",
-                            TableOrder = 10,
-                            ShowInFilter = false,
-                            HeaderStyle = "width: 120px;",
-                        }
-                    }
+
                 };
             }
             catch (Exception ex)
