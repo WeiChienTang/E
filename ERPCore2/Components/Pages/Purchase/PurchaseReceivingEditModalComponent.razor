@@ -161,8 +161,7 @@
                 var newReceiving = new PurchaseReceiving
                 {
                     ReceiptNumber = await GenerateReceiptNumberAsync(),
-                    ReceiptDate = DateTime.Now,
-                    ConfirmedAt = DateTime.Now
+                    ReceiptDate = DateTime.Now
                 };
                 
                 // 清空明細
@@ -446,28 +445,6 @@
                     IsRequired = true,
                     HelpText = "貨品實際入庫日期"
                 },
-                new()
-                {
-                    PropertyName = nameof(PurchaseReceiving.ConfirmedAt),
-                    Label = "確認時間",
-                    FieldType = FormFieldType.DateTime,
-                    IsRequired = false,
-                    IsReadOnly = false,
-                    HelpText = "入庫確認的時間"
-                },
-                new()
-                {
-                    PropertyName = nameof(PurchaseReceiving.ConfirmedBy),
-                    Label = "確認人員",
-                    FieldType = FormFieldType.Select,
-                    IsRequired = false,
-                    Options = employees.Select(u => new SelectOption
-                    {
-                        Value = u.Id.ToString(),
-                        Text = u.Name ?? "未知員工"
-                    }).ToList(),
-                    HelpText = "負責確認入庫的人員"
-                },
                 FormFieldConfigurationHelper.CreateRemarksField<PurchaseReceiving>()
             };
 
@@ -478,8 +455,6 @@
                 { "FilterProductId", "基本資訊" },
                 { nameof(PurchaseReceiving.PurchaseOrderId), "基本資訊" },
                 { nameof(PurchaseReceiving.ReceiptDate), "基本資訊" },
-                { nameof(PurchaseReceiving.ConfirmedAt), "確認資訊" },
-                { nameof(PurchaseReceiving.ConfirmedBy), "確認資訊" },
                 { nameof(BaseEntity.Remarks), "其他資訊" }
             };
         }

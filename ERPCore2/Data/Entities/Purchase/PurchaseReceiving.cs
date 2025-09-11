@@ -29,13 +29,6 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal TaxAmount { get; set; } = 0;
 
-        [Display(Name = "確認時間")]
-        public DateTime? ConfirmedAt { get; set; }
-
-        [Display(Name = "確認人員")]
-        [ForeignKey(nameof(ConfirmedByUser))]
-        public int? ConfirmedBy { get; set; }
-
         // Foreign Keys
         [Display(Name = "採購訂單")]
         [ForeignKey(nameof(PurchaseOrder))]
@@ -49,7 +42,6 @@ namespace ERPCore2.Data.Entities
         // Navigation Properties
         public PurchaseOrder? PurchaseOrder { get; set; }  // 改為可選
         public Supplier Supplier { get; set; } = null!;  // 新增供應商導覽屬性
-        public Employee? ConfirmedByUser { get; set; }
         public ICollection<PurchaseReceivingDetail> PurchaseReceivingDetails { get; set; } = new List<PurchaseReceivingDetail>();
     }
 }

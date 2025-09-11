@@ -350,11 +350,6 @@ namespace ERPCore2.Data.Context
                         .WithMany(po => po.PurchaseReceivings)
                         .HasForeignKey(pr => pr.PurchaseOrderId)
                         .OnDelete(DeleteBehavior.Restrict);
-
-                        entity.HasOne(pr => pr.ConfirmedByUser)
-                        .WithMany()
-                        .HasForeignKey(pr => pr.ConfirmedBy)
-                        .OnDelete(DeleteBehavior.SetNull);
                   });
 
                   modelBuilder.Entity<PurchaseReceivingDetail>(entity =>

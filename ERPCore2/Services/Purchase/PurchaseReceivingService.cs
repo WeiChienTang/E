@@ -43,7 +43,6 @@ namespace ERPCore2.Services
                     .Include(pr => pr.PurchaseOrder)
                         .ThenInclude(po => po!.Supplier)
                     .Include(pr => pr.Supplier)  // 新增直接供應商關聯
-                    .Include(pr => pr.ConfirmedByUser)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Product)
                     .Include(pr => pr.PurchaseReceivingDetails)
@@ -72,7 +71,6 @@ namespace ERPCore2.Services
                     .Include(pr => pr.PurchaseOrder)
                         .ThenInclude(po => po!.Supplier)
                     .Include(pr => pr.Supplier)  // 新增直接供應商關聯
-                    .Include(pr => pr.ConfirmedByUser)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Product)
                             .ThenInclude(p => p.Unit)
@@ -111,7 +109,6 @@ namespace ERPCore2.Services
                     .Include(pr => pr.PurchaseOrder)
                         .ThenInclude(po => po!.Supplier)
                     .Include(pr => pr.Supplier)  // 新增直接供應商關聯
-                    .Include(pr => pr.ConfirmedByUser)
                     .Where(pr => !pr.IsDeleted && (
                         pr.ReceiptNumber.Contains(searchTerm) ||
                         (pr.PurchaseOrder != null && pr.PurchaseOrder.PurchaseOrderNumber.Contains(searchTerm)) ||
@@ -368,8 +365,6 @@ namespace ERPCore2.Services
                     }
 
                     // 移除狀態檢查，直接確認（庫存更新已在儲存時處理）
-                    receipt.ConfirmedAt = DateTime.Now;
-                    receipt.ConfirmedBy = confirmedBy;
                     receipt.UpdatedAt = DateTime.Now;
 
                     await context.SaveChangesAsync();
@@ -837,81 +832,8 @@ namespace ERPCore2.Services
                     return;
                 }
 
-                // 檢查對應的採購單明細是否全部完成進貨
-                bool allCompleted = true;
-                bool hasAnyReceived = false;
-
-                // 根據入庫模式判定完成狀態
-                if (purchaseReceiving.PurchaseOrderId.HasValue && purchaseReceiving.PurchaseOrderId.Value > 0)
-                {
-                    // 單一採購單模式 - 檢查整張採購單的所有明細
-                    var allOrderDetails = await context.PurchaseOrderDetails
-                        .Where(pod => pod.PurchaseOrderId == purchaseReceiving.PurchaseOrderId.Value && !pod.IsDeleted)
-                        .ToListAsync();
-
-                    foreach (var orderDetail in allOrderDetails)
-                    {
-                        // 計算該明細的總已進貨數量（包含其他入庫單的進貨）
-                        var totalReceivedQuantity = await context.PurchaseReceivingDetails
-                            .Where(prd => prd.PurchaseOrderDetailId == orderDetail.Id && !prd.IsDeleted)
-                            .SumAsync(prd => prd.ReceivedQuantity);
-
-                        // 檢查是否有手動標記為完成的進貨記錄
-                        var isManuallyCompleted = await context.PurchaseReceivingDetails
-                            .Where(prd => prd.PurchaseOrderDetailId == orderDetail.Id && !prd.IsDeleted)
-                            .AnyAsync(prd => prd.IsReceivingCompleted);
-
-                        if (totalReceivedQuantity > 0)
-                        {
-                            hasAnyReceived = true;
-                        }
-
-                        // 如果手動標記為完成，或數量已達到訂購量，則視為完成
-                        if (!isManuallyCompleted && totalReceivedQuantity < orderDetail.OrderQuantity)
-                        {
-                            allCompleted = false;
-                        }
-                    }
-                }
-                else
-                {
-                    // 多採購單模式 - 只檢查本次進貨涉及的明細
-                    foreach (var purchaseOrderDetailId in purchaseOrderDetailIds)
-                    {
-                        var orderDetail = await context.PurchaseOrderDetails
-                            .FirstOrDefaultAsync(pod => pod.Id == purchaseOrderDetailId && !pod.IsDeleted);
-
-                        if (orderDetail != null)
-                        {
-                            // 計算該明細的總已進貨數量（包含其他入庫單的進貨）
-                            var totalReceivedQuantity = await context.PurchaseReceivingDetails
-                                .Where(prd => prd.PurchaseOrderDetailId == purchaseOrderDetailId && !prd.IsDeleted)
-                                .SumAsync(prd => prd.ReceivedQuantity);
-
-                            // 檢查是否有手動標記為完成的進貨記錄
-                            var isManuallyCompleted = await context.PurchaseReceivingDetails
-                                .Where(prd => prd.PurchaseOrderDetailId == purchaseOrderDetailId && !prd.IsDeleted)
-                                .AnyAsync(prd => prd.IsReceivingCompleted);
-
-                            if (totalReceivedQuantity > 0)
-                            {
-                                hasAnyReceived = true;
-                            }
-
-                            // 如果手動標記為完成，或數量已達到訂購量，則視為完成
-                            if (!isManuallyCompleted && totalReceivedQuantity < orderDetail.OrderQuantity)
-                            {
-                                allCompleted = false;
-                            }
-                        }
-                    }
-                }
-
-                // 移除狀態設定，僅更新確認時間
-                if (allCompleted && hasAnyReceived)
-                {
-                    purchaseReceiving.ConfirmedAt = DateTime.UtcNow;
-                }
+                // 由於移除確認功能，此方法現在僅更新修改時間
+                // 原有的進貨狀態檢查邏輯已不再需要
 
                 // 更新最後修改時間
                 purchaseReceiving.UpdatedAt = DateTime.UtcNow;

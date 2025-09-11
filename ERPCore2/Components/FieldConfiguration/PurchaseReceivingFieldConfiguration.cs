@@ -86,29 +86,6 @@ namespace ERPCore2.FieldConfiguration
                             ShowInFilter = false,
                             HeaderStyle = "width: 120px; text-align: right;",
                         }
-                    },
-                    {
-                        nameof(PurchaseReceiving.ConfirmedAt),
-                        new FieldDefinition<PurchaseReceiving>
-                        {
-                            PropertyName = nameof(PurchaseReceiving.ConfirmedAt),
-                            DisplayName = "確認時間",
-                            ColumnType = ColumnDataType.DateTime,
-                            TableOrder = 7,
-                            ShowInFilter = false,
-                            HeaderStyle = "width: 140px;",
-                        }
-                    },
-                    {
-                        nameof(PurchaseReceiving.ConfirmedBy),
-                        new FieldDefinition<PurchaseReceiving>
-                        {
-                            PropertyName = "ConfirmedByUser.Name", // 顯示確認人員的名稱
-                            DisplayName = "確認人員",
-                            TableOrder = 9,
-                            ShowInFilter = false,
-                            HeaderStyle = "width: 120px;",
-                        }
                     }
                 };
             }
